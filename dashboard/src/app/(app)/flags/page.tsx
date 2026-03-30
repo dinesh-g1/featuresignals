@@ -15,7 +15,7 @@ export default function FlagsPage() {
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api.listFlags(token, projectId).then(setFlags).catch(() => {});
+    api.listFlags(token, projectId).then((f) => setFlags(f ?? [])).catch(() => {});
   }, [token, projectId]);
 
   async function handleCreate(e: React.FormEvent) {
@@ -24,7 +24,7 @@ export default function FlagsPage() {
     await api.createFlag(token, projectId, newFlag);
     setShowCreate(false);
     setNewFlag({ key: "", name: "", flag_type: "boolean", description: "" });
-    api.listFlags(token, projectId).then(setFlags);
+    api.listFlags(token, projectId).then((f) => setFlags(f ?? []));
   }
 
   const filtered = flags.filter(

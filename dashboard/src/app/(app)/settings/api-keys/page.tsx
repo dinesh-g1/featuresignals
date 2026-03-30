@@ -17,14 +17,15 @@ export default function APIKeysPage() {
   useEffect(() => {
     if (!token || !projectId) return;
     api.listEnvironments(token, projectId).then((e) => {
-      setEnvs(e);
-      if (!selectedEnv && e.length > 0) setSelectedEnv(e[0].id);
+      const list = e ?? [];
+      setEnvs(list);
+      if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
     });
   }, [token, projectId, selectedEnv]);
 
   useEffect(() => {
     if (!token || !selectedEnv) return;
-    api.listAPIKeys(token, selectedEnv).then(setKeys).catch(() => {});
+    api.listAPIKeys(token, selectedEnv).then((k) => setKeys(k ?? [])).catch(() => {});
   }, [token, selectedEnv]);
 
   async function handleCreate(e: React.FormEvent) {
@@ -33,7 +34,7 @@ export default function APIKeysPage() {
     const result: any = await api.createAPIKey(token, selectedEnv, form);
     setNewKey(result.key);
     setForm({ name: "", type: "server" });
-    api.listAPIKeys(token, selectedEnv).then(setKeys);
+    api.listAPIKeys(token, selectedEnv).then((k) => setKeys(k ?? []));
   }
 
   return (

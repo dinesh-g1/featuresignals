@@ -99,7 +99,7 @@ func (s *Store) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgM
 		return nil, err
 	}
 	defer rows.Close()
-	var members []domain.OrgMember
+	members := []domain.OrgMember{}
 	for rows.Next() {
 		var m domain.OrgMember
 		if err := rows.Scan(&m.ID, &m.OrgID, &m.UserID, &m.Role, &m.CreatedAt); err != nil {
@@ -137,7 +137,7 @@ func (s *Store) ListProjects(ctx context.Context, orgID string) ([]domain.Projec
 		return nil, err
 	}
 	defer rows.Close()
-	var projects []domain.Project
+	projects := []domain.Project{}
 	for rows.Next() {
 		var p domain.Project
 		if err := rows.Scan(&p.ID, &p.OrgID, &p.Name, &p.Slug, &p.CreatedAt, &p.UpdatedAt); err != nil {
@@ -169,7 +169,7 @@ func (s *Store) ListEnvironments(ctx context.Context, projectID string) ([]domai
 		return nil, err
 	}
 	defer rows.Close()
-	var envs []domain.Environment
+	envs := []domain.Environment{}
 	for rows.Next() {
 		var e domain.Environment
 		if err := rows.Scan(&e.ID, &e.ProjectID, &e.Name, &e.Slug, &e.Color, &e.CreatedAt); err != nil {
@@ -226,7 +226,7 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 		return nil, err
 	}
 	defer rows.Close()
-	var flags []domain.Flag
+	flags := []domain.Flag{}
 	for rows.Next() {
 		var f domain.Flag
 		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.CreatedAt, &f.UpdatedAt); err != nil {
@@ -304,7 +304,7 @@ func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Se
 		return nil, err
 	}
 	defer rows.Close()
-	var segments []domain.Segment
+	segments := []domain.Segment{}
 	for rows.Next() {
 		var seg domain.Segment
 		var rulesJSON []byte
@@ -370,7 +370,7 @@ func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey,
 		return nil, err
 	}
 	defer rows.Close()
-	var keys []domain.APIKey
+	keys := []domain.APIKey{}
 	for rows.Next() {
 		var k domain.APIKey
 		if err := rows.Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt); err != nil {
@@ -412,7 +412,7 @@ func (s *Store) ListAuditEntries(ctx context.Context, orgID string, limit, offse
 		return nil, err
 	}
 	defer rows.Close()
-	var entries []domain.AuditEntry
+	entries := []domain.AuditEntry{}
 	for rows.Next() {
 		var e domain.AuditEntry
 		if err := rows.Scan(&e.ID, &e.OrgID, &e.ActorID, &e.ActorType, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Metadata, &e.CreatedAt); err != nil {
@@ -441,7 +441,7 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 		return nil, nil, nil, fmt.Errorf("load flag states: %w", err)
 	}
 	defer rows.Close()
-	var states []domain.FlagState
+	states := []domain.FlagState{}
 	for rows.Next() {
 		var fs domain.FlagState
 		var rulesJSON []byte

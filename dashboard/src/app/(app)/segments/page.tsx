@@ -13,7 +13,7 @@ export default function SegmentsPage() {
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api.listSegments(token, projectId).then(setSegments).catch(() => {});
+    api.listSegments(token, projectId).then((s) => setSegments(s ?? [])).catch(() => {});
   }, [token, projectId]);
 
   async function handleCreate(e: React.FormEvent) {
@@ -22,7 +22,7 @@ export default function SegmentsPage() {
     await api.createSegment(token, projectId, { ...form, rules: [] });
     setShowCreate(false);
     setForm({ key: "", name: "", description: "", match_type: "all" });
-    api.listSegments(token, projectId).then(setSegments);
+    api.listSegments(token, projectId).then((s) => setSegments(s ?? []));
   }
 
   return (

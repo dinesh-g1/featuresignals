@@ -12,7 +12,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api.listEnvironments(token, projectId).then(setEnvs).catch(() => {});
+    api.listEnvironments(token, projectId).then((e) => setEnvs(e ?? [])).catch(() => {});
   }, [token, projectId]);
 
   return (

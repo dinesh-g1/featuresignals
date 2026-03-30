@@ -10,7 +10,7 @@ export default function AuditPage() {
 
   useEffect(() => {
     if (!token) return;
-    api.listAudit(token, 100).then(setEntries).catch(() => {});
+    api.listAudit(token, 100).then((a) => setEntries(a ?? [])).catch(() => {});
   }, [token]);
 
   return (
