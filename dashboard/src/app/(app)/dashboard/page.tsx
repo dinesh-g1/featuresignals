@@ -15,17 +15,18 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return;
     api.listProjects(token).then((p) => {
-      setProjects(p);
-      if (p.length > 0 && !currentProjectId) {
-        setCurrentProject(p[0].id);
+      const list = p ?? [];
+      setProjects(list);
+      if (list.length > 0 && !currentProjectId) {
+        setCurrentProject(list[0].id);
       }
     });
-    api.listAudit(token, 10).then(setAudit).catch(() => {});
+    api.listAudit(token, 10).then((a) => setAudit(a ?? [])).catch(() => {});
   }, [token, currentProjectId, setCurrentProject]);
 
   useEffect(() => {
     if (!token || !currentProjectId) return;
-    api.listFlags(token, currentProjectId).then(setFlags).catch(() => {});
+    api.listFlags(token, currentProjectId).then((f) => setFlags(f ?? [])).catch(() => {});
   }, [token, currentProjectId]);
 
   return (

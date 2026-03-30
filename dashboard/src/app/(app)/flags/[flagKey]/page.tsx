@@ -21,8 +21,9 @@ export default function FlagDetailPage() {
     if (!token || !projectId) return;
     api.getFlag(token, projectId, flagKey).then(setFlag).catch(() => {});
     api.listEnvironments(token, projectId).then((e) => {
-      setEnvs(e);
-      if (!selectedEnv && e.length > 0) setSelectedEnv(e[0].id);
+      const list = e ?? [];
+      setEnvs(list);
+      if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
     });
   }, [token, projectId, flagKey, selectedEnv]);
 
