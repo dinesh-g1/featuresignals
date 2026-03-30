@@ -1,0 +1,279 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/featuresignals/server/internal/httputil"
+	"github.com/featuresignals/server/internal/api/middleware"
+	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/store/postgres"
+)
+
+type FlagHandler struct {
+	store *postgres.Store
+}
+
+func NewFlagHandler(store *postgres.Store) *FlagHandler {
+	return &FlagHandler{store: store}
+}
+
+type CreateFlagRequest struct {
+	Key          string          `json:"key"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	FlagType     string          `json:"flag_type"`
+	DefaultValue json.RawMessage `json:"default_value"`
+	Tags         []string        `json:"tags"`
+}
+
+func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+
+	var req CreateFlagRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Key == "" || req.Name == "" {
+		httputil.Error(w, http.StatusBadRequest, "key and name are required")
+		return
+	}
+
+	flagType := domain.FlagType(req.FlagType)
+	if flagType == "" {
+		flagType = domain.FlagTypeBoolean
+	}
+	defaultVal := req.DefaultValue
+	if defaultVal == nil {
+		defaultVal = json.RawMessage(`false`)
+	}
+
+	flag := &domain.Flag{
+		ProjectID:    projectID,
+		Key:          req.Key,
+		Name:         req.Name,
+		Description:  req.Description,
+		FlagType:     flagType,
+		DefaultValue: defaultVal,
+		Tags:         req.Tags,
+	}
+
+	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
+		httputil.Error(w, http.StatusConflict, "flag key already exists in this project")
+		return
+	}
+
+	// Create audit entry
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(flag)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &userID,
+		ActorType:    "user",
+		Action:       "flag.created",
+		ResourceType: "flag",
+		ResourceID:   &flag.ID,
+		AfterState:   afterState,
+	})
+
+	httputil.JSON(w, http.StatusCreated, flag)
+}
+
+func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+
+	flags, err := h.store.ListFlags(r.Context(), projectID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+		return
+	}
+	if flags == nil {
+		flags = []domain.Flag{}
+	}
+
+	httputil.JSON(w, http.StatusOK, flags)
+}
+
+func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, flag)
+}
+
+func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	var req CreateFlagRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	beforeState, _ := json.Marshal(flag)
+
+	if req.Name != "" {
+		flag.Name = req.Name
+	}
+	if req.Description != "" {
+		flag.Description = req.Description
+	}
+	if req.DefaultValue != nil {
+		flag.DefaultValue = req.DefaultValue
+	}
+	if req.Tags != nil {
+		flag.Tags = req.Tags
+	}
+
+	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to update flag")
+		return
+	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(flag)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &userID,
+		ActorType:    "user",
+		Action:       "flag.updated",
+		ResourceType: "flag",
+		ResourceID:   &flag.ID,
+		BeforeState:  beforeState,
+		AfterState:   afterState,
+	})
+
+	httputil.JSON(w, http.StatusOK, flag)
+}
+
+func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	if err := h.store.DeleteFlag(r.Context(), flag.ID); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to delete flag")
+		return
+	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	beforeState, _ := json.Marshal(flag)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &userID,
+		ActorType:    "user",
+		Action:       "flag.deleted",
+		ResourceType: "flag",
+		ResourceID:   &flag.ID,
+		BeforeState:  beforeState,
+	})
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// --- Flag State ---
+
+type UpdateFlagStateRequest struct {
+	Enabled           *bool                  `json:"enabled"`
+	DefaultValue      json.RawMessage        `json:"default_value,omitempty"`
+	Rules             []domain.TargetingRule  `json:"rules,omitempty"`
+	PercentageRollout *int                   `json:"percentage_rollout,omitempty"`
+}
+
+func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+	envID := chi.URLParam(r, "envID")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	var req UpdateFlagStateRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	state := &domain.FlagState{
+		FlagID: flag.ID,
+		EnvID:  envID,
+	}
+
+	// Try to get existing state
+	existing, err := h.store.GetFlagState(r.Context(), flag.ID, envID)
+	if err == nil {
+		state = existing
+	}
+
+	if req.Enabled != nil {
+		state.Enabled = *req.Enabled
+	}
+	if req.DefaultValue != nil {
+		state.DefaultValue = req.DefaultValue
+	}
+	if req.Rules != nil {
+		state.Rules = req.Rules
+	}
+	if req.PercentageRollout != nil {
+		state.PercentageRollout = *req.PercentageRollout
+	}
+
+	if err := h.store.UpsertFlagState(r.Context(), state); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to update flag state")
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, state)
+}
+
+func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+	envID := chi.URLParam(r, "envID")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	state, err := h.store.GetFlagState(r.Context(), flag.ID, envID)
+	if err != nil {
+		httputil.JSON(w, http.StatusOK, &domain.FlagState{
+			FlagID:  flag.ID,
+			EnvID:   envID,
+			Enabled: false,
+		})
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, state)
+}

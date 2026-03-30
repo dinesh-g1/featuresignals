@@ -1,0 +1,26 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="FeatureSignals vs Unleash">
+  <section class="mx-auto max-w-4xl px-6 py-20">
+    <h1 class="text-4xl font-bold text-center">FeatureSignals vs Unleash</h1>
+    <p class="mt-4 text-center text-gray-600">Open-source flexibility meets managed simplicity.</p>
+
+    <div class="mt-12 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b"><th class="py-3 pr-4 font-medium">Criteria</th><th class="py-3 px-4 font-semibold text-blue-600">FeatureSignals</th><th class="py-3 px-4 font-semibold">Unleash</th></tr>
+        </thead>
+        <tbody class="divide-y">
+          <tr><td class="py-3 pr-4">Deployment</td><td class="px-4">SaaS + on-prem (single binary)</td><td class="px-4">Self-hosted or Unleash Cloud</td></tr>
+          <tr><td class="py-3 pr-4">Ops burden</td><td class="px-4">Zero (managed) or minimal (single binary)</td><td class="px-4">Full DevOps for self-hosted</td></tr>
+          <tr><td class="py-3 pr-4">Dependencies</td><td class="px-4">PostgreSQL only</td><td class="px-4">PostgreSQL + Node.js runtime</td></tr>
+          <tr><td class="py-3 pr-4">OpenFeature</td><td class="px-4">Native</td><td class="px-4">Provider available</td></tr>
+          <tr><td class="py-3 pr-4">Edge evaluation</td><td class="px-4">SDK local eval + edge nodes</td><td class="px-4">Unleash Edge (newer)</td></tr>
+          <tr><td class="py-3 pr-4">Approval workflows</td><td class="px-4">Built-in (Enterprise)</td><td class="px-4">Change requests (Pro)</td></tr>
+          <tr><td class="py-3 pr-4">Code scanning</td><td class="px-4">Built-in</td><td class="px-4">Not available</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</Layout>
