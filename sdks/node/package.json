@@ -1,0 +1,17 @@
+{
+  "name": "@featuresignals/node",
+  "version": "0.1.0",
+  "description": "FeatureSignals Node.js/TypeScript SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo 'no tests yet'"
+  },
+  "files": ["dist"],
+  "keywords": ["feature-flags", "feature-toggle", "openfeature"],
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

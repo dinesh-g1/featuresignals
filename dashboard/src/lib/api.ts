@@ -1,0 +1,99 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+interface RequestOptions {
+  method?: string;
+  body?: unknown;
+  token?: string;
+}
+
+export class APIError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (options.token) {
+    headers["Authorization"] = `Bearer ${options.token}`;
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: options.method || "GET",
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: "Unknown error" }));
+    throw new APIError(res.status, data.error || "Request failed");
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+export const api = {
+  // Auth
+  register: (data: { email: string; password: string; name: string; org_name: string }) =>
+    request("/v1/auth/register", { method: "POST", body: data }),
+  login: (data: { email: string; password: string }) =>
+    request<{ user: any; tokens: { access_token: string; refresh_token: string } }>(
+      "/v1/auth/login",
+      { method: "POST", body: data },
+    ),
+  refresh: (refreshToken: string) =>
+    request("/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
+
+  // Projects
+  listProjects: (token: string) => request<any[]>("/v1/projects", { token }),
+  createProject: (token: string, data: { name: string; slug?: string }) =>
+    request("/v1/projects", { method: "POST", body: data, token }),
+  getProject: (token: string, id: string) => request<any>(`/v1/projects/${id}`, { token }),
+
+  // Environments
+  listEnvironments: (token: string, projectId: string) =>
+    request<any[]>(`/v1/projects/${projectId}/environments`, { token }),
+  createEnvironment: (token: string, projectId: string, data: { name: string; slug?: string; color?: string }) =>
+    request(`/v1/projects/${projectId}/environments`, { method: "POST", body: data, token }),
+
+  // Flags
+  listFlags: (token: string, projectId: string) =>
+    request<any[]>(`/v1/projects/${projectId}/flags`, { token }),
+  getFlag: (token: string, projectId: string, flagKey: string) =>
+    request<any>(`/v1/projects/${projectId}/flags/${flagKey}`, { token }),
+  createFlag: (token: string, projectId: string, data: any) =>
+    request(`/v1/projects/${projectId}/flags`, { method: "POST", body: data, token }),
+  updateFlag: (token: string, projectId: string, flagKey: string, data: any) =>
+    request(`/v1/projects/${projectId}/flags/${flagKey}`, { method: "PUT", body: data, token }),
+  deleteFlag: (token: string, projectId: string, flagKey: string) =>
+    request(`/v1/projects/${projectId}/flags/${flagKey}`, { method: "DELETE", token }),
+
+  // Flag States
+  getFlagState: (token: string, projectId: string, flagKey: string, envId: string) =>
+    request<any>(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { token }),
+  updateFlagState: (token: string, projectId: string, flagKey: string, envId: string, data: any) =>
+    request(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { method: "PUT", body: data, token }),
+
+  // Segments
+  listSegments: (token: string, projectId: string) =>
+    request<any[]>(`/v1/projects/${projectId}/segments`, { token }),
+  createSegment: (token: string, projectId: string, data: any) =>
+    request(`/v1/projects/${projectId}/segments`, { method: "POST", body: data, token }),
+
+  // API Keys
+  listAPIKeys: (token: string, envId: string) =>
+    request<any[]>(`/v1/environments/${envId}/api-keys`, { token }),
+  createAPIKey: (token: string, envId: string, data: { name: string; type: string }) =>
+    request(`/v1/environments/${envId}/api-keys`, { method: "POST", body: data, token }),
+
+  // Audit
+  listAudit: (token: string, limit?: number, offset?: number) =>
+    request<any[]>(`/v1/audit?limit=${limit || 50}&offset=${offset || 0}`, { token }),
+};

@@ -1,0 +1,13 @@
+DROP TRIGGER IF EXISTS flag_state_change ON flag_states;
+DROP FUNCTION IF EXISTS notify_flag_change();
+DROP TABLE IF EXISTS env_permissions;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS segments;
+DROP TABLE IF EXISTS flag_states;
+DROP TABLE IF EXISTS flags;
+DROP TABLE IF EXISTS api_keys;
+DROP TABLE IF EXISTS environments;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS org_members;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS organizations;

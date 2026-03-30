@@ -1,0 +1,21 @@
+{
+  "name": "@featuresignals/react",
+  "version": "0.1.0",
+  "description": "FeatureSignals React SDK with hooks",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo 'no tests yet'"
+  },
+  "files": ["dist"],
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0"
+  },
+  "license": "Apache-2.0"
+}

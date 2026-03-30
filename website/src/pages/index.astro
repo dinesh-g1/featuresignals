@@ -1,0 +1,114 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Feature Flags Without the $50K Bill">
+  <section class="mx-auto max-w-6xl px-6 py-24 text-center">
+    <div class="inline-block rounded-full bg-blue-50 px-4 py-1 text-sm font-medium text-blue-700 mb-6">
+      OpenFeature-native from day one
+    </div>
+    <h1 class="text-5xl font-bold leading-tight tracking-tight md:text-6xl">
+      Feature flags<br/>
+      <span class="text-blue-600">without the $50K bill</span>
+    </h1>
+    <p class="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
+      FeatureSignals is a developer-first feature management platform with transparent pricing,
+      sub-10ms evaluation, and genuine multi-deployment flexibility.
+    </p>
+    <div class="mt-8 flex items-center justify-center gap-4">
+      <a href="https://app.featuresignals.com/register" class="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700">Start Free</a>
+      <a href="https://docs.featuresignals.com/quickstart" class="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-50">View Docs</a>
+    </div>
+    <div class="mx-auto mt-12 max-w-xl rounded-xl bg-gray-950 p-6 text-left">
+      <div class="flex gap-2 mb-4">
+        <span class="h-3 w-3 rounded-full bg-red-500"></span>
+        <span class="h-3 w-3 rounded-full bg-yellow-500"></span>
+        <span class="h-3 w-3 rounded-full bg-green-500"></span>
+      </div>
+      <pre class="text-sm text-gray-300"><code><span class="text-blue-400">import</span> featuresignals <span class="text-blue-400">from</span> <span class="text-green-400">'@featuresignals/node'</span>;
+
+<span class="text-blue-400">const</span> client = featuresignals.init(<span class="text-green-400">'sdk-key-xxx'</span>);
+
+<span class="text-blue-400">if</span> (client.boolVariation(<span class="text-green-400">'new-checkout'</span>, user, <span class="text-yellow-400">false</span>)) &#123;
+  showNewCheckout();
+&#125;</code></pre>
+    </div>
+  </section>
+
+  <section class="bg-gray-50 py-20">
+    <div class="mx-auto max-w-6xl px-6">
+      <h2 class="text-center text-3xl font-bold">Why FeatureSignals?</h2>
+      <div class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mt-4 font-semibold">Transparent Pricing</h3>
+          <p class="mt-2 text-sm text-gray-600">Flat tier pricing. No per-MAU charges. Unlimited flags and evaluations on every plan.</p>
+        </div>
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mt-4 font-semibold">Sub-10ms Evaluation</h3>
+          <p class="mt-2 text-sm text-gray-600">SDKs evaluate locally with zero network calls. Rules sync via streaming.</p>
+        </div>
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mt-4 font-semibold">Zero Lock-in</h3>
+          <p class="mt-2 text-sm text-gray-600">OpenFeature-native SDKs. Switch providers without rewriting code.</p>
+        </div>
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mt-4 font-semibold">Deploy Anywhere</h3>
+          <p class="mt-2 text-sm text-gray-600">SaaS, private cloud, or on-premises. Single Go binary. Air-gap capable.</p>
+        </div>
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mt-4 font-semibold">Stale Flag Detection</h3>
+          <p class="mt-2 text-sm text-gray-600">Mandatory expiration dates, code scanning, and automated cleanup.</p>
+        </div>
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mt-4 font-semibold">Enterprise Ready</h3>
+          <p class="mt-2 text-sm text-gray-600">SSO, RBAC, audit logs, approval workflows. SOC 2 compliant.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20">
+    <div class="mx-auto max-w-6xl px-6 text-center">
+      <h2 class="text-3xl font-bold">Simple, transparent pricing</h2>
+      <p class="mt-3 text-gray-600">No per-MAU charges. Unlimited flags on every plan.</p>
+      <div class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div class="rounded-xl border border-gray-200 p-8 text-left">
+          <h3 class="text-lg font-semibold">Free</h3>
+          <p class="mt-2 text-3xl font-bold">$0<span class="text-base font-normal text-gray-500">/mo</span></p>
+          <ul class="mt-6 space-y-3 text-sm text-gray-600">
+            <li>1 project, 2 environments</li>
+            <li>Unlimited flags & evaluations</li>
+            <li>Up to 3 team members</li>
+          </ul>
+          <a href="https://app.featuresignals.com/register" class="mt-8 block rounded-lg border border-gray-300 py-2.5 text-center text-sm font-medium hover:bg-gray-50">Get Started</a>
+        </div>
+        <div class="rounded-xl border-2 border-blue-600 p-8 text-left relative">
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-xs font-medium text-white">Popular</span>
+          <h3 class="text-lg font-semibold">Pro</h3>
+          <p class="mt-2 text-3xl font-bold">$49<span class="text-base font-normal text-gray-500">/seat/mo</span></p>
+          <ul class="mt-6 space-y-3 text-sm text-gray-600">
+            <li>Unlimited projects & environments</li>
+            <li>SSO (SAML, OIDC)</li>
+            <li>Audit log, webhooks</li>
+          </ul>
+          <a href="https://app.featuresignals.com/register" class="mt-8 block rounded-lg bg-blue-600 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700">Start Pro Trial</a>
+        </div>
+        <div class="rounded-xl border border-gray-200 p-8 text-left">
+          <h3 class="text-lg font-semibold">Enterprise</h3>
+          <p class="mt-2 text-3xl font-bold">$149<span class="text-base font-normal text-gray-500">/seat/mo</span></p>
+          <ul class="mt-6 space-y-3 text-sm text-gray-600">
+            <li>Everything in Pro</li>
+            <li>Private cloud / on-premises</li>
+            <li>Dedicated support (4h SLA)</li>
+          </ul>
+          <a href="mailto:sales@featuresignals.com" class="mt-8 block rounded-lg border border-gray-300 py-2.5 text-center text-sm font-medium hover:bg-gray-50">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-blue-600 py-16 text-center text-white">
+    <h2 class="text-3xl font-bold">Ready to ship faster?</h2>
+    <p class="mt-3 text-blue-100">Start managing feature flags in under 5 minutes.</p>
+    <a href="https://app.featuresignals.com/register" class="mt-6 inline-block rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50">Get Started Free</a>
+  </section>
+</Layout>

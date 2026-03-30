@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: featuresignals
+      POSTGRES_USER: fs
+      POSTGRES_PASSWORD: fsdev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate:v4.17.0
+    depends_on:
+      - postgres
+    volumes:
+      - ./server/migrations:/migrations
+    command:
+      ["-path", "/migrations", "-database", "postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable", "up"]
+
+  server:
+    build:
+      context: ./server
+      dockerfile: ../deploy/docker/Dockerfile.server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - migrate
+    environment:
+      DATABASE_URL: postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable
+      JWT_SECRET: dev-secret-change-in-production
+      PORT: "8080"
+      CORS_ORIGIN: http://localhost:3000
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: ../deploy/docker/Dockerfile.dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+
+volumes:
+  pgdata:

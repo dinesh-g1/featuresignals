@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Features">
+  <section class="mx-auto max-w-4xl px-6 py-20">
+    <h1 class="text-4xl font-bold text-center">Everything you need to manage feature flags</h1>
+    <div class="mt-16 space-y-12">
+      <div>
+        <h2 class="text-2xl font-semibold">Flag Engine</h2>
+        <p class="mt-2 text-gray-600">Boolean, string, number, and JSON flag types. Percentage rollouts with consistent hashing. User targeting by attributes. Segment-based rules.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold">Multi-Environment</h2>
+        <p class="mt-2 text-gray-600">Dev, staging, production, and custom environments. Per-environment flag states and targeting rules. Copy flag configurations between environments.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold">SDKs for Every Stack</h2>
+        <p class="mt-2 text-gray-600">Go, Node.js, Python, Java, React. All SDKs implement OpenFeature providers. Local evaluation with zero-latency after init. SSE streaming for real-time updates.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold">Enterprise Governance</h2>
+        <p class="mt-2 text-gray-600">Tamper-evident audit logs. Approval workflows for production changes. RBAC with per-environment permissions. SSO via SAML and OIDC.</p>
+      </div>
+      <div>
+        <h2 class="text-2xl font-semibold">Deploy Anywhere</h2>
+        <p class="mt-2 text-gray-600">SaaS in your chosen region. Private cloud in your VPC. On-premises with a single Go binary. Air-gap capable with offline license validation.</p>
+      </div>
+    </div>
+  </section>
+</Layout>
