@@ -1,33 +1,47 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+
+const rows = [
+  { criteria: "Pricing model", fs: "Per seat, flat tiers", ld: "Per seat + per MAU" },
+  { criteria: "Cost at 100K MAU", fs: "$49/seat (same)", ld: "$1,000+/mo for MAU alone" },
+  { criteria: "Evaluations", fs: "Unlimited", ld: "Included with MAU tier" },
+  { criteria: "OpenFeature", fs: "Native from day one", ld: "Added later as provider" },
+  { criteria: "On-premises", fs: "Single Go binary", ld: "Relay Proxy only" },
+  { criteria: "Data sovereignty", fs: "Customer chooses region", ld: "US/EU only" },
+  { criteria: "Stale flag mgmt", fs: "Built-in + code scanning", ld: "Manual / code refs" },
+  { criteria: "SDK count", fs: "6 (growing)", ld: "25+" },
+  { criteria: "Experimentation", fs: "Hooks (use your analytics)", ld: "Built-in (additional cost)" },
+];
 ---
 <Layout title="FeatureSignals vs LaunchDarkly">
   <section class="mx-auto max-w-4xl px-6 py-20">
-    <h1 class="text-4xl font-bold text-center">FeatureSignals vs LaunchDarkly</h1>
-    <p class="mt-4 text-center text-gray-600">A fair, honest comparison of both platforms.</p>
+    <h1 class="text-4xl font-bold text-center text-slate-900">FeatureSignals vs LaunchDarkly</h1>
+    <p class="mt-4 text-center text-slate-500">A fair, honest comparison of both platforms.</p>
 
-    <div class="mt-12 overflow-x-auto">
+    <div class="mt-12 overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full text-left text-sm">
         <thead>
-          <tr class="border-b"><th class="py-3 pr-4 font-medium">Criteria</th><th class="py-3 px-4 font-semibold text-blue-600">FeatureSignals</th><th class="py-3 px-4 font-semibold">LaunchDarkly</th></tr>
+          <tr class="border-b border-slate-200 bg-slate-50">
+            <th class="py-3 pl-6 pr-4 font-medium text-slate-500">Criteria</th>
+            <th class="py-3 px-4 font-semibold text-indigo-600">FeatureSignals</th>
+            <th class="py-3 px-4 font-semibold text-slate-900">LaunchDarkly</th>
+          </tr>
         </thead>
-        <tbody class="divide-y">
-          <tr><td class="py-3 pr-4">Pricing model</td><td class="px-4">Per seat, flat tiers</td><td class="px-4">Per seat + per MAU</td></tr>
-          <tr><td class="py-3 pr-4">Cost at 100K MAU</td><td class="px-4">$49/seat (same)</td><td class="px-4">$1,000+/mo for MAU alone</td></tr>
-          <tr><td class="py-3 pr-4">Evaluations</td><td class="px-4">Unlimited</td><td class="px-4">Included with MAU tier</td></tr>
-          <tr><td class="py-3 pr-4">OpenFeature</td><td class="px-4">Native from day one</td><td class="px-4">Added later as provider</td></tr>
-          <tr><td class="py-3 pr-4">On-premises</td><td class="px-4">Single Go binary</td><td class="px-4">Relay Proxy only</td></tr>
-          <tr><td class="py-3 pr-4">Data sovereignty</td><td class="px-4">Customer chooses region</td><td class="px-4">US/EU only</td></tr>
-          <tr><td class="py-3 pr-4">Stale flag mgmt</td><td class="px-4">Built-in + code scanning</td><td class="px-4">Manual / code refs</td></tr>
-          <tr><td class="py-3 pr-4">SDK count</td><td class="px-4">6 (growing)</td><td class="px-4">25+</td></tr>
-          <tr><td class="py-3 pr-4">Experimentation</td><td class="px-4">Hooks (use your analytics)</td><td class="px-4">Built-in (additional cost)</td></tr>
+        <tbody class="divide-y divide-slate-100">
+          {rows.map((row, i) => (
+            <tr class:list={[i % 2 === 1 ? "bg-slate-50/50" : "bg-white", "transition-colors hover:bg-indigo-50/30"]}>
+              <td class="py-3 pl-6 pr-4 font-medium text-slate-700">{row.criteria}</td>
+              <td class="px-4 text-slate-600">{row.fs}</td>
+              <td class="px-4 text-slate-600">{row.ld}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
 
-    <div class="mt-12 rounded-xl bg-blue-50 p-6">
-      <h3 class="font-semibold text-blue-800">When to choose FeatureSignals</h3>
-      <p class="mt-2 text-sm text-blue-700">If you want predictable pricing, deployment flexibility, and don't need 25+ SDK variants. Best for teams that value transparency and control.</p>
+    <div class="mt-12 rounded-xl bg-indigo-50 p-6 ring-1 ring-indigo-100">
+      <h3 class="font-semibold text-indigo-800">When to choose FeatureSignals</h3>
+      <p class="mt-2 text-sm leading-relaxed text-indigo-700">If you want predictable pricing, deployment flexibility, and don't need 25+ SDK variants. Best for teams that value transparency and control.</p>
     </div>
   </section>
 </Layout>
