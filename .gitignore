@@ -40,6 +40,9 @@ pnpm-debug.log*
 # Claude local settings
 .claude/settings.local.json
 
+# Plan files
+PLAN.md
+
 # Misc
 *.pem
 *.tsbuildinfo
