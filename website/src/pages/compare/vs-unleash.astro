@@ -1,24 +1,38 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+
+const rows = [
+  { criteria: "Deployment", fs: "SaaS + on-prem (single binary)", ul: "Self-hosted or Unleash Cloud" },
+  { criteria: "Ops burden", fs: "Zero (managed) or minimal (single binary)", ul: "Full DevOps for self-hosted" },
+  { criteria: "Dependencies", fs: "PostgreSQL only", ul: "PostgreSQL + Node.js runtime" },
+  { criteria: "OpenFeature", fs: "Native", ul: "Provider available" },
+  { criteria: "Edge evaluation", fs: "SDK local eval + edge nodes", ul: "Unleash Edge (newer)" },
+  { criteria: "Approval workflows", fs: "Built-in (Enterprise)", ul: "Change requests (Pro)" },
+  { criteria: "Code scanning", fs: "Built-in", ul: "Not available" },
+];
 ---
 <Layout title="FeatureSignals vs Unleash">
   <section class="mx-auto max-w-4xl px-6 py-20">
-    <h1 class="text-4xl font-bold text-center">FeatureSignals vs Unleash</h1>
-    <p class="mt-4 text-center text-gray-600">Open-source flexibility meets managed simplicity.</p>
+    <h1 class="text-4xl font-bold text-center text-slate-900">FeatureSignals vs Unleash</h1>
+    <p class="mt-4 text-center text-slate-500">Open-source flexibility meets managed simplicity.</p>
 
-    <div class="mt-12 overflow-x-auto">
+    <div class="mt-12 overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full text-left text-sm">
         <thead>
-          <tr class="border-b"><th class="py-3 pr-4 font-medium">Criteria</th><th class="py-3 px-4 font-semibold text-blue-600">FeatureSignals</th><th class="py-3 px-4 font-semibold">Unleash</th></tr>
+          <tr class="border-b border-slate-200 bg-slate-50">
+            <th class="py-3 pl-6 pr-4 font-medium text-slate-500">Criteria</th>
+            <th class="py-3 px-4 font-semibold text-indigo-600">FeatureSignals</th>
+            <th class="py-3 px-4 font-semibold text-slate-900">Unleash</th>
+          </tr>
         </thead>
-        <tbody class="divide-y">
-          <tr><td class="py-3 pr-4">Deployment</td><td class="px-4">SaaS + on-prem (single binary)</td><td class="px-4">Self-hosted or Unleash Cloud</td></tr>
-          <tr><td class="py-3 pr-4">Ops burden</td><td class="px-4">Zero (managed) or minimal (single binary)</td><td class="px-4">Full DevOps for self-hosted</td></tr>
-          <tr><td class="py-3 pr-4">Dependencies</td><td class="px-4">PostgreSQL only</td><td class="px-4">PostgreSQL + Node.js runtime</td></tr>
-          <tr><td class="py-3 pr-4">OpenFeature</td><td class="px-4">Native</td><td class="px-4">Provider available</td></tr>
-          <tr><td class="py-3 pr-4">Edge evaluation</td><td class="px-4">SDK local eval + edge nodes</td><td class="px-4">Unleash Edge (newer)</td></tr>
-          <tr><td class="py-3 pr-4">Approval workflows</td><td class="px-4">Built-in (Enterprise)</td><td class="px-4">Change requests (Pro)</td></tr>
-          <tr><td class="py-3 pr-4">Code scanning</td><td class="px-4">Built-in</td><td class="px-4">Not available</td></tr>
+        <tbody class="divide-y divide-slate-100">
+          {rows.map((row, i) => (
+            <tr class:list={[i % 2 === 1 ? "bg-slate-50/50" : "bg-white", "transition-colors hover:bg-indigo-50/30"]}>
+              <td class="py-3 pl-6 pr-4 font-medium text-slate-700">{row.criteria}</td>
+              <td class="px-4 text-slate-600">{row.fs}</td>
+              <td class="px-4 text-slate-600">{row.ul}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

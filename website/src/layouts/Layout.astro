@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -7,74 +8,120 @@ interface Props {
 }
 
 const { title, description = "Feature flag management platform with transparent pricing, OpenFeature-native SDKs, and multi-deployment options." } = Astro.props;
+
+const currentPath = Astro.url.pathname;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>{title} | FeatureSignals</title>
+    <ClientRouter />
   </head>
-  <body class="bg-white text-gray-900 antialiased">
-    <nav class="border-b border-gray-100">
+  <body class="bg-white text-slate-900 font-sans antialiased">
+    <nav class="border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50" transition:persist>
       <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="/" class="text-xl font-bold text-blue-600">FeatureSignals</a>
+        <a href="/" class="text-xl font-bold tracking-tight text-indigo-600 transition-colors hover:text-indigo-700">FeatureSignals</a>
         <div class="hidden items-center gap-8 md:flex">
-          <a href="/features" class="text-sm text-gray-600 hover:text-gray-900">Features</a>
-          <a href="/pricing" class="text-sm text-gray-600 hover:text-gray-900">Pricing</a>
-          <a href="/blog" class="text-sm text-gray-600 hover:text-gray-900">Blog</a>
-          <a href="/compare/vs-launchdarkly" class="text-sm text-gray-600 hover:text-gray-900">Compare</a>
+          <a href="/features" class:list={["text-sm font-medium transition-colors", currentPath === "/features" || currentPath === "/features/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Features</a>
+          <a href="/pricing" class:list={["text-sm font-medium transition-colors", currentPath === "/pricing" || currentPath === "/pricing/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Pricing</a>
+          <a href="/blog" class:list={["text-sm font-medium transition-colors", currentPath === "/blog" || currentPath === "/blog/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Blog</a>
+          <a href="/compare/vs-launchdarkly" class:list={["text-sm font-medium transition-colors", currentPath.startsWith("/compare") ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Compare</a>
         </div>
-        <div class="flex items-center gap-3">
-          <a href="https://app.featuresignals.com/login" class="text-sm font-medium text-gray-600 hover:text-gray-900">Sign in</a>
-          <a href="https://app.featuresignals.com/register" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Get Started Free</a>
+        <div class="hidden items-center gap-3 md:flex">
+          <a href="#" class="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">Sign in</a>
+          <a href="#" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">Get Started Free</a>
+        </div>
+        <button id="mobile-menu-btn" class="md:hidden flex items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="Toggle menu">
+          <svg id="menu-icon-open" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+          <svg id="menu-icon-close" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="mobile-menu" class="hidden border-t border-slate-100 md:hidden">
+        <div class="space-y-1 px-6 py-4">
+          <a href="/features" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Features</a>
+          <a href="/pricing" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Pricing</a>
+          <a href="/blog" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Blog</a>
+          <a href="/compare/vs-launchdarkly" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Compare</a>
+          <hr class="my-2 border-slate-100" />
+          <a href="#" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Sign in</a>
+          <a href="#" class="block rounded-lg bg-indigo-600 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-700">Get Started Free</a>
         </div>
       </div>
     </nav>
 
-    <slot />
+    <main transition:animate="fade">
+      <slot />
+    </main>
 
-    <footer class="border-t border-gray-100 bg-gray-50">
+    <footer class="border-t border-slate-200 bg-slate-50" transition:animate="fade">
       <div class="mx-auto max-w-6xl px-6 py-12">
         <div class="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div>
-            <h3 class="text-sm font-semibold">Product</h3>
-            <ul class="mt-3 space-y-2 text-sm text-gray-500">
-              <li><a href="/features" class="hover:text-gray-900">Features</a></li>
-              <li><a href="/pricing" class="hover:text-gray-900">Pricing</a></li>
-              <li><a href="/changelog" class="hover:text-gray-900">Changelog</a></li>
+            <h3 class="text-sm font-semibold text-slate-900">Product</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-500">
+              <li><a href="/features" class="transition-colors hover:text-slate-900">Features</a></li>
+              <li><a href="/pricing" class="transition-colors hover:text-slate-900">Pricing</a></li>
+              <li><a href="/changelog" class="transition-colors hover:text-slate-900">Changelog</a></li>
             </ul>
           </div>
           <div>
-            <h3 class="text-sm font-semibold">Developers</h3>
-            <ul class="mt-3 space-y-2 text-sm text-gray-500">
-              <li><a href="https://docs.featuresignals.com" class="hover:text-gray-900">Documentation</a></li>
-              <li><a href="https://docs.featuresignals.com/api-reference" class="hover:text-gray-900">API Reference</a></li>
-              <li><a href="https://github.com/featuresignals" class="hover:text-gray-900">GitHub</a></li>
+            <h3 class="text-sm font-semibold text-slate-900">Developers</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-500">
+              <li><a href="#" class="transition-colors hover:text-slate-900">Documentation</a></li>
+              <li><a href="#" class="transition-colors hover:text-slate-900">API Reference</a></li>
+              <li><a href="#" class="transition-colors hover:text-slate-900">GitHub</a></li>
             </ul>
           </div>
           <div>
-            <h3 class="text-sm font-semibold">Company</h3>
-            <ul class="mt-3 space-y-2 text-sm text-gray-500">
-              <li><a href="/about" class="hover:text-gray-900">About</a></li>
-              <li><a href="/blog" class="hover:text-gray-900">Blog</a></li>
-              <li><a href="https://status.featuresignals.com" class="hover:text-gray-900">Status</a></li>
+            <h3 class="text-sm font-semibold text-slate-900">Company</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-500">
+              <li><a href="/about" class="transition-colors hover:text-slate-900">About</a></li>
+              <li><a href="/blog" class="transition-colors hover:text-slate-900">Blog</a></li>
+              <li><a href="#" class="transition-colors hover:text-slate-900">Status</a></li>
             </ul>
           </div>
           <div>
-            <h3 class="text-sm font-semibold">Compare</h3>
-            <ul class="mt-3 space-y-2 text-sm text-gray-500">
-              <li><a href="/compare/vs-launchdarkly" class="hover:text-gray-900">vs LaunchDarkly</a></li>
-              <li><a href="/compare/vs-unleash" class="hover:text-gray-900">vs Unleash</a></li>
+            <h3 class="text-sm font-semibold text-slate-900">Compare</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-500">
+              <li><a href="/compare/vs-launchdarkly" class="transition-colors hover:text-slate-900">vs LaunchDarkly</a></li>
+              <li><a href="/compare/vs-unleash" class="transition-colors hover:text-slate-900">vs Unleash</a></li>
             </ul>
           </div>
         </div>
-        <div class="mt-8 border-t border-gray-200 pt-8 text-center text-xs text-gray-400">
+        <div class="mt-8 border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
           &copy; 2026 FeatureSignals. All rights reserved.
         </div>
       </div>
     </footer>
+
+    <script>
+      document.addEventListener('astro:page-load', () => {
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        const iconOpen = document.getElementById('menu-icon-open');
+        const iconClose = document.getElementById('menu-icon-close');
+
+        if (btn && menu && iconOpen && iconClose) {
+          btn.addEventListener('click', () => {
+            const isOpen = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden');
+            iconOpen.classList.toggle('hidden');
+            iconClose.classList.toggle('hidden');
+            btn.setAttribute('aria-expanded', String(!isOpen));
+          });
+        }
+      });
+    </script>
   </body>
 </html>
