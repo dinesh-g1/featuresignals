@@ -27,7 +27,7 @@ Go to your GitHub repository **Settings > Secrets and variables > Actions** and 
 | `VPS_USER` | `deploy` | Created by the setup workflow |
 | `VPS_SSH_KEY` | *(your SSH private key)* | The private key matching your public key |
 | `REPO_TOKEN` | *(GitHub PAT)* | GitHub > Settings > Developer settings > Personal access tokens > Generate (needs `repo` scope) |
-| `POSTGRES_PASSWORD` | *(strong random)* | Run: `openssl rand -base64 32` |
+| `POSTGRES_PASSWORD` | *(hex, URL-safe)* | Run: `openssl rand -hex 24` (do NOT use base64, it contains `+/=` that break DB URLs) |
 | `JWT_SECRET` | *(64-char hex)* | Run: `openssl rand -hex 32` |
 
 > **Important**: `VPS_SSH_KEY` must be the **private key** (starts with `-----BEGIN`). The public key is already configured on the VPS by Utho and will be copied to the `deploy` user by the setup workflow.
