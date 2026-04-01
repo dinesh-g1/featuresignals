@@ -18,7 +18,9 @@ import (
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/store/cache"
+	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/webhook"
 )
 
 func main() {
@@ -55,6 +57,22 @@ func main() {
 	engine := eval.NewEngine()
 	sseServer := sse.NewServer(logger)
 	evalCache := cache.NewCache(store, logger, sseServer)
+
+	// Webhook dispatcher
+	whDispatcher := webhook.NewDispatcher(store, logger)
+	whCtx, whCancel := context.WithCancel(context.Background())
+	defer whCancel()
+	whDispatcher.Start(whCtx)
+
+	// Wire webhook notifier into cache so PG NOTIFY triggers webhook dispatch.
+	// Using empty orgID — the notifier broadcasts; the dispatcher filters per org.
+	evalCache.SetWebhookNotifier(webhook.NewNotifier(whDispatcher, ""))
+
+	// Flag scheduler (auto-enable/disable at scheduled times)
+	sched := scheduler.New(store, logger, 30*time.Second)
+	schedCtx, schedCancel := context.WithCancel(context.Background())
+	defer schedCancel()
+	go sched.Start(schedCtx)
 
 	// Start listening for PG NOTIFY changes
 	listenCtx, listenCancel := context.WithCancel(context.Background())

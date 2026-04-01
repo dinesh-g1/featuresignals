@@ -23,6 +23,11 @@ export default function FlagDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [audit, setAudit] = useState<any[]>([]);
   const [segments, setSegments] = useState<{ key: string; name: string }[]>([]);
+  const [showPromote, setShowPromote] = useState(false);
+  const [promoteTarget, setPromoteTarget] = useState("");
+  const [promoting, setPromoting] = useState(false);
+  const [scheduleEnable, setScheduleEnable] = useState("");
+  const [scheduleDisable, setScheduleDisable] = useState("");
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -85,6 +90,43 @@ export default function FlagDetailPage() {
     router.push("/flags");
   }
 
+  async function handlePromote() {
+    if (!token || !projectId || !selectedEnv || !promoteTarget) return;
+    setPromoting(true);
+    try {
+      await api.promoteFlag(token, projectId, flagKey, selectedEnv, promoteTarget);
+      setShowPromote(false);
+      setPromoteTarget("");
+    } catch {
+      // error handled by api layer
+    } finally {
+      setPromoting(false);
+    }
+  }
+
+  async function saveSchedule(enableAt: string, disableAt: string) {
+    if (!token || !projectId || !selectedEnv) return;
+    await api.updateFlagState(token, projectId, flagKey, selectedEnv, {
+      scheduled_enable_at: enableAt || "",
+      scheduled_disable_at: disableAt || "",
+    });
+    api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
+  }
+
+  async function cancelSchedule(field: "enable" | "disable") {
+    if (!token || !projectId || !selectedEnv) return;
+    const update: any = {};
+    if (field === "enable") {
+      update.scheduled_enable_at = "";
+      setScheduleEnable("");
+    } else {
+      update.scheduled_disable_at = "";
+      setScheduleDisable("");
+    }
+    await api.updateFlagState(token, projectId, flagKey, selectedEnv, update);
+    api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
+  }
+
   async function saveRules(rules: any[]) {
     if (!token || !projectId || !selectedEnv) return;
     await api.updateFlagState(token, projectId, flagKey, selectedEnv, { rules });
@@ -134,6 +176,12 @@ export default function FlagDetailPage() {
             <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${state?.enabled ? "translate-x-6" : "translate-x-1"}`} />
           </button>
           <button
+            onClick={() => { setShowPromote(!showPromote); setPromoteTarget(""); }}
+            className="rounded-lg border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+          >
+            Promote to&hellip;
+          </button>
+          <button
             onClick={() => setEditing(!editing)}
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
           >
@@ -158,6 +206,41 @@ export default function FlagDetailPage() {
               Delete Flag
             </button>
             <button onClick={() => setConfirmDelete(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showPromote && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 ring-1 ring-indigo-100">
+          <p className="text-sm font-medium text-indigo-800">
+            Promote <span className="font-mono">{flag.key}</span> from{" "}
+            <span className="font-semibold">{envs.find((e) => e.id === selectedEnv)?.name || "current"}</span>{" "}
+            environment to:
+          </p>
+          <div className="mt-3 flex items-center gap-3">
+            <select
+              value={promoteTarget}
+              onChange={(e) => setPromoteTarget(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">Select target environment</option>
+              {envs.filter((e) => e.id !== selectedEnv).map((env) => (
+                <option key={env.id} value={env.id}>{env.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={handlePromote}
+              disabled={!promoteTarget || promoting}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {promoting ? "Promoting..." : "Promote"}
+            </button>
+            <button
+              onClick={() => setShowPromote(false)}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white"
+            >
               Cancel
             </button>
           </div>
@@ -264,6 +347,80 @@ export default function FlagDetailPage() {
               flagType={flag.flag_type}
               onSave={saveRules}
             />
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+            <h3 className="text-sm font-medium text-slate-500 mb-4">Schedule</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Enable At</label>
+                {state?.scheduled_enable_at ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-emerald-100">
+                      <span className="font-medium">Scheduled: </span>
+                      {new Date(state.scheduled_enable_at).toLocaleString()}
+                    </div>
+                    <button
+                      onClick={() => cancelSchedule("enable")}
+                      className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="datetime-local"
+                      value={scheduleEnable}
+                      onChange={(e) => setScheduleEnable(e.target.value)}
+                      className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    {scheduleEnable && (
+                      <button
+                        onClick={() => saveSchedule(new Date(scheduleEnable).toISOString(), "")}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
+                      >
+                        Set
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Disable At</label>
+                {state?.scheduled_disable_at ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100">
+                      <span className="font-medium">Scheduled: </span>
+                      {new Date(state.scheduled_disable_at).toLocaleString()}
+                    </div>
+                    <button
+                      onClick={() => cancelSchedule("disable")}
+                      className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="datetime-local"
+                      value={scheduleDisable}
+                      onChange={(e) => setScheduleDisable(e.target.value)}
+                      className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    {scheduleDisable && (
+                      <button
+                        onClick={() => saveSchedule("", new Date(scheduleDisable).toISOString())}
+                        className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                      >
+                        Set
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

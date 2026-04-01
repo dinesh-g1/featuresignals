@@ -112,4 +112,38 @@ export const api = {
   // Audit
   listAudit: (token: string, limit?: number, offset?: number) =>
     request<any[]>(`/v1/audit?limit=${limit || 50}&offset=${offset || 0}`, { token }),
+
+  // Team / Members
+  listMembers: (token: string) =>
+    request<any[]>("/v1/members", { token }),
+  inviteMember: (token: string, data: { email: string; role: string }) =>
+    request("/v1/members/invite", { method: "POST", body: data, token }),
+  updateMemberRole: (token: string, memberId: string, role: string) =>
+    request(`/v1/members/${memberId}`, { method: "PUT", body: { role }, token }),
+  removeMember: (token: string, memberId: string) =>
+    request(`/v1/members/${memberId}`, { method: "DELETE", token }),
+  getMemberPermissions: (token: string, memberId: string) =>
+    request<any[]>(`/v1/members/${memberId}/permissions`, { token }),
+  updateMemberPermissions: (token: string, memberId: string, permissions: any[]) =>
+    request(`/v1/members/${memberId}/permissions`, { method: "PUT", body: { permissions }, token }),
+
+  // Flag Promotion
+  promoteFlag: (token: string, projectId: string, flagKey: string, sourceEnvId: string, targetEnvId: string) =>
+    request(`/v1/projects/${projectId}/flags/${flagKey}/promote`, {
+      method: "POST",
+      body: { source_env_id: sourceEnvId, target_env_id: targetEnvId },
+      token,
+    }),
+
+  // Webhooks
+  listWebhooks: (token: string) =>
+    request<any[]>("/v1/webhooks", { token }),
+  createWebhook: (token: string, data: { name: string; url: string; secret?: string; events: string[] }) =>
+    request("/v1/webhooks", { method: "POST", body: data, token }),
+  updateWebhook: (token: string, webhookId: string, data: any) =>
+    request(`/v1/webhooks/${webhookId}`, { method: "PUT", body: data, token }),
+  deleteWebhook: (token: string, webhookId: string) =>
+    request(`/v1/webhooks/${webhookId}`, { method: "DELETE", token }),
+  listWebhookDeliveries: (token: string, webhookId: string) =>
+    request<any[]>(`/v1/webhooks/${webhookId}/deliveries`, { token }),
 };

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -212,10 +213,12 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // --- Flag State ---
 
 type UpdateFlagStateRequest struct {
-	Enabled           *bool                  `json:"enabled"`
-	DefaultValue      json.RawMessage        `json:"default_value,omitempty"`
-	Rules             []domain.TargetingRule  `json:"rules,omitempty"`
-	PercentageRollout *int                   `json:"percentage_rollout,omitempty"`
+	Enabled            *bool                  `json:"enabled"`
+	DefaultValue       json.RawMessage        `json:"default_value,omitempty"`
+	Rules              []domain.TargetingRule  `json:"rules,omitempty"`
+	PercentageRollout  *int                   `json:"percentage_rollout,omitempty"`
+	ScheduledEnableAt  *string                `json:"scheduled_enable_at,omitempty"`
+	ScheduledDisableAt *string                `json:"scheduled_disable_at,omitempty"`
 }
 
 func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
@@ -258,6 +261,30 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	if req.PercentageRollout != nil {
 		state.PercentageRollout = *req.PercentageRollout
 	}
+	if req.ScheduledEnableAt != nil {
+		if *req.ScheduledEnableAt == "" {
+			state.ScheduledEnableAt = nil
+		} else {
+			t, err := time.Parse(time.RFC3339, *req.ScheduledEnableAt)
+			if err != nil {
+				httputil.Error(w, http.StatusBadRequest, "invalid scheduled_enable_at format (use RFC3339)")
+				return
+			}
+			state.ScheduledEnableAt = &t
+		}
+	}
+	if req.ScheduledDisableAt != nil {
+		if *req.ScheduledDisableAt == "" {
+			state.ScheduledDisableAt = nil
+		} else {
+			t, err := time.Parse(time.RFC3339, *req.ScheduledDisableAt)
+			if err != nil {
+				httputil.Error(w, http.StatusBadRequest, "invalid scheduled_disable_at format (use RFC3339)")
+				return
+			}
+			state.ScheduledDisableAt = &t
+		}
+	}
 
 	if err := h.store.UpsertFlagState(r.Context(), state); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to update flag state")
@@ -265,6 +292,85 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, state)
+}
+
+type PromoteRequest struct {
+	SourceEnvID string `json:"source_env_id"`
+	TargetEnvID string `json:"target_env_id"`
+}
+
+// Promote copies flag state from one environment to another.
+func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	var req PromoteRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.SourceEnvID == "" || req.TargetEnvID == "" {
+		httputil.Error(w, http.StatusBadRequest, "source_env_id and target_env_id are required")
+		return
+	}
+	if req.SourceEnvID == req.TargetEnvID {
+		httputil.Error(w, http.StatusBadRequest, "source and target environments must differ")
+		return
+	}
+
+	source, err := h.store.GetFlagState(r.Context(), flag.ID, req.SourceEnvID)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "source flag state not found")
+		return
+	}
+
+	var beforeState json.RawMessage
+	existing, _ := h.store.GetFlagState(r.Context(), flag.ID, req.TargetEnvID)
+	if existing != nil {
+		beforeState, _ = json.Marshal(existing)
+	}
+
+	target := &domain.FlagState{
+		FlagID:            flag.ID,
+		EnvID:             req.TargetEnvID,
+		Enabled:           source.Enabled,
+		DefaultValue:      source.DefaultValue,
+		Rules:             source.Rules,
+		PercentageRollout: source.PercentageRollout,
+	}
+	if existing != nil {
+		target.ID = existing.ID
+	}
+
+	if err := h.store.UpsertFlagState(r.Context(), target); err != nil {
+		h.l(r).Error("promote failed", "error", err, "flag_id", flag.ID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to promote flag state")
+		return
+	}
+
+	h.l(r).Info("flag promoted", "flag_id", flag.ID, "source_env", req.SourceEnvID, "target_env", req.TargetEnvID)
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(target)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &userID,
+		ActorType:    "user",
+		Action:       "flag.promoted",
+		ResourceType: "flag",
+		ResourceID:   &flag.ID,
+		BeforeState:  beforeState,
+		AfterState:   afterState,
+	})
+
+	httputil.JSON(w, http.StatusOK, target)
 }
 
 func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {

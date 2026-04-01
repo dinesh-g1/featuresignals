@@ -110,6 +110,63 @@ func (s *Store) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgM
 	return members, nil
 }
 
+func (s *Store) GetOrgMemberByID(ctx context.Context, memberID string) (*domain.OrgMember, error) {
+	m := &domain.OrgMember{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, user_id, role, created_at FROM org_members WHERE id = $1`, memberID,
+	).Scan(&m.ID, &m.OrgID, &m.UserID, &m.Role, &m.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (s *Store) UpdateOrgMemberRole(ctx context.Context, memberID string, role domain.Role) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE org_members SET role = $1 WHERE id = $2`, role, memberID)
+	return err
+}
+
+func (s *Store) RemoveOrgMember(ctx context.Context, memberID string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM org_members WHERE id = $1`, memberID)
+	return err
+}
+
+// --- Environment Permissions ---
+
+func (s *Store) ListEnvPermissions(ctx context.Context, memberID string) ([]domain.EnvPermission, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, member_id, env_id, can_toggle, can_edit_rules FROM env_permissions WHERE member_id = $1`, memberID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	perms := []domain.EnvPermission{}
+	for rows.Next() {
+		var p domain.EnvPermission
+		if err := rows.Scan(&p.ID, &p.MemberID, &p.EnvID, &p.CanToggle, &p.CanEditRules); err != nil {
+			return nil, err
+		}
+		perms = append(perms, p)
+	}
+	return perms, nil
+}
+
+func (s *Store) UpsertEnvPermission(ctx context.Context, perm *domain.EnvPermission) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO env_permissions (member_id, env_id, can_toggle, can_edit_rules)
+		 VALUES ($1, $2, $3, $4)
+		 ON CONFLICT (member_id, env_id) DO UPDATE SET can_toggle=$3, can_edit_rules=$4
+		 RETURNING id`,
+		perm.MemberID, perm.EnvID, perm.CanToggle, perm.CanEditRules,
+	).Scan(&perm.ID)
+}
+
+func (s *Store) DeleteEnvPermission(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM env_permissions WHERE id = $1`, id)
+	return err
+}
+
 // --- Projects ---
 
 func (s *Store) CreateProject(ctx context.Context, p *domain.Project) error {
@@ -258,11 +315,13 @@ func (s *Store) UpsertFlagState(ctx context.Context, fs *domain.FlagState) error
 		return fmt.Errorf("marshal rules: %w", err)
 	}
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO flag_states (flag_id, env_id, enabled, default_value, rules, percentage_rollout)
-		 VALUES ($1, $2, $3, $4, $5, $6)
-		 ON CONFLICT (flag_id, env_id) DO UPDATE SET enabled=$3, default_value=$4, rules=$5, percentage_rollout=$6, updated_at=NOW()
+		`INSERT INTO flag_states (flag_id, env_id, enabled, default_value, rules, percentage_rollout, scheduled_enable_at, scheduled_disable_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		 ON CONFLICT (flag_id, env_id) DO UPDATE SET enabled=$3, default_value=$4, rules=$5, percentage_rollout=$6,
+		   scheduled_enable_at=$7, scheduled_disable_at=$8, updated_at=NOW()
 		 RETURNING id, updated_at`,
 		fs.FlagID, fs.EnvID, fs.Enabled, fs.DefaultValue, rulesJSON, fs.PercentageRollout,
+		fs.ScheduledEnableAt, fs.ScheduledDisableAt,
 	).Scan(&fs.ID, &fs.UpdatedAt)
 }
 
@@ -270,9 +329,11 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 	fs := &domain.FlagState{}
 	var rulesJSON []byte
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout, updated_at
+		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout,
+		        scheduled_enable_at, scheduled_disable_at, updated_at
 		 FROM flag_states WHERE flag_id = $1 AND env_id = $2`, flagID, envID,
-	).Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue, &rulesJSON, &fs.PercentageRollout, &fs.UpdatedAt)
+	).Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue, &rulesJSON,
+		&fs.PercentageRollout, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -280,6 +341,33 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 		return nil, fmt.Errorf("unmarshal rules: %w", err)
 	}
 	return fs, nil
+}
+
+func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout,
+		        scheduled_enable_at, scheduled_disable_at, updated_at
+		 FROM flag_states
+		 WHERE (scheduled_enable_at IS NOT NULL AND scheduled_enable_at <= $1)
+		    OR (scheduled_disable_at IS NOT NULL AND scheduled_disable_at <= $1)`, before)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []domain.FlagState
+	for rows.Next() {
+		var fs domain.FlagState
+		var rulesJSON []byte
+		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue,
+			&rulesJSON, &fs.PercentageRollout, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
+			return nil, fmt.Errorf("unmarshal rules: %w", err)
+		}
+		result = append(result, fs)
+	}
+	return result, nil
 }
 
 // --- Segments ---
@@ -406,6 +494,87 @@ func (s *Store) UpdateAPIKeyLastUsed(ctx context.Context, id string) error {
 	return err
 }
 
+// --- Webhooks ---
+
+func (s *Store) CreateWebhook(ctx context.Context, w *domain.Webhook) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO webhooks (org_id, name, url, secret, events, enabled)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
+		w.OrgID, w.Name, w.URL, w.Secret, w.Events, w.Enabled,
+	).Scan(&w.ID, &w.CreatedAt, &w.UpdatedAt)
+}
+
+func (s *Store) GetWebhook(ctx context.Context, id string) (*domain.Webhook, error) {
+	w := &domain.Webhook{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, name, url, secret, events, enabled, created_at, updated_at
+		 FROM webhooks WHERE id = $1`, id,
+	).Scan(&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events, &w.Enabled, &w.CreatedAt, &w.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return w, nil
+}
+
+func (s *Store) ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, org_id, name, url, secret, events, enabled, created_at, updated_at
+		 FROM webhooks WHERE org_id = $1 ORDER BY created_at`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	webhooks := []domain.Webhook{}
+	for rows.Next() {
+		var w domain.Webhook
+		if err := rows.Scan(&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events, &w.Enabled, &w.CreatedAt, &w.UpdatedAt); err != nil {
+			return nil, err
+		}
+		webhooks = append(webhooks, w)
+	}
+	return webhooks, nil
+}
+
+func (s *Store) UpdateWebhook(ctx context.Context, w *domain.Webhook) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE webhooks SET name=$1, url=$2, secret=$3, events=$4, enabled=$5, updated_at=NOW()
+		 WHERE id = $6`,
+		w.Name, w.URL, w.Secret, w.Events, w.Enabled, w.ID)
+	return err
+}
+
+func (s *Store) DeleteWebhook(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM webhooks WHERE id = $1`, id)
+	return err
+}
+
+func (s *Store) CreateWebhookDelivery(ctx context.Context, d *domain.WebhookDelivery) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO webhook_deliveries (webhook_id, event_type, payload, response_status, response_body, success)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, delivered_at`,
+		d.WebhookID, d.EventType, d.Payload, d.ResponseStatus, d.ResponseBody, d.Success,
+	).Scan(&d.ID, &d.DeliveredAt)
+}
+
+func (s *Store) ListWebhookDeliveries(ctx context.Context, webhookID string, limit int) ([]domain.WebhookDelivery, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, webhook_id, event_type, payload, response_status, response_body, delivered_at, success
+		 FROM webhook_deliveries WHERE webhook_id = $1 ORDER BY delivered_at DESC LIMIT $2`, webhookID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	deliveries := []domain.WebhookDelivery{}
+	for rows.Next() {
+		var d domain.WebhookDelivery
+		if err := rows.Scan(&d.ID, &d.WebhookID, &d.EventType, &d.Payload, &d.ResponseStatus, &d.ResponseBody, &d.DeliveredAt, &d.Success); err != nil {
+			return nil, err
+		}
+		deliveries = append(deliveries, d)
+	}
+	return deliveries, nil
+}
+
 // --- Audit Log ---
 
 func (s *Store) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error {
@@ -446,7 +615,8 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 
 	// Load flag states for this environment
 	rows, err := s.pool.Query(ctx,
-		`SELECT fs.id, fs.flag_id, fs.env_id, fs.enabled, fs.default_value, fs.rules, fs.percentage_rollout, fs.updated_at
+		`SELECT fs.id, fs.flag_id, fs.env_id, fs.enabled, fs.default_value, fs.rules,
+		        fs.percentage_rollout, fs.scheduled_enable_at, fs.scheduled_disable_at, fs.updated_at
 		 FROM flag_states fs
 		 JOIN flags f ON f.id = fs.flag_id
 		 WHERE f.project_id = $1 AND fs.env_id = $2`, projectID, envID)
@@ -458,7 +628,8 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 	for rows.Next() {
 		var fs domain.FlagState
 		var rulesJSON []byte
-		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue, &rulesJSON, &fs.PercentageRollout, &fs.UpdatedAt); err != nil {
+		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue,
+			&rulesJSON, &fs.PercentageRollout, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
 			return nil, nil, nil, err
 		}
 		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {

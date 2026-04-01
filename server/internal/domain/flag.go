@@ -41,14 +41,16 @@ type Flag struct {
 //
 // PercentageRollout is expressed as basis points: 0 = 0%, 10000 = 100%.
 type FlagState struct {
-	ID                string          `json:"id" db:"id"`
-	FlagID            string          `json:"flag_id" db:"flag_id"`
-	EnvID             string          `json:"env_id" db:"env_id"`
-	Enabled           bool            `json:"enabled" db:"enabled"`
-	DefaultValue      json.RawMessage `json:"default_value,omitempty" db:"default_value"`
-	Rules             []TargetingRule `json:"rules" db:"rules"`
-	PercentageRollout int             `json:"percentage_rollout" db:"percentage_rollout"`
-	UpdatedAt         time.Time       `json:"updated_at" db:"updated_at"`
+	ID                 string          `json:"id" db:"id"`
+	FlagID             string          `json:"flag_id" db:"flag_id"`
+	EnvID              string          `json:"env_id" db:"env_id"`
+	Enabled            bool            `json:"enabled" db:"enabled"`
+	DefaultValue       json.RawMessage `json:"default_value,omitempty" db:"default_value"`
+	Rules              []TargetingRule `json:"rules" db:"rules"`
+	PercentageRollout  int             `json:"percentage_rollout" db:"percentage_rollout"`
+	ScheduledEnableAt  *time.Time      `json:"scheduled_enable_at,omitempty" db:"scheduled_enable_at"`
+	ScheduledDisableAt *time.Time      `json:"scheduled_disable_at,omitempty" db:"scheduled_disable_at"`
+	UpdatedAt          time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 // TargetingRule is a single rule evaluated during flag evaluation.

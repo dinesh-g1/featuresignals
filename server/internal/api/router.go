@@ -48,6 +48,11 @@ func NewRouter(
 		httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "featuresignals"})
 	})
 
+	// Reusable role sets
+	ownerAdmin := []domain.Role{domain.RoleOwner, domain.RoleAdmin}
+	writers := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper}
+	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
+
 	// Init handlers
 	authH := handlers.NewAuthHandler(store, jwtMgr)
 	projectH := handlers.NewProjectHandler(store)
@@ -56,6 +61,8 @@ func NewRouter(
 	segmentH := handlers.NewSegmentHandler(store)
 	apiKeyH := handlers.NewAPIKeyHandler(store)
 	auditH := handlers.NewAuditHandler(store)
+	teamH := handlers.NewTeamHandler(store, jwtMgr)
+	webhookH := handlers.NewWebhookHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger)
 
 	r.Route("/v1", func(r chi.Router) {
@@ -77,42 +84,61 @@ func NewRouter(
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.JWTAuth(jwtMgr))
 
-			// Projects
-			r.Post("/projects", projectH.Create)
-			r.Get("/projects", projectH.List)
-			r.Get("/projects/{projectID}", projectH.Get)
-			r.Delete("/projects/{projectID}", projectH.Delete)
+			// ── Read-only routes (all authenticated roles) ───────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(allRoles...))
 
-			// Environments
-			r.Post("/projects/{projectID}/environments", envH.Create)
-			r.Get("/projects/{projectID}/environments", envH.List)
-			r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
+				r.Get("/projects", projectH.List)
+				r.Get("/projects/{projectID}", projectH.Get)
+				r.Get("/projects/{projectID}/environments", envH.List)
+				r.Get("/projects/{projectID}/flags", flagH.List)
+				r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
+				r.Get("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.GetState)
+				r.Get("/projects/{projectID}/segments", segmentH.List)
+				r.Get("/projects/{projectID}/segments/{segmentKey}", segmentH.Get)
+				r.Get("/environments/{envID}/api-keys", apiKeyH.List)
+				r.Get("/audit", auditH.List)
+				r.Get("/members", teamH.List)
+				r.Get("/members/{memberID}/permissions", teamH.ListPermissions)
+			})
 
-			// Flags
-			r.Post("/projects/{projectID}/flags", flagH.Create)
-			r.Get("/projects/{projectID}/flags", flagH.List)
-			r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
-			r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
-			r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
+			// ── Write routes (owner, admin, developer) ───────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(writers...))
 
-			// Flag states (per environment)
-			r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
-			r.Get("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.GetState)
+				r.Post("/projects", projectH.Create)
+				r.Post("/projects/{projectID}/environments", envH.Create)
+				r.Post("/projects/{projectID}/flags", flagH.Create)
+				r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
+				r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
+				r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
+				r.Post("/projects/{projectID}/flags/{flagKey}/promote", flagH.Promote)
+				r.Post("/projects/{projectID}/segments", segmentH.Create)
+				r.Put("/projects/{projectID}/segments/{segmentKey}", segmentH.Update)
+				r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
+			})
 
-			// Segments
-			r.Post("/projects/{projectID}/segments", segmentH.Create)
-			r.Get("/projects/{projectID}/segments", segmentH.List)
-			r.Get("/projects/{projectID}/segments/{segmentKey}", segmentH.Get)
-			r.Put("/projects/{projectID}/segments/{segmentKey}", segmentH.Update)
-			r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
+			// ── Admin-only routes (owner, admin) ─────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
 
-			// API Keys
-			r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
-			r.Get("/environments/{envID}/api-keys", apiKeyH.List)
-			r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
+				r.Delete("/projects/{projectID}", projectH.Delete)
+				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
+				r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
+				r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
+				r.Post("/members/invite", teamH.Invite)
+				r.Put("/members/{memberID}", teamH.UpdateRole)
+				r.Delete("/members/{memberID}", teamH.Remove)
+				r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
 
-			// Audit
-			r.Get("/audit", auditH.List)
+				// Webhooks
+				r.Post("/webhooks", webhookH.Create)
+				r.Get("/webhooks", webhookH.List)
+				r.Get("/webhooks/{webhookID}", webhookH.Get)
+				r.Put("/webhooks/{webhookID}", webhookH.Update)
+				r.Delete("/webhooks/{webhookID}", webhookH.Delete)
+				r.Get("/webhooks/{webhookID}/deliveries", webhookH.ListDeliveries)
+			})
 		})
 	})
 

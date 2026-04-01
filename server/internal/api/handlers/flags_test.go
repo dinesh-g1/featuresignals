@@ -296,3 +296,90 @@ func TestFlagHandler_GetState(t *testing.T) {
 		t.Error("expected disabled by default")
 	}
 }
+
+func TestFlagHandler_Promote(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+
+	flag := &domain.Flag{ProjectID: "proj-1", Key: "promo-flag", Name: "Promo Flag"}
+	store.CreateFlag(context.Background(), flag)
+
+	store.UpsertFlagState(context.Background(), &domain.FlagState{
+		FlagID:            flag.ID,
+		EnvID:             "staging",
+		Enabled:           true,
+		DefaultValue:      json.RawMessage(`"variant-a"`),
+		PercentageRollout: 5000,
+	})
+
+	body := `{"source_env_id":"staging","target_env_id":"production"}`
+	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags/promo-flag/promote", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "promo-flag"})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Promote(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var promoted domain.FlagState
+	json.Unmarshal(w.Body.Bytes(), &promoted)
+
+	if promoted.EnvID != "production" {
+		t.Errorf("expected target env production, got %s", promoted.EnvID)
+	}
+	if !promoted.Enabled {
+		t.Error("expected enabled=true in promoted state")
+	}
+	if promoted.PercentageRollout != 5000 {
+		t.Errorf("expected rollout 5000, got %d", promoted.PercentageRollout)
+	}
+
+	if len(store.auditEntries) == 0 {
+		t.Fatal("expected audit entry for promotion")
+	}
+	lastAudit := store.auditEntries[len(store.auditEntries)-1]
+	if lastAudit.Action != "flag.promoted" {
+		t.Errorf("expected audit action flag.promoted, got %s", lastAudit.Action)
+	}
+}
+
+func TestFlagHandler_Promote_SameEnv(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "f1", Name: "F1"})
+
+	body := `{"source_env_id":"staging","target_env_id":"staging"}`
+	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags/f1/promote", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "f1"})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Promote(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestFlagHandler_Promote_MissingSource(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "f2", Name: "F2"})
+
+	body := `{"source_env_id":"nonexist","target_env_id":"production"}`
+	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags/f2/promote", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "f2"})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Promote(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
