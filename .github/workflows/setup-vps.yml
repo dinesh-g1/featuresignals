@@ -15,7 +15,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           command_timeout: 10m
           script: |
             set -euo pipefail
@@ -63,8 +62,6 @@ jobs:
             echo "==> Creating project directory..."
             mkdir -p /opt/featuresignals
             chown deploy:deploy /opt/featuresignals
-            mkdir -p /opt/featuresignals/backups
-            chown deploy:deploy /opt/featuresignals/backups
 
             echo "System provisioning complete."
 
@@ -74,15 +71,19 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           command_timeout: 5m
           script: |
             set -euo pipefail
             if [ ! -d /opt/featuresignals/.git ]; then
-              git clone https://github.com/featuresignals/featuresignals.git /opt/featuresignals
+              cd /opt/featuresignals
+              git init
+              git remote add origin https://github.com/featuresignals/featuresignals.git
+              git fetch origin
+              git checkout -b main origin/main
             else
               cd /opt/featuresignals && git pull origin main
             fi
+            mkdir -p /opt/featuresignals/backups
 
       - name: Write environment file
         uses: appleboy/ssh-action@v1
@@ -90,7 +91,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           envs: POSTGRES_PASSWORD,JWT_SECRET
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
@@ -118,7 +118,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           command_timeout: 15m
           script: |
             cd /opt/featuresignals
@@ -130,7 +129,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           script: |
             sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
             sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
