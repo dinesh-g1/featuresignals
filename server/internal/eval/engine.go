@@ -16,6 +16,7 @@ package eval
 
 import (
 	"encoding/json"
+	"sort"
 
 	"github.com/featuresignals/server/internal/domain"
 )
@@ -68,8 +69,11 @@ func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *Rules
 		}
 	}
 
-	// Evaluate targeting rules in priority order
-	for _, rule := range state.Rules {
+	rules := make([]domain.TargetingRule, len(state.Rules))
+	copy(rules, state.Rules)
+	sort.Slice(rules, func(i, j int) bool { return rules[i].Priority < rules[j].Priority })
+
+	for _, rule := range rules {
 		if e.matchRule(rule, ctx, ruleset) {
 			// Rule matched — check percentage rollout
 			if rule.Percentage >= 10000 {

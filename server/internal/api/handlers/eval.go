@@ -144,12 +144,23 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, results)
 }
 
-// ClientFlags handles GET /v1/client/{envKey}/flags — returns all flags for client SDKs
+// ClientFlags handles GET /v1/client/{envKey}/flags — returns all flags for client SDKs.
+// The envKey path parameter is validated against the environment resolved from the API key.
 func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
-	ruleset, _, err := h.getRulesetFromAPIKey(r)
+	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, err.Error())
 		return
+	}
+
+	envKey := chi.URLParam(r, "envKey")
+	if envKey != "" {
+		env, envErr := h.store.GetEnvironment(r.Context(), envID)
+		if envErr == nil && env.Slug != envKey {
+			h.logger.Warn("envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug, "env_id", envID)
+			httputil.Error(w, http.StatusForbidden, "API key does not belong to environment "+envKey)
+			return
+		}
 	}
 
 	// Extract context from query params
@@ -194,6 +205,12 @@ func (h *EvalHandler) Stream(w http.ResponseWriter, r *http.Request) {
 	env, _, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash)
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, "invalid API key")
+		return
+	}
+
+	if env.Slug != envKey {
+		h.logger.Warn("stream envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug)
+		httputil.Error(w, http.StatusForbidden, "API key does not belong to environment "+envKey)
 		return
 	}
 

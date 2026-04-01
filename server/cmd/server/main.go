@@ -54,7 +54,7 @@ func main() {
 	jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.TokenTTL, cfg.RefreshTTL)
 	engine := eval.NewEngine()
 	sseServer := sse.NewServer(logger)
-	evalCache := cache.NewCache(store, logger)
+	evalCache := cache.NewCache(store, logger, sseServer)
 
 	// Start listening for PG NOTIFY changes
 	listenCtx, listenCancel := context.WithCancel(context.Background())
