@@ -23,14 +23,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./server/migrations:/migrations
-    entrypoint: ["sh", "-c"]
     command:
-      - |
-        migrate -path /migrations -database "postgres://fs:$${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable" up
+      [
+        "-path", "/migrations",
+        "-database", "postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable",
+        "up",
+      ]
 
   server:
     build:

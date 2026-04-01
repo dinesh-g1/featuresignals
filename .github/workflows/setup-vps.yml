@@ -118,6 +118,18 @@ jobs:
             (crontab -l 2>/dev/null | grep -v "pg-backup"; echo "0 3 * * * /opt/featuresignals/deploy/pg-backup.sh >> /var/log/fs-backup.log 2>&1") | crontab -
             echo "Backup cron installed."
 
+      - name: Clean previous deployment (fresh start)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/featuresignals
+            docker compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+            docker system prune -af 2>/dev/null || true
+            echo "Cleaned previous deployment."
+
       - name: Initial deploy
         uses: appleboy/ssh-action@v1
         with:
