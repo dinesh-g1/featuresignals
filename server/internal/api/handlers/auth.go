@@ -5,18 +5,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type AuthHandler struct {
-	store  *postgres.Store
+	store  domain.Store
 	jwtMgr *auth.JWTManager
 }
 
-func NewAuthHandler(store *postgres.Store, jwtMgr *auth.JWTManager) *AuthHandler {
+func NewAuthHandler(store domain.Store, jwtMgr *auth.JWTManager) *AuthHandler {
 	return &AuthHandler{store: store, jwtMgr: jwtMgr}
 }
 

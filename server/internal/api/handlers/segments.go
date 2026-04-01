@@ -5,16 +5,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type SegmentHandler struct {
-	store *postgres.Store
+	store domain.Store
 }
 
-func NewSegmentHandler(store *postgres.Store) *SegmentHandler {
+func NewSegmentHandler(store domain.Store) *SegmentHandler {
 	return &SegmentHandler{store: store}
 }
 

@@ -9,16 +9,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type APIKeyHandler struct {
-	store *postgres.Store
+	store domain.Store
 }
 
-func NewAPIKeyHandler(store *postgres.Store) *APIKeyHandler {
+func NewAPIKeyHandler(store domain.Store) *APIKeyHandler {
 	return &APIKeyHandler{store: store}
 }
 

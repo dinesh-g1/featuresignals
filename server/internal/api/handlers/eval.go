@@ -8,23 +8,22 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
+	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/store/cache"
-	"github.com/featuresignals/server/internal/store/postgres"
 )
 
 type EvalHandler struct {
-	store     *postgres.Store
+	store     domain.Store
 	cache     *cache.Cache
 	engine    *eval.Engine
 	sseServer *sse.Server
 	logger    *slog.Logger
 }
 
-func NewEvalHandler(store *postgres.Store, cache *cache.Cache, engine *eval.Engine, sseServer *sse.Server, logger *slog.Logger) *EvalHandler {
+func NewEvalHandler(store domain.Store, cache *cache.Cache, engine *eval.Engine, sseServer *sse.Server, logger *slog.Logger) *EvalHandler {
 	return &EvalHandler{
 		store:     store,
 		cache:     cache,
