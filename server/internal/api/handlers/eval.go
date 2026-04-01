@@ -12,6 +12,7 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
+	"github.com/featuresignals/server/internal/metrics"
 )
 
 // RulesetCache abstracts the in-memory ruleset cache for testability.
@@ -31,15 +32,17 @@ type EvalHandler struct {
 	engine    *eval.Engine
 	sseServer StreamServer
 	logger    *slog.Logger
+	metrics   *metrics.Collector
 }
 
-func NewEvalHandler(store domain.Store, cache RulesetCache, engine *eval.Engine, sseServer StreamServer, logger *slog.Logger) *EvalHandler {
+func NewEvalHandler(store domain.Store, cache RulesetCache, engine *eval.Engine, sseServer StreamServer, logger *slog.Logger, mc *metrics.Collector) *EvalHandler {
 	return &EvalHandler{
 		store:     store,
 		cache:     cache,
 		engine:    engine,
 		sseServer: sseServer,
 		logger:    logger,
+		metrics:   mc,
 	}
 }
 
@@ -99,13 +102,17 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ruleset, _, err := h.getRulesetFromAPIKey(r)
+	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
 	result := h.engine.Evaluate(req.FlagKey, req.Context, ruleset)
+
+	if h.metrics != nil {
+		h.metrics.Record(req.FlagKey, envID, result.Reason)
+	}
 
 	h.logger.Debug("flag evaluated",
 		"flag_key", req.FlagKey,
@@ -130,7 +137,7 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ruleset, _, err := h.getRulesetFromAPIKey(r)
+	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
 		httputil.Error(w, http.StatusUnauthorized, err.Error())
 		return
@@ -138,7 +145,11 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 
 	results := make(map[string]domain.EvalResult, len(req.FlagKeys))
 	for _, key := range req.FlagKeys {
-		results[key] = h.engine.Evaluate(key, req.Context, ruleset)
+		result := h.engine.Evaluate(key, req.Context, ruleset)
+		results[key] = result
+		if h.metrics != nil {
+			h.metrics.Record(key, envID, result.Reason)
+		}
 	}
 
 	httputil.JSON(w, http.StatusOK, results)
@@ -174,10 +185,12 @@ func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 
 	results := h.engine.EvaluateAll(ctx, ruleset)
 
-	// Simplify to key -> value map for client SDKs
 	values := make(map[string]interface{}, len(results))
 	for k, v := range results {
 		values[k] = v.Value
+		if h.metrics != nil {
+			h.metrics.Record(k, envID, v.Reason)
+		}
 	}
 
 	httputil.JSON(w, http.StatusOK, values)

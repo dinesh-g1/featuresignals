@@ -78,6 +78,16 @@ func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *Rules
 		}
 	}
 
+	if flag.MutualExclusionGroup != "" {
+		if !e.winsMutexGroup(flagKey, flag.MutualExclusionGroup, ctx, ruleset) {
+			return domain.EvalResult{
+				FlagKey: flagKey,
+				Value:   parseJSONValue(flag.DefaultValue),
+				Reason:  domain.ReasonMutuallyExcluded,
+			}
+		}
+	}
+
 	if len(flag.Prerequisites) > 0 {
 		for _, prereqKey := range flag.Prerequisites {
 			prereqResult := e.Evaluate(prereqKey, ctx, ruleset)
@@ -142,6 +152,11 @@ func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *Rules
 		}
 	}
 
+	// A/B experiment: if variants defined, assign user to a variant bucket
+	if flag.FlagType == domain.FlagTypeAB && len(state.Variants) > 0 {
+		return e.evaluateVariant(flagKey, ctx, state.Variants)
+	}
+
 	// Fallthrough: flag is enabled, no rules, no rollout — return state or flag default
 	defaultVal := state.DefaultValue
 	if defaultVal == nil {
@@ -151,6 +166,33 @@ func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *Rules
 		FlagKey: flagKey,
 		Value:   parseJSONValue(defaultVal),
 		Reason:  domain.ReasonFallthrough,
+	}
+}
+
+// evaluateVariant assigns a user to one variant based on consistent hashing.
+// Variant weights are expressed in basis points (0–10000). The user's bucket
+// determines which variant they land in.
+func (e *Engine) evaluateVariant(flagKey string, ctx domain.EvalContext, variants []domain.Variant) domain.EvalResult {
+	bucket := BucketUser(flagKey, ctx.Key)
+	cumulative := 0
+	for _, v := range variants {
+		cumulative += v.Weight
+		if bucket < cumulative {
+			return domain.EvalResult{
+				FlagKey:    flagKey,
+				Value:      parseJSONValue(v.Value),
+				Reason:     domain.ReasonVariant,
+				VariantKey: v.Key,
+			}
+		}
+	}
+	// Fallback to last variant if weights don't sum to 10000
+	last := variants[len(variants)-1]
+	return domain.EvalResult{
+		FlagKey:    flagKey,
+		Value:      parseJSONValue(last.Value),
+		Reason:     domain.ReasonVariant,
+		VariantKey: last.Key,
 	}
 }
 
@@ -195,6 +237,32 @@ func (e *Engine) matchRule(rule domain.TargetingRule, ctx domain.EvalContext, ru
 	}
 
 	return true
+}
+
+// winsMutexGroup determines whether flagKey is the "winner" within its mutual
+// exclusion group for this user. Among all enabled flags in the same group,
+// the one whose BucketUser value is lowest wins. If two flags produce the
+// same bucket, the lexicographically smaller key wins (deterministic tiebreak).
+func (e *Engine) winsMutexGroup(flagKey, group string, ctx domain.EvalContext, ruleset *Ruleset) bool {
+	winnerKey := flagKey
+	winnerBucket := BucketUser(flagKey, ctx.Key)
+
+	for key, f := range ruleset.Flags {
+		if key == flagKey || f.MutualExclusionGroup != group {
+			continue
+		}
+		state, ok := ruleset.States[key]
+		if !ok || !state.Enabled {
+			continue
+		}
+		bucket := BucketUser(key, ctx.Key)
+		if bucket < winnerBucket || (bucket == winnerBucket && key < winnerKey) {
+			winnerKey = key
+			winnerBucket = bucket
+		}
+	}
+
+	return winnerKey == flagKey
 }
 
 func parseJSONValue(raw json.RawMessage) interface{} {

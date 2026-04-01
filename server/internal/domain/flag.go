@@ -16,7 +16,16 @@ const (
 	FlagTypeString  FlagType = "string"
 	FlagTypeNumber  FlagType = "number"
 	FlagTypeJSON    FlagType = "json"
+	FlagTypeAB      FlagType = "ab"
 )
+
+// Variant defines one arm of an A/B experiment.
+type Variant struct {
+	Key    string          `json:"key"`
+	Value  json.RawMessage `json:"value"`
+	Weight int             `json:"weight"` // relative weight (basis points summed to 10000)
+}
+
 
 // Flag is the top-level definition of a feature flag.
 // It belongs to a Project and holds a default value that applies when the flag
@@ -31,9 +40,10 @@ type Flag struct {
 	DefaultValue json.RawMessage `json:"default_value" db:"default_value"`
 	Tags          []string        `json:"tags" db:"tags"`
 	ExpiresAt     *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
-	Prerequisites []string        `json:"prerequisites,omitempty" db:"prerequisites"`
-	CreatedAt     time.Time       `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time       `json:"updated_at" db:"updated_at"`
+	Prerequisites        []string        `json:"prerequisites,omitempty" db:"prerequisites"`
+	MutualExclusionGroup string         `json:"mutual_exclusion_group,omitempty" db:"mutual_exclusion_group"`
+	CreatedAt            time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time      `json:"updated_at" db:"updated_at"`
 }
 
 // FlagState holds per-environment configuration for a Flag. Each environment
@@ -49,6 +59,7 @@ type FlagState struct {
 	DefaultValue       json.RawMessage `json:"default_value,omitempty" db:"default_value"`
 	Rules              []TargetingRule `json:"rules" db:"rules"`
 	PercentageRollout  int             `json:"percentage_rollout" db:"percentage_rollout"`
+	Variants           []Variant       `json:"variants,omitempty" db:"variants"`
 	ScheduledEnableAt  *time.Time      `json:"scheduled_enable_at,omitempty" db:"scheduled_enable_at"`
 	ScheduledDisableAt *time.Time      `json:"scheduled_disable_at,omitempty" db:"scheduled_disable_at"`
 	UpdatedAt          time.Time       `json:"updated_at" db:"updated_at"`

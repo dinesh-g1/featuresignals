@@ -18,9 +18,10 @@ func (c EvalContext) GetAttribute(name string) (interface{}, bool) {
 
 // EvalResult holds the result of a flag evaluation.
 type EvalResult struct {
-	FlagKey string      `json:"flag_key"`
-	Value   interface{} `json:"value"`
-	Reason  string      `json:"reason"`
+	FlagKey    string      `json:"flag_key"`
+	Value      interface{} `json:"value"`
+	Reason     string      `json:"reason"`
+	VariantKey string      `json:"variant_key,omitempty"`
 }
 
 // Evaluation reasons
@@ -32,5 +33,7 @@ const (
 	ReasonFallthrough        = "FALLTHROUGH"
 	ReasonNotFound           = "NOT_FOUND"
 	ReasonError              = "ERROR"
-	ReasonPrerequisiteFailed = "PREREQUISITE_FAILED"
+	ReasonPrerequisiteFailed  = "PREREQUISITE_FAILED"
+	ReasonMutuallyExcluded   = "MUTUALLY_EXCLUDED"
+	ReasonVariant             = "VARIANT"
 )
