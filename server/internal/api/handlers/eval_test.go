@@ -18,7 +18,7 @@ import (
 
 func newTestEvalHandler(store domain.Store) *EvalHandler {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	c := cache.NewCache(store, logger)
+	c := cache.NewCache(store, logger, nil)
 	engine := eval.NewEngine()
 	sseServer := sse.NewServer(logger)
 	return NewEvalHandler(store, c, engine, sseServer, logger)

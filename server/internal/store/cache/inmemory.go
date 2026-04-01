@@ -10,19 +10,31 @@ import (
 	"github.com/featuresignals/server/internal/eval"
 )
 
-// Cache holds in-memory rulesets per environment for fast evaluation.
-type Cache struct {
-	mu       sync.RWMutex
-	rulesets map[string]*eval.Ruleset // envID -> ruleset
-	store    domain.Store
-	logger   *slog.Logger
+// Broadcaster pushes flag-change events to connected clients (e.g. via SSE).
+// sse.Server satisfies this interface.
+type Broadcaster interface {
+	BroadcastFlagUpdate(envID string, data interface{})
 }
 
-func NewCache(store domain.Store, logger *slog.Logger) *Cache {
+// Cache holds in-memory rulesets per environment for fast evaluation.
+// When a ruleset is invalidated via PG NOTIFY, the cache also notifies
+// connected SDK clients through the optional Broadcaster.
+type Cache struct {
+	mu          sync.RWMutex
+	rulesets    map[string]*eval.Ruleset // envID -> ruleset
+	store       domain.Store
+	logger      *slog.Logger
+	broadcaster Broadcaster
+}
+
+// NewCache creates an evaluation cache. Pass a nil broadcaster if SSE
+// push is not needed (e.g. in tests).
+func NewCache(store domain.Store, logger *slog.Logger, broadcaster Broadcaster) *Cache {
 	return &Cache{
-		rulesets: make(map[string]*eval.Ruleset),
-		store:    store,
-		logger:   logger,
+		rulesets:    make(map[string]*eval.Ruleset),
+		store:       store,
+		logger:      logger,
+		broadcaster: broadcaster,
 	}
 }
 
@@ -85,9 +97,17 @@ func (c *Cache) StartListening(ctx context.Context) error {
 
 		c.logger.Info("flag change detected, invalidating cache", "env_id", change.EnvID, "action", change.Action)
 
-		// Invalidate the cached ruleset for this environment
 		c.mu.Lock()
 		delete(c.rulesets, change.EnvID)
 		c.mu.Unlock()
+
+		if c.broadcaster != nil {
+			c.broadcaster.BroadcastFlagUpdate(change.EnvID, map[string]string{
+				"type":    "flag_update",
+				"env_id":  change.EnvID,
+				"flag_id": change.FlagID,
+				"action":  change.Action,
+			})
+		}
 	})
 }
