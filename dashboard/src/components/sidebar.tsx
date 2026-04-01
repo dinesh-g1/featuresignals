@@ -18,9 +18,9 @@ export function Sidebar() {
   const logout = useAppStore((s) => s.logout);
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex h-14 items-center border-b border-gray-200 px-4 dark:border-gray-800">
-        <Link href="/dashboard" className="text-lg font-bold text-blue-600">
+    <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
+      <div className="flex h-14 items-center border-b border-slate-200 px-4">
+        <Link href="/dashboard" className="text-xl font-bold tracking-tight text-indigo-600 transition-colors hover:text-indigo-700">
           FeatureSignals
         </Link>
       </div>
@@ -32,13 +32,13 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                 active
-                  ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                  ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
               </svg>
               {item.label}
@@ -47,15 +47,15 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-gray-200 p-3 dark:border-gray-800">
-        <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <p className="font-medium">{user?.name || "User"}</p>
-            <p className="text-xs text-gray-500">{user?.email || ""}</p>
+      <div className="border-t border-slate-200 p-3">
+        <div className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-slate-50">
+          <div className="min-w-0 text-sm">
+            <p className="truncate font-medium text-slate-700">{user?.name || "User"}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email || ""}</p>
           </div>
           <button
             onClick={logout}
-            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+            className="shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             title="Sign out"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

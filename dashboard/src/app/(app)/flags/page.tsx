@@ -35,47 +35,47 @@ export default function FlagsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Feature Flags</h1>
-          <p className="text-sm text-gray-500">{flags.length} flags</p>
+          <h1 className="text-2xl font-bold text-slate-900">Feature Flags</h1>
+          <p className="mt-1 text-sm text-slate-500">{flags.length} flags in this project</p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
         >
           Create Flag
         </button>
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-gray-200 bg-white p-6 space-y-4 dark:border-gray-800 dark:bg-gray-900">
+        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-white p-6 space-y-4 ring-1 ring-indigo-100">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium">Key</label>
+              <label className="block text-sm font-medium text-slate-700">Key</label>
               <input
                 value={newFlag.key}
                 onChange={(e) => setNewFlag({ ...newFlag, key: e.target.value })}
                 placeholder="new-checkout-flow"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium">Name</label>
+              <label className="block text-sm font-medium text-slate-700">Name</label>
               <input
                 value={newFlag.name}
                 onChange={(e) => setNewFlag({ ...newFlag, name: e.target.value })}
                 placeholder="New Checkout Flow"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium">Type</label>
+            <label className="block text-sm font-medium text-slate-700">Type</label>
             <select
               value={newFlag.flag_type}
               onChange={(e) => setNewFlag({ ...newFlag, flag_type: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="boolean">Boolean</option>
               <option value="string">String</option>
@@ -84,44 +84,58 @@ export default function FlagsPage() {
             </select>
           </div>
           <div className="flex gap-2">
-            <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">
               Create
             </button>
-            <button type="button" onClick={() => setShowCreate(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm dark:border-gray-700">
+            <button type="button" onClick={() => setShowCreate(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
               Cancel
             </button>
           </div>
         </form>
       )}
 
-      <input
-        type="text"
-        placeholder="Search flags..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-      />
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search flags..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-4 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        />
+      </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="divide-y divide-gray-200 dark:divide-gray-800">
+      <div className="rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:border-slate-300">
+        <div className="divide-y divide-slate-100">
           {filtered.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-500">No flags found. Create your first flag.</div>
+            <div className="px-6 py-12 text-center">
+              <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+              </svg>
+              <p className="mt-3 text-sm font-medium text-slate-500">No flags found</p>
+              <p className="mt-1 text-xs text-slate-400">Create your first flag to get started.</p>
+            </div>
           ) : (
             filtered.map((flag) => (
               <Link
                 key={flag.id}
                 href={`/flags/${flag.key}`}
-                className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-indigo-50/30"
               >
                 <div>
-                  <p className="font-mono text-sm font-medium">{flag.key}</p>
-                  <p className="text-xs text-gray-500">{flag.name} &middot; {flag.flag_type}</p>
+                  <p className="font-mono text-sm font-medium text-slate-900">{flag.key}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{flag.name} &middot; {flag.flag_type}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {flag.tags?.map((tag: string) => (
-                    <span key={tag} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{tag}</span>
+                    <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200">{tag}</span>
                   ))}
-                  <span className="text-xs text-gray-400">{new Date(flag.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-slate-400">{new Date(flag.created_at).toLocaleDateString()}</span>
+                  <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
                 </div>
               </Link>
             ))
