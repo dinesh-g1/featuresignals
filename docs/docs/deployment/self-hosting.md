@@ -30,7 +30,7 @@ The simplest production setup. Suitable for small to medium teams.
 
 ```bash
 # On your VPS
-git clone https://github.com/featuresignals/featuresignals.git
+git clone https://github.com/dinesh-g1/featuresignals.git
 cd featuresignals
 
 # Create production environment file

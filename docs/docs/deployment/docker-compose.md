@@ -10,7 +10,7 @@ The quickest way to run FeatureSignals is with Docker Compose.
 ## Quick Start
 
 ```bash
-git clone https://github.com/featuresignals/featuresignals.git
+git clone https://github.com/dinesh-g1/featuresignals.git
 cd featuresignals
 docker compose up -d
 ```

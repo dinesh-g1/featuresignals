@@ -31,7 +31,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
-          editUrl: 'https://github.com/featuresignals/featuresignals/tree/main/docs/',
+          editUrl: 'https://github.com/dinesh-g1/featuresignals/tree/main/docs/',
         },
         blog: false,
         theme: {
@@ -68,7 +68,7 @@ const config: Config = {
           label: 'SDKs',
         },
         {
-          href: 'https://github.com/featuresignals/featuresignals',
+          href: 'https://github.com/dinesh-g1/featuresignals',
           label: 'GitHub',
           position: 'right',
         },
@@ -98,8 +98,8 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            {label: 'GitHub', href: 'https://github.com/featuresignals/featuresignals'},
-            {label: 'License (Apache-2.0)', href: 'https://github.com/featuresignals/featuresignals/blob/main/LICENSE'},
+            {label: 'GitHub', href: 'https://github.com/dinesh-g1/featuresignals'},
+            {label: 'License (Apache-2.0)', href: 'https://github.com/dinesh-g1/featuresignals/blob/main/LICENSE'},
           ],
         },
       ],
