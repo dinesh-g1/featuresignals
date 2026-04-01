@@ -10,8 +10,13 @@ export interface FeatureSignalsProviderProps {
   baseURL?: string;
   /** User key for targeting. Defaults to "anonymous". */
   userKey?: string;
-  /** Polling interval in ms. Default 30 000. Set 0 to disable polling. */
+  /**
+   * Polling interval in ms. Default 30 000. Set 0 to disable polling.
+   * Polling is automatically disabled when streaming is enabled.
+   */
   pollingIntervalMs?: number;
+  /** Enable SSE streaming for real-time flag updates. Default false. */
+  streaming?: boolean;
   children: React.ReactNode;
 }
 
@@ -21,12 +26,14 @@ export function FeatureSignalsProvider({
   baseURL = "https://api.featuresignals.com",
   userKey = "anonymous",
   pollingIntervalMs = 30_000,
+  streaming = false,
   children,
 }: FeatureSignalsProviderProps) {
   const [flags, setFlags] = useState<Record<string, unknown>>({});
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const fetchFlags = useCallback(async () => {
     try {
@@ -56,16 +63,41 @@ export function FeatureSignalsProvider({
     mountedRef.current = true;
     fetchFlags();
 
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (pollingIntervalMs > 0) {
-      interval = setInterval(fetchFlags, pollingIntervalMs);
+    if (streaming && typeof EventSource !== "undefined") {
+      const encodedEnv = encodeURIComponent(envKey);
+      const sseUrl = `${baseURL}/v1/stream/${encodedEnv}?api_key=${encodeURIComponent(sdkKey)}`;
+      const es = new EventSource(sseUrl);
+      eventSourceRef.current = es;
+
+      es.addEventListener("flag-update", () => {
+        if (mountedRef.current) fetchFlags();
+      });
+
+      es.addEventListener("connected", () => {
+        if (mountedRef.current) setError(null);
+      });
+
+      es.onerror = () => {
+        if (mountedRef.current) {
+          setError(new Error("SSE connection error"));
+        }
+      };
+    } else if (pollingIntervalMs > 0) {
+      const interval = setInterval(fetchFlags, pollingIntervalMs);
+      return () => {
+        mountedRef.current = false;
+        clearInterval(interval);
+      };
     }
 
     return () => {
       mountedRef.current = false;
-      if (interval) clearInterval(interval);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
-  }, [fetchFlags, pollingIntervalMs]);
+  }, [fetchFlags, pollingIntervalMs, streaming, envKey, sdkKey, baseURL]);
 
   return (
     <FeatureSignalsContext.Provider value={{ flags, ready, error }}>
