@@ -335,6 +335,19 @@ func (s *Store) GetSegment(ctx context.Context, projectID, key string) (*domain.
 	return seg, nil
 }
 
+func (s *Store) UpdateSegment(ctx context.Context, seg *domain.Segment) error {
+	rulesJSON, err := json.Marshal(seg.Rules)
+	if err != nil {
+		return fmt.Errorf("marshal rules: %w", err)
+	}
+	_, err = s.pool.Exec(ctx,
+		`UPDATE segments SET name = $1, description = $2, match_type = $3, rules = $4, updated_at = $5
+		 WHERE id = $6`,
+		seg.Name, seg.Description, seg.MatchType, rulesJSON, time.Now(), seg.ID,
+	)
+	return err
+}
+
 func (s *Store) DeleteSegment(ctx context.Context, id string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM segments WHERE id = $1`, id)
 	return err

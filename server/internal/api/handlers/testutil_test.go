@@ -342,6 +342,18 @@ func (m *mockStore) GetSegment(ctx context.Context, projectID, key string) (*dom
 	return seg, nil
 }
 
+func (m *mockStore) UpdateSegment(ctx context.Context, seg *domain.Segment) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for key, existing := range m.segments {
+		if existing.ID == seg.ID {
+			m.segments[key] = seg
+			return nil
+		}
+	}
+	return fmt.Errorf("not found")
+}
+
 func (m *mockStore) DeleteSegment(ctx context.Context, id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

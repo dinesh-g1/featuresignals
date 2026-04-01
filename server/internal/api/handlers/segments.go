@@ -85,6 +85,48 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, seg)
 }
 
+func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	segKey := chi.URLParam(r, "segmentKey")
+
+	seg, err := h.store.GetSegment(r.Context(), projectID, segKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "segment not found")
+		return
+	}
+
+	var req struct {
+		Name        *string            `json:"name"`
+		Description *string            `json:"description"`
+		MatchType   *string            `json:"match_type"`
+		Rules       []domain.Condition `json:"rules"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Name != nil {
+		seg.Name = *req.Name
+	}
+	if req.Description != nil {
+		seg.Description = *req.Description
+	}
+	if req.MatchType != nil {
+		seg.MatchType = domain.MatchType(*req.MatchType)
+	}
+	if req.Rules != nil {
+		seg.Rules = req.Rules
+	}
+
+	if err := h.store.UpdateSegment(r.Context(), seg); err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to update segment")
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, seg)
+}
+
 func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")

@@ -46,6 +46,7 @@ type Store interface {
 	CreateSegment(ctx context.Context, seg *Segment) error
 	ListSegments(ctx context.Context, projectID string) ([]Segment, error)
 	GetSegment(ctx context.Context, projectID, key string) (*Segment, error)
+	UpdateSegment(ctx context.Context, seg *Segment) error
 	DeleteSegment(ctx context.Context, id string) error
 
 	// API Keys
