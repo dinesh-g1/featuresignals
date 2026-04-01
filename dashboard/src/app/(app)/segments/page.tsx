@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { SegmentRulesEditor } from "@/components/segment-rules-editor";
 
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
@@ -11,6 +12,7 @@ export default function SegmentsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ key: "", name: "", description: "", match_type: "all" });
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   function reload() {
     if (!token || !projectId) return;
@@ -32,6 +34,12 @@ export default function SegmentsPage() {
     if (!token || !projectId) return;
     await api.deleteSegment(token, projectId, segKey);
     setDeleting(null);
+    reload();
+  }
+
+  async function handleSaveRules(segKey: string, rules: any[], matchType: string) {
+    if (!token || !projectId) return;
+    await api.updateSegment(token, projectId, segKey, { rules, match_type: matchType });
     reload();
   }
 
@@ -88,33 +96,59 @@ export default function SegmentsPage() {
               <p className="mt-1 text-xs text-slate-400">Create a segment to define reusable audiences.</p>
             </div>
           ) : (
-            segments.map((seg) => (
-              <div key={seg.id} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-indigo-50/30">
-                <div>
-                  <p className="font-mono text-sm font-medium text-slate-900">{seg.key}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{seg.name} &middot; Match {seg.match_type} &middot; {seg.rules?.length || 0} rules</p>
-                  {seg.description && <p className="mt-0.5 text-xs text-slate-400">{seg.description}</p>}
-                </div>
-                <div className="flex items-center gap-2">
-                  {deleting === seg.key ? (
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => handleDelete(seg.key)} className="rounded px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100">Confirm</button>
-                      <button onClick={() => setDeleting(null)} className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100">Cancel</button>
+            segments.map((seg) => {
+              const isExpanded = expanded === seg.key;
+              return (
+                <div key={seg.id}>
+                  <div
+                    className={`flex items-center justify-between px-6 py-4 transition-colors cursor-pointer ${isExpanded ? "bg-indigo-50/40" : "hover:bg-indigo-50/30"}`}
+                    onClick={() => setExpanded(isExpanded ? null : seg.key)}
+                  >
+                    <div>
+                      <p className="font-mono text-sm font-medium text-slate-900">{seg.key}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{seg.name} &middot; Match {seg.match_type} &middot; {seg.rules?.length || 0} rules</p>
+                      {seg.description && <p className="mt-0.5 text-xs text-slate-400">{seg.description}</p>}
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleting(seg.key)}
-                      className="rounded p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Delete segment"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    <div className="flex items-center gap-2">
+                      {deleting === seg.key ? (
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => handleDelete(seg.key)} className="rounded px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100">Confirm</button>
+                          <button onClick={() => setDeleting(null)} className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100">Cancel</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleting(seg.key); }}
+                          className="rounded p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          title="Delete segment"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      )}
+                      <svg
+                        className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
-                    </button>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
+                      <SegmentRulesEditor
+                        rules={seg.rules ?? []}
+                        matchType={seg.match_type}
+                        onSave={(rules, matchType) => handleSaveRules(seg.key, rules, matchType)}
+                      />
+                    </div>
                   )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

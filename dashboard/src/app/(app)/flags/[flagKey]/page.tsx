@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
 
 export default function FlagDetailPage() {
   const params = useParams();
@@ -21,6 +22,7 @@ export default function FlagDetailPage() {
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [audit, setAudit] = useState<any[]>([]);
+  const [segments, setSegments] = useState<{ key: string; name: string }[]>([]);
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -33,6 +35,9 @@ export default function FlagDetailPage() {
       setEnvs(list);
       if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
     });
+    api.listSegments(token, projectId).then((s) => {
+      setSegments((s ?? []).map((seg: any) => ({ key: seg.key, name: seg.name })));
+    }).catch(() => {});
   }, [token, projectId, flagKey, selectedEnv]);
 
   useEffect(() => {
@@ -78,6 +83,12 @@ export default function FlagDetailPage() {
     if (!token || !projectId) return;
     await api.deleteFlag(token, projectId, flagKey);
     router.push("/flags");
+  }
+
+  async function saveRules(rules: any[]) {
+    if (!token || !projectId || !selectedEnv) return;
+    await api.updateFlagState(token, projectId, flagKey, selectedEnv, { rules });
+    api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
   }
 
   if (!flag) {
@@ -247,34 +258,12 @@ export default function FlagDetailPage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-            <h3 className="text-sm font-medium text-slate-500 mb-4">Targeting Rules</h3>
-            {(!state?.rules || state.rules.length === 0) ? (
-              <div className="rounded-lg border border-dashed border-slate-300 px-6 py-8 text-center">
-                <svg className="mx-auto h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                <p className="mt-2 text-sm text-slate-500">No targeting rules configured.</p>
-                <p className="mt-1 text-xs text-slate-400">All users receive the default value based on rollout percentage.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {state.rules.map((rule: any, i: number) => (
-                  <div key={i} className="rounded-lg bg-slate-50 p-4 ring-1 ring-slate-100 transition-colors hover:bg-indigo-50/30">
-                    <p className="font-medium text-sm text-slate-700">Rule {i + 1}: {rule.description || "Unnamed rule"}</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {rule.conditions?.length || 0} conditions &middot; {((rule.percentage || 0) / 100).toFixed(1)}% rollout
-                    </p>
-                    {rule.conditions?.map((cond: any, j: number) => (
-                      <div key={j} className="mt-2 ml-4 text-xs text-slate-600">
-                        <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{cond.attribute}</span>
-                        {" "}<span className="text-indigo-600 font-medium">{cond.operator}</span>{" "}
-                        <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{cond.value || cond.values?.join(", ")}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
+            <TargetingRulesEditor
+              rules={state?.rules || []}
+              segments={segments}
+              flagType={flag.flag_type}
+              onSave={saveRules}
+            />
           </div>
         </div>
       )}
