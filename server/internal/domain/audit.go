@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// AuditEntry records every mutation performed through the management API.
+// BeforeState and AfterState capture the resource before and after the change
+// as JSON snapshots, enabling full change history and rollback support.
 type AuditEntry struct {
 	ID           string          `json:"id" db:"id"`
 	OrgID        string          `json:"org_id" db:"org_id"`

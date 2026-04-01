@@ -8,6 +8,9 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+// RateLimit applies a per-client sliding-window rate limiter.
+// Clients are identified by API key prefix (if present) or remote IP.
+
 type rateLimiter struct {
 	mu       sync.Mutex
 	visitors map[string]*visitor
@@ -61,6 +64,8 @@ func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
 			v.count++
 			if v.count > rl.rate {
 				rl.mu.Unlock()
+				log := httputil.LoggerFromContext(r.Context())
+				log.Warn("rate limit exceeded", "client_key", key, "count", v.count, "limit", rl.rate)
 				httputil.Error(w, http.StatusTooManyRequests, "rate limit exceeded")
 				return
 			}

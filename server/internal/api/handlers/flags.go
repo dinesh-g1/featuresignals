@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,6 +11,11 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
+
+// l returns a request-scoped logger for the flag handler.
+func (h *FlagHandler) l(r *http.Request) *slog.Logger {
+	return httputil.LoggerFromContext(r.Context()).With("handler", "flags")
+}
 
 type FlagHandler struct {
 	store domain.Store
@@ -62,11 +68,13 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
+		h.l(r).Warn("flag create conflict", "project_id", projectID, "key", req.Key)
 		httputil.Error(w, http.StatusConflict, "flag key already exists in this project")
 		return
 	}
 
-	// Create audit entry
+	h.l(r).Info("flag created", "flag_id", flag.ID, "project_id", projectID, "key", req.Key)
+
 	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(flag)
@@ -143,9 +151,12 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
+		h.l(r).Error("flag update failed", "error", err, "flag_id", flag.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to update flag")
 		return
 	}
+
+	h.l(r).Info("flag updated", "flag_id", flag.ID, "project_id", projectID, "key", flagKey)
 
 	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
@@ -175,9 +186,12 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.DeleteFlag(r.Context(), flag.ID); err != nil {
+		h.l(r).Error("flag delete failed", "error", err, "flag_id", flag.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete flag")
 		return
 	}
+
+	h.l(r).Info("flag deleted", "flag_id", flag.ID, "project_id", projectID, "key", flagKey)
 
 	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())

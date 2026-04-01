@@ -2,6 +2,8 @@ package domain
 
 import "time"
 
+// Segment groups users by shared attributes (e.g. "Beta Users", "Enterprise Plan").
+// Segments are reusable across flags via TargetingRule.SegmentKeys.
 type Segment struct {
 	ID          string      `json:"id" db:"id"`
 	ProjectID   string      `json:"project_id" db:"project_id"`

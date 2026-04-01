@@ -10,12 +10,13 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+
 type AuthHandler struct {
 	store  domain.Store
-	jwtMgr *auth.JWTManager
+	jwtMgr auth.TokenManager
 }
 
-func NewAuthHandler(store domain.Store, jwtMgr *auth.JWTManager) *AuthHandler {
+func NewAuthHandler(store domain.Store, jwtMgr auth.TokenManager) *AuthHandler {
 	return &AuthHandler{store: store, jwtMgr: jwtMgr}
 }
 
@@ -42,6 +43,8 @@ func slugify(s string) string {
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+
 	var req RegisterRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
@@ -59,6 +62,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
+		log.Error("password hashing failed", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to hash password")
 		return
 	}
@@ -69,6 +73,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Name:         req.Name,
 	}
 	if err := h.store.CreateUser(r.Context(), user); err != nil {
+		log.Warn("registration failed: duplicate email", "email", req.Email)
 		httputil.Error(w, http.StatusConflict, "email already registered")
 		return
 	}
@@ -78,6 +83,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Slug: slugify(req.OrgName),
 	}
 	if err := h.store.CreateOrganization(r.Context(), org); err != nil {
+		log.Error("failed to create organization", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to create organization")
 		return
 	}
@@ -88,17 +94,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Role:   domain.RoleOwner,
 	}
 	if err := h.store.AddOrgMember(r.Context(), member); err != nil {
+		log.Error("failed to add org member", "error", err, "org_id", org.ID, "user_id", user.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to add member")
 		return
 	}
 
-	// Create default project and environments
 	project := &domain.Project{
 		OrgID: org.ID,
 		Name:  "Default Project",
 		Slug:  "default",
 	}
 	if err := h.store.CreateProject(r.Context(), project); err != nil {
+		log.Error("failed to create default project", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to create default project")
 		return
 	}
@@ -122,9 +129,12 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner))
 	if err != nil {
+		log.Error("token generation failed", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
 		return
 	}
+
+	log.Info("user registered", "user_id", user.ID, "org_id", org.ID, "email", req.Email)
 
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
 		"user":         user,
@@ -134,6 +144,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+
 	var req LoginRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
@@ -142,11 +154,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
+		log.Warn("login failed: unknown email", "email", req.Email)
 		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
 	if !auth.CheckPassword(req.Password, user.PasswordHash) {
+		log.Warn("login failed: bad password", "email", req.Email, "user_id", user.ID)
 		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -159,7 +173,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		role = string(member.Role)
 	}
 
-	// Find the first org for this user
 	if orgID == "" {
 		members, _ := h.store.ListOrgMembers(r.Context(), "")
 		for _, m := range members {
@@ -173,9 +186,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, orgID, role)
 	if err != nil {
+		log.Error("token generation failed on login", "error", err, "user_id", user.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
 		return
 	}
+
+	log.Info("user logged in", "user_id", user.ID, "org_id", orgID, "role", role)
 
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
 		"user":   user,
@@ -184,6 +200,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+
 	var req RefreshRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
@@ -192,15 +210,19 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	claims, err := h.jwtMgr.ValidateToken(req.RefreshToken)
 	if err != nil {
+		log.Warn("invalid refresh token")
 		httputil.Error(w, http.StatusUnauthorized, "invalid refresh token")
 		return
 	}
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(claims.UserID, claims.OrgID, claims.Role)
 	if err != nil {
+		log.Error("token refresh failed", "error", err, "user_id", claims.UserID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
 		return
 	}
+
+	log.Info("token refreshed", "user_id", claims.UserID)
 
 	httputil.JSON(w, http.StatusOK, tokens)
 }

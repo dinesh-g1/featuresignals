@@ -2,6 +2,9 @@ package domain
 
 import "time"
 
+// APIKeyType distinguishes between server-side and client-side keys.
+// Server keys have full evaluation access; client keys are limited to
+// public-safe flags.
 type APIKeyType string
 
 const (
@@ -9,6 +12,9 @@ const (
 	APIKeyClient APIKeyType = "client"
 )
 
+// APIKey authenticates SDK and API requests to the evaluation endpoints.
+// The raw key is only shown once (at creation); after that only the
+// KeyPrefix and salted KeyHash are stored.
 type APIKey struct {
 	ID         string     `json:"id" db:"id"`
 	EnvID      string     `json:"env_id" db:"env_id"`

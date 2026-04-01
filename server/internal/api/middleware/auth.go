@@ -17,7 +17,7 @@ const (
 	RoleKey   contextKey = "role"
 )
 
-func JWTAuth(jwtMgr *auth.JWTManager) func(http.Handler) http.Handler {
+func JWTAuth(jwtMgr auth.TokenManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			header := r.Header.Get("Authorization")

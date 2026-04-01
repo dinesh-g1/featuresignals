@@ -1,3 +1,17 @@
+// Package eval implements the core feature flag evaluation engine.
+//
+// The engine is stateless and goroutine-safe: it takes a Ruleset (snapshot of
+// all flags, states, and segments for an environment) and an EvalContext (the
+// user being evaluated) and returns a deterministic result. The hot path
+// performs zero allocations beyond the result struct.
+//
+// Evaluation algorithm:
+//  1. Look up the flag by key → NOT_FOUND if missing
+//  2. Look up the per-environment FlagState → DISABLED if missing or off
+//  3. Walk targeting rules in priority order; first match wins
+//  4. For matched rules, apply the rule's percentage rollout
+//  5. If no rule matches, apply the default rollout on the FlagState
+//  6. Fallthrough: return the flag/state default value
 package eval
 
 import (
@@ -6,17 +20,20 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 )
 
-// Ruleset contains all the data needed to evaluate flags for an environment.
+// Ruleset is an immutable snapshot of all data needed to evaluate flags
+// for a single environment. It is built by the cache layer and passed to
+// Engine.Evaluate.
 type Ruleset struct {
-	Flags    map[string]*domain.Flag      // key -> flag
-	States   map[string]*domain.FlagState // flagKey -> state for this env
-	Segments map[string]*domain.Segment   // segmentKey -> segment
+	Flags    map[string]*domain.Flag      // flagKey → definition
+	States   map[string]*domain.FlagState // flagKey → per-environment state
+	Segments map[string]*domain.Segment   // segmentKey → segment definition
 }
 
-// Engine evaluates feature flags against a context.
+// Engine evaluates feature flags against a user context and a ruleset.
+// It is stateless and safe for concurrent use.
 type Engine struct{}
 
-// NewEngine creates a new evaluation engine.
+// NewEngine creates a new evaluation engine instance.
 func NewEngine() *Engine {
 	return &Engine{}
 }

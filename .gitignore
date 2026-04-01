@@ -29,13 +29,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Go binaries
+# Go binaries & coverage
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 /server/bin/
+*.out
 
 # Claude local settings
 .claude/settings.local.json
