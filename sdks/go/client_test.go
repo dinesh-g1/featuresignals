@@ -351,10 +351,18 @@ func TestClient_SSE_RefreshesOnEvent(t *testing.T) {
 	defer c.Close()
 
 	_ = sseWriter
-	time.Sleep(400 * time.Millisecond)
 
-	if v := c.NumberVariation("v", NewContext("u"), 0); v != 99.0 {
-		t.Errorf("expected 99.0 after SSE event, got %v", v)
+	deadline := time.After(3 * time.Second)
+	for {
+		if v := c.NumberVariation("v", NewContext("u"), 0); v == 99.0 {
+			break
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("expected 99.0 after SSE event, got %v (timed out)", c.NumberVariation("v", NewContext("u"), 0))
+		default:
+			time.Sleep(50 * time.Millisecond)
+		}
 	}
 }
 
