@@ -102,6 +102,7 @@ func NewRouter(
 			r.Post("/projects/{projectID}/segments", segmentH.Create)
 			r.Get("/projects/{projectID}/segments", segmentH.List)
 			r.Get("/projects/{projectID}/segments/{segmentKey}", segmentH.Get)
+			r.Put("/projects/{projectID}/segments/{segmentKey}", segmentH.Update)
 			r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
 
 			// API Keys

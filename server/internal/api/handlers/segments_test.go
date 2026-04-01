@@ -195,6 +195,85 @@ func TestSegmentHandler_Get_NotFound(t *testing.T) {
 	}
 }
 
+func TestSegmentHandler_Update(t *testing.T) {
+	store := newMockStore()
+	h := NewSegmentHandler(store)
+
+	store.CreateSegment(context.Background(), &domain.Segment{
+		ProjectID: "proj-1", Key: "upd-seg", Name: "Original", MatchType: domain.MatchAll,
+	})
+
+	body := `{"name":"Updated Name","match_type":"any","rules":[{"attribute":"plan","operator":"eq","values":["pro"]}]}`
+	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/segments/upd-seg", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "upd-seg"})
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var seg domain.Segment
+	json.Unmarshal(w.Body.Bytes(), &seg)
+
+	if seg.Name != "Updated Name" {
+		t.Errorf("expected name 'Updated Name', got '%s'", seg.Name)
+	}
+	if seg.MatchType != domain.MatchAny {
+		t.Errorf("expected match_type 'any', got '%s'", seg.MatchType)
+	}
+	if len(seg.Rules) != 1 {
+		t.Errorf("expected 1 rule, got %d", len(seg.Rules))
+	}
+}
+
+func TestSegmentHandler_Update_NotFound(t *testing.T) {
+	store := newMockStore()
+	h := NewSegmentHandler(store)
+
+	body := `{"name":"Updated"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/segments/nonexistent", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "nonexistent"})
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestSegmentHandler_Update_PartialFields(t *testing.T) {
+	store := newMockStore()
+	h := NewSegmentHandler(store)
+
+	store.CreateSegment(context.Background(), &domain.Segment{
+		ProjectID: "proj-1", Key: "partial-seg", Name: "Original", Description: "Original Desc", MatchType: domain.MatchAll,
+	})
+
+	body := `{"description":"Updated Desc"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/segments/partial-seg", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "partial-seg"})
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var seg domain.Segment
+	json.Unmarshal(w.Body.Bytes(), &seg)
+
+	if seg.Name != "Original" {
+		t.Errorf("name should be unchanged, got '%s'", seg.Name)
+	}
+	if seg.Description != "Updated Desc" {
+		t.Errorf("expected description 'Updated Desc', got '%s'", seg.Description)
+	}
+}
+
 func TestSegmentHandler_Delete(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
