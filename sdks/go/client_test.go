@@ -333,7 +333,7 @@ func TestClient_SSE_RefreshesOnEvent(t *testing.T) {
 		flags["v"] = 99.0
 		mu.Unlock()
 
-		fmt.Fprintf(w, "event: flag_update\ndata: {\"flag_key\":\"v\"}\n\n")
+		fmt.Fprintf(w, "event: flag-update\ndata: {\"flag_key\":\"v\"}\n\n")
 		flusher.Flush()
 
 		time.Sleep(500 * time.Millisecond)
