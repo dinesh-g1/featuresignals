@@ -19,17 +19,20 @@ No manual SSH access is required after the initial setup.
 
 ## Step 1: Add GitHub Secrets
 
-Go to your GitHub repository **Settings > Secrets and variables > Actions** and add these 5 secrets:
+Go to your GitHub repository **Settings > Secrets and variables > Actions** and add these 6 secrets:
 
 | Secret | Value | How to Generate |
 |--------|-------|-----------------|
 | `VPS_HOST` | `103.146.242.243` | Your VPS public IP |
 | `VPS_USER` | `deploy` | Created by the setup workflow |
 | `VPS_SSH_KEY` | *(your SSH private key)* | The private key matching your public key |
+| `REPO_TOKEN` | *(GitHub PAT)* | GitHub > Settings > Developer settings > Personal access tokens > Generate (needs `repo` scope) |
 | `POSTGRES_PASSWORD` | *(strong random)* | Run: `openssl rand -base64 32` |
 | `JWT_SECRET` | *(64-char hex)* | Run: `openssl rand -hex 32` |
 
 > **Important**: `VPS_SSH_KEY` must be the **private key** (starts with `-----BEGIN`). The public key is already configured on the VPS by Utho and will be copied to the `deploy` user by the setup workflow.
+>
+> **REPO_TOKEN**: Required because the repo is private. Go to https://github.com/settings/tokens > "Generate new token (classic)" > select the `repo` scope > Generate. Copy the token and add it as the `REPO_TOKEN` secret.
 
 ---
 

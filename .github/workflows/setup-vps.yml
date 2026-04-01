@@ -72,18 +72,24 @@ jobs:
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
           command_timeout: 5m
+          envs: REPO_TOKEN
           script: |
             set -euo pipefail
+            REPO_URL="https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
             if [ ! -d /opt/featuresignals/.git ]; then
               cd /opt/featuresignals
-              git init
-              git remote add origin https://github.com/featuresignals/featuresignals.git
+              git init -b main
+              git remote add origin "${REPO_URL}"
               git fetch origin
-              git checkout -b main origin/main
+              git reset --hard origin/main
             else
-              cd /opt/featuresignals && git pull origin main
+              cd /opt/featuresignals
+              git remote set-url origin "${REPO_URL}"
+              git pull origin main
             fi
             mkdir -p /opt/featuresignals/backups
+        env:
+          REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
 
       - name: Write environment file
         uses: appleboy/ssh-action@v1
