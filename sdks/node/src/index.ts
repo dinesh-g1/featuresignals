@@ -9,12 +9,18 @@ import { FeatureSignalsClient, ClientOptions } from "./client.ts";
  *
  * ```ts
  * import fs from "@featuresignals/node";
- * const client = fs.init("fs_srv_...", { baseURL: "http://localhost:8080" });
+ * const client = fs.init("fs_srv_...", {
+ *   envKey: "production",
+ *   baseURL: "http://localhost:8080",
+ * });
  * await client.waitForReady();
  * const darkMode = client.boolVariation("dark-mode", { key: "user-1" }, false);
  * ```
  */
-export function init(sdkKey: string, options?: Partial<ClientOptions>): FeatureSignalsClient {
+export function init(
+  sdkKey: string,
+  options: Pick<ClientOptions, "envKey"> & Partial<Omit<ClientOptions, "envKey">>,
+): FeatureSignalsClient {
   return new FeatureSignalsClient(sdkKey, options);
 }
 

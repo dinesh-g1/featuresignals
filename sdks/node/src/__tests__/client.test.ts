@@ -83,7 +83,11 @@ describe("FeatureSignalsClient", () => {
 
   describe("constructor", () => {
     it("throws when sdkKey is empty", () => {
-      assert.throws(() => new FeatureSignalsClient(""), /sdkKey is required/);
+      assert.throws(() => new FeatureSignalsClient("", { envKey: "test" }), /sdkKey is required/);
+    });
+
+    it("throws when envKey is missing", () => {
+      assert.throws(() => new FeatureSignalsClient("key", {} as any), /envKey is required/);
     });
   });
 
@@ -101,6 +105,7 @@ describe("FeatureSignalsClient", () => {
       server = s.server;
 
       client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 60_000,
       });
@@ -173,6 +178,7 @@ describe("FeatureSignalsClient", () => {
       server = s.server;
 
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 60_000,
       });
@@ -187,6 +193,7 @@ describe("FeatureSignalsClient", () => {
       server = s.server;
 
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 60_000,
       });
@@ -197,6 +204,7 @@ describe("FeatureSignalsClient", () => {
 
     it("waitForReady times out if server unreachable", async () => {
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: "http://localhost:1", // unreachable
         pollingIntervalMs: 60_000,
       });
@@ -214,6 +222,7 @@ describe("FeatureSignalsClient", () => {
   describe("error handling", () => {
     it("emits error on failed initial fetch", async () => {
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: "http://localhost:1",
         pollingIntervalMs: 60_000,
       });
@@ -234,6 +243,7 @@ describe("FeatureSignalsClient", () => {
       server = s;
 
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 60_000,
       });
@@ -258,6 +268,7 @@ describe("FeatureSignalsClient", () => {
       server = s;
 
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 100, // 100ms for fast test
       });
@@ -281,6 +292,7 @@ describe("FeatureSignalsClient", () => {
 
       const updates: Record<string, unknown>[] = [];
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 100,
       });
@@ -300,6 +312,7 @@ describe("FeatureSignalsClient", () => {
       server = s.server;
 
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 50,
       });
@@ -325,6 +338,7 @@ describe("FeatureSignalsClient", () => {
       server = s;
 
       const client = new FeatureSignalsClient("fs_srv_test", {
+        envKey: "test",
         baseURL: `http://localhost:${port}`,
         pollingIntervalMs: 60_000,
         context: { key: "user with spaces" },
