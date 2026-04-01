@@ -1,3 +1,7 @@
+// Package auth provides JWT-based authentication for the management API.
+//
+// All handlers and middleware depend on the TokenManager interface, not the
+// concrete JWTManager, so authentication can be mocked in tests.
 package auth
 
 import (
@@ -7,7 +11,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// ErrInvalidToken is returned when a token cannot be parsed or has expired.
 var ErrInvalidToken = errors.New("invalid or expired token")
+
+// TokenManager defines the contract for JWT token operations.
+// Depend on this interface instead of *JWTManager for testability.
+type TokenManager interface {
+	GenerateTokenPair(userID, orgID, role string) (*TokenPair, error)
+	ValidateToken(tokenStr string) (*Claims, error)
+}
 
 type Claims struct {
 	UserID string `json:"user_id"`

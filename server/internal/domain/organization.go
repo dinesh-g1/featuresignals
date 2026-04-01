@@ -2,6 +2,8 @@ package domain
 
 import "time"
 
+// Organization is the top-level tenant. All projects, users, and billing
+// are scoped to an organization.
 type Organization struct {
 	ID        string    `json:"id" db:"id"`
 	Name      string    `json:"name" db:"name"`

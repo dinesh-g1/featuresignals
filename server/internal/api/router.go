@@ -14,16 +14,17 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
-	"github.com/featuresignals/server/internal/sse"
-	"github.com/featuresignals/server/internal/store/cache"
 )
 
+// NewRouter wires all handlers, middleware, and routes. All dependencies are
+// passed as interfaces so the router (and the handlers it creates) can be
+// tested without real infrastructure.
 func NewRouter(
 	store domain.Store,
-	jwtMgr *auth.JWTManager,
-	evalCache *cache.Cache,
+	jwtMgr auth.TokenManager,
+	evalCache handlers.RulesetCache,
 	engine *eval.Engine,
-	sseServer *sse.Server,
+	sseServer handlers.StreamServer,
 	logger *slog.Logger,
 	corsOrigins []string,
 ) http.Handler {

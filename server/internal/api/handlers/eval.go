@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"log/slog"
@@ -11,19 +12,28 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
-	"github.com/featuresignals/server/internal/sse"
-	"github.com/featuresignals/server/internal/store/cache"
 )
+
+// RulesetCache abstracts the in-memory ruleset cache for testability.
+type RulesetCache interface {
+	GetRuleset(envID string) *eval.Ruleset
+	LoadRuleset(ctx context.Context, projectID, envID string) (*eval.Ruleset, error)
+}
+
+// StreamServer abstracts the SSE server for testability.
+type StreamServer interface {
+	HandleStream(w http.ResponseWriter, r *http.Request, envID string)
+}
 
 type EvalHandler struct {
 	store     domain.Store
-	cache     *cache.Cache
+	cache     RulesetCache
 	engine    *eval.Engine
-	sseServer *sse.Server
+	sseServer StreamServer
 	logger    *slog.Logger
 }
 
-func NewEvalHandler(store domain.Store, cache *cache.Cache, engine *eval.Engine, sseServer *sse.Server, logger *slog.Logger) *EvalHandler {
+func NewEvalHandler(store domain.Store, cache RulesetCache, engine *eval.Engine, sseServer StreamServer, logger *slog.Logger) *EvalHandler {
 	return &EvalHandler{
 		store:     store,
 		cache:     cache,
@@ -57,18 +67,18 @@ func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*eval.Ruleset, stri
 	keyHash := hashAPIKey(apiKey)
 	env, key, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash)
 	if err != nil {
+		h.logger.Warn("eval: invalid API key", "key_prefix", apiKey[:min(12, len(apiKey))])
 		return nil, "", fmt.Errorf("invalid API key")
 	}
 
-	// Update last used (fire and forget)
 	go h.store.UpdateAPIKeyLastUsed(r.Context(), key.ID)
 
-	// Check cache first
 	ruleset := h.cache.GetRuleset(env.ID)
 	if ruleset == nil {
-		// Load from DB
+		h.logger.Debug("cache miss, loading ruleset from store", "env_id", env.ID, "project_id", env.ProjectID)
 		ruleset, err = h.cache.LoadRuleset(r.Context(), env.ProjectID, env.ID)
 		if err != nil {
+			h.logger.Error("failed to load ruleset", "error", err, "env_id", env.ID)
 			return nil, "", fmt.Errorf("failed to load ruleset: %w", err)
 		}
 	}
@@ -76,7 +86,7 @@ func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*eval.Ruleset, stri
 	return ruleset, env.ID, nil
 }
 
-// Evaluate handles POST /v1/evaluate
+// Evaluate handles POST /v1/evaluate — single flag evaluation.
 func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	var req EvaluateRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
@@ -96,6 +106,14 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := h.engine.Evaluate(req.FlagKey, req.Context, ruleset)
+
+	h.logger.Debug("flag evaluated",
+		"flag_key", req.FlagKey,
+		"user_key", req.Context.Key,
+		"value", result.Value,
+		"reason", result.Reason,
+	)
+
 	httputil.JSON(w, http.StatusOK, result)
 }
 
