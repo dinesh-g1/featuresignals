@@ -5,17 +5,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type ProjectHandler struct {
-	store *postgres.Store
+	store domain.Store
 }
 
-func NewProjectHandler(store *postgres.Store) *ProjectHandler {
+func NewProjectHandler(store domain.Store) *ProjectHandler {
 	return &ProjectHandler{store: store}
 }
 
@@ -82,10 +81,10 @@ func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // --- Environments ---
 
 type EnvironmentHandler struct {
-	store *postgres.Store
+	store domain.Store
 }
 
-func NewEnvironmentHandler(store *postgres.Store) *EnvironmentHandler {
+func NewEnvironmentHandler(store domain.Store) *EnvironmentHandler {
 	return &EnvironmentHandler{store: store}
 }
 

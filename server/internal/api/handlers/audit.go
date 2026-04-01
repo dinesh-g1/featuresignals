@@ -4,16 +4,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/api/middleware"
-	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type AuditHandler struct {
-	store *postgres.Store
+	store domain.Store
 }
 
-func NewAuditHandler(store *postgres.Store) *AuditHandler {
+func NewAuditHandler(store domain.Store) *AuditHandler {
 	return &AuditHandler{store: store}
 }
 

@@ -8,18 +8,17 @@ import (
 
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
-	"github.com/featuresignals/server/internal/store/postgres"
 )
 
 // Cache holds in-memory rulesets per environment for fast evaluation.
 type Cache struct {
 	mu       sync.RWMutex
 	rulesets map[string]*eval.Ruleset // envID -> ruleset
-	store    *postgres.Store
+	store    domain.Store
 	logger   *slog.Logger
 }
 
-func NewCache(store *postgres.Store, logger *slog.Logger) *Cache {
+func NewCache(store domain.Store, logger *slog.Logger) *Cache {
 	return &Cache{
 		rulesets: make(map[string]*eval.Ruleset),
 		store:    store,

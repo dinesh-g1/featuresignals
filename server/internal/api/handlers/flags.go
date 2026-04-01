@@ -6,17 +6,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type FlagHandler struct {
-	store *postgres.Store
+	store domain.Store
 }
 
-func NewFlagHandler(store *postgres.Store) *FlagHandler {
+func NewFlagHandler(store domain.Store) *FlagHandler {
 	return &FlagHandler{store: store}
 }
 

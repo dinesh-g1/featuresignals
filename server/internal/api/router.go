@@ -11,15 +11,15 @@ import (
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
-	"github.com/featuresignals/server/internal/httputil"
+	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
+	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/store/cache"
-	"github.com/featuresignals/server/internal/store/postgres"
 )
 
 func NewRouter(
-	store *postgres.Store,
+	store domain.Store,
 	jwtMgr *auth.JWTManager,
 	evalCache *cache.Cache,
 	engine *eval.Engine,
