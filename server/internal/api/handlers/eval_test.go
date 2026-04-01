@@ -42,6 +42,7 @@ func setupEvalFixtures(store *mockStore) (envID, apiKeyRaw string) {
 		FlagID:            flag.ID,
 		EnvID:             env.ID,
 		Enabled:           true,
+		DefaultValue:      json.RawMessage(`true`),
 		PercentageRollout: 10000, // 100%
 	})
 
@@ -159,8 +160,8 @@ func TestEvalHandler_Evaluate_FlagNotFound(t *testing.T) {
 	var result domain.EvalResult
 	json.Unmarshal(w.Body.Bytes(), &result)
 
-	if result.Reason != "flag_not_found" {
-		t.Errorf("expected reason 'flag_not_found', got '%s'", result.Reason)
+	if result.Reason != domain.ReasonNotFound {
+		t.Errorf("expected reason '%s', got '%s'", domain.ReasonNotFound, result.Reason)
 	}
 }
 
