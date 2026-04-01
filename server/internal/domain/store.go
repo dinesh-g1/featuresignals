@@ -86,6 +86,12 @@ type Store interface {
 	CreateWebhookDelivery(ctx context.Context, d *WebhookDelivery) error
 	ListWebhookDeliveries(ctx context.Context, webhookID string, limit int) ([]WebhookDelivery, error)
 
+	// ── Approval Requests ────────────────────────────────────────────────
+	CreateApprovalRequest(ctx context.Context, ar *ApprovalRequest) error
+	GetApprovalRequest(ctx context.Context, id string) (*ApprovalRequest, error)
+	ListApprovalRequests(ctx context.Context, orgID string, status string, limit, offset int) ([]ApprovalRequest, error)
+	UpdateApprovalRequest(ctx context.Context, ar *ApprovalRequest) error
+
 	// ── Audit Log ────────────────────────────────────────────────────────
 	CreateAuditEntry(ctx context.Context, entry *AuditEntry) error
 	ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]AuditEntry, error)

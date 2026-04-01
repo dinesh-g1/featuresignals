@@ -25,11 +25,12 @@ type EvalResult struct {
 
 // Evaluation reasons
 const (
-	ReasonDefault     = "DEFAULT"
-	ReasonDisabled    = "DISABLED"
-	ReasonTargeted    = "TARGETED"
-	ReasonRollout     = "ROLLOUT"
-	ReasonFallthrough = "FALLTHROUGH"
-	ReasonNotFound    = "NOT_FOUND"
-	ReasonError       = "ERROR"
+	ReasonDefault            = "DEFAULT"
+	ReasonDisabled           = "DISABLED"
+	ReasonTargeted           = "TARGETED"
+	ReasonRollout            = "ROLLOUT"
+	ReasonFallthrough        = "FALLTHROUGH"
+	ReasonNotFound           = "NOT_FOUND"
+	ReasonError              = "ERROR"
+	ReasonPrerequisiteFailed = "PREREQUISITE_FAILED"
 )

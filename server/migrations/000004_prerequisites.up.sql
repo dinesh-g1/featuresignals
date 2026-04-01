@@ -1,0 +1,1 @@
+ALTER TABLE flags ADD COLUMN IF NOT EXISTS prerequisites TEXT[] NOT NULL DEFAULT '{}';

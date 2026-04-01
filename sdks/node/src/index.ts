@@ -1,6 +1,8 @@
 export { FeatureSignalsClient } from "./client.ts";
 export { EvalContext } from "./context.ts";
+export { FeatureSignalsProvider } from "./openfeature.ts";
 export type { ClientOptions, ClientEvents } from "./client.ts";
+export type { EvaluationContext, ResolutionDetails, ProviderMetadata } from "./openfeature.ts";
 
 import { FeatureSignalsClient, ClientOptions } from "./client.ts";
 

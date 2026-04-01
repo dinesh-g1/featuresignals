@@ -1,0 +1,1 @@
+ALTER TABLE flags DROP COLUMN IF EXISTS prerequisites;

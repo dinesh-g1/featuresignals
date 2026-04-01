@@ -101,6 +101,10 @@ func (m *mockStore) DeleteWebhook(_ context.Context, _ string) error { return ni
 func (m *mockStore) CreateWebhookDelivery(_ context.Context, _ *domain.WebhookDelivery) error { return nil }
 func (m *mockStore) ListWebhookDeliveries(_ context.Context, _ string, _ int) ([]domain.WebhookDelivery, error) { return nil, nil }
 func (m *mockStore) ListPendingSchedules(_ context.Context, _ time.Time) ([]domain.FlagState, error) { return nil, nil }
+func (m *mockStore) CreateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error { return nil }
+func (m *mockStore) GetApprovalRequest(_ context.Context, _ string) (*domain.ApprovalRequest, error) { return nil, nil }
+func (m *mockStore) ListApprovalRequests(_ context.Context, _ string, _ string, _, _ int) ([]domain.ApprovalRequest, error) { return nil, nil }
+func (m *mockStore) UpdateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error { return nil }
 
 // --- mock broadcaster ---
 

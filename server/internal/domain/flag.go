@@ -29,10 +29,11 @@ type Flag struct {
 	Description  string          `json:"description" db:"description"`
 	FlagType     FlagType        `json:"flag_type" db:"flag_type"`
 	DefaultValue json.RawMessage `json:"default_value" db:"default_value"`
-	Tags         []string        `json:"tags" db:"tags"`
-	ExpiresAt    *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
-	CreatedAt    time.Time       `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at" db:"updated_at"`
+	Tags          []string        `json:"tags" db:"tags"`
+	ExpiresAt     *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
+	Prerequisites []string        `json:"prerequisites,omitempty" db:"prerequisites"`
+	CreatedAt     time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 // FlagState holds per-environment configuration for a Flag. Each environment

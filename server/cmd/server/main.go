@@ -65,8 +65,8 @@ func main() {
 	whDispatcher.Start(whCtx)
 
 	// Wire webhook notifier into cache so PG NOTIFY triggers webhook dispatch.
-	// Using empty orgID — the notifier broadcasts; the dispatcher filters per org.
-	evalCache.SetWebhookNotifier(webhook.NewNotifier(whDispatcher, ""))
+	// The store implements OrgResolver, resolving orgID from envID via the projects table.
+	evalCache.SetWebhookNotifier(webhook.NewNotifier(whDispatcher, store))
 
 	// Flag scheduler (auto-enable/disable at scheduled times)
 	sched := scheduler.New(store, logger, 30*time.Second)

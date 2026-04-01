@@ -1,32 +1,45 @@
 package webhook
 
-import "time"
+import (
+	"context"
+	"time"
+)
+
+// OrgResolver looks up the organization ID that owns a given environment.
+type OrgResolver interface {
+	ResolveOrgIDByEnvID(ctx context.Context, envID string) (string, error)
+}
 
 // Notifier adapts the Dispatcher to the cache.WebhookNotifier interface.
-// It maps PG NOTIFY flag-change payloads to webhook events. The orgID
-// is looked up via the environment; for simplicity we broadcast with
-// a wildcard orgID and let the dispatcher filter per-org webhooks.
+// It resolves the orgID for each environment so webhooks are dispatched
+// to the correct tenant.
 type Notifier struct {
-	dispatcher *Dispatcher
-	orgID      string
+	dispatcher  *Dispatcher
+	orgResolver OrgResolver
 }
 
 // NewNotifier creates a WebhookNotifier backed by the given dispatcher.
-// orgID should be set once the server knows the operating org (or left
-// empty for multi-tenant — in that case the dispatcher resolves per-env).
-func NewNotifier(d *Dispatcher, orgID string) *Notifier {
-	return &Notifier{dispatcher: d, orgID: orgID}
+func NewNotifier(d *Dispatcher, resolver OrgResolver) *Notifier {
+	return &Notifier{dispatcher: d, orgResolver: resolver}
 }
 
 // NotifyFlagChange enqueues a webhook event for the given flag change.
 func (n *Notifier) NotifyFlagChange(envID, flagID, action string) {
+	orgID := ""
+	if n.orgResolver != nil {
+		resolved, err := n.orgResolver.ResolveOrgIDByEnvID(context.Background(), envID)
+		if err == nil {
+			orgID = resolved
+		}
+	}
+
 	eventType := "flag." + action
 	n.dispatcher.Enqueue(Event{
 		Type:   eventType,
 		EnvID:  envID,
 		FlagID: flagID,
 		Action: action,
-		OrgID:  n.orgID,
+		OrgID:  orgID,
 		SentAt: time.Now(),
 	})
 }
