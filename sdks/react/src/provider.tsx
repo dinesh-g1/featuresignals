@@ -4,6 +4,8 @@ import { FeatureSignalsContext } from "./context.ts";
 export interface FeatureSignalsProviderProps {
   /** Environment API key (client-side key, e.g. "fs_cli_..."). */
   sdkKey: string;
+  /** Environment slug (e.g. "production", "staging"). Required. */
+  envKey: string;
   /** Base URL of the FeatureSignals API. */
   baseURL?: string;
   /** User key for targeting. Defaults to "anonymous". */
@@ -15,6 +17,7 @@ export interface FeatureSignalsProviderProps {
 
 export function FeatureSignalsProvider({
   sdkKey,
+  envKey,
   baseURL = "https://api.featuresignals.com",
   userKey = "anonymous",
   pollingIntervalMs = 30_000,
@@ -28,8 +31,9 @@ export function FeatureSignalsProvider({
   const fetchFlags = useCallback(async () => {
     try {
       const encodedKey = encodeURIComponent(userKey);
+      const encodedEnv = encodeURIComponent(envKey);
       const res = await fetch(
-        `${baseURL}/v1/client/env/flags?key=${encodedKey}`,
+        `${baseURL}/v1/client/${encodedEnv}/flags?key=${encodedKey}`,
         { headers: { "X-API-Key": sdkKey } }
       );
       if (!res.ok) {
@@ -46,7 +50,7 @@ export function FeatureSignalsProvider({
         setError(err instanceof Error ? err : new Error(String(err)));
       }
     }
-  }, [sdkKey, baseURL, userKey]);
+  }, [sdkKey, envKey, baseURL, userKey]);
 
   useEffect(() => {
     mountedRef.current = true;

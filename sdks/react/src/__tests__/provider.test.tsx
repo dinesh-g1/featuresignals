@@ -44,6 +44,7 @@ describe("FeatureSignalsProvider", () => {
     const providerWrapper = ({ children }: { children: React.ReactNode }) => (
       <FeatureSignalsProvider
         sdkKey="fs_cli_test"
+        envKey="test"
         baseURL={`http://localhost:${port}`}
         pollingIntervalMs={0}
       >
@@ -73,6 +74,7 @@ describe("FeatureSignalsProvider", () => {
     const providerWrapper = ({ children }: { children: React.ReactNode }) => (
       <FeatureSignalsProvider
         sdkKey="fs_cli_test"
+        envKey="test"
         baseURL="http://localhost:1"
         pollingIntervalMs={0}
       >
@@ -112,6 +114,7 @@ describe("FeatureSignalsProvider", () => {
     const providerWrapper = ({ children }: { children: React.ReactNode }) => (
       <FeatureSignalsProvider
         sdkKey="fs_cli_test"
+        envKey="test"
         baseURL={`http://localhost:${port}`}
         pollingIntervalMs={0}
       >
@@ -152,6 +155,7 @@ describe("FeatureSignalsProvider", () => {
     const providerWrapper = ({ children }: { children: React.ReactNode }) => (
       <FeatureSignalsProvider
         sdkKey="fs_cli_test"
+        envKey="test"
         baseURL={`http://localhost:${port}`}
         userKey="user-42"
         pollingIntervalMs={0}

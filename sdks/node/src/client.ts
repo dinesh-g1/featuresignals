@@ -4,6 +4,8 @@ import type { EvalContext } from "./context.ts";
 export interface ClientOptions {
   /** Base URL of the FeatureSignals API. */
   baseURL: string;
+  /** Environment slug (e.g. "production", "staging"). Required. */
+  envKey: string;
   /** Polling interval in milliseconds (default 30 000). */
   pollingIntervalMs: number;
   /** Enable SSE streaming for real-time flag updates. */
@@ -16,7 +18,7 @@ export interface ClientOptions {
   context: EvalContext;
 }
 
-const DEFAULT_OPTIONS: ClientOptions = {
+const DEFAULT_OPTIONS: Omit<ClientOptions, "envKey"> = {
   baseURL: "https://api.featuresignals.com",
   pollingIntervalMs: 30_000,
   streaming: false,
@@ -52,11 +54,12 @@ export class FeatureSignalsClient extends EventEmitter {
   private sseAbort?: AbortController;
   private closed = false;
 
-  constructor(sdkKey: string, options?: Partial<ClientOptions>) {
+  constructor(sdkKey: string, options: Pick<ClientOptions, "envKey"> & Partial<Omit<ClientOptions, "envKey">>) {
     super();
     if (!sdkKey) throw new Error("sdkKey is required");
+    if (!options?.envKey) throw new Error("options.envKey is required (e.g. 'production')");
     this.sdkKey = sdkKey;
-    this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.options = { ...DEFAULT_OPTIONS, ...options } as ClientOptions;
 
     // Initial fetch, then start background updates.
     this.refresh()
@@ -124,8 +127,9 @@ export class FeatureSignalsClient extends EventEmitter {
 
   /** Fetch flags from the server. Exported for testing. */
   async refresh(): Promise<void> {
+    const envKey = encodeURIComponent(this.options.envKey);
     const ctxKey = encodeURIComponent(this.options.context.key);
-    const url = `${this.options.baseURL}/v1/client/env/flags?key=${ctxKey}`;
+    const url = `${this.options.baseURL}/v1/client/${envKey}/flags?key=${ctxKey}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
@@ -184,7 +188,7 @@ export class FeatureSignalsClient extends EventEmitter {
   }
 
   private async connectSSE(): Promise<void> {
-    const envKey = encodeURIComponent(this.options.context.key);
+    const envKey = encodeURIComponent(this.options.envKey);
     const url = `${this.options.baseURL}/v1/stream/${envKey}?api_key=${encodeURIComponent(this.sdkKey)}`;
 
     this.sseAbort = new AbortController();
