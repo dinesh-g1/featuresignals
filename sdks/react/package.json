@@ -1,21 +1,35 @@
 {
   "name": "@featuresignals/react",
   "version": "0.1.0",
-  "description": "FeatureSignals React SDK with hooks",
+  "description": "FeatureSignals React SDK with hooks — useFlag, useFlags, useReady, useError",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "echo 'no tests yet'"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --import tsx --test src/__tests__/hooks.test.tsx src/__tests__/provider.test.tsx"
+  },
+  "files": [
+    "dist"
+  ],
   "peerDependencies": {
     "react": ">=18.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
-    "react": "^19.0.0"
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.2.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.0.0"
   },
   "license": "Apache-2.0"
 }

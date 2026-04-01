@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 
 export default function FlagDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const flagKey = params.flagKey as string;
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
@@ -16,10 +17,17 @@ export default function FlagDetailPage() {
   const [envs, setEnvs] = useState<any[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
   const [tab, setTab] = useState<"overview" | "targeting" | "history">("overview");
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", description: "" });
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [audit, setAudit] = useState<any[]>([]);
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api.getFlag(token, projectId, flagKey).then(setFlag).catch(() => {});
+    api.getFlag(token, projectId, flagKey).then((f) => {
+      setFlag(f);
+      setEditForm({ name: f.name, description: f.description || "" });
+    }).catch(() => {});
     api.listEnvironments(token, projectId).then((e) => {
       const list = e ?? [];
       setEnvs(list);
@@ -31,6 +39,16 @@ export default function FlagDetailPage() {
     if (!token || !projectId || !selectedEnv) return;
     api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState).catch(() => {});
   }, [token, projectId, flagKey, selectedEnv]);
+
+  useEffect(() => {
+    if (!token || tab !== "history") return;
+    api.listAudit(token, 50).then((a) => {
+      const filtered = (a ?? []).filter(
+        (e: any) => e.resource_type === "flag" && e.resource_id === flag?.id,
+      );
+      setAudit(filtered);
+    }).catch(() => {});
+  }, [token, tab, flag?.id]);
 
   async function toggleFlag() {
     if (!token || !projectId || !selectedEnv) return;
@@ -48,6 +66,20 @@ export default function FlagDetailPage() {
     api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
   }
 
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !projectId) return;
+    const updated = await api.updateFlag(token, projectId, flagKey, editForm);
+    setFlag(updated);
+    setEditing(false);
+  }
+
+  async function handleDelete() {
+    if (!token || !projectId) return;
+    await api.deleteFlag(token, projectId, flagKey);
+    router.push("/flags");
+  }
+
   if (!flag) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -63,10 +95,17 @@ export default function FlagDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-mono text-slate-900">{flag.key}</h1>
-          <p className="mt-1 text-sm text-slate-500">{flag.name} &middot; {flag.flag_type}</p>
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.push("/flags")} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+            <h1 className="text-2xl font-bold font-mono text-slate-900">{flag.key}</h1>
+          </div>
+          <p className="mt-1 ml-8 text-sm text-slate-500">{flag.name} &middot; {flag.flag_type}</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <select
             value={selectedEnv}
             onChange={(e) => setSelectedEnv(e.target.value)}
@@ -83,8 +122,66 @@ export default function FlagDetailPage() {
           >
             <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${state?.enabled ? "translate-x-6" : "translate-x-1"}`} />
           </button>
+          <button
+            onClick={() => setEditing(!editing)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+          >
+            Delete
+          </button>
         </div>
       </div>
+
+      {confirmDelete && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 ring-1 ring-red-100">
+          <p className="text-sm font-medium text-red-800">
+            Are you sure you want to delete <span className="font-mono">{flag.key}</span>? This action cannot be undone.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button onClick={handleDelete} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-red-700">
+              Delete Flag
+            </button>
+            <button onClick={() => setConfirmDelete(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <form onSubmit={handleEdit} className="rounded-xl border border-slate-200 bg-white p-6 space-y-4 ring-1 ring-indigo-100">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Name</label>
+            <input
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Description</label>
+            <textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              rows={3}
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">
+              Save Changes
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="flex gap-1 border-b border-slate-200">
         {(["overview", "targeting", "history"] as const).map((t) => (
@@ -157,7 +254,7 @@ export default function FlagDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
                 <p className="mt-2 text-sm text-slate-500">No targeting rules configured.</p>
-                <p className="mt-1 text-xs text-slate-400">All users receive the default value.</p>
+                <p className="mt-1 text-xs text-slate-400">All users receive the default value based on rollout percentage.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -165,8 +262,15 @@ export default function FlagDetailPage() {
                   <div key={i} className="rounded-lg bg-slate-50 p-4 ring-1 ring-slate-100 transition-colors hover:bg-indigo-50/30">
                     <p className="font-medium text-sm text-slate-700">Rule {i + 1}: {rule.description || "Unnamed rule"}</p>
                     <p className="text-xs text-slate-500 mt-1">
-                      {rule.conditions?.length || 0} conditions &middot; {(rule.percentage / 100).toFixed(1)}% rollout
+                      {rule.conditions?.length || 0} conditions &middot; {((rule.percentage || 0) / 100).toFixed(1)}% rollout
                     </p>
+                    {rule.conditions?.map((cond: any, j: number) => (
+                      <div key={j} className="mt-2 ml-4 text-xs text-slate-600">
+                        <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{cond.attribute}</span>
+                        {" "}<span className="text-indigo-600 font-medium">{cond.operator}</span>{" "}
+                        <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{cond.value || cond.values?.join(", ")}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
@@ -176,13 +280,28 @@ export default function FlagDetailPage() {
       )}
 
       {tab === "history" && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-          <div className="rounded-lg border border-dashed border-slate-300 px-6 py-8 text-center">
-            <svg className="mx-auto h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="mt-2 text-sm text-slate-500">Audit history for this flag will appear here.</p>
-          </div>
+        <div className="rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:border-slate-300">
+          {audit.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 px-6 py-8 text-center m-6">
+              <svg className="mx-auto h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="mt-2 text-sm text-slate-500">No audit history for this flag yet.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {audit.map((entry: any) => (
+                <div key={entry.id} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-indigo-50/30">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+                      {entry.action}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400">{new Date(entry.created_at).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

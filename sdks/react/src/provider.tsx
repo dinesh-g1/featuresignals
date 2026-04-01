@@ -1,41 +1,70 @@
-import React, { useEffect, useState } from "react";
-import { FeatureSignalsContext } from "./context";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { FeatureSignalsContext } from "./context.ts";
 
-interface ProviderProps {
+export interface FeatureSignalsProviderProps {
+  /** Environment API key (client-side key, e.g. "fs_cli_..."). */
   sdkKey: string;
+  /** Base URL of the FeatureSignals API. */
   baseURL?: string;
+  /** User key for targeting. Defaults to "anonymous". */
+  userKey?: string;
+  /** Polling interval in ms. Default 30 000. Set 0 to disable polling. */
+  pollingIntervalMs?: number;
   children: React.ReactNode;
 }
 
-export function FeatureSignalsProvider({ sdkKey, baseURL = "https://api.featuresignals.com", children }: ProviderProps) {
+export function FeatureSignalsProvider({
+  sdkKey,
+  baseURL = "https://api.featuresignals.com",
+  userKey = "anonymous",
+  pollingIntervalMs = 30_000,
+  children,
+}: FeatureSignalsProviderProps) {
   const [flags, setFlags] = useState<Record<string, unknown>>({});
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const mountedRef = useRef(true);
 
-  useEffect(() => {
-    async function fetchFlags() {
-      try {
-        const res = await fetch(`${baseURL}/v1/client/env/flags?key=anonymous`, {
-          headers: { "X-API-Key": sdkKey },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setFlags(data);
-          setReady(true);
-        }
-      } catch {
-        console.warn("[featuresignals] failed to fetch flags");
+  const fetchFlags = useCallback(async () => {
+    try {
+      const encodedKey = encodeURIComponent(userKey);
+      const res = await fetch(
+        `${baseURL}/v1/client/env/flags?key=${encodedKey}`,
+        { headers: { "X-API-Key": sdkKey } }
+      );
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (mountedRef.current) {
+        setFlags(data);
+        setReady(true);
+        setError(null);
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err : new Error(String(err)));
       }
     }
+  }, [sdkKey, baseURL, userKey]);
 
+  useEffect(() => {
+    mountedRef.current = true;
     fetchFlags();
 
-    // Poll every 30s
-    const interval = setInterval(fetchFlags, 30000);
-    return () => clearInterval(interval);
-  }, [sdkKey, baseURL]);
+    let interval: ReturnType<typeof setInterval> | undefined;
+    if (pollingIntervalMs > 0) {
+      interval = setInterval(fetchFlags, pollingIntervalMs);
+    }
+
+    return () => {
+      mountedRef.current = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [fetchFlags, pollingIntervalMs]);
 
   return (
-    <FeatureSignalsContext.Provider value={{ flags, ready }}>
+    <FeatureSignalsContext.Provider value={{ flags, ready, error }}>
       {children}
     </FeatureSignalsContext.Provider>
   );

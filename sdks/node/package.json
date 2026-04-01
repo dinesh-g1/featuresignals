@@ -1,16 +1,24 @@
 {
   "name": "@featuresignals/node",
   "version": "0.1.0",
-  "description": "FeatureSignals Node.js/TypeScript SDK",
+  "description": "FeatureSignals Node.js/TypeScript SDK — server-side feature flag evaluation",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsc",
-    "test": "echo 'no tests yet'"
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --test --experimental-strip-types src/__tests__/client.test.ts"
   },
   "files": ["dist"],
-  "keywords": ["feature-flags", "feature-toggle", "openfeature"],
+  "keywords": ["feature-flags", "feature-toggle", "openfeature", "featuresignals"],
   "license": "Apache-2.0",
+  "engines": { "node": ">=22.0.0" },
   "devDependencies": {
     "typescript": "^5.0.0"
   }
