@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Store defines the contract for all data access operations.
 //
@@ -24,8 +27,16 @@ type Store interface {
 	AddOrgMember(ctx context.Context, member *OrgMember) error
 	// GetOrgMember retrieves a membership. Pass orgID="" to search all orgs.
 	GetOrgMember(ctx context.Context, orgID, userID string) (*OrgMember, error)
+	GetOrgMemberByID(ctx context.Context, memberID string) (*OrgMember, error)
 	// ListOrgMembers lists members. Pass orgID="" to list across all orgs.
 	ListOrgMembers(ctx context.Context, orgID string) ([]OrgMember, error)
+	UpdateOrgMemberRole(ctx context.Context, memberID string, role Role) error
+	RemoveOrgMember(ctx context.Context, memberID string) error
+
+	// ── Environment Permissions ──────────────────────────────────────────
+	ListEnvPermissions(ctx context.Context, memberID string) ([]EnvPermission, error)
+	UpsertEnvPermission(ctx context.Context, perm *EnvPermission) error
+	DeleteEnvPermission(ctx context.Context, id string) error
 
 	// ── Projects ─────────────────────────────────────────────────────────
 	CreateProject(ctx context.Context, p *Project) error
@@ -49,6 +60,8 @@ type Store interface {
 	// ── Flag States (per environment) ────────────────────────────────────
 	UpsertFlagState(ctx context.Context, fs *FlagState) error
 	GetFlagState(ctx context.Context, flagID, envID string) (*FlagState, error)
+	// ListPendingSchedules returns flag states with a schedule time that has passed.
+	ListPendingSchedules(ctx context.Context, before time.Time) ([]FlagState, error)
 
 	// ── Segments ─────────────────────────────────────────────────────────
 	CreateSegment(ctx context.Context, seg *Segment) error
@@ -63,6 +76,15 @@ type Store interface {
 	ListAPIKeys(ctx context.Context, envID string) ([]APIKey, error)
 	RevokeAPIKey(ctx context.Context, id string) error
 	UpdateAPIKeyLastUsed(ctx context.Context, id string) error
+
+	// ── Webhooks ─────────────────────────────────────────────────────────
+	CreateWebhook(ctx context.Context, w *Webhook) error
+	GetWebhook(ctx context.Context, id string) (*Webhook, error)
+	ListWebhooks(ctx context.Context, orgID string) ([]Webhook, error)
+	UpdateWebhook(ctx context.Context, w *Webhook) error
+	DeleteWebhook(ctx context.Context, id string) error
+	CreateWebhookDelivery(ctx context.Context, d *WebhookDelivery) error
+	ListWebhookDeliveries(ctx context.Context, webhookID string, limit int) ([]WebhookDelivery, error)
 
 	// ── Audit Log ────────────────────────────────────────────────────────
 	CreateAuditEntry(ctx context.Context, entry *AuditEntry) error

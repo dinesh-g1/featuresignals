@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/sidebar";
 import { AuthGuard } from "@/components/auth-guard";
+import { CommandPalette } from "@/components/command-palette";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen bg-slate-50">
         <Sidebar />
         <main className="flex-1 overflow-y-auto p-8">{children}</main>
+        <CommandPalette />
       </div>
     </AuthGuard>
   );

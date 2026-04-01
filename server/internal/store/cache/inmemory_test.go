@@ -87,6 +87,20 @@ func (m *mockStore) UpdateAPIKeyLastUsed(_ context.Context, _ string) error { re
 func (m *mockStore) CreateAuditEntry(_ context.Context, _ *domain.AuditEntry) error { return nil }
 func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) { return nil, nil }
 func (m *mockStore) GetEnvironmentByAPIKeyHash(_ context.Context, _ string) (*domain.Environment, *domain.APIKey, error) { return nil, nil, nil }
+func (m *mockStore) GetOrgMemberByID(_ context.Context, _ string) (*domain.OrgMember, error) { return nil, nil }
+func (m *mockStore) UpdateOrgMemberRole(_ context.Context, _ string, _ domain.Role) error { return nil }
+func (m *mockStore) RemoveOrgMember(_ context.Context, _ string) error { return nil }
+func (m *mockStore) ListEnvPermissions(_ context.Context, _ string) ([]domain.EnvPermission, error) { return nil, nil }
+func (m *mockStore) UpsertEnvPermission(_ context.Context, _ *domain.EnvPermission) error { return nil }
+func (m *mockStore) DeleteEnvPermission(_ context.Context, _ string) error { return nil }
+func (m *mockStore) CreateWebhook(_ context.Context, _ *domain.Webhook) error { return nil }
+func (m *mockStore) GetWebhook(_ context.Context, _ string) (*domain.Webhook, error) { return nil, nil }
+func (m *mockStore) ListWebhooks(_ context.Context, _ string) ([]domain.Webhook, error) { return nil, nil }
+func (m *mockStore) UpdateWebhook(_ context.Context, _ *domain.Webhook) error { return nil }
+func (m *mockStore) DeleteWebhook(_ context.Context, _ string) error { return nil }
+func (m *mockStore) CreateWebhookDelivery(_ context.Context, _ *domain.WebhookDelivery) error { return nil }
+func (m *mockStore) ListWebhookDeliveries(_ context.Context, _ string, _ int) ([]domain.WebhookDelivery, error) { return nil, nil }
+func (m *mockStore) ListPendingSchedules(_ context.Context, _ time.Time) ([]domain.FlagState, error) { return nil, nil }
 
 // --- mock broadcaster ---
 

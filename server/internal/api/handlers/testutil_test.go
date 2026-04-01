@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/featuresignals/server/internal/domain"
 )
@@ -13,43 +14,55 @@ import (
 type mockStore struct {
 	mu sync.RWMutex
 
-	orgs         map[string]*domain.Organization
-	users        map[string]*domain.User    // id -> user
-	usersByEmail map[string]*domain.User    // email -> user
-	orgMembers   map[string][]domain.OrgMember // orgID -> members
-	projects     map[string]*domain.Project
-	projectsByOrg map[string][]string // orgID -> []projectID
-	envs         map[string]*domain.Environment
-	envsByProject map[string][]string // projectID -> []envID
-	flags        map[string]*domain.Flag // "projectID:key" -> flag
+	orgs           map[string]*domain.Organization
+	users          map[string]*domain.User    // id -> user
+	usersByEmail   map[string]*domain.User    // email -> user
+	orgMembers     map[string][]domain.OrgMember // orgID -> members
+	orgMembersByID map[string]*domain.OrgMember  // memberID -> member
+	projects       map[string]*domain.Project
+	projectsByOrg  map[string][]string // orgID -> []projectID
+	envs           map[string]*domain.Environment
+	envsByProject  map[string][]string // projectID -> []envID
+	flags          map[string]*domain.Flag // "projectID:key" -> flag
 	flagsByProject map[string][]string  // projectID -> []keys
-	flagStates   map[string]*domain.FlagState // "flagID:envID" -> state
-	segments     map[string]*domain.Segment // "projectID:key" -> segment
-	apiKeys      map[string]*domain.APIKey // keyHash -> apikey
-	apiKeysByEnv map[string][]string       // envID -> []keyHash
-	apiKeysById  map[string]*domain.APIKey // id -> apikey
-	auditEntries []domain.AuditEntry
+	flagStates     map[string]*domain.FlagState // "flagID:envID" -> state
+	segments       map[string]*domain.Segment // "projectID:key" -> segment
+	apiKeys        map[string]*domain.APIKey // keyHash -> apikey
+	apiKeysByEnv   map[string][]string       // envID -> []keyHash
+	apiKeysById    map[string]*domain.APIKey // id -> apikey
+	auditEntries   []domain.AuditEntry
+	envPerms       map[string][]domain.EnvPermission // memberID -> perms
+	envPermsById   map[string]*domain.EnvPermission  // id -> perm
+	webhooks       map[string]*domain.Webhook        // id -> webhook
+	webhooksByOrg  map[string][]string               // orgID -> []webhookID
+	whDeliveries   map[string][]domain.WebhookDelivery // webhookID -> deliveries
 
 	idCounter int
 }
 
 func newMockStore() *mockStore {
 	return &mockStore{
-		orgs:          make(map[string]*domain.Organization),
-		users:         make(map[string]*domain.User),
-		usersByEmail:  make(map[string]*domain.User),
-		orgMembers:    make(map[string][]domain.OrgMember),
-		projects:      make(map[string]*domain.Project),
-		projectsByOrg: make(map[string][]string),
-		envs:          make(map[string]*domain.Environment),
-		envsByProject: make(map[string][]string),
-		flags:         make(map[string]*domain.Flag),
+		orgs:           make(map[string]*domain.Organization),
+		users:          make(map[string]*domain.User),
+		usersByEmail:   make(map[string]*domain.User),
+		orgMembers:     make(map[string][]domain.OrgMember),
+		orgMembersByID: make(map[string]*domain.OrgMember),
+		projects:       make(map[string]*domain.Project),
+		projectsByOrg:  make(map[string][]string),
+		envs:           make(map[string]*domain.Environment),
+		envsByProject:  make(map[string][]string),
+		flags:          make(map[string]*domain.Flag),
 		flagsByProject: make(map[string][]string),
-		flagStates:    make(map[string]*domain.FlagState),
-		segments:      make(map[string]*domain.Segment),
-		apiKeys:       make(map[string]*domain.APIKey),
-		apiKeysByEnv:  make(map[string][]string),
-		apiKeysById:   make(map[string]*domain.APIKey),
+		flagStates:     make(map[string]*domain.FlagState),
+		segments:       make(map[string]*domain.Segment),
+		apiKeys:        make(map[string]*domain.APIKey),
+		apiKeysByEnv:   make(map[string][]string),
+		apiKeysById:    make(map[string]*domain.APIKey),
+		envPerms:       make(map[string][]domain.EnvPermission),
+		envPermsById:   make(map[string]*domain.EnvPermission),
+		webhooks:       make(map[string]*domain.Webhook),
+		webhooksByOrg:  make(map[string][]string),
+		whDeliveries:   make(map[string][]domain.WebhookDelivery),
 	}
 }
 
@@ -113,6 +126,99 @@ func (m *mockStore) AddOrgMember(ctx context.Context, member *domain.OrgMember) 
 	defer m.mu.Unlock()
 	member.ID = m.nextID()
 	m.orgMembers[member.OrgID] = append(m.orgMembers[member.OrgID], *member)
+	cp := *member
+	m.orgMembersByID[member.ID] = &cp
+	return nil
+}
+
+func (m *mockStore) GetOrgMemberByID(ctx context.Context, memberID string) (*domain.OrgMember, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	mem, ok := m.orgMembersByID[memberID]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	return mem, nil
+}
+
+func (m *mockStore) UpdateOrgMemberRole(ctx context.Context, memberID string, role domain.Role) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	mem, ok := m.orgMembersByID[memberID]
+	if !ok {
+		return fmt.Errorf("not found")
+	}
+	mem.Role = role
+	for i, mm := range m.orgMembers[mem.OrgID] {
+		if mm.ID == memberID {
+			m.orgMembers[mem.OrgID][i].Role = role
+			break
+		}
+	}
+	return nil
+}
+
+func (m *mockStore) RemoveOrgMember(ctx context.Context, memberID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	mem, ok := m.orgMembersByID[memberID]
+	if !ok {
+		return fmt.Errorf("not found")
+	}
+	delete(m.orgMembersByID, memberID)
+	members := m.orgMembers[mem.OrgID]
+	for i, mm := range members {
+		if mm.ID == memberID {
+			m.orgMembers[mem.OrgID] = append(members[:i], members[i+1:]...)
+			break
+		}
+	}
+	return nil
+}
+
+func (m *mockStore) ListEnvPermissions(ctx context.Context, memberID string) ([]domain.EnvPermission, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	perms := m.envPerms[memberID]
+	if perms == nil {
+		return []domain.EnvPermission{}, nil
+	}
+	return perms, nil
+}
+
+func (m *mockStore) UpsertEnvPermission(ctx context.Context, perm *domain.EnvPermission) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i, existing := range m.envPerms[perm.MemberID] {
+		if existing.EnvID == perm.EnvID {
+			perm.ID = existing.ID
+			m.envPerms[perm.MemberID][i] = *perm
+			m.envPermsById[perm.ID] = perm
+			return nil
+		}
+	}
+	perm.ID = m.nextID()
+	m.envPerms[perm.MemberID] = append(m.envPerms[perm.MemberID], *perm)
+	cp := *perm
+	m.envPermsById[perm.ID] = &cp
+	return nil
+}
+
+func (m *mockStore) DeleteEnvPermission(ctx context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	p, ok := m.envPermsById[id]
+	if !ok {
+		return nil
+	}
+	delete(m.envPermsById, id)
+	perms := m.envPerms[p.MemberID]
+	for i, pp := range perms {
+		if pp.ID == id {
+			m.envPerms[p.MemberID] = append(perms[:i], perms[i+1:]...)
+			break
+		}
+	}
 	return nil
 }
 
@@ -459,6 +565,85 @@ func (m *mockStore) GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash stri
 		return nil, nil, err
 	}
 	return env, k, nil
+}
+
+func (m *mockStore) ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.FlagState
+	for _, fs := range m.flagStates {
+		if (fs.ScheduledEnableAt != nil && !fs.ScheduledEnableAt.After(before)) ||
+			(fs.ScheduledDisableAt != nil && !fs.ScheduledDisableAt.After(before)) {
+			result = append(result, *fs)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockStore) CreateWebhook(ctx context.Context, w *domain.Webhook) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	w.ID = m.nextID()
+	m.webhooks[w.ID] = w
+	m.webhooksByOrg[w.OrgID] = append(m.webhooksByOrg[w.OrgID], w.ID)
+	return nil
+}
+
+func (m *mockStore) GetWebhook(ctx context.Context, id string) (*domain.Webhook, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	w, ok := m.webhooks[id]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	return w, nil
+}
+
+func (m *mockStore) ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.Webhook
+	for _, id := range m.webhooksByOrg[orgID] {
+		if w, ok := m.webhooks[id]; ok {
+			result = append(result, *w)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockStore) UpdateWebhook(ctx context.Context, w *domain.Webhook) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.webhooks[w.ID]; !ok {
+		return fmt.Errorf("not found")
+	}
+	m.webhooks[w.ID] = w
+	return nil
+}
+
+func (m *mockStore) DeleteWebhook(ctx context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.webhooks, id)
+	return nil
+}
+
+func (m *mockStore) CreateWebhookDelivery(ctx context.Context, d *domain.WebhookDelivery) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	d.ID = m.nextID()
+	m.whDeliveries[d.WebhookID] = append(m.whDeliveries[d.WebhookID], *d)
+	return nil
+}
+
+func (m *mockStore) ListWebhookDeliveries(ctx context.Context, webhookID string, limit int) ([]domain.WebhookDelivery, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	dels := m.whDeliveries[webhookID]
+	if limit < len(dels) {
+		dels = dels[:limit]
+	}
+	return dels, nil
 }
 
 func jsonRaw(v interface{}) json.RawMessage {

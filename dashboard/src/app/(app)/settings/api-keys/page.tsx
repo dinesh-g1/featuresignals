@@ -9,6 +9,8 @@ import { useAppStore } from "@/stores/app-store";
 const settingsTabs = [
   { href: "/settings/general", label: "General" },
   { href: "/settings/api-keys", label: "API Keys" },
+  { href: "/settings/team", label: "Team" },
+  { href: "/settings/webhooks", label: "Webhooks" },
 ];
 
 export default function APIKeysPage() {

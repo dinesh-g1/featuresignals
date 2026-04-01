@@ -16,19 +16,26 @@ type Broadcaster interface {
 	BroadcastFlagUpdate(envID string, data interface{})
 }
 
-// Cache holds in-memory rulesets per environment for fast evaluation.
-// When a ruleset is invalidated via PG NOTIFY, the cache also notifies
-// connected SDK clients through the optional Broadcaster.
-type Cache struct {
-	mu          sync.RWMutex
-	rulesets    map[string]*eval.Ruleset // envID -> ruleset
-	store       domain.Store
-	logger      *slog.Logger
-	broadcaster Broadcaster
+// WebhookNotifier pushes flag-change events to the webhook dispatch queue.
+type WebhookNotifier interface {
+	NotifyFlagChange(envID, flagID, action string)
 }
 
-// NewCache creates an evaluation cache. Pass a nil broadcaster if SSE
-// push is not needed (e.g. in tests).
+// Cache holds in-memory rulesets per environment for fast evaluation.
+// When a ruleset is invalidated via PG NOTIFY, the cache also notifies
+// connected SDK clients through the optional Broadcaster and dispatches
+// webhook events through the optional WebhookNotifier.
+type Cache struct {
+	mu              sync.RWMutex
+	rulesets        map[string]*eval.Ruleset // envID -> ruleset
+	store           domain.Store
+	logger          *slog.Logger
+	broadcaster     Broadcaster
+	webhookNotifier WebhookNotifier
+}
+
+// NewCache creates an evaluation cache. Pass nil for broadcaster/notifier
+// when not needed (e.g. in tests).
 func NewCache(store domain.Store, logger *slog.Logger, broadcaster Broadcaster) *Cache {
 	return &Cache{
 		rulesets:    make(map[string]*eval.Ruleset),
@@ -36,6 +43,11 @@ func NewCache(store domain.Store, logger *slog.Logger, broadcaster Broadcaster) 
 		logger:      logger,
 		broadcaster: broadcaster,
 	}
+}
+
+// SetWebhookNotifier attaches a webhook dispatcher to the cache.
+func (c *Cache) SetWebhookNotifier(n WebhookNotifier) {
+	c.webhookNotifier = n
 }
 
 // GetRuleset returns the cached ruleset for an environment.
@@ -108,6 +120,10 @@ func (c *Cache) StartListening(ctx context.Context) error {
 				"flag_id": change.FlagID,
 				"action":  change.Action,
 			})
+		}
+
+		if c.webhookNotifier != nil {
+			c.webhookNotifier.NotifyFlagChange(change.EnvID, change.FlagID, change.Action)
 		}
 	})
 }
