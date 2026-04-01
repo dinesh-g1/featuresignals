@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { toast } from "@/components/toast";
 
 const settingsTabs = [
   { href: "/settings/general", label: "General" },
@@ -31,18 +32,44 @@ export default function SettingsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !projectId) return;
-    await api.createEnvironment(token, projectId, form);
-    setShowCreate(false);
-    setForm({ name: "", slug: "", color: "#6B7280" });
-    reload();
+    if (!token || !projectId) {
+      toast("Select a project first", "error");
+      return;
+    }
+    try {
+      await api.createEnvironment(token, projectId, form);
+      setShowCreate(false);
+      setForm({ name: "", slug: "", color: "#6B7280" });
+      toast("Environment created", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to create environment", "error");
+    }
   }
 
   async function handleDelete(envId: string) {
     if (!token || !projectId) return;
-    await api.deleteEnvironment(token, projectId, envId);
-    setDeleting(null);
-    reload();
+    try {
+      await api.deleteEnvironment(token, projectId, envId);
+      setDeleting(null);
+      toast("Environment deleted", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to delete environment", "error");
+      setDeleting(null);
+    }
+  }
+
+  if (!projectId) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <p className="text-sm font-medium text-slate-500">No project selected</p>
+          <p className="mt-1 text-xs text-slate-400">Create a project using the sidebar first.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

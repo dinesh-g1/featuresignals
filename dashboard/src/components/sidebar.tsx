@@ -17,28 +17,32 @@ const navItems = [
   { href: "/settings/general", label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
 ];
 
-const ENV_COLORS: Record<string, string> = {
-  green: "bg-emerald-400",
-  yellow: "bg-amber-400",
-  red: "bg-red-400",
-  blue: "bg-blue-400",
-  purple: "bg-purple-400",
-};
-
-function envDot(color: string) {
-  return ENV_COLORS[color] || "bg-slate-400";
-}
-
 export function Sidebar() {
   const pathname = usePathname();
   const token = useAppStore((s) => s.token);
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
   const projectId = useAppStore((s) => s.currentProjectId);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 
+  const [projects, setProjects] = useState<any[]>([]);
   const [envs, setEnvs] = useState<any[]>([]);
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    api.listProjects(token).then((list) => {
+      const sorted = (list ?? []).sort((a: any, b: any) => a.name.localeCompare(b.name));
+      setProjects(sorted);
+      if (sorted.length > 0 && !projectId) {
+        setCurrentProject(sorted[0].id);
+      }
+    }).catch(() => {});
+  }, [token, projectId, setCurrentProject]);
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -51,6 +55,21 @@ export function Sidebar() {
     }).catch(() => {});
   }, [token, projectId, currentEnvId, setCurrentEnv]);
 
+  async function handleCreateProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !newProjectName.trim()) return;
+    setCreating(true);
+    try {
+      const created: any = await api.createProject(token, { name: newProjectName.trim() });
+      setProjects((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setCurrentProject(created.id);
+      setShowNewProject(false);
+      setNewProjectName("");
+    } catch { /* ignored */ } finally {
+      setCreating(false);
+    }
+  }
+
   const selectedEnv = envs.find((e) => e.id === currentEnvId);
 
   return (
@@ -61,12 +80,71 @@ export function Sidebar() {
         </Link>
       </div>
 
+      {/* Project selector */}
+      <div className="border-b border-slate-200 px-3 py-2">
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Project</label>
+        {projects.length === 0 && !showNewProject ? (
+          <button
+            onClick={() => setShowNewProject(true)}
+            className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50/50 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+          >
+            + Create Your First Project
+          </button>
+        ) : showNewProject ? (
+          <form onSubmit={handleCreateProject} className="flex gap-1.5">
+            <input
+              autoFocus
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="Project name"
+              required
+              className="flex-1 min-w-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+            <button type="submit" disabled={creating} className="rounded-lg bg-indigo-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+              {creating ? "..." : "Create"}
+            </button>
+            <button type="button" onClick={() => { setShowNewProject(false); setNewProjectName(""); }} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50">
+              Cancel
+            </button>
+          </form>
+        ) : (
+          <div className="flex gap-1.5">
+            <div className="relative flex-1 min-w-0">
+              <select
+                value={projectId || ""}
+                onChange={(e) => {
+                  setCurrentProject(e.target.value);
+                  setCurrentEnv("");
+                }}
+                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-3 pr-8 text-sm font-medium text-slate-700 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              >
+                {projects.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <svg className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            <button
+              onClick={() => setShowNewProject(true)}
+              className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+              title="Create new project"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Environment selector */}
-      {envs.length > 0 && (
+      {projectId && envs.length > 0 && (
         <div className="border-b border-slate-200 px-3 py-2">
           <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Environment</label>
           <div className="relative">
-            <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full ${envDot(selectedEnv?.color || "")}`} />
+            <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full`} style={{ backgroundColor: selectedEnv?.color || "#94a3b8" }} />
             <select
               value={currentEnvId || ""}
               onChange={(e) => setCurrentEnv(e.target.value)}
@@ -83,7 +161,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map((item) => {
           const active = pathname.startsWith(item.href);
           return (

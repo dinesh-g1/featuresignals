@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { toast } from "@/components/toast";
 
-const FLAG_TYPES = ["all", "boolean", "string", "number", "json"];
+const FLAG_TYPES = ["all", "boolean", "string", "number", "json", "ab"];
 type SortKey = "key" | "name" | "created_at" | "updated_at";
 
 export default function FlagsPage() {
@@ -50,30 +51,52 @@ export default function FlagsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !projectId) return;
-    await api.createFlag(token, projectId, newFlag);
-    setShowCreate(false);
-    setNewFlag({ key: "", name: "", flag_type: "boolean", description: "" });
-    reload();
+    if (!token || !projectId) {
+      toast("Select a project first", "error");
+      return;
+    }
+    try {
+      await api.createFlag(token, projectId, newFlag);
+      setShowCreate(false);
+      setNewFlag({ key: "", name: "", flag_type: "boolean", description: "" });
+      toast("Flag created", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to create flag", "error");
+    }
   }
 
   async function handleDelete(flagKey: string) {
     if (!token || !projectId) return;
-    await api.deleteFlag(token, projectId, flagKey);
-    setDeleting(null);
-    reload();
+    try {
+      await api.deleteFlag(token, projectId, flagKey);
+      setDeleting(null);
+      toast("Flag deleted", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to delete flag", "error");
+      setDeleting(null);
+    }
   }
 
   async function handleQuickToggle(flagKey: string) {
-    if (!token || !projectId || !currentEnvId) return;
+    if (!token || !projectId || !currentEnvId) {
+      toast("Select an environment first", "error");
+      return;
+    }
     setToggling(flagKey);
-    const current = flagStates[flagKey];
-    await api.updateFlagState(token, projectId, flagKey, currentEnvId, {
-      enabled: !current?.enabled,
-    });
-    const updated = await api.getFlagState(token, projectId, flagKey, currentEnvId);
-    setFlagStates((prev) => ({ ...prev, [flagKey]: updated }));
-    setToggling(null);
+    try {
+      const current = flagStates[flagKey];
+      await api.updateFlagState(token, projectId, flagKey, currentEnvId, {
+        enabled: !current?.enabled,
+      });
+      const updated = await api.getFlagState(token, projectId, flagKey, currentEnvId);
+      setFlagStates((prev) => ({ ...prev, [flagKey]: updated }));
+    } catch (err: any) {
+      toast(err.message || "Failed to toggle flag", "error");
+    } finally {
+      setToggling(null);
+    }
   }
 
   const allTags = useMemo(() => {
@@ -111,6 +134,18 @@ export default function FlagsPage() {
   }, [flags, search, typeFilter, tagFilter, sortBy, sortDir]);
 
   const currentEnvName = envs.find((e) => e.id === currentEnvId)?.name;
+
+  if (!projectId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <svg className="h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+        </svg>
+        <p className="mt-4 text-sm font-medium text-slate-500">No project selected</p>
+        <p className="mt-1 text-xs text-slate-400">Create a project using the sidebar to start managing flags.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -162,7 +197,17 @@ export default function FlagsPage() {
               <option value="string">String</option>
               <option value="number">Number</option>
               <option value="json">JSON</option>
+              <option value="ab">A/B Experiment</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Description</label>
+            <input
+              value={newFlag.description}
+              onChange={(e) => setNewFlag({ ...newFlag, description: e.target.value })}
+              placeholder="Optional description"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
           </div>
           <div className="flex gap-2">
             <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">
@@ -195,7 +240,7 @@ export default function FlagsPage() {
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           {FLAG_TYPES.map((t) => (
-            <option key={t} value={t}>{t === "all" ? "All Types" : t.charAt(0).toUpperCase() + t.slice(1)}</option>
+            <option key={t} value={t}>{t === "all" ? "All Types" : t === "ab" ? "A/B" : t.charAt(0).toUpperCase() + t.slice(1)}</option>
           ))}
         </select>
         {allTags.length > 0 && (
@@ -246,7 +291,7 @@ export default function FlagsPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-mono text-sm font-medium text-slate-900">{flag.key}</p>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-slate-200">
-                        {flag.flag_type}
+                        {flag.flag_type === "ab" ? "A/B" : flag.flag_type}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-slate-500">{flag.name}</p>
@@ -256,7 +301,6 @@ export default function FlagsPage() {
                       <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200">{tag}</span>
                     ))}
 
-                    {/* Quick toggle for current env */}
                     {currentEnvId && (
                       <button
                         onClick={(e) => { e.preventDefault(); handleQuickToggle(flag.key); }}

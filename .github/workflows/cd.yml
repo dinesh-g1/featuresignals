@@ -1,0 +1,91 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Write environment file from secrets
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: POSTGRES_PASSWORD,JWT_SECRET
+          script_stop: true
+          script: |
+            cat > /opt/featuresignals/.env << ENVEOF
+            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            JWT_SECRET=${JWT_SECRET}
+            ENVEOF
+            chmod 600 /opt/featuresignals/.env
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Pre-deploy database backup
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            if docker compose -f /opt/featuresignals/docker-compose.prod.yml ps -q postgres 2>/dev/null | grep -q .; then
+              bash /opt/featuresignals/deploy/pg-backup.sh || echo "Backup skipped (first deploy or postgres not running)"
+            else
+              echo "Postgres not running yet, skipping backup"
+            fi
+
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            cd /opt/featuresignals
+            bash deploy/deploy.sh
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            echo "Waiting for services to stabilize..."
+            sleep 15
+
+            echo "==> Checking service containers..."
+            docker compose -f /opt/featuresignals/docker-compose.prod.yml ps
+
+            echo ""
+            echo "==> Health check: API"
+            curl -sf --max-time 10 https://api.featuresignals.com/health || echo "WARNING: API health check failed"
+
+            echo ""
+            echo "==> Health check: Dashboard"
+            curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://app.featuresignals.com || echo "WARNING: Dashboard health check failed"
+
+            echo ""
+            echo "==> Health check: Website"
+            curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://featuresignals.com || echo "WARNING: Website health check failed"
+
+            echo ""
+            echo "==> Health check: Docs"
+            curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://docs.featuresignals.com || echo "WARNING: Docs health check failed"
+
+            echo ""
+            echo "Deployment verified."

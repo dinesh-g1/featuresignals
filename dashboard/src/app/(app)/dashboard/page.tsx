@@ -11,16 +11,18 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [flags, setFlags] = useState<any[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!token) return;
+    setLoading(true);
     api.listProjects(token).then((p) => {
       const list = p ?? [];
       setProjects(list);
       if (list.length > 0 && !currentProjectId) {
         setCurrentProject(list[0].id);
       }
-    });
+    }).finally(() => setLoading(false));
     api.listAudit(token, 10).then((a) => setAudit(a ?? [])).catch(() => {});
   }, [token, currentProjectId, setCurrentProject]);
 
@@ -28,6 +30,35 @@ export default function DashboardPage() {
     if (!token || !currentProjectId) return;
     api.listFlags(token, currentProjectId).then((f) => setFlags(f ?? [])).catch(() => {});
   }, [token, currentProjectId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!currentProjectId && projects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24">
+        <div className="mx-auto max-w-md text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 ring-1 ring-indigo-100">
+            <svg className="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
+          </div>
+          <h1 className="mt-6 text-2xl font-bold text-slate-900">Welcome to FeatureSignals</h1>
+          <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+            Create your first project to start managing feature flags. A project groups your flags, environments, and segments together.
+          </p>
+          <p className="mt-4 text-xs text-slate-400">
+            Use the <strong>&quot;+ Create Your First Project&quot;</strong> button in the sidebar to get started.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     { label: "Projects", value: projects.length, icon: "M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z", color: "indigo" },

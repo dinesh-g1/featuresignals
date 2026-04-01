@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { toast } from "@/components/toast";
 
 const settingsTabs = [
   { href: "/settings/general", label: "General" },
@@ -43,18 +44,32 @@ export default function APIKeysPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !selectedEnv) return;
-    const result: any = await api.createAPIKey(token, selectedEnv, form);
-    setNewKey(result.key);
-    setForm({ name: "", type: "server" });
-    reloadKeys();
+    if (!token || !selectedEnv) {
+      toast("Select an environment first", "error");
+      return;
+    }
+    try {
+      const result: any = await api.createAPIKey(token, selectedEnv, form);
+      setNewKey(result.key);
+      setForm({ name: "", type: "server" });
+      toast("API key created", "success");
+      reloadKeys();
+    } catch (err: any) {
+      toast(err.message || "Failed to create API key", "error");
+    }
   }
 
   async function handleRevoke(keyId: string) {
     if (!token) return;
-    await api.revokeAPIKey(token, keyId);
-    setRevoking(null);
-    reloadKeys();
+    try {
+      await api.revokeAPIKey(token, keyId);
+      setRevoking(null);
+      toast("API key revoked", "success");
+      reloadKeys();
+    } catch (err: any) {
+      toast(err.message || "Failed to revoke API key", "error");
+      setRevoking(null);
+    }
   }
 
   function copyToClipboard(text: string) {
