@@ -12,7 +12,7 @@ FeatureSignals can be installed via Docker Compose (recommended), standalone Doc
 The fastest way to run the full stack locally:
 
 ```bash
-git clone https://github.com/featuresignals/featuresignals.git
+git clone https://github.com/dinesh-g1/featuresignals.git
 cd featuresignals
 docker compose up -d
 ```
