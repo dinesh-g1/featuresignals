@@ -63,6 +63,7 @@ func NewRouter(
 	auditH := handlers.NewAuditHandler(store)
 	teamH := handlers.NewTeamHandler(store, jwtMgr)
 	webhookH := handlers.NewWebhookHandler(store)
+	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger)
 
 	r.Route("/v1", func(r chi.Router) {
@@ -100,6 +101,8 @@ func NewRouter(
 				r.Get("/audit", auditH.List)
 				r.Get("/members", teamH.List)
 				r.Get("/members/{memberID}/permissions", teamH.ListPermissions)
+				r.Get("/approvals", approvalH.List)
+				r.Get("/approvals/{approvalID}", approvalH.Get)
 			})
 
 			// ── Write routes (owner, admin, developer) ───────────────
@@ -113,6 +116,8 @@ func NewRouter(
 				r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
 				r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
 				r.Post("/projects/{projectID}/flags/{flagKey}/promote", flagH.Promote)
+				r.Post("/projects/{projectID}/flags/{flagKey}/kill", flagH.Kill)
+				r.Post("/approvals", approvalH.Create)
 				r.Post("/projects/{projectID}/segments", segmentH.Create)
 				r.Put("/projects/{projectID}/segments/{segmentKey}", segmentH.Update)
 				r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
@@ -126,6 +131,7 @@ func NewRouter(
 				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
 				r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
 				r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
+				r.Post("/approvals/{approvalID}/review", approvalH.Review)
 				r.Post("/members/invite", teamH.Invite)
 				r.Put("/members/{memberID}", teamH.UpdateRole)
 				r.Delete("/members/{memberID}", teamH.Remove)

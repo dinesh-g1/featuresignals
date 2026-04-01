@@ -28,13 +28,17 @@ export default function FlagDetailPage() {
   const [promoting, setPromoting] = useState(false);
   const [scheduleEnable, setScheduleEnable] = useState("");
   const [scheduleDisable, setScheduleDisable] = useState("");
+  const [allFlags, setAllFlags] = useState<any[]>([]);
+  const [prereqs, setPrereqs] = useState<string[]>([]);
 
   useEffect(() => {
     if (!token || !projectId) return;
     api.getFlag(token, projectId, flagKey).then((f) => {
       setFlag(f);
       setEditForm({ name: f.name, description: f.description || "" });
+      setPrereqs(f.prerequisites || []);
     }).catch(() => {});
+    api.listFlags(token, projectId).then((f) => setAllFlags(f ?? [])).catch(() => {});
     api.listEnvironments(token, projectId).then((e) => {
       const list = e ?? [];
       setEnvs(list);
@@ -290,25 +294,93 @@ export default function FlagDetailPage() {
       </div>
 
       {tab === "overview" && (
-        <div className="grid grid-cols-2 gap-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-            <h3 className="text-sm font-medium text-slate-500">Status</h3>
-            <div className="mt-2 flex items-center gap-2">
-              <div className={`h-2.5 w-2.5 rounded-full ${state?.enabled ? "bg-emerald-500" : "bg-slate-300"}`} />
-              <p className="text-lg font-semibold text-slate-900">{state?.enabled ? "Enabled" : "Disabled"}</p>
+        <div className="space-y-6">
+          {/* Kill switch */}
+          {state?.enabled && (
+            <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 flex items-center justify-between ring-1 ring-red-100">
+              <div>
+                <p className="text-sm font-semibold text-red-800">Kill Switch</p>
+                <p className="text-xs text-red-600 mt-0.5">Instantly disable this flag across the current environment</p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!token || !projectId || !selectedEnv) return;
+                  await api.killFlag(token, projectId, flagKey, selectedEnv);
+                  api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
+                }}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-red-700 hover:shadow-md"
+              >
+                Kill Flag Now
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+              <h3 className="text-sm font-medium text-slate-500">Status</h3>
+              <div className="mt-2 flex items-center gap-2">
+                <div className={`h-2.5 w-2.5 rounded-full ${state?.enabled ? "bg-emerald-500" : "bg-slate-300"}`} />
+                <p className="text-lg font-semibold text-slate-900">{state?.enabled ? "Enabled" : "Disabled"}</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+              <h3 className="text-sm font-medium text-slate-500">Type</h3>
+              <p className="mt-2 text-lg font-semibold capitalize text-slate-900">{flag.flag_type}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+              <h3 className="text-sm font-medium text-slate-500">Default Value</h3>
+              <pre className="mt-2 rounded-lg bg-slate-50 p-2 text-sm font-mono text-slate-700 ring-1 ring-slate-100">{JSON.stringify(flag.default_value)}</pre>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+              <h3 className="text-sm font-medium text-slate-500">Description</h3>
+              <p className="mt-2 text-sm text-slate-700">{flag.description || "No description"}</p>
             </div>
           </div>
+
+          {/* Prerequisites editor */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-            <h3 className="text-sm font-medium text-slate-500">Type</h3>
-            <p className="mt-2 text-lg font-semibold capitalize text-slate-900">{flag.flag_type}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-            <h3 className="text-sm font-medium text-slate-500">Default Value</h3>
-            <pre className="mt-2 rounded-lg bg-slate-50 p-2 text-sm font-mono text-slate-700 ring-1 ring-slate-100">{JSON.stringify(flag.default_value)}</pre>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-            <h3 className="text-sm font-medium text-slate-500">Description</h3>
-            <p className="mt-2 text-sm text-slate-700">{flag.description || "No description"}</p>
+            <h3 className="text-sm font-medium text-slate-500 mb-3">Prerequisites</h3>
+            <p className="text-xs text-slate-400 mb-3">This flag will only evaluate when all prerequisite flags are ON.</p>
+            <div className="space-y-2">
+              {prereqs.map((pk, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="flex-1 rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-mono text-slate-700 ring-1 ring-slate-200">{pk}</span>
+                  <button
+                    onClick={() => {
+                      const updated = prereqs.filter((_, j) => j !== i);
+                      setPrereqs(updated);
+                      if (token && projectId) api.updateFlag(token, projectId, flagKey, { prerequisites: updated }).then(setFlag);
+                    }}
+                    className="rounded p-1 text-slate-400 hover:text-red-500 hover:bg-red-50"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <select
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const updated = [...prereqs, e.target.value];
+                    setPrereqs(updated);
+                    e.target.value = "";
+                    if (token && projectId) api.updateFlag(token, projectId, flagKey, { prerequisites: updated }).then(setFlag);
+                  }}
+                >
+                  <option value="">Add prerequisite flag...</option>
+                  {allFlags
+                    .filter((f) => f.key !== flagKey && !prereqs.includes(f.key))
+                    .map((f) => (
+                      <option key={f.key} value={f.key}>{f.key} — {f.name}</option>
+                    ))}
+                </select>
+              </div>
+              {prereqs.length === 0 && (
+                <p className="text-xs text-slate-400 italic">No prerequisites configured. This flag evaluates independently.</p>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -127,6 +127,24 @@ export const api = {
   updateMemberPermissions: (token: string, memberId: string, permissions: any[]) =>
     request(`/v1/members/${memberId}/permissions`, { method: "PUT", body: { permissions }, token }),
 
+  // Approvals
+  listApprovals: (token: string, status?: string) =>
+    request<any[]>(`/v1/approvals${status ? `?status=${status}` : ""}`, { token }),
+  getApproval: (token: string, id: string) =>
+    request<any>(`/v1/approvals/${id}`, { token }),
+  createApproval: (token: string, data: { flag_id: string; env_id: string; change_type: string; payload: any }) =>
+    request("/v1/approvals", { method: "POST", body: data, token }),
+  reviewApproval: (token: string, id: string, action: "approve" | "reject", note?: string) =>
+    request(`/v1/approvals/${id}/review`, { method: "POST", body: { action, note: note || "" }, token }),
+
+  // Kill Switch
+  killFlag: (token: string, projectId: string, flagKey: string, envId: string) =>
+    request(`/v1/projects/${projectId}/flags/${flagKey}/kill`, {
+      method: "POST",
+      body: { env_id: envId },
+      token,
+    }),
+
   // Flag Promotion
   promoteFlag: (token: string, projectId: string, flagKey: string, sourceEnvId: string, targetEnvId: string) =>
     request(`/v1/projects/${projectId}/flags/${flagKey}/promote`, {

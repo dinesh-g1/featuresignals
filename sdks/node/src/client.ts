@@ -225,7 +225,7 @@ export class FeatureSignalsClient extends EventEmitter {
           if (line.startsWith("event:")) {
             eventType = line.slice(6).trim();
           } else if (line.startsWith("data:")) {
-            if (eventType === "flag_update") {
+            if (eventType === "flag-update") {
               await this.refresh().catch((err) => this.emitError(err));
             }
             eventType = "";

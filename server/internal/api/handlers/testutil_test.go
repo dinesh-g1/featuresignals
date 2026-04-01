@@ -646,6 +646,29 @@ func (m *mockStore) ListWebhookDeliveries(ctx context.Context, webhookID string,
 	return dels, nil
 }
 
+// --- Approval Requests ---
+
+func (m *mockStore) CreateApprovalRequest(ctx context.Context, ar *domain.ApprovalRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ar.ID = m.nextID()
+	ar.CreatedAt = time.Now()
+	ar.UpdatedAt = ar.CreatedAt
+	return nil
+}
+
+func (m *mockStore) GetApprovalRequest(ctx context.Context, id string) (*domain.ApprovalRequest, error) {
+	return nil, fmt.Errorf("not found")
+}
+
+func (m *mockStore) ListApprovalRequests(ctx context.Context, orgID string, status string, limit, offset int) ([]domain.ApprovalRequest, error) {
+	return []domain.ApprovalRequest{}, nil
+}
+
+func (m *mockStore) UpdateApprovalRequest(ctx context.Context, ar *domain.ApprovalRequest) error {
+	return nil
+}
+
 func jsonRaw(v interface{}) json.RawMessage {
 	b, _ := json.Marshal(v)
 	return b

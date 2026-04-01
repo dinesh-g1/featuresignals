@@ -339,7 +339,7 @@ func (c *Client) connectSSE() error {
 		}
 
 		if strings.HasPrefix(line, "data:") {
-			if eventType == "flag_update" {
+			if eventType == "flag-update" {
 				if err := c.refresh(c.ctx); err != nil {
 					c.logError("refresh after SSE event failed", err)
 				}

@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  server-test:
+    name: Server Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fs
+          POSTGRES_PASSWORD: fsdev
+          POSTGRES_DB: featuresignals
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: server/go.sum
+      - name: Run migrations
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
+      - name: Run tests
+        working-directory: server
+        run: go test ./... -count=1 -timeout 120s -v
+        env:
+          TEST_DATABASE_URL: postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable
+      - name: Build
+        working-directory: server
+        run: go build -o bin/server ./cmd/server
+
+  server-lint:
+    name: Server Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: server/go.sum
+      - name: Vet
+        working-directory: server
+        run: go vet ./...
+
+  go-sdk-test:
+    name: Go SDK Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: sdks/go/go.sum
+      - name: Test
+        working-directory: sdks/go
+        run: go test ./... -count=1 -v
+      - name: Build
+        working-directory: sdks/go
+        run: go build ./...
+
+  node-sdk-test:
+    name: Node SDK Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: sdks/node
+        run: npm install
+      - name: Test
+        working-directory: sdks/node
+        run: npm test
+
+  dashboard-build:
+    name: Dashboard Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: dashboard
+        run: npm install
+      - name: Build
+        working-directory: dashboard
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+
+  website-build:
+    name: Website Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: website
+        run: npm install
+      - name: Build
+        working-directory: website
+        run: npm run build
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [server-test, dashboard-build]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build server image
+        run: docker build -f deploy/docker/Dockerfile.server -t featuresignals-server:ci ./server
+      - name: Build dashboard image
+        run: docker build -f deploy/docker/Dockerfile.dashboard -t featuresignals-dashboard:ci ./dashboard

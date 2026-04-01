@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/featuresignals/server/internal/domain"
 )
@@ -193,6 +194,88 @@ func TestEvaluate_PercentageRollout(t *testing.T) {
 	ratio := float64(trueCount) / float64(total)
 	if ratio < 0.40 || ratio > 0.60 {
 		t.Errorf("expected ~50%% rollout, got %.2f%% (%d/%d)", ratio*100, trueCount, total)
+	}
+}
+
+func TestEvaluate_ExpiredFlag(t *testing.T) {
+	engine := NewEngine()
+	ruleset := makeRuleset()
+
+	past := time.Now().Add(-24 * time.Hour)
+	ruleset.Flags["feature-a"].ExpiresAt = &past
+
+	ctx := domain.EvalContext{
+		Key:        "user1",
+		Attributes: map[string]interface{}{"email": "dev@internal.com"},
+	}
+	result := engine.Evaluate("feature-a", ctx, ruleset)
+	if result.Reason != domain.ReasonDisabled {
+		t.Errorf("expected DISABLED for expired flag, got %s", result.Reason)
+	}
+	if result.Value != false {
+		t.Errorf("expected false (default) for expired flag, got %v", result.Value)
+	}
+}
+
+func TestEvaluate_NotYetExpiredFlag(t *testing.T) {
+	engine := NewEngine()
+	ruleset := makeRuleset()
+
+	future := time.Now().Add(24 * time.Hour)
+	ruleset.Flags["feature-a"].ExpiresAt = &future
+
+	ctx := domain.EvalContext{
+		Key:        "user1",
+		Attributes: map[string]interface{}{"email": "dev@internal.com"},
+	}
+	result := engine.Evaluate("feature-a", ctx, ruleset)
+	if result.Reason != domain.ReasonTargeted {
+		t.Errorf("expected TARGETED for not-yet-expired flag, got %s", result.Reason)
+	}
+}
+
+func TestEvaluate_PrerequisiteMet(t *testing.T) {
+	engine := NewEngine()
+	ruleset := makeRuleset()
+	ruleset.Flags["feature-a"].Prerequisites = []string{"rollout-flag"}
+
+	ctx := domain.EvalContext{
+		Key:        "user-in-rollout",
+		Attributes: map[string]interface{}{"email": "dev@internal.com"},
+	}
+
+	rolloutResult := engine.Evaluate("rollout-flag", ctx, ruleset)
+	if rolloutResult.Value != true {
+		t.Skip("test user not in rollout bucket, skipping")
+	}
+
+	result := engine.Evaluate("feature-a", ctx, ruleset)
+	if result.Reason == domain.ReasonPrerequisiteFailed {
+		t.Error("prerequisite is met but got PREREQUISITE_FAILED")
+	}
+}
+
+func TestEvaluate_PrerequisiteNotMet(t *testing.T) {
+	engine := NewEngine()
+	ruleset := makeRuleset()
+
+	ruleset.Flags["dependent"] = &domain.Flag{
+		ID: "f-dep", Key: "dependent", FlagType: domain.FlagTypeBoolean,
+		DefaultValue: jsonVal(false), Prerequisites: []string{"feature-a"},
+	}
+	ruleset.States["dependent"] = &domain.FlagState{
+		FlagID: "f-dep", Enabled: true, DefaultValue: jsonVal(true),
+	}
+
+	ruleset.States["feature-a"].Enabled = false
+
+	ctx := domain.EvalContext{Key: "user1"}
+	result := engine.Evaluate("dependent", ctx, ruleset)
+	if result.Reason != domain.ReasonPrerequisiteFailed {
+		t.Errorf("expected PREREQUISITE_FAILED, got %s", result.Reason)
+	}
+	if result.Value != false {
+		t.Errorf("expected false (default), got %v", result.Value)
 	}
 }
 

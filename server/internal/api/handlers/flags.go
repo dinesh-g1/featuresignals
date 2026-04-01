@@ -27,12 +27,13 @@ func NewFlagHandler(store domain.Store) *FlagHandler {
 }
 
 type CreateFlagRequest struct {
-	Key          string          `json:"key"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	FlagType     string          `json:"flag_type"`
-	DefaultValue json.RawMessage `json:"default_value"`
-	Tags         []string        `json:"tags"`
+	Key           string          `json:"key"`
+	Name          string          `json:"name"`
+	Description   string          `json:"description"`
+	FlagType      string          `json:"flag_type"`
+	DefaultValue  json.RawMessage `json:"default_value"`
+	Tags          []string        `json:"tags"`
+	Prerequisites []string        `json:"prerequisites,omitempty"`
 }
 
 func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -59,13 +60,14 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	flag := &domain.Flag{
-		ProjectID:    projectID,
-		Key:          req.Key,
-		Name:         req.Name,
-		Description:  req.Description,
-		FlagType:     flagType,
-		DefaultValue: defaultVal,
-		Tags:         req.Tags,
+		ProjectID:     projectID,
+		Key:           req.Key,
+		Name:          req.Name,
+		Description:   req.Description,
+		FlagType:      flagType,
+		DefaultValue:  defaultVal,
+		Tags:          req.Tags,
+		Prerequisites: req.Prerequisites,
 	}
 
 	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
@@ -149,6 +151,9 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Tags != nil {
 		flag.Tags = req.Tags
+	}
+	if req.Prerequisites != nil {
+		flag.Prerequisites = req.Prerequisites
 	}
 
 	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
@@ -371,6 +376,59 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 	})
 
 	httputil.JSON(w, http.StatusOK, target)
+}
+
+// Kill instantly disables a flag in the specified environment. This bypasses
+// any approval workflow and is intended for emergency use.
+func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "flag not found")
+		return
+	}
+
+	var req struct {
+		EnvID string `json:"env_id"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil || req.EnvID == "" {
+		httputil.Error(w, http.StatusBadRequest, "env_id is required")
+		return
+	}
+
+	state, err := h.store.GetFlagState(r.Context(), flag.ID, req.EnvID)
+	if err != nil {
+		state = &domain.FlagState{FlagID: flag.ID, EnvID: req.EnvID}
+	}
+
+	beforeState, _ := json.Marshal(state)
+	state.Enabled = false
+
+	if err := h.store.UpsertFlagState(r.Context(), state); err != nil {
+		h.l(r).Error("kill switch failed", "error", err, "flag_id", flag.ID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to disable flag")
+		return
+	}
+
+	h.l(r).Warn("KILL SWITCH activated", "flag_key", flagKey, "env_id", req.EnvID)
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(state)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &userID,
+		ActorType:    "user",
+		Action:       "flag.killed",
+		ResourceType: "flag",
+		ResourceID:   &flag.ID,
+		BeforeState:  beforeState,
+		AfterState:   afterState,
+	})
+
+	httputil.JSON(w, http.StatusOK, state)
 }
 
 func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {

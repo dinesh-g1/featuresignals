@@ -253,22 +253,35 @@ func (s *Store) DeleteEnvironment(ctx context.Context, id string) error {
 	return err
 }
 
+// ResolveOrgIDByEnvID returns the organization ID that owns the given
+// environment by joining through the projects table.
+func (s *Store) ResolveOrgIDByEnvID(ctx context.Context, envID string) (string, error) {
+	var orgID string
+	err := s.pool.QueryRow(ctx,
+		`SELECT p.org_id FROM environments e JOIN projects p ON e.project_id = p.id WHERE e.id = $1`, envID,
+	).Scan(&orgID)
+	return orgID, err
+}
+
 // --- Flags ---
 
 func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
+	if f.Prerequisites == nil {
+		f.Prerequisites = []string{}
+	}
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO flags (project_id, key, name, description, flag_type, default_value, tags, expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at, updated_at`,
-		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.DefaultValue, f.Tags, f.ExpiresAt,
+		`INSERT INTO flags (project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at, updated_at`,
+		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites,
 	).Scan(&f.ID, &f.CreatedAt, &f.UpdatedAt)
 }
 
 func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error) {
 	f := &domain.Flag{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, created_at, updated_at
+		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, created_at, updated_at
 		 FROM flags WHERE project_id = $1 AND key = $2`, projectID, key,
-	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.CreatedAt, &f.UpdatedAt)
+	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +290,7 @@ func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Fla
 
 func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, created_at, updated_at
+		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, created_at, updated_at
 		 FROM flags WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
@@ -286,7 +299,7 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 	flags := []domain.Flag{}
 	for rows.Next() {
 		var f domain.Flag
-		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.CreatedAt, &f.UpdatedAt); err != nil {
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.CreatedAt, &f.UpdatedAt); err != nil {
 			return nil, err
 		}
 		flags = append(flags, f)
@@ -295,10 +308,13 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 }
 
 func (s *Store) UpdateFlag(ctx context.Context, f *domain.Flag) error {
+	if f.Prerequisites == nil {
+		f.Prerequisites = []string{}
+	}
 	_, err := s.pool.Exec(ctx,
-		`UPDATE flags SET name=$1, description=$2, default_value=$3, tags=$4, expires_at=$5, updated_at=NOW()
-		 WHERE id = $6`,
-		f.Name, f.Description, f.DefaultValue, f.Tags, f.ExpiresAt, f.ID)
+		`UPDATE flags SET name=$1, description=$2, default_value=$3, tags=$4, expires_at=$5, prerequisites=$6, updated_at=NOW()
+		 WHERE id = $7`,
+		f.Name, f.Description, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.ID)
 	return err
 }
 
@@ -676,6 +692,71 @@ func (s *Store) ListenForChanges(ctx context.Context, callback func(payload stri
 	}()
 
 	return nil
+}
+
+// --- Approval Requests ---
+
+func (s *Store) CreateApprovalRequest(ctx context.Context, ar *domain.ApprovalRequest) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO approval_requests (org_id, requestor_id, flag_id, env_id, change_type, payload, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`,
+		ar.OrgID, ar.RequestorID, ar.FlagID, ar.EnvID, ar.ChangeType, ar.Payload, ar.Status,
+	).Scan(&ar.ID, &ar.CreatedAt, &ar.UpdatedAt)
+}
+
+func (s *Store) GetApprovalRequest(ctx context.Context, id string) (*domain.ApprovalRequest, error) {
+	ar := &domain.ApprovalRequest{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, requestor_id, flag_id, env_id, change_type, payload, status,
+		        reviewer_id, review_note, reviewed_at, created_at, updated_at
+		 FROM approval_requests WHERE id = $1`, id,
+	).Scan(&ar.ID, &ar.OrgID, &ar.RequestorID, &ar.FlagID, &ar.EnvID, &ar.ChangeType,
+		&ar.Payload, &ar.Status, &ar.ReviewerID, &ar.ReviewNote, &ar.ReviewedAt, &ar.CreatedAt, &ar.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return ar, nil
+}
+
+func (s *Store) ListApprovalRequests(ctx context.Context, orgID string, status string, limit, offset int) ([]domain.ApprovalRequest, error) {
+	query := `SELECT id, org_id, requestor_id, flag_id, env_id, change_type, payload, status,
+	                  reviewer_id, review_note, reviewed_at, created_at, updated_at
+	           FROM approval_requests WHERE org_id = $1`
+	args := []interface{}{orgID}
+	if status != "" {
+		query += ` AND status = $2`
+		args = append(args, status)
+		query += ` ORDER BY created_at DESC LIMIT $3 OFFSET $4`
+		args = append(args, limit, offset)
+	} else {
+		query += ` ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+		args = append(args, limit, offset)
+	}
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []domain.ApprovalRequest
+	for rows.Next() {
+		var ar domain.ApprovalRequest
+		if err := rows.Scan(&ar.ID, &ar.OrgID, &ar.RequestorID, &ar.FlagID, &ar.EnvID,
+			&ar.ChangeType, &ar.Payload, &ar.Status, &ar.ReviewerID, &ar.ReviewNote,
+			&ar.ReviewedAt, &ar.CreatedAt, &ar.UpdatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, ar)
+	}
+	return result, nil
+}
+
+func (s *Store) UpdateApprovalRequest(ctx context.Context, ar *domain.ApprovalRequest) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE approval_requests SET status=$1, reviewer_id=$2, review_note=$3, reviewed_at=$4, updated_at=NOW()
+		 WHERE id=$5`,
+		ar.Status, ar.ReviewerID, ar.ReviewNote, ar.ReviewedAt, ar.ID)
+	return err
 }
 
 // --- Get environment by API key ---

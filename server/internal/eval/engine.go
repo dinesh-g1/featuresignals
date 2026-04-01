@@ -17,6 +17,7 @@ package eval
 import (
 	"encoding/json"
 	"sort"
+	"time"
 
 	"github.com/featuresignals/server/internal/domain"
 )
@@ -60,12 +61,34 @@ func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *Rules
 		}
 	}
 
+	if flag.ExpiresAt != nil && !flag.ExpiresAt.IsZero() && flag.ExpiresAt.Before(time.Now()) {
+		return domain.EvalResult{
+			FlagKey: flagKey,
+			Value:   parseJSONValue(flag.DefaultValue),
+			Reason:  domain.ReasonDisabled,
+		}
+	}
+
 	state, ok := ruleset.States[flagKey]
 	if !ok || !state.Enabled {
 		return domain.EvalResult{
 			FlagKey: flagKey,
 			Value:   parseJSONValue(flag.DefaultValue),
 			Reason:  domain.ReasonDisabled,
+		}
+	}
+
+	if len(flag.Prerequisites) > 0 {
+		for _, prereqKey := range flag.Prerequisites {
+			prereqResult := e.Evaluate(prereqKey, ctx, ruleset)
+			prereqOn, _ := prereqResult.Value.(bool)
+			if prereqResult.Reason == domain.ReasonNotFound || prereqResult.Reason == domain.ReasonDisabled || !prereqOn {
+				return domain.EvalResult{
+					FlagKey: flagKey,
+					Value:   parseJSONValue(flag.DefaultValue),
+					Reason:  domain.ReasonPrerequisiteFailed,
+				}
+			}
 		}
 	}
 
