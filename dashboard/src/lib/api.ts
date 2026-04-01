@@ -81,17 +81,33 @@ export const api = {
   updateFlagState: (token: string, projectId: string, flagKey: string, envId: string, data: any) =>
     request(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { method: "PUT", body: data, token }),
 
+  // Projects
+  deleteProject: (token: string, id: string) =>
+    request(`/v1/projects/${id}`, { method: "DELETE", token }),
+
+  // Environments
+  deleteEnvironment: (token: string, projectId: string, envId: string) =>
+    request(`/v1/projects/${projectId}/environments/${envId}`, { method: "DELETE", token }),
+
   // Segments
   listSegments: (token: string, projectId: string) =>
     request<any[]>(`/v1/projects/${projectId}/segments`, { token }),
+  getSegment: (token: string, projectId: string, segKey: string) =>
+    request<any>(`/v1/projects/${projectId}/segments/${segKey}`, { token }),
   createSegment: (token: string, projectId: string, data: any) =>
     request(`/v1/projects/${projectId}/segments`, { method: "POST", body: data, token }),
+  updateSegment: (token: string, projectId: string, segKey: string, data: any) =>
+    request(`/v1/projects/${projectId}/segments/${segKey}`, { method: "PUT", body: data, token }),
+  deleteSegment: (token: string, projectId: string, segKey: string) =>
+    request(`/v1/projects/${projectId}/segments/${segKey}`, { method: "DELETE", token }),
 
   // API Keys
   listAPIKeys: (token: string, envId: string) =>
     request<any[]>(`/v1/environments/${envId}/api-keys`, { token }),
   createAPIKey: (token: string, envId: string, data: { name: string; type: string }) =>
     request(`/v1/environments/${envId}/api-keys`, { method: "POST", body: data, token }),
+  revokeAPIKey: (token: string, keyId: string) =>
+    request(`/v1/api-keys/${keyId}`, { method: "DELETE", token }),
 
   // Audit
   listAudit: (token: string, limit?: number, offset?: number) =>

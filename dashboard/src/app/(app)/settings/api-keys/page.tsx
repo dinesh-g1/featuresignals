@@ -9,8 +9,6 @@ import { useAppStore } from "@/stores/app-store";
 const settingsTabs = [
   { href: "/settings/general", label: "General" },
   { href: "/settings/api-keys", label: "API Keys" },
-  { href: "/settings/members", label: "Members" },
-  { href: "/settings/environments", label: "Environments" },
 ];
 
 export default function APIKeysPage() {
@@ -23,6 +21,7 @@ export default function APIKeysPage() {
   const [keys, setKeys] = useState<any[]>([]);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", type: "server" });
+  const [revoking, setRevoking] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -33,10 +32,12 @@ export default function APIKeysPage() {
     });
   }, [token, projectId, selectedEnv]);
 
-  useEffect(() => {
+  function reloadKeys() {
     if (!token || !selectedEnv) return;
     api.listAPIKeys(token, selectedEnv).then((k) => setKeys(k ?? [])).catch(() => {});
-  }, [token, selectedEnv]);
+  }
+
+  useEffect(() => { reloadKeys(); }, [token, selectedEnv]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +45,18 @@ export default function APIKeysPage() {
     const result: any = await api.createAPIKey(token, selectedEnv, form);
     setNewKey(result.key);
     setForm({ name: "", type: "server" });
-    api.listAPIKeys(token, selectedEnv).then((k) => setKeys(k ?? []));
+    reloadKeys();
+  }
+
+  async function handleRevoke(keyId: string) {
+    if (!token) return;
+    await api.revokeAPIKey(token, keyId);
+    setRevoking(null);
+    reloadKeys();
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text);
   }
 
   return (
@@ -78,7 +90,12 @@ export default function APIKeysPage() {
       {newKey && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 ring-1 ring-emerald-100">
           <p className="text-sm font-medium text-emerald-800">API key created. Copy it now — it won&apos;t be shown again.</p>
-          <code className="mt-2 block rounded-lg bg-emerald-100 p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200">{newKey}</code>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 rounded-lg bg-emerald-100 p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200">{newKey}</code>
+            <button onClick={() => copyToClipboard(newKey)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 transition-colors">
+              Copy
+            </button>
+          </div>
           <button onClick={() => setNewKey(null)} className="mt-2 text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700">Dismiss</button>
         </div>
       )}
@@ -109,9 +126,23 @@ export default function APIKeysPage() {
                   <p className="text-sm font-medium text-slate-900">{k.name}</p>
                   <p className="mt-0.5 text-xs text-slate-500">{k.key_prefix}... &middot; {k.type}</p>
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${k.revoked_at ? "bg-red-50 text-red-700 ring-red-100" : "bg-emerald-50 text-emerald-700 ring-emerald-100"}`}>
-                  {k.revoked_at ? "Revoked" : "Active"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${k.revoked_at ? "bg-red-50 text-red-700 ring-red-100" : "bg-emerald-50 text-emerald-700 ring-emerald-100"}`}>
+                    {k.revoked_at ? "Revoked" : "Active"}
+                  </span>
+                  {!k.revoked_at && (
+                    revoking === k.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleRevoke(k.id)} className="rounded px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100">Revoke</button>
+                        <button onClick={() => setRevoking(null)} className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100">Cancel</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setRevoking(k.id)} className="rounded px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors">
+                        Revoke
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             ))
           )}
