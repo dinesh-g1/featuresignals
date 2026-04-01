@@ -30,6 +30,7 @@ export default function FlagDetailPage() {
   const [scheduleDisable, setScheduleDisable] = useState("");
   const [allFlags, setAllFlags] = useState<any[]>([]);
   const [prereqs, setPrereqs] = useState<string[]>([]);
+  const [mutexGroup, setMutexGroup] = useState("");
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -37,6 +38,7 @@ export default function FlagDetailPage() {
       setFlag(f);
       setEditForm({ name: f.name, description: f.description || "" });
       setPrereqs(f.prerequisites || []);
+      setMutexGroup(f.mutual_exclusion_group || "");
     }).catch(() => {});
     api.listFlags(token, projectId).then((f) => setAllFlags(f ?? [])).catch(() => {});
     api.listEnvironments(token, projectId).then((e) => {
@@ -381,6 +383,53 @@ export default function FlagDetailPage() {
                 <p className="text-xs text-slate-400 italic">No prerequisites configured. This flag evaluates independently.</p>
               )}
             </div>
+          </div>
+
+          {/* Mutual exclusion group */}
+          <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+            <h3 className="text-sm font-medium text-slate-500 mb-3">Mutual Exclusion Group</h3>
+            <p className="text-xs text-slate-400 mb-3">Flags in the same group are mutually exclusive — only one can be ON per user. The eval engine picks a deterministic winner using consistent hashing.</p>
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={mutexGroup}
+                onChange={(e) => setMutexGroup(e.target.value)}
+                placeholder="e.g. experiment-checkout-v2"
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <button
+                onClick={async () => {
+                  if (!token || !projectId) return;
+                  const updated = await api.updateFlag(token, projectId, flagKey, { mutual_exclusion_group: mutexGroup });
+                  setFlag(updated);
+                }}
+                className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-indigo-700"
+              >
+                Save
+              </button>
+              {mutexGroup && (
+                <button
+                  onClick={async () => {
+                    if (!token || !projectId) return;
+                    setMutexGroup("");
+                    const updated = await api.updateFlag(token, projectId, flagKey, { mutual_exclusion_group: "" });
+                    setFlag(updated);
+                  }}
+                  className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {mutexGroup && (
+              <div className="mt-3 rounded-lg bg-purple-50 px-3 py-2 ring-1 ring-purple-100">
+                <p className="text-xs font-medium text-purple-700">
+                  Group: <span className="font-mono">{mutexGroup}</span>
+                  {" — "}
+                  {allFlags.filter((f) => f.key !== flagKey && f.mutual_exclusion_group === mutexGroup).length} other flag(s) in this group
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

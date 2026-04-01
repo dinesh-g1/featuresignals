@@ -14,6 +14,7 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
+	"github.com/featuresignals/server/internal/metrics"
 )
 
 // NewRouter wires all handlers, middleware, and routes. All dependencies are
@@ -27,6 +28,7 @@ func NewRouter(
 	sseServer handlers.StreamServer,
 	logger *slog.Logger,
 	corsOrigins []string,
+	metricsCollector *metrics.Collector,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -64,7 +66,9 @@ func NewRouter(
 	teamH := handlers.NewTeamHandler(store, jwtMgr)
 	webhookH := handlers.NewWebhookHandler(store)
 	approvalH := handlers.NewApprovalHandler(store)
-	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger)
+	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
+	impressionCollector := metrics.NewImpressionCollector(100_000)
+	metricsH := handlers.NewMetricsHandler(metricsCollector, impressionCollector)
 
 	r.Route("/v1", func(r chi.Router) {
 		// Public auth routes
@@ -79,6 +83,7 @@ func NewRouter(
 			r.Post("/evaluate/bulk", evalH.BulkEvaluate)
 			r.Get("/client/{envKey}/flags", evalH.ClientFlags)
 			r.Get("/stream/{envKey}", evalH.Stream)
+			r.Post("/track", metricsH.TrackImpression)
 		})
 
 		// Management API (authenticated via JWT)
@@ -136,6 +141,12 @@ func NewRouter(
 				r.Put("/members/{memberID}", teamH.UpdateRole)
 				r.Delete("/members/{memberID}", teamH.Remove)
 				r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
+
+				// Metrics
+				r.Get("/metrics/evaluations", metricsH.Summary)
+				r.Post("/metrics/evaluations/reset", metricsH.Reset)
+				r.Get("/metrics/impressions", metricsH.ImpressionSummary)
+				r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
 
 				// Webhooks
 				r.Post("/webhooks", webhookH.Create)

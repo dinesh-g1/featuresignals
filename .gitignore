@@ -7,6 +7,7 @@ out/
 dist/
 build/
 .astro/
+.docusaurus/
 
 # Environment variables
 .env
@@ -37,6 +38,14 @@ pnpm-debug.log*
 *.dylib
 /server/bin/
 *.out
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+.venv/
 
 # Claude local settings
 .claude/settings.local.json

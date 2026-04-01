@@ -270,18 +270,18 @@ func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
 		f.Prerequisites = []string{}
 	}
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO flags (project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at, updated_at`,
-		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites,
+		`INSERT INTO flags (project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`,
+		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup,
 	).Scan(&f.ID, &f.CreatedAt, &f.UpdatedAt)
 }
 
 func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error) {
 	f := &domain.Flag{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, created_at, updated_at
+		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE project_id = $1 AND key = $2`, projectID, key,
-	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.CreatedAt, &f.UpdatedAt)
+	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Fla
 
 func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, created_at, updated_at
+		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
@@ -299,7 +299,7 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 	flags := []domain.Flag{}
 	for rows.Next() {
 		var f domain.Flag
-		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.CreatedAt, &f.UpdatedAt); err != nil {
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
 			return nil, err
 		}
 		flags = append(flags, f)
@@ -312,9 +312,9 @@ func (s *Store) UpdateFlag(ctx context.Context, f *domain.Flag) error {
 		f.Prerequisites = []string{}
 	}
 	_, err := s.pool.Exec(ctx,
-		`UPDATE flags SET name=$1, description=$2, default_value=$3, tags=$4, expires_at=$5, prerequisites=$6, updated_at=NOW()
-		 WHERE id = $7`,
-		f.Name, f.Description, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.ID)
+		`UPDATE flags SET name=$1, description=$2, default_value=$3, tags=$4, expires_at=$5, prerequisites=$6, mutual_exclusion_group=$7, updated_at=NOW()
+		 WHERE id = $8`,
+		f.Name, f.Description, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup, f.ID)
 	return err
 }
 
@@ -330,31 +330,40 @@ func (s *Store) UpsertFlagState(ctx context.Context, fs *domain.FlagState) error
 	if err != nil {
 		return fmt.Errorf("marshal rules: %w", err)
 	}
+	variantsJSON, err := json.Marshal(fs.Variants)
+	if err != nil {
+		return fmt.Errorf("marshal variants: %w", err)
+	}
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO flag_states (flag_id, env_id, enabled, default_value, rules, percentage_rollout, scheduled_enable_at, scheduled_disable_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		`INSERT INTO flag_states (flag_id, env_id, enabled, default_value, rules, percentage_rollout, variants, scheduled_enable_at, scheduled_disable_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		 ON CONFLICT (flag_id, env_id) DO UPDATE SET enabled=$3, default_value=$4, rules=$5, percentage_rollout=$6,
-		   scheduled_enable_at=$7, scheduled_disable_at=$8, updated_at=NOW()
+		   variants=$7, scheduled_enable_at=$8, scheduled_disable_at=$9, updated_at=NOW()
 		 RETURNING id, updated_at`,
 		fs.FlagID, fs.EnvID, fs.Enabled, fs.DefaultValue, rulesJSON, fs.PercentageRollout,
-		fs.ScheduledEnableAt, fs.ScheduledDisableAt,
+		variantsJSON, fs.ScheduledEnableAt, fs.ScheduledDisableAt,
 	).Scan(&fs.ID, &fs.UpdatedAt)
 }
 
 func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain.FlagState, error) {
 	fs := &domain.FlagState{}
-	var rulesJSON []byte
+	var rulesJSON, variantsJSON []byte
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout,
-		        scheduled_enable_at, scheduled_disable_at, updated_at
+		        variants, scheduled_enable_at, scheduled_disable_at, updated_at
 		 FROM flag_states WHERE flag_id = $1 AND env_id = $2`, flagID, envID,
 	).Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue, &rulesJSON,
-		&fs.PercentageRollout, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt)
+		&fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
 		return nil, fmt.Errorf("unmarshal rules: %w", err)
+	}
+	if len(variantsJSON) > 0 {
+		if err := json.Unmarshal(variantsJSON, &fs.Variants); err != nil {
+			return nil, fmt.Errorf("unmarshal variants: %w", err)
+		}
 	}
 	return fs, nil
 }
@@ -362,7 +371,7 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout,
-		        scheduled_enable_at, scheduled_disable_at, updated_at
+		        variants, scheduled_enable_at, scheduled_disable_at, updated_at
 		 FROM flag_states
 		 WHERE (scheduled_enable_at IS NOT NULL AND scheduled_enable_at <= $1)
 		    OR (scheduled_disable_at IS NOT NULL AND scheduled_disable_at <= $1)`, before)
@@ -373,13 +382,16 @@ func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]d
 	var result []domain.FlagState
 	for rows.Next() {
 		var fs domain.FlagState
-		var rulesJSON []byte
+		var rulesJSON, variantsJSON []byte
 		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue,
-			&rulesJSON, &fs.PercentageRollout, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
+			&rulesJSON, &fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
 			return nil, fmt.Errorf("unmarshal rules: %w", err)
+		}
+		if len(variantsJSON) > 0 {
+			json.Unmarshal(variantsJSON, &fs.Variants)
 		}
 		result = append(result, fs)
 	}
@@ -632,7 +644,7 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 	// Load flag states for this environment
 	rows, err := s.pool.Query(ctx,
 		`SELECT fs.id, fs.flag_id, fs.env_id, fs.enabled, fs.default_value, fs.rules,
-		        fs.percentage_rollout, fs.scheduled_enable_at, fs.scheduled_disable_at, fs.updated_at
+		        fs.percentage_rollout, fs.variants, fs.scheduled_enable_at, fs.scheduled_disable_at, fs.updated_at
 		 FROM flag_states fs
 		 JOIN flags f ON f.id = fs.flag_id
 		 WHERE f.project_id = $1 AND fs.env_id = $2`, projectID, envID)
@@ -643,13 +655,16 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 	states := []domain.FlagState{}
 	for rows.Next() {
 		var fs domain.FlagState
-		var rulesJSON []byte
+		var rulesJSON, variantsJSON []byte
 		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue,
-			&rulesJSON, &fs.PercentageRollout, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
+			&rulesJSON, &fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
 			return nil, nil, nil, err
 		}
 		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
 			return nil, nil, nil, fmt.Errorf("unmarshal rules: %w", err)
+		}
+		if len(variantsJSON) > 0 {
+			json.Unmarshal(variantsJSON, &fs.Variants)
 		}
 		states = append(states, fs)
 	}

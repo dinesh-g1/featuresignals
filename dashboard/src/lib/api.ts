@@ -153,6 +153,15 @@ export const api = {
       token,
     }),
 
+  // Evaluation Metrics
+  getEvalMetrics: (token: string) =>
+    request<{ total_evaluations: number; window_start: string; counters: { flag_key: string; env_id: string; reason: string; count: number }[] }>(
+      "/v1/metrics/evaluations",
+      { token },
+    ),
+  resetEvalMetrics: (token: string) =>
+    request("/v1/metrics/evaluations/reset", { method: "POST", token }),
+
   // Webhooks
   listWebhooks: (token: string) =>
     request<any[]>("/v1/webhooks", { token }),

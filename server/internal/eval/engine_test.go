@@ -279,6 +279,143 @@ func TestEvaluate_PrerequisiteNotMet(t *testing.T) {
 	}
 }
 
+func TestEvaluate_MutualExclusion_OnlyOneWins(t *testing.T) {
+	engine := NewEngine()
+	ruleset := &Ruleset{
+		Flags: map[string]*domain.Flag{
+			"exp-a": {ID: "f-a", Key: "exp-a", FlagType: domain.FlagTypeBoolean, DefaultValue: jsonVal(false), MutualExclusionGroup: "experiment-1"},
+			"exp-b": {ID: "f-b", Key: "exp-b", FlagType: domain.FlagTypeBoolean, DefaultValue: jsonVal(false), MutualExclusionGroup: "experiment-1"},
+			"exp-c": {ID: "f-c", Key: "exp-c", FlagType: domain.FlagTypeBoolean, DefaultValue: jsonVal(false), MutualExclusionGroup: "experiment-1"},
+		},
+		States: map[string]*domain.FlagState{
+			"exp-a": {FlagID: "f-a", Enabled: true, DefaultValue: jsonVal(true)},
+			"exp-b": {FlagID: "f-b", Enabled: true, DefaultValue: jsonVal(true)},
+			"exp-c": {FlagID: "f-c", Enabled: true, DefaultValue: jsonVal(true)},
+		},
+		Segments: map[string]*domain.Segment{},
+	}
+
+	total := 1000
+	for i := 0; i < total; i++ {
+		ctx := domain.EvalContext{Key: fmt.Sprintf("user-%d", i)}
+		enabledCount := 0
+		for _, key := range []string{"exp-a", "exp-b", "exp-c"} {
+			result := engine.Evaluate(key, ctx, ruleset)
+			if result.Reason != domain.ReasonMutuallyExcluded {
+				enabledCount++
+			}
+		}
+		if enabledCount != 1 {
+			t.Fatalf("user-%d: expected exactly 1 flag enabled in mutex group, got %d", i, enabledCount)
+		}
+	}
+}
+
+func TestEvaluate_MutualExclusion_DisabledMembersIgnored(t *testing.T) {
+	engine := NewEngine()
+	ruleset := &Ruleset{
+		Flags: map[string]*domain.Flag{
+			"exp-a": {ID: "f-a", Key: "exp-a", FlagType: domain.FlagTypeBoolean, DefaultValue: jsonVal(false), MutualExclusionGroup: "grp"},
+			"exp-b": {ID: "f-b", Key: "exp-b", FlagType: domain.FlagTypeBoolean, DefaultValue: jsonVal(false), MutualExclusionGroup: "grp"},
+		},
+		States: map[string]*domain.FlagState{
+			"exp-a": {FlagID: "f-a", Enabled: true, DefaultValue: jsonVal(true)},
+			"exp-b": {FlagID: "f-b", Enabled: false, DefaultValue: jsonVal(true)},
+		},
+		Segments: map[string]*domain.Segment{},
+	}
+
+	ctx := domain.EvalContext{Key: "any-user"}
+	result := engine.Evaluate("exp-a", ctx, ruleset)
+	if result.Reason == domain.ReasonMutuallyExcluded {
+		t.Error("exp-a should win when exp-b is disabled, but got MUTUALLY_EXCLUDED")
+	}
+}
+
+func TestEvaluate_MutualExclusion_NoGroupNoEffect(t *testing.T) {
+	engine := NewEngine()
+	ruleset := makeRuleset()
+
+	ctx := domain.EvalContext{Key: "user1", Attributes: map[string]interface{}{"email": "dev@internal.com"}}
+	result := engine.Evaluate("feature-a", ctx, ruleset)
+	if result.Reason == domain.ReasonMutuallyExcluded {
+		t.Error("flag without mutex group should not be mutually excluded")
+	}
+}
+
+func TestEvaluate_ABVariant_Assignment(t *testing.T) {
+	engine := NewEngine()
+	ruleset := &Ruleset{
+		Flags: map[string]*domain.Flag{
+			"checkout-exp": {ID: "f-ab", Key: "checkout-exp", FlagType: domain.FlagTypeAB, DefaultValue: jsonVal("control")},
+		},
+		States: map[string]*domain.FlagState{
+			"checkout-exp": {
+				FlagID:  "f-ab",
+				Enabled: true,
+				Variants: []domain.Variant{
+					{Key: "control", Value: jsonVal("control"), Weight: 5000},
+					{Key: "variant-a", Value: jsonVal("new-checkout"), Weight: 5000},
+				},
+			},
+		},
+		Segments: map[string]*domain.Segment{},
+	}
+
+	controlCount := 0
+	variantCount := 0
+	total := 10000
+	for i := 0; i < total; i++ {
+		ctx := domain.EvalContext{Key: fmt.Sprintf("user-%d", i)}
+		result := engine.Evaluate("checkout-exp", ctx, ruleset)
+		if result.Reason != domain.ReasonVariant {
+			t.Fatalf("expected VARIANT reason, got %s", result.Reason)
+		}
+		if result.VariantKey == "control" {
+			controlCount++
+		} else if result.VariantKey == "variant-a" {
+			variantCount++
+		} else {
+			t.Fatalf("unexpected variant key: %s", result.VariantKey)
+		}
+	}
+
+	ratio := float64(controlCount) / float64(total)
+	if ratio < 0.40 || ratio > 0.60 {
+		t.Errorf("expected ~50%% control split, got %.2f%% (%d/%d)", ratio*100, controlCount, total)
+	}
+}
+
+func TestEvaluate_ABVariant_Consistency(t *testing.T) {
+	engine := NewEngine()
+	ruleset := &Ruleset{
+		Flags: map[string]*domain.Flag{
+			"exp": {ID: "f-ab2", Key: "exp", FlagType: domain.FlagTypeAB, DefaultValue: jsonVal("x")},
+		},
+		States: map[string]*domain.FlagState{
+			"exp": {
+				FlagID:  "f-ab2",
+				Enabled: true,
+				Variants: []domain.Variant{
+					{Key: "a", Value: jsonVal("a"), Weight: 3333},
+					{Key: "b", Value: jsonVal("b"), Weight: 3333},
+					{Key: "c", Value: jsonVal("c"), Weight: 3334},
+				},
+			},
+		},
+		Segments: map[string]*domain.Segment{},
+	}
+
+	ctx := domain.EvalContext{Key: "stable-user"}
+	first := engine.Evaluate("exp", ctx, ruleset)
+	for i := 0; i < 100; i++ {
+		result := engine.Evaluate("exp", ctx, ruleset)
+		if result.VariantKey != first.VariantKey {
+			t.Fatalf("variant assignment not consistent: first=%s, got=%s on iteration %d", first.VariantKey, result.VariantKey, i)
+		}
+	}
+}
+
 func TestEvaluateAll(t *testing.T) {
 	engine := NewEngine()
 	ruleset := makeRuleset()

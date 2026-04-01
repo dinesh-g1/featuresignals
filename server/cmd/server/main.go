@@ -17,6 +17,7 @@ import (
 	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/sse"
+	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/store/postgres"
@@ -81,8 +82,11 @@ func main() {
 		logger.Warn("failed to start PG LISTEN (cache invalidation disabled)", "error", err)
 	}
 
+	// Evaluation metrics collector
+	metricsCollector := metrics.NewCollector()
+
 	// Router
-	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins)
+	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector)
 
 	// Server
 	srv := &http.Server{

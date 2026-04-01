@@ -27,13 +27,14 @@ func NewFlagHandler(store domain.Store) *FlagHandler {
 }
 
 type CreateFlagRequest struct {
-	Key           string          `json:"key"`
-	Name          string          `json:"name"`
-	Description   string          `json:"description"`
-	FlagType      string          `json:"flag_type"`
-	DefaultValue  json.RawMessage `json:"default_value"`
-	Tags          []string        `json:"tags"`
-	Prerequisites []string        `json:"prerequisites,omitempty"`
+	Key                  string          `json:"key"`
+	Name                 string          `json:"name"`
+	Description          string          `json:"description"`
+	FlagType             string          `json:"flag_type"`
+	DefaultValue         json.RawMessage `json:"default_value"`
+	Tags                 []string        `json:"tags"`
+	Prerequisites        []string        `json:"prerequisites,omitempty"`
+	MutualExclusionGroup string          `json:"mutual_exclusion_group,omitempty"`
 }
 
 func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -60,18 +61,19 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	flag := &domain.Flag{
-		ProjectID:     projectID,
-		Key:           req.Key,
-		Name:          req.Name,
-		Description:   req.Description,
-		FlagType:      flagType,
-		DefaultValue:  defaultVal,
-		Tags:          req.Tags,
-		Prerequisites: req.Prerequisites,
+		ProjectID:            projectID,
+		Key:                  req.Key,
+		Name:                 req.Name,
+		Description:          req.Description,
+		FlagType:             flagType,
+		DefaultValue:         defaultVal,
+		Tags:                 req.Tags,
+		Prerequisites:        req.Prerequisites,
+		MutualExclusionGroup: req.MutualExclusionGroup,
 	}
 
 	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
-		h.l(r).Warn("flag create conflict", "project_id", projectID, "key", req.Key)
+		h.l(r).Warn("flag create failed", "project_id", projectID, "key", req.Key, "err", err)
 		httputil.Error(w, http.StatusConflict, "flag key already exists in this project")
 		return
 	}
@@ -155,6 +157,9 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if req.Prerequisites != nil {
 		flag.Prerequisites = req.Prerequisites
 	}
+	if req.MutualExclusionGroup != "" || req.MutualExclusionGroup == "" {
+		flag.MutualExclusionGroup = req.MutualExclusionGroup
+	}
 
 	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
 		h.l(r).Error("flag update failed", "error", err, "flag_id", flag.ID)
@@ -222,6 +227,7 @@ type UpdateFlagStateRequest struct {
 	DefaultValue       json.RawMessage        `json:"default_value,omitempty"`
 	Rules              []domain.TargetingRule  `json:"rules,omitempty"`
 	PercentageRollout  *int                   `json:"percentage_rollout,omitempty"`
+	Variants           []domain.Variant       `json:"variants,omitempty"`
 	ScheduledEnableAt  *string                `json:"scheduled_enable_at,omitempty"`
 	ScheduledDisableAt *string                `json:"scheduled_disable_at,omitempty"`
 }
@@ -265,6 +271,9 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.PercentageRollout != nil {
 		state.PercentageRollout = *req.PercentageRollout
+	}
+	if req.Variants != nil {
+		state.Variants = req.Variants
 	}
 	if req.ScheduledEnableAt != nil {
 		if *req.ScheduledEnableAt == "" {
