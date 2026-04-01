@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { SegmentRulesEditor } from "@/components/segment-rules-editor";
+import { toast } from "@/components/toast";
 
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
@@ -23,24 +24,55 @@ export default function SegmentsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !projectId) return;
-    await api.createSegment(token, projectId, { ...form, rules: [] });
-    setShowCreate(false);
-    setForm({ key: "", name: "", description: "", match_type: "all" });
-    reload();
+    if (!token || !projectId) {
+      toast("Select a project first", "error");
+      return;
+    }
+    try {
+      await api.createSegment(token, projectId, { ...form, rules: [] });
+      setShowCreate(false);
+      setForm({ key: "", name: "", description: "", match_type: "all" });
+      toast("Segment created", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to create segment", "error");
+    }
   }
 
   async function handleDelete(segKey: string) {
     if (!token || !projectId) return;
-    await api.deleteSegment(token, projectId, segKey);
-    setDeleting(null);
-    reload();
+    try {
+      await api.deleteSegment(token, projectId, segKey);
+      setDeleting(null);
+      toast("Segment deleted", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to delete segment", "error");
+      setDeleting(null);
+    }
   }
 
   async function handleSaveRules(segKey: string, rules: any[], matchType: string) {
     if (!token || !projectId) return;
-    await api.updateSegment(token, projectId, segKey, { rules, match_type: matchType });
-    reload();
+    try {
+      await api.updateSegment(token, projectId, segKey, { rules, match_type: matchType });
+      toast("Segment rules saved", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to save rules", "error");
+    }
+  }
+
+  if (!projectId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <svg className="h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <p className="mt-4 text-sm font-medium text-slate-500">No project selected</p>
+        <p className="mt-1 text-xs text-slate-400">Create a project using the sidebar to start managing segments.</p>
+      </div>
+    );
   }
 
   return (

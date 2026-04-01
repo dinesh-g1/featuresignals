@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { toast } from "@/components/toast";
 
 const settingsTabs = [
   { href: "/settings/general", label: "General" },
@@ -59,17 +60,28 @@ export default function WebhooksPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!token) return;
-    await api.createWebhook(token, form);
-    setShowCreate(false);
-    setForm({ name: "", url: "", secret: "", events: [] });
-    reload();
+    try {
+      await api.createWebhook(token, form);
+      setShowCreate(false);
+      setForm({ name: "", url: "", secret: "", events: [] });
+      toast("Webhook created", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to create webhook", "error");
+    }
   }
 
   async function handleDelete(webhookId: string) {
     if (!token) return;
-    await api.deleteWebhook(token, webhookId);
-    setDeleting(null);
-    reload();
+    try {
+      await api.deleteWebhook(token, webhookId);
+      setDeleting(null);
+      toast("Webhook deleted", "success");
+      reload();
+    } catch (err: any) {
+      toast(err.message || "Failed to delete webhook", "error");
+      setDeleting(null);
+    }
   }
 
   async function toggleEnabled(wh: Webhook) {

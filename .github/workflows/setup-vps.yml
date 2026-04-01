@@ -1,0 +1,159 @@
+name: Setup VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  provision:
+    name: Provision VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: System setup and deploy user creation
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            echo "==> System updates..."
+            apt update && apt upgrade -y
+            apt install -y curl git ufw fail2ban
+
+            echo "==> Creating deploy user..."
+            id -u deploy &>/dev/null || adduser --disabled-password --gecos "" deploy
+            echo "deploy ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/deploy
+            chmod 440 /etc/sudoers.d/deploy
+
+            echo "==> Configuring SSH for deploy user..."
+            mkdir -p /home/deploy/.ssh
+            cp /root/.ssh/authorized_keys /home/deploy/.ssh/authorized_keys
+            chmod 700 /home/deploy/.ssh
+            chmod 600 /home/deploy/.ssh/authorized_keys
+            chown -R deploy:deploy /home/deploy/.ssh
+
+            echo "==> Installing Docker..."
+            if ! command -v docker &> /dev/null; then
+              install -m 0755 -d /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              chmod a+r /etc/apt/keyrings/docker.gpg
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+              apt update
+              apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            fi
+            usermod -aG docker deploy
+
+            echo "==> Configuring firewall..."
+            ufw default deny incoming
+            ufw default allow outgoing
+            ufw allow 22/tcp
+            ufw allow 80/tcp
+            ufw allow 443/tcp
+            ufw allow 443/udp
+            ufw --force enable
+
+            echo "==> Starting fail2ban..."
+            systemctl enable fail2ban
+            systemctl start fail2ban
+
+            echo "==> Creating project directory..."
+            mkdir -p /opt/featuresignals
+            chown deploy:deploy /opt/featuresignals
+            mkdir -p /opt/featuresignals/backups
+            chown deploy:deploy /opt/featuresignals/backups
+
+            echo "System provisioning complete."
+
+      - name: Clone repository
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            if [ ! -d /opt/featuresignals/.git ]; then
+              git clone https://github.com/featuresignals/featuresignals.git /opt/featuresignals
+            else
+              cd /opt/featuresignals && git pull origin main
+            fi
+
+      - name: Write environment file
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          envs: POSTGRES_PASSWORD,JWT_SECRET
+          script: |
+            cat > /opt/featuresignals/.env << ENVEOF
+            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            JWT_SECRET=${JWT_SECRET}
+            ENVEOF
+            chmod 600 /opt/featuresignals/.env
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Setup backup cron
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            (crontab -l 2>/dev/null | grep -v "pg-backup"; echo "0 3 * * * /opt/featuresignals/deploy/pg-backup.sh >> /var/log/fs-backup.log 2>&1") | crontab -
+            echo "Backup cron installed."
+
+      - name: Initial deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            cd /opt/featuresignals
+            bash deploy/deploy.sh
+
+      - name: Harden SSH (disable root and password login)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+            sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+            sudo sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+            sudo systemctl restart sshd
+            echo "SSH hardened: root login disabled, password auth disabled."
+
+      - name: Verify setup
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "==> Docker version:"
+            docker --version
+
+            echo "==> Firewall status:"
+            sudo ufw status
+
+            echo "==> Service status:"
+            sleep 15
+            docker compose -f /opt/featuresignals/docker-compose.prod.yml ps
+
+            echo ""
+            echo "VPS setup complete. All services running."

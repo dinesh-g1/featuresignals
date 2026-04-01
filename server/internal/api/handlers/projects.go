@@ -19,7 +19,13 @@ func NewProjectHandler(store domain.Store) *ProjectHandler {
 }
 
 func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
+
+	if orgID == "" {
+		httputil.Error(w, http.StatusForbidden, "no organization associated with your account")
+		return
+	}
 
 	var req struct {
 		Name string `json:"name"`
@@ -39,6 +45,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	project := &domain.Project{OrgID: orgID, Name: req.Name, Slug: req.Slug}
 	if err := h.store.CreateProject(r.Context(), project); err != nil {
+		log.Warn("project create failed", "org_id", orgID, "slug", req.Slug, "err", err)
 		httputil.Error(w, http.StatusConflict, "project slug already exists")
 		return
 	}

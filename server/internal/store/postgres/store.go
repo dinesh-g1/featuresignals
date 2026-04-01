@@ -82,10 +82,16 @@ func (s *Store) AddOrgMember(ctx context.Context, member *domain.OrgMember) erro
 
 func (s *Store) GetOrgMember(ctx context.Context, orgID, userID string) (*domain.OrgMember, error) {
 	m := &domain.OrgMember{}
-	err := s.pool.QueryRow(ctx,
-		`SELECT id, org_id, user_id, role, created_at FROM org_members WHERE org_id = $1 AND user_id = $2`,
-		orgID, userID,
-	).Scan(&m.ID, &m.OrgID, &m.UserID, &m.Role, &m.CreatedAt)
+	var query string
+	var args []interface{}
+	if orgID == "" {
+		query = `SELECT id, org_id, user_id, role, created_at FROM org_members WHERE user_id = $1 LIMIT 1`
+		args = []interface{}{userID}
+	} else {
+		query = `SELECT id, org_id, user_id, role, created_at FROM org_members WHERE org_id = $1 AND user_id = $2`
+		args = []interface{}{orgID, userID}
+	}
+	err := s.pool.QueryRow(ctx, query, args...).Scan(&m.ID, &m.OrgID, &m.UserID, &m.Role, &m.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +99,16 @@ func (s *Store) GetOrgMember(ctx context.Context, orgID, userID string) (*domain
 }
 
 func (s *Store) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgMember, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, org_id, user_id, role, created_at FROM org_members WHERE org_id = $1`, orgID)
+	var query string
+	var args []interface{}
+	if orgID == "" {
+		query = `SELECT id, org_id, user_id, role, created_at FROM org_members`
+		args = nil
+	} else {
+		query = `SELECT id, org_id, user_id, role, created_at FROM org_members WHERE org_id = $1`
+		args = []interface{}{orgID}
+	}
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

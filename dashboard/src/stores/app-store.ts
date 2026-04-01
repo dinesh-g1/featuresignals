@@ -31,7 +31,10 @@ export const useAppStore = create<AppState>()(
           currentProjectId: null,
           currentEnvId: null,
         }),
-      setCurrentProject: (id) => set({ currentProjectId: id }),
+      setCurrentProject: (id) => set((state) => ({
+        currentProjectId: id,
+        currentEnvId: state.currentProjectId !== id ? null : state.currentEnvId,
+      })),
       setCurrentEnv: (id) => set({ currentEnvId: id }),
     }),
     { name: "featuresignals-store" },
