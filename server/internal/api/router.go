@@ -32,11 +32,7 @@ func NewRouter(
 ) http.Handler {
 	r := chi.NewRouter()
 
-	// Global middleware
-	r.Use(chimw.RequestID)
-	r.Use(chimw.RealIP)
-	r.Use(middleware.Logging(logger))
-	r.Use(chimw.Recoverer)
+	// CORS must be first so every response (including panic recoveries) gets headers.
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   corsOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -44,6 +40,10 @@ func NewRouter(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	r.Use(chimw.RequestID)
+	r.Use(chimw.RealIP)
+	r.Use(middleware.Logging(logger))
+	r.Use(chimw.Recoverer)
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
