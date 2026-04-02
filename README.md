@@ -7,7 +7,7 @@
     <a href="https://featuresignals.com">Website</a> &middot;
     <a href="https://docs.featuresignals.com">Documentation</a> &middot;
     <a href="https://app.featuresignals.com">Dashboard</a> &middot;
-    <a href="https://github.com/featuresignals/featuresignals/issues">Issues</a>
+    <a href="https://github.com/dinesh-g1/featuresignals/issues">Issues</a>
   </p>
 </p>
 
@@ -74,7 +74,7 @@ Zero database calls on the evaluation hot path. Flags are evaluated from an in-m
 The fastest way to run the full stack locally -- API server, dashboard, and PostgreSQL:
 
 ```bash
-git clone https://github.com/featuresignals/featuresignals.git
+git clone https://github.com/dinesh-g1/featuresignals.git
 cd featuresignals
 docker compose up
 ```
