@@ -87,6 +87,7 @@ func NewRouter(
 	metricsH := handlers.NewMetricsHandler(metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.PayUMerchantKey, billing.PayUSalt, billing.PayUMode, billing.DashboardURL, billing.AppBaseURL, logger)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
+	demoH := handlers.NewDemoHandler(store, jwtMgr, logger)
 
 	jwtAuth := middleware.JWTAuth(jwtMgr)
 
@@ -100,6 +101,17 @@ func NewRouter(
 		// PayU callbacks (public — PayU redirects here after payment)
 		r.Post("/billing/payu/callback", billingH.PayUCallback)
 		r.Post("/billing/payu/failure", billingH.PayUFailure)
+
+		// Demo routes (session creation is public + rate-limited; convert/feedback require JWT)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(10))
+			r.Post("/demo/session", demoH.CreateSession)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Post("/demo/convert", demoH.Convert)
+			r.Post("/demo/feedback", demoH.Feedback)
+		})
 
 		// Auth verification (authenticated via JWT)
 		r.Group(func(r chi.Router) {

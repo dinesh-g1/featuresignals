@@ -89,4 +89,8 @@ jobs:
             curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://docs.featuresignals.com || echo "WARNING: Docs health check failed"
 
             echo ""
+            echo "==> Health check: Demo"
+            curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://demo.featuresignals.com || echo "WARNING: Demo health check failed"
+
+            echo ""
             echo "Deployment verified."

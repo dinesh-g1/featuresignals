@@ -128,3 +128,54 @@ func TestGenerateTokenPair_DifferentUsersGetDifferentTokens(t *testing.T) {
 		t.Error("different users should get different tokens")
 	}
 }
+
+func TestGenerateDemoTokenPair(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	demoExpires := time.Now().Add(7 * 24 * time.Hour).Unix()
+
+	pair, err := mgr.GenerateDemoTokenPair("user-1", "org-1", "owner", demoExpires)
+	if err != nil {
+		t.Fatalf("GenerateDemoTokenPair() error: %v", err)
+	}
+	if pair.AccessToken == "" {
+		t.Error("expected non-empty access token")
+	}
+	if pair.RefreshToken == "" {
+		t.Error("expected non-empty refresh token")
+	}
+
+	claims, err := mgr.ValidateToken(pair.AccessToken)
+	if err != nil {
+		t.Fatalf("ValidateToken() error: %v", err)
+	}
+	if !claims.Demo {
+		t.Error("expected Demo claim to be true")
+	}
+	if claims.DemoExpiresAt != demoExpires {
+		t.Errorf("expected DemoExpiresAt=%d, got %d", demoExpires, claims.DemoExpiresAt)
+	}
+	if claims.UserID != "user-1" {
+		t.Errorf("expected UserID=user-1, got %s", claims.UserID)
+	}
+
+	refreshClaims, err := mgr.ValidateToken(pair.RefreshToken)
+	if err != nil {
+		t.Fatalf("ValidateToken(refresh) error: %v", err)
+	}
+	if !refreshClaims.Demo {
+		t.Error("expected Demo claim in refresh token")
+	}
+}
+
+func TestDemoToken_RegularTokenNotDemo(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+
+	pair, _ := mgr.GenerateTokenPair("user-1", "org-1", "owner")
+	claims, _ := mgr.ValidateToken(pair.AccessToken)
+	if claims.Demo {
+		t.Error("regular token should not have Demo claim")
+	}
+	if claims.DemoExpiresAt != 0 {
+		t.Error("regular token should not have DemoExpiresAt")
+	}
+}

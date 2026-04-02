@@ -18,13 +18,16 @@ var ErrInvalidToken = errors.New("invalid or expired token")
 // Depend on this interface instead of *JWTManager for testability.
 type TokenManager interface {
 	GenerateTokenPair(userID, orgID, role string) (*TokenPair, error)
+	GenerateDemoTokenPair(userID, orgID, role string, demoExpiresAt int64) (*TokenPair, error)
 	ValidateToken(tokenStr string) (*Claims, error)
 }
 
 type Claims struct {
-	UserID string `json:"user_id"`
-	OrgID  string `json:"org_id"`
-	Role   string `json:"role"`
+	UserID        string `json:"user_id"`
+	OrgID         string `json:"org_id"`
+	Role          string `json:"role"`
+	Demo          bool   `json:"demo,omitempty"`
+	DemoExpiresAt int64  `json:"demo_expires_at,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -73,6 +76,54 @@ func (m *JWTManager) GenerateTokenPair(userID, orgID, role string) (*TokenPair, 
 		UserID: userID,
 		OrgID:  orgID,
 		Role:   role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(m.refreshTTL)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			Issuer:    "featuresignals-refresh",
+		},
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshTokenStr, err := refreshToken.SignedString(m.secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshTokenStr,
+		ExpiresAt:    expiresAt.Unix(),
+	}, nil
+}
+
+func (m *JWTManager) GenerateDemoTokenPair(userID, orgID, role string, demoExpiresAt int64) (*TokenPair, error) {
+	now := time.Now()
+	expiresAt := now.Add(m.tokenTTL)
+
+	claims := Claims{
+		UserID:        userID,
+		OrgID:         orgID,
+		Role:          role,
+		Demo:          true,
+		DemoExpiresAt: demoExpiresAt,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			Issuer:    "featuresignals",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	accessToken, err := token.SignedString(m.secret)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshClaims := Claims{
+		UserID:        userID,
+		OrgID:         orgID,
+		Role:          role,
+		Demo:          true,
+		DemoExpiresAt: demoExpiresAt,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(m.refreshTTL)),
 			IssuedAt:  jwt.NewNumericDate(now),

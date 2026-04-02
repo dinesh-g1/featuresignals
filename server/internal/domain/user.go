@@ -26,6 +26,7 @@ type User struct {
 	EmailVerifyExpires *time.Time `json:"-" db:"email_verify_expires_at"`
 	PhoneOTP           string     `json:"-" db:"phone_otp"`
 	PhoneOTPExpires    *time.Time `json:"-" db:"phone_otp_expires_at"`
+	IsDemo             bool       `json:"is_demo" db:"is_demo"`
 	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
 }
