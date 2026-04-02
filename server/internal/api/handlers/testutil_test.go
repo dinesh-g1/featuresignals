@@ -35,7 +35,8 @@ type mockStore struct {
 	envPermsById   map[string]*domain.EnvPermission  // id -> perm
 	webhooks       map[string]*domain.Webhook        // id -> webhook
 	webhooksByOrg  map[string][]string               // orgID -> []webhookID
-	whDeliveries   map[string][]domain.WebhookDelivery // webhookID -> deliveries
+	whDeliveries     map[string][]domain.WebhookDelivery   // webhookID -> deliveries
+	onboardingStates map[string]*domain.OnboardingState   // orgID -> state
 
 	idCounter int
 }
@@ -61,8 +62,9 @@ func newMockStore() *mockStore {
 		envPerms:       make(map[string][]domain.EnvPermission),
 		envPermsById:   make(map[string]*domain.EnvPermission),
 		webhooks:       make(map[string]*domain.Webhook),
-		webhooksByOrg:  make(map[string][]string),
-		whDeliveries:   make(map[string][]domain.WebhookDelivery),
+		webhooksByOrg:    make(map[string][]string),
+		whDeliveries:     make(map[string][]domain.WebhookDelivery),
+		onboardingStates: make(map[string]*domain.OnboardingState),
 	}
 }
 
@@ -711,10 +713,19 @@ func (m *mockStore) GetUsage(ctx context.Context, orgID, metricName string) (*do
 }
 
 func (m *mockStore) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {
-	return nil, fmt.Errorf("not found")
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	s, ok := m.onboardingStates[orgID]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	return s, nil
 }
 
 func (m *mockStore) UpsertOnboardingState(ctx context.Context, state *domain.OnboardingState) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onboardingStates[state.OrgID] = state
 	return nil
 }
 
