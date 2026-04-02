@@ -51,8 +51,9 @@ __pycache__/
 # Claude local settings
 .claude/settings.local.json
 
-# Plan files
+# Internal documentation (not for public repo)
 PLAN.md
+SERVER_SETUP.md
 
 # Misc
 *.pem
