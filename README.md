@@ -110,7 +110,18 @@ cd server && make seed
 
 ## SDKs
 
-All SDKs evaluate flags locally from an in-memory cache. Zero network calls per flag check. All implement OpenFeature providers for zero vendor lock-in.
+All server-side SDKs evaluate flags locally from an in-memory cache. Zero network calls per flag check. Server SDKs implement OpenFeature providers for zero vendor lock-in.
+
+| SDK | Type | Package | Runtime |
+|-----|------|---------|---------|
+| [Go](sdks/go/README.md) | Server | `github.com/featuresignals/sdks/go` | Go 1.22+ |
+| [Node.js](sdks/node/README.md) | Server | `@featuresignals/node` | Node 22+ |
+| [Python](sdks/python/README.md) | Server | `featuresignals` | Python 3.9+ |
+| [Java](sdks/java/README.md) | Server | `com.featuresignals:sdk-java` | Java 17+ |
+| [.NET/C#](sdks/dotnet/README.md) | Server | `FeatureSignals` | .NET 8.0+ |
+| [Ruby](sdks/ruby/README.md) | Server | `featuresignals` | Ruby 3.1+ |
+| [React](sdks/react/README.md) | Client | `@featuresignals/react` | React 18+ |
+| [Vue](sdks/vue/README.md) | Client | `@featuresignals/vue` | Vue 3.3+ |
 
 ### Go (Server-Side)
 
@@ -218,6 +229,75 @@ boolean enabled = client.boolVariation("new-checkout", user, false);
 
 [Java SDK Documentation](sdks/java/README.md)
 
+### .NET / C# (Server-Side)
+
+```bash
+dotnet add package FeatureSignals
+```
+
+```csharp
+using FeatureSignals;
+
+var options = new ClientOptions { EnvKey = "production" };
+using var client = new FeatureSignalsClient("fs_srv_xxx", options);
+await client.WaitForReadyAsync();
+
+var user = new EvalContext("user-42").WithAttribute("plan", "pro");
+bool enabled = client.BoolVariation("new-checkout", user, false);
+```
+
+[.NET SDK Documentation](sdks/dotnet/README.md)
+
+### Ruby (Server-Side)
+
+```bash
+gem install featuresignals
+```
+
+```ruby
+require "featuresignals"
+
+options = FeatureSignals::ClientOptions.new(env_key: "production")
+client = FeatureSignals::Client.new("fs_srv_xxx", options)
+client.wait_for_ready
+
+user = FeatureSignals::EvalContext.new(key: "user-42", attributes: { "plan" => "pro" })
+enabled = client.bool_variation("new-checkout", user, false)
+```
+
+[Ruby SDK Documentation](sdks/ruby/README.md)
+
+### Vue.js (Client-Side)
+
+```bash
+npm install @featuresignals/vue
+```
+
+```typescript
+// main.ts
+import { createApp } from "vue";
+import { FeatureSignalsPlugin } from "@featuresignals/vue";
+import App from "./App.vue";
+
+createApp(App)
+  .use(FeatureSignalsPlugin, { sdkKey: "fs_cli_xxx", envKey: "production" })
+  .mount("#app");
+```
+
+```vue
+<script setup>
+import { useFlag } from "@featuresignals/vue";
+const showCheckout = useFlag("new-checkout", false);
+</script>
+
+<template>
+  <NewCheckout v-if="showCheckout" />
+  <OldCheckout v-else />
+</template>
+```
+
+[Vue SDK Documentation](sdks/vue/README.md)
+
 ## Project Structure
 
 ```
@@ -236,9 +316,12 @@ featuresignals/
 ├── sdks/
 │   ├── go/                  # Go SDK
 │   ├── node/                # Node.js/TypeScript SDK
-│   ├── react/               # React SDK (hooks)
 │   ├── python/              # Python SDK
-│   └── java/                # Java SDK
+│   ├── java/                # Java SDK
+│   ├── dotnet/              # .NET/C# SDK
+│   ├── ruby/                # Ruby SDK
+│   ├── react/               # React SDK (hooks)
+│   └── vue/                 # Vue SDK (composables)
 ├── deploy/                  # Dockerfiles, Caddyfile, Helm chart, Terraform, scripts
 │   ├── docker/              # Dockerfile.server, .dashboard, .website, .docs, .relay
 │   ├── helm/                # Kubernetes Helm chart

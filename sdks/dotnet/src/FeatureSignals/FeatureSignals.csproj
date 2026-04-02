@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FeatureSignals</RootNamespace>
+
+    <PackageId>FeatureSignals</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>FeatureSignals</Authors>
+    <Description>Server-side .NET SDK for FeatureSignals feature flag management</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://featuresignals.com</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/featuresignals/featuresignals</RepositoryUrl>
+    <PackageTags>feature-flags;feature-toggles;featuresignals</PackageTags>
+  </PropertyGroup>
+
+</Project>
