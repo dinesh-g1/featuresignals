@@ -41,8 +41,8 @@ func NewRouter(
 	corsOrigins []string,
 	metricsCollector *metrics.Collector,
 	billing BillingConfig,
-	smsClient *sms.Client,
-	emailSender *email.Sender,
+	smsClient sms.Sender,
+	emailSender email.VerificationSender,
 	appBaseURL string,
 	dashboardURL string,
 ) http.Handler {

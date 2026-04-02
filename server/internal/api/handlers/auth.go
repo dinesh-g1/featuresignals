@@ -22,13 +22,13 @@ import (
 type AuthHandler struct {
 	store        domain.Store
 	jwtMgr       auth.TokenManager
-	smsClient    *sms.Client
-	emailSender  *email.Sender
+	smsClient    sms.Sender
+	emailSender  email.VerificationSender
 	appBaseURL   string
 	dashboardURL string
 }
 
-func NewAuthHandler(store domain.Store, jwtMgr auth.TokenManager, smsClient *sms.Client, emailSender *email.Sender, appBaseURL, dashboardURL string) *AuthHandler {
+func NewAuthHandler(store domain.Store, jwtMgr auth.TokenManager, smsClient sms.Sender, emailSender email.VerificationSender, appBaseURL, dashboardURL string) *AuthHandler {
 	return &AuthHandler{
 		store:        store,
 		jwtMgr:       jwtMgr,

@@ -12,6 +12,7 @@ type Client struct {
 	templateID string
 	senderID   string
 	httpClient *http.Client
+	baseURL    string
 }
 
 func NewClient(authKey, templateID, senderID string) *Client {
@@ -20,7 +21,13 @@ func NewClient(authKey, templateID, senderID string) *Client {
 		templateID: templateID,
 		senderID:   senderID,
 		httpClient: &http.Client{},
+		baseURL:    "https://control.msg91.com",
 	}
+}
+
+func (c *Client) WithBaseURL(url string) *Client {
+	c.baseURL = url
+	return c
 }
 
 // SendOTP sends a 6-digit OTP to the given phone number via MSG91's Send OTP API.
@@ -34,7 +41,7 @@ func (c *Client) SendOTP(phone, otp string) error {
 	}
 	body, _ := json.Marshal(payload)
 
-	req, err := http.NewRequest("POST", "https://control.msg91.com/api/v5/otp", bytes.NewReader(body))
+	req, err := http.NewRequest("POST", c.baseURL+"/api/v5/otp", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
