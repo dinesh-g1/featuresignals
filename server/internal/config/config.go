@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -24,8 +25,21 @@ func Load() *Config {
 		TokenTTL:    time.Duration(getEnvInt("TOKEN_TTL_MINUTES", 60)) * time.Minute,
 		RefreshTTL:  time.Duration(getEnvInt("REFRESH_TTL_HOURS", 168)) * time.Hour, // 7 days
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		CORSOrigins: []string{getEnv("CORS_ORIGIN", "http://localhost:3000")},
+		CORSOrigins: parseCORSOrigins(getEnv("CORS_ORIGIN", "http://localhost:3000")),
 	}
+}
+
+func parseCORSOrigins(raw string) []string {
+	var origins []string
+	for _, o := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(o); trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+	if len(origins) == 0 {
+		return []string{"http://localhost:3000"}
+	}
+	return origins
 }
 
 func getEnv(key, fallback string) string {
