@@ -59,6 +59,17 @@ jobs:
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
 
+      - name: Restart Caddy for TLS certificate renewal
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "==> Restarting Caddy to pick up TLS certs for any new domains..."
+            docker compose -f /opt/featuresignals/docker-compose.prod.yml restart caddy
+            echo "Caddy restarted."
+
       - name: Health check
         uses: appleboy/ssh-action@v1
         with:
