@@ -32,7 +32,7 @@ const currentPath = Astro.url.pathname;
           <a href="/features" class:list={["text-sm font-medium transition-colors", currentPath === "/features" || currentPath === "/features/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Features</a>
           <a href="/pricing" class:list={["text-sm font-medium transition-colors", currentPath === "/pricing" || currentPath === "/pricing/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Pricing</a>
           <a href="/changelog" class:list={["text-sm font-medium transition-colors", currentPath === "/changelog" || currentPath === "/changelog/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Changelog</a>
-          <a href="/compare/vs-launchdarkly" class:list={["text-sm font-medium transition-colors", currentPath.startsWith("/compare") ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Compare</a>
+          <a href="/use-cases" class:list={["text-sm font-medium transition-colors", currentPath === "/use-cases" || currentPath === "/use-cases/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Use Cases</a>
           <a href="https://docs.featuresignals.com" class="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">Docs</a>
           <a href="https://github.com/dinesh-g1/featuresignals" class="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">GitHub</a>
         </div>
@@ -54,7 +54,7 @@ const currentPath = Astro.url.pathname;
           <a href="/features" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Features</a>
           <a href="/pricing" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Pricing</a>
           <a href="/changelog" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Changelog</a>
-          <a href="/compare/vs-launchdarkly" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Compare</a>
+          <a href="/use-cases" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Use Cases</a>
           <a href="https://docs.featuresignals.com" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Docs</a>
           <hr class="my-2 border-slate-100" />
           <a href="https://github.com/dinesh-g1/featuresignals" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">GitHub</a>
@@ -96,10 +96,11 @@ const currentPath = Astro.url.pathname;
             </ul>
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-slate-900">Compare</h3>
+            <h3 class="text-sm font-semibold text-slate-900">Use Cases</h3>
             <ul class="mt-3 space-y-2 text-sm text-slate-500">
-              <li><a href="/compare/vs-launchdarkly" class="transition-colors hover:text-slate-900">vs LaunchDarkly</a></li>
-              <li><a href="/compare/vs-unleash" class="transition-colors hover:text-slate-900">vs Unleash</a></li>
+              <li><a href="/use-cases" class="transition-colors hover:text-slate-900">Progressive Rollouts</a></li>
+              <li><a href="/use-cases" class="transition-colors hover:text-slate-900">A/B Testing</a></li>
+              <li><a href="/use-cases" class="transition-colors hover:text-slate-900">Kill Switch</a></li>
             </ul>
           </div>
         </div>
