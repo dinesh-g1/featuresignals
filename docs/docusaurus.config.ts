@@ -92,7 +92,10 @@ const config: Config = {
             {label: 'Node.js', to: '/sdks/nodejs'},
             {label: 'Python', to: '/sdks/python'},
             {label: 'Java', to: '/sdks/java'},
+            {label: '.NET', to: '/sdks/dotnet'},
+            {label: 'Ruby', to: '/sdks/ruby'},
             {label: 'React', to: '/sdks/react'},
+            {label: 'Vue', to: '/sdks/vue'},
           ],
         },
         {
@@ -108,7 +111,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['java', 'python', 'go', 'bash', 'json', 'yaml', 'toml'],
+      additionalLanguages: ['java', 'python', 'go', 'bash', 'json', 'yaml', 'toml', 'csharp', 'ruby'],
     },
   } satisfies Preset.ThemeConfig,
 };

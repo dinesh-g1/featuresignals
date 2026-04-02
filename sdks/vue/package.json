@@ -1,0 +1,32 @@
+{
+  "name": "@featuresignals/vue",
+  "version": "0.1.0",
+  "description": "FeatureSignals Vue SDK with composables — useFlag, useFlags, useReady, useError",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "vue": ">=3.3.0"
+  },
+  "devDependencies": {
+    "@vue/test-utils": "^2.4.0",
+    "jsdom": "^29.0.1",
+    "vitest": "^3.0.0",
+    "vue": "^3.5.0",
+    "typescript": "^5.0.0"
+  },
+  "license": "Apache-2.0"
+}

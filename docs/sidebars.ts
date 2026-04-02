@@ -91,7 +91,10 @@ const sidebars: SidebarsConfig = {
     'sdks/nodejs',
     'sdks/python',
     'sdks/java',
+    'sdks/dotnet',
+    'sdks/ruby',
     'sdks/react',
+    'sdks/vue',
     'sdks/openfeature',
   ],
 };

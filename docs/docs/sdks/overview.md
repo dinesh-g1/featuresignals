@@ -15,7 +15,10 @@ FeatureSignals provides official SDKs for server-side and client-side applicatio
 | [Node.js](/sdks/nodejs) | TypeScript/Node 22+ | Server | `@featuresignals/node` |
 | [Python](/sdks/python) | Python 3.9+ | Server | `featuresignals` |
 | [Java](/sdks/java) | Java 17+ | Server | `com.featuresignals:sdk-java` |
+| [.NET](/sdks/dotnet) | .NET 8.0+ / C# | Server | `FeatureSignals` |
+| [Ruby](/sdks/ruby) | Ruby 3.1+ | Server | `featuresignals` |
 | [React](/sdks/react) | React 18+ | Client | `@featuresignals/react` |
+| [Vue](/sdks/vue) | Vue 3.3+ | Client | `@featuresignals/vue` |
 
 ## SDK Architecture
 
@@ -84,6 +87,12 @@ client.wait_for_ready()
 
 // Java
 client.waitForReady(5000);
+
+// C#
+await client.WaitForReadyAsync();
+
+// Ruby
+client.wait_for_ready
 ```
 
 ### Lifecycle
@@ -91,8 +100,9 @@ client.waitForReady(5000);
 Always close the client when shutting down:
 
 ```typescript
-client.close(); // Node.js, Go, Java
-client.close()  // Python
+client.close();   // Node.js, Go, Java
+client.close()    // Python, Ruby
+client.Dispose(); // C#
 ```
 
 ## OpenFeature Support
