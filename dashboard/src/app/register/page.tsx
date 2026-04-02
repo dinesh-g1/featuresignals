@@ -214,11 +214,11 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.sendOTP(token, `${countryCode}${phone}`);
+    } catch {
+      // OTP delivery may not be configured yet — continue to input screen
+    } finally {
       setOtpSent(true);
       setCountdown(60);
-    } catch (err: any) {
-      setError(err.message || "Failed to send OTP");
-    } finally {
       setLoading(false);
     }
   }
@@ -284,20 +284,20 @@ export default function RegisterPage() {
             className="space-y-4"
           >
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name</label>
+              <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name <span className="text-red-500">*</span></label>
               <input id="name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className={inputCls} />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email <span className="text-red-500">*</span></label>
               <input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className={inputCls} />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password <span className="text-red-500">*</span></label>
               <input id="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required className={inputCls} />
               <PasswordStrength password={form.password} />
             </div>
             <div>
-              <label htmlFor="org_name" className="block text-sm font-medium text-slate-700">Organization Name</label>
+              <label htmlFor="org_name" className="block text-sm font-medium text-slate-700">Organization Name <span className="text-red-500">*</span></label>
               <input id="org_name" type="text" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required className={inputCls} />
             </div>
             <button
@@ -321,7 +321,7 @@ export default function RegisterPage() {
             {!otpSent ? (
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">Phone Number</label>
+                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">Phone Number <span className="text-red-500">*</span></label>
                   <div className="mt-1 flex gap-2">
                     <select
                       value={countryCode}
