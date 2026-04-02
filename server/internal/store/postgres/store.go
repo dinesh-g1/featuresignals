@@ -23,17 +23,27 @@ func NewStore(pool *pgxpool.Pool) *Store {
 // --- Organizations ---
 
 func (s *Store) CreateOrganization(ctx context.Context, org *domain.Organization) error {
+	if org.Plan == "" {
+		org.Plan = domain.PlanFree
+	}
+	defaults := domain.PlanDefaults[org.Plan]
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id, created_at, updated_at`,
-		org.Name, org.Slug,
+		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
+		org.Name, org.Slug, org.Plan, defaults.Seats, defaults.Projects, defaults.Environments,
 	).Scan(&org.ID, &org.CreatedAt, &org.UpdatedAt)
 }
 
 func (s *Store) GetOrganization(ctx context.Context, id string) (*domain.Organization, error) {
 	org := &domain.Organization{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, name, slug, created_at, updated_at FROM organizations WHERE id = $1`, id,
-	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt)
+		`SELECT id, name, slug, created_at, updated_at,
+		        COALESCE(plan, 'free'), COALESCE(stripe_customer_id, ''), COALESCE(stripe_subscription_id, ''),
+		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2)
+		 FROM organizations WHERE id = $1`, id,
+	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
+		&org.Plan, &org.StripeCustomerID, &org.StripeSubscriptionID,
+		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -803,4 +813,124 @@ func (s *Store) GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) 
 		return nil, nil, err
 	}
 	return env, k, nil
+}
+
+// --- Billing ---
+
+func (s *Store) GetSubscription(ctx context.Context, orgID string) (*domain.Subscription, error) {
+	sub := &domain.Subscription{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, stripe_subscription_id, stripe_customer_id, plan, status,
+		        current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at
+		 FROM subscriptions WHERE org_id = $1`, orgID,
+	).Scan(&sub.ID, &sub.OrgID, &sub.StripeSubscriptionID, &sub.StripeCustomerID,
+		&sub.Plan, &sub.Status, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd,
+		&sub.CancelAtPeriodEnd, &sub.CreatedAt, &sub.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return sub, nil
+}
+
+func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription) error {
+	existing, err := s.GetSubscription(ctx, sub.OrgID)
+	if err != nil || existing == nil {
+		return s.pool.QueryRow(ctx,
+			`INSERT INTO subscriptions (org_id, stripe_subscription_id, stripe_customer_id, plan, status,
+			                            current_period_start, current_period_end, cancel_at_period_end)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			 RETURNING id, created_at, updated_at`,
+			sub.OrgID, sub.StripeSubscriptionID, sub.StripeCustomerID,
+			sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
+			sub.CancelAtPeriodEnd,
+		).Scan(&sub.ID, &sub.CreatedAt, &sub.UpdatedAt)
+	}
+
+	_, err = s.pool.Exec(ctx,
+		`UPDATE subscriptions SET
+		   stripe_subscription_id = COALESCE(NULLIF($2, ''), stripe_subscription_id),
+		   stripe_customer_id = COALESCE(NULLIF($3, ''), stripe_customer_id),
+		   plan = COALESCE(NULLIF($4, ''), plan),
+		   status = COALESCE(NULLIF($5, ''), status),
+		   current_period_start = CASE WHEN $6 = '0001-01-01'::timestamptz THEN current_period_start ELSE $6 END,
+		   current_period_end = CASE WHEN $7 = '0001-01-01'::timestamptz THEN current_period_end ELSE $7 END,
+		   cancel_at_period_end = $8,
+		   updated_at = NOW()
+		 WHERE org_id = $1`,
+		sub.OrgID, sub.StripeSubscriptionID, sub.StripeCustomerID,
+		sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
+		sub.CancelAtPeriodEnd,
+	)
+	return err
+}
+
+func (s *Store) UpdateOrgPlan(ctx context.Context, orgID, plan string, limits domain.PlanLimits) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE organizations SET plan = $1, plan_seats_limit = $2, plan_projects_limit = $3,
+		        plan_environments_limit = $4, updated_at = NOW()
+		 WHERE id = $5`,
+		plan, limits.Seats, limits.Projects, limits.Environments, orgID)
+	return err
+}
+
+// --- Usage ---
+
+func (s *Store) IncrementUsage(ctx context.Context, orgID, metricName string, delta int64) error {
+	existing, err := s.GetUsage(ctx, orgID, metricName)
+	if err != nil || existing == nil {
+		now := time.Now()
+		periodStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		periodEnd := periodStart.AddDate(0, 1, 0)
+		_, err := s.pool.Exec(ctx,
+			`INSERT INTO usage_metrics (org_id, metric_name, value, period_start, period_end)
+			 VALUES ($1, $2, $3, $4, $5)`,
+			orgID, metricName, delta, periodStart, periodEnd)
+		return err
+	}
+	_, err = s.pool.Exec(ctx,
+		`UPDATE usage_metrics SET value = value + $1 WHERE id = $2`,
+		delta, existing.ID)
+	return err
+}
+
+func (s *Store) GetUsage(ctx context.Context, orgID, metricName string) (*domain.UsageMetric, error) {
+	m := &domain.UsageMetric{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, metric_name, value, period_start, period_end, created_at
+		 FROM usage_metrics WHERE org_id = $1 AND metric_name = $2`, orgID, metricName,
+	).Scan(&m.ID, &m.OrgID, &m.MetricName, &m.Value, &m.PeriodStart, &m.PeriodEnd, &m.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// --- Onboarding ---
+
+func (s *Store) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {
+	state := &domain.OnboardingState{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT org_id, plan_selected, first_flag_created, first_sdk_connected,
+		        first_evaluation, completed, completed_at, updated_at
+		 FROM onboarding_state WHERE org_id = $1`, orgID,
+	).Scan(&state.OrgID, &state.PlanSelected, &state.FirstFlagCreated,
+		&state.FirstSDKConnected, &state.FirstEvaluation, &state.Completed,
+		&state.CompletedAt, &state.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return state, nil
+}
+
+func (s *Store) UpsertOnboardingState(ctx context.Context, state *domain.OnboardingState) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO onboarding_state (org_id, plan_selected, first_flag_created, first_sdk_connected,
+		                               first_evaluation, completed, completed_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+		 ON CONFLICT (org_id) DO UPDATE SET
+		   plan_selected = $2, first_flag_created = $3, first_sdk_connected = $4,
+		   first_evaluation = $5, completed = $6, completed_at = $7, updated_at = NOW()`,
+		state.OrgID, state.PlanSelected, state.FirstFlagCreated, state.FirstSDKConnected,
+		state.FirstEvaluation, state.Completed, state.CompletedAt)
+	return err
 }

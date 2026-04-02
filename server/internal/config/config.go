@@ -15,6 +15,10 @@ type Config struct {
 	RefreshTTL  time.Duration
 	LogLevel    string
 	CORSOrigins []string
+
+	StripeSecretKey       string
+	StripeWebhookSecret   string
+	StripePriceProMonthly string
 }
 
 func Load() *Config {
@@ -26,6 +30,10 @@ func Load() *Config {
 		RefreshTTL:  time.Duration(getEnvInt("REFRESH_TTL_HOURS", 168)) * time.Hour, // 7 days
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
 		CORSOrigins: parseCORSOrigins(getEnv("CORS_ORIGIN", "http://localhost:3000")),
+
+		StripeSecretKey:       os.Getenv("STRIPE_SECRET_KEY"),
+		StripeWebhookSecret:   os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripePriceProMonthly: os.Getenv("STRIPE_PRICE_PRO_MONTHLY"),
 	}
 }
 

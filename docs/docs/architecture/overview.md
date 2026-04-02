@@ -59,7 +59,7 @@ The single data store for all persistent state:
 
 ### SDKs
 
-Client libraries for Go, Node.js, Python, Java, and React. All follow the same pattern:
+Client libraries for Go, Node.js, Python, Java, .NET/C#, Ruby, React, and Vue. All follow the same pattern:
 1. Initial flag fetch via HTTP
 2. Background sync via polling or SSE
 3. Local evaluation from in-memory cache

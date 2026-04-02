@@ -9,6 +9,7 @@ import { toast } from "@/components/toast";
 
 const settingsTabs = [
   { href: "/settings/general", label: "General" },
+  { href: "/settings/billing", label: "Billing" },
   { href: "/settings/api-keys", label: "API Keys" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/webhooks", label: "Webhooks" },

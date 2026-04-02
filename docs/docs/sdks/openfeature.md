@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 9
 title: OpenFeature
 ---
 
@@ -103,6 +103,40 @@ try (var provider = new FeatureSignalsProvider("fs_srv_...", options)) {
     var result = provider.resolveBooleanEvaluation("my-flag", false, null);
     // result.value(), result.reason()
 }
+```
+
+## .NET / C#
+
+```csharp
+using FeatureSignals;
+using FeatureSignals.OpenFeature;
+
+var options = new ClientOptions { EnvKey = "production" };
+using var client = new FeatureSignalsClient("fs_srv_...", options);
+await client.WaitForReadyAsync();
+
+var provider = new FeatureSignalsProvider(client);
+
+var result = provider.ResolveBooleanEvaluation("my-flag", false);
+// result.Value, result.Reason
+```
+
+## Ruby
+
+```ruby
+require "featuresignals"
+
+options = FeatureSignals::ClientOptions.new(
+  env_key: "production",
+  base_url: "http://localhost:8080"
+)
+provider = FeatureSignals::OpenFeature::Provider.new("fs_srv_...", options)
+provider.client.wait_for_ready
+
+result = provider.resolve_boolean_evaluation("my-flag", false)
+# result.value, result.reason
+
+provider.shutdown
 ```
 
 ## Resolution Details

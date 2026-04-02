@@ -669,6 +669,44 @@ func (m *mockStore) UpdateApprovalRequest(ctx context.Context, ar *domain.Approv
 	return nil
 }
 
+// --- Billing ---
+
+func (m *mockStore) GetSubscription(ctx context.Context, orgID string) (*domain.Subscription, error) {
+	return nil, fmt.Errorf("not found")
+}
+
+func (m *mockStore) UpsertSubscription(ctx context.Context, sub *domain.Subscription) error {
+	return nil
+}
+
+func (m *mockStore) UpdateOrgPlan(ctx context.Context, orgID, plan string, limits domain.PlanLimits) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		org.Plan = plan
+		org.PlanSeatsLimit = limits.Seats
+		org.PlanProjectsLimit = limits.Projects
+		org.PlanEnvironmentsLimit = limits.Environments
+	}
+	return nil
+}
+
+func (m *mockStore) IncrementUsage(ctx context.Context, orgID, metricName string, delta int64) error {
+	return nil
+}
+
+func (m *mockStore) GetUsage(ctx context.Context, orgID, metricName string) (*domain.UsageMetric, error) {
+	return nil, fmt.Errorf("not found")
+}
+
+func (m *mockStore) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {
+	return nil, fmt.Errorf("not found")
+}
+
+func (m *mockStore) UpsertOnboardingState(ctx context.Context, state *domain.OnboardingState) error {
+	return nil
+}
+
 func jsonRaw(v interface{}) json.RawMessage {
 	b, _ := json.Marshal(v)
 	return b

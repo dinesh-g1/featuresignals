@@ -162,7 +162,7 @@ Triggered on every push and pull request:
 
 1. **Server tests** -- PostgreSQL service container, migrations, `go test`, `go build`
 2. **Server lint** -- `go vet`
-3. **SDK tests** -- Go, Node.js, Python, Java (parallel)
+3. **SDK tests** -- Go, Node.js, Python, Java, .NET, Ruby, React, Vue (parallel)
 4. **Dashboard build** -- `npm install && npm run build`
 5. **Docs build** -- `npm install && npm run build`
 6. **Docker build** -- builds server and dashboard images (after tests pass)

@@ -173,4 +173,20 @@ export const api = {
     request(`/v1/webhooks/${webhookId}`, { method: "DELETE", token }),
   listWebhookDeliveries: (token: string, webhookId: string) =>
     request<any[]>(`/v1/webhooks/${webhookId}/deliveries`, { token }),
+
+  // Billing
+  createCheckout: (token: string) =>
+    request<{ url: string }>("/v1/billing/checkout", { method: "POST", token }),
+  createPortal: (token: string) =>
+    request<{ url: string }>("/v1/billing/portal", { method: "POST", token }),
+  getSubscription: (token: string) =>
+    request<any>("/v1/billing/subscription", { token }),
+  getUsage: (token: string) =>
+    request<any>("/v1/billing/usage", { token }),
+
+  // Onboarding
+  getOnboarding: (token: string) =>
+    request<any>("/v1/onboarding", { token }),
+  updateOnboarding: (token: string, data: Record<string, boolean>) =>
+    request("/v1/onboarding", { method: "PATCH", body: data, token }),
 };

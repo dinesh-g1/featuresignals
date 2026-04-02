@@ -17,6 +17,13 @@ import (
 	"github.com/featuresignals/server/internal/metrics"
 )
 
+// BillingConfig holds Stripe credentials passed through from config.
+type BillingConfig struct {
+	StripeSecretKey       string
+	StripeWebhookSecret   string
+	StripePriceProMonthly string
+}
+
 // NewRouter wires all handlers, middleware, and routes. All dependencies are
 // passed as interfaces so the router (and the handlers it creates) can be
 // tested without real infrastructure.
@@ -29,6 +36,7 @@ func NewRouter(
 	logger *slog.Logger,
 	corsOrigins []string,
 	metricsCollector *metrics.Collector,
+	billing BillingConfig,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -69,12 +77,30 @@ func NewRouter(
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(metricsCollector, impressionCollector)
+	billingH := handlers.NewBillingHandler(store, billing.StripeSecretKey, billing.StripeWebhookSecret, billing.StripePriceProMonthly, logger)
+	onboardingH := handlers.NewOnboardingHandler(store, logger)
+
+	jwtAuth := middleware.JWTAuth(jwtMgr)
 
 	r.Route("/v1", func(r chi.Router) {
 		// Public auth routes
 		r.Post("/auth/register", authH.Register)
 		r.Post("/auth/login", authH.Login)
 		r.Post("/auth/refresh", authH.Refresh)
+
+		// Stripe webhook (public — verified via signature, not JWT)
+		r.Post("/billing/webhook", billingH.Webhook)
+
+		// Billing & onboarding (authenticated via JWT)
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Post("/billing/checkout", billingH.CreateCheckout)
+			r.Post("/billing/portal", billingH.CreatePortal)
+			r.Get("/billing/subscription", billingH.GetSubscription)
+			r.Get("/billing/usage", billingH.GetUsage)
+			r.Get("/onboarding", onboardingH.GetState)
+			r.Patch("/onboarding", onboardingH.UpdateState)
+		})
 
 		// Evaluation API (authenticated via API key, rate limited)
 		r.Group(func(r chi.Router) {
@@ -86,9 +112,10 @@ func NewRouter(
 			r.Post("/track", metricsH.TrackImpression)
 		})
 
-		// Management API (authenticated via JWT)
+		// Management API (authenticated via JWT, with tier enforcement)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.JWTAuth(jwtMgr))
+			r.Use(jwtAuth)
+			r.Use(middleware.TierEnforce(store, logger))
 
 			// ── Read-only routes (all authenticated roles) ───────────
 			r.Group(func(r chi.Router) {
