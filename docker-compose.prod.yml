@@ -44,7 +44,7 @@ services:
       DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
       PORT: "8080"
-      CORS_ORIGIN: https://app.featuresignals.com
+      CORS_ORIGIN: https://app.featuresignals.com,https://demo.featuresignals.com
       LOG_LEVEL: info
     deploy:
       resources:
@@ -62,6 +62,24 @@ services:
       - server
     environment:
       NEXT_PUBLIC_API_URL: https://api.featuresignals.com
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  demo-dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: ../deploy/docker/Dockerfile.dashboard
+      args:
+        NEXT_PUBLIC_API_URL: https://api.featuresignals.com
+        NEXT_PUBLIC_DEMO_MODE: "true"
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NEXT_PUBLIC_API_URL: https://api.featuresignals.com
+      NEXT_PUBLIC_DEMO_MODE: "true"
     deploy:
       resources:
         limits:
@@ -92,6 +110,8 @@ services:
       server:
         condition: service_started
       dashboard:
+        condition: service_started
+      demo-dashboard:
         condition: service_started
     ports:
       - "80:80"

@@ -13,13 +13,15 @@ type Store interface {
 	ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error)
 	UpsertFlagState(ctx context.Context, fs *domain.FlagState) error
 	CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error
+	DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error)
 }
 
 // Scheduler periodically checks for pending flag schedules and applies them.
 type Scheduler struct {
-	store    Store
-	logger   *slog.Logger
-	interval time.Duration
+	store         Store
+	logger        *slog.Logger
+	interval      time.Duration
+	cleanupTicker int // counts ticks to run demo cleanup hourly
 }
 
 // New creates a scheduler that ticks at the given interval.
@@ -45,6 +47,14 @@ func (s *Scheduler) Start(ctx context.Context) {
 			return
 		case <-ticker.C:
 			s.tick(ctx)
+			s.cleanupTicker++
+			ticksPerHour := int(time.Hour / s.interval)
+			if ticksPerHour < 1 {
+				ticksPerHour = 1
+			}
+			if s.cleanupTicker%ticksPerHour == 0 {
+				s.cleanupDemoSessions(ctx)
+			}
 		}
 	}
 }
@@ -96,7 +106,23 @@ func (s *Scheduler) tick(ctx context.Context) {
 	}
 }
 
+func (s *Scheduler) cleanupDemoSessions(ctx context.Context) {
+	count, err := s.store.DeleteExpiredDemoOrgs(ctx, time.Now())
+	if err != nil {
+		s.logger.Error("failed to cleanup expired demo sessions", "error", err)
+		return
+	}
+	if count > 0 {
+		s.logger.Info("cleaned up expired demo sessions", "count", count)
+	}
+}
+
 // RunOnce runs a single tick (useful for testing).
 func (s *Scheduler) RunOnce(ctx context.Context) {
 	s.tick(ctx)
+}
+
+// RunDemoCleanup runs a single demo cleanup pass (useful for testing).
+func (s *Scheduler) RunDemoCleanup(ctx context.Context) {
+	s.cleanupDemoSessions(ctx)
 }

@@ -63,6 +63,10 @@ func (m *mockScheduleStore) CreateAuditEntry(ctx context.Context, entry *domain.
 	return nil
 }
 
+func (m *mockScheduleStore) DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error) {
+	return 0, nil
+}
+
 func TestScheduler_EnableSchedule(t *testing.T) {
 	store := newMockScheduleStore()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))

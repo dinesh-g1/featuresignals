@@ -205,4 +205,20 @@ export const api = {
     request<any>("/v1/onboarding", { token }),
   updateOnboarding: (token: string, data: Record<string, boolean>) =>
     request("/v1/onboarding", { method: "PATCH", body: data, token }),
+
+  // Demo
+  createDemoSession: () =>
+    request<{
+      user: any;
+      organization: any;
+      tokens: { access_token: string; refresh_token: string; expires_at: number };
+      demo_expires_at: number;
+    }>("/v1/demo/session", { method: "POST" }),
+  convertDemo: (token: string, data: { email: string; password: string; name: string; org_name: string; phone?: string }) =>
+    request<{ tokens: { access_token: string; refresh_token: string; expires_at: number }; message: string }>(
+      "/v1/demo/convert",
+      { method: "POST", body: data, token },
+    ),
+  submitDemoFeedback: (token: string, data: { message: string; email?: string; rating?: number }) =>
+    request("/v1/demo/feedback", { method: "POST", body: data, token }),
 };

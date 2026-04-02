@@ -791,6 +791,55 @@ func (m *mockStore) SetEmailVerified(ctx context.Context, userID string) error {
 	return nil
 }
 
+// --- Demo ---
+
+func (m *mockStore) DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for id, org := range m.orgs {
+		if org.IsDemo && org.DemoExpiresAt != nil && org.DemoExpiresAt.Before(before) {
+			delete(m.orgs, id)
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (m *mockStore) ConvertDemoUser(ctx context.Context, userID, email, passwordHash, name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		delete(m.usersByEmail, u.Email)
+		u.Email = email
+		u.PasswordHash = passwordHash
+		u.Name = name
+		u.IsDemo = false
+		m.usersByEmail[email] = u
+	}
+	return nil
+}
+
+func (m *mockStore) ConvertDemoOrg(ctx context.Context, orgID, name, slug string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		org.Name = name
+		org.Slug = slug
+		org.IsDemo = false
+		org.DemoExpiresAt = nil
+	}
+	return nil
+}
+
+func (m *mockStore) CreateDemoFeedback(ctx context.Context, fb *domain.DemoFeedback) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	fb.ID = m.nextID()
+	fb.CreatedAt = time.Now()
+	return nil
+}
+
 func jsonRaw(v interface{}) json.RawMessage {
 	b, _ := json.Marshal(v)
 	return b

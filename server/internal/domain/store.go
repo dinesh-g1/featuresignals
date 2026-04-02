@@ -129,4 +129,10 @@ type Store interface {
 	// ── Onboarding ───────────────────────────────────────────────────────
 	GetOnboardingState(ctx context.Context, orgID string) (*OnboardingState, error)
 	UpsertOnboardingState(ctx context.Context, state *OnboardingState) error
+
+	// ── Demo ─────────────────────────────────────────────────────────────
+	DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error)
+	ConvertDemoUser(ctx context.Context, userID, email, passwordHash, name string) error
+	ConvertDemoOrg(ctx context.Context, orgID, name, slug string) error
+	CreateDemoFeedback(ctx context.Context, fb *DemoFeedback) error
 }

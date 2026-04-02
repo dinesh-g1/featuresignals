@@ -5,10 +5,12 @@ import { AuthGuard } from "@/components/auth-guard";
 import { CommandPalette } from "@/components/command-palette";
 import { ToastContainer } from "@/components/toast";
 import { VerificationBanner } from "@/components/verification-banner";
+import { DemoBanner } from "@/components/demo-banner";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
+      <DemoBanner />
       <VerificationBanner />
       <div className="flex h-screen bg-slate-50">
         <Sidebar />

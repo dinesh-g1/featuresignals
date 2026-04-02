@@ -17,4 +17,18 @@ type Organization struct {
 	PlanSeatsLimit       int    `json:"plan_seats_limit" db:"plan_seats_limit"`
 	PlanProjectsLimit    int    `json:"plan_projects_limit" db:"plan_projects_limit"`
 	PlanEnvironmentsLimit int   `json:"plan_environments_limit" db:"plan_environments_limit"`
+
+	// Demo fields
+	IsDemo       bool       `json:"is_demo" db:"is_demo"`
+	DemoExpiresAt *time.Time `json:"demo_expires_at,omitempty" db:"demo_expires_at"`
+}
+
+// DemoFeedback stores feedback from demo users.
+type DemoFeedback struct {
+	ID        string    `json:"id" db:"id"`
+	OrgID     string    `json:"org_id" db:"org_id"`
+	Message   string    `json:"message" db:"message"`
+	Email     string    `json:"email,omitempty" db:"email"`
+	Rating    int       `json:"rating,omitempty" db:"rating"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
