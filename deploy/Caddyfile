@@ -46,11 +46,28 @@ app.featuresignals.com {
 }
 
 api.featuresignals.com {
+	@cors_preflight method OPTIONS
+	handle @cors_preflight {
+		header Access-Control-Allow-Origin "https://app.featuresignals.com"
+		header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		header Access-Control-Allow-Headers "Accept, Authorization, Content-Type, X-API-Key"
+		header Access-Control-Allow-Credentials "true"
+		header Access-Control-Max-Age "300"
+		respond "" 204
+	}
+
 	reverse_proxy server:8080 {
 		header_up X-Forwarded-Proto {scheme}
+		header_down -Access-Control-Allow-Origin
+		header_down -Access-Control-Allow-Methods
+		header_down -Access-Control-Allow-Headers
+		header_down -Access-Control-Allow-Credentials
+		header_down -Access-Control-Max-Age
 	}
 
 	header {
+		Access-Control-Allow-Origin "https://app.featuresignals.com"
+		Access-Control-Allow-Credentials "true"
 		X-Content-Type-Options "nosniff"
 		-Server
 	}
