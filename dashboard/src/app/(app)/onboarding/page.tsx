@@ -160,9 +160,21 @@ export default function OnboardingPage() {
   async function handleUpgradePro() {
     if (!token) return;
     try {
-      const { url } = await api.createCheckout(token);
+      const data = await api.createCheckout(token);
       await markStepComplete("plan_chosen");
-      window.location.href = url;
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.payu_url;
+      for (const [key, value] of Object.entries(data)) {
+        if (key === "payu_url") continue;
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
     } catch (err: any) {
       toast(err.message || "Failed to start checkout", "error");
     }
