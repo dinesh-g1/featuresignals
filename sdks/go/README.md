@@ -5,7 +5,7 @@ Official Go SDK for [FeatureSignals](https://featuresignals.com) — feature fla
 ## Installation
 
 ```bash
-go get github.com/featuresignals/sdks/go
+go get github.com/featuresignals/sdk-go
 ```
 
 ## Quick Start
@@ -18,7 +18,7 @@ import (
     "log/slog"
     "os"
 
-    fs "github.com/featuresignals/sdks/go"
+    fs "github.com/featuresignals/sdk-go"
 )
 
 func main() {

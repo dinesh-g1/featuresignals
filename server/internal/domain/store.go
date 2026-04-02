@@ -109,4 +109,17 @@ type Store interface {
 	// GetEnvironmentByAPIKeyHash resolves an API key hash to its parent
 	// Environment and the key record itself.
 	GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) (*Environment, *APIKey, error)
+
+	// ── Billing ─────────────────────────────────────────────────────────
+	GetSubscription(ctx context.Context, orgID string) (*Subscription, error)
+	UpsertSubscription(ctx context.Context, sub *Subscription) error
+	UpdateOrgPlan(ctx context.Context, orgID, plan string, limits PlanLimits) error
+
+	// ── Usage ────────────────────────────────────────────────────────────
+	IncrementUsage(ctx context.Context, orgID, metricName string, delta int64) error
+	GetUsage(ctx context.Context, orgID, metricName string) (*UsageMetric, error)
+
+	// ── Onboarding ───────────────────────────────────────────────────────
+	GetOnboardingState(ctx context.Context, orgID string) (*OnboardingState, error)
+	UpsertOnboardingState(ctx context.Context, state *OnboardingState) error
 }

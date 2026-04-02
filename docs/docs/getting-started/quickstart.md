@@ -154,6 +154,90 @@ System.out.println("New checkout enabled: " + enabled);
 ```
 
 </TabItem>
+<TabItem value="dotnet" label=".NET">
+
+```bash
+dotnet add package FeatureSignals
+```
+
+```csharp
+using FeatureSignals;
+
+var options = new ClientOptions { EnvKey = "dev" };
+using var client = new FeatureSignalsClient("YOUR_API_KEY", options);
+await client.WaitForReadyAsync();
+
+bool enabled = client.BoolVariation("new-checkout", new EvalContext("user-123"), false);
+Console.WriteLine($"New checkout enabled: {enabled}");
+```
+
+</TabItem>
+<TabItem value="ruby" label="Ruby">
+
+```bash
+gem install featuresignals
+```
+
+```ruby
+require "featuresignals"
+
+options = FeatureSignals::ClientOptions.new(env_key: "dev", base_url: "http://localhost:8080")
+client = FeatureSignals::Client.new("YOUR_API_KEY", options)
+client.wait_for_ready
+
+enabled = client.bool_variation("new-checkout", FeatureSignals::EvalContext.new(key: "user-123"), false)
+puts "New checkout enabled: #{enabled}"
+```
+
+</TabItem>
+<TabItem value="react" label="React">
+
+```bash
+npm install @featuresignals/react
+```
+
+```tsx
+import { FeatureSignalsProvider, useFlag } from '@featuresignals/react';
+
+function App() {
+  return (
+    <FeatureSignalsProvider sdkKey="YOUR_API_KEY" envKey="dev">
+      <Checkout />
+    </FeatureSignalsProvider>
+  );
+}
+
+function Checkout() {
+  const enabled = useFlag('new-checkout', false);
+  return <div>New checkout: {enabled ? 'v2' : 'v1'}</div>;
+}
+```
+
+</TabItem>
+<TabItem value="vue" label="Vue">
+
+```bash
+npm install @featuresignals/vue
+```
+
+```typescript
+// main.ts
+import { createApp } from "vue";
+import { FeatureSignalsPlugin } from "@featuresignals/vue";
+
+createApp(App)
+  .use(FeatureSignalsPlugin, { sdkKey: "YOUR_API_KEY", envKey: "dev" })
+  .mount("#app");
+```
+
+```vue
+<script setup>
+import { useFlag } from "@featuresignals/vue";
+const enabled = useFlag("new-checkout", false);
+</script>
+```
+
+</TabItem>
 </Tabs>
 
 ## 6. Toggle and Observe

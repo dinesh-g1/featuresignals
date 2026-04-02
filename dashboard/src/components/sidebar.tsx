@@ -183,6 +183,23 @@ export function Sidebar() {
         })}
       </nav>
 
+      {user?.tier === "free" && (
+        <div className="border-t border-slate-200 px-3 py-2">
+          <Link
+            href="/settings/billing"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 ring-1 ring-indigo-100 transition-all hover:from-indigo-100 hover:to-purple-100"
+          >
+            <svg className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+            </svg>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-indigo-700">Upgrade to Pro</p>
+              <p className="text-[10px] text-indigo-500">Unlock unlimited flags</p>
+            </div>
+          </Link>
+        </div>
+      )}
+
       <div className="border-t border-slate-200 p-3">
         <div className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-slate-50">
           <div className="min-w-0 text-sm">

@@ -42,9 +42,9 @@ Existing feature flag platforms force you to choose between **unpredictable pric
 ```
 ┌──────────────┐    ┌───────────────┐    ┌──────────────┐
 │   Dashboard  │    │   SDKs        │    │  REST Client  │
-│   (Next.js)  │    │  (Go/Node/    │    │  (curl, etc)  │
-│              │    │   React/Py/   │    │               │
-│              │    │   Java)       │    │               │
+│   (Next.js)  │    │  Go/Node/Py  │    │  (curl, etc)  │
+│              │    │  Java/C#/Ruby │    │               │
+│              │    │  React/Vue   │    │               │
 └──────┬───────┘    └──────┬────────┘    └──────┬───────┘
        │ JWT               │ API Key            │
        ▼                   ▼                    ▼
@@ -114,7 +114,7 @@ All server-side SDKs evaluate flags locally from an in-memory cache. Zero networ
 
 | SDK | Type | Package | Runtime |
 |-----|------|---------|---------|
-| [Go](sdks/go/README.md) | Server | `github.com/featuresignals/sdks/go` | Go 1.22+ |
+| [Go](sdks/go/README.md) | Server | `github.com/featuresignals/sdk-go` | Go 1.22+ |
 | [Node.js](sdks/node/README.md) | Server | `@featuresignals/node` | Node 22+ |
 | [Python](sdks/python/README.md) | Server | `featuresignals` | Python 3.9+ |
 | [Java](sdks/java/README.md) | Server | `com.featuresignals:sdk-java` | Java 17+ |
@@ -126,7 +126,7 @@ All server-side SDKs evaluate flags locally from an in-memory cache. Zero networ
 ### Go (Server-Side)
 
 ```bash
-go get github.com/featuresignals/sdks/go
+go get github.com/featuresignals/sdk-go
 ```
 
 ```go

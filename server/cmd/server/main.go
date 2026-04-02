@@ -87,7 +87,11 @@ func main() {
 
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
-	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector)
+	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
+		StripeSecretKey:       cfg.StripeSecretKey,
+		StripeWebhookSecret:   cfg.StripeWebhookSecret,
+		StripePriceProMonthly: cfg.StripePriceProMonthly,
+	})
 
 	// Server
 	srv := &http.Server{

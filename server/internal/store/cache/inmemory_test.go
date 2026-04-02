@@ -105,6 +105,13 @@ func (m *mockStore) CreateApprovalRequest(_ context.Context, _ *domain.ApprovalR
 func (m *mockStore) GetApprovalRequest(_ context.Context, _ string) (*domain.ApprovalRequest, error) { return nil, nil }
 func (m *mockStore) ListApprovalRequests(_ context.Context, _ string, _ string, _, _ int) ([]domain.ApprovalRequest, error) { return nil, nil }
 func (m *mockStore) UpdateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error { return nil }
+func (m *mockStore) GetSubscription(_ context.Context, _ string) (*domain.Subscription, error) { return nil, nil }
+func (m *mockStore) UpsertSubscription(_ context.Context, _ *domain.Subscription) error { return nil }
+func (m *mockStore) UpdateOrgPlan(_ context.Context, _ string, _ string, _ domain.PlanLimits) error { return nil }
+func (m *mockStore) IncrementUsage(_ context.Context, _, _ string, _ int64) error { return nil }
+func (m *mockStore) GetUsage(_ context.Context, _, _ string) (*domain.UsageMetric, error) { return nil, nil }
+func (m *mockStore) GetOnboardingState(_ context.Context, _ string) (*domain.OnboardingState, error) { return nil, nil }
+func (m *mockStore) UpsertOnboardingState(_ context.Context, _ *domain.OnboardingState) error { return nil }
 
 // --- mock broadcaster ---
 
