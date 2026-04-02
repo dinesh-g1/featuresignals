@@ -28,7 +28,7 @@ const config: Config = {
     [
       '@scalar/docusaurus',
       {
-        label: 'API Reference',
+        label: 'API Playground',
         route: '/api-playground',
         configuration: {
           spec: {
@@ -72,11 +72,6 @@ const config: Config = {
           label: 'Integration Guide',
         },
         {
-          to: '/api-playground',
-          position: 'left',
-          label: 'API Playground',
-        },
-        {
           type: 'docSidebar',
           sidebarId: 'sdks',
           position: 'left',
@@ -87,6 +82,12 @@ const config: Config = {
           sidebarId: 'api',
           position: 'left',
           label: 'API Reference',
+        },
+        {
+          href: 'https://github.com/dinesh-g1/featuresignals',
+          position: 'right',
+          className: 'header-github-link',
+          'aria-label': 'GitHub repository',
         },
         {
           href: 'https://app.featuresignals.com/login',
