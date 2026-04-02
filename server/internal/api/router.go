@@ -19,11 +19,13 @@ import (
 	"github.com/featuresignals/server/internal/sms"
 )
 
-// BillingConfig holds Stripe credentials passed through from config.
+// BillingConfig holds PayU credentials passed through from config.
 type BillingConfig struct {
-	StripeSecretKey       string
-	StripeWebhookSecret   string
-	StripePriceProMonthly string
+	PayUMerchantKey string
+	PayUSalt        string
+	PayUMode        string
+	DashboardURL    string
+	AppBaseURL      string
 }
 
 // NewRouter wires all handlers, middleware, and routes. All dependencies are
@@ -83,7 +85,7 @@ func NewRouter(
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(metricsCollector, impressionCollector)
-	billingH := handlers.NewBillingHandler(store, billing.StripeSecretKey, billing.StripeWebhookSecret, billing.StripePriceProMonthly, logger)
+	billingH := handlers.NewBillingHandler(store, billing.PayUMerchantKey, billing.PayUSalt, billing.PayUMode, billing.DashboardURL, billing.AppBaseURL, logger)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
 
 	jwtAuth := middleware.JWTAuth(jwtMgr)
@@ -95,8 +97,9 @@ func NewRouter(
 		r.Post("/auth/refresh", authH.Refresh)
 		r.Get("/auth/verify-email", authH.VerifyEmail)
 
-		// Stripe webhook (public — verified via signature, not JWT)
-		r.Post("/billing/webhook", billingH.Webhook)
+		// PayU callbacks (public — PayU redirects here after payment)
+		r.Post("/billing/payu/callback", billingH.PayUCallback)
+		r.Post("/billing/payu/failure", billingH.PayUFailure)
 
 		// Auth verification (authenticated via JWT)
 		r.Group(func(r chi.Router) {
@@ -110,7 +113,6 @@ func NewRouter(
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
 			r.Post("/billing/checkout", billingH.CreateCheckout)
-			r.Post("/billing/portal", billingH.CreatePortal)
 			r.Get("/billing/subscription", billingH.GetSubscription)
 			r.Get("/billing/usage", billingH.GetUsage)
 			r.Get("/onboarding", onboardingH.GetState)

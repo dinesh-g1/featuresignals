@@ -2,17 +2,11 @@ package handlers
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/featuresignals/server/internal/api/middleware"
@@ -21,61 +15,54 @@ import (
 )
 
 type BillingHandler struct {
-	store               domain.Store
-	stripeSecretKey     string
-	stripeWebhookSecret string
-	stripePriceID       string
-	logger              *slog.Logger
+	store           domain.Store
+	payuMerchantKey string
+	payuSalt        string
+	payuMode        string
+	dashboardURL    string
+	appBaseURL      string
+	logger          *slog.Logger
 }
 
-func NewBillingHandler(store domain.Store, stripeSecretKey, stripeWebhookSecret, stripePriceID string, logger *slog.Logger) *BillingHandler {
+func NewBillingHandler(store domain.Store, payuKey, payuSalt, payuMode, dashboardURL, appBaseURL string, logger *slog.Logger) *BillingHandler {
 	return &BillingHandler{
-		store:               store,
-		stripeSecretKey:     stripeSecretKey,
-		stripeWebhookSecret: stripeWebhookSecret,
-		stripePriceID:       stripePriceID,
-		logger:              logger,
+		store:           store,
+		payuMerchantKey: payuKey,
+		payuSalt:        payuSalt,
+		payuMode:        payuMode,
+		dashboardURL:    dashboardURL,
+		appBaseURL:      appBaseURL,
+		logger:          logger,
 	}
 }
 
-// stripePost sends a form-encoded POST to the Stripe API and returns the
-// parsed JSON response. No external Stripe SDK is used.
-func (h *BillingHandler) stripePost(endpoint string, data url.Values) (map[string]interface{}, error) {
-	req, err := http.NewRequest("POST", "https://api.stripe.com/v1/"+endpoint, strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+func (h *BillingHandler) payuEndpoint() string {
+	if h.payuMode == "live" {
+		return "https://secure.payu.in/_payment"
 	}
-	req.Header.Set("Authorization", "Bearer "+h.stripeSecretKey)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("stripe request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding stripe response: %w", err)
-	}
-
-	if resp.StatusCode >= 400 {
-		errMsg := "unknown error"
-		if errObj, ok := result["error"].(map[string]interface{}); ok {
-			if msg, ok := errObj["message"].(string); ok {
-				errMsg = msg
-			}
-		}
-		return nil, fmt.Errorf("stripe API error (%d): %s", resp.StatusCode, errMsg)
-	}
-
-	return result, nil
+	return "https://test.payu.in/_payment"
 }
 
-// CreateCheckout creates a Stripe Checkout Session for the Pro plan.
+func (h *BillingHandler) generateHash(txnid, amount, productinfo, firstname, email string) string {
+	hashStr := fmt.Sprintf("%s|%s|%s|%s|%s|%s|||||||||||%s",
+		h.payuMerchantKey, txnid, amount, productinfo, firstname, email, h.payuSalt)
+	hash := sha512.Sum512([]byte(hashStr))
+	return hex.EncodeToString(hash[:])
+}
+
+func (h *BillingHandler) verifyReverseHash(params map[string]string) bool {
+	hashStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
+		h.payuSalt, params["status"], params["email"], params["firstname"],
+		params["productinfo"], params["amount"], params["txnid"], h.payuMerchantKey)
+	computed := sha512.Sum512([]byte(hashStr))
+	return hex.EncodeToString(computed[:]) == params["hash"]
+}
+
+// CreateCheckout returns the PayU form fields the dashboard needs to POST.
 func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
 
 	org, err := h.store.GetOrganization(r.Context(), orgID)
 	if err != nil {
@@ -84,316 +71,139 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	data := url.Values{}
-	data.Set("mode", "subscription")
-	data.Set("line_items[0][price]", h.stripePriceID)
-	data.Set("line_items[0][quantity]", "1")
-	data.Set("success_url", "https://app.featuresignals.com/settings/billing?session_id={CHECKOUT_SESSION_ID}")
-	data.Set("cancel_url", "https://app.featuresignals.com/settings/billing")
-	data.Set("metadata[org_id]", orgID)
-	data.Set("subscription_data[metadata][org_id]", orgID)
-
-	if org.StripeCustomerID != "" {
-		data.Set("customer", org.StripeCustomerID)
-	} else {
-		data.Set("customer_creation", "always")
-	}
-
-	result, err := h.stripePost("checkout/sessions", data)
+	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
-		log.Error("stripe checkout session creation failed", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusBadGateway, "failed to create checkout session")
+		log.Error("failed to get user", "error", err, "user_id", userID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to load user")
 		return
 	}
 
-	checkoutURL, _ := result["url"].(string)
-	log.Info("checkout session created", "org_id", orgID)
+	txnid := fmt.Sprintf("FS_%s_%d", orgID[:8], time.Now().UnixMilli())
+	amount := "999.00"
+	productinfo := "FeatureSignals Pro Plan"
+	firstname := user.Name
+	email := user.Email
+	phone := user.Phone
+	if phone == "" {
+		phone = "9999999999"
+	}
 
-	httputil.JSON(w, http.StatusOK, map[string]string{"url": checkoutURL})
+	hash := h.generateHash(txnid, amount, productinfo, firstname, email)
+
+	surl := h.appBaseURL + "/v1/billing/payu/callback"
+	furl := h.appBaseURL + "/v1/billing/payu/failure"
+
+	_ = org // used for context logging
+	log.Info("payu checkout initiated", "org_id", orgID, "txnid", txnid)
+
+	httputil.JSON(w, http.StatusOK, map[string]string{
+		"payu_url":    h.payuEndpoint(),
+		"key":         h.payuMerchantKey,
+		"txnid":       txnid,
+		"hash":        hash,
+		"amount":      amount,
+		"productinfo": productinfo,
+		"firstname":   firstname,
+		"email":       email,
+		"phone":       phone,
+		"surl":        surl,
+		"furl":        furl,
+	})
 }
 
-// CreatePortal creates a Stripe Customer Portal session for subscription management.
-func (h *BillingHandler) CreatePortal(w http.ResponseWriter, r *http.Request) {
-	log := httputil.LoggerFromContext(r.Context())
-	orgID := middleware.GetOrgID(r.Context())
-
-	org, err := h.store.GetOrganization(r.Context(), orgID)
-	if err != nil {
-		log.Error("failed to get organization", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to load organization")
+// PayUCallback handles the success redirect from PayU (form-encoded POST).
+func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.logger.Error("failed to parse payu callback form", "error", err)
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
-	if org.StripeCustomerID == "" {
-		httputil.Error(w, http.StatusBadRequest, "no billing account found — please subscribe first")
+	params := map[string]string{
+		"txnid":       r.FormValue("txnid"),
+		"amount":      r.FormValue("amount"),
+		"productinfo": r.FormValue("productinfo"),
+		"firstname":   r.FormValue("firstname"),
+		"email":       r.FormValue("email"),
+		"status":      r.FormValue("status"),
+		"hash":        r.FormValue("hash"),
+		"mihpayid":    r.FormValue("mihpayid"),
+	}
+
+	if !h.verifyReverseHash(params) {
+		h.logger.Warn("invalid payu reverse hash", "txnid", params["txnid"])
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
-	data := url.Values{}
-	data.Set("customer", org.StripeCustomerID)
-	data.Set("return_url", "https://app.featuresignals.com/settings/billing")
-
-	result, err := h.stripePost("billing_portal/sessions", data)
-	if err != nil {
-		log.Error("stripe portal session creation failed", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusBadGateway, "failed to create portal session")
+	if params["status"] != "success" {
+		h.logger.Warn("payu payment not successful", "txnid", params["txnid"], "status", params["status"])
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
-	portalURL, _ := result["url"].(string)
-	log.Info("portal session created", "org_id", orgID)
-
-	httputil.JSON(w, http.StatusOK, map[string]string{"url": portalURL})
-}
-
-// Webhook handles incoming Stripe webhook events. No JWT auth — Stripe
-// signs the payload and we verify the signature with HMAC-SHA256.
-func (h *BillingHandler) Webhook(w http.ResponseWriter, r *http.Request) {
-	const maxBodySize = 65536
-	body, err := io.ReadAll(io.LimitReader(r.Body, maxBodySize))
-	if err != nil {
-		h.logger.Error("failed to read webhook body", "error", err)
-		httputil.Error(w, http.StatusBadRequest, "failed to read body")
-		return
+	// Extract orgID from txnid (format: FS_<orgID[:8]>_<timestamp>)
+	txnid := params["txnid"]
+	orgIDPrefix := ""
+	if len(txnid) > 3 {
+		// Parse FS_<8chars>_<timestamp>
+		parts := splitTxnID(txnid)
+		if parts != nil {
+			orgIDPrefix = parts.orgPrefix
+		}
 	}
 
-	sigHeader := r.Header.Get("Stripe-Signature")
-	if !h.verifySignature(body, sigHeader) {
-		h.logger.Warn("invalid stripe webhook signature")
-		httputil.Error(w, http.StatusBadRequest, "invalid signature")
-		return
-	}
-
-	var event struct {
-		Type string          `json:"type"`
-		Data json.RawMessage `json:"data"`
-	}
-	if err := json.Unmarshal(body, &event); err != nil {
-		h.logger.Error("failed to parse webhook event", "error", err)
-		httputil.Error(w, http.StatusBadRequest, "invalid payload")
-		return
-	}
-
-	// data.object is nested inside event.Data
-	var wrapper struct {
-		Object json.RawMessage `json:"object"`
-	}
-	if err := json.Unmarshal(event.Data, &wrapper); err != nil {
-		h.logger.Error("failed to parse event data", "error", err)
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	var obj map[string]interface{}
-	if err := json.Unmarshal(wrapper.Object, &obj); err != nil {
-		h.logger.Error("failed to parse event object", "error", err)
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	h.logger.Info("stripe webhook received", "type", event.Type)
-
-	switch event.Type {
-	case "checkout.session.completed":
-		h.handleCheckoutCompleted(r.Context(), obj)
-	case "invoice.paid":
-		h.handleInvoicePaid(r.Context(), obj)
-	case "invoice.payment_failed":
-		h.handleInvoicePaymentFailed(r.Context(), obj)
-	case "customer.subscription.deleted":
-		h.handleSubscriptionDeleted(r.Context(), obj)
-	default:
-		h.logger.Debug("unhandled stripe event", "type", event.Type)
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (h *BillingHandler) handleCheckoutCompleted(ctx context.Context, obj map[string]interface{}) {
-	customerID, _ := obj["customer"].(string)
-	subscriptionID, _ := obj["subscription"].(string)
-
-	metadata, _ := obj["metadata"].(map[string]interface{})
-	orgID, _ := metadata["org_id"].(string)
-	if orgID == "" {
-		h.logger.Warn("checkout.session.completed missing org_id in metadata")
+	// Look up org by prefix match
+	ctx := r.Context()
+	org, err := h.findOrgByTxnPrefix(ctx, orgIDPrefix)
+	if err != nil || org == nil {
+		h.logger.Error("failed to find org for payu callback", "error", err, "txnid", txnid, "org_prefix", orgIDPrefix)
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
 	proLimits := domain.PlanDefaults[domain.PlanPro]
-	if err := h.store.UpdateOrgPlan(ctx, orgID, domain.PlanPro, proLimits); err != nil {
-		h.logger.Error("failed to update org plan after checkout", "error", err, "org_id", orgID)
+	if err := h.store.UpdateOrgPlan(ctx, org.ID, domain.PlanPro, proLimits); err != nil {
+		h.logger.Error("failed to update org plan after payu payment", "error", err, "org_id", org.ID)
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
+	now := time.Now()
 	sub := &domain.Subscription{
-		OrgID:                orgID,
-		StripeSubscriptionID: subscriptionID,
-		StripeCustomerID:     customerID,
-		Plan:                 domain.PlanPro,
-		Status:               "active",
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
+		OrgID:              org.ID,
+		PayUTxnID:          params["txnid"],
+		PayUMihpayID:       params["mihpayid"],
+		Plan:               domain.PlanPro,
+		Status:             "active",
+		CurrentPeriodStart: now,
+		CurrentPeriodEnd:   now.AddDate(0, 1, 0),
+		CreatedAt:          now,
+		UpdatedAt:          now,
 	}
 	if err := h.store.UpsertSubscription(ctx, sub); err != nil {
-		h.logger.Error("failed to upsert subscription", "error", err, "org_id", orgID)
-		return
+		h.logger.Error("failed to upsert subscription", "error", err, "org_id", org.ID)
 	}
 
-	// Mark onboarding plan_selected step
-	state, _ := h.store.GetOnboardingState(ctx, orgID)
+	state, _ := h.store.GetOnboardingState(ctx, org.ID)
 	if state == nil {
-		state = &domain.OnboardingState{OrgID: orgID}
+		state = &domain.OnboardingState{OrgID: org.ID}
 	}
 	state.PlanSelected = true
-	state.UpdatedAt = time.Now()
+	state.UpdatedAt = now
 	_ = h.store.UpsertOnboardingState(ctx, state)
 
-	h.logger.Info("checkout completed — org upgraded to pro", "org_id", orgID, "customer_id", customerID)
+	h.logger.Info("payu payment successful — org upgraded to pro", "org_id", org.ID, "txnid", txnid, "mihpayid", params["mihpayid"])
+	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=success", http.StatusSeeOther)
 }
 
-func (h *BillingHandler) handleInvoicePaid(ctx context.Context, obj map[string]interface{}) {
-	subscriptionID, _ := obj["subscription"].(string)
-	if subscriptionID == "" {
-		return
-	}
-
-	// Extract org_id from subscription metadata
-	subMetadata, _ := obj["subscription_details"].(map[string]interface{})
-	metadata, _ := subMetadata["metadata"].(map[string]interface{})
-	orgID, _ := metadata["org_id"].(string)
-
-	// Fallback: look up subscription from lines
-	if orgID == "" {
-		lines, _ := obj["lines"].(map[string]interface{})
-		data, _ := lines["data"].([]interface{})
-		if len(data) > 0 {
-			line, _ := data[0].(map[string]interface{})
-			lineMeta, _ := line["metadata"].(map[string]interface{})
-			orgID, _ = lineMeta["org_id"].(string)
-		}
-	}
-	if orgID == "" {
-		h.logger.Warn("invoice.paid: could not determine org_id", "subscription_id", subscriptionID)
-		return
-	}
-
-	periodEnd, _ := obj["period_end"].(float64)
-	periodStart, _ := obj["period_start"].(float64)
-
-	sub := &domain.Subscription{
-		OrgID:                orgID,
-		StripeSubscriptionID: subscriptionID,
-		Status:               "active",
-		CurrentPeriodStart:   time.Unix(int64(periodStart), 0),
-		CurrentPeriodEnd:     time.Unix(int64(periodEnd), 0),
-		UpdatedAt:            time.Now(),
-	}
-	if err := h.store.UpsertSubscription(ctx, sub); err != nil {
-		h.logger.Error("failed to update subscription on invoice.paid", "error", err, "org_id", orgID)
-		return
-	}
-
-	h.logger.Info("invoice paid", "org_id", orgID, "subscription_id", subscriptionID)
-}
-
-func (h *BillingHandler) handleInvoicePaymentFailed(ctx context.Context, obj map[string]interface{}) {
-	subscriptionID, _ := obj["subscription"].(string)
-	if subscriptionID == "" {
-		return
-	}
-
-	subMetadata, _ := obj["subscription_details"].(map[string]interface{})
-	metadata, _ := subMetadata["metadata"].(map[string]interface{})
-	orgID, _ := metadata["org_id"].(string)
-	if orgID == "" {
-		h.logger.Warn("invoice.payment_failed: could not determine org_id", "subscription_id", subscriptionID)
-		return
-	}
-
-	sub := &domain.Subscription{
-		OrgID:                orgID,
-		StripeSubscriptionID: subscriptionID,
-		Status:               "past_due",
-		UpdatedAt:            time.Now(),
-	}
-	if err := h.store.UpsertSubscription(ctx, sub); err != nil {
-		h.logger.Error("failed to update subscription on payment failure", "error", err, "org_id", orgID)
-		return
-	}
-
-	h.logger.Warn("invoice payment failed", "org_id", orgID, "subscription_id", subscriptionID)
-}
-
-func (h *BillingHandler) handleSubscriptionDeleted(ctx context.Context, obj map[string]interface{}) {
-	metadata, _ := obj["metadata"].(map[string]interface{})
-	orgID, _ := metadata["org_id"].(string)
-	subscriptionID, _ := obj["id"].(string)
-
-	if orgID == "" {
-		h.logger.Warn("customer.subscription.deleted: missing org_id in metadata", "subscription_id", subscriptionID)
-		return
-	}
-
-	freeLimits := domain.PlanDefaults[domain.PlanFree]
-	if err := h.store.UpdateOrgPlan(ctx, orgID, domain.PlanFree, freeLimits); err != nil {
-		h.logger.Error("failed to downgrade org to free", "error", err, "org_id", orgID)
-		return
-	}
-
-	sub := &domain.Subscription{
-		OrgID:                orgID,
-		StripeSubscriptionID: subscriptionID,
-		Status:               "canceled",
-		UpdatedAt:            time.Now(),
-	}
-	if err := h.store.UpsertSubscription(ctx, sub); err != nil {
-		h.logger.Error("failed to update subscription on deletion", "error", err, "org_id", orgID)
-	}
-
-	h.logger.Info("subscription deleted — org downgraded to free", "org_id", orgID)
-}
-
-// verifySignature validates the Stripe-Signature header using HMAC-SHA256.
-// Stripe sends: t=<timestamp>,v1=<signature>
-func (h *BillingHandler) verifySignature(payload []byte, sigHeader string) bool {
-	if h.stripeWebhookSecret == "" || sigHeader == "" {
-		return false
-	}
-
-	var timestamp, signature string
-	for _, part := range strings.Split(sigHeader, ",") {
-		kv := strings.SplitN(part, "=", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		switch kv[0] {
-		case "t":
-			timestamp = kv[1]
-		case "v1":
-			signature = kv[1]
-		}
-	}
-
-	if timestamp == "" || signature == "" {
-		return false
-	}
-
-	// Reject timestamps older than 5 minutes to prevent replay attacks
-	ts, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		return false
-	}
-	if time.Since(time.Unix(ts, 0)) > 5*time.Minute {
-		return false
-	}
-
-	signedPayload := timestamp + "." + string(payload)
-	mac := hmac.New(sha256.New, []byte(h.stripeWebhookSecret))
-	mac.Write([]byte(signedPayload))
-	expectedSig := hex.EncodeToString(mac.Sum(nil))
-
-	return hmac.Equal([]byte(expectedSig), []byte(signature))
+// PayUFailure handles the failure redirect from PayU.
+func (h *BillingHandler) PayUFailure(w http.ResponseWriter, r *http.Request) {
+	_ = r.ParseForm()
+	txnid := r.FormValue("txnid")
+	status := r.FormValue("status")
+	h.logger.Warn("payu payment failed", "txnid", txnid, "status", status)
+	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 }
 
 // GetSubscription returns the current subscription and plan info for the org.
@@ -426,7 +236,6 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 		resp["status"] = "none"
 	}
 
-	// Include live usage counts
 	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
 	projects, _ := h.store.ListProjects(r.Context(), orgID)
 	resp["seats_used"] = len(members)
@@ -450,7 +259,6 @@ func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
 	projects, _ := h.store.ListProjects(r.Context(), orgID)
 
-	// Count total environments across all projects
 	totalEnvs := 0
 	for _, p := range projects {
 		envs, _ := h.store.ListEnvironments(r.Context(), p.ID)
@@ -466,4 +274,32 @@ func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 		"environments_limit": org.PlanEnvironmentsLimit,
 		"plan":               org.Plan,
 	})
+}
+
+type txnParts struct {
+	orgPrefix string
+}
+
+func splitTxnID(txnid string) *txnParts {
+	// Format: FS_<orgID[:8]>_<timestamp>
+	if len(txnid) < 4 || txnid[:3] != "FS_" {
+		return nil
+	}
+	rest := txnid[3:]
+	// Find the second underscore
+	for i := 0; i < len(rest); i++ {
+		if rest[i] == '_' {
+			return &txnParts{orgPrefix: rest[:i]}
+		}
+	}
+	return nil
+}
+
+// findOrgByTxnPrefix searches for an organization whose ID starts with the
+// given prefix. This is used to resolve the org from the PayU txnid.
+func (h *BillingHandler) findOrgByTxnPrefix(ctx context.Context, prefix string) (*domain.Organization, error) {
+	if prefix == "" {
+		return nil, fmt.Errorf("empty org prefix")
+	}
+	return h.store.GetOrganizationByIDPrefix(ctx, prefix)
 }

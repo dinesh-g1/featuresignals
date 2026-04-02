@@ -182,9 +182,19 @@ export const api = {
 
   // Billing
   createCheckout: (token: string) =>
-    request<{ url: string }>("/v1/billing/checkout", { method: "POST", token }),
-  createPortal: (token: string) =>
-    request<{ url: string }>("/v1/billing/portal", { method: "POST", token }),
+    request<{
+      payu_url: string;
+      key: string;
+      txnid: string;
+      hash: string;
+      amount: string;
+      productinfo: string;
+      firstname: string;
+      email: string;
+      phone: string;
+      surl: string;
+      furl: string;
+    }>("/v1/billing/checkout", { method: "POST", token }),
   getSubscription: (token: string) =>
     request<any>("/v1/billing/subscription", { token }),
   getUsage: (token: string) =>

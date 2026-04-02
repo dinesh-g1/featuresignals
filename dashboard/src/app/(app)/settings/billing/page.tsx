@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -64,13 +64,22 @@ const planBadgeColors: Record<string, string> = {
 
 export default function BillingPage() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const token = useAppStore((s) => s.token);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [subscription, setSubscription] = useState<any>(null);
   const [usage, setUsage] = useState<any>(null);
   const [upgrading, setUpgrading] = useState(false);
-  const [managingPortal, setManagingPortal] = useState(false);
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status === "success") {
+      toast("Payment successful! Your plan has been upgraded to Pro.", "success");
+    } else if (status === "failed") {
+      toast("Payment failed. Please try again or contact support.", "error");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!token) return;
@@ -96,23 +105,25 @@ export default function BillingPage() {
     if (!token) return;
     setUpgrading(true);
     try {
-      const { url } = await api.createCheckout(token);
-      window.location.href = url;
+      const data = await api.createCheckout(token);
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.payu_url;
+
+      const fields = ["key", "txnid", "hash", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl"];
+      for (const field of fields) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = field;
+        input.value = (data as any)[field];
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
     } catch (err: any) {
       toast(err.message || "Failed to start checkout", "error");
       setUpgrading(false);
-    }
-  }
-
-  async function handleManageSubscription() {
-    if (!token) return;
-    setManagingPortal(true);
-    try {
-      const { url } = await api.createPortal(token);
-      window.location.href = url;
-    } catch (err: any) {
-      toast(err.message || "Failed to open billing portal", "error");
-      setManagingPortal(false);
     }
   }
 
@@ -159,7 +170,7 @@ export default function BillingPage() {
                 <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${planBadgeColors[plan] || planBadgeColors.free}`}>
                   {plan.charAt(0).toUpperCase() + plan.slice(1)}
                 </span>
-                {status && (
+                {status && status !== "none" && (
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${statusColors[status] || statusColors.active}`}>
                     {status.replace("_", " ")}
                   </span>
@@ -183,17 +194,16 @@ export default function BillingPage() {
                   disabled={upgrading}
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
                 >
-                  {upgrading ? "Redirecting..." : "Upgrade to Pro"}
+                  {upgrading ? "Redirecting to PayU..." : "Upgrade to Pro"}
                 </button>
               )}
               {isPaid && (
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={managingPortal}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 disabled:opacity-50"
-                >
-                  {managingPortal ? "Opening..." : "Manage Subscription"}
-                </button>
+                <p className="text-sm text-slate-500">
+                  To manage or cancel your subscription, please contact{" "}
+                  <a href="mailto:support@featuresignals.com" className="font-medium text-indigo-600 hover:text-indigo-700">
+                    support@featuresignals.com
+                  </a>
+                </p>
               )}
             </div>
           </div>
@@ -214,15 +224,14 @@ export default function BillingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <PlanCard
               name="Free"
-              price="$0"
+              price="₹0"
               period="forever"
               features={freePlanFeatures}
               current={plan === "free"}
-              action={plan === "free" ? undefined : undefined}
             />
             <PlanCard
               name="Pro"
-              price="$49"
+              price="₹999"
               period="/month"
               features={proPlanFeatures}
               current={plan === "pro"}

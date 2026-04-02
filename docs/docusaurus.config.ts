@@ -24,6 +24,22 @@ const config: Config = {
     locales: ['en'],
   },
 
+  plugins: [
+    [
+      '@scalar/docusaurus',
+      {
+        label: 'API Reference',
+        route: '/api-playground',
+        configuration: {
+          spec: {
+            url: '/openapi/featuresignals.json',
+          },
+          theme: 'default',
+        },
+      },
+    ],
+  ],
+
   presets: [
     [
       'classic',
@@ -53,13 +69,12 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'docs',
           position: 'left',
-          label: 'Docs',
+          label: 'Integration Guide',
         },
         {
-          type: 'docSidebar',
-          sidebarId: 'api',
+          to: '/api-playground',
           position: 'left',
-          label: 'API Reference',
+          label: 'API Playground',
         },
         {
           type: 'docSidebar',
@@ -68,9 +83,21 @@ const config: Config = {
           label: 'SDKs',
         },
         {
-          href: 'https://github.com/dinesh-g1/featuresignals',
-          label: 'GitHub',
+          type: 'docSidebar',
+          sidebarId: 'api',
+          position: 'left',
+          label: 'API Reference',
+        },
+        {
+          href: 'https://app.featuresignals.com/login',
+          label: 'Log in',
           position: 'right',
+        },
+        {
+          href: 'https://app.featuresignals.com/register',
+          label: 'Sign Up',
+          position: 'right',
+          className: 'navbar-signup-btn',
         },
       ],
     },

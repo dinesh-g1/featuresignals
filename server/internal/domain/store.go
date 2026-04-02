@@ -17,6 +17,7 @@ type Store interface {
 	// ── Organizations ────────────────────────────────────────────────────
 	CreateOrganization(ctx context.Context, org *Organization) error
 	GetOrganization(ctx context.Context, id string) (*Organization, error)
+	GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*Organization, error)
 
 	// ── Users ────────────────────────────────────────────────────────────
 	CreateUser(ctx context.Context, user *User) error

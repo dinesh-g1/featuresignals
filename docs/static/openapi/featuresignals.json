@@ -1,0 +1,1640 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "FeatureSignals API",
+    "description": "Complete API reference for FeatureSignals — feature flag management platform",
+    "version": "1.0.0",
+    "contact": { "name": "FeatureSignals", "url": "https://featuresignals.com" },
+    "license": { "name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0" }
+  },
+  "servers": [
+    { "url": "https://api.featuresignals.com", "description": "Production" },
+    { "url": "http://localhost:8080", "description": "Local development" }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Authentication and account verification" },
+    { "name": "Projects", "description": "Project management" },
+    { "name": "Environments", "description": "Environment management within projects" },
+    { "name": "Flags", "description": "Feature flag CRUD operations" },
+    { "name": "Flag State", "description": "Per-environment flag state and promotion" },
+    { "name": "Evaluation", "description": "Flag evaluation for SDKs and clients" },
+    { "name": "Segments", "description": "User segment targeting rules" },
+    { "name": "API Keys", "description": "API key management for environments" },
+    { "name": "Team", "description": "Team member and permission management" },
+    { "name": "Approvals", "description": "Approval workflow for flag changes" },
+    { "name": "Webhooks", "description": "Webhook configuration and delivery history" },
+    { "name": "Audit", "description": "Audit log for all actions" },
+    { "name": "Metrics", "description": "Evaluation metrics and analytics" },
+    { "name": "Billing", "description": "Subscription and usage billing" },
+    { "name": "Onboarding", "description": "Onboarding progress tracking" }
+  ],
+  "security": [{ "BearerAuth": [] }],
+  "paths": {
+    "/v1/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new account",
+        "description": "Creates a new user account and returns authentication tokens.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" },
+              "example": { "email": "user@example.com", "password": "securePass123!", "name": "Jane Doe" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log in",
+        "description": "Authenticates a user and returns JWT tokens.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "example": { "email": "user@example.com", "password": "securePass123!" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "description": "Exchanges a valid refresh token for a new access token.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshRequest" },
+              "example": { "refreshToken": "eyJhbGciOi..." }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/auth/send-otp": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Send OTP code",
+        "description": "Sends a one-time password to the user's email or phone for verification.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "format": "email" } } },
+              "example": { "email": "user@example.com" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP sent", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/auth/verify-otp": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Verify OTP code",
+        "description": "Verifies the one-time password and completes authentication.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email", "otp"], "properties": { "email": { "type": "string", "format": "email" }, "otp": { "type": "string" } } },
+              "example": { "email": "user@example.com", "otp": "123456" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP verified", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/auth/send-verification-email": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Send email verification link",
+        "description": "Sends a verification link to the user's email address.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "format": "email" } } },
+              "example": { "email": "user@example.com" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Verification email sent", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/auth/verify-email": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Verify email address",
+        "description": "Verifies the user's email using a token from the verification link.",
+        "security": [],
+        "parameters": [
+          { "name": "token", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Email verification token" }
+        ],
+        "responses": {
+          "200": { "description": "Email verified", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "tags": ["Projects"],
+        "summary": "List all projects",
+        "description": "Returns all projects the authenticated user has access to.",
+        "responses": {
+          "200": {
+            "description": "List of projects",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "projects": { "type": "array", "items": { "$ref": "#/components/schemas/Project" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Projects"],
+        "summary": "Create a project",
+        "description": "Creates a new project with a default set of environments.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateProjectRequest" },
+              "example": { "name": "My App", "description": "Mobile application flags" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Project created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}": {
+      "get": {
+        "tags": ["Projects"],
+        "summary": "Get a project",
+        "description": "Returns a single project by ID.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": { "description": "Project details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Projects"],
+        "summary": "Delete a project",
+        "description": "Permanently deletes a project and all associated resources.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": { "description": "Project deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/environments": {
+      "get": {
+        "tags": ["Environments"],
+        "summary": "List environments",
+        "description": "Returns all environments in a project.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": {
+            "description": "List of environments",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "environments": { "type": "array", "items": { "$ref": "#/components/schemas/Environment" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "tags": ["Environments"],
+        "summary": "Create an environment",
+        "description": "Creates a new environment in the specified project.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateEnvironmentRequest" },
+              "example": { "name": "staging", "color": "#f59e0b" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Environment created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Environment" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/environments/{envID}": {
+      "delete": {
+        "tags": ["Environments"],
+        "summary": "Delete an environment",
+        "description": "Permanently deletes an environment and its associated flag states.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/EnvID" }
+        ],
+        "responses": {
+          "200": { "description": "Environment deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/flags": {
+      "get": {
+        "tags": ["Flags"],
+        "summary": "List all flags",
+        "description": "Returns all feature flags in a project.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": {
+            "description": "List of flags",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "flags": { "type": "array", "items": { "$ref": "#/components/schemas/Flag" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Flags"],
+        "summary": "Create a flag",
+        "description": "Creates a new feature flag in the project.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateFlagRequest" },
+              "example": { "key": "new-checkout", "name": "New Checkout Flow", "type": "boolean", "description": "Enable the redesigned checkout experience", "defaultValue": false }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Flag created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flag" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/flags/{flagKey}": {
+      "get": {
+        "tags": ["Flags"],
+        "summary": "Get a flag",
+        "description": "Returns a single feature flag by key.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" }
+        ],
+        "responses": {
+          "200": { "description": "Flag details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flag" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Flags"],
+        "summary": "Update a flag",
+        "description": "Updates the flag definition (name, description, tags, etc.).",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateFlagRequest" },
+              "example": { "name": "New Checkout v2", "description": "Updated checkout with faster payment processing" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Flag updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Flag" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Flags"],
+        "summary": "Delete a flag",
+        "description": "Permanently deletes a feature flag and all associated state.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" }
+        ],
+        "responses": {
+          "200": { "description": "Flag deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/flags/{flagKey}/environments/{envID}": {
+      "get": {
+        "tags": ["Flag State"],
+        "summary": "Get flag state for environment",
+        "description": "Returns the flag's state (enabled, targeting rules, percentage) for a specific environment.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" },
+          { "$ref": "#/components/parameters/EnvID" }
+        ],
+        "responses": {
+          "200": { "description": "Flag state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FlagState" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Flag State"],
+        "summary": "Update flag state for environment",
+        "description": "Updates the flag's enabled status, targeting rules, or rollout percentage for a specific environment.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" },
+          { "$ref": "#/components/parameters/EnvID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateFlagStateRequest" },
+              "example": { "enabled": true, "percentage": 50, "rules": [{ "segmentKey": "beta-users", "value": true }] }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Flag state updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FlagState" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/flags/{flagKey}/promote": {
+      "post": {
+        "tags": ["Flag State"],
+        "summary": "Promote flag state",
+        "description": "Copies the flag state from one environment to the next in the promotion order.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["fromEnvID", "toEnvID"], "properties": { "fromEnvID": { "type": "string", "format": "uuid" }, "toEnvID": { "type": "string", "format": "uuid" } } },
+              "example": { "fromEnvID": "env-staging-id", "toEnvID": "env-production-id" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Flag promoted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FlagState" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/flags/{flagKey}/kill": {
+      "post": {
+        "tags": ["Flag State"],
+        "summary": "Kill switch — disable flag everywhere",
+        "description": "Instantly disables the flag across all environments. Use for emergency rollbacks.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/FlagKey" }
+        ],
+        "responses": {
+          "200": { "description": "Flag killed across all environments", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/evaluate": {
+      "post": {
+        "tags": ["Evaluation"],
+        "summary": "Evaluate a single flag",
+        "description": "Evaluates a feature flag for the given context and returns its value.",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EvaluateRequest" },
+              "example": { "flagKey": "new-checkout", "context": { "userID": "user-123", "email": "user@example.com", "plan": "pro" } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Evaluation result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvaluationResult" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/evaluate/bulk": {
+      "post": {
+        "tags": ["Evaluation"],
+        "summary": "Evaluate multiple flags",
+        "description": "Evaluates all (or specified) flags for the given context in a single request.",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BulkEvaluateRequest" },
+              "example": { "context": { "userID": "user-123", "email": "user@example.com" }, "flagKeys": ["new-checkout", "dark-mode"] }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk evaluation results",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "results": { "type": "array", "items": { "$ref": "#/components/schemas/EvaluationResult" } } } } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/client/{envKey}/flags": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Get all flag values for client",
+        "description": "Returns all evaluated flag values for a client environment key. Used by client-side SDKs.",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/EnvKey" }],
+        "responses": {
+          "200": {
+            "description": "Client flag values",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "flags": { "type": "object", "additionalProperties": {} } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/stream/{envKey}": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Stream flag updates (SSE)",
+        "description": "Opens a Server-Sent Events stream for real-time flag updates. SDKs use this for instant propagation.",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/EnvKey" }],
+        "responses": {
+          "200": { "description": "SSE stream opened", "content": { "text/event-stream": { "schema": { "type": "string" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/segments": {
+      "get": {
+        "tags": ["Segments"],
+        "summary": "List segments",
+        "description": "Returns all segments in a project.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": {
+            "description": "List of segments",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "segments": { "type": "array", "items": { "$ref": "#/components/schemas/Segment" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Segments"],
+        "summary": "Create a segment",
+        "description": "Creates a new user segment with targeting rules.",
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSegmentRequest" },
+              "example": { "key": "beta-users", "name": "Beta Users", "rules": [{ "attribute": "plan", "operator": "eq", "value": "beta" }] }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Segment created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Segment" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/segments/{segmentKey}": {
+      "get": {
+        "tags": ["Segments"],
+        "summary": "Get a segment",
+        "description": "Returns a single segment by key.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/SegmentKey" }
+        ],
+        "responses": {
+          "200": { "description": "Segment details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Segment" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Segments"],
+        "summary": "Update a segment",
+        "description": "Updates a segment's name, description, or rules.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/SegmentKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSegmentRequest" },
+              "example": { "name": "Beta Users v2", "rules": [{ "attribute": "plan", "operator": "in", "value": ["beta", "early-access"] }] }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Segment updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Segment" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Segments"],
+        "summary": "Delete a segment",
+        "description": "Permanently deletes a segment. Flags referencing it will stop matching.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "$ref": "#/components/parameters/SegmentKey" }
+        ],
+        "responses": {
+          "200": { "description": "Segment deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/environments/{envID}/api-keys": {
+      "get": {
+        "tags": ["API Keys"],
+        "summary": "List API keys",
+        "description": "Returns all API keys for an environment.",
+        "parameters": [{ "$ref": "#/components/parameters/EnvID" }],
+        "responses": {
+          "200": {
+            "description": "List of API keys",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "apiKeys": { "type": "array", "items": { "$ref": "#/components/schemas/ApiKey" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["API Keys"],
+        "summary": "Create an API key",
+        "description": "Creates a new API key for the environment. The full key is only returned once.",
+        "parameters": [{ "$ref": "#/components/parameters/EnvID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateApiKeyRequest" },
+              "example": { "name": "Production SDK Key", "type": "server" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "API key created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiKeyFull" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/api-keys/{keyID}": {
+      "delete": {
+        "tags": ["API Keys"],
+        "summary": "Delete an API key",
+        "description": "Revokes and permanently deletes an API key.",
+        "parameters": [
+          { "name": "keyID", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "API key ID" }
+        ],
+        "responses": {
+          "200": { "description": "API key deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/members": {
+      "get": {
+        "tags": ["Team"],
+        "summary": "List team members",
+        "description": "Returns all members of the current organization.",
+        "responses": {
+          "200": {
+            "description": "List of members",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "members": { "type": "array", "items": { "$ref": "#/components/schemas/Member" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/members/invite": {
+      "post": {
+        "tags": ["Team"],
+        "summary": "Invite a team member",
+        "description": "Sends an invitation email to add a new team member.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InviteMemberRequest" },
+              "example": { "email": "teammate@example.com", "role": "developer" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Invitation sent", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Member" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/members/{memberID}": {
+      "put": {
+        "tags": ["Team"],
+        "summary": "Update a member",
+        "description": "Updates a team member's role.",
+        "parameters": [{ "$ref": "#/components/parameters/MemberID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "role": { "type": "string", "enum": ["owner", "admin", "developer", "viewer"] } } },
+              "example": { "role": "admin" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Member updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Member" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Team"],
+        "summary": "Remove a member",
+        "description": "Removes a team member from the organization.",
+        "parameters": [{ "$ref": "#/components/parameters/MemberID" }],
+        "responses": {
+          "200": { "description": "Member removed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/members/{memberID}/permissions": {
+      "get": {
+        "tags": ["Team"],
+        "summary": "Get member permissions",
+        "description": "Returns the granular permissions assigned to a team member.",
+        "parameters": [{ "$ref": "#/components/parameters/MemberID" }],
+        "responses": {
+          "200": { "description": "Member permissions", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Permissions" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Team"],
+        "summary": "Update member permissions",
+        "description": "Sets granular permissions for a team member.",
+        "parameters": [{ "$ref": "#/components/parameters/MemberID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Permissions" },
+              "example": { "projectPermissions": { "proj-123": { "flags": "write", "environments": "read" } } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Permissions updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Permissions" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/approvals": {
+      "get": {
+        "tags": ["Approvals"],
+        "summary": "List approval requests",
+        "description": "Returns all pending and recent approval requests.",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "approved", "rejected"] }, "description": "Filter by status" }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of approvals",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "approvals": { "type": "array", "items": { "$ref": "#/components/schemas/Approval" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Approvals"],
+        "summary": "Create an approval request",
+        "description": "Requests approval for a flag state change before it takes effect.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateApprovalRequest" },
+              "example": { "flagKey": "new-checkout", "projectID": "proj-123", "envID": "env-prod", "changes": { "enabled": true, "percentage": 100 }, "description": "Enable checkout for all users" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Approval created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Approval" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/approvals/{approvalID}": {
+      "get": {
+        "tags": ["Approvals"],
+        "summary": "Get an approval request",
+        "description": "Returns details of a single approval request.",
+        "parameters": [{ "$ref": "#/components/parameters/ApprovalID" }],
+        "responses": {
+          "200": { "description": "Approval details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Approval" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/approvals/{approvalID}/review": {
+      "post": {
+        "tags": ["Approvals"],
+        "summary": "Review an approval request",
+        "description": "Approves or rejects a pending approval request.",
+        "parameters": [{ "$ref": "#/components/parameters/ApprovalID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["decision"], "properties": { "decision": { "type": "string", "enum": ["approved", "rejected"] }, "comment": { "type": "string" } } },
+              "example": { "decision": "approved", "comment": "LGTM" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Review submitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Approval" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/webhooks": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "List webhooks",
+        "description": "Returns all configured webhooks.",
+        "responses": {
+          "200": {
+            "description": "List of webhooks",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "webhooks": { "type": "array", "items": { "$ref": "#/components/schemas/Webhook" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Create a webhook",
+        "description": "Creates a new webhook endpoint for flag change events.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateWebhookRequest" },
+              "example": { "url": "https://example.com/webhooks/flags", "events": ["flag.updated", "flag.deleted"], "secret": "whsec_abc123" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Webhook created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/webhooks/{webhookID}": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "Get a webhook",
+        "description": "Returns a single webhook by ID.",
+        "parameters": [{ "$ref": "#/components/parameters/WebhookID" }],
+        "responses": {
+          "200": { "description": "Webhook details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Webhooks"],
+        "summary": "Update a webhook",
+        "description": "Updates a webhook's URL, events, or secret.",
+        "parameters": [{ "$ref": "#/components/parameters/WebhookID" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateWebhookRequest" },
+              "example": { "url": "https://example.com/webhooks/v2", "events": ["flag.updated"] }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Webhook updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Webhooks"],
+        "summary": "Delete a webhook",
+        "description": "Permanently deletes a webhook.",
+        "parameters": [{ "$ref": "#/components/parameters/WebhookID" }],
+        "responses": {
+          "200": { "description": "Webhook deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/webhooks/{webhookID}/deliveries": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "List webhook deliveries",
+        "description": "Returns delivery history for a webhook including status codes and payloads.",
+        "parameters": [{ "$ref": "#/components/parameters/WebhookID" }],
+        "responses": {
+          "200": {
+            "description": "Delivery history",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "deliveries": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookDelivery" } } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/audit": {
+      "get": {
+        "tags": ["Audit"],
+        "summary": "List audit log entries",
+        "description": "Returns a paginated audit log of all actions performed in the organization.",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 }, "description": "Items per page" },
+          { "name": "action", "in": "query", "schema": { "type": "string" }, "description": "Filter by action type (e.g. flag.created)" },
+          { "name": "actorID", "in": "query", "schema": { "type": "string" }, "description": "Filter by actor user ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit log entries",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/AuditEntry" } }, "total": { "type": "integer" }, "page": { "type": "integer" }, "limit": { "type": "integer" } } } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/metrics/evaluations": {
+      "get": {
+        "tags": ["Metrics"],
+        "summary": "Get evaluation metrics",
+        "description": "Returns evaluation counts and latency metrics for flags over a time range.",
+        "parameters": [
+          { "name": "flagKey", "in": "query", "schema": { "type": "string" }, "description": "Filter by flag key" },
+          { "name": "envID", "in": "query", "schema": { "type": "string" }, "description": "Filter by environment ID" },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Start of time range" },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "End of time range" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evaluation metrics",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvaluationMetrics" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/metrics/evaluations/reset": {
+      "post": {
+        "tags": ["Metrics"],
+        "summary": "Reset evaluation metrics",
+        "description": "Resets evaluation counters for the specified scope.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "flagKey": { "type": "string" }, "envID": { "type": "string" } } },
+              "example": { "flagKey": "new-checkout" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Metrics reset", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/billing/checkout": {
+      "post": {
+        "tags": ["Billing"],
+        "summary": "Create checkout session",
+        "description": "Generates PayU form fields for upgrading the subscription plan via merchant-hosted checkout.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["planID"], "properties": { "planID": { "type": "string" }, "successURL": { "type": "string", "format": "uri" }, "cancelURL": { "type": "string", "format": "uri" } } },
+              "example": { "planID": "plan-pro", "successURL": "https://app.featuresignals.com/billing?success=true", "cancelURL": "https://app.featuresignals.com/billing" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Checkout session created",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "checkoutURL": { "type": "string", "format": "uri" } } } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/billing/subscription": {
+      "get": {
+        "tags": ["Billing"],
+        "summary": "Get subscription details",
+        "description": "Returns the current subscription plan, status, and renewal date.",
+        "responses": {
+          "200": {
+            "description": "Subscription details",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Subscription" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/billing/usage": {
+      "get": {
+        "tags": ["Billing"],
+        "summary": "Get usage statistics",
+        "description": "Returns current billing period usage: evaluations, flags, environments, team seats.",
+        "responses": {
+          "200": {
+            "description": "Usage statistics",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usage" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/onboarding": {
+      "get": {
+        "tags": ["Onboarding"],
+        "summary": "Get onboarding progress",
+        "description": "Returns the current user's onboarding checklist and completion status.",
+        "responses": {
+          "200": {
+            "description": "Onboarding progress",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Onboarding" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "patch": {
+        "tags": ["Onboarding"],
+        "summary": "Update onboarding progress",
+        "description": "Marks onboarding steps as completed.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateOnboardingRequest" },
+              "example": { "steps": { "createProject": true, "createFlag": true, "installSDK": false } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Onboarding updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Onboarding" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token obtained from /v1/auth/login or /v1/auth/register"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Environment API key for server-side or client-side SDK access"
+      }
+    },
+    "parameters": {
+      "ProjectID": {
+        "name": "projectID",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "Project ID"
+      },
+      "EnvID": {
+        "name": "envID",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "Environment ID"
+      },
+      "EnvKey": {
+        "name": "envKey",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Environment public key"
+      },
+      "FlagKey": {
+        "name": "flagKey",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Feature flag key"
+      },
+      "SegmentKey": {
+        "name": "segmentKey",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Segment key"
+      },
+      "MemberID": {
+        "name": "memberID",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "Team member ID"
+      },
+      "ApprovalID": {
+        "name": "approvalID",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "Approval request ID"
+      },
+      "WebhookID": {
+        "name": "webhookID",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "Webhook ID"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request parameters",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid authentication",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password", "name"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8 },
+          "name": { "type": "string" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": ["refreshToken"],
+        "properties": {
+          "refreshToken": { "type": "string" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "expiresIn": { "type": "integer", "description": "Token lifetime in seconds" },
+          "user": { "$ref": "#/components/schemas/User" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string" },
+          "emailVerified": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateProjectRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "Environment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "key": { "type": "string" },
+          "color": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateEnvironmentRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "color": { "type": "string" }
+        }
+      },
+      "Flag": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["boolean", "string", "number", "json"] },
+          "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "defaultValue": {},
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } },
+          "prerequisites": { "type": "array", "items": { "$ref": "#/components/schemas/Prerequisite" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Variant": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "value": {},
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "Prerequisite": {
+        "type": "object",
+        "properties": {
+          "flagKey": { "type": "string" },
+          "value": {}
+        }
+      },
+      "CreateFlagRequest": {
+        "type": "object",
+        "required": ["key", "name", "type"],
+        "properties": {
+          "key": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["boolean", "string", "number", "json"] },
+          "description": { "type": "string" },
+          "defaultValue": {},
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } }
+        }
+      },
+      "UpdateFlagRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } },
+          "prerequisites": { "type": "array", "items": { "$ref": "#/components/schemas/Prerequisite" } }
+        }
+      },
+      "FlagState": {
+        "type": "object",
+        "properties": {
+          "flagKey": { "type": "string" },
+          "envID": { "type": "string", "format": "uuid" },
+          "enabled": { "type": "boolean" },
+          "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "rules": { "type": "array", "items": { "$ref": "#/components/schemas/TargetingRule" } },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TargetingRule": {
+        "type": "object",
+        "properties": {
+          "segmentKey": { "type": "string" },
+          "value": {},
+          "percentage": { "type": "number" }
+        }
+      },
+      "UpdateFlagStateRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "rules": { "type": "array", "items": { "$ref": "#/components/schemas/TargetingRule" } }
+        }
+      },
+      "EvaluateRequest": {
+        "type": "object",
+        "required": ["flagKey", "context"],
+        "properties": {
+          "flagKey": { "type": "string" },
+          "context": { "type": "object", "additionalProperties": {} }
+        }
+      },
+      "BulkEvaluateRequest": {
+        "type": "object",
+        "required": ["context"],
+        "properties": {
+          "context": { "type": "object", "additionalProperties": {} },
+          "flagKeys": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "EvaluationResult": {
+        "type": "object",
+        "properties": {
+          "flagKey": { "type": "string" },
+          "value": {},
+          "variationKey": { "type": "string" },
+          "reason": { "type": "string", "enum": ["TARGETING_MATCH", "PERCENTAGE_ROLLOUT", "DEFAULT", "DISABLED", "PREREQUISITE_FAILED"] }
+        }
+      },
+      "Segment": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "rules": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentRule" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SegmentRule": {
+        "type": "object",
+        "properties": {
+          "attribute": { "type": "string" },
+          "operator": { "type": "string", "enum": ["eq", "neq", "in", "not_in", "contains", "starts_with", "ends_with", "gt", "gte", "lt", "lte", "regex"] },
+          "value": {}
+        }
+      },
+      "CreateSegmentRequest": {
+        "type": "object",
+        "required": ["key", "name"],
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "rules": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentRule" } }
+        }
+      },
+      "UpdateSegmentRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "rules": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentRule" } }
+        }
+      },
+      "ApiKey": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["server", "client"] },
+          "prefix": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ApiKeyFull": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["server", "client"] },
+          "key": { "type": "string", "description": "Full API key — only returned on creation" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateApiKeyRequest": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["server", "client"] }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string" },
+          "role": { "type": "string", "enum": ["owner", "admin", "developer", "viewer"] },
+          "status": { "type": "string", "enum": ["active", "invited"] },
+          "joinedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "InviteMemberRequest": {
+        "type": "object",
+        "required": ["email", "role"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string", "enum": ["admin", "developer", "viewer"] }
+        }
+      },
+      "Permissions": {
+        "type": "object",
+        "properties": {
+          "projectPermissions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "flags": { "type": "string", "enum": ["none", "read", "write"] },
+                "environments": { "type": "string", "enum": ["none", "read", "write"] },
+                "segments": { "type": "string", "enum": ["none", "read", "write"] }
+              }
+            }
+          }
+        }
+      },
+      "Approval": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "flagKey": { "type": "string" },
+          "projectID": { "type": "string", "format": "uuid" },
+          "envID": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+          "changes": { "type": "object" },
+          "description": { "type": "string" },
+          "requestedBy": { "type": "string", "format": "uuid" },
+          "reviewedBy": { "type": "string", "format": "uuid" },
+          "reviewComment": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "reviewedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateApprovalRequest": {
+        "type": "object",
+        "required": ["flagKey", "projectID", "envID", "changes"],
+        "properties": {
+          "flagKey": { "type": "string" },
+          "projectID": { "type": "string", "format": "uuid" },
+          "envID": { "type": "string", "format": "uuid" },
+          "changes": { "type": "object" },
+          "description": { "type": "string" }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "url": { "type": "string", "format": "uri" },
+          "events": { "type": "array", "items": { "type": "string" } },
+          "active": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateWebhookRequest": {
+        "type": "object",
+        "required": ["url", "events"],
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "events": { "type": "array", "items": { "type": "string" } },
+          "secret": { "type": "string" }
+        }
+      },
+      "UpdateWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "events": { "type": "array", "items": { "type": "string" } },
+          "secret": { "type": "string" },
+          "active": { "type": "boolean" }
+        }
+      },
+      "WebhookDelivery": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "event": { "type": "string" },
+          "statusCode": { "type": "integer" },
+          "success": { "type": "boolean" },
+          "requestBody": { "type": "object" },
+          "responseBody": { "type": "string" },
+          "deliveredAt": { "type": "string", "format": "date-time" },
+          "duration": { "type": "integer", "description": "Response time in milliseconds" }
+        }
+      },
+      "AuditEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "action": { "type": "string" },
+          "resourceType": { "type": "string" },
+          "resourceID": { "type": "string" },
+          "actorID": { "type": "string", "format": "uuid" },
+          "actorEmail": { "type": "string", "format": "email" },
+          "metadata": { "type": "object" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EvaluationMetrics": {
+        "type": "object",
+        "properties": {
+          "totalEvaluations": { "type": "integer" },
+          "uniqueUsers": { "type": "integer" },
+          "avgLatencyMs": { "type": "number" },
+          "timeseries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "timestamp": { "type": "string", "format": "date-time" },
+                "count": { "type": "integer" },
+                "trueCount": { "type": "integer" },
+                "falseCount": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "planID": { "type": "string" },
+          "planName": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "trialing", "past_due", "canceled"] },
+          "currentPeriodEnd": { "type": "string", "format": "date-time" },
+          "cancelAtPeriodEnd": { "type": "boolean" }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "evaluations": { "type": "integer" },
+          "evaluationsLimit": { "type": "integer" },
+          "flags": { "type": "integer" },
+          "flagsLimit": { "type": "integer" },
+          "environments": { "type": "integer" },
+          "environmentsLimit": { "type": "integer" },
+          "seats": { "type": "integer" },
+          "seatsLimit": { "type": "integer" }
+        }
+      },
+      "Onboarding": {
+        "type": "object",
+        "properties": {
+          "completed": { "type": "boolean" },
+          "steps": {
+            "type": "object",
+            "properties": {
+              "createProject": { "type": "boolean" },
+              "createFlag": { "type": "boolean" },
+              "installSDK": { "type": "boolean" },
+              "firstEvaluation": { "type": "boolean" },
+              "inviteTeammate": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "UpdateOnboardingRequest": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "object",
+            "properties": {
+              "createProject": { "type": "boolean" },
+              "createFlag": { "type": "boolean" },
+              "installSDK": { "type": "boolean" },
+              "firstEvaluation": { "type": "boolean" },
+              "inviteTeammate": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -12,9 +12,8 @@ type Organization struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 
 	// Billing / plan fields
-	Plan                 string `json:"plan" db:"plan"`
-	StripeCustomerID     string `json:"stripe_customer_id,omitempty" db:"stripe_customer_id"`
-	StripeSubscriptionID string `json:"stripe_subscription_id,omitempty" db:"stripe_subscription_id"`
+	Plan            string `json:"plan" db:"plan"`
+	PayUCustomerRef string `json:"payu_customer_ref,omitempty" db:"payu_customer_ref"`
 	PlanSeatsLimit       int    `json:"plan_seats_limit" db:"plan_seats_limit"`
 	PlanProjectsLimit    int    `json:"plan_projects_limit" db:"plan_projects_limit"`
 	PlanEnvironmentsLimit int   `json:"plan_environments_limit" db:"plan_environments_limit"`

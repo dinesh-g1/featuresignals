@@ -21,3 +21,70 @@
   --ifm-color-primary-lightest: #e0e7ff;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.navbar-signup-btn {
+  background-color: var(--ifm-color-primary);
+  color: white !important;
+  border-radius: 8px;
+  padding: 6px 16px !important;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.navbar-signup-btn:hover {
+  background-color: var(--ifm-color-primary-dark);
+  color: white !important;
+  text-decoration: none;
+}
+
+/* Landing page styles */
+.docs-landing {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+.docs-landing h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+.docs-landing .subtitle {
+  text-align: center;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 1.15rem;
+  margin-bottom: 3rem;
+}
+.docs-landing .cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+@media (max-width: 640px) {
+  .docs-landing .cards {
+    grid-template-columns: 1fr;
+  }
+}
+.docs-landing .card {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.docs-landing .card:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  text-decoration: none;
+  color: inherit;
+}
+.docs-landing .card h3 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.docs-landing .card p {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.9rem;
+  margin: 0;
+}
