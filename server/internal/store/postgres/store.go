@@ -38,11 +38,27 @@ func (s *Store) GetOrganization(ctx context.Context, id string) (*domain.Organiz
 	org := &domain.Organization{}
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, name, slug, created_at, updated_at,
-		        COALESCE(plan, 'free'), COALESCE(stripe_customer_id, ''), COALESCE(stripe_subscription_id, ''),
+		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
 		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2)
 		 FROM organizations WHERE id = $1`, id,
 	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
-		&org.Plan, &org.StripeCustomerID, &org.StripeSubscriptionID,
+		&org.Plan, &org.PayUCustomerRef,
+		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
+	if err != nil {
+		return nil, err
+	}
+	return org, nil
+}
+
+func (s *Store) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*domain.Organization, error) {
+	org := &domain.Organization{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, name, slug, created_at, updated_at,
+		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
+		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2)
+		 FROM organizations WHERE id LIKE $1 || '%' LIMIT 1`, prefix,
+	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
+		&org.Plan, &org.PayUCustomerRef,
 		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
 	if err != nil {
 		return nil, err
@@ -892,10 +908,10 @@ func (s *Store) GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) 
 func (s *Store) GetSubscription(ctx context.Context, orgID string) (*domain.Subscription, error) {
 	sub := &domain.Subscription{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, org_id, stripe_subscription_id, stripe_customer_id, plan, status,
+		`SELECT id, org_id, COALESCE(payu_txnid, ''), COALESCE(payu_mihpayid, ''), plan, status,
 		        current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at
 		 FROM subscriptions WHERE org_id = $1`, orgID,
-	).Scan(&sub.ID, &sub.OrgID, &sub.StripeSubscriptionID, &sub.StripeCustomerID,
+	).Scan(&sub.ID, &sub.OrgID, &sub.PayUTxnID, &sub.PayUMihpayID,
 		&sub.Plan, &sub.Status, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd,
 		&sub.CancelAtPeriodEnd, &sub.CreatedAt, &sub.UpdatedAt)
 	if err != nil {
@@ -908,11 +924,11 @@ func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription
 	existing, err := s.GetSubscription(ctx, sub.OrgID)
 	if err != nil || existing == nil {
 		return s.pool.QueryRow(ctx,
-			`INSERT INTO subscriptions (org_id, stripe_subscription_id, stripe_customer_id, plan, status,
+			`INSERT INTO subscriptions (org_id, payu_txnid, payu_mihpayid, plan, status,
 			                            current_period_start, current_period_end, cancel_at_period_end)
 			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			 RETURNING id, created_at, updated_at`,
-			sub.OrgID, sub.StripeSubscriptionID, sub.StripeCustomerID,
+			sub.OrgID, sub.PayUTxnID, sub.PayUMihpayID,
 			sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
 			sub.CancelAtPeriodEnd,
 		).Scan(&sub.ID, &sub.CreatedAt, &sub.UpdatedAt)
@@ -920,8 +936,8 @@ func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription
 
 	_, err = s.pool.Exec(ctx,
 		`UPDATE subscriptions SET
-		   stripe_subscription_id = COALESCE(NULLIF($2, ''), stripe_subscription_id),
-		   stripe_customer_id = COALESCE(NULLIF($3, ''), stripe_customer_id),
+		   payu_txnid = COALESCE(NULLIF($2, ''), payu_txnid),
+		   payu_mihpayid = COALESCE(NULLIF($3, ''), payu_mihpayid),
 		   plan = COALESCE(NULLIF($4, ''), plan),
 		   status = COALESCE(NULLIF($5, ''), status),
 		   current_period_start = CASE WHEN $6 = '0001-01-01'::timestamptz THEN current_period_start ELSE $6 END,
@@ -929,7 +945,7 @@ func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription
 		   cancel_at_period_end = $8,
 		   updated_at = NOW()
 		 WHERE org_id = $1`,
-		sub.OrgID, sub.StripeSubscriptionID, sub.StripeCustomerID,
+		sub.OrgID, sub.PayUTxnID, sub.PayUMihpayID,
 		sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
 		sub.CancelAtPeriodEnd,
 	)

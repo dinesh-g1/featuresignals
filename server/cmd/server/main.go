@@ -94,9 +94,11 @@ func main() {
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
-		StripeSecretKey:       cfg.StripeSecretKey,
-		StripeWebhookSecret:   cfg.StripeWebhookSecret,
-		StripePriceProMonthly: cfg.StripePriceProMonthly,
+		PayUMerchantKey: cfg.PayUMerchantKey,
+		PayUSalt:        cfg.PayUSalt,
+		PayUMode:        cfg.PayUMode,
+		DashboardURL:    cfg.DashboardURL,
+		AppBaseURL:      cfg.AppBaseURL,
 	}, smsClient, emailSender, cfg.AppBaseURL, cfg.DashboardURL)
 
 	// Server

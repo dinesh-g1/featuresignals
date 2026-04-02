@@ -53,6 +53,7 @@ func (m *mockStore) simulateNotify(payload string) {
 // Satisfy domain.Store — unused methods return nil/zero.
 func (m *mockStore) CreateOrganization(_ context.Context, _ *domain.Organization) error { return nil }
 func (m *mockStore) GetOrganization(_ context.Context, _ string) (*domain.Organization, error) { return nil, nil }
+func (m *mockStore) GetOrganizationByIDPrefix(_ context.Context, _ string) (*domain.Organization, error) { return nil, nil }
 func (m *mockStore) CreateUser(_ context.Context, _ *domain.User) error { return nil }
 func (m *mockStore) GetUserByEmail(_ context.Context, _ string) (*domain.User, error) { return nil, nil }
 func (m *mockStore) GetUserByID(_ context.Context, _ string) (*domain.User, error) { return nil, nil }

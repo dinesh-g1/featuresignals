@@ -89,6 +89,17 @@ func (m *mockStore) GetOrganization(ctx context.Context, id string) (*domain.Org
 	return org, nil
 }
 
+func (m *mockStore) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*domain.Organization, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for id, org := range m.orgs {
+		if len(id) >= len(prefix) && id[:len(prefix)] == prefix {
+			return org, nil
+		}
+	}
+	return nil, fmt.Errorf("not found")
+}
+
 func (m *mockStore) CreateUser(ctx context.Context, user *domain.User) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

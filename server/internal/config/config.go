@@ -16,9 +16,9 @@ type Config struct {
 	LogLevel    string
 	CORSOrigins []string
 
-	StripeSecretKey       string
-	StripeWebhookSecret   string
-	StripePriceProMonthly string
+	PayUMerchantKey string
+	PayUSalt        string
+	PayUMode        string
 
 	// SMS (MSG91)
 	MSG91AuthKey    string
@@ -47,9 +47,9 @@ func Load() *Config {
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
 		CORSOrigins: parseCORSOrigins(getEnv("CORS_ORIGIN", "http://localhost:3000")),
 
-		StripeSecretKey:       os.Getenv("STRIPE_SECRET_KEY"),
-		StripeWebhookSecret:   os.Getenv("STRIPE_WEBHOOK_SECRET"),
-		StripePriceProMonthly: os.Getenv("STRIPE_PRICE_PRO_MONTHLY"),
+		PayUMerchantKey: os.Getenv("PAYU_MERCHANT_KEY"),
+		PayUSalt:        os.Getenv("PAYU_SALT"),
+		PayUMode:        getEnv("PAYU_MODE", "test"),
 
 		MSG91AuthKey:    os.Getenv("MSG91_AUTH_KEY"),
 		MSG91TemplateID: os.Getenv("MSG91_TEMPLATE_ID"),

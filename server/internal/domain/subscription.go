@@ -3,17 +3,17 @@ package domain
 import "time"
 
 type Subscription struct {
-	ID                   string    `json:"id"`
-	OrgID                string    `json:"org_id"`
-	StripeSubscriptionID string    `json:"stripe_subscription_id"`
-	StripeCustomerID     string    `json:"stripe_customer_id"`
-	Plan                 string    `json:"plan"`
-	Status               string    `json:"status"`
-	CurrentPeriodStart   time.Time `json:"current_period_start"`
-	CurrentPeriodEnd     time.Time `json:"current_period_end"`
-	CancelAtPeriodEnd    bool      `json:"cancel_at_period_end"`
-	CreatedAt            time.Time `json:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at"`
+	ID                 string    `json:"id"`
+	OrgID              string    `json:"org_id"`
+	PayUTxnID          string    `json:"payu_txnid" db:"payu_txnid"`
+	PayUMihpayID       string    `json:"payu_mihpayid" db:"payu_mihpayid"`
+	Plan               string    `json:"plan"`
+	Status             string    `json:"status"`
+	CurrentPeriodStart time.Time `json:"current_period_start"`
+	CurrentPeriodEnd   time.Time `json:"current_period_end"`
+	CancelAtPeriodEnd  bool      `json:"cancel_at_period_end"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
 
 type UsageMetric struct {
