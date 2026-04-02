@@ -32,6 +32,7 @@ type OnboardingState struct {
 	FirstFlagCreated  bool       `json:"first_flag_created"`
 	FirstSDKConnected bool       `json:"first_sdk_connected"`
 	FirstEvaluation   bool       `json:"first_evaluation"`
+	TourCompleted     bool       `json:"tour_completed"`
 	Completed         bool       `json:"completed"`
 	CompletedAt       *time.Time `json:"completed_at,omitempty"`
 	UpdatedAt         time.Time  `json:"updated_at"`

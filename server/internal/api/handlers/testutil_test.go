@@ -707,6 +707,68 @@ func (m *mockStore) UpsertOnboardingState(ctx context.Context, state *domain.Onb
 	return nil
 }
 
+func (m *mockStore) GetUserByEmailVerifyToken(ctx context.Context, token string) (*domain.User, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, u := range m.users {
+		if u.EmailVerifyToken == token {
+			return u, nil
+		}
+	}
+	return nil, fmt.Errorf("not found")
+}
+
+func (m *mockStore) UpdateUserPhone(ctx context.Context, userID, phone string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		u.Phone = phone
+	}
+	return nil
+}
+
+func (m *mockStore) UpdateUserPhoneOTP(ctx context.Context, userID, otpHash string, expires time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		u.PhoneOTP = otpHash
+		u.PhoneOTPExpires = &expires
+	}
+	return nil
+}
+
+func (m *mockStore) SetPhoneVerified(ctx context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		u.PhoneVerified = true
+		u.PhoneOTP = ""
+		u.PhoneOTPExpires = nil
+	}
+	return nil
+}
+
+func (m *mockStore) UpdateUserEmailVerifyToken(ctx context.Context, userID, token string, expires time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		u.EmailVerifyToken = token
+		u.EmailVerifyExpires = &expires
+	}
+	return nil
+}
+
+func (m *mockStore) SetEmailVerified(ctx context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		u.EmailVerified = true
+		u.EmailVerifyToken = ""
+		u.EmailVerifyExpires = nil
+	}
+	return nil
+}
+
 func jsonRaw(v interface{}) json.RawMessage {
 	b, _ := json.Marshal(v)
 	return b

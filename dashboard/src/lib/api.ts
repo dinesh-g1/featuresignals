@@ -50,6 +50,12 @@ export const api = {
     ),
   refresh: (refreshToken: string) =>
     request("/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
+  sendOTP: (token: string, phone: string) =>
+    request("/v1/auth/send-otp", { method: "POST", body: { phone }, token }),
+  verifyOTP: (token: string, otp: string) =>
+    request("/v1/auth/verify-otp", { method: "POST", body: { otp }, token }),
+  sendVerificationEmail: (token: string) =>
+    request("/v1/auth/send-verification-email", { method: "POST", token }),
 
   // Projects
   listProjects: (token: string) => request<any[]>("/v1/projects", { token }),

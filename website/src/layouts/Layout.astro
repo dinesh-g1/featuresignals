@@ -33,10 +33,12 @@ const currentPath = Astro.url.pathname;
           <a href="/pricing" class:list={["text-sm font-medium transition-colors", currentPath === "/pricing" || currentPath === "/pricing/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Pricing</a>
           <a href="/changelog" class:list={["text-sm font-medium transition-colors", currentPath === "/changelog" || currentPath === "/changelog/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Changelog</a>
           <a href="/compare/vs-launchdarkly" class:list={["text-sm font-medium transition-colors", currentPath.startsWith("/compare") ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Compare</a>
+          <a href="https://docs.featuresignals.com" class="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">Docs</a>
         </div>
         <div class="hidden items-center gap-3 md:flex">
           <a href="https://github.com/dinesh-g1/featuresignals" class="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">GitHub</a>
-          <a href="https://docs.featuresignals.com" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">Documentation</a>
+          <a href="https://app.featuresignals.com/login" class="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900">Log in</a>
+          <a href="https://app.featuresignals.com/register" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">Sign Up</a>
         </div>
         <button id="mobile-menu-btn" class="md:hidden flex items-center justify-center rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="Toggle menu">
           <svg id="menu-icon-open" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -53,9 +55,11 @@ const currentPath = Astro.url.pathname;
           <a href="/pricing" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Pricing</a>
           <a href="/changelog" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Changelog</a>
           <a href="/compare/vs-launchdarkly" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Compare</a>
+          <a href="https://docs.featuresignals.com" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Docs</a>
           <hr class="my-2 border-slate-100" />
           <a href="https://github.com/dinesh-g1/featuresignals" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">GitHub</a>
-          <a href="https://docs.featuresignals.com" class="block rounded-lg bg-indigo-600 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-700">Documentation</a>
+          <a href="https://app.featuresignals.com/login" class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">Log in</a>
+          <a href="https://app.featuresignals.com/register" class="block rounded-lg bg-indigo-600 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-700">Sign Up</a>
         </div>
       </div>
     </nav>

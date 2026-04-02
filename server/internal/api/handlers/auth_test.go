@@ -14,13 +14,13 @@ import (
 func newTestAuthHandler() (*AuthHandler, *mockStore) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	return NewAuthHandler(store, jwtMgr), store
+	return NewAuthHandler(store, jwtMgr, nil, nil, "http://localhost:8080", "http://localhost:3000"), store
 }
 
 func TestAuthHandler_Register(t *testing.T) {
 	h, store := newTestAuthHandler()
 
-	body := `{"email":"test@example.com","password":"securepassword123","name":"Test User","org_name":"Test Org"}`
+	body := `{"email":"test@example.com","password":"Secure@123","name":"Test User","org_name":"Test Org"}`
 	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
 	w := httptest.NewRecorder()
 
@@ -56,11 +56,13 @@ func TestAuthHandler_Register_MissingFields(t *testing.T) {
 		name string
 		body string
 	}{
-		{"missing email", `{"password":"pass12345","name":"Test","org_name":"Org"}`},
+		{"missing email", `{"password":"Secure@123","name":"Test","org_name":"Org"}`},
 		{"missing password", `{"email":"test@test.com","name":"Test","org_name":"Org"}`},
-		{"missing name", `{"email":"test@test.com","password":"pass12345","org_name":"Org"}`},
-		{"missing org_name", `{"email":"test@test.com","password":"pass12345","name":"Test"}`},
+		{"missing name", `{"email":"test@test.com","password":"Secure@123","org_name":"Org"}`},
+		{"missing org_name", `{"email":"test@test.com","password":"Secure@123","name":"Test"}`},
 		{"short password", `{"email":"test@test.com","password":"short","name":"Test","org_name":"Org"}`},
+		{"no uppercase", `{"email":"test@test.com","password":"secure@123","name":"Test","org_name":"Org"}`},
+		{"no special char", `{"email":"test@test.com","password":"Secure1234","name":"Test","org_name":"Org"}`},
 	}
 
 	for _, tt := range tests {
@@ -80,7 +82,7 @@ func TestAuthHandler_Register_MissingFields(t *testing.T) {
 func TestAuthHandler_Register_DuplicateEmail(t *testing.T) {
 	h, _ := newTestAuthHandler()
 
-	body := `{"email":"dup@example.com","password":"securepassword123","name":"Test User","org_name":"Test Org"}`
+	body := `{"email":"dup@example.com","password":"Secure@123","name":"Test User","org_name":"Test Org"}`
 
 	r1 := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
 	w1 := httptest.NewRecorder()
@@ -103,7 +105,7 @@ func TestAuthHandler_Login(t *testing.T) {
 	h, _ := newTestAuthHandler()
 
 	// Register first
-	regBody := `{"email":"login@example.com","password":"securepassword123","name":"Test","org_name":"Org"}`
+	regBody := `{"email":"login@example.com","password":"Secure@123","name":"Test","org_name":"Org"}`
 	r1 := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(regBody))
 	w1 := httptest.NewRecorder()
 	h.Register(w1, r1)
@@ -113,7 +115,7 @@ func TestAuthHandler_Login(t *testing.T) {
 	}
 
 	// Login
-	loginBody := `{"email":"login@example.com","password":"securepassword123"}`
+	loginBody := `{"email":"login@example.com","password":"Secure@123"}`
 	r2 := httptest.NewRequest("POST", "/v1/auth/login", strings.NewReader(loginBody))
 	w2 := httptest.NewRecorder()
 	h.Login(w2, r2)
@@ -136,7 +138,7 @@ func TestAuthHandler_Login(t *testing.T) {
 func TestAuthHandler_Login_WrongPassword(t *testing.T) {
 	h, _ := newTestAuthHandler()
 
-	regBody := `{"email":"wrong@example.com","password":"securepassword123","name":"Test","org_name":"Org"}`
+	regBody := `{"email":"wrong@example.com","password":"Secure@123","name":"Test","org_name":"Org"}`
 	r1 := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(regBody))
 	w1 := httptest.NewRecorder()
 	h.Register(w1, r1)
@@ -168,7 +170,7 @@ func TestAuthHandler_Refresh(t *testing.T) {
 	h, _ := newTestAuthHandler()
 
 	// Register to get tokens
-	regBody := `{"email":"refresh@example.com","password":"securepassword123","name":"Test","org_name":"Org"}`
+	regBody := `{"email":"refresh@example.com","password":"Secure@123","name":"Test","org_name":"Org"}`
 	r1 := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(regBody))
 	w1 := httptest.NewRecorder()
 	h.Register(w1, r1)

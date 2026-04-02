@@ -12,9 +12,11 @@ import (
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/sms"
 )
 
 // BillingConfig holds Stripe credentials passed through from config.
@@ -37,6 +39,10 @@ func NewRouter(
 	corsOrigins []string,
 	metricsCollector *metrics.Collector,
 	billing BillingConfig,
+	smsClient *sms.Client,
+	emailSender *email.Sender,
+	appBaseURL string,
+	dashboardURL string,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -64,7 +70,7 @@ func NewRouter(
 	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
 
 	// Init handlers
-	authH := handlers.NewAuthHandler(store, jwtMgr)
+	authH := handlers.NewAuthHandler(store, jwtMgr, smsClient, emailSender, appBaseURL, dashboardURL)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store)
@@ -87,9 +93,18 @@ func NewRouter(
 		r.Post("/auth/register", authH.Register)
 		r.Post("/auth/login", authH.Login)
 		r.Post("/auth/refresh", authH.Refresh)
+		r.Get("/auth/verify-email", authH.VerifyEmail)
 
 		// Stripe webhook (public — verified via signature, not JWT)
 		r.Post("/billing/webhook", billingH.Webhook)
+
+		// Auth verification (authenticated via JWT)
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Post("/auth/send-otp", authH.SendOTP)
+			r.Post("/auth/verify-otp", authH.VerifyOTP)
+			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
+		})
 
 		// Billing & onboarding (authenticated via JWT)
 		r.Group(func(r chi.Router) {

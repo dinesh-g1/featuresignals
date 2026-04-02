@@ -19,6 +19,22 @@ type Config struct {
 	StripeSecretKey       string
 	StripeWebhookSecret   string
 	StripePriceProMonthly string
+
+	// SMS (MSG91)
+	MSG91AuthKey    string
+	MSG91TemplateID string
+	MSG91SenderID   string
+
+	// Email (SMTP)
+	SMTPHost string
+	SMTPPort int
+	SMTPUser string
+	SMTPPass string
+	SMTPFrom string
+
+	// App
+	AppBaseURL   string
+	DashboardURL string
 }
 
 func Load() *Config {
@@ -34,6 +50,19 @@ func Load() *Config {
 		StripeSecretKey:       os.Getenv("STRIPE_SECRET_KEY"),
 		StripeWebhookSecret:   os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		StripePriceProMonthly: os.Getenv("STRIPE_PRICE_PRO_MONTHLY"),
+
+		MSG91AuthKey:    os.Getenv("MSG91_AUTH_KEY"),
+		MSG91TemplateID: os.Getenv("MSG91_TEMPLATE_ID"),
+		MSG91SenderID:   getEnv("MSG91_SENDER_ID", "FEATSIG"),
+
+		SMTPHost: getEnv("SMTP_HOST", "localhost"),
+		SMTPPort: getEnvInt("SMTP_PORT", 587),
+		SMTPUser: os.Getenv("SMTP_USER"),
+		SMTPPass: os.Getenv("SMTP_PASS"),
+		SMTPFrom: getEnv("SMTP_FROM", "noreply@featuresignals.com"),
+
+		AppBaseURL:   getEnv("APP_BASE_URL", "http://localhost:8080"),
+		DashboardURL: getEnv("DASHBOARD_URL", "http://localhost:3000"),
 	}
 }
 
