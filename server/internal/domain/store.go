@@ -22,6 +22,12 @@ type Store interface {
 	CreateUser(ctx context.Context, user *User) error
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
+	GetUserByEmailVerifyToken(ctx context.Context, token string) (*User, error)
+	UpdateUserPhone(ctx context.Context, userID, phone string) error
+	UpdateUserPhoneOTP(ctx context.Context, userID, otpHash string, expires time.Time) error
+	SetPhoneVerified(ctx context.Context, userID string) error
+	UpdateUserEmailVerifyToken(ctx context.Context, userID, token string, expires time.Time) error
+	SetEmailVerified(ctx context.Context, userID string) error
 
 	// ── Org Members ──────────────────────────────────────────────────────
 	AddOrgMember(ctx context.Context, member *OrgMember) error

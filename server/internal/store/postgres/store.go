@@ -62,8 +62,17 @@ func (s *Store) CreateUser(ctx context.Context, user *domain.User) error {
 func (s *Store) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	user := &domain.User{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, name, created_at, updated_at FROM users WHERE email = $1`, email,
-	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+		`SELECT id, email, password_hash, name,
+		        COALESCE(phone, ''), COALESCE(phone_verified, false), COALESCE(email_verified, false),
+		        COALESCE(email_verify_token, ''), email_verify_expires_at,
+		        COALESCE(phone_otp, ''), phone_otp_expires_at,
+		        created_at, updated_at
+		 FROM users WHERE email = $1`, email,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name,
+		&user.Phone, &user.PhoneVerified, &user.EmailVerified,
+		&user.EmailVerifyToken, &user.EmailVerifyExpires,
+		&user.PhoneOTP, &user.PhoneOTPExpires,
+		&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +82,75 @@ func (s *Store) GetUserByEmail(ctx context.Context, email string) (*domain.User,
 func (s *Store) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	user := &domain.User{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, name, created_at, updated_at FROM users WHERE id = $1`, id,
-	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+		`SELECT id, email, password_hash, name,
+		        COALESCE(phone, ''), COALESCE(phone_verified, false), COALESCE(email_verified, false),
+		        COALESCE(email_verify_token, ''), email_verify_expires_at,
+		        COALESCE(phone_otp, ''), phone_otp_expires_at,
+		        created_at, updated_at
+		 FROM users WHERE id = $1`, id,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name,
+		&user.Phone, &user.PhoneVerified, &user.EmailVerified,
+		&user.EmailVerifyToken, &user.EmailVerifyExpires,
+		&user.PhoneOTP, &user.PhoneOTPExpires,
+		&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (s *Store) GetUserByEmailVerifyToken(ctx context.Context, token string) (*domain.User, error) {
+	user := &domain.User{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, email, password_hash, name,
+		        COALESCE(phone, ''), COALESCE(phone_verified, false), COALESCE(email_verified, false),
+		        COALESCE(email_verify_token, ''), email_verify_expires_at,
+		        COALESCE(phone_otp, ''), phone_otp_expires_at,
+		        created_at, updated_at
+		 FROM users WHERE email_verify_token = $1`, token,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name,
+		&user.Phone, &user.PhoneVerified, &user.EmailVerified,
+		&user.EmailVerifyToken, &user.EmailVerifyExpires,
+		&user.PhoneOTP, &user.PhoneOTPExpires,
+		&user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (s *Store) UpdateUserPhone(ctx context.Context, userID, phone string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET phone = $2, updated_at = now() WHERE id = $1`, userID, phone)
+	return err
+}
+
+func (s *Store) UpdateUserPhoneOTP(ctx context.Context, userID, otpHash string, expires time.Time) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET phone_otp = $2, phone_otp_expires_at = $3, updated_at = now() WHERE id = $1`,
+		userID, otpHash, expires)
+	return err
+}
+
+func (s *Store) SetPhoneVerified(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET phone_verified = true, phone_otp = NULL, phone_otp_expires_at = NULL, updated_at = now() WHERE id = $1`,
+		userID)
+	return err
+}
+
+func (s *Store) UpdateUserEmailVerifyToken(ctx context.Context, userID, token string, expires time.Time) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET email_verify_token = $2, email_verify_expires_at = $3, updated_at = now() WHERE id = $1`,
+		userID, token, expires)
+	return err
+}
+
+func (s *Store) SetEmailVerified(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET email_verified = true, email_verify_token = NULL, email_verify_expires_at = NULL, updated_at = now() WHERE id = $1`,
+		userID)
+	return err
 }
 
 // --- Org Members ---

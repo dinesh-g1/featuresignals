@@ -15,11 +15,13 @@ import (
 	"github.com/featuresignals/server/internal/api"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/config"
+	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/eval"
-	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/metrics"
-	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/scheduler"
+	"github.com/featuresignals/server/internal/sms"
+	"github.com/featuresignals/server/internal/sse"
+	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/store/postgres"
 	"github.com/featuresignals/server/internal/webhook"
 )
@@ -85,13 +87,17 @@ func main() {
 	// Evaluation metrics collector
 	metricsCollector := metrics.NewCollector()
 
+	// SMS & Email clients
+	smsClient := sms.NewClient(cfg.MSG91AuthKey, cfg.MSG91TemplateID, cfg.MSG91SenderID)
+	emailSender := email.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
+
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
 		StripeSecretKey:       cfg.StripeSecretKey,
 		StripeWebhookSecret:   cfg.StripeWebhookSecret,
 		StripePriceProMonthly: cfg.StripePriceProMonthly,
-	})
+	}, smsClient, emailSender, cfg.AppBaseURL, cfg.DashboardURL)
 
 	// Server
 	srv := &http.Server{

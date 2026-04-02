@@ -112,6 +112,12 @@ func (m *mockStore) IncrementUsage(_ context.Context, _, _ string, _ int64) erro
 func (m *mockStore) GetUsage(_ context.Context, _, _ string) (*domain.UsageMetric, error) { return nil, nil }
 func (m *mockStore) GetOnboardingState(_ context.Context, _ string) (*domain.OnboardingState, error) { return nil, nil }
 func (m *mockStore) UpsertOnboardingState(_ context.Context, _ *domain.OnboardingState) error { return nil }
+func (m *mockStore) GetUserByEmailVerifyToken(_ context.Context, _ string) (*domain.User, error) { return nil, nil }
+func (m *mockStore) UpdateUserPhone(_ context.Context, _, _ string) error { return nil }
+func (m *mockStore) UpdateUserPhoneOTP(_ context.Context, _, _ string, _ time.Time) error { return nil }
+func (m *mockStore) SetPhoneVerified(_ context.Context, _ string) error { return nil }
+func (m *mockStore) UpdateUserEmailVerifyToken(_ context.Context, _, _ string, _ time.Time) error { return nil }
+func (m *mockStore) SetEmailVerified(_ context.Context, _ string) error { return nil }
 
 // --- mock broadcaster ---
 
