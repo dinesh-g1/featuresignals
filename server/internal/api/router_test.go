@@ -191,6 +191,7 @@ func (noopStore) UpsertOnboardingState(context.Context, *domain.OnboardingState)
 	return errNoop
 }
 
+func (noopStore) UpdateOrgDemoExpiry(context.Context, string, time.Time) error { return errNoop }
 func (noopStore) DeleteExpiredDemoOrgs(context.Context, time.Time) (int, error) { return 0, errNoop }
 func (noopStore) ConvertDemoUser(context.Context, string, string, string, string) error {
 	return errNoop

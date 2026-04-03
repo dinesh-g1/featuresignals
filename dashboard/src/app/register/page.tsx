@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+
+const PHONE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_PHONE_VERIFICATION === "true";
 
 const COUNTRY_CODES = [
   { code: "+91", label: "India (+91)" },
@@ -65,8 +67,7 @@ function isPasswordStrong(password: string) {
   );
 }
 
-function StepIndicator({ current, completed }: { current: number; completed: number[] }) {
-  const steps = ["Account", "Phone", "Email"];
+function StepIndicator({ steps, current, completed }: { steps: string[]; current: number; completed: number[] }) {
   return (
     <div className="flex items-center justify-center gap-0">
       {steps.map((label, i) => {
@@ -163,6 +164,10 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const source = searchParams.get("source") || "";
+  const isDemoSource = source === "demo";
+
   const setAuth = useAppStore((s) => s.setAuth);
   const [step, setStep] = useState(0);
   const [completed, setCompleted] = useState<number[]>([]);
@@ -170,7 +175,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Step 2 state
+  // Phone step state (only when PHONE_ENABLED)
   const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -178,14 +183,36 @@ export default function RegisterPage() {
   const [countdown, setCountdown] = useState(0);
   const [token, setToken] = useState("");
 
-  // Step 3 state
+  // Email step state
   const [emailSent, setEmailSent] = useState(true);
+
+  // Plan selection state (demo source only)
+  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro">("free");
+  const [retainData, setRetainData] = useState(true);
+  const [pricing, setPricing] = useState<PricingConfig | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (isDemoSource) {
+      api.getPricing().then(setPricing).catch(() => {});
+    }
+  }, [isDemoSource]);
 
   useEffect(() => {
     if (countdown <= 0) return;
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
   }, [countdown]);
+
+  // Build steps dynamically
+  const stepLabels: string[] = ["Account"];
+  if (PHONE_ENABLED) stepLabels.push("Phone");
+  stepLabels.push("Email");
+  if (isDemoSource) stepLabels.push("Plan");
+
+  const phoneStepIndex = PHONE_ENABLED ? 1 : -1;
+  const emailStepIndex = PHONE_ENABLED ? 2 : 1;
+  const planStepIndex = isDemoSource ? (PHONE_ENABLED ? 3 : 2) : -1;
 
   const canContinueStep1 =
     form.name.trim() !== "" &&
@@ -197,11 +224,17 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const data: any = await api.register(form);
+      const payload: any = { ...form };
+      if (isDemoSource) payload.source = "demo";
+      const data: any = await api.register(payload);
       setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user);
       setToken(data.tokens.access_token);
       setCompleted((c) => [...c, 0]);
-      setStep(1);
+      if (PHONE_ENABLED) {
+        setStep(phoneStepIndex);
+      } else {
+        setStep(emailStepIndex);
+      }
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
@@ -215,7 +248,7 @@ export default function RegisterPage() {
     try {
       await api.sendOTP(token, `${countryCode}${phone}`);
     } catch {
-      // OTP delivery may not be configured yet — continue to input screen
+      // OTP delivery may not be configured yet
     } finally {
       setOtpSent(true);
       setCountdown(60);
@@ -228,8 +261,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.verifyOTP(token, otp);
-      setCompleted((c) => [...c, 1]);
-      setStep(2);
+      setCompleted((c) => [...c, phoneStepIndex]);
+      setStep(emailStepIndex);
     } catch (err: any) {
       setError(err.message || "Verification failed");
     } finally {
@@ -250,9 +283,46 @@ export default function RegisterPage() {
     }
   }
 
-  function handleFinish() {
-    setCompleted((c) => [...c, 2]);
-    router.push("/onboarding");
+  function handleEmailContinue() {
+    setCompleted((c) => [...c, emailStepIndex]);
+    if (isDemoSource) {
+      setStep(planStepIndex);
+    } else {
+      router.push("/dashboard");
+    }
+  }
+
+  async function handleSelectPlan() {
+    if (!token) return;
+    setError("");
+    setLoading(true);
+    try {
+      const data = await api.selectDemoPlan(token, { plan: selectedPlan, retain_data: retainData });
+      if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+        return;
+      }
+      if (data.payu_url && formRef.current) {
+        const f = formRef.current;
+        f.action = data.payu_url;
+        (f.querySelector('[name="key"]') as HTMLInputElement).value = data.key || "";
+        (f.querySelector('[name="txnid"]') as HTMLInputElement).value = data.txnid || "";
+        (f.querySelector('[name="hash"]') as HTMLInputElement).value = data.hash || "";
+        (f.querySelector('[name="amount"]') as HTMLInputElement).value = data.amount || "";
+        (f.querySelector('[name="productinfo"]') as HTMLInputElement).value = data.productinfo || "";
+        (f.querySelector('[name="firstname"]') as HTMLInputElement).value = data.firstname || "";
+        (f.querySelector('[name="email"]') as HTMLInputElement).value = data.email || "";
+        (f.querySelector('[name="phone"]') as HTMLInputElement).value = data.phone || "";
+        (f.querySelector('[name="surl"]') as HTMLInputElement).value = data.surl || "";
+        (f.querySelector('[name="furl"]') as HTMLInputElement).value = data.furl || "";
+        f.submit();
+        return;
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to select plan");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const inputCls =
@@ -263,10 +333,12 @@ export default function RegisterPage() {
       <div className="w-full max-w-lg space-y-8 rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-indigo-600">FeatureSignals</h1>
-          <p className="mt-2 text-sm text-slate-500">Create your account</p>
+          <p className="mt-2 text-sm text-slate-500">
+            {isDemoSource ? "Sign up to explore with sample data" : "Create your account"}
+          </p>
         </div>
 
-        <StepIndicator current={step} completed={completed} />
+        <StepIndicator steps={stepLabels} current={step} completed={completed} />
 
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-100">
@@ -274,7 +346,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Step 1: Account Details */}
+        {/* Step: Account Details */}
         {step === 0 && (
           <form
             onSubmit={(e) => {
@@ -310,8 +382,8 @@ export default function RegisterPage() {
           </form>
         )}
 
-        {/* Step 2: Phone Verification */}
-        {step === 1 && (
+        {/* Step: Phone Verification (only when PHONE_ENABLED) */}
+        {PHONE_ENABLED && step === phoneStepIndex && (
           <div className="space-y-5">
             <div className="text-center">
               <h2 className="text-lg font-semibold text-slate-900">Phone Verification</h2>
@@ -381,8 +453,8 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Step 3: Email Verification */}
-        {step === 2 && (
+        {/* Step: Email Verification */}
+        {step === emailStepIndex && (
           <div className="space-y-5 text-center">
             <div>
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
@@ -410,18 +482,114 @@ export default function RegisterPage() {
             </button>
 
             <button
-              onClick={handleFinish}
+              onClick={handleEmailContinue}
               className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
             >
-              Continue to Flag Engine
+              {isDemoSource ? "Continue to Plan Selection" : "Continue to Flag Engine"}
             </button>
 
             <button
-              onClick={handleFinish}
+              onClick={handleEmailContinue}
               className="text-sm text-slate-400 transition-colors hover:text-slate-600"
             >
               Skip for now
             </button>
+          </div>
+        )}
+
+        {/* Step: Plan Selection (demo source only) */}
+        {isDemoSource && step === planStepIndex && (
+          <div className="space-y-5">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-slate-900">Choose Your Plan</h2>
+              <p className="mt-1 text-sm text-slate-500">Select a plan to get started with FeatureSignals.</p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setSelectedPlan("free")}
+                className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedPlan === "free" ? "border-indigo-600 bg-indigo-50" : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{pricing?.plans?.free?.name ?? "Free"}</h3>
+                    <p className="text-sm text-slate-500">{pricing?.plans?.free?.tagline ?? "For individuals and small projects"}</p>
+                  </div>
+                  <span className="text-lg font-bold text-slate-900">{pricing?.plans?.free?.display_price ?? "₹0"}<span className="text-sm font-normal text-slate-400">/{pricing?.plans?.free?.billing_period ?? "month"}</span></span>
+                </div>
+                <ul className="mt-2 space-y-1 text-xs text-slate-500">
+                  {(pricing?.plans?.free?.features ?? ["1 project, 2 environments, 3 team members", "Unlimited feature flags"]).slice(0, 3).map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPlan("pro")}
+                className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedPlan === "pro" ? "border-indigo-600 bg-indigo-50" : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-slate-900">{pricing?.plans?.pro?.name ?? "Pro"}</h3>
+                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">Recommended</span>
+                    </div>
+                    <p className="text-sm text-slate-500">{pricing?.plans?.pro?.tagline ?? "For growing teams"}</p>
+                  </div>
+                  <span className="text-lg font-bold text-slate-900">{pricing?.plans?.pro?.display_price ?? "₹999"}<span className="text-sm font-normal text-slate-400">/{pricing?.plans?.pro?.billing_period ?? "month"}</span></span>
+                </div>
+                <ul className="mt-2 space-y-1 text-xs text-slate-500">
+                  {(pricing?.plans?.pro?.features ?? ["Unlimited projects, environments, team members", "Advanced targeting, A/B testing, audit logs"]).slice(0, 3).map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={retainData}
+                  onChange={(e) => setRetainData(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-700">Keep sample data</span>
+                  <p className="text-xs text-slate-400">
+                    Preserve the sample feature flags, segments, environments, and API keys.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <button
+              onClick={handleSelectPlan}
+              disabled={loading}
+              className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {loading ? "Processing..." : selectedPlan === "free" ? "Start with Free" : "Continue to Payment"}
+            </button>
+
+            {/* Hidden PayU form */}
+            <form ref={formRef} method="POST" className="hidden">
+              <input name="key" />
+              <input name="txnid" />
+              <input name="hash" />
+              <input name="amount" />
+              <input name="productinfo" />
+              <input name="firstname" />
+              <input name="email" />
+              <input name="phone" />
+              <input name="surl" />
+              <input name="furl" />
+            </form>
           </div>
         )}
 

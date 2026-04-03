@@ -13,8 +13,9 @@ export function VerificationBanner() {
 
   if (!user || dismissed) return null;
 
+  const phoneEnabled = process.env.NEXT_PUBLIC_ENABLE_PHONE_VERIFICATION === "true";
   const needsEmail = user.email_verified === false;
-  const needsPhone = user.phone_verified === false;
+  const needsPhone = phoneEnabled && user.phone_verified === false;
 
   if (!needsEmail && !needsPhone) return null;
 

@@ -325,7 +325,10 @@ func registerAndExtract(t *testing.T, h *AuthHandler, email string) (userID, org
 	return user["id"].(string), org["id"].(string)
 }
 
-func TestAuthHandler_SendOTP(t *testing.T) {
+// Phone verification is disabled by default (EnablePhoneVerification = false).
+// SendOTP and VerifyOTP should return 501 Not Implemented.
+
+func TestAuthHandler_SendOTP_DisabledByFeatureFlag(t *testing.T) {
 	h, _ := newTestAuthHandler()
 	smsMock := &mockSMSSender{}
 	h.smsClient = smsMock
@@ -337,96 +340,88 @@ func TestAuthHandler_SendOTP(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.SendOTP(w, r)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-	if smsMock.lastPhone != "+919876543210" {
-		t.Errorf("SMS not sent to correct phone: %s", smsMock.lastPhone)
-	}
-	if smsMock.lastOTP == "" {
-		t.Error("no OTP was sent")
+	if w.Code != http.StatusNotImplemented {
+		t.Fatalf("expected 501 (phone flag off), got %d: %s", w.Code, w.Body.String())
 	}
 }
 
-func TestAuthHandler_SendOTP_MissingPhone(t *testing.T) {
+func TestAuthHandler_VerifyOTP_DisabledByFeatureFlag(t *testing.T) {
 	h, _ := newTestAuthHandler()
-	smsMock := &mockSMSSender{}
-	h.smsClient = smsMock
-
-	userID, orgID := registerAndExtract(t, h, "otp-nophone@test.com")
-
-	r := newAuthenticatedRequest("POST", "/v1/auth/send-otp", `{"phone":""}`, userID, orgID)
-	w := httptest.NewRecorder()
-	h.SendOTP(w, r)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", w.Code)
-	}
-}
-
-func TestAuthHandler_VerifyOTP(t *testing.T) {
-	h, store := newTestAuthHandler()
-	smsMock := &mockSMSSender{}
-	h.smsClient = smsMock
 
 	userID, orgID := registerAndExtract(t, h, "verify-otp@test.com")
-
-	sendBody := `{"phone":"+919876543210"}`
-	r2 := newAuthenticatedRequest("POST", "/v1/auth/send-otp", sendBody, userID, orgID)
-	w2 := httptest.NewRecorder()
-	h.SendOTP(w2, r2)
-	if w2.Code != 200 {
-		t.Fatalf("send-otp failed: %d", w2.Code)
-	}
-
-	otp := smsMock.lastOTP
-	verifyBody := `{"otp":"` + otp + `"}`
-	r3 := newAuthenticatedRequest("POST", "/v1/auth/verify-otp", verifyBody, userID, orgID)
-	w3 := httptest.NewRecorder()
-	h.VerifyOTP(w3, r3)
-
-	if w3.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w3.Code, w3.Body.String())
-	}
-
-	u, _ := store.GetUserByID(context.Background(), userID)
-	if !u.PhoneVerified {
-		t.Error("phone should be verified")
-	}
-}
-
-func TestAuthHandler_VerifyOTP_WrongCode(t *testing.T) {
-	h, _ := newTestAuthHandler()
-	smsMock := &mockSMSSender{}
-	h.smsClient = smsMock
-
-	userID, orgID := registerAndExtract(t, h, "wrong-otp@test.com")
-
-	sendBody := `{"phone":"+919876543210"}`
-	r2 := newAuthenticatedRequest("POST", "/v1/auth/send-otp", sendBody, userID, orgID)
-	w2 := httptest.NewRecorder()
-	h.SendOTP(w2, r2)
-
-	r3 := newAuthenticatedRequest("POST", "/v1/auth/verify-otp", `{"otp":"000000"}`, userID, orgID)
-	w3 := httptest.NewRecorder()
-	h.VerifyOTP(w3, r3)
-
-	if w3.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for wrong OTP, got %d", w3.Code)
-	}
-}
-
-func TestAuthHandler_VerifyOTP_NoPending(t *testing.T) {
-	h, _ := newTestAuthHandler()
-
-	userID, orgID := registerAndExtract(t, h, "no-pending-otp@test.com")
 
 	r := newAuthenticatedRequest("POST", "/v1/auth/verify-otp", `{"otp":"123456"}`, userID, orgID)
 	w := httptest.NewRecorder()
 	h.VerifyOTP(w, r)
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for no pending OTP, got %d", w.Code)
+	if w.Code != http.StatusNotImplemented {
+		t.Fatalf("expected 501 (phone flag off), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthHandler_Register_WithDemoSource(t *testing.T) {
+	h, store := newTestAuthHandler()
+
+	body := `{"email":"demo@example.com","password":"Secure@123","name":"Demo User","org_name":"Demo Org","source":"demo"}`
+	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.Register(w, r)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var result map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &result)
+
+	if result["demo_expires_at"] == nil {
+		t.Error("expected demo_expires_at in response for demo source")
+	}
+
+	demoExpiresAt := result["demo_expires_at"].(float64)
+	if demoExpiresAt < float64(time.Now().Add(6*24*time.Hour).Unix()) {
+		t.Error("demo_expires_at should be ~7 days in the future")
+	}
+
+	// Verify sample data was seeded
+	store.mu.RLock()
+	flagCount := len(store.flags)
+	segCount := len(store.segments)
+	store.mu.RUnlock()
+
+	if flagCount < 5 {
+		t.Errorf("expected at least 5 sample flags for demo source, got %d", flagCount)
+	}
+	if segCount < 1 {
+		t.Errorf("expected at least 1 sample segment for demo source, got %d", segCount)
+	}
+}
+
+func TestAuthHandler_Register_NormalSource_NoDemoData(t *testing.T) {
+	h, store := newTestAuthHandler()
+
+	body := `{"email":"normal@example.com","password":"Secure@123","name":"Normal User","org_name":"Normal Org"}`
+	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.Register(w, r)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var result map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &result)
+
+	if result["demo_expires_at"] != nil {
+		t.Error("normal registration should not have demo_expires_at")
+	}
+
+	store.mu.RLock()
+	flagCount := len(store.flags)
+	store.mu.RUnlock()
+
+	if flagCount != 0 {
+		t.Errorf("normal registration should not seed sample flags, got %d", flagCount)
 	}
 }
 

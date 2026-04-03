@@ -1074,7 +1074,14 @@ func (s *Store) UpsertOnboardingState(ctx context.Context, state *domain.Onboard
 	return err
 }
 
-// --- Demo ---
+// --- Demo / Trial ---
+
+func (s *Store) UpdateOrgDemoExpiry(ctx context.Context, orgID string, expiresAt time.Time) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE organizations SET demo_expires_at = $1, updated_at = NOW() WHERE id = $2`,
+		expiresAt, orgID)
+	return err
+}
 
 func (s *Store) DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error) {
 	// Delete in dependency order: the FK cascades handle most,
