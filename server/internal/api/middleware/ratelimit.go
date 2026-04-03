@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 // RateLimit applies a per-client sliding-window rate limiter.
 // Clients are identified by API key prefix (if present) or remote IP.
+// Note: this is an in-memory limiter — it does not synchronise across replicas.
 
 type rateLimiter struct {
 	mu       sync.Mutex
@@ -19,8 +21,8 @@ type rateLimiter struct {
 }
 
 type visitor struct {
-	count    int
-	resetAt  time.Time
+	count   int
+	resetAt time.Time
 }
 
 func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
@@ -30,7 +32,6 @@ func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
 		window:   time.Minute,
 	}
 
-	// Cleanup old entries periodically
 	go func() {
 		for {
 			time.Sleep(time.Minute)
@@ -63,9 +64,11 @@ func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
 			}
 			v.count++
 			if v.count > rl.rate {
+				retryAfter := int(time.Until(v.resetAt).Seconds()) + 1
 				rl.mu.Unlock()
 				log := httputil.LoggerFromContext(r.Context())
 				log.Warn("rate limit exceeded", "client_key", key, "count", v.count, "limit", rl.rate)
+				w.Header().Set("Retry-After", fmt.Sprintf("%d", retryAfter))
 				httputil.Error(w, http.StatusTooManyRequests, "rate limit exceeded")
 				return
 			}

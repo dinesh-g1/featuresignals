@@ -38,6 +38,9 @@ type CreateFlagRequest struct {
 }
 
 func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 
 	var req CreateFlagRequest
@@ -50,10 +53,26 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "key and name are required")
 		return
 	}
+	if !validateFlagKey(req.Key) {
+		httputil.Error(w, http.StatusBadRequest, "key must match pattern: lowercase alphanumeric, hyphens, underscores (max 128 chars)")
+		return
+	}
+	if !validateStringLength(req.Name, 255) {
+		httputil.Error(w, http.StatusBadRequest, "name must be at most 255 characters")
+		return
+	}
+	if !validateStringLength(req.Description, 2000) {
+		httputil.Error(w, http.StatusBadRequest, "description must be at most 2000 characters")
+		return
+	}
 
 	flagType := domain.FlagType(req.FlagType)
 	if flagType == "" {
 		flagType = domain.FlagTypeBoolean
+	}
+	if req.FlagType != "" && !validateFlagType(req.FlagType) {
+		httputil.Error(w, http.StatusBadRequest, "invalid flag_type; must be boolean, string, number, json, or ab")
+		return
 	}
 	defaultVal := req.DefaultValue
 	if defaultVal == nil {
@@ -97,6 +116,9 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 
 	flags, err := h.store.ListFlags(r.Context(), projectID)
@@ -112,6 +134,9 @@ func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 
@@ -125,6 +150,9 @@ func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 
@@ -187,6 +215,9 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 
@@ -233,6 +264,9 @@ type UpdateFlagStateRequest struct {
 }
 
 func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 	envID := chi.URLParam(r, "envID")
@@ -315,6 +349,9 @@ type PromoteRequest struct {
 
 // Promote copies flag state from one environment to another.
 func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 
@@ -390,6 +427,9 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 // Kill instantly disables a flag in the specified environment. This bypasses
 // any approval workflow and is intended for emergency use.
 func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 
@@ -441,6 +481,9 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 	envID := chi.URLParam(r, "envID")

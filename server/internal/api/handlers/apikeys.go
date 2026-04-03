@@ -43,7 +43,11 @@ type CreateAPIKeyRequest struct {
 }
 
 func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
-	envID := chi.URLParam(r, "envID")
+	env, ok := verifyEnvironmentOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	envID := env.ID
 
 	var req CreateAPIKeyRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
@@ -88,8 +92,11 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
-	envID := chi.URLParam(r, "envID")
-	keys, err := h.store.ListAPIKeys(r.Context(), envID)
+	env, ok := verifyEnvironmentOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	keys, err := h.store.ListAPIKeys(r.Context(), env.ID)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to list API keys")
 		return

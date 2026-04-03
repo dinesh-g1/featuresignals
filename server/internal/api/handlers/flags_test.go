@@ -29,14 +29,17 @@ func requestWithAuth(r *http.Request, userID, orgID, role string) *http.Request 
 	return r.WithContext(ctx)
 }
 
+const testOrgID = "org-1"
+
 func TestFlagHandler_Create(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"new-feature","name":"New Feature","flag_type":"boolean"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -59,17 +62,18 @@ func TestFlagHandler_Create(t *testing.T) {
 func TestFlagHandler_Create_DefaultType(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"test","name":"Test"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
 
 	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201, got %d", w.Code)
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
 	}
 
 	var flag domain.Flag
@@ -83,11 +87,12 @@ func TestFlagHandler_Create_DefaultType(t *testing.T) {
 func TestFlagHandler_Create_MissingFields(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"","name":""}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -100,17 +105,18 @@ func TestFlagHandler_Create_MissingFields(t *testing.T) {
 func TestFlagHandler_Create_DuplicateKey(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"dup-flag","name":"Dup Flag"}`
-	r1 := httptest.NewRequest("POST", "/v1/projects/proj-1/flags", strings.NewReader(body))
-	r1 = requestWithChi(r1, map[string]string{"projectID": "proj-1"})
-	r1 = requestWithAuth(r1, "user-1", "org-1", "admin")
+	r1 := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r1 = requestWithChi(r1, map[string]string{"projectID": projID})
+	r1 = requestWithAuth(r1, "user-1", testOrgID, "admin")
 	w1 := httptest.NewRecorder()
 	h.Create(w1, r1)
 
-	r2 := httptest.NewRequest("POST", "/v1/projects/proj-1/flags", strings.NewReader(body))
-	r2 = requestWithChi(r2, map[string]string{"projectID": "proj-1"})
-	r2 = requestWithAuth(r2, "user-1", "org-1", "admin")
+	r2 := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r2 = requestWithChi(r2, map[string]string{"projectID": projID})
+	r2 = requestWithAuth(r2, "user-1", testOrgID, "admin")
 	w2 := httptest.NewRecorder()
 	h.Create(w2, r2)
 
@@ -119,16 +125,71 @@ func TestFlagHandler_Create_DuplicateKey(t *testing.T) {
 	}
 }
 
+func TestFlagHandler_Create_InvalidFlagType(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"bad-type","name":"Bad Type","flag_type":"invalid"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid flag_type, got %d", w.Code)
+	}
+}
+
+func TestFlagHandler_Create_InvalidKey(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"UPPER-CASE","name":"Bad Key"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for uppercase key, got %d", w.Code)
+	}
+}
+
+func TestFlagHandler_Create_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"hack-flag","name":"Hack Flag"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org flag create, got %d", w.Code)
+	}
+}
+
 func TestFlagHandler_List(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	// Create flags
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "flag-1", Name: "Flag 1"})
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "flag-2", Name: "Flag 2"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "flag-1", Name: "Flag 1"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "flag-2", Name: "Flag 2"})
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/flags", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -148,9 +209,11 @@ func TestFlagHandler_List(t *testing.T) {
 func TestFlagHandler_List_Empty(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/flags", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -159,7 +222,6 @@ func TestFlagHandler_List_Empty(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	// Should return empty array, not null
 	body := strings.TrimSpace(w.Body.String())
 	if body != "[]" {
 		t.Errorf("expected empty JSON array, got %s", body)
@@ -169,11 +231,13 @@ func TestFlagHandler_List_Empty(t *testing.T) {
 func TestFlagHandler_Get(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "my-flag", Name: "My Flag"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "my-flag", Name: "My Flag"})
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/flags/my-flag", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "my-flag"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags/my-flag", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "my-flag"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Get(w, r)
@@ -186,9 +250,11 @@ func TestFlagHandler_Get(t *testing.T) {
 func TestFlagHandler_Get_NotFound(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/flags/nonexistent", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "nonexistent"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags/nonexistent", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "nonexistent"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Get(w, r)
@@ -201,13 +267,14 @@ func TestFlagHandler_Get_NotFound(t *testing.T) {
 func TestFlagHandler_Update(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "upd-flag", Name: "Original"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "upd-flag", Name: "Original"})
 
 	body := `{"name":"Updated Name","description":"New description"}`
-	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/flags/upd-flag", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "upd-flag"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/flags/upd-flag", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "upd-flag"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Update(w, r)
@@ -227,12 +294,13 @@ func TestFlagHandler_Update(t *testing.T) {
 func TestFlagHandler_Delete(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "del-flag", Name: "Delete Me"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "del-flag", Name: "Delete Me"})
 
-	r := httptest.NewRequest("DELETE", "/v1/projects/proj-1/flags/del-flag", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "del-flag"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("DELETE", "/v1/projects/"+projID+"/flags/del-flag", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "del-flag"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Delete(w, r)
@@ -245,13 +313,14 @@ func TestFlagHandler_Delete(t *testing.T) {
 func TestFlagHandler_UpdateState(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "state-flag", Name: "State Flag"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "state-flag", Name: "State Flag"})
 
-	enabled := true
 	body := `{"enabled":true,"percentage_rollout":5000}`
-	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/flags/state-flag/environments/env-1", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "state-flag", "envID": "env-1"})
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/flags/state-flag/environments/env-1", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "state-flag", "envID": "env-1"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.UpdateState(w, r)
@@ -263,7 +332,7 @@ func TestFlagHandler_UpdateState(t *testing.T) {
 	var state domain.FlagState
 	json.Unmarshal(w.Body.Bytes(), &state)
 
-	if state.Enabled != enabled {
+	if !state.Enabled {
 		t.Error("expected enabled=true")
 	}
 	if state.PercentageRollout != 5000 {
@@ -274,13 +343,14 @@ func TestFlagHandler_UpdateState(t *testing.T) {
 func TestFlagHandler_GetState(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	flag := &domain.Flag{ProjectID: "proj-1", Key: "gs-flag", Name: "Get State"}
+	flag := &domain.Flag{ProjectID: projID, Key: "gs-flag", Name: "Get State"}
 	store.CreateFlag(context.Background(), flag)
 
-	// No state yet — should return default disabled state
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/flags/gs-flag/environments/env-1", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "gs-flag", "envID": "env-1"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags/gs-flag/environments/env-1", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "gs-flag", "envID": "env-1"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.GetState(w, r)
@@ -300,8 +370,9 @@ func TestFlagHandler_GetState(t *testing.T) {
 func TestFlagHandler_Promote(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	flag := &domain.Flag{ProjectID: "proj-1", Key: "promo-flag", Name: "Promo Flag"}
+	flag := &domain.Flag{ProjectID: projID, Key: "promo-flag", Name: "Promo Flag"}
 	store.CreateFlag(context.Background(), flag)
 
 	store.UpsertFlagState(context.Background(), &domain.FlagState{
@@ -313,9 +384,9 @@ func TestFlagHandler_Promote(t *testing.T) {
 	})
 
 	body := `{"source_env_id":"staging","target_env_id":"production"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags/promo-flag/promote", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "promo-flag"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags/promo-flag/promote", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "promo-flag"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Promote(w, r)
@@ -349,13 +420,14 @@ func TestFlagHandler_Promote(t *testing.T) {
 func TestFlagHandler_Promote_SameEnv(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "f1", Name: "F1"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "f1", Name: "F1"})
 
 	body := `{"source_env_id":"staging","target_env_id":"staging"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags/f1/promote", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "f1"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags/f1/promote", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "f1"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Promote(w, r)
@@ -368,13 +440,14 @@ func TestFlagHandler_Promote_SameEnv(t *testing.T) {
 func TestFlagHandler_Promote_MissingSource(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: "proj-1", Key: "f2", Name: "F2"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "f2", Name: "F2"})
 
 	body := `{"source_env_id":"nonexist","target_env_id":"production"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/flags/f2/promote", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "flagKey": "f2"})
-	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags/f2/promote", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "f2"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Promote(w, r)

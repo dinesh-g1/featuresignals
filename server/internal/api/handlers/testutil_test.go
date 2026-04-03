@@ -890,3 +890,18 @@ func jsonRaw(v interface{}) json.RawMessage {
 	b, _ := json.Marshal(v)
 	return b
 }
+
+// setupTestProject creates a project owned by orgID and returns its generated ID.
+func setupTestProject(store *mockStore, orgID string) string {
+	p := &domain.Project{OrgID: orgID, Name: "Test Project", Slug: "test"}
+	store.CreateProject(context.Background(), p)
+	return p.ID
+}
+
+// setupTestEnv creates a project and an environment, returning both IDs.
+func setupTestEnv(store *mockStore, orgID string) (projectID, envID string) {
+	pID := setupTestProject(store, orgID)
+	env := &domain.Environment{ProjectID: pID, Name: "Dev", Slug: "dev"}
+	store.CreateEnvironment(context.Background(), env)
+	return pID, env.ID
+}

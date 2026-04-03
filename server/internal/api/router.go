@@ -56,11 +56,12 @@ func NewRouter(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
 	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.Logging(logger))
-	r.Use(chimw.Recoverer)
+	r.Use(middleware.SafeRecoverer)
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +86,7 @@ func NewRouter(
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
-	metricsH := handlers.NewMetricsHandler(metricsCollector, impressionCollector)
+	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.PayUMerchantKey, billing.PayUSalt, billing.PayUMode, billing.DashboardURL, billing.AppBaseURL, logger)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
 	demoH := handlers.NewDemoHandler(handlers.DemoHandlerConfig{
@@ -109,16 +110,22 @@ func NewRouter(
 			httputil.JSON(w, http.StatusOK, domain.Pricing)
 		})
 
-		// Public auth routes
-		r.Post("/auth/register", authH.Register)
-		r.Post("/auth/login", authH.Login)
-		r.Post("/auth/refresh", authH.Refresh)
-		r.Get("/auth/verify-email", authH.VerifyEmail)
-		r.Post("/auth/token-exchange", authH.TokenExchange)
+		// Public auth routes (rate-limited to prevent brute force)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(20))
+			r.Post("/auth/register", authH.Register)
+			r.Post("/auth/login", authH.Login)
+			r.Post("/auth/refresh", authH.Refresh)
+			r.Get("/auth/verify-email", authH.VerifyEmail)
+			r.Post("/auth/token-exchange", authH.TokenExchange)
+		})
 
-		// PayU callbacks (public — PayU redirects here after payment)
-		r.Post("/billing/payu/callback", billingH.PayUCallback)
-		r.Post("/billing/payu/failure", billingH.PayUFailure)
+		// PayU callbacks (public, rate-limited)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(30))
+			r.Post("/billing/payu/callback", billingH.PayUCallback)
+			r.Post("/billing/payu/failure", billingH.PayUFailure)
+		})
 
 		// Demo routes (session creation is public + rate-limited; convert/feedback require JWT)
 		r.Group(func(r chi.Router) {

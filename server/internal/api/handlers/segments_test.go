@@ -14,10 +14,12 @@ import (
 func TestSegmentHandler_Create(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"beta-users","name":"Beta Users","description":"Users in beta program","match_type":"all","rules":[{"attribute":"plan","operator":"eq","value":"beta"}]}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/segments", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -43,10 +45,12 @@ func TestSegmentHandler_Create(t *testing.T) {
 func TestSegmentHandler_Create_DefaultMatchType(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"vip","name":"VIP Users"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/segments", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -66,6 +70,7 @@ func TestSegmentHandler_Create_DefaultMatchType(t *testing.T) {
 func TestSegmentHandler_Create_MissingFields(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	tests := []struct {
 		name string
@@ -78,8 +83,9 @@ func TestSegmentHandler_Create_MissingFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest("POST", "/v1/projects/proj-1/segments", strings.NewReader(tt.body))
-			r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+			r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(tt.body))
+			r = requestWithChi(r, map[string]string{"projectID": projID})
+			r = requestWithAuth(r, "user-1", testOrgID, "admin")
 			w := httptest.NewRecorder()
 
 			h.Create(w, r)
@@ -94,15 +100,18 @@ func TestSegmentHandler_Create_MissingFields(t *testing.T) {
 func TestSegmentHandler_Create_DuplicateKey(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"dup-seg","name":"Dup"}`
-	r1 := httptest.NewRequest("POST", "/v1/projects/proj-1/segments", strings.NewReader(body))
-	r1 = requestWithChi(r1, map[string]string{"projectID": "proj-1"})
+	r1 := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(body))
+	r1 = requestWithChi(r1, map[string]string{"projectID": projID})
+	r1 = requestWithAuth(r1, "user-1", testOrgID, "admin")
 	w1 := httptest.NewRecorder()
 	h.Create(w1, r1)
 
-	r2 := httptest.NewRequest("POST", "/v1/projects/proj-1/segments", strings.NewReader(body))
-	r2 = requestWithChi(r2, map[string]string{"projectID": "proj-1"})
+	r2 := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(body))
+	r2 = requestWithChi(r2, map[string]string{"projectID": projID})
+	r2 = requestWithAuth(r2, "user-1", testOrgID, "admin")
 	w2 := httptest.NewRecorder()
 	h.Create(w2, r2)
 
@@ -111,15 +120,35 @@ func TestSegmentHandler_Create_DuplicateKey(t *testing.T) {
 	}
 }
 
+func TestSegmentHandler_Create_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"hack-seg","name":"Hack Segment"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org segment create, got %d", w.Code)
+	}
+}
+
 func TestSegmentHandler_List(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: "proj-1", Key: "seg-1", Name: "Seg 1"})
-	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: "proj-1", Key: "seg-2", Name: "Seg 2"})
+	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: projID, Key: "seg-1", Name: "Seg 1"})
+	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: projID, Key: "seg-2", Name: "Seg 2"})
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/segments", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/segments", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -139,9 +168,11 @@ func TestSegmentHandler_List(t *testing.T) {
 func TestSegmentHandler_List_Empty(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/segments", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/segments", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -159,11 +190,13 @@ func TestSegmentHandler_List_Empty(t *testing.T) {
 func TestSegmentHandler_Get(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: "proj-1", Key: "my-seg", Name: "My Segment"})
+	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: projID, Key: "my-seg", Name: "My Segment"})
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/segments/my-seg", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "my-seg"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/segments/my-seg", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "my-seg"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Get(w, r)
@@ -183,9 +216,11 @@ func TestSegmentHandler_Get(t *testing.T) {
 func TestSegmentHandler_Get_NotFound(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/segments/nonexistent", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "nonexistent"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/segments/nonexistent", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "nonexistent"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Get(w, r)
@@ -198,14 +233,16 @@ func TestSegmentHandler_Get_NotFound(t *testing.T) {
 func TestSegmentHandler_Update(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	store.CreateSegment(context.Background(), &domain.Segment{
-		ProjectID: "proj-1", Key: "upd-seg", Name: "Original", MatchType: domain.MatchAll,
+		ProjectID: projID, Key: "upd-seg", Name: "Original", MatchType: domain.MatchAll,
 	})
 
 	body := `{"name":"Updated Name","match_type":"any","rules":[{"attribute":"plan","operator":"eq","values":["pro"]}]}`
-	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/segments/upd-seg", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "upd-seg"})
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/segments/upd-seg", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "upd-seg"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Update(w, r)
@@ -231,10 +268,12 @@ func TestSegmentHandler_Update(t *testing.T) {
 func TestSegmentHandler_Update_NotFound(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	body := `{"name":"Updated"}`
-	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/segments/nonexistent", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "nonexistent"})
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/segments/nonexistent", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "nonexistent"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Update(w, r)
@@ -247,14 +286,16 @@ func TestSegmentHandler_Update_NotFound(t *testing.T) {
 func TestSegmentHandler_Update_PartialFields(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
 	store.CreateSegment(context.Background(), &domain.Segment{
-		ProjectID: "proj-1", Key: "partial-seg", Name: "Original", Description: "Original Desc", MatchType: domain.MatchAll,
+		ProjectID: projID, Key: "partial-seg", Name: "Original", Description: "Original Desc", MatchType: domain.MatchAll,
 	})
 
 	body := `{"description":"Updated Desc"}`
-	r := httptest.NewRequest("PUT", "/v1/projects/proj-1/segments/partial-seg", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "partial-seg"})
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/segments/partial-seg", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "partial-seg"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Update(w, r)
@@ -277,11 +318,13 @@ func TestSegmentHandler_Update_PartialFields(t *testing.T) {
 func TestSegmentHandler_Delete(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: "proj-1", Key: "del-seg", Name: "Delete Me"})
+	store.CreateSegment(context.Background(), &domain.Segment{ProjectID: projID, Key: "del-seg", Name: "Delete Me"})
 
-	r := httptest.NewRequest("DELETE", "/v1/projects/proj-1/segments/del-seg", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "del-seg"})
+	r := httptest.NewRequest("DELETE", "/v1/projects/"+projID+"/segments/del-seg", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "del-seg"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Delete(w, r)
@@ -294,9 +337,11 @@ func TestSegmentHandler_Delete(t *testing.T) {
 func TestSegmentHandler_Delete_NotFound(t *testing.T) {
 	store := newMockStore()
 	h := NewSegmentHandler(store)
+	projID := setupTestProject(store, testOrgID)
 
-	r := httptest.NewRequest("DELETE", "/v1/projects/proj-1/segments/nonexistent", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "segmentKey": "nonexistent"})
+	r := httptest.NewRequest("DELETE", "/v1/projects/"+projID+"/segments/nonexistent", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "segmentKey": "nonexistent"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Delete(w, r)

@@ -26,6 +26,9 @@ type CreateSegmentRequest struct {
 }
 
 func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 
 	var req CreateSegmentRequest
@@ -35,6 +38,18 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Key == "" || req.Name == "" {
 		httputil.Error(w, http.StatusBadRequest, "key and name are required")
+		return
+	}
+	if !validateFlagKey(req.Key) {
+		httputil.Error(w, http.StatusBadRequest, "key must match pattern: lowercase alphanumeric, hyphens, underscores (max 128 chars)")
+		return
+	}
+	if !validateStringLength(req.Name, 255) {
+		httputil.Error(w, http.StatusBadRequest, "name must be at most 255 characters")
+		return
+	}
+	if !validateStringLength(req.Description, 2000) {
+		httputil.Error(w, http.StatusBadRequest, "description must be at most 2000 characters")
 		return
 	}
 
@@ -61,6 +76,9 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	segments, err := h.store.ListSegments(r.Context(), projectID)
 	if err != nil {
@@ -74,6 +92,9 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")
 
@@ -86,6 +107,9 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")
 
@@ -128,6 +152,9 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")
 

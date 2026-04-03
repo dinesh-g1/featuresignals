@@ -1,19 +1,23 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 
+	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
 )
 
 type MetricsHandler struct {
+	store       domain.Store
 	collector   *metrics.Collector
 	impressions *metrics.ImpressionCollector
 }
 
-func NewMetricsHandler(collector *metrics.Collector, impressions *metrics.ImpressionCollector) *MetricsHandler {
-	return &MetricsHandler{collector: collector, impressions: impressions}
+func NewMetricsHandler(store domain.Store, collector *metrics.Collector, impressions *metrics.ImpressionCollector) *MetricsHandler {
+	return &MetricsHandler{store: store, collector: collector, impressions: impressions}
 }
 
 func (h *MetricsHandler) Summary(w http.ResponseWriter, r *http.Request) {
@@ -26,8 +30,19 @@ func (h *MetricsHandler) Reset(w http.ResponseWriter, r *http.Request) {
 }
 
 // TrackImpression receives variant impressions from SDKs.
-// POST /v1/track with body: {"flag_key": "...", "variant_key": "...", "user_key": "..."}
+// Requires X-API-Key header for authentication.
 func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("X-API-Key")
+	if apiKey == "" {
+		httputil.Error(w, http.StatusUnauthorized, "missing X-API-Key header")
+		return
+	}
+	keyHash := fmt.Sprintf("%x", sha256.Sum256([]byte(apiKey)))
+	if _, _, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash); err != nil {
+		httputil.Error(w, http.StatusUnauthorized, "invalid API key")
+		return
+	}
+
 	var req struct {
 		FlagKey    string `json:"flag_key"`
 		VariantKey string `json:"variant_key"`
@@ -41,12 +56,10 @@ func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ImpressionSummary returns per-flag/variant counts.
 func (h *MetricsHandler) ImpressionSummary(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, h.impressions.Summary())
 }
 
-// FlushImpressions returns all raw impressions and clears the buffer.
 func (h *MetricsHandler) FlushImpressions(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, h.impressions.Flush())
 }

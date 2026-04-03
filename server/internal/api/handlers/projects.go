@@ -39,6 +39,10 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if !validateStringLength(req.Name, 255) {
+		httputil.Error(w, http.StatusBadRequest, "name must be at most 255 characters")
+		return
+	}
 	if req.Slug == "" {
 		req.Slug = slugify(req.Name)
 	}
@@ -67,18 +71,19 @@ func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "projectID")
-	project, err := h.store.GetProject(r.Context(), id)
-	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "project not found")
+	project, ok := verifyProjectOwnership(h.store, r, w)
+	if !ok {
 		return
 	}
 	httputil.JSON(w, http.StatusOK, project)
 }
 
 func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "projectID")
-	if err := h.store.DeleteProject(r.Context(), id); err != nil {
+	project, ok := verifyProjectOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	if err := h.store.DeleteProject(r.Context(), project.ID); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete project")
 		return
 	}
@@ -96,6 +101,9 @@ func NewEnvironmentHandler(store domain.Store) *EnvironmentHandler {
 }
 
 func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 
 	var req struct {
@@ -128,6 +136,9 @@ func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	projectID := chi.URLParam(r, "projectID")
 	envs, err := h.store.ListEnvironments(r.Context(), projectID)
 	if err != nil {
@@ -141,6 +152,9 @@ func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *EnvironmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
 	id := chi.URLParam(r, "envID")
 	if err := h.store.DeleteEnvironment(r.Context(), id); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete environment")

@@ -115,6 +115,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "email, password, name, and org_name are required")
 		return
 	}
+	if !validateEmail(req.Email) {
+		httputil.Error(w, http.StatusBadRequest, "invalid email format")
+		return
+	}
+	if !validateStringLength(req.Name, 255) || !validateStringLength(req.OrgName, 255) {
+		httputil.Error(w, http.StatusBadRequest, "name and org_name must be at most 255 characters")
+		return
+	}
 	if !validatePassword(req.Password) {
 		httputil.Error(w, http.StatusBadRequest, "password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
 		return
@@ -318,6 +326,10 @@ func (h *AuthHandler) SendOTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Phone == "" {
 		httputil.Error(w, http.StatusBadRequest, "phone is required")
+		return
+	}
+	if !validatePhone(req.Phone) {
+		httputil.Error(w, http.StatusBadRequest, "invalid phone format (use E.164 or 7-15 digits)")
 		return
 	}
 

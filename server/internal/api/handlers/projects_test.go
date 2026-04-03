@@ -134,12 +134,13 @@ func TestProjectHandler_Get(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/v1/projects/"+p.ID, nil)
 	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Get(w, r)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Code)
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 
 	var project domain.Project
@@ -156,12 +157,32 @@ func TestProjectHandler_Get_NotFound(t *testing.T) {
 
 	r := httptest.NewRequest("GET", "/v1/projects/nonexistent", nil)
 	r = requestWithChi(r, map[string]string{"projectID": "nonexistent"})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Get(w, r)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestProjectHandler_Get_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Secret", Slug: "secret"}
+	store.CreateProject(context.Background(), p)
+
+	r := httptest.NewRequest("GET", "/v1/projects/"+p.ID, nil)
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Get(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org access, got %d", w.Code)
 	}
 }
 
@@ -174,6 +195,7 @@ func TestProjectHandler_Delete(t *testing.T) {
 
 	r := httptest.NewRequest("DELETE", "/v1/projects/"+p.ID, nil)
 	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Delete(w, r)
@@ -183,15 +205,37 @@ func TestProjectHandler_Delete(t *testing.T) {
 	}
 }
 
+func TestProjectHandler_Delete_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Other", Slug: "other"}
+	store.CreateProject(context.Background(), p)
+
+	r := httptest.NewRequest("DELETE", "/v1/projects/"+p.ID, nil)
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Delete(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org delete, got %d", w.Code)
+	}
+}
+
 // --- Environment Handler Tests ---
 
 func TestEnvironmentHandler_Create(t *testing.T) {
 	store := newMockStore()
 	h := NewEnvironmentHandler(store)
 
+	projID := setupTestProject(store, "org-1")
+
 	body := `{"name":"Production","slug":"production","color":"#EF4444"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/environments", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/environments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -215,9 +259,12 @@ func TestEnvironmentHandler_Create_DefaultColor(t *testing.T) {
 	store := newMockStore()
 	h := NewEnvironmentHandler(store)
 
+	projID := setupTestProject(store, "org-1")
+
 	body := `{"name":"Staging"}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/environments", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/environments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -238,9 +285,12 @@ func TestEnvironmentHandler_Create_MissingName(t *testing.T) {
 	store := newMockStore()
 	h := NewEnvironmentHandler(store)
 
+	projID := setupTestProject(store, "org-1")
+
 	body := `{"name":""}`
-	r := httptest.NewRequest("POST", "/v1/projects/proj-1/environments", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/environments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -250,15 +300,36 @@ func TestEnvironmentHandler_Create_MissingName(t *testing.T) {
 	}
 }
 
+func TestEnvironmentHandler_Create_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewEnvironmentHandler(store)
+
+	projID := setupTestProject(store, "org-1")
+
+	body := `{"name":"Hacked"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/environments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org env create, got %d", w.Code)
+	}
+}
+
 func TestEnvironmentHandler_List(t *testing.T) {
 	store := newMockStore()
 	h := NewEnvironmentHandler(store)
 
-	store.CreateEnvironment(context.Background(), &domain.Environment{ProjectID: "proj-1", Name: "Dev", Slug: "dev"})
-	store.CreateEnvironment(context.Background(), &domain.Environment{ProjectID: "proj-1", Name: "Prod", Slug: "prod"})
+	projID := setupTestProject(store, "org-1")
+	store.CreateEnvironment(context.Background(), &domain.Environment{ProjectID: projID, Name: "Dev", Slug: "dev"})
+	store.CreateEnvironment(context.Background(), &domain.Environment{ProjectID: projID, Name: "Prod", Slug: "prod"})
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/environments", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/environments", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -279,8 +350,11 @@ func TestEnvironmentHandler_List_Empty(t *testing.T) {
 	store := newMockStore()
 	h := NewEnvironmentHandler(store)
 
-	r := httptest.NewRequest("GET", "/v1/projects/proj-1/environments", nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1"})
+	projID := setupTestProject(store, "org-1")
+
+	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/environments", nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -299,11 +373,13 @@ func TestEnvironmentHandler_Delete(t *testing.T) {
 	store := newMockStore()
 	h := NewEnvironmentHandler(store)
 
-	env := &domain.Environment{ProjectID: "proj-1", Name: "Del", Slug: "del"}
+	projID := setupTestProject(store, "org-1")
+	env := &domain.Environment{ProjectID: projID, Name: "Del", Slug: "del"}
 	store.CreateEnvironment(context.Background(), env)
 
-	r := httptest.NewRequest("DELETE", "/v1/projects/proj-1/environments/"+env.ID, nil)
-	r = requestWithChi(r, map[string]string{"projectID": "proj-1", "envID": env.ID})
+	r := httptest.NewRequest("DELETE", "/v1/projects/"+projID+"/environments/"+env.ID, nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID, "envID": env.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
 	w := httptest.NewRecorder()
 
 	h.Delete(w, r)

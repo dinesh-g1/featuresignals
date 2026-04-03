@@ -75,6 +75,10 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "email is required")
 		return
 	}
+	if !validateEmail(req.Email) {
+		httputil.Error(w, http.StatusBadRequest, "invalid email format")
+		return
+	}
 	if req.Role == "" {
 		req.Role = domain.RoleDeveloper
 	}

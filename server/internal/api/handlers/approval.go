@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -85,10 +83,8 @@ func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // Get returns a single approval request.
 func (h *ApprovalHandler) Get(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "approvalID")
-	ar, err := h.store.GetApprovalRequest(r.Context(), id)
-	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "approval request not found")
+	ar, ok := verifyApprovalOwnership(h.store, r, w)
+	if !ok {
 		return
 	}
 	httputil.JSON(w, http.StatusOK, ar)
@@ -101,14 +97,11 @@ type ReviewRequest struct {
 
 // Review approves or rejects a pending request. If approved, the change is applied.
 func (h *ApprovalHandler) Review(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "approvalID")
-	userID := middleware.GetUserID(r.Context())
-
-	ar, err := h.store.GetApprovalRequest(r.Context(), id)
-	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "approval request not found")
+	ar, ok := verifyApprovalOwnership(h.store, r, w)
+	if !ok {
 		return
 	}
+	userID := middleware.GetUserID(r.Context())
 	if ar.Status != domain.ApprovalPending {
 		httputil.Error(w, http.StatusConflict, "request is no longer pending")
 		return
