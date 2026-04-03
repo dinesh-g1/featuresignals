@@ -11,6 +11,7 @@ import (
 
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
+	"github.com/featuresignals/server/internal/domain"
 )
 
 func newTestDemoHandler() (*DemoHandler, *mockStore) {
@@ -23,108 +24,64 @@ func newTestDemoHandler() (*DemoHandler, *mockStore) {
 	}), store
 }
 
-func TestDemoHandler_CreateSession(t *testing.T) {
-	h, store := newTestDemoHandler()
+func TestDemoHandler_CreateSession_ReturnsGone(t *testing.T) {
+	h, _ := newTestDemoHandler()
 
 	r := httptest.NewRequest("POST", "/v1/demo/session", nil)
 	w := httptest.NewRecorder()
 	h.CreateSession(w, r)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	if w.Code != http.StatusGone {
+		t.Fatalf("expected 410 Gone, got %d: %s", w.Code, w.Body.String())
 	}
 
 	var result map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &result)
-
-	if result["user"] == nil {
-		t.Error("expected user in response")
-	}
-	if result["tokens"] == nil {
-		t.Error("expected tokens in response")
-	}
-	if result["organization"] == nil {
-		t.Error("expected organization in response")
-	}
-	if result["demo_expires_at"] == nil {
-		t.Error("expected demo_expires_at in response")
-	}
-
-	expiresAt := result["demo_expires_at"].(float64)
-	if expiresAt < float64(time.Now().Add(6*24*time.Hour).Unix()) {
-		t.Error("demo_expires_at should be ~7 days in the future")
-	}
-
-	user := result["user"].(map[string]interface{})
-	if !user["is_demo"].(bool) {
-		t.Error("user should be marked as demo")
-	}
-
-	org := result["organization"].(map[string]interface{})
-	if !org["is_demo"].(bool) {
-		t.Error("organization should be marked as demo")
-	}
-
-	store.mu.RLock()
-	flagCount := len(store.flags)
-	segCount := len(store.segments)
-	envCount := 0
-	for range store.envs {
-		envCount++
-	}
-	store.mu.RUnlock()
-
-	if flagCount < 5 {
-		t.Errorf("expected at least 5 sample flags, got %d", flagCount)
-	}
-	if segCount < 1 {
-		t.Errorf("expected at least 1 sample segment, got %d", segCount)
-	}
-	if envCount < 3 {
-		t.Errorf("expected at least 3 environments, got %d", envCount)
+	if result["error"] != "demo_sessions_deprecated" {
+		t.Errorf("expected demo_sessions_deprecated error, got %v", result["error"])
 	}
 }
 
-func TestDemoHandler_CreateSession_GeneratesDemoJWT(t *testing.T) {
-	h, _ := newTestDemoHandler()
-	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+// setupDemoUser creates a demo user and org directly in the store for testing
+// Convert, SelectPlan, and other demo endpoints that still need an existing demo user.
+func setupDemoUser(t *testing.T, store *mockStore) (userID, orgID string) {
+	t.Helper()
+	ctx := context.Background()
 
-	r := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	w := httptest.NewRecorder()
-	h.CreateSession(w, r)
+	user := &domain.User{
+		Email:        "demo-test@demo.featuresignals.com",
+		PasswordHash: "$2a$10$dummyhash",
+		Name:         "Demo User",
+		IsDemo:       true,
+	}
+	if err := store.CreateUser(ctx, user); err != nil {
+		t.Fatalf("failed to create demo user: %v", err)
+	}
 
-	var result map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &result)
-	tokens := result["tokens"].(map[string]interface{})
-	accessToken := tokens["access_token"].(string)
+	demoExpires := time.Now().Add(7 * 24 * time.Hour)
+	org := &domain.Organization{
+		Name:          "Demo Organization",
+		Slug:          "demo-test",
+		IsDemo:        true,
+		DemoExpiresAt: &demoExpires,
+	}
+	if err := store.CreateOrganization(ctx, org); err != nil {
+		t.Fatalf("failed to create demo org: %v", err)
+	}
 
-	claims, err := jwtMgr.ValidateToken(accessToken)
-	if err != nil {
-		t.Fatalf("failed to validate demo token: %v", err)
+	member := &domain.OrgMember{OrgID: org.ID, UserID: user.ID, Role: domain.RoleOwner}
+	if err := store.AddOrgMember(ctx, member); err != nil {
+		t.Fatalf("failed to add demo org member: %v", err)
 	}
-	if !claims.Demo {
-		t.Error("demo claim should be true")
-	}
-	if claims.DemoExpiresAt == 0 {
-		t.Error("demo_expires_at claim should be set")
-	}
+
+	return user.ID, org.ID
 }
 
 func TestDemoHandler_Convert(t *testing.T) {
 	h, store := newTestDemoHandler()
+	userID, orgID := setupDemoUser(t, store)
 
-	createReq := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	createW := httptest.NewRecorder()
-	h.CreateSession(createW, createReq)
-
-	var createResult map[string]interface{}
-	json.Unmarshal(createW.Body.Bytes(), &createResult)
-	user := createResult["user"].(map[string]interface{})
-	org := createResult["organization"].(map[string]interface{})
-	userID := user["id"].(string)
-	orgID := org["id"].(string)
-
-	body := `{"email":"real@company.com","password":"Secure@123","name":"Real User","org_name":"Real Company","phone":"+15551234567"}`
+	body := `{"email":"real@company.com","password":"Secure@123","name":"Real User","org_name":"Real Company"}`
 	r := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(body))
 	ctx := context.WithValue(r.Context(), middleware.UserIDKey, userID)
 	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
@@ -167,16 +124,16 @@ func TestDemoHandler_Convert(t *testing.T) {
 func TestDemoHandler_Convert_MissingFields(t *testing.T) {
 	h, _ := newTestDemoHandler()
 
+	// Phone is optional when EnablePhoneVerification is false
 	tests := []struct {
 		name string
 		body string
 	}{
-		{"missing email", `{"password":"Secure@123","name":"Test","org_name":"Org","phone":"+15551234567"}`},
-		{"missing password", `{"email":"t@t.com","name":"Test","org_name":"Org","phone":"+15551234567"}`},
-		{"missing name", `{"email":"t@t.com","password":"Secure@123","org_name":"Org","phone":"+15551234567"}`},
-		{"missing org_name", `{"email":"t@t.com","password":"Secure@123","name":"Test","phone":"+15551234567"}`},
-		{"missing phone", `{"email":"t@t.com","password":"Secure@123","name":"Test","org_name":"Org"}`},
-		{"weak password", `{"email":"t@t.com","password":"weak","name":"Test","org_name":"Org","phone":"+15551234567"}`},
+		{"missing email", `{"password":"Secure@123","name":"Test","org_name":"Org"}`},
+		{"missing password", `{"email":"t@t.com","name":"Test","org_name":"Org"}`},
+		{"missing name", `{"email":"t@t.com","password":"Secure@123","org_name":"Org"}`},
+		{"missing org_name", `{"email":"t@t.com","password":"Secure@123","name":"Test"}`},
+		{"weak password", `{"email":"t@t.com","password":"weak","name":"Test","org_name":"Org"}`},
 	}
 
 	for _, tt := range tests {
@@ -195,39 +152,32 @@ func TestDemoHandler_Convert_MissingFields(t *testing.T) {
 }
 
 func TestDemoHandler_Convert_DuplicateEmail(t *testing.T) {
-	h, _ := newTestDemoHandler()
+	h, store := newTestDemoHandler()
+	userID1, orgID1 := setupDemoUser(t, store)
 
-	createReq := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	createW := httptest.NewRecorder()
-	h.CreateSession(createW, createReq)
-	var r1 map[string]interface{}
-	json.Unmarshal(createW.Body.Bytes(), &r1)
-	u1 := r1["user"].(map[string]interface{})
-	o1 := r1["organization"].(map[string]interface{})
-
-	body1 := `{"email":"taken@company.com","password":"Secure@123","name":"User 1","org_name":"Org 1","phone":"+15551111111"}`
+	body1 := `{"email":"taken@company.com","password":"Secure@123","name":"User 1","org_name":"Org 1"}`
 	req1 := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(body1))
-	ctx1 := context.WithValue(req1.Context(), middleware.UserIDKey, u1["id"].(string))
-	ctx1 = context.WithValue(ctx1, middleware.OrgIDKey, o1["id"].(string))
+	ctx1 := context.WithValue(req1.Context(), middleware.UserIDKey, userID1)
+	ctx1 = context.WithValue(ctx1, middleware.OrgIDKey, orgID1)
 	req1 = req1.WithContext(ctx1)
 	w1 := httptest.NewRecorder()
 	h.Convert(w1, req1)
 	if w1.Code != http.StatusOK {
-		t.Fatalf("first convert failed: %d", w1.Code)
+		t.Fatalf("first convert failed: %d: %s", w1.Code, w1.Body.String())
 	}
 
-	createReq2 := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	createW2 := httptest.NewRecorder()
-	h.CreateSession(createW2, createReq2)
-	var r2 map[string]interface{}
-	json.Unmarshal(createW2.Body.Bytes(), &r2)
-	u2 := r2["user"].(map[string]interface{})
-	o2 := r2["organization"].(map[string]interface{})
+	// Create a second demo user to try same email
+	user2 := &domain.User{Email: "demo2@demo.featuresignals.com", PasswordHash: "$2a$10$dummyhash", Name: "Demo 2", IsDemo: true}
+	store.CreateUser(context.Background(), user2)
+	demoExpires := time.Now().Add(7 * 24 * time.Hour)
+	org2 := &domain.Organization{Name: "Demo 2", Slug: "demo-2", IsDemo: true, DemoExpiresAt: &demoExpires}
+	store.CreateOrganization(context.Background(), org2)
+	store.AddOrgMember(context.Background(), &domain.OrgMember{OrgID: org2.ID, UserID: user2.ID, Role: domain.RoleOwner})
 
-	body2 := `{"email":"taken@company.com","password":"Secure@123","name":"User 2","org_name":"Org 2","phone":"+15552222222"}`
+	body2 := `{"email":"taken@company.com","password":"Secure@123","name":"User 2","org_name":"Org 2"}`
 	req2 := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(body2))
-	ctx2 := context.WithValue(req2.Context(), middleware.UserIDKey, u2["id"].(string))
-	ctx2 = context.WithValue(ctx2, middleware.OrgIDKey, o2["id"].(string))
+	ctx2 := context.WithValue(req2.Context(), middleware.UserIDKey, user2.ID)
+	ctx2 = context.WithValue(ctx2, middleware.OrgIDKey, org2.ID)
 	req2 = req2.WithContext(ctx2)
 	w2 := httptest.NewRecorder()
 	h.Convert(w2, req2)
@@ -268,15 +218,18 @@ func TestDemoHandler_Feedback_MissingMessage(t *testing.T) {
 	}
 }
 
-func TestDemoHandler_SampleDataContents(t *testing.T) {
-	h, store := newTestDemoHandler()
+func TestSampleDataContents_ViaRegister(t *testing.T) {
+	store := newMockStore()
+	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	h := NewAuthHandler(store, jwtMgr, nil, nil, "http://localhost:8080", "http://localhost:3000")
 
-	r := httptest.NewRequest("POST", "/v1/demo/session", nil)
+	body := `{"email":"sampledata@test.com","password":"Secure@123","name":"Test","org_name":"Org","source":"demo"}`
+	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
 	w := httptest.NewRecorder()
-	h.CreateSession(w, r)
+	h.Register(w, r)
 
 	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201, got %d", w.Code)
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
 	}
 
 	store.mu.RLock()
@@ -312,20 +265,10 @@ func TestDemoHandler_SampleDataContents(t *testing.T) {
 func TestDemoHandler_SelectPlan_Free(t *testing.T) {
 	h, store := newTestDemoHandler()
 	h.dashboardURL = "https://app.featuresignals.com"
-
-	createReq := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	createW := httptest.NewRecorder()
-	h.CreateSession(createW, createReq)
-
-	var createResult map[string]interface{}
-	json.Unmarshal(createW.Body.Bytes(), &createResult)
-	user := createResult["user"].(map[string]interface{})
-	org := createResult["organization"].(map[string]interface{})
-	userID := user["id"].(string)
-	orgID := org["id"].(string)
+	userID, orgID := setupDemoUser(t, store)
 
 	// First convert the demo
-	convBody := `{"email":"test@company.com","password":"Secure@123","name":"Test","org_name":"Test Org","phone":"+15551234567"}`
+	convBody := `{"email":"test@company.com","password":"Secure@123","name":"Test","org_name":"Test Org"}`
 	convReq := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(convBody))
 	ctx := context.WithValue(convReq.Context(), middleware.UserIDKey, userID)
 	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
@@ -371,24 +314,14 @@ func TestDemoHandler_SelectPlan_Free(t *testing.T) {
 }
 
 func TestDemoHandler_SelectPlan_Pro(t *testing.T) {
-	h, _ := newTestDemoHandler()
+	h, store := newTestDemoHandler()
 	h.payu = PayUHasher{MerchantKey: "test_key", Salt: "test_salt"}
 	h.payuMode = "test"
 	h.appBaseURL = "https://api.featuresignals.com"
-
-	createReq := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	createW := httptest.NewRecorder()
-	h.CreateSession(createW, createReq)
-
-	var createResult map[string]interface{}
-	json.Unmarshal(createW.Body.Bytes(), &createResult)
-	user := createResult["user"].(map[string]interface{})
-	org := createResult["organization"].(map[string]interface{})
-	userID := user["id"].(string)
-	orgID := org["id"].(string)
+	userID, orgID := setupDemoUser(t, store)
 
 	// Convert first
-	convBody := `{"email":"pro@company.com","password":"Secure@123","name":"Pro User","org_name":"Pro Org","phone":"+15551234567"}`
+	convBody := `{"email":"pro@company.com","password":"Secure@123","name":"Pro User","org_name":"Pro Org"}`
 	convReq := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(convBody))
 	ctx := context.WithValue(convReq.Context(), middleware.UserIDKey, userID)
 	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
@@ -445,16 +378,8 @@ func TestDemoHandler_SelectPlan_InvalidPlan(t *testing.T) {
 }
 
 func TestDemoHandler_Cleanup(t *testing.T) {
-	h, store := newTestDemoHandler()
-
-	r := httptest.NewRequest("POST", "/v1/demo/session", nil)
-	w := httptest.NewRecorder()
-	h.CreateSession(w, r)
-
-	var result map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &result)
-	org := result["organization"].(map[string]interface{})
-	orgID := org["id"].(string)
+	_, store := newTestDemoHandler()
+	_, orgID := setupDemoUser(t, store)
 
 	store.mu.Lock()
 	expired := time.Now().Add(-1 * time.Hour)

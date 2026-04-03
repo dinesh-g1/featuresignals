@@ -28,10 +28,11 @@ POST /v1/auth/register
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `email` | string | Yes | User email address |
+| `email` | string | Yes | User email address (corporate or personal) |
 | `password` | string | Yes | Minimum 8 characters with at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character |
 | `name` | string | Yes | Display name |
 | `org_name` | string | Yes | Organization name |
+| `source` | string | No | Set to `"demo"` to seed sample data and start a 7-day trial |
 
 ### Response `201 Created`
 
@@ -64,8 +65,10 @@ POST /v1/auth/register
 Registration automatically creates:
 - User with **owner** role
 - Organization with slug derived from name
-- **Default Project** with slug `default`
-- Three environments: `dev`, `staging`, `production`
+- A default project with three environments: `dev`, `staging`, `production`
+- A verification email is sent immediately
+
+When `source` is `"demo"`, the response additionally includes `demo_expires_at` (Unix timestamp) and the project is seeded with sample feature flags, a segment, and API keys. The organization gets a 7-day trial period.
 
 ---
 
@@ -178,6 +181,10 @@ curl -X POST http://localhost:8080/v1/evaluate \
 ---
 
 ## Phone OTP Verification
+
+:::caution Feature Flag
+Phone verification is currently **disabled** behind a feature flag. These endpoints return `501 Not Implemented` until phone verification is enabled on the server. Email verification is the default verification method.
+:::
 
 Send a one-time password to the user's phone via MSG91.
 

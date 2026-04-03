@@ -1,60 +1,53 @@
 ---
 sidebar_position: 15
-title: Demo
+title: Demo & Trial
 ---
 
-# Demo
+# Demo & Trial
 
-The demo system allows prospects to experience FeatureSignals without signing up. Demo sessions include pre-populated sample data and expire after 7 days.
+FeatureSignals offers a trial experience where users can sign up and explore the platform with pre-populated sample data. Trial accounts expire after 7 days.
 
-**Demo site:** [demo.featuresignals.com](https://demo.featuresignals.com)
+**To start a trial:** Register at [app.featuresignals.com/register?source=demo](https://app.featuresignals.com/register?source=demo)
 
 ---
 
-## Create Demo Session
+## How It Works
 
-Start an anonymous demo session with sample data.
+Instead of anonymous demo sessions, users sign up with a real email at `/register?source=demo`. This:
+
+1. Creates a real account with email verification
+2. Seeds sample feature flags, segments, and API keys
+3. Sets a 7-day trial period on the organization
+4. After email verification, the user selects a plan (Free or Pro)
+
+See [Authentication > Register](/api-reference/authentication#register) for the `source` field documentation.
+
+---
+
+## Create Demo Session (Deprecated)
 
 ```
 POST /v1/demo/session
 ```
 
-**Authentication:** None (public, rate-limited to 10 req/min)
+:::danger Deprecated
+This endpoint returns `410 Gone`. Anonymous demo sessions are no longer supported. Users should register at `/register?source=demo` instead.
+:::
 
-### Response `201 Created`
+### Response `410 Gone`
 
 ```json
 {
-  "user": {
-    "id": "uuid",
-    "email": "demo-abc123@demo.featuresignals.com",
-    "name": "Demo User"
-  },
-  "organization": {
-    "id": "uuid",
-    "name": "Demo Organization",
-    "slug": "demo-abc123"
-  },
-  "tokens": {
-    "access_token": "eyJ...",
-    "refresh_token": "eyJ...",
-    "expires_at": 1711929600
-  },
-  "demo_expires_at": 1712534400
+  "error": "demo_sessions_deprecated",
+  "message": "Anonymous demo sessions are no longer available. Please sign up at /register?source=demo to get started with sample data."
 }
 ```
-
-The session includes:
-- A demo user with `demo: true` JWT claim
-- A demo organization
-- Sample project with 3 environments (dev, staging, production)
-- Pre-seeded feature flags with targeting rules and variants
 
 ---
 
 ## Convert Demo Account
 
-Convert a demo session into a permanent registered account.
+Convert an existing demo session into a permanent registered account. This endpoint is maintained for users with active legacy demo sessions.
 
 ```
 POST /v1/demo/convert
@@ -80,7 +73,7 @@ POST /v1/demo/convert
 | `password` | string | Yes | Must meet password policy (8+ chars, 1 upper, 1 lower, 1 digit, 1 special) |
 | `name` | string | Yes | Full name |
 | `org_name` | string | Yes | Organization name |
-| `phone` | string | Yes | Phone number for OTP verification |
+| `phone` | string | No | Phone number (only required when phone verification is enabled) |
 
 ### Response `200 OK`
 
@@ -95,15 +88,13 @@ POST /v1/demo/convert
 }
 ```
 
-After conversion, the user receives:
-- An OTP to the provided phone number (via MSG91)
-- A verification email with a link
+After conversion, a verification email is sent. An OTP is only sent when phone verification is enabled on the server.
 
 ---
 
 ## Select Plan
 
-Choose a subscription plan after converting from demo. For Pro, returns PayU checkout data.
+Choose a subscription plan after converting from demo or registering with `source=demo`. For Pro, returns PayU checkout data.
 
 ```
 POST /v1/demo/select-plan
@@ -123,14 +114,14 @@ POST /v1/demo/select-plan
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `plan` | string | Yes | `"free"` or `"pro"` |
-| `retain_data` | boolean | Yes | Whether to keep demo data after conversion |
+| `retain_data` | boolean | Yes | Whether to keep sample data after plan selection |
 
 ### Response — Free Plan `200 OK`
 
 ```json
 {
   "plan": "free",
-  "redirect_url": "https://app.featuresignals.com/dashboard"
+  "redirect_url": "https://app.featuresignals.com/auth/exchange?token=..."
 }
 ```
 
@@ -142,13 +133,13 @@ Returns PayU checkout fields (same structure as [Billing > Create Checkout](./bi
 
 ## Submit Feedback
 
-Submit feedback from a demo user (e.g., when declining to register).
+Submit feedback from a demo/trial user.
 
 ```
 POST /v1/demo/feedback
 ```
 
-**Authentication:** Bearer JWT (demo user)
+**Authentication:** Bearer JWT
 
 ### Request
 
@@ -162,18 +153,18 @@ POST /v1/demo/feedback
 
 ---
 
-## Demo Expiry Enforcement
+## Trial Expiry Enforcement
 
-Demo sessions are enforced server-side. When a demo JWT is expired:
+Trial sessions (created via `source=demo`) are enforced server-side. When a trial has expired:
 
 - All management API calls return `403 Forbidden`:
 
 ```json
 {
   "error": "demo_expired",
-  "message": "Your demo session has expired. Register to continue using FeatureSignals.",
-  "convert_url": "https://app.featuresignals.com/demo/register"
+  "message": "Your trial has expired. Choose a plan to continue using FeatureSignals.",
+  "convert_url": "https://app.featuresignals.com/register?source=demo"
 }
 ```
 
-- The dashboard automatically redirects expired demo users to the registration page.
+- The dashboard shows a trial expiry banner and prompts the user to upgrade.

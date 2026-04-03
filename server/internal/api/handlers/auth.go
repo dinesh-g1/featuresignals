@@ -15,6 +15,7 @@ import (
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/email"
+	"github.com/featuresignals/server/internal/features"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/sms"
 )
@@ -45,6 +46,7 @@ type RegisterRequest struct {
 	Name     string `json:"name"`
 	OrgName  string `json:"org_name"`
 	Phone    string `json:"phone"`
+	Source   string `json:"source"`
 }
 
 type LoginRequest struct {
@@ -161,7 +163,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Email:        req.Email,
 		PasswordHash: hash,
 		Name:         req.Name,
-		Phone:        req.Phone,
+	}
+	if features.EnablePhoneVerification && req.Phone != "" {
+		user.Phone = req.Phone
 	}
 	if err := h.store.CreateUser(r.Context(), user); err != nil {
 		log.Warn("registration failed: duplicate email")
@@ -190,10 +194,19 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isDemoSource := req.Source == "demo"
+
+	projectName := "Default Project"
+	projectSlug := "default"
+	if isDemoSource {
+		projectName = "Sample App"
+		projectSlug = "sample-app"
+	}
+
 	project := &domain.Project{
 		OrgID: org.ID,
-		Name:  "Default Project",
-		Slug:  "default",
+		Name:  projectName,
+		Slug:  projectSlug,
 	}
 	if err := h.store.CreateProject(r.Context(), project); err != nil {
 		log.Error("failed to create default project", "error", err)
@@ -201,7 +214,21 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	BootstrapEnvironments(r.Context(), h.store, project.ID)
+	bootstrappedEnvs := BootstrapEnvironments(r.Context(), h.store, project.ID)
+
+	if isDemoSource {
+		trialExpiry := time.Now().Add(7 * 24 * time.Hour)
+		org.DemoExpiresAt = &trialExpiry
+		_ = h.store.UpdateOrgDemoExpiry(r.Context(), org.ID, trialExpiry)
+
+		envMap := make(map[string]*domain.Environment)
+		for _, env := range bootstrappedEnvs {
+			envMap[env.Slug] = env
+		}
+		SeedSampleFlags(r.Context(), h.store, project, envMap, log)
+		SeedSampleSegment(r.Context(), h.store, project, log)
+		SeedSampleAPIKeys(r.Context(), h.store, envMap, log)
+	}
 
 	// Send verification email in background (best-effort)
 	if h.emailSender != nil {
@@ -225,13 +252,17 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("user registered", "user_id", user.ID, "org_id", org.ID)
+	log.Info("user registered", "user_id", user.ID, "org_id", org.ID, "source", req.Source)
 
-	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
+	resp := map[string]interface{}{
 		"user":         sanitizeUser(user),
 		"organization": org,
 		"tokens":       tokens,
-	})
+	}
+	if isDemoSource && org.DemoExpiresAt != nil {
+		resp["demo_expires_at"] = org.DemoExpiresAt.Unix()
+	}
+	httputil.JSON(w, http.StatusCreated, resp)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -311,6 +342,11 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 // SendOTP generates a 6-digit OTP, hashes it, stores it with a 5-minute expiry,
 // and sends the plaintext OTP to the user's phone via SMS.
 func (h *AuthHandler) SendOTP(w http.ResponseWriter, r *http.Request) {
+	if !features.EnablePhoneVerification {
+		httputil.Error(w, http.StatusNotImplemented, "phone verification is not enabled")
+		return
+	}
+
 	log := httputil.LoggerFromContext(r.Context())
 	userID := middleware.GetUserID(r.Context())
 
@@ -371,6 +407,11 @@ func (h *AuthHandler) SendOTP(w http.ResponseWriter, r *http.Request) {
 
 // VerifyOTP validates the user-provided OTP against the stored hash.
 func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
+	if !features.EnablePhoneVerification {
+		httputil.Error(w, http.StatusNotImplemented, "phone verification is not enabled")
+		return
+	}
+
 	log := httputil.LoggerFromContext(r.Context())
 	userID := middleware.GetUserID(r.Context())
 

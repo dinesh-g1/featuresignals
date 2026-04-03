@@ -8,7 +8,7 @@ title: Quickstart
 Get FeatureSignals running locally in under 5 minutes using Docker Compose.
 
 :::tip Try without installing
-Want to explore FeatureSignals without any setup? Try the **[live demo](https://demo.featuresignals.com/demo)** — full access with sample data, no account required. Your data is kept for 7 days.
+Want to explore FeatureSignals without any setup? **[Start a free trial](https://app.featuresignals.com/register?source=demo)** — sign up with your email to get full access with sample data for 7 days.
 :::
 
 ## Prerequisites

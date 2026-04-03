@@ -866,7 +866,16 @@ func (m *mockStore) SetEmailVerified(ctx context.Context, userID string) error {
 	return nil
 }
 
-// --- Demo ---
+// --- Demo / Trial ---
+
+func (m *mockStore) UpdateOrgDemoExpiry(ctx context.Context, orgID string, expiresAt time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		org.DemoExpiresAt = &expiresAt
+	}
+	return nil
+}
 
 func (m *mockStore) DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error) {
 	m.mu.Lock()

@@ -108,8 +108,8 @@
     "/v1/auth/send-otp": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Send OTP code",
-        "description": "Sends a one-time password to the user's email or phone for verification.",
+        "summary": "Send phone OTP (conditionally available)",
+        "description": "Sends a one-time password to the user's phone via SMS. Returns 501 Not Implemented when phone verification is disabled on the server.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -129,8 +129,8 @@
     "/v1/auth/verify-otp": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Verify OTP code",
-        "description": "Verifies the one-time password and completes authentication.",
+        "summary": "Verify phone OTP (conditionally available)",
+        "description": "Verifies the phone OTP. Returns 501 Not Implemented when phone verification is disabled on the server.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1212,13 +1212,14 @@
     "/v1/demo/session": {
       "post": {
         "tags": ["Demo"],
-        "summary": "Create a demo session",
-        "description": "Creates an anonymous demo session with pre-populated sample data. Rate-limited to 10 requests per minute.",
+        "summary": "Create a demo session (Deprecated)",
+        "description": "DEPRECATED: Returns 410 Gone. Anonymous demo sessions are no longer supported. Use POST /v1/auth/register with source='demo' instead.",
+        "deprecated": true,
         "security": [],
         "responses": {
-          "201": {
-            "description": "Demo session created",
-            "content": { "application/json": { "schema": { "type": "object" } } }
+          "410": {
+            "description": "Gone — endpoint deprecated",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } } } } }
           }
         }
       }
@@ -1387,11 +1388,13 @@
       },
       "RegisterRequest": {
         "type": "object",
-        "required": ["email", "password", "name"],
+        "required": ["email", "password", "name", "org_name"],
         "properties": {
           "email": { "type": "string", "format": "email" },
           "password": { "type": "string", "minLength": 8 },
-          "name": { "type": "string" }
+          "name": { "type": "string" },
+          "org_name": { "type": "string" },
+          "source": { "type": "string", "enum": ["demo"], "description": "Set to 'demo' to seed sample data and start a 7-day trial" }
         }
       },
       "LoginRequest": {
