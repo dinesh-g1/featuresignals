@@ -453,11 +453,11 @@ func TestAuthHandler_SendVerificationEmail(t *testing.T) {
 }
 
 func TestAuthHandler_VerifyEmail(t *testing.T) {
-	emailMock := &mockEmailSender{}
 	h, store := newTestAuthHandler()
-	h.emailSender = emailMock
-
 	userID, orgID := registerAndExtract(t, h, "verifyemail@test.com")
+
+	emailMock := &mockEmailSender{}
+	h.emailSender = emailMock
 
 	r := newAuthenticatedRequest("POST", "/v1/auth/send-verification-email", "", userID, orgID)
 	w := httptest.NewRecorder()
