@@ -465,6 +465,86 @@
         }
       }
     },
+    "/v1/projects/{projectID}/flags/compare-environments": {
+      "get": {
+        "tags": ["Flag Management"],
+        "summary": "Compare flag states across environments",
+        "description": "Returns per-flag differences between two environments (enabled, rollout, rules, default value).",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "name": "source_env_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "target_env_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Environment comparison result", "content": { "application/json": { "schema": { "type": "object", "properties": { "total": { "type": "integer" }, "diff_count": { "type": "integer" }, "diffs": { "type": "array", "items": { "type": "object" } } } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/flags/sync-environments": {
+      "post": {
+        "tags": ["Flag Management"],
+        "summary": "Sync flag states between environments",
+        "description": "Bulk-promotes selected flags from source to target environment.",
+        "parameters": [ { "$ref": "#/components/parameters/ProjectID" } ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["source_env_id", "target_env_id", "flag_keys"], "properties": { "source_env_id": { "type": "string" }, "target_env_id": { "type": "string" }, "flag_keys": { "type": "array", "items": { "type": "string" } } } } } }
+        },
+        "responses": {
+          "200": { "description": "Sync result", "content": { "application/json": { "schema": { "type": "object", "properties": { "synced": { "type": "integer" }, "total": { "type": "integer" } } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/environments/{envID}/inspect-entity": {
+      "post": {
+        "tags": ["Insights"],
+        "summary": "Inspect entity — evaluate all flags for one entity",
+        "description": "Evaluates all flags for a specific entity context and returns per-flag values, reasons, and targeting info.",
+        "parameters": [ { "$ref": "#/components/parameters/ProjectID" }, { "$ref": "#/components/parameters/EnvID" } ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["key"], "properties": { "key": { "type": "string" }, "attributes": { "type": "object", "additionalProperties": {} } } } } }
+        },
+        "responses": {
+          "200": { "description": "Entity inspection results", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "value": {}, "reason": { "type": "string" }, "variant_key": { "type": "string" }, "individually_targeted": { "type": "boolean" } } } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/environments/{envID}/compare-entities": {
+      "post": {
+        "tags": ["Insights"],
+        "summary": "Compare two entities side by side",
+        "description": "Evaluates all flags for two different entity contexts and returns a diff.",
+        "parameters": [ { "$ref": "#/components/parameters/ProjectID" }, { "$ref": "#/components/parameters/EnvID" } ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["entity_a", "entity_b"], "properties": { "entity_a": { "type": "object", "properties": { "key": { "type": "string" }, "attributes": { "type": "object" } } }, "entity_b": { "type": "object", "properties": { "key": { "type": "string" }, "attributes": { "type": "object" } } } } } } }
+        },
+        "responses": {
+          "200": { "description": "Entity comparison results", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "value_a": {}, "value_b": {}, "reason_a": { "type": "string" }, "reason_b": { "type": "string" }, "is_different": { "type": "boolean" } } } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/environments/{envID}/flag-insights": {
+      "get": {
+        "tags": ["Insights"],
+        "summary": "Flag usage insights",
+        "description": "Returns per-flag true/false evaluation distribution for the given environment.",
+        "parameters": [ { "$ref": "#/components/parameters/ProjectID" }, { "$ref": "#/components/parameters/EnvID" } ],
+        "responses": {
+          "200": { "description": "Flag insights", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "total_count": { "type": "integer" }, "true_count": { "type": "integer" }, "false_count": { "type": "integer" }, "true_percentage": { "type": "number" } } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
     "/v1/evaluate": {
       "post": {
         "tags": ["Evaluation"],
@@ -1392,6 +1472,8 @@
           "key": { "type": "string" },
           "name": { "type": "string" },
           "type": { "type": "string", "enum": ["boolean", "string", "number", "json"] },
+          "category": { "type": "string", "enum": ["release", "experiment", "ops", "permission"], "description": "Toggle category based on Martin Fowler's taxonomy" },
+          "status": { "type": "string", "enum": ["active", "rolled_out", "deprecated", "archived"], "description": "Lifecycle status of the flag" },
           "description": { "type": "string" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "defaultValue": {},
@@ -1424,6 +1506,8 @@
           "key": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "name": { "type": "string" },
           "type": { "type": "string", "enum": ["boolean", "string", "number", "json"] },
+          "category": { "type": "string", "enum": ["release", "experiment", "ops", "permission"], "default": "release" },
+          "status": { "type": "string", "enum": ["active", "rolled_out", "deprecated", "archived"], "default": "active" },
           "description": { "type": "string" },
           "defaultValue": {},
           "tags": { "type": "array", "items": { "type": "string" } },
@@ -1435,6 +1519,8 @@
         "properties": {
           "name": { "type": "string" },
           "description": { "type": "string" },
+          "category": { "type": "string", "enum": ["release", "experiment", "ops", "permission"] },
+          "status": { "type": "string", "enum": ["active", "rolled_out", "deprecated", "archived"] },
           "tags": { "type": "array", "items": { "type": "string" } },
           "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } },
           "prerequisites": { "type": "array", "items": { "$ref": "#/components/schemas/Prerequisite" } }

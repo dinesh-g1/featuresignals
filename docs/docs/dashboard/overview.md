@@ -1,13 +1,13 @@
 ---
 sidebar_position: 1
-title: Dashboard Overview
+title: Flag Engine Overview
 ---
 
-# Dashboard Overview
+# Flag Engine Overview
 
-The FeatureSignals dashboard is a Next.js web application that provides a visual interface for managing feature flags, environments, team members, and more.
+The FeatureSignals Flag Engine is a Next.js web application that provides a visual interface for managing feature flags, environments, team members, and more.
 
-## Accessing the Dashboard
+## Accessing the Flag Engine
 
 After starting FeatureSignals, open [http://localhost:3000](http://localhost:3000).
 
@@ -43,7 +43,7 @@ The sidebar provides access to all major sections:
 - Kill switch for emergency disable
 
 ### Real-Time Updates
-The dashboard uses polling to keep flag states current. Changes made via API or by other team members appear automatically.
+The Flag Engine uses polling to keep flag states current. Changes made via API or by other team members appear automatically.
 
 ### Multi-Environment View
 The flag detail page shows per-environment configuration in tabs, making it easy to compare dev, staging, and production settings side by side.

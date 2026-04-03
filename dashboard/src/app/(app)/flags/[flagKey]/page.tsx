@@ -162,7 +162,29 @@ export default function FlagDetailPage() {
             </button>
             <h1 className="text-2xl font-bold font-mono text-slate-900">{flag.key}</h1>
           </div>
-          <p className="mt-1 ml-8 text-sm text-slate-500">{flag.name} &middot; {flag.flag_type}</p>
+          <div className="mt-1 ml-8 flex items-center gap-2">
+            <span className="text-sm text-slate-500">{flag.name} &middot; {flag.flag_type}</span>
+            {flag.category && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${
+                flag.category === "release" ? "bg-blue-50 text-blue-700 ring-blue-200" :
+                flag.category === "experiment" ? "bg-purple-50 text-purple-700 ring-purple-200" :
+                flag.category === "ops" ? "bg-orange-50 text-orange-700 ring-orange-200" :
+                "bg-emerald-50 text-emerald-700 ring-emerald-200"
+              }`}>
+                {flag.category}
+              </span>
+            )}
+            {flag.status && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${
+                flag.status === "active" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" :
+                flag.status === "rolled_out" ? "bg-blue-50 text-blue-700 ring-blue-200" :
+                flag.status === "deprecated" ? "bg-amber-50 text-amber-700 ring-amber-200" :
+                "bg-slate-100 text-slate-500 ring-slate-200"
+              }`}>
+                {flag.status.replace(/_/g, " ")}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <select

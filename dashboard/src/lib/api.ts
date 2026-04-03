@@ -190,6 +190,22 @@ export const api = {
       token,
     }),
 
+  // Environment Comparison
+  compareEnvironments: (token: string, projectId: string, sourceEnvId: string, targetEnvId: string) =>
+    request<any>(`/v1/projects/${projectId}/flags/compare-environments?source_env_id=${sourceEnvId}&target_env_id=${targetEnvId}`, { token }),
+  syncEnvironments: (token: string, projectId: string, data: { source_env_id: string; target_env_id: string; flag_keys: string[] }) =>
+    request(`/v1/projects/${projectId}/flags/sync-environments`, { method: "POST", body: data, token }),
+
+  // Entity Inspector & Comparison
+  inspectEntity: (token: string, projectId: string, envId: string, data: { key: string; attributes: Record<string, any> }) =>
+    request<any[]>(`/v1/projects/${projectId}/environments/${envId}/inspect-entity`, { method: "POST", body: data, token }),
+  compareEntities: (token: string, projectId: string, envId: string, data: { entity_a: any; entity_b: any }) =>
+    request<any[]>(`/v1/projects/${projectId}/environments/${envId}/compare-entities`, { method: "POST", body: data, token }),
+
+  // Flag Usage Insights
+  getFlagInsights: (token: string, projectId: string, envId: string) =>
+    request<any[]>(`/v1/projects/${projectId}/environments/${envId}/flag-insights`, { token }),
+
   // Evaluation Metrics
   getEvalMetrics: (token: string) =>
     request<{ total_evaluations: number; window_start: string; counters: { flag_key: string; env_id: string; reason: string; count: number }[] }>(

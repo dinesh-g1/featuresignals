@@ -605,7 +605,7 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
         onClick={onFinish}
         className="mt-6 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
       >
-        Go to Dashboard
+        Go to Flag Engine
       </button>
     </div>
   );
