@@ -22,15 +22,6 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 )
 
-// Ruleset is an immutable snapshot of all data needed to evaluate flags
-// for a single environment. It is built by the cache layer and passed to
-// Engine.Evaluate.
-type Ruleset struct {
-	Flags    map[string]*domain.Flag      // flagKey → definition
-	States   map[string]*domain.FlagState // flagKey → per-environment state
-	Segments map[string]*domain.Segment   // segmentKey → segment definition
-}
-
 // Engine evaluates feature flags against a user context and a ruleset.
 // It is stateless and safe for concurrent use.
 type Engine struct{}
@@ -51,7 +42,7 @@ func NewEngine() *Engine {
 //  6. If a rule matches, apply its rollout percentage
 //  7. If no rule matches, apply default rollout
 //  8. Return evaluated value
-func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *Ruleset) domain.EvalResult {
+func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *domain.Ruleset) domain.EvalResult {
 	flag, ok := ruleset.Flags[flagKey]
 	if !ok {
 		return domain.EvalResult{
@@ -197,7 +188,7 @@ func (e *Engine) evaluateVariant(flagKey string, ctx domain.EvalContext, variant
 }
 
 // EvaluateAll evaluates all flags in the ruleset for the given context.
-func (e *Engine) EvaluateAll(ctx domain.EvalContext, ruleset *Ruleset) map[string]domain.EvalResult {
+func (e *Engine) EvaluateAll(ctx domain.EvalContext, ruleset *domain.Ruleset) map[string]domain.EvalResult {
 	results := make(map[string]domain.EvalResult, len(ruleset.Flags))
 	for key := range ruleset.Flags {
 		results[key] = e.Evaluate(key, ctx, ruleset)
@@ -206,7 +197,7 @@ func (e *Engine) EvaluateAll(ctx domain.EvalContext, ruleset *Ruleset) map[strin
 }
 
 // matchRule checks if a targeting rule matches the given context.
-func (e *Engine) matchRule(rule domain.TargetingRule, ctx domain.EvalContext, ruleset *Ruleset) bool {
+func (e *Engine) matchRule(rule domain.TargetingRule, ctx domain.EvalContext, ruleset *domain.Ruleset) bool {
 	// Check segment-based targeting
 	if len(rule.SegmentKeys) > 0 {
 		segmentMatched := false
@@ -243,7 +234,7 @@ func (e *Engine) matchRule(rule domain.TargetingRule, ctx domain.EvalContext, ru
 // exclusion group for this user. Among all enabled flags in the same group,
 // the one whose BucketUser value is lowest wins. If two flags produce the
 // same bucket, the lexicographically smaller key wins (deterministic tiebreak).
-func (e *Engine) winsMutexGroup(flagKey, group string, ctx domain.EvalContext, ruleset *Ruleset) bool {
+func (e *Engine) winsMutexGroup(flagKey, group string, ctx domain.EvalContext, ruleset *domain.Ruleset) bool {
 	winnerKey := flagKey
 	winnerBucket := BucketUser(flagKey, ctx.Key)
 

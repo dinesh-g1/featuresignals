@@ -13,7 +13,6 @@ import (
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/email"
-	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/sms"
@@ -35,7 +34,7 @@ func NewRouter(
 	store domain.Store,
 	jwtMgr auth.TokenManager,
 	evalCache handlers.RulesetCache,
-	engine *eval.Engine,
+	engine handlers.Evaluator,
 	sseServer handlers.StreamServer,
 	logger *slog.Logger,
 	corsOrigins []string,

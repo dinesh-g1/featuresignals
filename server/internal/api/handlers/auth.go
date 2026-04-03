@@ -145,7 +145,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "name and org_name must be at most 255 characters")
 		return
 	}
-	if !validatePassword(req.Password) {
+	if !ValidatePasswordStrength(req.Password) {
 		httputil.Error(w, http.StatusBadRequest, "password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
 		return
 	}
@@ -201,22 +201,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envs := []struct {
-		name, slug, color string
-	}{
-		{"Development", "development", "#22C55E"},
-		{"Staging", "staging", "#EAB308"},
-		{"Production", "production", "#EF4444"},
-	}
-	for _, e := range envs {
-		env := &domain.Environment{
-			ProjectID: project.ID,
-			Name:      e.name,
-			Slug:      e.slug,
-			Color:     e.color,
-		}
-		h.store.CreateEnvironment(r.Context(), env)
-	}
+	BootstrapEnvironments(r.Context(), h.store, project.ID)
 
 	// Send verification email in background (best-effort)
 	if h.emailSender != nil {

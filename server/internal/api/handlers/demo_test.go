@@ -372,8 +372,7 @@ func TestDemoHandler_SelectPlan_Free(t *testing.T) {
 
 func TestDemoHandler_SelectPlan_Pro(t *testing.T) {
 	h, _ := newTestDemoHandler()
-	h.payuMerchantKey = "test_key"
-	h.payuSalt = "test_salt"
+	h.payu = PayUHasher{MerchantKey: "test_key", Salt: "test_salt"}
 	h.payuMode = "test"
 	h.appBaseURL = "https://api.featuresignals.com"
 

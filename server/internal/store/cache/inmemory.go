@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/eval"
 )
 
 // Broadcaster pushes flag-change events to connected clients (e.g. via SSE).
@@ -27,7 +26,7 @@ type WebhookNotifier interface {
 // webhook events through the optional WebhookNotifier.
 type Cache struct {
 	mu              sync.RWMutex
-	rulesets        map[string]*eval.Ruleset // envID -> ruleset
+	rulesets        map[string]*domain.Ruleset // envID -> ruleset
 	store           domain.Store
 	logger          *slog.Logger
 	broadcaster     Broadcaster
@@ -38,7 +37,7 @@ type Cache struct {
 // when not needed (e.g. in tests).
 func NewCache(store domain.Store, logger *slog.Logger, broadcaster Broadcaster) *Cache {
 	return &Cache{
-		rulesets:    make(map[string]*eval.Ruleset),
+		rulesets:    make(map[string]*domain.Ruleset),
 		store:       store,
 		logger:      logger,
 		broadcaster: broadcaster,
@@ -51,20 +50,20 @@ func (c *Cache) SetWebhookNotifier(n WebhookNotifier) {
 }
 
 // GetRuleset returns the cached ruleset for an environment.
-func (c *Cache) GetRuleset(envID string) *eval.Ruleset {
+func (c *Cache) GetRuleset(envID string) *domain.Ruleset {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.rulesets[envID]
 }
 
 // LoadRuleset fetches the full ruleset from the database and caches it.
-func (c *Cache) LoadRuleset(ctx context.Context, projectID, envID string) (*eval.Ruleset, error) {
+func (c *Cache) LoadRuleset(ctx context.Context, projectID, envID string) (*domain.Ruleset, error) {
 	flags, states, segments, err := c.store.LoadRuleset(ctx, projectID, envID)
 	if err != nil {
 		return nil, err
 	}
 
-	ruleset := &eval.Ruleset{
+	ruleset := &domain.Ruleset{
 		Flags:    make(map[string]*domain.Flag, len(flags)),
 		States:   make(map[string]*domain.FlagState, len(states)),
 		Segments: make(map[string]*domain.Segment, len(segments)),

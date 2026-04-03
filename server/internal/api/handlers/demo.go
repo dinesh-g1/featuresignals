@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-	"unicode"
 
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
@@ -28,10 +26,8 @@ type DemoHandler struct {
 	emailSender  email.VerificationSender
 	appBaseURL   string
 	dashboardURL string
-	// PayU fields for demo-to-pro checkout
-	payuMerchantKey string
-	payuSalt        string
-	payuMode        string
+	payu         PayUHasher
+	payuMode     string
 }
 
 type DemoHandlerConfig struct {
@@ -49,16 +45,15 @@ type DemoHandlerConfig struct {
 
 func NewDemoHandler(cfg DemoHandlerConfig) *DemoHandler {
 	return &DemoHandler{
-		store:           cfg.Store,
-		jwtMgr:          cfg.JWTMgr,
-		logger:          cfg.Logger,
-		smsClient:       cfg.SMSClient,
-		emailSender:     cfg.EmailSender,
-		appBaseURL:      cfg.AppBaseURL,
-		dashboardURL:    cfg.DashboardURL,
-		payuMerchantKey: cfg.PayUMerchantKey,
-		payuSalt:        cfg.PayUSalt,
-		payuMode:        cfg.PayUMode,
+		store:        cfg.Store,
+		jwtMgr:       cfg.JWTMgr,
+		logger:       cfg.Logger,
+		smsClient:    cfg.SMSClient,
+		emailSender:  cfg.EmailSender,
+		appBaseURL:   cfg.AppBaseURL,
+		dashboardURL: cfg.DashboardURL,
+		payu:         PayUHasher{MerchantKey: cfg.PayUMerchantKey, Salt: cfg.PayUSalt},
+		payuMode:     cfg.PayUMode,
 	}
 }
 
@@ -114,19 +109,9 @@ func (h *DemoHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envDefs := []struct{ name, slug, color string }{
-		{"Development", "development", "#22C55E"},
-		{"Staging", "staging", "#EAB308"},
-		{"Production", "production", "#EF4444"},
-	}
 	envs := make(map[string]*domain.Environment)
-	for _, e := range envDefs {
-		env := &domain.Environment{ProjectID: project.ID, Name: e.name, Slug: e.slug, Color: e.color}
-		if err := h.store.CreateEnvironment(ctx, env); err != nil {
-			log.Error("failed to create demo env", "error", err, "env", e.name)
-			continue
-		}
-		envs[e.slug] = env
+	for _, env := range BootstrapEnvironments(ctx, h.store, project.ID) {
+		envs[env.Slug] = env
 	}
 
 	h.seedSampleFlags(ctx, project, envs, log)
@@ -186,7 +171,7 @@ func (h *DemoHandler) Convert(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "name and org_name must be at most 255 characters")
 		return
 	}
-	if !validateDemoPassword(req.Password) {
+	if !ValidatePasswordStrength(req.Password) {
 		httputil.Error(w, http.StatusBadRequest, "password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
 		return
 	}
@@ -293,19 +278,11 @@ func (h *DemoHandler) SelectPlan(w http.ResponseWriter, r *http.Request) {
 		if err := h.store.DeleteDemoData(ctx, orgID); err != nil {
 			log.Error("failed to delete demo data", "error", err, "org_id", orgID)
 		}
-		// Create fresh defaults
 		project := &domain.Project{OrgID: orgID, Name: "Default Project", Slug: "default"}
 		if err := h.store.CreateProject(ctx, project); err != nil {
 			log.Error("failed to create default project after demo data cleanup", "error", err)
 		} else {
-			for _, e := range []struct{ n, s, c string }{
-				{"Development", "development", "#22C55E"},
-				{"Staging", "staging", "#EAB308"},
-				{"Production", "production", "#EF4444"},
-			} {
-				env := &domain.Environment{ProjectID: project.ID, Name: e.n, Slug: e.s, Color: e.c}
-				h.store.CreateEnvironment(ctx, env)
-			}
+			BootstrapEnvironments(ctx, h.store, project.ID)
 		}
 	}
 
@@ -355,14 +332,11 @@ func (h *DemoHandler) SelectPlan(w http.ResponseWriter, r *http.Request) {
 		phone = "9999999999"
 	}
 
-	hash := h.generatePayUHash(txnid, amount, productinfo, firstname, userEmail)
+	hash := h.payu.Hash(txnid, amount, productinfo, firstname, userEmail)
 	surl := h.appBaseURL + "/v1/billing/payu/callback"
 	furl := h.appBaseURL + "/v1/billing/payu/failure"
 
-	payuURL := "https://test.payu.in/_payment"
-	if h.payuMode == "live" {
-		payuURL = "https://secure.payu.in/_payment"
-	}
+	payuURL := h.payu.Endpoint(h.payuMode)
 
 	// Store retain_data preference so the PayU callback can use it
 	state, _ := h.store.GetOnboardingState(ctx, orgID)
@@ -377,7 +351,7 @@ func (h *DemoHandler) SelectPlan(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, map[string]string{
 		"plan":        "pro",
 		"payu_url":    payuURL,
-		"key":         h.payuMerchantKey,
+		"key":         h.payu.MerchantKey,
 		"txnid":       txnid,
 		"hash":        hash,
 		"amount":      amount,
@@ -388,13 +362,6 @@ func (h *DemoHandler) SelectPlan(w http.ResponseWriter, r *http.Request) {
 		"surl":        surl,
 		"furl":        furl,
 	})
-}
-
-func (h *DemoHandler) generatePayUHash(txnid, amount, productinfo, firstname, email string) string {
-	hashStr := fmt.Sprintf("%s|%s|%s|%s|%s|%s|||||||||||%s",
-		h.payuMerchantKey, txnid, amount, productinfo, firstname, email, h.payuSalt)
-	hash := sha512.Sum512([]byte(hashStr))
-	return hex.EncodeToString(hash[:])
 }
 
 func (h *DemoHandler) Feedback(w http.ResponseWriter, r *http.Request) {
@@ -586,22 +553,3 @@ func randomHex(n int) string {
 	return hex.EncodeToString(b)
 }
 
-func validateDemoPassword(pw string) bool {
-	if len(pw) < 8 {
-		return false
-	}
-	var hasUpper, hasLower, hasDigit, hasSpecial bool
-	for _, c := range pw {
-		switch {
-		case unicode.IsUpper(c):
-			hasUpper = true
-		case unicode.IsLower(c):
-			hasLower = true
-		case unicode.IsDigit(c):
-			hasDigit = true
-		case unicode.IsPunct(c) || unicode.IsSymbol(c):
-			hasSpecial = true
-		}
-	}
-	return hasUpper && hasLower && hasDigit && hasSpecial
-}

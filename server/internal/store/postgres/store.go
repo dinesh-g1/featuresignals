@@ -5,10 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/featuresignals/server/internal/domain"
@@ -22,6 +24,29 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
+// wrapNotFound converts pgx.ErrNoRows into domain.ErrNotFound.
+func wrapNotFound(err error, noun string) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.WrapNotFound(noun)
+	}
+	return err
+}
+
+// wrapConflict converts PostgreSQL unique-violation (23505) into domain.ErrConflict.
+func wrapConflict(err error, noun string) error {
+	if err == nil {
+		return nil
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return domain.WrapConflict(noun)
+	}
+	return err
+}
+
 // --- Organizations ---
 
 func (s *Store) CreateOrganization(ctx context.Context, org *domain.Organization) error {
@@ -29,11 +54,12 @@ func (s *Store) CreateOrganization(ctx context.Context, org *domain.Organization
 		org.Plan = domain.PlanFree
 	}
 	defaults := domain.PlanDefaults[org.Plan]
-	return s.pool.QueryRow(ctx,
+	err := s.pool.QueryRow(ctx,
 		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit)
 		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
 		org.Name, org.Slug, org.Plan, defaults.Seats, defaults.Projects, defaults.Environments,
 	).Scan(&org.ID, &org.CreatedAt, &org.UpdatedAt)
+	return wrapConflict(err, "organization")
 }
 
 func (s *Store) GetOrganization(ctx context.Context, id string) (*domain.Organization, error) {
@@ -47,7 +73,7 @@ func (s *Store) GetOrganization(ctx context.Context, id string) (*domain.Organiz
 		&org.Plan, &org.PayUCustomerRef,
 		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "organization")
 	}
 	return org, nil
 }
@@ -63,7 +89,7 @@ func (s *Store) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*
 		&org.Plan, &org.PayUCustomerRef,
 		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "organization")
 	}
 	return org, nil
 }
@@ -71,10 +97,11 @@ func (s *Store) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*
 // --- Users ---
 
 func (s *Store) CreateUser(ctx context.Context, user *domain.User) error {
-	return s.pool.QueryRow(ctx,
+	err := s.pool.QueryRow(ctx,
 		`INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at`,
 		user.Email, user.PasswordHash, user.Name,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+	return wrapConflict(err, "user")
 }
 
 func (s *Store) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
@@ -92,7 +119,7 @@ func (s *Store) GetUserByEmail(ctx context.Context, email string) (*domain.User,
 		&user.PhoneOTP, &user.PhoneOTPExpires,
 		&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "user")
 	}
 	return user, nil
 }
@@ -112,7 +139,7 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (*domain.User, error
 		&user.PhoneOTP, &user.PhoneOTPExpires,
 		&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "user")
 	}
 	return user, nil
 }
@@ -132,7 +159,7 @@ func (s *Store) GetUserByEmailVerifyToken(ctx context.Context, token string) (*d
 		&user.PhoneOTP, &user.PhoneOTPExpires,
 		&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "user")
 	}
 	return user, nil
 }
@@ -193,7 +220,7 @@ func (s *Store) GetOrgMember(ctx context.Context, orgID, userID string) (*domain
 	}
 	err := s.pool.QueryRow(ctx, query, args...).Scan(&m.ID, &m.OrgID, &m.UserID, &m.Role, &m.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "member")
 	}
 	return m, nil
 }
@@ -230,7 +257,7 @@ func (s *Store) GetOrgMemberByID(ctx context.Context, memberID string) (*domain.
 		`SELECT id, org_id, user_id, role, created_at FROM org_members WHERE id = $1`, memberID,
 	).Scan(&m.ID, &m.OrgID, &m.UserID, &m.Role, &m.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "member")
 	}
 	return m, nil
 }
@@ -296,7 +323,7 @@ func (s *Store) GetProject(ctx context.Context, id string) (*domain.Project, err
 		`SELECT id, org_id, name, slug, created_at, updated_at FROM projects WHERE id = $1`, id,
 	).Scan(&p.ID, &p.OrgID, &p.Name, &p.Slug, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "project")
 	}
 	return p, nil
 }
@@ -357,7 +384,7 @@ func (s *Store) GetEnvironment(ctx context.Context, id string) (*domain.Environm
 		`SELECT id, project_id, name, slug, color, created_at FROM environments WHERE id = $1`, id,
 	).Scan(&e.ID, &e.ProjectID, &e.Name, &e.Slug, &e.Color, &e.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "environment")
 	}
 	return e, nil
 }
@@ -383,11 +410,12 @@ func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
 	if f.Prerequisites == nil {
 		f.Prerequisites = []string{}
 	}
-	return s.pool.QueryRow(ctx,
+	err := s.pool.QueryRow(ctx,
 		`INSERT INTO flags (project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`,
 		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup,
 	).Scan(&f.ID, &f.CreatedAt, &f.UpdatedAt)
+	return wrapConflict(err, "flag key")
 }
 
 func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error) {
@@ -397,7 +425,7 @@ func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Fla
 		 FROM flags WHERE project_id = $1 AND key = $2`, projectID, key,
 	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "flag")
 	}
 	return f, nil
 }
@@ -469,7 +497,7 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 	).Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue, &rulesJSON,
 		&fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "flag state")
 	}
 	if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
 		return nil, fmt.Errorf("unmarshal rules: %w", err)
@@ -519,11 +547,12 @@ func (s *Store) CreateSegment(ctx context.Context, seg *domain.Segment) error {
 	if err != nil {
 		return fmt.Errorf("marshal rules: %w", err)
 	}
-	return s.pool.QueryRow(ctx,
+	err = s.pool.QueryRow(ctx,
 		`INSERT INTO segments (project_id, key, name, description, match_type, rules)
 		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
 		seg.ProjectID, seg.Key, seg.Name, seg.Description, seg.MatchType, rulesJSON,
 	).Scan(&seg.ID, &seg.CreatedAt, &seg.UpdatedAt)
+	return wrapConflict(err, "segment key")
 }
 
 func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Segment, error) {
@@ -557,7 +586,7 @@ func (s *Store) GetSegment(ctx context.Context, projectID, key string) (*domain.
 		 FROM segments WHERE project_id = $1 AND key = $2`, projectID, key,
 	).Scan(&seg.ID, &seg.ProjectID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.CreatedAt, &seg.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "segment")
 	}
 	if err := json.Unmarshal(rulesJSON, &seg.Rules); err != nil {
 		return nil, fmt.Errorf("unmarshal rules: %w", err)
@@ -586,11 +615,12 @@ func (s *Store) DeleteSegment(ctx context.Context, id string) error {
 // --- API Keys ---
 
 func (s *Store) CreateAPIKey(ctx context.Context, k *domain.APIKey) error {
-	return s.pool.QueryRow(ctx,
+	err := s.pool.QueryRow(ctx,
 		`INSERT INTO api_keys (env_id, key_hash, key_prefix, name, type, expires_at)
 		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`,
 		k.EnvID, k.KeyHash, k.KeyPrefix, k.Name, k.Type, k.ExpiresAt,
 	).Scan(&k.ID, &k.CreatedAt)
+	return wrapConflict(err, "api key")
 }
 
 func (s *Store) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKey, error) {
@@ -600,7 +630,7 @@ func (s *Store) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKey, e
 		 FROM api_keys WHERE id = $1`, id,
 	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "api key")
 	}
 	return k, nil
 }
@@ -613,7 +643,7 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.AP
 		 AND (expires_at IS NULL OR expires_at > NOW())`, keyHash,
 	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "api key")
 	}
 	return k, nil
 }
@@ -666,7 +696,7 @@ func (s *Store) GetWebhook(ctx context.Context, id string) (*domain.Webhook, err
 		 FROM webhooks WHERE id = $1`, id,
 	).Scan(&w.ID, &w.OrgID, &w.Name, &w.URL, &w.Secret, &w.Events, &w.Enabled, &w.CreatedAt, &w.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "webhook")
 	}
 	return w, nil
 }
@@ -855,7 +885,7 @@ func (s *Store) GetApprovalRequest(ctx context.Context, id string) (*domain.Appr
 	).Scan(&ar.ID, &ar.OrgID, &ar.RequestorID, &ar.FlagID, &ar.EnvID, &ar.ChangeType,
 		&ar.Payload, &ar.Status, &ar.ReviewerID, &ar.ReviewNote, &ar.ReviewedAt, &ar.CreatedAt, &ar.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "approval request")
 	}
 	return ar, nil
 }
@@ -930,7 +960,7 @@ func (s *Store) GetSubscription(ctx context.Context, orgID string) (*domain.Subs
 		&sub.Plan, &sub.Status, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd,
 		&sub.CancelAtPeriodEnd, &sub.CreatedAt, &sub.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "subscription")
 	}
 	return sub, nil
 }
@@ -1003,7 +1033,7 @@ func (s *Store) GetUsage(ctx context.Context, orgID, metricName string) (*domain
 		 FROM usage_metrics WHERE org_id = $1 AND metric_name = $2`, orgID, metricName,
 	).Scan(&m.ID, &m.OrgID, &m.MetricName, &m.Value, &m.PeriodStart, &m.PeriodEnd, &m.CreatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "usage metric")
 	}
 	return m, nil
 }
@@ -1020,7 +1050,7 @@ func (s *Store) GetOnboardingState(ctx context.Context, orgID string) (*domain.O
 		&state.FirstSDKConnected, &state.FirstEvaluation, &state.Completed,
 		&state.CompletedAt, &state.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, wrapNotFound(err, "onboarding state")
 	}
 	return state, nil
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,15 +9,13 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
-	"github.com/featuresignals/server/internal/metrics"
 )
 
 // RulesetCache abstracts the in-memory ruleset cache for testability.
 type RulesetCache interface {
-	GetRuleset(envID string) *eval.Ruleset
-	LoadRuleset(ctx context.Context, projectID, envID string) (*eval.Ruleset, error)
+	GetRuleset(envID string) *domain.Ruleset
+	LoadRuleset(ctx context.Context, projectID, envID string) (*domain.Ruleset, error)
 }
 
 // StreamServer abstracts the SSE server for testability.
@@ -26,16 +23,28 @@ type StreamServer interface {
 	HandleStream(w http.ResponseWriter, r *http.Request, envID string)
 }
 
+// Evaluator abstracts the flag evaluation engine so handlers
+// depend on behavior, not a concrete struct (DIP).
+type Evaluator interface {
+	Evaluate(flagKey string, ctx domain.EvalContext, ruleset *domain.Ruleset) domain.EvalResult
+	EvaluateAll(ctx domain.EvalContext, ruleset *domain.Ruleset) map[string]domain.EvalResult
+}
+
+// MetricsRecorder abstracts eval-metrics recording (ISP).
+type MetricsRecorder interface {
+	Record(flagKey, envID, reason string)
+}
+
 type EvalHandler struct {
 	store     domain.Store
 	cache     RulesetCache
-	engine    *eval.Engine
+	engine    Evaluator
 	sseServer StreamServer
 	logger    *slog.Logger
-	metrics   *metrics.Collector
+	metrics   MetricsRecorder
 }
 
-func NewEvalHandler(store domain.Store, cache RulesetCache, engine *eval.Engine, sseServer StreamServer, logger *slog.Logger, mc *metrics.Collector) *EvalHandler {
+func NewEvalHandler(store domain.Store, cache RulesetCache, engine Evaluator, sseServer StreamServer, logger *slog.Logger, mc MetricsRecorder) *EvalHandler {
 	return &EvalHandler{
 		store:     store,
 		cache:     cache,
@@ -56,12 +65,10 @@ type BulkEvaluateRequest struct {
 	Context  domain.EvalContext `json:"context"`
 }
 
-func hashAPIKey(key string) string {
-	h := sha256.Sum256([]byte(key))
-	return fmt.Sprintf("%x", h[:])
-}
+// hashAPIKey is a local alias for the shared utility.
+var hashAPIKey = HashAPIKey
 
-func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*eval.Ruleset, string, error) {
+func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*domain.Ruleset, string, error) {
 	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
 		return nil, "", fmt.Errorf("missing X-API-Key header")

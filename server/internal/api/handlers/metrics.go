@@ -10,13 +10,26 @@ import (
 	"github.com/featuresignals/server/internal/metrics"
 )
 
-type MetricsHandler struct {
-	store       domain.Store
-	collector   *metrics.Collector
-	impressions *metrics.ImpressionCollector
+// ImpressionRecorder abstracts impression recording (ISP).
+type ImpressionRecorder interface {
+	Record(flagKey, variantKey, userKey string)
+	Summary() []metrics.ImpressionSummary
+	Flush() []metrics.Impression
 }
 
-func NewMetricsHandler(store domain.Store, collector *metrics.Collector, impressions *metrics.ImpressionCollector) *MetricsHandler {
+// EvalSummarizer abstracts eval metrics reading (ISP).
+type EvalSummarizer interface {
+	Summary() metrics.EvalSummary
+	Reset()
+}
+
+type MetricsHandler struct {
+	store       domain.Store
+	collector   EvalSummarizer
+	impressions ImpressionRecorder
+}
+
+func NewMetricsHandler(store domain.Store, collector EvalSummarizer, impressions ImpressionRecorder) *MetricsHandler {
 	return &MetricsHandler{store: store, collector: collector, impressions: impressions}
 }
 

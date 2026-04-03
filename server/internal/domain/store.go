@@ -5,6 +5,52 @@ import (
 	"time"
 )
 
+// ─── Focused sub-interfaces (ISP) ──────────────────────────────────────────
+// Handlers and services should depend on the narrowest interface they need.
+
+// FlagReader provides read-only access to flags and their states.
+type FlagReader interface {
+	GetFlag(ctx context.Context, projectID, key string) (*Flag, error)
+	ListFlags(ctx context.Context, projectID string) ([]Flag, error)
+	GetFlagState(ctx context.Context, flagID, envID string) (*FlagState, error)
+}
+
+// FlagWriter provides mutating operations on flags and their states.
+type FlagWriter interface {
+	CreateFlag(ctx context.Context, f *Flag) error
+	UpdateFlag(ctx context.Context, f *Flag) error
+	DeleteFlag(ctx context.Context, id string) error
+	UpsertFlagState(ctx context.Context, fs *FlagState) error
+}
+
+// SegmentStore provides CRUD for segments.
+type SegmentStore interface {
+	CreateSegment(ctx context.Context, seg *Segment) error
+	ListSegments(ctx context.Context, projectID string) ([]Segment, error)
+	GetSegment(ctx context.Context, projectID, key string) (*Segment, error)
+	UpdateSegment(ctx context.Context, seg *Segment) error
+	DeleteSegment(ctx context.Context, id string) error
+}
+
+// EvalStore is the minimal interface needed by the evaluation hot path.
+type EvalStore interface {
+	LoadRuleset(ctx context.Context, projectID, envID string) ([]Flag, []FlagState, []Segment, error)
+	ListenForChanges(ctx context.Context, callback func(payload string)) error
+	GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) (*Environment, *APIKey, error)
+	UpdateAPIKeyLastUsed(ctx context.Context, id string) error
+	GetEnvironment(ctx context.Context, id string) (*Environment, error)
+}
+
+// AuditWriter provides write access to the audit log.
+type AuditWriter interface {
+	CreateAuditEntry(ctx context.Context, entry *AuditEntry) error
+}
+
+// AuditReader provides read access to the audit log.
+type AuditReader interface {
+	ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]AuditEntry, error)
+}
+
 // Store defines the contract for all data access operations.
 //
 // Every handler and service depends on this interface — never on a concrete
@@ -12,8 +58,18 @@ import (
 // mock (see handlers/testutil_test.go) and allows swapping PostgreSQL for
 // another backend without touching business logic.
 //
+// It composes the focused sub-interfaces above plus remaining methods that
+// are not yet extracted into their own interfaces.
+//
 // Implementations must be safe for concurrent use.
 type Store interface {
+	FlagReader
+	FlagWriter
+	SegmentStore
+	EvalStore
+	AuditWriter
+	AuditReader
+
 	// ── Organizations ────────────────────────────────────────────────────
 	CreateOrganization(ctx context.Context, org *Organization) error
 	GetOrganization(ctx context.Context, id string) (*Organization, error)
@@ -32,10 +88,8 @@ type Store interface {
 
 	// ── Org Members ──────────────────────────────────────────────────────
 	AddOrgMember(ctx context.Context, member *OrgMember) error
-	// GetOrgMember retrieves a membership. Pass orgID="" to search all orgs.
 	GetOrgMember(ctx context.Context, orgID, userID string) (*OrgMember, error)
 	GetOrgMemberByID(ctx context.Context, memberID string) (*OrgMember, error)
-	// ListOrgMembers lists members. Pass orgID="" to list across all orgs.
 	ListOrgMembers(ctx context.Context, orgID string) ([]OrgMember, error)
 	UpdateOrgMemberRole(ctx context.Context, memberID string, role Role) error
 	RemoveOrgMember(ctx context.Context, memberID string) error
@@ -54,28 +108,10 @@ type Store interface {
 	// ── Environments ─────────────────────────────────────────────────────
 	CreateEnvironment(ctx context.Context, e *Environment) error
 	ListEnvironments(ctx context.Context, projectID string) ([]Environment, error)
-	GetEnvironment(ctx context.Context, id string) (*Environment, error)
 	DeleteEnvironment(ctx context.Context, id string) error
 
-	// ── Flags ────────────────────────────────────────────────────────────
-	CreateFlag(ctx context.Context, f *Flag) error
-	GetFlag(ctx context.Context, projectID, key string) (*Flag, error)
-	ListFlags(ctx context.Context, projectID string) ([]Flag, error)
-	UpdateFlag(ctx context.Context, f *Flag) error
-	DeleteFlag(ctx context.Context, id string) error
-
-	// ── Flag States (per environment) ────────────────────────────────────
-	UpsertFlagState(ctx context.Context, fs *FlagState) error
-	GetFlagState(ctx context.Context, flagID, envID string) (*FlagState, error)
-	// ListPendingSchedules returns flag states with a schedule time that has passed.
+	// ── Flag States (additional) ─────────────────────────────────────────
 	ListPendingSchedules(ctx context.Context, before time.Time) ([]FlagState, error)
-
-	// ── Segments ─────────────────────────────────────────────────────────
-	CreateSegment(ctx context.Context, seg *Segment) error
-	ListSegments(ctx context.Context, projectID string) ([]Segment, error)
-	GetSegment(ctx context.Context, projectID, key string) (*Segment, error)
-	UpdateSegment(ctx context.Context, seg *Segment) error
-	DeleteSegment(ctx context.Context, id string) error
 
 	// ── API Keys ─────────────────────────────────────────────────────────
 	CreateAPIKey(ctx context.Context, k *APIKey) error
@@ -83,7 +119,6 @@ type Store interface {
 	GetAPIKeyByHash(ctx context.Context, keyHash string) (*APIKey, error)
 	ListAPIKeys(ctx context.Context, envID string) ([]APIKey, error)
 	RevokeAPIKey(ctx context.Context, id string) error
-	UpdateAPIKeyLastUsed(ctx context.Context, id string) error
 
 	// ── Webhooks ─────────────────────────────────────────────────────────
 	CreateWebhook(ctx context.Context, w *Webhook) error
@@ -99,24 +134,6 @@ type Store interface {
 	GetApprovalRequest(ctx context.Context, id string) (*ApprovalRequest, error)
 	ListApprovalRequests(ctx context.Context, orgID string, status string, limit, offset int) ([]ApprovalRequest, error)
 	UpdateApprovalRequest(ctx context.Context, ar *ApprovalRequest) error
-
-	// ── Audit Log ────────────────────────────────────────────────────────
-	CreateAuditEntry(ctx context.Context, entry *AuditEntry) error
-	ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]AuditEntry, error)
-
-	// ── Evaluation (hot path) ────────────────────────────────────────────
-
-	// LoadRuleset fetches all data needed to evaluate flags in one call.
-	// Used by the cache to populate an in-memory Ruleset.
-	LoadRuleset(ctx context.Context, projectID, envID string) ([]Flag, []FlagState, []Segment, error)
-
-	// ListenForChanges subscribes to real-time change notifications (e.g.
-	// PostgreSQL LISTEN/NOTIFY) and invokes callback on each event.
-	ListenForChanges(ctx context.Context, callback func(payload string)) error
-
-	// GetEnvironmentByAPIKeyHash resolves an API key hash to its parent
-	// Environment and the key record itself.
-	GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) (*Environment, *APIKey, error)
 
 	// ── Billing ─────────────────────────────────────────────────────────
 	GetSubscription(ctx context.Context, orgID string) (*Subscription, error)
