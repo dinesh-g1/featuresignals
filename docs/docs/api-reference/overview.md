@@ -97,9 +97,16 @@ All errors follow a consistent format:
 
 ```json
 {
-  "error": "descriptive error message"
+  "error": "descriptive error message",
+  "request_id": "correlation-id"
 }
 ```
+
+Error payloads may include a `request_id` field for correlation with server logs. The same value is typically also sent as the `X-Request-Id` response header.
+
+## Request bodies (POST / PUT / PATCH)
+
+`POST`, `PUT`, and `PATCH` requests that send a body must use `Content-Type: application/json`. Other content types receive `415 Unsupported Media Type`.
 
 Common HTTP status codes:
 
@@ -116,3 +123,13 @@ Common HTTP status codes:
 ## Rate Limiting
 
 Evaluation endpoints are rate-limited to **1000 requests per minute** per client. The client is identified by the first 12 characters of the `X-API-Key` header, or by IP address if no key is provided.
+
+Responses from rate-limited routes include standard headers you can use to avoid hitting limits:
+
+| Header | Meaning |
+|--------|---------|
+| `X-RateLimit-Limit` | Maximum requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining before the limit is hit |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
+Limits differ by route group (for example, auth and evaluation use different values). Clients should read these headers and back off when `X-RateLimit-Remaining` is low or after a `429 Too Many Requests` response.

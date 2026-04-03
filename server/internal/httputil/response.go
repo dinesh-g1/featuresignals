@@ -6,9 +6,10 @@ import (
 )
 
 type ErrorResponse struct {
-	Error   string `json:"error"`
-	Code    string `json:"code,omitempty"`
-	Details string `json:"details,omitempty"`
+	Error     string `json:"error"`
+	Code      string `json:"code,omitempty"`
+	Details   string `json:"details,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 }
 
 func JSON(w http.ResponseWriter, status int, data interface{}) {
@@ -18,7 +19,8 @@ func JSON(w http.ResponseWriter, status int, data interface{}) {
 }
 
 func Error(w http.ResponseWriter, status int, message string) {
-	JSON(w, status, ErrorResponse{Error: message})
+	reqID := w.Header().Get("X-Request-Id")
+	JSON(w, status, ErrorResponse{Error: message, RequestID: reqID})
 }
 
 func DecodeJSON(r *http.Request, v interface{}) error {

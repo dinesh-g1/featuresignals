@@ -29,7 +29,7 @@ POST /v1/auth/register
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `email` | string | Yes | User email address |
-| `password` | string | Yes | Minimum 8 characters |
+| `password` | string | Yes | Minimum 8 characters with at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character |
 | `name` | string | Yes | Display name |
 | `org_name` | string | Yes | Organization name |
 
@@ -41,8 +41,10 @@ POST /v1/auth/register
     "id": "uuid",
     "email": "admin@example.com",
     "name": "Admin User",
-    "created_at": "2026-04-01T00:00:00Z",
-    "updated_at": "2026-04-01T00:00:00Z"
+    "phone": "+1234567890",
+    "phone_verified": false,
+    "email_verified": false,
+    "created_at": "2026-04-01T00:00:00Z"
   },
   "organization": {
     "id": "uuid",
@@ -89,7 +91,11 @@ POST /v1/auth/login
   "user": {
     "id": "uuid",
     "email": "admin@example.com",
-    "name": "Admin User"
+    "name": "Admin User",
+    "phone": "+1234567890",
+    "phone_verified": false,
+    "email_verified": false,
+    "created_at": "2026-04-01T00:00:00Z"
   },
   "tokens": {
     "access_token": "eyJ...",
@@ -132,6 +138,8 @@ POST /v1/auth/refresh
   "expires_at": 1711929600
 }
 ```
+
+**Important:** Refresh tokens cannot be used in place of access tokens. The server validates token type and will reject refresh tokens presented as Bearer tokens.
 
 ---
 
@@ -294,7 +302,11 @@ POST /v1/auth/token-exchange
   "user": {
     "id": "uuid",
     "email": "jane@company.com",
-    "name": "Jane Smith"
+    "name": "Jane Smith",
+    "phone": "+1234567890",
+    "phone_verified": false,
+    "email_verified": false,
+    "created_at": "2026-04-01T00:00:00Z"
   },
   "tokens": {
     "access_token": "eyJ...",

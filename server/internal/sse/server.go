@@ -39,7 +39,6 @@ func (s *Server) HandleStream(w http.ResponseWriter, r *http.Request, envID stri
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	client := &Client{
 		envID:  envID,

@@ -4,11 +4,14 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
@@ -38,8 +41,9 @@ func generateAPIKey(keyType domain.APIKeyType) (string, string, string) {
 }
 
 type CreateAPIKeyRequest struct {
-	Name string `json:"name"`
-	Type string `json:"type"` // "server" or "client"
+	Name          string `json:"name"`
+	Type          string `json:"type"` // "server" or "client"
+	ExpiresInDays *int   `json:"expires_in_days,omitempty"`
 }
 
 func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +77,10 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:      req.Name,
 		Type:      keyType,
 	}
+	if req.ExpiresInDays != nil && *req.ExpiresInDays > 0 {
+		exp := time.Now().Add(time.Duration(*req.ExpiresInDays) * 24 * time.Hour)
+		apiKey.ExpiresAt = &exp
+	}
 
 	if err := h.store.CreateAPIKey(r.Context(), apiKey); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to create API key")
@@ -80,7 +88,7 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return the full key only on creation — it's never shown again
-	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
+	resp := map[string]interface{}{
 		"id":         apiKey.ID,
 		"key":        rawKey,
 		"key_prefix": apiKey.KeyPrefix,
@@ -88,7 +96,26 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		"type":       apiKey.Type,
 		"env_id":     apiKey.EnvID,
 		"created_at": apiKey.CreatedAt,
+	}
+	if apiKey.ExpiresAt != nil {
+		resp["expires_at"] = apiKey.ExpiresAt
+	}
+
+	actorID := middleware.GetUserID(r.Context())
+	orgID := middleware.GetOrgID(r.Context())
+	keyIDStr := apiKey.ID
+	meta, _ := json.Marshal(map[string]string{"key_prefix": apiKey.KeyPrefix, "env_id": envID})
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &actorID,
+		ActorType:    "user",
+		Action:       "api_key.created",
+		ResourceType: "api_key",
+		ResourceID:   &keyIDStr,
+		Metadata:     meta,
 	})
+
+	httputil.JSON(w, http.StatusCreated, resp)
 }
 
 func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -109,9 +136,41 @@ func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *APIKeyHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 	keyID := chi.URLParam(r, "keyID")
+
+	apiKey, err := h.store.GetAPIKeyByID(r.Context(), keyID)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "API key not found")
+		return
+	}
+
+	env, err := h.store.GetEnvironment(r.Context(), apiKey.EnvID)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "API key not found")
+		return
+	}
+	project, err := h.store.GetProject(r.Context(), env.ProjectID)
+	if err != nil || project.OrgID != middleware.GetOrgID(r.Context()) {
+		httputil.Error(w, http.StatusNotFound, "API key not found")
+		return
+	}
+
 	if err := h.store.RevokeAPIKey(r.Context(), keyID); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to revoke API key")
 		return
 	}
+
+	actorID := middleware.GetUserID(r.Context())
+	orgID := middleware.GetOrgID(r.Context())
+	meta, _ := json.Marshal(map[string]string{"key_prefix": apiKey.KeyPrefix})
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &actorID,
+		ActorType:    "user",
+		Action:       "api_key.revoked",
+		ResourceType: "api_key",
+		ResourceID:   &keyID,
+		Metadata:     meta,
+	})
+
 	w.WriteHeader(http.StatusNoContent)
 }

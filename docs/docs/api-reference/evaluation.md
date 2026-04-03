@@ -7,6 +7,8 @@ title: Evaluation
 
 The evaluation API is used by SDKs to evaluate feature flags. Authenticated via API key.
 
+For **POST** endpoints, requests must include `Content-Type: application/json`.
+
 ## Single Evaluation
 
 ```
@@ -88,6 +90,8 @@ POST /v1/evaluate/bulk
 }
 ```
 
+The `flag_keys` array is limited to **100** items per request.
+
 ### Response `200 OK`
 
 Returns a map keyed by flag key:
@@ -122,7 +126,7 @@ Get all evaluated flag values for an environment. This is the primary endpoint u
 GET /v1/client/{envKey}/flags?key={userKey}
 ```
 
-**Auth**: API Key (`X-API-Key` header or `api_key` query parameter)
+**Auth**: API Key (`X-API-Key` header). The `api_key` query parameter is **deprecated**; prefer the header so keys are not logged in URLs.
 
 ### Parameters
 
@@ -151,10 +155,10 @@ Returns a flat map of flag key to evaluated value:
 Subscribe to real-time flag updates via Server-Sent Events.
 
 ```
-GET /v1/stream/{envKey}?api_key={apiKey}
+GET /v1/stream/{envKey}
 ```
 
-**Auth**: API Key (`X-API-Key` header or `api_key` query parameter)
+**Auth**: API Key (`X-API-Key` header). The `api_key` query parameter is **deprecated**; prefer the header so keys are not logged in URLs.
 
 ### Events
 

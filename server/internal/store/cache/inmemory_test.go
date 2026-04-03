@@ -81,6 +81,7 @@ func (m *mockStore) GetSegment(_ context.Context, _, _ string) (*domain.Segment,
 func (m *mockStore) UpdateSegment(_ context.Context, _ *domain.Segment) error { return nil }
 func (m *mockStore) DeleteSegment(_ context.Context, _ string) error { return nil }
 func (m *mockStore) CreateAPIKey(_ context.Context, _ *domain.APIKey) error { return nil }
+func (m *mockStore) GetAPIKeyByID(_ context.Context, _ string) (*domain.APIKey, error) { return nil, nil }
 func (m *mockStore) GetAPIKeyByHash(_ context.Context, _ string) (*domain.APIKey, error) { return nil, nil }
 func (m *mockStore) ListAPIKeys(_ context.Context, _ string) ([]domain.APIKey, error) { return nil, nil }
 func (m *mockStore) RevokeAPIKey(_ context.Context, _ string) error { return nil }

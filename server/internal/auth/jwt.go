@@ -20,6 +20,7 @@ type TokenManager interface {
 	GenerateTokenPair(userID, orgID, role string) (*TokenPair, error)
 	GenerateDemoTokenPair(userID, orgID, role string, demoExpiresAt int64) (*TokenPair, error)
 	ValidateToken(tokenStr string) (*Claims, error)
+	ValidateRefreshToken(tokenStr string) (*Claims, error)
 }
 
 type Claims struct {
@@ -144,6 +145,15 @@ func (m *JWTManager) GenerateDemoTokenPair(userID, orgID, role string, demoExpir
 }
 
 func (m *JWTManager) ValidateToken(tokenStr string) (*Claims, error) {
+	return m.validateTokenWithIssuer(tokenStr, "featuresignals")
+}
+
+// ValidateRefreshToken validates a refresh token specifically, rejecting access tokens.
+func (m *JWTManager) ValidateRefreshToken(tokenStr string) (*Claims, error) {
+	return m.validateTokenWithIssuer(tokenStr, "featuresignals-refresh")
+}
+
+func (m *JWTManager) validateTokenWithIssuer(tokenStr, expectedIssuer string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
@@ -156,6 +166,10 @@ func (m *JWTManager) ValidateToken(tokenStr string) (*Claims, error) {
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	if claims.Issuer != expectedIssuer {
 		return nil, ErrInvalidToken
 	}
 

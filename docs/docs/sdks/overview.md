@@ -108,3 +108,9 @@ client.Dispose(); // C#
 ## OpenFeature Support
 
 All server SDKs include an [OpenFeature](https://openfeature.dev/) provider for vendor-neutral flag consumption. See the [OpenFeature guide](/sdks/openfeature) for details.
+
+## API keys and HTTP behavior
+
+- **API key expiration**: Environment API keys can be created with an optional expiration time. Expired keys are rejected; rotate keys before they expire.
+- **SSE authentication**: Passing the API key as the `api_key` query parameter on `GET /v1/stream/{envKey}` is **deprecated** and will be removed in a future version. Use the `X-API-Key` header instead.
+- **Rate limits**: Evaluation and other rate-limited responses include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. SDKs should respect these (for example by backing off or reducing request frequency) to avoid `429` responses.

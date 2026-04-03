@@ -29,6 +29,11 @@ import (
 func main() {
 	cfg := config.Load()
 
+	if cfg.JWTSecret == "dev-secret-change-in-production" && cfg.LogLevel != "debug" {
+		fmt.Fprintln(os.Stderr, "FATAL: JWT_SECRET is set to the default value. Set a strong secret for non-development environments.")
+		os.Exit(1)
+	}
+
 	// Logger
 	logLevel := slog.LevelInfo
 	if cfg.LogLevel == "debug" {

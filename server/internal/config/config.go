@@ -40,7 +40,7 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		Port:        getEnvInt("PORT", 8080),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=require"),
 		JWTSecret:   getEnv("JWT_SECRET", "dev-secret-change-in-production"),
 		TokenTTL:    time.Duration(getEnvInt("TOKEN_TTL_MINUTES", 60)) * time.Minute,
 		RefreshTTL:  time.Duration(getEnvInt("REFRESH_TTL_HOURS", 168)) * time.Hour, // 7 days

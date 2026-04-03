@@ -94,6 +94,28 @@ func generateOTP() (string, error) {
 	return otp, nil
 }
 
+type safeUser struct {
+	ID            string    `json:"id"`
+	Email         string    `json:"email"`
+	Name          string    `json:"name"`
+	Phone         string    `json:"phone,omitempty"`
+	PhoneVerified bool      `json:"phone_verified"`
+	EmailVerified bool      `json:"email_verified"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+func sanitizeUser(u *domain.User) safeUser {
+	return safeUser{
+		ID:            u.ID,
+		Email:         u.Email,
+		Name:          u.Name,
+		Phone:         u.Phone,
+		PhoneVerified: u.PhoneVerified,
+		EmailVerified: u.EmailVerified,
+		CreatedAt:     u.CreatedAt,
+	}
+}
+
 func generateEmailToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -142,7 +164,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Phone:        req.Phone,
 	}
 	if err := h.store.CreateUser(r.Context(), user); err != nil {
-		log.Warn("registration failed: duplicate email", "email", req.Email)
+		log.Warn("registration failed: duplicate email")
 		httputil.Error(w, http.StatusConflict, "email already registered")
 		return
 	}
@@ -218,10 +240,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("user registered", "user_id", user.ID, "org_id", org.ID, "email", req.Email)
+	log.Info("user registered", "user_id", user.ID, "org_id", org.ID)
 
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
-		"user":         user,
+		"user":         sanitizeUser(user),
 		"organization": org,
 		"tokens":       tokens,
 	})
@@ -238,35 +260,25 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		log.Warn("login failed: unknown email", "email", req.Email)
+		log.Warn("login failed: unknown email")
 		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
 	if !auth.CheckPassword(req.Password, user.PasswordHash) {
-		log.Warn("login failed: bad password", "email", req.Email, "user_id", user.ID)
+		log.Warn("login failed: bad password", "user_id", user.ID)
 		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
 	member, err := h.store.GetOrgMember(r.Context(), "", user.ID)
-	orgID := ""
-	role := string(domain.RoleDeveloper)
-	if err == nil {
-		orgID = member.OrgID
-		role = string(member.Role)
+	if err != nil {
+		log.Warn("login failed: no org membership", "user_id", user.ID)
+		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
+		return
 	}
-
-	if orgID == "" {
-		members, _ := h.store.ListOrgMembers(r.Context(), "")
-		for _, m := range members {
-			if m.UserID == user.ID {
-				orgID = m.OrgID
-				role = string(m.Role)
-				break
-			}
-		}
-	}
+	orgID := member.OrgID
+	role := string(member.Role)
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, orgID, role)
 	if err != nil {
@@ -278,7 +290,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	log.Info("user logged in", "user_id", user.ID, "org_id", orgID, "role", role)
 
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"user":   user,
+		"user":   sanitizeUser(user),
 		"tokens": tokens,
 	})
 }
@@ -292,7 +304,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, err := h.jwtMgr.ValidateToken(req.RefreshToken)
+	claims, err := h.jwtMgr.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		log.Warn("invalid refresh token")
 		httputil.Error(w, http.StatusUnauthorized, "invalid refresh token")
@@ -368,7 +380,7 @@ func (h *AuthHandler) SendOTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Info("OTP sent", "user_id", userID, "phone", req.Phone)
+	log.Info("OTP sent", "user_id", userID)
 	httputil.JSON(w, http.StatusOK, map[string]string{"message": "OTP sent"})
 }
 
@@ -470,7 +482,7 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmailVerifyToken(r.Context(), token)
 	if err != nil {
-		log.Warn("invalid email verification token", "token", token)
+		log.Warn("invalid email verification token")
 		httputil.Error(w, http.StatusBadRequest, "invalid or expired token")
 		return
 	}
@@ -530,8 +542,11 @@ func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 	user, _ := h.store.GetUserByID(r.Context(), userID)
 
 	log.Info("one-time token exchanged", "user_id", userID, "org_id", orgID)
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
+	resp := map[string]interface{}{
 		"tokens": tokens,
-		"user":   user,
-	})
+	}
+	if user != nil {
+		resp["user"] = sanitizeUser(user)
+	}
+	httputil.JSON(w, http.StatusOK, resp)
 }

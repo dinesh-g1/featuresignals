@@ -12,8 +12,8 @@ All configuration is done via environment variables.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP server port |
-| `DATABASE_URL` | `postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable` | PostgreSQL connection string |
-| `JWT_SECRET` | `dev-secret-change-in-production` | Secret for JWT token signing |
+| `DATABASE_URL` | `postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=require` | PostgreSQL connection string |
+| `JWT_SECRET` | `dev-secret-change-in-production` | Secret for JWT token signing. Must not be left at the default in non-debug environments — the server will refuse to start. |
 | `TOKEN_TTL_MINUTES` | `60` | Access token lifetime (minutes) |
 | `REFRESH_TTL_HOURS` | `168` | Refresh token lifetime (hours, default 7 days) |
 | `LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |

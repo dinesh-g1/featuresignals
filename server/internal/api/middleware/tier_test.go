@@ -109,6 +109,9 @@ func (s *tierMockStore) GetSegment(context.Context, string, string) (*domain.Seg
 func (s *tierMockStore) UpdateSegment(context.Context, *domain.Segment) error  { return nil }
 func (s *tierMockStore) DeleteSegment(context.Context, string) error           { return nil }
 func (s *tierMockStore) CreateAPIKey(context.Context, *domain.APIKey) error    { return nil }
+func (s *tierMockStore) GetAPIKeyByID(context.Context, string) (*domain.APIKey, error) {
+	return nil, fmt.Errorf("not found")
+}
 func (s *tierMockStore) GetAPIKeyByHash(context.Context, string) (*domain.APIKey, error) {
 	return nil, fmt.Errorf("not found")
 }
