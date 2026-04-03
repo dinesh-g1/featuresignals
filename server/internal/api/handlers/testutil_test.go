@@ -37,8 +37,16 @@ type mockStore struct {
 	webhooksByOrg  map[string][]string               // orgID -> []webhookID
 	whDeliveries     map[string][]domain.WebhookDelivery   // webhookID -> deliveries
 	onboardingStates map[string]*domain.OnboardingState   // orgID -> state
+	oneTimeTokens    map[string]*ottEntry                 // token -> entry
 
 	idCounter int
+}
+
+type ottEntry struct {
+	userID    string
+	orgID     string
+	used      bool
+	expiresAt time.Time
 }
 
 func newMockStore() *mockStore {
@@ -65,6 +73,7 @@ func newMockStore() *mockStore {
 		webhooksByOrg:    make(map[string][]string),
 		whDeliveries:     make(map[string][]domain.WebhookDelivery),
 		onboardingStates: make(map[string]*domain.OnboardingState),
+		oneTimeTokens:    make(map[string]*ottEntry),
 	}
 }
 
@@ -838,6 +847,43 @@ func (m *mockStore) CreateDemoFeedback(ctx context.Context, fb *domain.DemoFeedb
 	fb.ID = m.nextID()
 	fb.CreatedAt = time.Now()
 	return nil
+}
+
+func (m *mockStore) DeleteDemoData(ctx context.Context, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for key, p := range m.projects {
+		if p.OrgID == orgID {
+			delete(m.projects, key)
+		}
+	}
+	delete(m.projectsByOrg, orgID)
+	return nil
+}
+
+func (m *mockStore) CreateOneTimeToken(ctx context.Context, userID, orgID string, ttl time.Duration) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	token := fmt.Sprintf("ott-%d", m.idCounter)
+	m.idCounter++
+	m.oneTimeTokens[token] = &ottEntry{
+		userID:    userID,
+		orgID:     orgID,
+		used:      false,
+		expiresAt: time.Now().Add(ttl),
+	}
+	return token, nil
+}
+
+func (m *mockStore) ConsumeOneTimeToken(ctx context.Context, token string) (string, string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	entry, ok := m.oneTimeTokens[token]
+	if !ok || entry.used || time.Now().After(entry.expiresAt) {
+		return "", "", fmt.Errorf("invalid or expired token")
+	}
+	entry.used = true
+	return entry.userID, entry.orgID, nil
 }
 
 func jsonRaw(v interface{}) json.RawMessage {

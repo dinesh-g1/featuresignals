@@ -135,3 +135,99 @@ func TestGetRole_NoContext(t *testing.T) {
 		t.Errorf("expected empty string, got %s", role)
 	}
 }
+
+func TestGetClaims_NoContext(t *testing.T) {
+	ctx := context.Background()
+	claims := GetClaims(ctx)
+	if claims != nil {
+		t.Errorf("expected nil claims, got %+v", claims)
+	}
+}
+
+func TestGetClaims_WithContext(t *testing.T) {
+	mgr := newTestJWTManager()
+	pair, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin")
+
+	handler := JWTAuth(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims := GetClaims(r.Context())
+		if claims == nil {
+			t.Error("expected claims in context")
+			return
+		}
+		if claims.UserID != "user-1" {
+			t.Errorf("expected user-1, got %s", claims.UserID)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+}
+
+// --- Demo Expiry Middleware Tests ---
+
+func TestDemoExpiry_NonDemoUser_Passes(t *testing.T) {
+	mgr := newTestJWTManager()
+	pair, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin")
+
+	handler := JWTAuth(mgr)(DemoExpiry("https://demo.example.com/register")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})))
+
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("non-demo user should pass through, got %d", w.Code)
+	}
+}
+
+func TestDemoExpiry_ActiveDemo_Passes(t *testing.T) {
+	mgr := newTestJWTManager()
+	futureExpiry := time.Now().Add(24 * time.Hour).Unix()
+	pair, _ := mgr.GenerateDemoTokenPair("user-1", "org-1", "admin", futureExpiry)
+
+	handler := JWTAuth(mgr)(DemoExpiry("https://demo.example.com/register")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})))
+
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("active demo user should pass through, got %d", w.Code)
+	}
+}
+
+func TestDemoExpiry_ExpiredDemo_Blocked(t *testing.T) {
+	mgr := newTestJWTManager()
+	pastExpiry := time.Now().Add(-1 * time.Hour).Unix()
+	pair, _ := mgr.GenerateDemoTokenPair("user-1", "org-1", "admin", pastExpiry)
+
+	handler := JWTAuth(mgr)(DemoExpiry("https://demo.example.com/register")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})))
+
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("expired demo user should be blocked with 403, got %d", w.Code)
+	}
+
+	body := w.Body.String()
+	if body == "" {
+		t.Error("expected error body")
+	}
+}

@@ -54,14 +54,14 @@ export function DemoBanner() {
           </div>
           <h2 className="text-center text-xl font-bold text-slate-900">Your demo has expired</h2>
           <p className="mt-2 text-center text-sm text-slate-500">
-            Register now to keep all your flags and settings, or share your feedback with us.
+            Register to keep your data, choose a plan, and continue using FeatureSignals.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <Link
               href="/demo/register"
               className="block w-full rounded-lg bg-indigo-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-indigo-700"
             >
-              Register to Keep Your Data
+              Register & Choose a Plan
             </Link>
             <button
               onClick={() => setFeedbackOpen(true)}
@@ -137,7 +137,7 @@ export function DemoBanner() {
           <span className="font-medium">
             Your demo expires in {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}!
           </span>
-          <span className="hidden sm:inline">Register now to keep all your flags and settings.</span>
+          <span className="hidden sm:inline">Register now to keep your data and choose a plan.</span>
         </div>
         <Link
           href="/demo/register"

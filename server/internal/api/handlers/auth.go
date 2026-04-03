@@ -477,3 +477,49 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	log.Info("email verified", "user_id", user.ID)
 	http.Redirect(w, r, h.dashboardURL+"/login?email_verified=true", http.StatusFound)
 }
+
+// TokenExchange swaps a short-lived, single-use one-time token for a standard
+// JWT pair. Used for cross-domain redirects (demo → main dashboard).
+func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+
+	var req struct {
+		Token string `json:"token"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.Token == "" {
+		httputil.Error(w, http.StatusBadRequest, "token is required")
+		return
+	}
+
+	userID, orgID, err := h.store.ConsumeOneTimeToken(r.Context(), req.Token)
+	if err != nil {
+		log.Warn("invalid one-time token exchange attempt", "error", err)
+		httputil.Error(w, http.StatusUnauthorized, "invalid or expired token")
+		return
+	}
+
+	member, err := h.store.GetOrgMember(r.Context(), orgID, userID)
+	role := string(domain.RoleDeveloper)
+	if err == nil {
+		role = string(member.Role)
+	}
+
+	tokens, err := h.jwtMgr.GenerateTokenPair(userID, orgID, role)
+	if err != nil {
+		log.Error("failed to generate tokens for token exchange", "error", err, "user_id", userID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
+		return
+	}
+
+	user, _ := h.store.GetUserByID(r.Context(), userID)
+
+	log.Info("one-time token exchanged", "user_id", userID, "org_id", orgID)
+	httputil.JSON(w, http.StatusOK, map[string]interface{}{
+		"tokens": tokens,
+		"user":   user,
+	})
+}

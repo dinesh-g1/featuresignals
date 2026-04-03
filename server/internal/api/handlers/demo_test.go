@@ -16,7 +16,11 @@ import (
 func newTestDemoHandler() (*DemoHandler, *mockStore) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	return NewDemoHandler(store, jwtMgr, nil), store
+	return NewDemoHandler(DemoHandlerConfig{
+		Store:  store,
+		JWTMgr: jwtMgr,
+		Logger: nil,
+	}), store
 }
 
 func TestDemoHandler_CreateSession(t *testing.T) {
@@ -120,7 +124,7 @@ func TestDemoHandler_Convert(t *testing.T) {
 	userID := user["id"].(string)
 	orgID := org["id"].(string)
 
-	body := `{"email":"real@company.com","password":"Secure@123","name":"Real User","org_name":"Real Company"}`
+	body := `{"email":"real@company.com","password":"Secure@123","name":"Real User","org_name":"Real Company","phone":"+15551234567"}`
 	r := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(body))
 	ctx := context.WithValue(r.Context(), middleware.UserIDKey, userID)
 	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
@@ -167,11 +171,12 @@ func TestDemoHandler_Convert_MissingFields(t *testing.T) {
 		name string
 		body string
 	}{
-		{"missing email", `{"password":"Secure@123","name":"Test","org_name":"Org"}`},
-		{"missing password", `{"email":"t@t.com","name":"Test","org_name":"Org"}`},
-		{"missing name", `{"email":"t@t.com","password":"Secure@123","org_name":"Org"}`},
-		{"missing org_name", `{"email":"t@t.com","password":"Secure@123","name":"Test"}`},
-		{"weak password", `{"email":"t@t.com","password":"weak","name":"Test","org_name":"Org"}`},
+		{"missing email", `{"password":"Secure@123","name":"Test","org_name":"Org","phone":"+15551234567"}`},
+		{"missing password", `{"email":"t@t.com","name":"Test","org_name":"Org","phone":"+15551234567"}`},
+		{"missing name", `{"email":"t@t.com","password":"Secure@123","org_name":"Org","phone":"+15551234567"}`},
+		{"missing org_name", `{"email":"t@t.com","password":"Secure@123","name":"Test","phone":"+15551234567"}`},
+		{"missing phone", `{"email":"t@t.com","password":"Secure@123","name":"Test","org_name":"Org"}`},
+		{"weak password", `{"email":"t@t.com","password":"weak","name":"Test","org_name":"Org","phone":"+15551234567"}`},
 	}
 
 	for _, tt := range tests {
@@ -200,7 +205,7 @@ func TestDemoHandler_Convert_DuplicateEmail(t *testing.T) {
 	u1 := r1["user"].(map[string]interface{})
 	o1 := r1["organization"].(map[string]interface{})
 
-	body1 := `{"email":"taken@company.com","password":"Secure@123","name":"User 1","org_name":"Org 1"}`
+	body1 := `{"email":"taken@company.com","password":"Secure@123","name":"User 1","org_name":"Org 1","phone":"+15551111111"}`
 	req1 := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(body1))
 	ctx1 := context.WithValue(req1.Context(), middleware.UserIDKey, u1["id"].(string))
 	ctx1 = context.WithValue(ctx1, middleware.OrgIDKey, o1["id"].(string))
@@ -219,7 +224,7 @@ func TestDemoHandler_Convert_DuplicateEmail(t *testing.T) {
 	u2 := r2["user"].(map[string]interface{})
 	o2 := r2["organization"].(map[string]interface{})
 
-	body2 := `{"email":"taken@company.com","password":"Secure@123","name":"User 2","org_name":"Org 2"}`
+	body2 := `{"email":"taken@company.com","password":"Secure@123","name":"User 2","org_name":"Org 2","phone":"+15552222222"}`
 	req2 := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(body2))
 	ctx2 := context.WithValue(req2.Context(), middleware.UserIDKey, u2["id"].(string))
 	ctx2 = context.WithValue(ctx2, middleware.OrgIDKey, o2["id"].(string))
@@ -301,6 +306,142 @@ func TestDemoHandler_SampleDataContents(t *testing.T) {
 	}
 	if !foundBetaSegment {
 		t.Error("expected 'beta-users' segment")
+	}
+}
+
+func TestDemoHandler_SelectPlan_Free(t *testing.T) {
+	h, store := newTestDemoHandler()
+	h.dashboardURL = "https://app.featuresignals.com"
+
+	createReq := httptest.NewRequest("POST", "/v1/demo/session", nil)
+	createW := httptest.NewRecorder()
+	h.CreateSession(createW, createReq)
+
+	var createResult map[string]interface{}
+	json.Unmarshal(createW.Body.Bytes(), &createResult)
+	user := createResult["user"].(map[string]interface{})
+	org := createResult["organization"].(map[string]interface{})
+	userID := user["id"].(string)
+	orgID := org["id"].(string)
+
+	// First convert the demo
+	convBody := `{"email":"test@company.com","password":"Secure@123","name":"Test","org_name":"Test Org","phone":"+15551234567"}`
+	convReq := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(convBody))
+	ctx := context.WithValue(convReq.Context(), middleware.UserIDKey, userID)
+	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
+	convReq = convReq.WithContext(ctx)
+	convW := httptest.NewRecorder()
+	h.Convert(convW, convReq)
+	if convW.Code != http.StatusOK {
+		t.Fatalf("convert failed: %d %s", convW.Code, convW.Body.String())
+	}
+
+	// Select free plan with data retention
+	planBody := `{"plan":"free","retain_data":true}`
+	planReq := httptest.NewRequest("POST", "/v1/demo/select-plan", strings.NewReader(planBody))
+	ctx = context.WithValue(planReq.Context(), middleware.UserIDKey, userID)
+	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
+	planReq = planReq.WithContext(ctx)
+	planW := httptest.NewRecorder()
+	h.SelectPlan(planW, planReq)
+
+	if planW.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", planW.Code, planW.Body.String())
+	}
+
+	var planResult map[string]interface{}
+	json.Unmarshal(planW.Body.Bytes(), &planResult)
+	if planResult["plan"] != "free" {
+		t.Errorf("expected free plan, got %v", planResult["plan"])
+	}
+	redirectURL, ok := planResult["redirect_url"].(string)
+	if !ok || redirectURL == "" {
+		t.Error("expected redirect_url for free plan")
+	}
+	if !strings.Contains(redirectURL, "/auth/exchange?token=") {
+		t.Errorf("redirect should contain /auth/exchange?token=, got %s", redirectURL)
+	}
+
+	store.mu.RLock()
+	o := store.orgs[orgID]
+	store.mu.RUnlock()
+	if o.Plan != "free" {
+		t.Errorf("org plan should be free, got %s", o.Plan)
+	}
+}
+
+func TestDemoHandler_SelectPlan_Pro(t *testing.T) {
+	h, _ := newTestDemoHandler()
+	h.payuMerchantKey = "test_key"
+	h.payuSalt = "test_salt"
+	h.payuMode = "test"
+	h.appBaseURL = "https://api.featuresignals.com"
+
+	createReq := httptest.NewRequest("POST", "/v1/demo/session", nil)
+	createW := httptest.NewRecorder()
+	h.CreateSession(createW, createReq)
+
+	var createResult map[string]interface{}
+	json.Unmarshal(createW.Body.Bytes(), &createResult)
+	user := createResult["user"].(map[string]interface{})
+	org := createResult["organization"].(map[string]interface{})
+	userID := user["id"].(string)
+	orgID := org["id"].(string)
+
+	// Convert first
+	convBody := `{"email":"pro@company.com","password":"Secure@123","name":"Pro User","org_name":"Pro Org","phone":"+15551234567"}`
+	convReq := httptest.NewRequest("POST", "/v1/demo/convert", strings.NewReader(convBody))
+	ctx := context.WithValue(convReq.Context(), middleware.UserIDKey, userID)
+	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
+	convReq = convReq.WithContext(ctx)
+	convW := httptest.NewRecorder()
+	h.Convert(convW, convReq)
+
+	// Select pro plan
+	planBody := `{"plan":"pro","retain_data":false}`
+	planReq := httptest.NewRequest("POST", "/v1/demo/select-plan", strings.NewReader(planBody))
+	ctx = context.WithValue(planReq.Context(), middleware.UserIDKey, userID)
+	ctx = context.WithValue(ctx, middleware.OrgIDKey, orgID)
+	planReq = planReq.WithContext(ctx)
+	planW := httptest.NewRecorder()
+	h.SelectPlan(planW, planReq)
+
+	if planW.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", planW.Code, planW.Body.String())
+	}
+
+	var planResult map[string]string
+	json.Unmarshal(planW.Body.Bytes(), &planResult)
+	if planResult["plan"] != "pro" {
+		t.Errorf("expected pro plan, got %s", planResult["plan"])
+	}
+	if planResult["payu_url"] == "" {
+		t.Error("expected payu_url for pro plan")
+	}
+	if planResult["key"] != "test_key" {
+		t.Errorf("expected test_key, got %s", planResult["key"])
+	}
+	if !strings.HasPrefix(planResult["txnid"], "DEMO_") {
+		t.Errorf("demo checkout txnid should start with DEMO_, got %s", planResult["txnid"])
+	}
+	if planResult["hash"] == "" {
+		t.Error("expected non-empty hash")
+	}
+}
+
+func TestDemoHandler_SelectPlan_InvalidPlan(t *testing.T) {
+	h, _ := newTestDemoHandler()
+
+	body := `{"plan":"enterprise","retain_data":true}`
+	r := httptest.NewRequest("POST", "/v1/demo/select-plan", strings.NewReader(body))
+	ctx := context.WithValue(r.Context(), middleware.UserIDKey, "u1")
+	ctx = context.WithValue(ctx, middleware.OrgIDKey, "o1")
+	r = r.WithContext(ctx)
+	w := httptest.NewRecorder()
+	h.SelectPlan(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
 	}
 }
 

@@ -505,3 +505,91 @@ func TestAuthHandler_VerifyEmail_MissingToken(t *testing.T) {
 		t.Errorf("expected 400, got %d", w.Code)
 	}
 }
+
+// --- Token Exchange Tests ---
+
+func TestAuthHandler_TokenExchange_Success(t *testing.T) {
+	h, store := newTestAuthHandler()
+
+	userID, orgID := registerAndExtract(t, h, "exchange-success@test.com")
+
+	// Create a one-time token
+	ott, err := store.CreateOneTimeToken(context.Background(), userID, orgID, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("failed to create one-time token: %v", err)
+	}
+
+	body := `{"token":"` + ott + `"}`
+	r := httptest.NewRequest("POST", "/v1/auth/token-exchange", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.TokenExchange(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var result map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if result["tokens"] == nil {
+		t.Error("expected tokens in response")
+	}
+	tokens := result["tokens"].(map[string]interface{})
+	if tokens["access_token"] == nil || tokens["access_token"].(string) == "" {
+		t.Error("expected non-empty access_token")
+	}
+}
+
+func TestAuthHandler_TokenExchange_InvalidToken(t *testing.T) {
+	h, _ := newTestAuthHandler()
+
+	body := `{"token":"nonexistent-token"}`
+	r := httptest.NewRequest("POST", "/v1/auth/token-exchange", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.TokenExchange(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", w.Code)
+	}
+}
+
+func TestAuthHandler_TokenExchange_MissingToken(t *testing.T) {
+	h, _ := newTestAuthHandler()
+
+	body := `{}`
+	r := httptest.NewRequest("POST", "/v1/auth/token-exchange", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.TokenExchange(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestAuthHandler_TokenExchange_Replay(t *testing.T) {
+	h, store := newTestAuthHandler()
+
+	userID, orgID := registerAndExtract(t, h, "exchange-replay@test.com")
+
+	ott, err := store.CreateOneTimeToken(context.Background(), userID, orgID, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("failed to create one-time token: %v", err)
+	}
+
+	body := `{"token":"` + ott + `"}`
+
+	// First use should succeed
+	r1 := httptest.NewRequest("POST", "/v1/auth/token-exchange", strings.NewReader(body))
+	w1 := httptest.NewRecorder()
+	h.TokenExchange(w1, r1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected 200 on first use, got %d", w1.Code)
+	}
+
+	// Second use should fail (token is consumed)
+	r2 := httptest.NewRequest("POST", "/v1/auth/token-exchange", strings.NewReader(body))
+	w2 := httptest.NewRecorder()
+	h.TokenExchange(w2, r2)
+	if w2.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 on replay, got %d", w2.Code)
+	}
+}

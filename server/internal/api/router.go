@@ -87,7 +87,18 @@ func NewRouter(
 	metricsH := handlers.NewMetricsHandler(metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.PayUMerchantKey, billing.PayUSalt, billing.PayUMode, billing.DashboardURL, billing.AppBaseURL, logger)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
-	demoH := handlers.NewDemoHandler(store, jwtMgr, logger)
+	demoH := handlers.NewDemoHandler(handlers.DemoHandlerConfig{
+		Store:           store,
+		JWTMgr:          jwtMgr,
+		Logger:          logger,
+		SMSClient:       smsClient,
+		EmailSender:     emailSender,
+		AppBaseURL:      appBaseURL,
+		DashboardURL:    dashboardURL,
+		PayUMerchantKey: billing.PayUMerchantKey,
+		PayUSalt:        billing.PayUSalt,
+		PayUMode:        billing.PayUMode,
+	})
 
 	jwtAuth := middleware.JWTAuth(jwtMgr)
 
@@ -97,6 +108,7 @@ func NewRouter(
 		r.Post("/auth/login", authH.Login)
 		r.Post("/auth/refresh", authH.Refresh)
 		r.Get("/auth/verify-email", authH.VerifyEmail)
+		r.Post("/auth/token-exchange", authH.TokenExchange)
 
 		// PayU callbacks (public — PayU redirects here after payment)
 		r.Post("/billing/payu/callback", billingH.PayUCallback)
@@ -110,6 +122,7 @@ func NewRouter(
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
 			r.Post("/demo/convert", demoH.Convert)
+			r.Post("/demo/select-plan", demoH.SelectPlan)
 			r.Post("/demo/feedback", demoH.Feedback)
 		})
 
@@ -141,9 +154,10 @@ func NewRouter(
 			r.Post("/track", metricsH.TrackImpression)
 		})
 
-		// Management API (authenticated via JWT, with tier enforcement)
+		// Management API (authenticated via JWT, with demo expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
+			r.Use(middleware.DemoExpiry(dashboardURL + "/demo/register"))
 			r.Use(middleware.TierEnforce(store, logger))
 
 			// ── Read-only routes (all authenticated roles) ───────────

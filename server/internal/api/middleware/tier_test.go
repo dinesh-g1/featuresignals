@@ -180,6 +180,13 @@ func (s *tierMockStore) ConvertDemoUser(context.Context, string, string, string,
 }
 func (s *tierMockStore) ConvertDemoOrg(context.Context, string, string, string) error { return nil }
 func (s *tierMockStore) CreateDemoFeedback(context.Context, *domain.DemoFeedback) error { return nil }
+func (s *tierMockStore) DeleteDemoData(context.Context, string) error { return nil }
+func (s *tierMockStore) CreateOneTimeToken(context.Context, string, string, time.Duration) (string, error) {
+	return "test-token", nil
+}
+func (s *tierMockStore) ConsumeOneTimeToken(context.Context, string) (string, string, error) {
+	return "user-id", "org-id", nil
+}
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)

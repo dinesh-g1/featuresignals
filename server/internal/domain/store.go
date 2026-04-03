@@ -135,4 +135,9 @@ type Store interface {
 	ConvertDemoUser(ctx context.Context, userID, email, passwordHash, name string) error
 	ConvertDemoOrg(ctx context.Context, orgID, name, slug string) error
 	CreateDemoFeedback(ctx context.Context, fb *DemoFeedback) error
+	DeleteDemoData(ctx context.Context, orgID string) error
+
+	// ── One-Time Tokens (cross-domain auth) ──────────────────────────────
+	CreateOneTimeToken(ctx context.Context, userID, orgID string, ttl time.Duration) (string, error)
+	ConsumeOneTimeToken(ctx context.Context, token string) (userID, orgID string, err error)
 }

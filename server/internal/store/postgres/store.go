@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -1058,4 +1060,44 @@ func (s *Store) CreateDemoFeedback(ctx context.Context, fb *domain.DemoFeedback)
 		 VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
 		fb.OrgID, fb.Message, fb.Email, fb.Rating,
 	).Scan(&fb.ID, &fb.CreatedAt)
+}
+
+func (s *Store) DeleteDemoData(ctx context.Context, orgID string) error {
+	_, err := s.pool.Exec(ctx,
+		`DELETE FROM projects WHERE org_id = $1`, orgID)
+	return err
+}
+
+// --- One-Time Tokens ---
+
+func (s *Store) CreateOneTimeToken(ctx context.Context, userID, orgID string, ttl time.Duration) (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generating one-time token: %w", err)
+	}
+	token := hex.EncodeToString(b)
+	expiresAt := time.Now().Add(ttl)
+
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO one_time_tokens (token, user_id, org_id, expires_at)
+		 VALUES ($1, $2, $3, $4)`,
+		token, userID, orgID, expiresAt)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func (s *Store) ConsumeOneTimeToken(ctx context.Context, token string) (string, string, error) {
+	var userID, orgID string
+	err := s.pool.QueryRow(ctx,
+		`UPDATE one_time_tokens
+		 SET used = true
+		 WHERE token = $1 AND used = false AND expires_at > NOW()
+		 RETURNING user_id, org_id`,
+		token).Scan(&userID, &orgID)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid or expired token")
+	}
+	return userID, orgID, nil
 }
