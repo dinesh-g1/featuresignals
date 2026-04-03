@@ -19,10 +19,17 @@ ingress:
           pathType: Prefix
 
 env:
+  # REQUIRED: Connection string with sslmode=require for production.
+  # Example: postgres://fs:password@db-host:5432/featuresignals?sslmode=require
   DATABASE_URL: ""
+  # REQUIRED: Must NOT be the default "dev-secret-change-in-production".
+  # Server will refuse to start with the default value when LOG_LEVEL != "debug".
+  # Use a strong, random secret (32+ characters).
   JWT_SECRET: ""
   PORT: "8080"
   LOG_LEVEL: "info"
+  # Comma-separated list of allowed CORS origins (e.g. "https://app.featuresignals.com").
+  CORS_ORIGINS: ""
 
 resources:
   requests:
@@ -37,4 +44,8 @@ postgresql:
   auth:
     database: featuresignals
     username: fs
+    # REQUIRED: Set a strong password for the database user.
     password: ""
+  # Enable SSL/TLS for PostgreSQL connections in production.
+  tls:
+    enabled: true

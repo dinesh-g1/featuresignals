@@ -79,6 +79,7 @@ type Store interface {
 
 	// ── API Keys ─────────────────────────────────────────────────────────
 	CreateAPIKey(ctx context.Context, k *APIKey) error
+	GetAPIKeyByID(ctx context.Context, id string) (*APIKey, error)
 	GetAPIKeyByHash(ctx context.Context, keyHash string) (*APIKey, error)
 	ListAPIKeys(ctx context.Context, envID string) ([]APIKey, error)
 	RevokeAPIKey(ctx context.Context, id string) error

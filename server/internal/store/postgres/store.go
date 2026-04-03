@@ -587,18 +587,31 @@ func (s *Store) DeleteSegment(ctx context.Context, id string) error {
 
 func (s *Store) CreateAPIKey(ctx context.Context, k *domain.APIKey) error {
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO api_keys (env_id, key_hash, key_prefix, name, type)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`,
-		k.EnvID, k.KeyHash, k.KeyPrefix, k.Name, k.Type,
+		`INSERT INTO api_keys (env_id, key_hash, key_prefix, name, type, expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`,
+		k.EnvID, k.KeyHash, k.KeyPrefix, k.Name, k.Type, k.ExpiresAt,
 	).Scan(&k.ID, &k.CreatedAt)
+}
+
+func (s *Store) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKey, error) {
+	k := &domain.APIKey{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
+		 FROM api_keys WHERE id = $1`, id,
+	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
+	if err != nil {
+		return nil, err
+	}
+	return k, nil
 }
 
 func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.APIKey, error) {
 	k := &domain.APIKey{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at
-		 FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL`, keyHash,
-	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt)
+		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
+		 FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL
+		 AND (expires_at IS NULL OR expires_at > NOW())`, keyHash,
+	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +620,7 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.AP
 
 func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at
+		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
 		 FROM api_keys WHERE env_id = $1 ORDER BY created_at`, envID)
 	if err != nil {
 		return nil, err
@@ -616,7 +629,7 @@ func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey,
 	keys := []domain.APIKey{}
 	for rows.Next() {
 		var k domain.APIKey
-		if err := rows.Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt); err != nil {
+		if err := rows.Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt); err != nil {
 			return nil, err
 		}
 		keys = append(keys, k)

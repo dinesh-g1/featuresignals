@@ -20,6 +20,8 @@ Every significant action creates an audit entry:
 | `flag.promoted` | Config promoted between environments |
 | `flag.scheduled_toggle` | Scheduled enable/disable (system actor) |
 | `flag.approved_change_applied` | Approved change applied |
+| `api_key.created` | API key created for an environment |
+| `api_key.revoked` | API key revoked |
 
 ## Before/After State Diffs
 

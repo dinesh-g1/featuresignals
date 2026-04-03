@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -331,5 +333,32 @@ func TestEvalHandler_Evaluate_InvalidJSON(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestEvalHandler_BulkEvaluate_OversizedFlagKeys(t *testing.T) {
+	keys := make([]string, 101)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("flag-%d", i)
+	}
+	body, err := json.Marshal(map[string]interface{}{
+		"flag_keys": keys,
+		"context":   map[string]interface{}{"key": "user-1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := newMockStore()
+	h := newTestEvalHandler(store)
+	_, apiKey := setupEvalFixtures(store)
+
+	r := httptest.NewRequest("POST", "/v1/evaluate/bulk", bytes.NewReader(body))
+	r.Header.Set("X-API-Key", apiKey)
+	w := httptest.NewRecorder()
+
+	h.BulkEvaluate(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for oversized flag_keys, got %d: %s", w.Code, w.Body.String())
 	}
 }

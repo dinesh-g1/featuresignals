@@ -35,9 +35,11 @@ type mockStore struct {
 	envPermsById   map[string]*domain.EnvPermission  // id -> perm
 	webhooks       map[string]*domain.Webhook        // id -> webhook
 	webhooksByOrg  map[string][]string               // orgID -> []webhookID
-	whDeliveries     map[string][]domain.WebhookDelivery   // webhookID -> deliveries
-	onboardingStates map[string]*domain.OnboardingState   // orgID -> state
-	oneTimeTokens    map[string]*ottEntry                 // token -> entry
+	whDeliveries     map[string][]domain.WebhookDelivery        // webhookID -> deliveries
+	approvals        map[string]*domain.ApprovalRequest         // id -> approval
+	approvalsByOrg   map[string][]string                        // orgID -> []approvalID
+	onboardingStates map[string]*domain.OnboardingState         // orgID -> state
+	oneTimeTokens    map[string]*ottEntry                       // token -> entry
 
 	idCounter int
 }
@@ -504,11 +506,27 @@ func (m *mockStore) CreateAPIKey(ctx context.Context, k *domain.APIKey) error {
 	return nil
 }
 
+func (m *mockStore) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKey, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	k, ok := m.apiKeysById[id]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	return k, nil
+}
+
 func (m *mockStore) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.APIKey, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	k, ok := m.apiKeys[keyHash]
 	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	if k.RevokedAt != nil {
+		return nil, fmt.Errorf("not found")
+	}
+	if k.ExpiresAt != nil && time.Now().After(*k.ExpiresAt) {
 		return nil, fmt.Errorf("not found")
 	}
 	return k, nil
@@ -676,18 +694,66 @@ func (m *mockStore) CreateApprovalRequest(ctx context.Context, ar *domain.Approv
 	ar.ID = m.nextID()
 	ar.CreatedAt = time.Now()
 	ar.UpdatedAt = ar.CreatedAt
+	if m.approvals == nil {
+		m.approvals = make(map[string]*domain.ApprovalRequest)
+		m.approvalsByOrg = make(map[string][]string)
+	}
+	cp := *ar
+	m.approvals[ar.ID] = &cp
+	m.approvalsByOrg[ar.OrgID] = append(m.approvalsByOrg[ar.OrgID], ar.ID)
 	return nil
 }
 
 func (m *mockStore) GetApprovalRequest(ctx context.Context, id string) (*domain.ApprovalRequest, error) {
-	return nil, fmt.Errorf("not found")
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.approvals == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	ar, ok := m.approvals[id]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	cp := *ar
+	return &cp, nil
 }
 
 func (m *mockStore) ListApprovalRequests(ctx context.Context, orgID string, status string, limit, offset int) ([]domain.ApprovalRequest, error) {
-	return []domain.ApprovalRequest{}, nil
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.ApprovalRequest
+	if m.approvals == nil {
+		return []domain.ApprovalRequest{}, nil
+	}
+	for _, id := range m.approvalsByOrg[orgID] {
+		if ar, ok := m.approvals[id]; ok {
+			if status == "" || string(ar.Status) == status {
+				result = append(result, *ar)
+			}
+		}
+	}
+	if offset >= len(result) {
+		return []domain.ApprovalRequest{}, nil
+	}
+	result = result[offset:]
+	if limit < len(result) {
+		result = result[:limit]
+	}
+	return result, nil
 }
 
 func (m *mockStore) UpdateApprovalRequest(ctx context.Context, ar *domain.ApprovalRequest) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.approvals == nil {
+		return fmt.Errorf("not found")
+	}
+	if _, ok := m.approvals[ar.ID]; !ok {
+		return fmt.Errorf("not found")
+	}
+	cp := *ar
+	cp.UpdatedAt = time.Now()
+	m.approvals[ar.ID] = &cp
 	return nil
 }
 

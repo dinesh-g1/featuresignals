@@ -136,6 +136,10 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "context.key is required")
 		return
 	}
+	if len(req.FlagKeys) > 100 {
+		httputil.Error(w, http.StatusBadRequest, "flag_keys must contain at most 100 items")
+		return
+	}
 
 	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
@@ -204,10 +208,13 @@ func (h *EvalHandler) Stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For SSE, we validate the API key from query param
-	apiKey := r.URL.Query().Get("api_key")
+	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
-		apiKey = r.Header.Get("X-API-Key")
+		apiKey = r.URL.Query().Get("api_key")
+		if apiKey != "" {
+			h.logger.Warn("DEPRECATED: api_key query parameter will be removed in a future version, use X-API-Key header instead",
+				"env_key", envKey)
+		}
 	}
 	if apiKey == "" {
 		httputil.Error(w, http.StatusUnauthorized, "API key required")

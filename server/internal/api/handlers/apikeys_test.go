@@ -186,15 +186,46 @@ func TestAPIKeyHandler_List_Empty(t *testing.T) {
 func TestAPIKeyHandler_Revoke(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
-	r := httptest.NewRequest("DELETE", "/v1/api-keys/key-1", nil)
-	r = requestWithChi(r, map[string]string{"keyID": "key-1"})
+	store.CreateAPIKey(context.Background(), &domain.APIKey{
+		EnvID: envID, KeyHash: "hash-rev", KeyPrefix: "fs_srv_rev1", Name: "Revoke Me", Type: domain.APIKeyServer,
+	})
+	keys, _ := store.ListAPIKeys(context.Background(), envID)
+	keyID := keys[0].ID
+
+	r := httptest.NewRequest("DELETE", "/v1/api-keys/"+keyID, nil)
+	r = requestWithChi(r, map[string]string{"keyID": keyID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Revoke(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("expected 204, got %d", w.Code)
+	}
+}
+
+func TestAPIKeyHandler_Revoke_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
+
+	store.CreateAPIKey(context.Background(), &domain.APIKey{
+		EnvID: envID, KeyHash: "hash-iso", KeyPrefix: "fs_srv_iso1", Name: "Org1 Key", Type: domain.APIKeyServer,
+	})
+	keys, _ := store.ListAPIKeys(context.Background(), envID)
+	keyID := keys[0].ID
+
+	r := httptest.NewRequest("DELETE", "/v1/api-keys/"+keyID, nil)
+	r = requestWithChi(r, map[string]string{"keyID": keyID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Revoke(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org API key revoke, got %d", w.Code)
 	}
 }
 

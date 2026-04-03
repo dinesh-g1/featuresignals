@@ -20,7 +20,8 @@ POST /v1/environments/{envID}/api-keys
 ```json
 {
   "name": "Backend Service",
-  "type": "server"
+  "type": "server",
+  "expires_in_days": 90
 }
 ```
 
@@ -28,6 +29,7 @@ POST /v1/environments/{envID}/api-keys
 |-------|------|----------|---------|-------------|
 | `name` | string | Yes | — | Descriptive name |
 | `type` | string | No | `server` | `server` or `client` |
+| `expires_in_days` | integer | No | — | Optional expiration offset in days from creation |
 
 ### Key Types
 
@@ -46,7 +48,8 @@ POST /v1/environments/{envID}/api-keys
   "name": "Backend Service",
   "type": "server",
   "env_id": "uuid",
-  "created_at": "2026-04-01T00:00:00Z"
+  "created_at": "2026-04-01T00:00:00Z",
+  "expires_at": "2026-07-01T00:00:00Z"
 }
 ```
 
@@ -75,6 +78,7 @@ GET /v1/environments/{envID}/api-keys
     "name": "Backend Service",
     "type": "server",
     "created_at": "2026-04-01T00:00:00Z",
+    "expires_at": "2026-07-01T00:00:00Z",
     "last_used_at": "2026-04-01T12:00:00Z"
   }
 ]
@@ -95,3 +99,9 @@ DELETE /v1/api-keys/{keyID}
 ### Response `204 No Content`
 
 Revoked keys immediately stop working for evaluation requests.
+
+---
+
+## Key Rotation
+
+Rotate API keys regularly to limit exposure if a key is leaked. As a general practice, create a new key, deploy it across your services, then revoke the old key. **Recommendation:** rotate keys every 60–90 days.

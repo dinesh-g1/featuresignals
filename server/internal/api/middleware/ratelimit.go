@@ -58,21 +58,36 @@ func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
 			now := time.Now()
 			if !exists || now.After(v.resetAt) {
 				rl.visitors[key] = &visitor{count: 1, resetAt: now.Add(rl.window)}
+				resetAt := rl.visitors[key].resetAt
 				rl.mu.Unlock()
+				w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", requestsPerMinute))
+				w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", requestsPerMinute-1))
+				w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", resetAt.Unix()))
 				next.ServeHTTP(w, r)
 				return
 			}
 			v.count++
+			remaining := rl.rate - v.count
+			if remaining < 0 {
+				remaining = 0
+			}
+			resetUnix := v.resetAt.Unix()
 			if v.count > rl.rate {
 				retryAfter := int(time.Until(v.resetAt).Seconds()) + 1
 				rl.mu.Unlock()
 				log := httputil.LoggerFromContext(r.Context())
 				log.Warn("rate limit exceeded", "client_key", key, "count", v.count, "limit", rl.rate)
+				w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", requestsPerMinute))
+				w.Header().Set("X-RateLimit-Remaining", "0")
+				w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", resetUnix))
 				w.Header().Set("Retry-After", fmt.Sprintf("%d", retryAfter))
 				httputil.Error(w, http.StatusTooManyRequests, "rate limit exceeded")
 				return
 			}
 			rl.mu.Unlock()
+			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", requestsPerMinute))
+			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", resetUnix))
 			next.ServeHTTP(w, r)
 		})
 	}

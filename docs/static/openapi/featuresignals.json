@@ -1295,7 +1295,8 @@
         "type": "object",
         "properties": {
           "error": { "type": "string" },
-          "message": { "type": "string" }
+          "message": { "type": "string" },
+          "request_id": { "type": "string" }
         }
       },
       "MessageResponse": {
@@ -1343,8 +1344,10 @@
           "id": { "type": "string", "format": "uuid" },
           "email": { "type": "string", "format": "email" },
           "name": { "type": "string" },
-          "emailVerified": { "type": "boolean" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "phone": { "type": "string" },
+          "phone_verified": { "type": "boolean" },
+          "email_verified": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
       "Project": {
@@ -1474,10 +1477,15 @@
       },
       "BulkEvaluateRequest": {
         "type": "object",
+        "description": "When `flagKeys` is provided, it may contain at most 100 flag keys.",
         "required": ["context"],
         "properties": {
           "context": { "type": "object", "additionalProperties": {} },
-          "flagKeys": { "type": "array", "items": { "type": "string" } }
+          "flagKeys": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Optional list of flag keys to evaluate. Maximum 100 items."
+          }
         }
       },
       "EvaluationResult": {
@@ -1543,7 +1551,8 @@
           "name": { "type": "string" },
           "type": { "type": "string", "enum": ["server", "client"] },
           "key": { "type": "string", "description": "Full API key — only returned on creation" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "createdAt": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" }
         }
       },
       "CreateApiKeyRequest": {
@@ -1551,7 +1560,8 @@
         "required": ["name", "type"],
         "properties": {
           "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["server", "client"] }
+          "type": { "type": "string", "enum": ["server", "client"] },
+          "expires_in_days": { "type": "integer" }
         }
       },
       "Member": {

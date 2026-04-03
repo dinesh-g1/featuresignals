@@ -7,6 +7,12 @@ title: Webhooks
 
 Webhooks notify external systems when flag changes occur.
 
+:::warning Public URLs only
+
+Webhook URLs must be **publicly reachable** over the internet. For SSRF protection, the server rejects destinations that use private IP ranges (`10.x.x.x`, `172.16.x.x`–`172.31.x.x`, `192.168.x.x`), loopback (`127.0.0.x`), `localhost`, and hostnames ending in `.local`.
+
+:::
+
 ## Create Webhook
 
 ```

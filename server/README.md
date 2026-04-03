@@ -104,7 +104,7 @@ make seed
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP listen port |
-| `DATABASE_URL` | `postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable` | PostgreSQL connection string |
+| `DATABASE_URL` | `postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=require` | PostgreSQL connection string (local dev often uses `sslmode=disable`) |
 | `JWT_SECRET` | `dev-secret-change-in-production` | HMAC secret for JWT signing |
 | `TOKEN_TTL_MINUTES` | `60` | Access token lifetime |
 | `REFRESH_TTL_HOURS` | `168` (7 days) | Refresh token lifetime |
@@ -120,7 +120,7 @@ curl -s -X POST http://localhost:8080/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "dev@example.com",
-    "password": "securepass123",
+    "password": "StrongP@ss1",
     "name": "Developer",
     "org_name": "My Org"
   }' | jq .
@@ -133,7 +133,7 @@ curl -s -X POST http://localhost:8080/v1/auth/register \
 ```bash
 curl -s -X POST http://localhost:8080/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "dev@example.com", "password": "securepass123"}' | jq .
+  -d '{"email": "dev@example.com", "password": "StrongP@ss1"}' | jq .
 ```
 
 ### Create a feature flag
@@ -239,7 +239,8 @@ curl -s http://localhost:8080/v1/client/production/flags?key=user-42 \
 ### SSE streaming (real-time updates)
 
 ```bash
-curl -N "http://localhost:8080/v1/stream/production?api_key=$API_KEY"
+curl -N "http://localhost:8080/v1/stream/production" \
+  -H "X-API-Key: $API_KEY"
 ```
 
 ## Project Structure

@@ -25,4 +25,5 @@ type APIKey struct {
 	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
 	LastUsedAt *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
 	RevokedAt  *time.Time `json:"revoked_at,omitempty" db:"revoked_at"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty" db:"expires_at"`
 }

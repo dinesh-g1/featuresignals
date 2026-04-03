@@ -60,6 +60,7 @@ func NewRouter(
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
 	r.Use(middleware.SecurityHeaders)
+	r.Use(middleware.RequireJSON)
 	r.Use(middleware.Logging(logger))
 	r.Use(middleware.SafeRecoverer)
 

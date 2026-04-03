@@ -9,8 +9,33 @@ import Layout from '../layouts/Layout.astro';
     <div class="mt-12 space-y-12">
       <article>
         <div class="flex items-center gap-3">
-          <time class="text-sm font-medium text-indigo-600">Phase 3 &mdash; April 2026</time>
+          <time class="text-sm font-medium text-indigo-600">April 2026</time>
           <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">Latest</span>
+        </div>
+        <h2 class="mt-3 text-xl font-semibold text-slate-900">API Security Hardening</h2>
+        <ul class="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
+          <li><strong>Broken Object Level Authorization fix</strong> &mdash; API key revocation now verifies org ownership to prevent cross-tenant access</li>
+          <li><strong>JWT token type enforcement</strong> &mdash; Refresh tokens can no longer be used as access tokens (issuer claim validation)</li>
+          <li><strong>User data minimization</strong> &mdash; Login and register responses no longer expose sensitive fields like password hash or internal flags</li>
+          <li><strong>API key expiration</strong> &mdash; Optional <code>expires_in_days</code> parameter on key creation; expired keys rejected at evaluation time</li>
+          <li><strong>Rate limit headers</strong> &mdash; <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code> on all rate-limited responses</li>
+          <li><strong>Content-Type enforcement</strong> &mdash; POST/PUT/PATCH requests must use <code>application/json</code> (415 otherwise)</li>
+          <li><strong>Content-Security-Policy header</strong> &mdash; Added <code>default-src 'none'; frame-ancestors 'none'</code> to all responses</li>
+          <li><strong>SSRF protection</strong> &mdash; Webhook URLs block private IPs, localhost, and internal hostnames</li>
+          <li><strong>Bulk evaluation limit</strong> &mdash; <code>flag_keys</code> array capped at 100 items</li>
+          <li><strong>PII masking in logs</strong> &mdash; Emails, tokens, and phone numbers are masked in server logs</li>
+          <li><strong>Security audit logging</strong> &mdash; <code>api_key.created</code>, <code>api_key.revoked</code> actions tracked in audit trail</li>
+          <li><strong>JWT secret startup check</strong> &mdash; Server refuses to start with default secret in non-debug environments</li>
+          <li><strong>Database SSL enforcement</strong> &mdash; Default connection string now requires <code>sslmode=require</code></li>
+          <li><strong>SSE CORS fix</strong> &mdash; Removed hardcoded <code>Access-Control-Allow-Origin: *</code> from SSE server</li>
+          <li><strong>Request ID in errors</strong> &mdash; Error responses include <code>request_id</code> for correlation</li>
+          <li><strong>Comprehensive test suite</strong> &mdash; 50+ new tests covering auth flows, middleware, org isolation, and security boundaries</li>
+        </ul>
+      </article>
+
+      <article>
+        <div class="flex items-center gap-3">
+          <time class="text-sm font-medium text-indigo-600">Phase 3 &mdash; April 2026</time>
         </div>
         <h2 class="mt-3 text-xl font-semibold text-slate-900">Scale &amp; Differentiation</h2>
         <ul class="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">

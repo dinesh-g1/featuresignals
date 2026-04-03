@@ -51,7 +51,7 @@ func TestValidateToken_Valid(t *testing.T) {
 	}
 }
 
-func TestValidateToken_RefreshToken(t *testing.T) {
+func TestValidateRefreshToken(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
 	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "developer")
@@ -59,9 +59,9 @@ func TestValidateToken_RefreshToken(t *testing.T) {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
 
-	claims, err := mgr.ValidateToken(pair.RefreshToken)
+	claims, err := mgr.ValidateRefreshToken(pair.RefreshToken)
 	if err != nil {
-		t.Fatalf("ValidateToken() for refresh token error: %v", err)
+		t.Fatalf("ValidateRefreshToken() error: %v", err)
 	}
 
 	if claims.UserID != "user-123" {
@@ -69,6 +69,34 @@ func TestValidateToken_RefreshToken(t *testing.T) {
 	}
 	if claims.Issuer != "featuresignals-refresh" {
 		t.Errorf("expected Issuer 'featuresignals-refresh', got '%s'", claims.Issuer)
+	}
+}
+
+func TestValidateToken_RejectsRefreshToken(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error: %v", err)
+	}
+
+	_, err = mgr.ValidateToken(pair.RefreshToken)
+	if err == nil {
+		t.Error("ValidateToken() should reject refresh tokens")
+	}
+}
+
+func TestValidateRefreshToken_RejectsAccessToken(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error: %v", err)
+	}
+
+	_, err = mgr.ValidateRefreshToken(pair.AccessToken)
+	if err == nil {
+		t.Error("ValidateRefreshToken() should reject access tokens")
 	}
 }
 
@@ -158,9 +186,9 @@ func TestGenerateDemoTokenPair(t *testing.T) {
 		t.Errorf("expected UserID=user-1, got %s", claims.UserID)
 	}
 
-	refreshClaims, err := mgr.ValidateToken(pair.RefreshToken)
+	refreshClaims, err := mgr.ValidateRefreshToken(pair.RefreshToken)
 	if err != nil {
-		t.Fatalf("ValidateToken(refresh) error: %v", err)
+		t.Fatalf("ValidateRefreshToken() error: %v", err)
 	}
 	if !refreshClaims.Demo {
 		t.Error("expected Demo claim in refresh token")

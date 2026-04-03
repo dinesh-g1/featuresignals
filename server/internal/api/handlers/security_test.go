@@ -88,8 +88,11 @@ func TestValidateStringLength(t *testing.T) {
 }
 
 func TestValidateWebhookURL(t *testing.T) {
-	valid := []string{"https://example.com/webhook", "http://localhost:8080/hook"}
-	invalid := []string{"", "ftp://bad.com", "not-a-url", "javascript:alert(1)"}
+	valid := []string{"https://example.com/webhook"}
+	invalid := []string{"", "ftp://bad.com", "not-a-url", "javascript:alert(1)",
+		"http://localhost:8080/hook", "http://127.0.0.1/hook",
+		"http://10.0.0.1/hook", "http://192.168.1.1/hook",
+		"http://172.16.0.1/hook"}
 
 	for _, u := range valid {
 		if !validateWebhookURL(u) {

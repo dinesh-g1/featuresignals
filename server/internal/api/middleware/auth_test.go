@@ -169,6 +169,27 @@ func TestGetClaims_WithContext(t *testing.T) {
 	}
 }
 
+// --- JWT Token Confusion Security Test ---
+
+func TestJWTAuth_RejectsRefreshToken(t *testing.T) {
+	mgr := newTestJWTManager()
+	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+
+	handler := JWTAuth(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("handler should not be called with refresh token")
+	}))
+
+	r := httptest.NewRequest("GET", "/test", nil)
+	r.Header.Set("Authorization", "Bearer "+pair.RefreshToken)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401 when using refresh token as access token, got %d", w.Code)
+	}
+}
+
 // --- Demo Expiry Middleware Tests ---
 
 func TestDemoExpiry_NonDemoUser_Passes(t *testing.T) {

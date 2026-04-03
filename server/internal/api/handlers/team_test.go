@@ -23,6 +23,9 @@ func (s *stubTokenManager) GenerateTokenPair(userID, orgID, role string) (*auth.
 func (s *stubTokenManager) ValidateToken(tokenStr string) (*auth.Claims, error) {
 	return &auth.Claims{}, nil
 }
+func (s *stubTokenManager) ValidateRefreshToken(tokenStr string) (*auth.Claims, error) {
+	return &auth.Claims{}, nil
+}
 func (s *stubTokenManager) GenerateDemoTokenPair(userID, orgID, role string, demoExpiresAt int64) (*auth.TokenPair, error) {
 	return &auth.TokenPair{AccessToken: "demo-tok", RefreshToken: "demo-ref"}, nil
 }
