@@ -96,7 +96,7 @@ export default function FlagHealthPage() {
           <p className="mt-1 text-xs text-slate-500">out of 100</p>
         </div>
         <StatCard label="Total Flags" value={flags.length} color="indigo" />
-        <StatCard label="Stale (>90d)" value={staleFlags.length} color={staleFlags.length > 0 ? "amber" : "emerald"} />
+        <StatCard label="Stale" value={staleFlags.length} color={staleFlags.length > 0 ? "amber" : "emerald"} />
         <StatCard label="Expired" value={expired.length} color={expired.length > 0 ? "red" : "emerald"} />
       </div>
 
@@ -121,7 +121,7 @@ export default function FlagHealthPage() {
 
       {/* Stale flags */}
       {staleFlags.length > 0 && (
-        <Section title="Stale Flags" subtitle={`Not updated in over ${STALE_DAYS} days. Consider cleaning up.`} color="slate">
+        <Section title="Stale Flags" subtitle="Not updated within their category threshold. Consider cleaning up." color="slate">
           {staleFlags.map((f) => {
             const age = Math.floor((now.getTime() - new Date(f.updated_at).getTime()) / (1000 * 60 * 60 * 24));
             return <FlagRow key={f.id} flag={f} badge={`${age}d old`} badgeColor="slate" />;
