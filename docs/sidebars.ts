@@ -70,7 +70,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Dashboard',
+      label: 'Flag Engine',
       items: [
         'dashboard/overview',
         'dashboard/managing-flags',

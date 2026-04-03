@@ -21,14 +21,22 @@ export default function FlagHealthPage() {
   }, [token, projectId]);
 
   const now = new Date();
-  const STALE_DAYS = 90;
   const EXPIRING_SOON_DAYS = 7;
+
+  const staleDaysForCategory: Record<string, number> = {
+    release: 14,
+    experiment: 42,
+    ops: Infinity,
+    permission: Infinity,
+  };
+  const DEFAULT_STALE_DAYS = 90;
 
   const staleFlags = useMemo(() => {
     return flags.filter((f) => {
       const updated = new Date(f.updated_at);
       const age = (now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24);
-      return age > STALE_DAYS;
+      const threshold = staleDaysForCategory[f.category] ?? DEFAULT_STALE_DAYS;
+      return age > threshold;
     });
   }, [flags]);
 

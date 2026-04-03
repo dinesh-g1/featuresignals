@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FeatureSignals Dashboard",
+  title: "FeatureSignals Flag Engine",
   description: "Feature flag management platform",
   icons: {
     icon: "/favicon.svg",

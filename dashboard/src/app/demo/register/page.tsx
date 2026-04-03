@@ -340,7 +340,7 @@ export default function DemoRegisterPage() {
           )}
 
           <p className="mt-4 text-center text-xs text-slate-400">
-            <Link href="/dashboard" className="text-indigo-600 hover:underline">Back to dashboard</Link>
+            <Link href="/dashboard" className="text-indigo-600 hover:underline">Back to Flag Engine</Link>
           </p>
         </div>
       </div>

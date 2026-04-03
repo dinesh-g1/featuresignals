@@ -14,9 +14,14 @@ interface PaletteItem {
 }
 
 const NAV_ITEMS: PaletteItem[] = [
-  { id: "nav-dashboard", label: "Dashboard", category: "navigation", href: "/dashboard" },
+  { id: "nav-overview", label: "Overview", category: "navigation", href: "/dashboard" },
   { id: "nav-flags", label: "Flags", category: "navigation", href: "/flags" },
   { id: "nav-segments", label: "Segments", category: "navigation", href: "/segments" },
+  { id: "nav-env-comparison", label: "Env Comparison", category: "navigation", href: "/env-comparison" },
+  { id: "nav-entity-inspector", label: "Entity Inspector", category: "navigation", href: "/entity-inspector" },
+  { id: "nav-entity-comparison", label: "Entity Comparison", category: "navigation", href: "/entity-comparison" },
+  { id: "nav-usage-insights", label: "Usage Insights", category: "navigation", href: "/usage-insights" },
+  { id: "nav-health", label: "Flag Health", category: "navigation", href: "/health" },
   { id: "nav-audit", label: "Audit Log", category: "navigation", href: "/audit" },
   { id: "nav-settings", label: "Settings", category: "navigation", href: "/settings/general" },
   { id: "nav-team", label: "Team", category: "navigation", href: "/settings/team" },

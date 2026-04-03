@@ -7,7 +7,23 @@ import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 
 const FLAG_TYPES = ["all", "boolean", "string", "number", "json", "ab"];
+const CATEGORIES = ["all", "release", "experiment", "ops", "permission"];
+const STATUSES = ["all", "active", "rolled_out", "deprecated", "archived"];
 type SortKey = "key" | "name" | "created_at" | "updated_at";
+
+const categoryColors: Record<string, string> = {
+  release: "bg-blue-50 text-blue-700 ring-blue-200",
+  experiment: "bg-purple-50 text-purple-700 ring-purple-200",
+  ops: "bg-orange-50 text-orange-700 ring-orange-200",
+  permission: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+};
+
+const statusColors: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  rolled_out: "bg-blue-50 text-blue-700 ring-blue-200",
+  deprecated: "bg-amber-50 text-amber-700 ring-amber-200",
+  archived: "bg-slate-100 text-slate-500 ring-slate-200",
+};
 
 export default function FlagsPage() {
   const token = useAppStore((s) => s.token);
@@ -17,11 +33,13 @@ export default function FlagsPage() {
   const [envs, setEnvs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showCreate, setShowCreate] = useState(false);
-  const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", description: "" });
+  const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", category: "release", description: "" });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [flagStates, setFlagStates] = useState<Record<string, any>>({});
@@ -58,7 +76,7 @@ export default function FlagsPage() {
     try {
       await api.createFlag(token, projectId, newFlag);
       setShowCreate(false);
-      setNewFlag({ key: "", name: "", flag_type: "boolean", description: "" });
+      setNewFlag({ key: "", name: "", flag_type: "boolean", category: "release", description: "" });
       toast("Flag created", "success");
       reload();
     } catch (err: any) {
@@ -121,6 +139,12 @@ export default function FlagsPage() {
     if (typeFilter !== "all") {
       result = result.filter((f) => f.flag_type === typeFilter);
     }
+    if (categoryFilter !== "all") {
+      result = result.filter((f) => f.category === categoryFilter);
+    }
+    if (statusFilter !== "all") {
+      result = result.filter((f) => f.status === statusFilter);
+    }
     if (tagFilter) {
       result = result.filter((f) => f.tags?.includes(tagFilter));
     }
@@ -131,7 +155,7 @@ export default function FlagsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [flags, search, typeFilter, tagFilter, sortBy, sortDir]);
+  }, [flags, search, typeFilter, categoryFilter, statusFilter, tagFilter, sortBy, sortDir]);
 
   const currentEnvName = envs.find((e) => e.id === currentEnvId)?.name;
 
@@ -186,19 +210,34 @@ export default function FlagsPage() {
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Type</label>
-            <select
-              value={newFlag.flag_type}
-              onChange={(e) => setNewFlag({ ...newFlag, flag_type: e.target.value })}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value="boolean">Boolean</option>
-              <option value="string">String</option>
-              <option value="number">Number</option>
-              <option value="json">JSON</option>
-              <option value="ab">A/B Experiment</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Type</label>
+              <select
+                value={newFlag.flag_type}
+                onChange={(e) => setNewFlag({ ...newFlag, flag_type: e.target.value })}
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="boolean">Boolean</option>
+                <option value="string">String</option>
+                <option value="number">Number</option>
+                <option value="json">JSON</option>
+                <option value="ab">A/B Experiment</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Category</label>
+              <select
+                value={newFlag.category}
+                onChange={(e) => setNewFlag({ ...newFlag, category: e.target.value })}
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="release">Release — short-lived, trunk-based dev</option>
+                <option value="experiment">Experiment — A/B tests, cohort analysis</option>
+                <option value="ops">Ops — kill switches, circuit breakers</option>
+                <option value="permission">Permission — premium features, entitlements</option>
+              </select>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700">Description</label>
@@ -241,6 +280,24 @@ export default function FlagsPage() {
         >
           {FLAG_TYPES.map((t) => (
             <option key={t} value={t}>{t === "all" ? "All Types" : t === "ab" ? "A/B" : t.charAt(0).toUpperCase() + t.slice(1)}</option>
+          ))}
+        </select>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c === "all" ? "All Categories" : c.charAt(0).toUpperCase() + c.slice(1)}</option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{s === "all" ? "All Statuses" : s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
           ))}
         </select>
         {allTags.length > 0 && (
@@ -293,6 +350,16 @@ export default function FlagsPage() {
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-slate-200">
                         {flag.flag_type === "ab" ? "A/B" : flag.flag_type}
                       </span>
+                      {flag.category && (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${categoryColors[flag.category] || "bg-slate-100 text-slate-500 ring-slate-200"}`}>
+                          {flag.category}
+                        </span>
+                      )}
+                      {flag.status && flag.status !== "active" && (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${statusColors[flag.status] || "bg-slate-100 text-slate-500 ring-slate-200"}`}>
+                          {flag.status.replace(/_/g, " ")}
+                        </span>
+                      )}
                     </div>
                     <p className="mt-0.5 text-xs text-slate-500">{flag.name}</p>
                   </Link>
