@@ -123,6 +123,13 @@ func (m *mockStore) DeleteExpiredDemoOrgs(_ context.Context, _ time.Time) (int, 
 func (m *mockStore) ConvertDemoUser(_ context.Context, _, _, _, _ string) error { return nil }
 func (m *mockStore) ConvertDemoOrg(_ context.Context, _, _, _ string) error { return nil }
 func (m *mockStore) CreateDemoFeedback(_ context.Context, _ *domain.DemoFeedback) error { return nil }
+func (m *mockStore) DeleteDemoData(_ context.Context, _ string) error { return nil }
+func (m *mockStore) CreateOneTimeToken(_ context.Context, _, _ string, _ time.Duration) (string, error) {
+	return "test-token", nil
+}
+func (m *mockStore) ConsumeOneTimeToken(_ context.Context, _ string) (string, string, error) {
+	return "user-id", "org-id", nil
+}
 
 // --- mock broadcaster ---
 

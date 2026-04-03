@@ -15,6 +15,7 @@ const (
 	UserIDKey contextKey = "user_id"
 	OrgIDKey  contextKey = "org_id"
 	RoleKey   contextKey = "role"
+	ClaimsKey contextKey = "claims"
 )
 
 func JWTAuth(jwtMgr auth.TokenManager) func(http.Handler) http.Handler {
@@ -41,6 +42,7 @@ func JWTAuth(jwtMgr auth.TokenManager) func(http.Handler) http.Handler {
 			ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
 			ctx = context.WithValue(ctx, OrgIDKey, claims.OrgID)
 			ctx = context.WithValue(ctx, RoleKey, claims.Role)
+			ctx = context.WithValue(ctx, ClaimsKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -58,5 +60,10 @@ func GetOrgID(ctx context.Context) string {
 
 func GetRole(ctx context.Context) string {
 	v, _ := ctx.Value(RoleKey).(string)
+	return v
+}
+
+func GetClaims(ctx context.Context) *auth.Claims {
+	v, _ := ctx.Value(ClaimsKey).(*auth.Claims)
 	return v
 }

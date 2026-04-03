@@ -32,6 +32,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({ error: "Unknown error" }));
+
+    if (res.status === 403 && data.error === "demo_expired") {
+      if (typeof window !== "undefined") {
+        window.location.href = "/demo/register";
+      }
+      throw new APIError(403, "demo_expired");
+    }
+
     throw new APIError(res.status, data.error || "Request failed");
   }
 
@@ -214,11 +222,32 @@ export const api = {
       tokens: { access_token: string; refresh_token: string; expires_at: number };
       demo_expires_at: number;
     }>("/v1/demo/session", { method: "POST" }),
-  convertDemo: (token: string, data: { email: string; password: string; name: string; org_name: string; phone?: string }) =>
+  convertDemo: (token: string, data: { email: string; password: string; name: string; org_name: string; phone: string }) =>
     request<{ tokens: { access_token: string; refresh_token: string; expires_at: number }; message: string }>(
       "/v1/demo/convert",
       { method: "POST", body: data, token },
     ),
+  selectDemoPlan: (token: string, data: { plan: string; retain_data: boolean }) =>
+    request<{
+      plan: string;
+      redirect_url?: string;
+      payu_url?: string;
+      key?: string;
+      txnid?: string;
+      hash?: string;
+      amount?: string;
+      productinfo?: string;
+      firstname?: string;
+      email?: string;
+      phone?: string;
+      surl?: string;
+      furl?: string;
+    }>("/v1/demo/select-plan", { method: "POST", body: data, token }),
   submitDemoFeedback: (token: string, data: { message: string; email?: string; rating?: number }) =>
     request("/v1/demo/feedback", { method: "POST", body: data, token }),
+  exchangeToken: (token: string) =>
+    request<{ tokens: { access_token: string; refresh_token: string; expires_at: number }; user: any }>(
+      "/v1/auth/token-exchange",
+      { method: "POST", body: { token } },
+    ),
 };

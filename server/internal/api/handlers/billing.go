@@ -193,6 +193,22 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 	state.UpdatedAt = now
 	_ = h.store.UpsertOnboardingState(ctx, state)
 
+	isDemoConversion := len(txnid) >= 5 && txnid[:5] == "DEMO_"
+
+	if isDemoConversion {
+		// Demo conversion: generate one-time token and redirect to main dashboard
+		members, _ := h.store.ListOrgMembers(ctx, org.ID)
+		if len(members) > 0 {
+			ott, ottErr := h.store.CreateOneTimeToken(ctx, members[0].UserID, org.ID, 5*time.Minute)
+			if ottErr == nil {
+				h.logger.Info("payu demo payment successful — redirecting to exchange", "org_id", org.ID, "txnid", txnid)
+				http.Redirect(w, r, h.dashboardURL+"/auth/exchange?token="+ott, http.StatusSeeOther)
+				return
+			}
+			h.logger.Error("failed to create one-time token after demo payment", "error", ottErr)
+		}
+	}
+
 	h.logger.Info("payu payment successful — org upgraded to pro", "org_id", org.ID, "txnid", txnid, "mihpayid", params["mihpayid"])
 	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=success", http.StatusSeeOther)
 }
@@ -203,6 +219,12 @@ func (h *BillingHandler) PayUFailure(w http.ResponseWriter, r *http.Request) {
 	txnid := r.FormValue("txnid")
 	status := r.FormValue("status")
 	h.logger.Warn("payu payment failed", "txnid", txnid, "status", status)
+
+	isDemoConversion := len(txnid) >= 5 && txnid[:5] == "DEMO_"
+	if isDemoConversion {
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed&source=demo", http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 }
 

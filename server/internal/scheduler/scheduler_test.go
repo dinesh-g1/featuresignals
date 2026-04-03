@@ -67,6 +67,18 @@ func (m *mockScheduleStore) DeleteExpiredDemoOrgs(ctx context.Context, before ti
 	return 0, nil
 }
 
+func (m *mockScheduleStore) DeleteDemoData(ctx context.Context, orgID string) error {
+	return nil
+}
+
+func (m *mockScheduleStore) CreateOneTimeToken(ctx context.Context, userID, orgID string, ttl time.Duration) (string, error) {
+	return "test-token", nil
+}
+
+func (m *mockScheduleStore) ConsumeOneTimeToken(ctx context.Context, token string) (userID, orgID string, err error) {
+	return "user-id", "org-id", nil
+}
+
 func TestScheduler_EnableSchedule(t *testing.T) {
 	store := newMockScheduleStore()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
