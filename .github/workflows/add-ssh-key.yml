@@ -1,0 +1,30 @@
+name: Add SSH Key to VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  add-key:
+    name: Add Ed25519 public key to deploy user
+    runs-on: ubuntu-latest
+    steps:
+      - name: Append public key to authorized_keys
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFiVuZ5cyEOOX/Tl0voANuTWqB6mG7eQcNtkkeCeFVXp dinesh@featuresignals"
+            AUTH_FILE="/home/deploy/.ssh/authorized_keys"
+
+            if grep -qF "$KEY" "$AUTH_FILE" 2>/dev/null; then
+              echo "Key already present, skipping."
+            else
+              echo "$KEY" >> "$AUTH_FILE"
+              chmod 600 "$AUTH_FILE"
+              echo "Key added successfully."
+            fi
+
+            echo "Current authorized_keys:"
+            wc -l "$AUTH_FILE"
