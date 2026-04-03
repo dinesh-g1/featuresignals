@@ -2,12 +2,17 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: featuresignals
       POSTGRES_USER: fs
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD}
+      DB_READONLY_PASSWORD: ${DB_READONLY_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./deploy/pg-init:/docker-entrypoint-initdb.d:ro
     deploy:
       resources:
         limits:

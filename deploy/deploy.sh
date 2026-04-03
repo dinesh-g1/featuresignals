@@ -39,6 +39,9 @@ fi
 echo "==> Waiting for one-shot builders to finish..."
 docker compose -f "$COMPOSE_FILE" wait website-build docs-build 2>/dev/null || sleep 30
 
+echo "==> Setting up database roles..."
+bash "$PROJECT_DIR/deploy/pg-setup-roles.sh" || echo "WARNING: Role setup skipped (postgres may still be starting)"
+
 echo "==> Cleaning up dangling images..."
 docker image prune -f
 

@@ -17,11 +17,14 @@ deploy/
 │       ├── Chart.yaml
 │       ├── values.yaml
 │       └── templates/
+├── pg-init/
+│   └── 01-roles.sh             # DB role creation on first init (docker-entrypoint-initdb.d)
 ├── terraform/
 │   └── aws/                    # AWS infrastructure modules
 ├── Caddyfile                   # Reverse proxy and HTTPS configuration
 ├── deploy.sh                   # Production deployment script
-└── pg-backup.sh                # PostgreSQL backup with rotation
+├── pg-backup.sh                # PostgreSQL backup with rotation
+└── pg-setup-roles.sh           # Idempotent DB role provisioning (runs each deploy)
 ```
 
 ## Deployment Options
@@ -125,6 +128,81 @@ Requirements: PostgreSQL 16+ accessible at the `DATABASE_URL`. Run migrations fi
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `NEXT_PUBLIC_API_URL` | `https://api.featuresignals.com` | Dashboard API URL (build-time) |
 
+## Database Access (Admin & Readonly)
+
+Production Postgres is bound to `127.0.0.1:5432` on the VPS -- unreachable from the internet. Access is via SSH tunnel only.
+
+### Roles
+
+| Role | User | Privileges | Audience |
+|------|------|------------|----------|
+| App (existing) | `fs` | Superuser (used by the server) | Application only |
+| Admin | `fs_admin` | Full DDL + DML on `featuresignals` | Project owner (Dinesh) |
+| Readonly | `fs_readonly` | SELECT only on all tables | Future team members |
+
+### Prerequisites
+
+1. SSH key-based access to the VPS as `deploy`.
+2. `FS_VPS_HOST` set in your environment, or `~/.featuresignals/config`:
+   ```bash
+   mkdir -p ~/.featuresignals
+   echo "VPS_HOST=<your-server-ip>" > ~/.featuresignals/config
+   ```
+3. `DB_ADMIN_PASSWORD` and `DB_READONLY_PASSWORD` stored in GitHub Secrets (added to VPS `.env` by CD pipeline).
+
+### Quick Start (from your laptop)
+
+```bash
+# Open psql as admin (full privileges)
+make db-admin
+
+# Open psql as readonly
+make db-readonly
+
+# Open tunnel only (for pgAdmin, DBeaver, etc.)
+make db-tunnel
+# Then connect your GUI client to: localhost:15432, database: featuresignals
+```
+
+Or use the script directly:
+
+```bash
+./scripts/db-connect.sh                      # admin psql
+./scripts/db-connect.sh --role readonly      # readonly psql
+./scripts/db-connect.sh --tunnel-only        # tunnel for GUI clients
+./scripts/db-connect.sh --host 1.2.3.4       # override VPS host
+```
+
+### Running Role Setup Manually
+
+If roles need to be (re)created or passwords rotated:
+
+```bash
+# Via Makefile
+make db-setup-roles
+
+# Or SSH into VPS directly
+ssh deploy@<vps-ip> "cd /opt/featuresignals && bash deploy/pg-setup-roles.sh"
+```
+
+The script is idempotent and runs automatically on every deploy.
+
+### Onboarding a Readonly Team Member
+
+1. Share the `DB_READONLY_PASSWORD` with the team member (via a secure channel).
+2. Have them set up `FS_VPS_HOST` and SSH access (if using tunnel), or connect via a bastion.
+3. They connect with: `make db-readonly` or `./scripts/db-connect.sh --role readonly`.
+4. **Do NOT** share the admin password or VPS SSH credentials.
+
+### Required GitHub Secrets for Database Roles
+
+| Secret | Description |
+|--------|-------------|
+| `DB_ADMIN_PASSWORD` | Password for `fs_admin` role |
+| `DB_READONLY_PASSWORD` | Password for `fs_readonly` role |
+
+Generate with: `openssl rand -hex 24`
+
 ## DNS Configuration
 
 For a production deployment, configure these DNS records pointing to your server's IP:
@@ -196,8 +274,10 @@ Provisions a fresh Ubuntu VPS via `workflow_dispatch`:
 | `VPS_HOST` | Server IP address |
 | `VPS_USER` | SSH user (e.g. `deploy`) |
 | `VPS_SSH_KEY` | SSH private key |
-| `POSTGRES_PASSWORD` | Database password |
+| `POSTGRES_PASSWORD` | Database password (app user `fs`) |
 | `JWT_SECRET` | JWT signing key |
+| `DB_ADMIN_PASSWORD` | Admin DB role password (`fs_admin`) |
+| `DB_READONLY_PASSWORD` | Readonly DB role password (`fs_readonly`) |
 
 ## Backup Strategy
 
@@ -248,10 +328,12 @@ It performs:
 - [ ] Dedicated deploy user (root login disabled)
 - [ ] UFW firewall: ports 22, 80, 443 only
 - [ ] fail2ban for SSH brute-force protection
-- [ ] PostgreSQL not exposed to internet (Docker internal network only)
+- [ ] PostgreSQL bound to `127.0.0.1` only (SSH tunnel required for access)
+- [ ] Database roles: `fs_admin` (owner only), `fs_readonly` (team members)
+- [ ] Team members never given VPS SSH credentials or admin DB password
 - [ ] CORS locked to exact production domain
 - [ ] Auto-HTTPS via Let's Encrypt (Caddy)
-- [ ] Strong generated passwords for database and JWT
+- [ ] Strong generated passwords for database, JWT, and DB roles
 - [ ] Regular OS updates (`apt update && apt upgrade`)
 
 ## Architecture Overview
