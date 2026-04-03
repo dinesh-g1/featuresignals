@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
+import { CreateProjectDialog } from "@/components/create-project-dialog";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -33,9 +34,7 @@ export function Sidebar() {
 
   const [projects, setProjects] = useState<any[]>([]);
   const [envs, setEnvs] = useState<any[]>([]);
-  const [showNewProject, setShowNewProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -59,19 +58,9 @@ export function Sidebar() {
     }).catch(() => {});
   }, [token, projectId, currentEnvId, setCurrentEnv]);
 
-  async function handleCreateProject(e: React.FormEvent) {
-    e.preventDefault();
-    if (!token || !newProjectName.trim()) return;
-    setCreating(true);
-    try {
-      const created: any = await api.createProject(token, { name: newProjectName.trim() });
-      setProjects((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setCurrentProject(created.id);
-      setShowNewProject(false);
-      setNewProjectName("");
-    } catch { /* ignored */ } finally {
-      setCreating(false);
-    }
+  function handleProjectCreated(created: any) {
+    setProjects((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
+    setCurrentProject(created.id);
   }
 
   const selectedEnv = envs.find((e) => e.id === currentEnvId);
@@ -87,30 +76,13 @@ export function Sidebar() {
       {/* Project selector */}
       <div className="border-b border-slate-200 px-3 py-2">
         <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Project</label>
-        {projects.length === 0 && !showNewProject ? (
+        {projects.length === 0 ? (
           <button
-            onClick={() => setShowNewProject(true)}
+            onClick={() => setDialogOpen(true)}
             className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50/50 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
           >
             + Create Your First Project
           </button>
-        ) : showNewProject ? (
-          <form onSubmit={handleCreateProject} className="flex gap-1.5">
-            <input
-              autoFocus
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Project name"
-              required
-              className="flex-1 min-w-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-            <button type="submit" disabled={creating} className="rounded-lg bg-indigo-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-              {creating ? "..." : "Create"}
-            </button>
-            <button type="button" onClick={() => { setShowNewProject(false); setNewProjectName(""); }} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50">
-              Cancel
-            </button>
-          </form>
         ) : (
           <div className="flex gap-1.5">
             <div className="relative flex-1 min-w-0">
@@ -131,7 +103,7 @@ export function Sidebar() {
               </svg>
             </div>
             <button
-              onClick={() => setShowNewProject(true)}
+              onClick={() => setDialogOpen(true)}
               className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-indigo-600"
               title="Create new project"
             >
@@ -142,6 +114,12 @@ export function Sidebar() {
           </div>
         )}
       </div>
+
+      <CreateProjectDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onCreated={handleProjectCreated}
+      />
 
       {/* Environment selector */}
       {projectId && envs.length > 0 && (
