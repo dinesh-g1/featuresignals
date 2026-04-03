@@ -15,7 +15,7 @@ Learn how to set up an A/B test using FeatureSignals and the React SDK to measur
 
 ## Step 1: Create a Multi-Variant Flag
 
-In the dashboard, create a new flag with string variants:
+In the Flag Engine, create a new flag with string variants:
 
 - **Key**: `pricing-page-layout`
 - **Name**: Pricing Page Layout Test
@@ -92,7 +92,7 @@ function PricingPage() {
 
 ## Step 5: Configure the Rollout
 
-In the dashboard, go to the flag's environment settings:
+In the Flag Engine, go to the flag's environment settings:
 
 1. **Enable** the flag in your production environment
 2. Set the **percentage rollout** to distribute traffic:
@@ -132,7 +132,7 @@ function PricingCard({ plan }) {
 
 ## Step 7: Analyze Results
 
-After collecting sufficient data, check the evaluation metrics in the dashboard:
+After collecting sufficient data, check the evaluation metrics in the Flag Engine:
 
 1. Navigate to **Metrics → Evaluations**
 2. Filter by `pricing-page-layout`

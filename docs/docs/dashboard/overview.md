@@ -17,11 +17,15 @@ The sidebar provides access to all major sections:
 
 | Section | Description |
 |---------|-------------|
-| **Flags** | Create, view, and manage feature flags |
+| **Flags** | Create, view, and manage feature flags with category and status tracking |
 | **Segments** | Define reusable user segments |
 | **Environments** | View and manage deployment environments |
 | **Eval Metrics** | Monitor flag evaluation statistics |
-| **Flag Health** | Identify stale or problematic flags |
+| **Flag Health** | Identify stale or problematic flags with category-aware thresholds |
+| **Env Comparison** | Compare and sync flag states across environments |
+| **Entity Inspector** | See what a specific user experiences across all flags |
+| **Entity Comparison** | Compare flag evaluations between two users side-by-side |
+| **Usage Insights** | View flag value distributions (true/false percentages) |
 | **Webhooks** | Configure event notifications |
 | **Audit Log** | Review change history |
 | **Team** | Manage organization members and roles |
@@ -32,6 +36,7 @@ The sidebar provides access to all major sections:
 
 ### Flag Management
 - Create flags with different types (boolean, string, number, JSON, A/B)
+- Classify flags by category (release, experiment, ops, permission) and track lifecycle status
 - Toggle flags per environment
 - Configure targeting rules with a visual editor
 - Set percentage rollouts
@@ -39,8 +44,13 @@ The sidebar provides access to all major sections:
 - Manage mutual exclusion groups
 - Set up prerequisite dependencies
 - Schedule enable/disable times
-- Promote configurations between environments
+- Compare and sync flag states across environments
 - Kill switch for emergency disable
+
+### Flag Intelligence
+- **Entity Inspector** — See all flag evaluations for a specific user
+- **Entity Comparison** — Compare what two different users experience
+- **Usage Insights** — View value distribution percentages per flag
 
 ### Real-Time Updates
 The Flag Engine uses polling to keep flag states current. Changes made via API or by other team members appear automatically.

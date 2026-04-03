@@ -5,7 +5,7 @@ title: Evaluation Metrics
 
 # Evaluation Metrics
 
-The Eval Metrics page in the dashboard provides visibility into how your feature flags are being evaluated.
+The Eval Metrics page in the Flag Engine provides visibility into how your feature flags are being evaluated.
 
 ## Accessing Metrics
 
@@ -44,6 +44,10 @@ Click **Reset Counters** to clear all metrics and start a fresh counting window.
 - Starting a new measurement period
 - After deploying changes
 - Clearing test data
+
+## Related: Usage Insights
+
+For **value distribution** data (what percentage of evaluations return `true` vs. `false`), see the **[Usage Insights](/dashboard/usage-insights)** page. Eval Metrics focuses on evaluation reasons and counts, while Usage Insights focuses on the actual values returned.
 
 ## Data Characteristics
 

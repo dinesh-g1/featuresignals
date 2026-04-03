@@ -9,7 +9,7 @@ Webhooks notify external systems when flag changes occur. Use them to trigger CI
 
 ## Setting Up a Webhook
 
-1. Navigate to **Webhooks** in the dashboard
+1. Navigate to **Webhooks** in the Flag Engine
 2. Click **Create Webhook**
 3. Configure:
    - **Name**: Descriptive identifier
@@ -72,7 +72,7 @@ def verify_signature(payload: bytes, signature: str, secret: str) -> bool:
 
 ## Monitoring Deliveries
 
-View delivery history via the API or dashboard:
+View delivery history via the API or Flag Engine:
 
 ```bash
 curl http://localhost:8080/v1/webhooks/$WEBHOOK_ID/deliveries \

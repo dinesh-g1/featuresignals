@@ -5,7 +5,27 @@ title: Flag Lifecycle
 
 # Flag Lifecycle
 
-Feature flags have a lifecycle from creation to retirement. Managing this lifecycle is critical to avoiding technical debt.
+Feature flags have a lifecycle from creation to retirement. Managing this lifecycle is critical to avoiding technical debt. FeatureSignals tracks lifecycle progress through a combination of **toggle categories** and **status tracking**.
+
+## Status Model
+
+Every flag has a `status` field that tracks where it is in its lifecycle:
+
+| Status | Meaning | Next Steps |
+|--------|---------|------------|
+| `active` | Flag is in use and being evaluated | Monitor, iterate, or roll out |
+| `rolled_out` | Feature has been fully enabled for all users | Remove flag from code, then deprecate |
+| `deprecated` | Flag is scheduled for removal | Delete after confirming no SDK references |
+| `archived` | Flag is retained for audit purposes only | No action needed |
+
+Update status via the Flag Engine or API:
+
+```bash
+curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "rolled_out"}'
+```
 
 ## Lifecycle Stages
 
@@ -15,7 +35,7 @@ Created → Configured → Enabled (Dev) → Enabled (Staging) → Enabled (Prod
 
 ### 1. Created
 
-A new flag is created with a key, name, type, and default value. It starts **disabled** in all environments.
+A new flag is created with a key, name, type, default value, [category](/core-concepts/toggle-categories), and status (`active`). It starts **disabled** in all environments.
 
 ### 2. Configured
 
@@ -45,11 +65,27 @@ Gradually increase the percentage rollout in production:
 
 ### 6. Full Rollout
 
-Once at 100% with no issues, the flag is fully rolled out.
+Once at 100% with no issues, the flag is fully rolled out. Update the flag's status to `rolled_out`:
+
+```bash
+curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "rolled_out"}'
+```
 
 ### 7. Cleanup
 
-Remove the flag from code and delete it from FeatureSignals. This is often the forgotten step — use **flag expiration** to prevent stale flags.
+Remove the flag from code and mark it `deprecated`, then `archived` or delete it from FeatureSignals. This is often the forgotten step — use **flag expiration** and **category-aware staleness thresholds** to prevent stale flags.
+
+The expected cleanup urgency depends on the flag's [category](/core-concepts/toggle-categories):
+
+| Category | Expected Cleanup Timeline |
+|----------|--------------------------|
+| Release | Days to weeks after full rollout |
+| Experiment | After experiment concludes and winner is declared |
+| Ops | Rarely — ops toggles are often long-lived |
+| Permission | Rarely — permission toggles may be permanent |
 
 ## Flag Expiration
 
@@ -95,7 +131,9 @@ This sets `enabled: false` immediately and creates an audit entry with `flag.kil
 
 ## Flag Health
 
-The dashboard's **Flag Health** page shows:
-- Flags without recent evaluations (potentially stale)
+The Flag Engine's **[Flag Health](/dashboard/flag-health)** page shows:
+- Flags without recent evaluations (potentially stale), with category-aware thresholds
 - Flags past their expiration date
 - Flags that have been at 100% rollout for extended periods
+
+Use **[Usage Insights](/dashboard/usage-insights)** to monitor value distributions and **[Entity Inspector](/dashboard/entity-inspector)** to debug flag evaluation for specific users.

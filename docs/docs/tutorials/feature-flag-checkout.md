@@ -15,7 +15,7 @@ Learn how to wrap a new checkout experience behind a feature flag and roll it ou
 
 ## Step 1: Create the Flag
 
-In the FeatureSignals dashboard, navigate to your project and create a new flag:
+In the FeatureSignals Flag Engine, navigate to your project and create a new flag:
 
 - **Key**: `new-checkout`
 - **Name**: New Checkout Flow
@@ -114,7 +114,7 @@ Once the new checkout is stable and serving 100% of traffic:
 
 1. Remove the flag check from your code — keep only the new checkout path
 2. Deploy the simplified code
-3. Delete the flag from the dashboard
+3. Delete the flag from the Flag Engine
 
 ```javascript
 // After cleanup — no more flag check

@@ -5,13 +5,13 @@ title: Architecture Overview
 
 # Architecture Overview
 
-FeatureSignals is built as a modular, self-hosted platform with a clear separation between the API server, dashboard, SDKs, and relay proxy.
+FeatureSignals is built as a modular, self-hosted platform with a clear separation between the API server, Flag Engine (dashboard), SDKs, and relay proxy.
 
 ## System Architecture
 
 ```
                          ┌──────────────────────────────────┐
-                         │           Dashboard               │
+                         │          Flag Engine               │
                          │         (Next.js, port 3000)      │
                          └──────────────┬───────────────────┘
                                         │ REST API (JWT auth)
@@ -45,7 +45,7 @@ The core server built with Go and the chi router. Handles:
 - **Flag Scheduler** — Background worker for scheduled enable/disable operations
 - **Metrics Collector** — In-memory evaluation counters and impression tracking
 
-### Dashboard (Next.js)
+### Flag Engine (Next.js)
 
 A React/Next.js web application providing a visual interface for all management operations. Uses Zustand for state management.
 

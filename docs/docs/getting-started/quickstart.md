@@ -27,7 +27,7 @@ docker compose up -d
 This starts:
 - **PostgreSQL** on port `5432`
 - **API Server** on port `8080`
-- **Dashboard** on port `3000`
+- **Flag Engine** on port `3000`
 
 Database migrations run automatically on startup.
 
@@ -246,7 +246,7 @@ const enabled = useFlag("new-checkout", false);
 
 ## 6. Toggle and Observe
 
-Go back to the dashboard, toggle the flag OFF, and re-run your app. The value changes instantly (or within the polling interval).
+Go back to the Flag Engine, toggle the flag OFF, and re-run your app. The value changes instantly (or within the polling interval).
 
 ## Next Steps
 

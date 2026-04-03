@@ -34,7 +34,7 @@ curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/kill \
   -d '{"env_id": "production-env-uuid"}'
 ```
 
-### Via Dashboard
+### Via Flag Engine
 
 1. Open the flag detail page
 2. Navigate to the target environment tab

@@ -5,7 +5,7 @@ title: Managing Flags
 
 # Managing Flags
 
-The flag management interface is the core of the FeatureSignals dashboard.
+The flag management interface is the core of the FeatureSignals Flag Engine.
 
 ## Creating a Flag
 
@@ -17,6 +17,8 @@ The flag management interface is the core of the FeatureSignals dashboard.
    - **Description**: Optional description
    - **Type**: `boolean`, `string`, `number`, `json`, or `ab`
    - **Default Value**: Value when disabled
+   - **Category**: `release`, `experiment`, `ops`, or `permission` (see [Toggle Categories](/core-concepts/toggle-categories))
+   - **Status**: `active`, `rolled_out`, `deprecated`, or `archived` (defaults to `active`)
    - **Tags**: Optional tags for organization
 4. Click **Create**
 
@@ -26,6 +28,7 @@ The flag detail page is organized into tabs:
 
 ### Overview Tab
 - Flag metadata (key, name, type, description)
+- Category and status badges
 - Tags management
 - Prerequisite flags configuration
 - Mutual exclusion group editor
@@ -63,9 +66,19 @@ Click the toggle switch in any environment tab to enable or disable a flag. This
 In the **Overview** tab, find the **Mutual Exclusion Group** section:
 1. Enter a group name (e.g., `checkout-experiments`)
 2. Click **Save**
-3. The dashboard shows how many other flags share this group
+3. The Flag Engine shows how many other flags share this group
 
 To remove from a group, click **Remove**.
+
+## Filtering Flags
+
+The flags list page provides filters to quickly find relevant flags:
+
+- **Search** — Filter by flag key or name
+- **Category filter** — Show only release, experiment, ops, or permission flags
+- **Status filter** — Show only active, rolled_out, deprecated, or archived flags
+
+Each flag in the list displays its category and status as color-coded badges for quick visual identification.
 
 ## Kill Switch
 

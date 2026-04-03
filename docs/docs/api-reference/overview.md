@@ -19,7 +19,7 @@ The API uses two authentication methods:
 
 | Method | Header | Use Case |
 |--------|--------|----------|
-| **JWT Bearer Token** | `Authorization: Bearer <token>` | Management API (dashboard, admin) |
+| **JWT Bearer Token** | `Authorization: Bearer <token>` | Management API (Flag Engine, admin) |
 | **API Key** | `X-API-Key: <key>` | Evaluation API (SDKs, clients) |
 
 See [Authentication](/api-reference/authentication) for details.
