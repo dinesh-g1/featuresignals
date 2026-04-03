@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 
+
 const PASSWORD_RULES = [
   { label: "8+ characters", test: (p: string) => p.length >= 8 },
   { label: "1 uppercase", test: (p: string) => /[A-Z]/.test(p) },
@@ -13,7 +14,7 @@ const PASSWORD_RULES = [
   { label: "1 special character", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2;
 
 export default function DemoRegisterPage() {
   const { token, isDemo, setAuth, clearDemo } = useAppStore();
@@ -26,10 +27,6 @@ export default function DemoRegisterPage() {
   const [loading, setLoading] = useState(false);
 
   // Step 2 fields
-  const [otp, setOtp] = useState("");
-  const [otpResending, setOtpResending] = useState(false);
-
-  // Step 3 fields
   const [selectedPlan, setSelectedPlan] = useState<"free" | "pro">("free");
   const [retainData, setRetainData] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
@@ -97,35 +94,7 @@ export default function DemoRegisterPage() {
     }
   };
 
-  // Step 2: OTP verification
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeToken) return;
-    setError(null);
-    setLoading(true);
-    try {
-      await api.verifyOTP(activeToken, otp);
-      setStep(3);
-    } catch (err: any) {
-      setError(err.message || "Invalid OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (!activeToken) return;
-    setOtpResending(true);
-    try {
-      await api.sendOTP(activeToken, form.phone);
-    } catch {
-      // best-effort
-    } finally {
-      setOtpResending(false);
-    }
-  };
-
-  // Step 3: Plan selection
+  // Step 2: Plan selection
   const handleSelectPlan = async () => {
     if (!activeToken) return;
     setError(null);
@@ -164,7 +133,7 @@ export default function DemoRegisterPage() {
       <div className="w-full max-w-lg">
         {/* Step indicator */}
         <div className="mb-8 flex items-center justify-center gap-2">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div key={s} className="flex items-center gap-2">
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
@@ -179,7 +148,7 @@ export default function DemoRegisterPage() {
                   s
                 )}
               </div>
-              {s < 3 && <div className={`h-0.5 w-8 ${s < step ? "bg-green-500" : "bg-slate-200"}`} />}
+              {s < 2 && <div className={`h-0.5 w-8 ${s < step ? "bg-green-500" : "bg-slate-200"}`} />}
             </div>
           ))}
         </div>
@@ -269,68 +238,8 @@ export default function DemoRegisterPage() {
             </>
           )}
 
-          {/* Step 2: Phone OTP Verification */}
+          {/* Step 2: Plan Selection + Data Retention */}
           {step === 2 && (
-            <>
-              <div className="mb-6 text-center">
-                <h1 className="text-xl font-bold text-slate-900">Verify Your Phone</h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  Enter the 6-digit code sent to <span className="font-medium text-slate-700">{form.phone}</span>
-                </p>
-              </div>
-
-              <div className="mb-5 rounded-lg bg-blue-50 p-3">
-                <p className="text-xs text-blue-700">
-                  A verification link was also sent to <span className="font-medium">{form.email}</span>. You can verify your email anytime.
-                </p>
-              </div>
-
-              {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-
-              <form onSubmit={handleVerifyOTP} className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">OTP Code</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    pattern="\d{6}"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-3 text-center text-lg font-mono tracking-widest focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    placeholder="000000"
-                    autoFocus
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading || otp.length !== 6}
-                  className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {loading ? "Verifying..." : "Verify & Continue"}
-                </button>
-              </form>
-
-              <div className="mt-4 flex items-center justify-between">
-                <button
-                  onClick={handleResendOTP}
-                  disabled={otpResending}
-                  className="text-sm text-indigo-600 hover:underline disabled:opacity-50"
-                >
-                  {otpResending ? "Resending..." : "Resend OTP"}
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  className="text-sm text-slate-400 hover:text-slate-600"
-                >
-                  Skip for now
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Step 3: Plan Selection + Data Retention */}
-          {step === 3 && (
             <>
               <div className="mb-6 text-center">
                 <h1 className="text-xl font-bold text-slate-900">Choose Your Plan</h1>

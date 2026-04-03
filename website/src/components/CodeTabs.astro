@@ -10,12 +10,12 @@ interface Props {
 }
 const { tabs, id } = Astro.props;
 ---
-<div class="code-tabs mt-4 rounded-lg border border-slate-200 bg-slate-900 overflow-hidden" data-tabgroup={id}>
-  <div class="flex border-b border-slate-700 bg-slate-800">
+<div class="code-tabs mt-4 rounded-lg border border-slate-200 bg-slate-900 overflow-hidden max-w-full" data-tabgroup={id}>
+  <div class="flex overflow-x-auto border-b border-slate-700 bg-slate-800 scrollbar-hide">
     {tabs.map((tab, i) => (
       <button
         type="button"
-        class={`code-tab-btn px-3 py-2 text-xs font-medium transition-colors ${i === 0 ? 'text-white bg-slate-900' : 'text-slate-400 hover:text-slate-200'}`}
+        class={`code-tab-btn shrink-0 px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${i === 0 ? 'text-white bg-slate-900' : 'text-slate-400 hover:text-slate-200'}`}
         data-tabgroup={id}
         data-tab={i}
       >
@@ -29,10 +29,15 @@ const { tabs, id } = Astro.props;
       data-tabgroup={id}
       data-panel={i}
     >
-      <pre class="overflow-x-auto p-4 text-[13px] leading-relaxed text-slate-100"><code>{tab.code}</code></pre>
+      <pre class="overflow-x-auto p-3 sm:p-4 text-[11px] sm:text-[13px] leading-relaxed text-slate-100"><code>{tab.code}</code></pre>
     </div>
   ))}
 </div>
+
+<style>
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
 
 <script>
   document.addEventListener('astro:page-load', () => {

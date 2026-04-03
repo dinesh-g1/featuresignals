@@ -5,17 +5,19 @@ import pricingData from '../../pricing.json';
 const free = pricingData.plans.free;
 const pro = pricingData.plans.pro;
 const enterprise = pricingData.plans.enterprise;
+const providers = pricingData.self_hosting.providers;
+const providerKeys = Object.keys(providers) as Array<keyof typeof providers>;
 const checkSvg = `<svg class="h-4 w-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
 const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
 ---
 <Layout title="Pricing" description="Start free, upgrade when you're ready. FeatureSignals offers a generous free tier, a Pro plan for growing teams, and Enterprise for custom needs.">
-  <section class="mx-auto max-w-6xl px-6 py-20">
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-20">
     <div class="text-center">
-      <div class="inline-block rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700 mb-6 ring-1 ring-indigo-100">
+      <div class="inline-block rounded-full bg-indigo-50 px-4 py-1.5 text-xs sm:text-sm font-medium text-indigo-700 mb-6 ring-1 ring-indigo-100">
         Simple, transparent pricing
       </div>
-      <h1 class="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">Start free. Scale as you grow.</h1>
-      <p class="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+      <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">Start free. Scale as you grow.</h1>
+      <p class="mt-4 text-sm sm:text-lg text-slate-500 max-w-2xl mx-auto">
         Every plan includes the full feature set. Pick the one that matches your team size and support needs.
       </p>
       <p class="mt-3 text-sm text-slate-400">
@@ -23,9 +25,9 @@ const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none
       </p>
     </div>
 
-    <div class="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-start">
+    <div class="mt-10 sm:mt-16 grid grid-cols-1 gap-6 lg:grid-cols-3 max-w-5xl mx-auto items-start">
 
-      <div class="rounded-2xl border border-slate-200 bg-white p-8 text-left transition-all hover:shadow-lg hover:border-slate-300">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 text-left transition-all hover:shadow-lg hover:border-slate-300">
         <h3 class="text-lg font-semibold text-slate-900">{free.name}</h3>
         <p class="mt-1 text-sm text-slate-500">{free.tagline}</p>
         <p class="mt-4 text-4xl font-bold text-slate-900">{free.display_price}<span class="text-base font-normal text-slate-500"> / {free.billing_period}</span></p>
@@ -37,7 +39,7 @@ const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none
         <a href={free.cta_url} class="mt-8 block rounded-lg border border-slate-300 py-3 text-center text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400">{free.cta_label}</a>
       </div>
 
-      <div class="rounded-2xl border-2 border-indigo-600 bg-white p-8 text-left relative shadow-xl shadow-indigo-100 lg:-mt-4 lg:pb-10">
+      <div class="rounded-2xl border-2 border-indigo-600 bg-white p-6 sm:p-8 text-left relative shadow-xl shadow-indigo-100 lg:-mt-4 lg:pb-10">
         <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1 text-xs font-semibold text-white">Most Popular</span>
         <h3 class="text-lg font-semibold text-slate-900">{pro.name}</h3>
         <p class="mt-1 text-sm text-slate-500">{pro.tagline}</p>
@@ -50,7 +52,7 @@ const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none
         <a href={pro.cta_url} class="mt-8 block rounded-lg bg-indigo-600 py-3 text-center text-sm font-semibold text-white transition-all hover:bg-indigo-700 hover:shadow-md">{pro.cta_label}</a>
       </div>
 
-      <div class="rounded-2xl border border-slate-200 bg-white p-8 text-left transition-all hover:shadow-lg hover:border-slate-300">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 text-left transition-all hover:shadow-lg hover:border-slate-300">
         <h3 class="text-lg font-semibold text-slate-900">{enterprise.name}</h3>
         <p class="mt-1 text-sm text-slate-500">{enterprise.tagline}</p>
         <p class="mt-4 text-4xl font-bold text-slate-900">{enterprise.display_price}</p>
@@ -73,11 +75,11 @@ const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none
     </div>
   </section>
 
-  <section class="border-t border-slate-100 bg-slate-50 py-20">
-    <div class="mx-auto max-w-6xl px-6">
-      <h2 class="text-center text-2xl font-bold text-slate-900">Every plan includes</h2>
-      <p class="mt-2 text-center text-slate-500">No feature gating. The full platform from day one.</p>
-      <div class="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 max-w-4xl mx-auto">
+  <section class="border-t border-slate-100 bg-slate-50 py-14 sm:py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <h2 class="text-center text-xl sm:text-2xl font-bold text-slate-900">Every plan includes</h2>
+      <p class="mt-2 text-center text-sm sm:text-base text-slate-500">No feature gating. The full platform from day one.</p>
+      <div class="mt-8 sm:mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-4 max-w-4xl mx-auto">
         {pricingData.common_features.map((f: string) => (
           <div class="rounded-lg border border-slate-200 bg-white p-4 text-center transition-all hover:shadow-md">
             <p class="font-semibold text-slate-900 text-sm">{f}</p>
@@ -87,25 +89,62 @@ const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none
     </div>
   </section>
 
-  <section class="py-20">
-    <div class="mx-auto max-w-6xl px-6">
-      <h2 class="text-center text-2xl font-bold text-slate-900">Self-hosting cost estimates</h2>
-      <p class="mt-2 text-center text-slate-500">For teams who prefer to run on their own infrastructure. The software is always free.</p>
-      <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3 max-w-3xl mx-auto">
-        {pricingData.self_hosting.map((s: { tier: string; estimate: string; description: string }) => (
-          <div class="rounded-xl border border-slate-200 p-6 text-center">
-            <h3 class="font-semibold text-slate-900">{s.tier}</h3>
-            <p class="mt-2 text-3xl font-bold text-indigo-600">{s.estimate}</p>
-            <p class="mt-3 text-xs text-slate-500">{s.description}</p>
+  <section class="py-14 sm:py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <h2 class="text-center text-xl sm:text-2xl font-bold text-slate-900">Self-hosting cost estimates</h2>
+      <p class="mt-2 text-center text-sm sm:text-base text-slate-500 max-w-2xl mx-auto">FeatureSignals is Apache-2.0 — the software is always free. These are infrastructure-only costs based on real provider pricing.</p>
+
+      <div class="mt-8 sm:mt-10" data-selfhost-tabs>
+        <div class="flex justify-center">
+          <div class="inline-flex overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1 scrollbar-hide">
+            {providerKeys.map((key, i) => (
+              <button
+                type="button"
+                class={`selfhost-tab-btn shrink-0 rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${i === 0 ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                data-provider={key}
+              >
+                {providers[key].name}
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {providerKeys.map((key, i) => {
+          const provider = providers[key];
+          return (
+            <div class={`selfhost-tab-panel mt-6 sm:mt-8 ${i === 0 ? '' : 'hidden'}`} data-provider-panel={key}>
+              <p class="text-center text-xs text-slate-400 mb-4 sm:mb-6">Region: {provider.region} &middot; Prices as of April 2026</p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3 max-w-4xl mx-auto">
+                {provider.tiers.map((tier: any) => (
+                  <div class="rounded-xl border border-slate-200 p-4 sm:p-6 text-left hover:shadow-md transition-shadow">
+                    <h3 class="font-semibold text-slate-900">{tier.tier}</h3>
+                    <p class="mt-1 text-xs text-slate-400">{tier.use_case}</p>
+                    <p class="mt-3 text-2xl sm:text-3xl font-bold text-indigo-600">{tier.monthly_cost_inr}</p>
+                    <p class="text-xs text-slate-400">{tier.monthly_cost} {provider.currency}/mo</p>
+                    <div class="mt-4 space-y-2">
+                      <p class="text-xs font-medium text-slate-500">Instances</p>
+                      <p class="text-xs text-slate-600">{tier.instances}</p>
+                      <p class="text-xs font-medium text-slate-500 mt-2">Includes</p>
+                      <p class="text-xs text-slate-600">{tier.includes}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   </section>
 
-  <section class="border-t border-slate-100 py-20">
-    <div class="mx-auto max-w-3xl px-6">
-      <h2 class="text-center text-2xl font-bold text-slate-900">Frequently asked questions</h2>
+  <style>
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+
+  <section class="border-t border-slate-100 py-14 sm:py-20">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6">
+      <h2 class="text-center text-xl sm:text-2xl font-bold text-slate-900">Frequently asked questions</h2>
       <div class="mt-10 space-y-6">
         <div class="border-b border-slate-100 pb-6">
           <h3 class="font-semibold text-slate-900">Can I try before I sign up?</h3>
@@ -131,13 +170,32 @@ const checkSvgIndigo = `<svg class="h-4 w-4 text-indigo-500 shrink-0" fill="none
     </div>
   </section>
 
-  <section class="bg-gradient-to-br from-indigo-600 to-indigo-800 py-16 text-center text-white">
-    <h2 class="text-3xl font-bold">See it in action</h2>
-    <p class="mt-3 text-indigo-200">No credit card. No sign-up. Just the product.</p>
-    <div class="mt-6 flex flex-wrap items-center justify-center gap-4">
-      <a href="https://demo.featuresignals.com/demo" class="inline-block rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md">Try Live Demo</a>
-      <a href="https://app.featuresignals.com/register" class="inline-block rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10">Sign Up Free</a>
-      <a href="https://docs.featuresignals.com" class="inline-block rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10">Read the Docs</a>
+  <section class="bg-gradient-to-br from-indigo-600 to-indigo-800 px-4 sm:px-6 py-12 sm:py-16 text-center text-white">
+    <h2 class="text-2xl sm:text-3xl font-bold">See it in action</h2>
+    <p class="mt-3 text-sm sm:text-base text-indigo-200">No credit card. No sign-up. Just the product.</p>
+    <div class="mt-6 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
+      <a href="https://demo.featuresignals.com/demo" class="w-full sm:w-auto inline-block rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md">Try Live Demo</a>
+      <a href="https://app.featuresignals.com/register" class="w-full sm:w-auto inline-block rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10">Sign Up Free</a>
+      <a href="https://docs.featuresignals.com" class="w-full sm:w-auto inline-block rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10">Read the Docs</a>
     </div>
   </section>
+
+  <script>
+    document.addEventListener('astro:page-load', () => {
+      document.querySelectorAll<HTMLButtonElement>('.selfhost-tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const provider = btn.dataset.provider!;
+          document.querySelectorAll<HTMLButtonElement>('.selfhost-tab-btn').forEach((b) => {
+            b.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+            b.classList.add('text-slate-500');
+          });
+          btn.classList.remove('text-slate-500');
+          btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+          document.querySelectorAll<HTMLElement>('.selfhost-tab-panel').forEach((p) => {
+            p.classList.toggle('hidden', p.dataset.providerPanel !== provider);
+          });
+        });
+      });
+    });
+  </script>
 </Layout>
