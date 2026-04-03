@@ -20,6 +20,30 @@ func (ft FlagType) IsValid() bool {
 	return validFlagTypes[ft]
 }
 
+var validFlagCategories = map[FlagCategory]bool{
+	CategoryRelease:    true,
+	CategoryExperiment: true,
+	CategoryOps:        true,
+	CategoryPermission: true,
+}
+
+// IsValid returns true if fc is a recognized flag category.
+func (fc FlagCategory) IsValid() bool {
+	return validFlagCategories[fc]
+}
+
+var validFlagStatuses = map[FlagStatus]bool{
+	StatusActive:     true,
+	StatusRolledOut:  true,
+	StatusDeprecated: true,
+	StatusArchived:   true,
+}
+
+// IsValid returns true if fs is a recognized flag status.
+func (fs FlagStatus) IsValid() bool {
+	return validFlagStatuses[fs]
+}
+
 var validOperators = map[Operator]bool{
 	OpEquals: true, OpNotEquals: true, OpContains: true,
 	OpStartsWith: true, OpEndsWith: true,
@@ -62,6 +86,12 @@ func (f *Flag) Validate() error {
 	}
 	if f.FlagType != "" && !f.FlagType.IsValid() {
 		return NewValidationError("flag_type", "must be boolean, string, number, json, or ab")
+	}
+	if f.Category != "" && !f.Category.IsValid() {
+		return NewValidationError("category", "must be release, experiment, ops, or permission")
+	}
+	if f.Status != "" && !f.Status.IsValid() {
+		return NewValidationError("status", "must be active, rolled_out, deprecated, or archived")
 	}
 	if f.DefaultValue != nil && !json.Valid(f.DefaultValue) {
 		return NewValidationError("default_value", "must be valid JSON")

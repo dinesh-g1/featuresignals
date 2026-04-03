@@ -32,6 +32,8 @@ type CreateFlagRequest struct {
 	Name                 string          `json:"name"`
 	Description          string          `json:"description"`
 	FlagType             string          `json:"flag_type"`
+	Category             string          `json:"category"`
+	Status               string          `json:"status"`
 	DefaultValue         json.RawMessage `json:"default_value"`
 	Tags                 []string        `json:"tags"`
 	Prerequisites        []string        `json:"prerequisites,omitempty"`
@@ -54,6 +56,14 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if flagType == "" {
 		flagType = domain.FlagTypeBoolean
 	}
+	category := domain.FlagCategory(req.Category)
+	if category == "" {
+		category = domain.CategoryRelease
+	}
+	status := domain.FlagStatus(req.Status)
+	if status == "" {
+		status = domain.StatusActive
+	}
 	defaultVal := req.DefaultValue
 	if defaultVal == nil {
 		defaultVal = json.RawMessage(`false`)
@@ -65,6 +75,8 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:                 req.Name,
 		Description:          req.Description,
 		FlagType:             flagType,
+		Category:             category,
+		Status:               status,
 		DefaultValue:         defaultVal,
 		Tags:                 req.Tags,
 		Prerequisites:        req.Prerequisites,
@@ -184,6 +196,22 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.MutualExclusionGroup != "" || req.MutualExclusionGroup == "" {
 		flag.MutualExclusionGroup = req.MutualExclusionGroup
+	}
+	if req.Category != "" {
+		cat := domain.FlagCategory(req.Category)
+		if !cat.IsValid() {
+			httputil.Error(w, http.StatusBadRequest, "category: must be release, experiment, ops, or permission")
+			return
+		}
+		flag.Category = cat
+	}
+	if req.Status != "" {
+		st := domain.FlagStatus(req.Status)
+		if !st.IsValid() {
+			httputil.Error(w, http.StatusBadRequest, "status: must be active, rolled_out, deprecated, or archived")
+			return
+		}
+		flag.Status = st
 	}
 
 	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
@@ -479,6 +507,195 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 	})
 
 	httputil.JSON(w, http.StatusOK, state)
+}
+
+// --- Environment Comparison ---
+
+type EnvDiff struct {
+	FlagKey        string `json:"flag_key"`
+	SourceEnabled  *bool  `json:"source_enabled"`
+	TargetEnabled  *bool  `json:"target_enabled"`
+	SourceRollout  *int   `json:"source_rollout"`
+	TargetRollout  *int   `json:"target_rollout"`
+	SourceRules    int    `json:"source_rules"`
+	TargetRules    int    `json:"target_rules"`
+	Differences    []string `json:"differences"`
+}
+
+type EnvComparisonResponse struct {
+	Total       int       `json:"total"`
+	DiffCount   int       `json:"diff_count"`
+	Diffs       []EnvDiff `json:"diffs"`
+}
+
+// CompareEnvironments returns per-flag diffs between two environments.
+func (h *FlagHandler) CompareEnvironments(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	projectID := chi.URLParam(r, "projectID")
+	sourceEnvID := r.URL.Query().Get("source_env_id")
+	targetEnvID := r.URL.Query().Get("target_env_id")
+	if sourceEnvID == "" || targetEnvID == "" {
+		httputil.Error(w, http.StatusBadRequest, "source_env_id and target_env_id query params are required")
+		return
+	}
+	if sourceEnvID == targetEnvID {
+		httputil.Error(w, http.StatusBadRequest, "source and target environments must differ")
+		return
+	}
+
+	flags, err := h.store.ListFlags(r.Context(), projectID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+		return
+	}
+
+	stateMap := func(envID string) map[string]*domain.FlagState {
+		m := make(map[string]*domain.FlagState)
+		for _, f := range flags {
+			st, err := h.store.GetFlagState(r.Context(), f.ID, envID)
+			if err == nil {
+				m[f.Key] = st
+			}
+		}
+		return m
+	}
+	sourceStates := stateMap(sourceEnvID)
+	targetStates := stateMap(targetEnvID)
+
+	diffs := make([]EnvDiff, 0)
+	for _, f := range flags {
+		src := sourceStates[f.Key]
+		tgt := targetStates[f.Key]
+		diff := EnvDiff{FlagKey: f.Key}
+		hasDiff := false
+
+		if src != nil {
+			diff.SourceEnabled = &src.Enabled
+			diff.SourceRollout = &src.PercentageRollout
+			diff.SourceRules = len(src.Rules)
+		}
+		if tgt != nil {
+			diff.TargetEnabled = &tgt.Enabled
+			diff.TargetRollout = &tgt.PercentageRollout
+			diff.TargetRules = len(tgt.Rules)
+		}
+
+		if (src == nil) != (tgt == nil) {
+			hasDiff = true
+			if src == nil {
+				diff.Differences = append(diff.Differences, "target_only")
+			} else {
+				diff.Differences = append(diff.Differences, "source_only")
+			}
+		} else if src != nil && tgt != nil {
+			if src.Enabled != tgt.Enabled {
+				diff.Differences = append(diff.Differences, "enabled")
+				hasDiff = true
+			}
+			if src.PercentageRollout != tgt.PercentageRollout {
+				diff.Differences = append(diff.Differences, "rollout")
+				hasDiff = true
+			}
+			if len(src.Rules) != len(tgt.Rules) {
+				diff.Differences = append(diff.Differences, "rules")
+				hasDiff = true
+			}
+			if string(src.DefaultValue) != string(tgt.DefaultValue) {
+				diff.Differences = append(diff.Differences, "default_value")
+				hasDiff = true
+			}
+		}
+
+		if hasDiff {
+			diffs = append(diffs, diff)
+		}
+	}
+
+	httputil.JSON(w, http.StatusOK, EnvComparisonResponse{
+		Total:     len(flags),
+		DiffCount: len(diffs),
+		Diffs:     diffs,
+	})
+}
+
+type SyncEnvironmentsRequest struct {
+	SourceEnvID string   `json:"source_env_id"`
+	TargetEnvID string   `json:"target_env_id"`
+	FlagKeys    []string `json:"flag_keys"`
+}
+
+// SyncEnvironments bulk-promotes selected flags from source to target environment.
+func (h *FlagHandler) SyncEnvironments(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	projectID := chi.URLParam(r, "projectID")
+
+	var req SyncEnvironmentsRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.SourceEnvID == "" || req.TargetEnvID == "" || len(req.FlagKeys) == 0 {
+		httputil.Error(w, http.StatusBadRequest, "source_env_id, target_env_id, and flag_keys are required")
+		return
+	}
+	if req.SourceEnvID == req.TargetEnvID {
+		httputil.Error(w, http.StatusBadRequest, "source and target environments must differ")
+		return
+	}
+
+	synced := 0
+	for _, key := range req.FlagKeys {
+		flag, err := h.store.GetFlag(r.Context(), projectID, key)
+		if err != nil {
+			continue
+		}
+		source, err := h.store.GetFlagState(r.Context(), flag.ID, req.SourceEnvID)
+		if err != nil {
+			continue
+		}
+
+		existing, _ := h.store.GetFlagState(r.Context(), flag.ID, req.TargetEnvID)
+		target := &domain.FlagState{
+			FlagID:            flag.ID,
+			EnvID:             req.TargetEnvID,
+			Enabled:           source.Enabled,
+			DefaultValue:      source.DefaultValue,
+			Rules:             source.Rules,
+			PercentageRollout: source.PercentageRollout,
+			Variants:          source.Variants,
+		}
+		if existing != nil {
+			target.ID = existing.ID
+		}
+
+		if err := h.store.UpsertFlagState(r.Context(), target); err != nil {
+			h.l(r).Error("sync flag failed", "error", err, "flag_key", key)
+			continue
+		}
+
+		orgID := middleware.GetOrgID(r.Context())
+		userID := middleware.GetUserID(r.Context())
+		afterState, _ := json.Marshal(target)
+		h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+			OrgID:        orgID,
+			ActorID:      &userID,
+			ActorType:    "user",
+			Action:       "flag.synced",
+			ResourceType: "flag",
+			ResourceID:   &flag.ID,
+			AfterState:   afterState,
+		})
+		synced++
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]interface{}{
+		"synced": synced,
+		"total":  len(req.FlagKeys),
+	})
 }
 
 func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {

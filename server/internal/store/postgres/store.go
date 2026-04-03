@@ -410,10 +410,16 @@ func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
 	if f.Prerequisites == nil {
 		f.Prerequisites = []string{}
 	}
+	if f.Category == "" {
+		f.Category = domain.CategoryRelease
+	}
+	if f.Status == "" {
+		f.Status = domain.StatusActive
+	}
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO flags (project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at, updated_at`,
-		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup,
+		`INSERT INTO flags (project_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at, updated_at`,
+		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.Category, f.Status, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup,
 	).Scan(&f.ID, &f.CreatedAt, &f.UpdatedAt)
 	return wrapConflict(err, "flag key")
 }
@@ -421,9 +427,9 @@ func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
 func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error) {
 	f := &domain.Flag{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+		`SELECT id, project_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE project_id = $1 AND key = $2`, projectID, key,
-	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt)
+	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "flag")
 	}
@@ -432,7 +438,7 @@ func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Fla
 
 func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+		`SELECT id, project_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
@@ -441,7 +447,7 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 	flags := []domain.Flag{}
 	for rows.Next() {
 		var f domain.Flag
-		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
 			return nil, err
 		}
 		flags = append(flags, f)
@@ -454,9 +460,9 @@ func (s *Store) UpdateFlag(ctx context.Context, f *domain.Flag) error {
 		f.Prerequisites = []string{}
 	}
 	_, err := s.pool.Exec(ctx,
-		`UPDATE flags SET name=$1, description=$2, default_value=$3, tags=$4, expires_at=$5, prerequisites=$6, mutual_exclusion_group=$7, updated_at=NOW()
-		 WHERE id = $8`,
-		f.Name, f.Description, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup, f.ID)
+		`UPDATE flags SET name=$1, description=$2, default_value=$3, tags=$4, expires_at=$5, prerequisites=$6, mutual_exclusion_group=$7, category=$8, status=$9, updated_at=NOW()
+		 WHERE id = $10`,
+		f.Name, f.Description, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup, f.Category, f.Status, f.ID)
 	return err
 }
 

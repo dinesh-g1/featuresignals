@@ -103,6 +103,65 @@ func TestFlagType_IsValid(t *testing.T) {
 	}
 }
 
+func TestFlagCategory_IsValid(t *testing.T) {
+	for _, cat := range []FlagCategory{CategoryRelease, CategoryExperiment, CategoryOps, CategoryPermission} {
+		if !cat.IsValid() {
+			t.Errorf("%q should be valid", cat)
+		}
+	}
+	if FlagCategory("bogus").IsValid() {
+		t.Error("bogus category should be invalid")
+	}
+	if FlagCategory("").IsValid() {
+		t.Error("empty category should be invalid")
+	}
+}
+
+func TestFlagStatus_IsValid(t *testing.T) {
+	for _, st := range []FlagStatus{StatusActive, StatusRolledOut, StatusDeprecated, StatusArchived} {
+		if !st.IsValid() {
+			t.Errorf("%q should be valid", st)
+		}
+	}
+	if FlagStatus("bogus").IsValid() {
+		t.Error("bogus status should be invalid")
+	}
+	if FlagStatus("").IsValid() {
+		t.Error("empty status should be invalid")
+	}
+}
+
+func TestFlag_Validate_CategoryStatus(t *testing.T) {
+	base := Flag{Key: "ok", Name: "Ok", FlagType: FlagTypeBoolean}
+
+	bad := base
+	bad.Category = "invalid"
+	err := bad.Validate()
+	if err == nil {
+		t.Fatal("expected error for invalid category")
+	}
+	if !contains(err.Error(), "category") {
+		t.Errorf("error should mention category, got %q", err.Error())
+	}
+
+	bad2 := base
+	bad2.Status = "invalid"
+	err = bad2.Validate()
+	if err == nil {
+		t.Fatal("expected error for invalid status")
+	}
+	if !contains(err.Error(), "status") {
+		t.Errorf("error should mention status, got %q", err.Error())
+	}
+
+	good := base
+	good.Category = CategoryExperiment
+	good.Status = StatusRolledOut
+	if err := good.Validate(); err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchSubstring(s, substr)
 }
