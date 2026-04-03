@@ -174,6 +174,18 @@ func (h *DemoHandler) Convert(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "email, password, name, org_name, and phone are required")
 		return
 	}
+	if !validateEmail(req.Email) {
+		httputil.Error(w, http.StatusBadRequest, "invalid email format")
+		return
+	}
+	if !validatePhone(req.Phone) {
+		httputil.Error(w, http.StatusBadRequest, "invalid phone format (use E.164 or 7-15 digits)")
+		return
+	}
+	if !validateStringLength(req.Name, 255) || !validateStringLength(req.OrgName, 255) {
+		httputil.Error(w, http.StatusBadRequest, "name and org_name must be at most 255 characters")
+		return
+	}
 	if !validateDemoPassword(req.Password) {
 		httputil.Error(w, http.StatusBadRequest, "password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
 		return
@@ -401,6 +413,10 @@ func (h *DemoHandler) Feedback(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Message == "" {
 		httputil.Error(w, http.StatusBadRequest, "message is required")
+		return
+	}
+	if !validateStringLength(req.Message, 2000) {
+		httputil.Error(w, http.StatusBadRequest, "message must be at most 2000 characters")
 		return
 	}
 

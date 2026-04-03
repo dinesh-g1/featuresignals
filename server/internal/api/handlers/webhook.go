@@ -3,8 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -35,6 +33,14 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Name == "" || req.URL == "" {
 		httputil.Error(w, http.StatusBadRequest, "name and url are required")
+		return
+	}
+	if !validateWebhookURL(req.URL) {
+		httputil.Error(w, http.StatusBadRequest, "url must use http or https scheme")
+		return
+	}
+	if !validateStringLength(req.Name, 255) {
+		httputil.Error(w, http.StatusBadRequest, "name must be at most 255 characters")
 		return
 	}
 
@@ -70,21 +76,16 @@ func (h *WebhookHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) Get(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "webhookID")
-	wh, err := h.store.GetWebhook(r.Context(), id)
-	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "webhook not found")
+	wh, ok := verifyWebhookOwnership(h.store, r, w)
+	if !ok {
 		return
 	}
 	httputil.JSON(w, http.StatusOK, wh)
 }
 
 func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "webhookID")
-
-	existing, err := h.store.GetWebhook(r.Context(), id)
-	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "webhook not found")
+	existing, ok := verifyWebhookOwnership(h.store, r, w)
+	if !ok {
 		return
 	}
 
@@ -125,8 +126,11 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "webhookID")
-	if err := h.store.DeleteWebhook(r.Context(), id); err != nil {
+	wh, ok := verifyWebhookOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	if err := h.store.DeleteWebhook(r.Context(), wh.ID); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete webhook")
 		return
 	}
@@ -134,8 +138,11 @@ func (h *WebhookHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) ListDeliveries(w http.ResponseWriter, r *http.Request) {
-	webhookID := chi.URLParam(r, "webhookID")
-	deliveries, err := h.store.ListWebhookDeliveries(r.Context(), webhookID, 50)
+	wh, ok := verifyWebhookOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	deliveries, err := h.store.ListWebhookDeliveries(r.Context(), wh.ID, 50)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to list deliveries")
 		return

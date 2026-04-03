@@ -104,7 +104,7 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 
 	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
-		httputil.Error(w, http.StatusUnauthorized, err.Error())
+		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -139,7 +139,7 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 
 	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
-		httputil.Error(w, http.StatusUnauthorized, err.Error())
+		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -160,7 +160,7 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
-		httputil.Error(w, http.StatusUnauthorized, err.Error())
+		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 

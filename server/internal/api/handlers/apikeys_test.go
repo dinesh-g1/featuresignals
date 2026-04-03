@@ -14,10 +14,12 @@ import (
 func TestAPIKeyHandler_Create(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
 	body := `{"name":"Production Server Key","type":"server"}`
-	r := httptest.NewRequest("POST", "/v1/environments/env-1/api-keys", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"envID": "env-1"})
+	r := httptest.NewRequest("POST", "/v1/environments/"+envID+"/api-keys", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -44,10 +46,12 @@ func TestAPIKeyHandler_Create(t *testing.T) {
 func TestAPIKeyHandler_Create_ClientKey(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
 	body := `{"name":"Client Key","type":"client"}`
-	r := httptest.NewRequest("POST", "/v1/environments/env-1/api-keys", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"envID": "env-1"})
+	r := httptest.NewRequest("POST", "/v1/environments/"+envID+"/api-keys", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -68,10 +72,12 @@ func TestAPIKeyHandler_Create_ClientKey(t *testing.T) {
 func TestAPIKeyHandler_Create_DefaultsToServer(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
 	body := `{"name":"Default Key","type":"unknown"}`
-	r := httptest.NewRequest("POST", "/v1/environments/env-1/api-keys", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"envID": "env-1"})
+	r := httptest.NewRequest("POST", "/v1/environments/"+envID+"/api-keys", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -91,10 +97,12 @@ func TestAPIKeyHandler_Create_DefaultsToServer(t *testing.T) {
 func TestAPIKeyHandler_Create_MissingName(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
 	body := `{"name":"","type":"server"}`
-	r := httptest.NewRequest("POST", "/v1/environments/env-1/api-keys", strings.NewReader(body))
-	r = requestWithChi(r, map[string]string{"envID": "env-1"})
+	r := httptest.NewRequest("POST", "/v1/environments/"+envID+"/api-keys", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.Create(w, r)
@@ -104,19 +112,39 @@ func TestAPIKeyHandler_Create_MissingName(t *testing.T) {
 	}
 }
 
+func TestAPIKeyHandler_Create_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
+
+	body := `{"name":"Hack Key","type":"server"}`
+	r := httptest.NewRequest("POST", "/v1/environments/"+envID+"/api-keys", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org API key create, got %d", w.Code)
+	}
+}
+
 func TestAPIKeyHandler_List(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
 	store.CreateAPIKey(context.Background(), &domain.APIKey{
-		EnvID: "env-1", KeyHash: "hash1", KeyPrefix: "fs_srv_abc1", Name: "Key 1", Type: domain.APIKeyServer,
+		EnvID: envID, KeyHash: "hash1", KeyPrefix: "fs_srv_abc1", Name: "Key 1", Type: domain.APIKeyServer,
 	})
 	store.CreateAPIKey(context.Background(), &domain.APIKey{
-		EnvID: "env-1", KeyHash: "hash2", KeyPrefix: "fs_cli_xyz2", Name: "Key 2", Type: domain.APIKeyClient,
+		EnvID: envID, KeyHash: "hash2", KeyPrefix: "fs_cli_xyz2", Name: "Key 2", Type: domain.APIKeyClient,
 	})
 
-	r := httptest.NewRequest("GET", "/v1/environments/env-1/api-keys", nil)
-	r = requestWithChi(r, map[string]string{"envID": "env-1"})
+	r := httptest.NewRequest("GET", "/v1/environments/"+envID+"/api-keys", nil)
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
@@ -136,9 +164,11 @@ func TestAPIKeyHandler_List(t *testing.T) {
 func TestAPIKeyHandler_List_Empty(t *testing.T) {
 	store := newMockStore()
 	h := NewAPIKeyHandler(store)
+	_, envID := setupTestEnv(store, testOrgID)
 
-	r := httptest.NewRequest("GET", "/v1/environments/env-1/api-keys", nil)
-	r = requestWithChi(r, map[string]string{"envID": "env-1"})
+	r := httptest.NewRequest("GET", "/v1/environments/"+envID+"/api-keys", nil)
+	r = requestWithChi(r, map[string]string{"envID": envID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
 	w := httptest.NewRecorder()
 
 	h.List(w, r)
