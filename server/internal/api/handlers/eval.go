@@ -35,6 +35,24 @@ type MetricsRecorder interface {
 	Record(flagKey, envID, reason string)
 }
 
+// ValueRecorder optionally tracks evaluated values for insights.
+type ValueRecorder interface {
+	RecordValue(flagKey, envID string, value interface{})
+}
+
+// InsightsProvider exposes per-flag value distribution.
+type InsightsProvider interface {
+	Insights(envID string) []insightResult
+}
+
+type insightResult = struct {
+	FlagKey        string  `json:"flag_key"`
+	TotalCount     int64   `json:"total_count"`
+	TrueCount      int64   `json:"true_count"`
+	FalseCount     int64   `json:"false_count"`
+	TruePercentage float64 `json:"true_percentage"`
+}
+
 type EvalHandler struct {
 	store     domain.Store
 	cache     RulesetCache
@@ -119,6 +137,9 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 
 	if h.metrics != nil {
 		h.metrics.Record(req.FlagKey, envID, result.Reason)
+		if vr, ok := h.metrics.(ValueRecorder); ok {
+			vr.RecordValue(req.FlagKey, envID, result.Value)
+		}
 	}
 
 	h.logger.Debug("flag evaluated",
@@ -160,6 +181,9 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 		results[key] = result
 		if h.metrics != nil {
 			h.metrics.Record(key, envID, result.Reason)
+			if vr, ok := h.metrics.(ValueRecorder); ok {
+				vr.RecordValue(key, envID, result.Value)
+			}
 		}
 	}
 
@@ -201,6 +225,9 @@ func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 		values[k] = v.Value
 		if h.metrics != nil {
 			h.metrics.Record(k, envID, v.Reason)
+			if vr, ok := h.metrics.(ValueRecorder); ok {
+				vr.RecordValue(k, envID, v.Value)
+			}
 		}
 	}
 

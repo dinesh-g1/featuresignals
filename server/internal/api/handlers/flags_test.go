@@ -456,3 +456,248 @@ func TestFlagHandler_Promote_MissingSource(t *testing.T) {
 		t.Errorf("expected 404, got %d", w.Code)
 	}
 }
+
+// --- Category & Status Tests ---
+
+func TestFlagHandler_Create_WithCategory(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"experiment-flag","name":"Experiment","category":"experiment","status":"active"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var flag domain.Flag
+	json.Unmarshal(w.Body.Bytes(), &flag)
+
+	if flag.Category != domain.CategoryExperiment {
+		t.Errorf("expected category 'experiment', got '%s'", flag.Category)
+	}
+	if flag.Status != domain.StatusActive {
+		t.Errorf("expected status 'active', got '%s'", flag.Status)
+	}
+}
+
+func TestFlagHandler_Create_DefaultCategoryStatus(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"default-cat","name":"Default Cat"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var flag domain.Flag
+	json.Unmarshal(w.Body.Bytes(), &flag)
+
+	if flag.Category != domain.CategoryRelease {
+		t.Errorf("expected default category 'release', got '%s'", flag.Category)
+	}
+	if flag.Status != domain.StatusActive {
+		t.Errorf("expected default status 'active', got '%s'", flag.Status)
+	}
+}
+
+func TestFlagHandler_Create_InvalidCategory(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"bad-cat","name":"Bad Cat","category":"invalid"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid category, got %d", w.Code)
+	}
+}
+
+func TestFlagHandler_Create_InvalidStatus(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"bad-status","name":"Bad Status","status":"invalid"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid status, got %d", w.Code)
+	}
+}
+
+func TestFlagHandler_Update_CategoryStatus(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	store.CreateFlag(context.Background(), &domain.Flag{
+		ProjectID: projID, Key: "update-cs", Name: "Update CS",
+		Category: domain.CategoryRelease, Status: domain.StatusActive,
+	})
+
+	body := `{"category":"ops","status":"deprecated"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/flags/update-cs", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "update-cs"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var flag domain.Flag
+	json.Unmarshal(w.Body.Bytes(), &flag)
+
+	if flag.Category != domain.CategoryOps {
+		t.Errorf("expected category 'ops', got '%s'", flag.Category)
+	}
+	if flag.Status != domain.StatusDeprecated {
+		t.Errorf("expected status 'deprecated', got '%s'", flag.Status)
+	}
+}
+
+func TestFlagHandler_Update_InvalidCategory(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "upd-bad", Name: "Bad"})
+
+	body := `{"category":"nope"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/flags/upd-bad", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "flagKey": "upd-bad"})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid category update, got %d", w.Code)
+	}
+}
+
+// --- Environment Comparison Tests ---
+
+func TestFlagHandler_CompareEnvironments(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID, envID1 := setupTestEnv(store, testOrgID)
+	env2 := &domain.Environment{ProjectID: projID, Name: "Staging", Slug: "staging"}
+	store.CreateEnvironment(context.Background(), env2)
+
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "flag-a", Name: "Flag A"})
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "flag-b", Name: "Flag B"})
+
+	flagA, _ := store.GetFlag(context.Background(), projID, "flag-a")
+	store.UpsertFlagState(context.Background(), &domain.FlagState{
+		FlagID: flagA.ID, EnvID: envID1, Enabled: true, PercentageRollout: 5000,
+	})
+	store.UpsertFlagState(context.Background(), &domain.FlagState{
+		FlagID: flagA.ID, EnvID: env2.ID, Enabled: false, PercentageRollout: 0,
+	})
+
+	r := httptest.NewRequest("GET",
+		"/v1/projects/"+projID+"/flags/compare-environments?source_env_id="+envID1+"&target_env_id="+env2.ID, nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.CompareEnvironments(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp EnvComparisonResponse
+	json.Unmarshal(w.Body.Bytes(), &resp)
+
+	if resp.Total != 2 {
+		t.Errorf("expected total 2, got %d", resp.Total)
+	}
+	if resp.DiffCount < 1 {
+		t.Errorf("expected at least 1 diff, got %d", resp.DiffCount)
+	}
+}
+
+func TestFlagHandler_CompareEnvironments_SameEnv(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID, envID := setupTestEnv(store, testOrgID)
+
+	r := httptest.NewRequest("GET",
+		"/v1/projects/"+projID+"/flags/compare-environments?source_env_id="+envID+"&target_env_id="+envID, nil)
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.CompareEnvironments(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for same env, got %d", w.Code)
+	}
+}
+
+func TestFlagHandler_SyncEnvironments(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID, envID1 := setupTestEnv(store, testOrgID)
+	env2 := &domain.Environment{ProjectID: projID, Name: "Prod", Slug: "prod"}
+	store.CreateEnvironment(context.Background(), env2)
+
+	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "sync-flag", Name: "Sync Flag"})
+	flagSync, _ := store.GetFlag(context.Background(), projID, "sync-flag")
+	store.UpsertFlagState(context.Background(), &domain.FlagState{
+		FlagID: flagSync.ID, EnvID: envID1, Enabled: true, PercentageRollout: 10000,
+	})
+
+	body := `{"source_env_id":"` + envID1 + `","target_env_id":"` + env2.ID + `","flag_keys":["sync-flag"]}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags/sync-environments", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.SyncEnvironments(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	synced, _ := store.GetFlagState(context.Background(), flagSync.ID, env2.ID)
+	if synced == nil {
+		t.Fatal("expected synced state to exist")
+	}
+	if !synced.Enabled {
+		t.Error("expected synced state to be enabled")
+	}
+	if synced.PercentageRollout != 10000 {
+		t.Errorf("expected rollout 10000, got %d", synced.PercentageRollout)
+	}
+}

@@ -19,6 +19,27 @@ const (
 	FlagTypeAB      FlagType = "ab"
 )
 
+// FlagCategory classifies a flag by its purpose and management lifecycle.
+// See Martin Fowler's "Feature Toggles" for the full taxonomy.
+type FlagCategory string
+
+const (
+	CategoryRelease    FlagCategory = "release"
+	CategoryExperiment FlagCategory = "experiment"
+	CategoryOps        FlagCategory = "ops"
+	CategoryPermission FlagCategory = "permission"
+)
+
+// FlagStatus tracks where a flag is in its development lifecycle.
+type FlagStatus string
+
+const (
+	StatusActive     FlagStatus = "active"
+	StatusRolledOut  FlagStatus = "rolled_out"
+	StatusDeprecated FlagStatus = "deprecated"
+	StatusArchived   FlagStatus = "archived"
+)
+
 // Variant defines one arm of an A/B experiment.
 type Variant struct {
 	Key    string          `json:"key"`
@@ -37,6 +58,8 @@ type Flag struct {
 	Name         string          `json:"name" db:"name"`
 	Description  string          `json:"description" db:"description"`
 	FlagType     FlagType        `json:"flag_type" db:"flag_type"`
+	Category     FlagCategory    `json:"category" db:"category"`
+	Status       FlagStatus      `json:"status" db:"status"`
 	DefaultValue json.RawMessage `json:"default_value" db:"default_value"`
 	Tags          []string        `json:"tags" db:"tags"`
 	ExpiresAt     *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
