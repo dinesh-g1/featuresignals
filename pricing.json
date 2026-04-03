@@ -1,6 +1,31 @@
 {
   "currency": "INR",
   "currency_symbol": "₹",
+
+  "_pricing_strategy": {
+    "last_updated": "2026-04-02",
+    "methodology": "Cost-plus pricing based on actual cloud infrastructure costs with target 60-80% gross margin for SaaS.",
+    "saas_infrastructure": {
+      "provider": "Hetzner Cloud (EU)",
+      "api_server": { "instance": "CPX42 (8 vCPU, 16 GB)", "cost_eur": 25.49, "cost_inr": 2345 },
+      "database": { "instance": "CPX32 (4 vCPU, 8 GB)", "cost_eur": 13.99, "cost_inr": 1287 },
+      "demo_env": { "instance": "CPX22 (3 vCPU, 4 GB)", "cost_eur": 7.99, "cost_inr": 735 },
+      "backups": { "cost_inr": 875 },
+      "total_monthly_inr": 5242,
+      "per_customer_cost_at_100": 372,
+      "pro_margin_at_100_customers": "63%",
+      "pro_margin_at_500_customers": "80%"
+    },
+    "competitor_benchmarks": {
+      "launchdarkly": "$8.33/seat/month (min 10 seats)",
+      "configcat": "$26/seat/month",
+      "flagsmith": "$45/month (cloud Pro)",
+      "unleash": "$80/month (Pro)",
+      "featuresignals_pro": "₹999/month (~$12, unlimited seats) — most competitive"
+    },
+    "exchange_rates_used": { "eur_to_inr": 92, "usd_to_inr": 84 }
+  },
+
   "plans": {
     "free": {
       "name": "Free",
@@ -74,6 +99,7 @@
       "cta_url": "mailto:support@featuresignals.com"
     }
   },
+
   "common_features": [
     "5 flag types (boolean, string, number, JSON, A/B)",
     "8 SDKs (Go, Node, Python, Java, C#, Ruby, React, Vue)",
@@ -84,9 +110,139 @@
     "Relay proxy — edge caching",
     "API Playground"
   ],
-  "self_hosting": [
-    { "tier": "Small Team", "estimate": "~₹800/month", "description": "Single VPS (2 CPU, 4 GB RAM). Runs all services including PostgreSQL." },
-    { "tier": "Growing Team", "estimate": "~₹2,500/month", "description": "Separate API server and PostgreSQL. Add a relay proxy for edge deployments." },
-    { "tier": "Scale", "estimate": "~₹4,000+/month", "description": "Multi-instance API behind a load balancer. Relay proxies per region. Managed PostgreSQL." }
-  ]
+
+  "self_hosting": {
+    "note": "FeatureSignals is Apache-2.0 — the software is always free. These are infrastructure-only costs.",
+    "assumptions": {
+      "components": "Go API server + Next.js dashboard + PostgreSQL + Caddy",
+      "storage": "PostgreSQL with ~1-5 MB per 1,000 flags + audit logs",
+      "network": "SSE connections + API calls; ~1 KB per evaluation"
+    },
+    "providers": {
+      "hetzner": {
+        "name": "Hetzner Cloud",
+        "region": "EU (Falkenstein / Helsinki / Ashburn)",
+        "currency": "EUR",
+        "tiers": [
+          {
+            "tier": "Small Team",
+            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
+            "instances": "CPX22 (3 vCPU, 4 GB RAM, 80 GB NVMe) — all-in-one",
+            "monthly_cost": "€7.99",
+            "monthly_cost_inr": "~₹735",
+            "includes": "API + Dashboard + PostgreSQL on one server, 20 TB traffic"
+          },
+          {
+            "tier": "Growing Team",
+            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
+            "instances": "CPX32 (4 vCPU, 8 GB) for app + CPX22 for DB",
+            "monthly_cost": "€21.98",
+            "monthly_cost_inr": "~₹2,022",
+            "includes": "Separate API/DB servers, relay proxy, backups"
+          },
+          {
+            "tier": "Scale",
+            "use_case": "50+ users, multi-region, >1M evals/day",
+            "instances": "CPX42 (8 vCPU, 16 GB) + CPX32 DB + CPX22 relay per region",
+            "monthly_cost": "€47.47+",
+            "monthly_cost_inr": "~₹4,367+",
+            "includes": "Multi-instance API, relay proxies per region, automated backups"
+          }
+        ]
+      },
+      "digitalocean": {
+        "name": "DigitalOcean",
+        "region": "Bangalore (BLR1) / Singapore (SGP1)",
+        "currency": "USD",
+        "tiers": [
+          {
+            "tier": "Small Team",
+            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
+            "instances": "Basic Droplet 2 GB (1 vCPU, 50 GB SSD)",
+            "monthly_cost": "$12",
+            "monthly_cost_inr": "~₹1,008",
+            "includes": "All services on one droplet, 2 TB transfer"
+          },
+          {
+            "tier": "Growing Team",
+            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
+            "instances": "4 GB Droplet ($24) + Managed DB ($15)",
+            "monthly_cost": "$39",
+            "monthly_cost_inr": "~₹3,276",
+            "includes": "Separate app server + managed PostgreSQL, automated backups"
+          },
+          {
+            "tier": "Scale",
+            "use_case": "50+ users, multi-region, >1M evals/day",
+            "instances": "8 GB Droplet ($48) + Managed DB ($30) + Load Balancer ($12)",
+            "monthly_cost": "$90+",
+            "monthly_cost_inr": "~₹7,560+",
+            "includes": "Multi-instance with managed DB, load balancer, relay proxies"
+          }
+        ]
+      },
+      "aws": {
+        "name": "Amazon Web Services",
+        "region": "ap-south-1 (Mumbai)",
+        "currency": "USD",
+        "tiers": [
+          {
+            "tier": "Small Team",
+            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
+            "instances": "t3.small (2 vCPU, 2 GB) + PostgreSQL on same instance",
+            "monthly_cost": "~$17",
+            "monthly_cost_inr": "~₹1,428",
+            "includes": "Single EC2 with all services, EBS 20 GB gp3"
+          },
+          {
+            "tier": "Growing Team",
+            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
+            "instances": "t3.medium ($33) + RDS db.t3.micro ($13)",
+            "monthly_cost": "~$46",
+            "monthly_cost_inr": "~₹3,864",
+            "includes": "Separate app server + managed RDS PostgreSQL, automated backups"
+          },
+          {
+            "tier": "Scale",
+            "use_case": "50+ users, multi-region, >1M evals/day",
+            "instances": "t3.large ($66) + RDS db.t3.small ($26) + ALB ($20) + S3 backups",
+            "monthly_cost": "~$112+",
+            "monthly_cost_inr": "~₹9,408+",
+            "includes": "Auto Scaling group, managed RDS, ALB, CloudWatch monitoring"
+          }
+        ]
+      },
+      "gcp": {
+        "name": "Google Cloud Platform",
+        "region": "asia-south1 (Mumbai)",
+        "currency": "USD",
+        "tiers": [
+          {
+            "tier": "Small Team",
+            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
+            "instances": "e2-small (2 vCPU, 2 GB)",
+            "monthly_cost": "~$15",
+            "monthly_cost_inr": "~₹1,260",
+            "includes": "Single VM with all services, 10 GB persistent SSD"
+          },
+          {
+            "tier": "Growing Team",
+            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
+            "instances": "e2-medium ($24) + Cloud SQL Basic ($10)",
+            "monthly_cost": "~$34",
+            "monthly_cost_inr": "~₹2,856",
+            "includes": "Separate VM + managed Cloud SQL PostgreSQL"
+          },
+          {
+            "tier": "Scale",
+            "use_case": "50+ users, multi-region, >1M evals/day",
+            "instances": "e2-standard-2 ($49) + Cloud SQL ($25) + Cloud Load Balancing ($18)",
+            "monthly_cost": "~$92+",
+            "monthly_cost_inr": "~₹7,728+",
+            "includes": "Managed instance group, Cloud SQL HA, load balancing, Cloud Monitoring"
+          }
+        ]
+      }
+    }
+  }
 }
