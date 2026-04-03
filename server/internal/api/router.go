@@ -58,6 +58,7 @@ func NewRouter(
 	}))
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
+	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.Logging(logger))
 	r.Use(chimw.Recoverer)
 
@@ -103,6 +104,11 @@ func NewRouter(
 	jwtAuth := middleware.JWTAuth(jwtMgr)
 
 	r.Route("/v1", func(r chi.Router) {
+		// Public pricing endpoint — single source of truth for all clients
+		r.Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
+			httputil.JSON(w, http.StatusOK, domain.Pricing)
+		})
+
 		// Public auth routes
 		r.Post("/auth/register", authH.Register)
 		r.Post("/auth/login", authH.Login)

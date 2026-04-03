@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'FeatureSignals',
   tagline: 'Open-source feature flag management for modern teams',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.svg',
 
   future: {
     v4: true,
@@ -35,6 +35,10 @@ const config: Config = {
             url: '/openapi/featuresignals.json',
           },
           theme: 'default',
+          hiddenClients: true,
+          metaData: {
+            title: 'FeatureSignals API Playground',
+          },
         },
       },
     ],
@@ -64,6 +68,12 @@ const config: Config = {
     },
     navbar: {
       title: 'FeatureSignals',
+      logo: {
+        alt: 'FeatureSignals Logo',
+        src: 'img/logo.svg',
+        width: 32,
+        height: 32,
+      },
       items: [
         {
           type: 'docSidebar',

@@ -79,8 +79,8 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 	}
 
 	txnid := fmt.Sprintf("FS_%s_%d", orgID[:8], time.Now().UnixMilli())
-	amount := "999.00"
-	productinfo := "FeatureSignals Pro Plan"
+	amount := domain.ProPlanAmount()
+	productinfo := domain.ProPlanProductInfo()
 	firstname := user.Name
 	email := user.Email
 	phone := user.Phone

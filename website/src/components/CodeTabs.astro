@@ -1,0 +1,55 @@
+---
+interface Tab {
+  lang: string;
+  label: string;
+  code: string;
+}
+interface Props {
+  tabs: Tab[];
+  id: string;
+}
+const { tabs, id } = Astro.props;
+---
+<div class="code-tabs mt-4 rounded-lg border border-slate-200 bg-slate-900 overflow-hidden" data-tabgroup={id}>
+  <div class="flex border-b border-slate-700 bg-slate-800">
+    {tabs.map((tab, i) => (
+      <button
+        type="button"
+        class={`code-tab-btn px-3 py-2 text-xs font-medium transition-colors ${i === 0 ? 'text-white bg-slate-900' : 'text-slate-400 hover:text-slate-200'}`}
+        data-tabgroup={id}
+        data-tab={i}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+  {tabs.map((tab, i) => (
+    <div
+      class={`code-tab-panel ${i === 0 ? '' : 'hidden'}`}
+      data-tabgroup={id}
+      data-panel={i}
+    >
+      <pre class="overflow-x-auto p-4 text-[13px] leading-relaxed text-slate-100"><code>{tab.code}</code></pre>
+    </div>
+  ))}
+</div>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLButtonElement>('.code-tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.tabgroup!;
+        const idx = btn.dataset.tab!;
+        document.querySelectorAll<HTMLButtonElement>(`.code-tab-btn[data-tabgroup="${group}"]`).forEach((b) => {
+          b.classList.remove('text-white', 'bg-slate-900');
+          b.classList.add('text-slate-400');
+        });
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-white', 'bg-slate-900');
+        document.querySelectorAll<HTMLElement>(`.code-tab-panel[data-tabgroup="${group}"]`).forEach((p) => {
+          p.classList.toggle('hidden', p.dataset.panel !== idx);
+        });
+      });
+    });
+  });
+</script>

@@ -26,7 +26,9 @@
     { "name": "Audit", "description": "Audit log for all actions" },
     { "name": "Metrics", "description": "Evaluation metrics and analytics" },
     { "name": "Billing", "description": "Subscription and usage billing" },
-    { "name": "Onboarding", "description": "Onboarding progress tracking" }
+    { "name": "Onboarding", "description": "Onboarding progress tracking" },
+    { "name": "Demo", "description": "Demo session management and conversion" },
+    { "name": "Pricing", "description": "Public pricing configuration" }
   ],
   "security": [{ "BearerAuth": [] }],
   "paths": {
@@ -1089,6 +1091,114 @@
           "200": { "description": "Onboarding updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Onboarding" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/pricing": {
+      "get": {
+        "tags": ["Pricing"],
+        "summary": "Get pricing configuration",
+        "description": "Returns the canonical pricing configuration for all plans. Public endpoint, no authentication required.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Pricing configuration",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    },
+    "/v1/auth/token-exchange": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Exchange one-time token for JWT",
+        "description": "Exchanges a single-use one-time token for a full JWT pair. Used for cross-domain authentication after payment redirects.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["token"], "properties": { "token": { "type": "string" } } },
+              "example": { "token": "hex_one_time_token" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Token exchanged", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/demo/session": {
+      "post": {
+        "tags": ["Demo"],
+        "summary": "Create a demo session",
+        "description": "Creates an anonymous demo session with pre-populated sample data. Rate-limited to 10 requests per minute.",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Demo session created",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    },
+    "/v1/demo/convert": {
+      "post": {
+        "tags": ["Demo"],
+        "summary": "Convert demo to permanent account",
+        "description": "Converts an anonymous demo session into a registered account with email, password, phone, and organization details.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email", "password", "name", "org_name", "phone"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string", "minLength": 8 }, "name": { "type": "string" }, "org_name": { "type": "string" }, "phone": { "type": "string" } } },
+              "example": { "email": "jane@company.com", "password": "SecurePass123!", "name": "Jane Smith", "org_name": "Acme Inc", "phone": "+919876543210" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Account converted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/demo/select-plan": {
+      "post": {
+        "tags": ["Demo"],
+        "summary": "Select plan after demo conversion",
+        "description": "Choose a subscription plan after converting from demo. Returns PayU checkout data for Pro plan.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["plan", "retain_data"], "properties": { "plan": { "type": "string", "enum": ["free", "pro"] }, "retain_data": { "type": "boolean" } } },
+              "example": { "plan": "pro", "retain_data": true }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Plan selected", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/demo/feedback": {
+      "post": {
+        "tags": ["Demo"],
+        "summary": "Submit demo feedback",
+        "description": "Submit feedback from a demo user when declining to register or requesting enhancements.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["message"], "properties": { "message": { "type": "string" }, "email": { "type": "string", "format": "email" }, "rating": { "type": "integer", "minimum": 1, "maximum": 5 } } },
+              "example": { "message": "Great product! Would love a Terraform provider.", "rating": 4 }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Feedback submitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } }
         }
       }
     }

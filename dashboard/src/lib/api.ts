@@ -47,7 +47,30 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return res.json();
 }
 
+export interface PricingPlan {
+  name: string;
+  tagline: string;
+  price: number | null;
+  display_price: string;
+  billing_period: string | null;
+  limits: { projects: number; environments: number; seats: number };
+  features: string[];
+  cta_label: string;
+  cta_url: string;
+}
+
+export interface PricingConfig {
+  currency: string;
+  currency_symbol: string;
+  plans: Record<string, PricingPlan>;
+  common_features: string[];
+  self_hosting: { tier: string; estimate: string; description: string }[];
+}
+
 export const api = {
+  // Pricing (public)
+  getPricing: () => request<PricingConfig>("/v1/pricing"),
+
   // Auth
   register: (data: { email: string; password: string; name: string; org_name: string }) =>
     request("/v1/auth/register", { method: "POST", body: data }),

@@ -94,6 +94,9 @@ const sidebars: SidebarsConfig = {
     'api-reference/webhooks',
     'api-reference/audit-log',
     'api-reference/metrics',
+    'api-reference/billing',
+    'api-reference/demo',
+    'api-reference/onboarding',
   ],
   sdks: [
     'sdks/overview',

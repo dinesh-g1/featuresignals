@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 
@@ -13,39 +13,6 @@ const settingsTabs = [
   { href: "/settings/api-keys", label: "API Keys" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/webhooks", label: "Webhooks" },
-];
-
-const freePlanFeatures = [
-  "Up to 5 feature flags",
-  "2 environments",
-  "1 project",
-  "3 team seats",
-  "Community support",
-  "Basic analytics",
-];
-
-const proPlanFeatures = [
-  "Unlimited feature flags",
-  "Unlimited environments",
-  "Unlimited projects",
-  "25 team seats",
-  "Priority support",
-  "Advanced analytics & metrics",
-  "Webhooks & integrations",
-  "Approval workflows",
-  "Audit log (90 days)",
-  "SSO (coming soon)",
-];
-
-const enterprisePlanFeatures = [
-  "Everything in Pro",
-  "Unlimited team seats",
-  "Custom SLA",
-  "Dedicated support engineer",
-  "Audit log (unlimited)",
-  "SSO & SAML",
-  "Self-hosted option",
-  "Custom contracts",
 ];
 
 const statusColors: Record<string, string> = {
@@ -71,6 +38,11 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<any>(null);
   const [usage, setUsage] = useState<any>(null);
   const [upgrading, setUpgrading] = useState(false);
+  const [pricing, setPricing] = useState<PricingConfig | null>(null);
+
+  useEffect(() => {
+    api.getPricing().then(setPricing).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const status = searchParams.get("status");
@@ -223,17 +195,17 @@ export default function BillingPage() {
           {/* Plan Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <PlanCard
-              name="Free"
-              price="₹0"
-              period="forever"
-              features={freePlanFeatures}
+              name={pricing?.plans?.free?.name ?? "Free"}
+              price={pricing?.plans?.free?.display_price ?? "₹0"}
+              period={pricing?.plans?.free?.billing_period ? `/${pricing.plans.free.billing_period}` : "/month"}
+              features={pricing?.plans?.free?.features ?? ["1 project", "2 environments", "3 team members", "Community support"]}
               current={plan === "free"}
             />
             <PlanCard
-              name="Pro"
-              price="₹999"
-              period="/month"
-              features={proPlanFeatures}
+              name={pricing?.plans?.pro?.name ?? "Pro"}
+              price={pricing?.plans?.pro?.display_price ?? "₹999"}
+              period={pricing?.plans?.pro?.billing_period ? `/${pricing.plans.pro.billing_period}` : "/month"}
+              features={pricing?.plans?.pro?.features ?? ["Unlimited projects", "Unlimited environments", "Unlimited team members", "Priority support"]}
               current={plan === "pro"}
               highlighted
               action={
@@ -243,14 +215,14 @@ export default function BillingPage() {
               }
             />
             <PlanCard
-              name="Enterprise"
-              price="Custom"
+              name={pricing?.plans?.enterprise?.name ?? "Enterprise"}
+              price={pricing?.plans?.enterprise?.display_price ?? "Custom"}
               period=""
-              features={enterprisePlanFeatures}
+              features={pricing?.plans?.enterprise?.features ?? ["Everything in Pro", "Dedicated support", "Custom SLA", "Self-hosted option"]}
               current={plan === "enterprise"}
               action={
                 plan !== "enterprise"
-                  ? { label: "Contact Sales", href: "mailto:sales@featuresignals.com" }
+                  ? { label: "Contact Sales", href: "mailto:support@featuresignals.com" }
                   : undefined
               }
             />

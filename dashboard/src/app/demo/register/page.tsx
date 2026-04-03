@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 
 const PASSWORD_RULES = [
@@ -33,6 +33,12 @@ export default function DemoRegisterPage() {
   const [selectedPlan, setSelectedPlan] = useState<"free" | "pro">("free");
   const [retainData, setRetainData] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Pricing
+  const [pricing, setPricing] = useState<PricingConfig | null>(null);
+  useEffect(() => {
+    api.getPricing().then(setPricing).catch(() => {});
+  }, []);
 
   const passwordValid = useMemo(() => PASSWORD_RULES.every((r) => r.test(form.password)), [form.password]);
 
@@ -344,14 +350,15 @@ export default function DemoRegisterPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-slate-900">Free</h3>
-                      <p className="text-sm text-slate-500">For individuals and small projects</p>
+                      <h3 className="font-semibold text-slate-900">{pricing?.plans?.free?.name ?? "Free"}</h3>
+                      <p className="text-sm text-slate-500">{pricing?.plans?.free?.tagline ?? "For individuals and small projects"}</p>
                     </div>
-                    <span className="text-lg font-bold text-slate-900">$0<span className="text-sm font-normal text-slate-400">/mo</span></span>
+                    <span className="text-lg font-bold text-slate-900">{pricing?.plans?.free?.display_price ?? "₹0"}<span className="text-sm font-normal text-slate-400">/{pricing?.plans?.free?.billing_period ?? "month"}</span></span>
                   </div>
                   <ul className="mt-2 space-y-1 text-xs text-slate-500">
-                    <li>1 project, 2 environments, 3 team seats</li>
-                    <li>Unlimited feature flags</li>
+                    {(pricing?.plans?.free?.features ?? ["1 project, 2 environments, 3 team members", "Unlimited feature flags"]).slice(0, 3).map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
                   </ul>
                 </button>
 
@@ -366,16 +373,17 @@ export default function DemoRegisterPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-slate-900">Pro</h3>
+                        <h3 className="font-semibold text-slate-900">{pricing?.plans?.pro?.name ?? "Pro"}</h3>
                         <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">Recommended</span>
                       </div>
-                      <p className="text-sm text-slate-500">For growing teams</p>
+                      <p className="text-sm text-slate-500">{pricing?.plans?.pro?.tagline ?? "For growing teams"}</p>
                     </div>
-                    <span className="text-lg font-bold text-slate-900">&#8377;999<span className="text-sm font-normal text-slate-400">/mo</span></span>
+                    <span className="text-lg font-bold text-slate-900">{pricing?.plans?.pro?.display_price ?? "₹999"}<span className="text-sm font-normal text-slate-400">/{pricing?.plans?.pro?.billing_period ?? "month"}</span></span>
                   </div>
                   <ul className="mt-2 space-y-1 text-xs text-slate-500">
-                    <li>Unlimited projects, environments, team seats</li>
-                    <li>Advanced targeting, A/B testing, audit logs</li>
+                    {(pricing?.plans?.pro?.features ?? ["Unlimited projects, environments, team members", "Advanced targeting, A/B testing, audit logs"]).slice(0, 3).map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
                   </ul>
                 </button>
               </div>

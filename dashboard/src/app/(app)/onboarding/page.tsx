@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 
@@ -124,6 +124,13 @@ export default function OnboardingPage() {
 
   // Step 3 state
   const [selectedSdk, setSelectedSdk] = useState<string>("node");
+
+  // Pricing
+  const [pricing, setPricing] = useState<PricingConfig | null>(null);
+
+  useEffect(() => {
+    api.getPricing().then(setPricing).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -269,7 +276,7 @@ export default function OnboardingPage() {
 
       {/* Step Content */}
       <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        {currentStep === 0 && <StepChoosePlan onChooseFree={handleChooseFree} onUpgradePro={handleUpgradePro} completed={!!completed.plan_chosen} />}
+        {currentStep === 0 && <StepChoosePlan onChooseFree={handleChooseFree} onUpgradePro={handleUpgradePro} completed={!!completed.plan_chosen} pricing={pricing} />}
         {currentStep === 1 && (
           <StepCreateFlag
             form={flagForm}
@@ -307,11 +314,17 @@ function StepChoosePlan({
   onChooseFree,
   onUpgradePro,
   completed,
+  pricing,
 }: {
   onChooseFree: () => void;
   onUpgradePro: () => void;
   completed: boolean;
+  pricing: PricingConfig | null;
 }) {
+  const free = pricing?.plans?.free;
+  const pro = pricing?.plans?.pro;
+  const enterprise = pricing?.plans?.enterprise;
+
   if (completed) {
     return (
       <div className="text-center py-8">
@@ -334,10 +347,10 @@ function StepChoosePlan({
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Free */}
         <div className="rounded-xl border border-slate-200 p-5">
-          <h3 className="text-base font-semibold text-slate-900">Free</h3>
-          <p className="mt-1 text-2xl font-bold text-slate-900">$0<span className="text-sm font-normal text-slate-400">/mo</span></p>
+          <h3 className="text-base font-semibold text-slate-900">{free?.name ?? "Free"}</h3>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{free?.display_price ?? "₹0"}<span className="text-sm font-normal text-slate-400">/{free?.billing_period ?? "mo"}</span></p>
           <ul className="mt-4 space-y-1.5">
-            {["5 flags", "2 environments", "1 project", "3 seats"].map((f) => (
+            {(free?.features ?? ["1 project", "2 environments", "3 team members"]).map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
                 <svg className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 {f}
@@ -352,12 +365,12 @@ function StepChoosePlan({
         {/* Pro */}
         <div className="rounded-xl border-2 border-indigo-300 bg-indigo-50/30 p-5 ring-1 ring-indigo-100 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-slate-900">Pro</h3>
+            <h3 className="text-base font-semibold text-slate-900">{pro?.name ?? "Pro"}</h3>
             <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">POPULAR</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-slate-900">$49<span className="text-sm font-normal text-slate-400">/mo</span></p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{pro?.display_price ?? "₹999"}<span className="text-sm font-normal text-slate-400">/{pro?.billing_period ?? "mo"}</span></p>
           <ul className="mt-4 space-y-1.5">
-            {["Unlimited flags", "Unlimited envs", "Unlimited projects", "25 seats", "Priority support"].map((f) => (
+            {(pro?.features ?? ["Unlimited projects", "Unlimited environments", "Unlimited team members"]).map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
                 <svg className="h-3.5 w-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 {f}
@@ -371,17 +384,17 @@ function StepChoosePlan({
 
         {/* Enterprise */}
         <div className="rounded-xl border border-slate-200 p-5">
-          <h3 className="text-base font-semibold text-slate-900">Enterprise</h3>
-          <p className="mt-1 text-2xl font-bold text-slate-900">Custom</p>
+          <h3 className="text-base font-semibold text-slate-900">{enterprise?.name ?? "Enterprise"}</h3>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{enterprise?.display_price ?? "Custom"}</p>
           <ul className="mt-4 space-y-1.5">
-            {["Everything in Pro", "Unlimited seats", "SSO & SAML", "Custom SLA", "Self-hosted option"].map((f) => (
+            {(enterprise?.features ?? ["Everything in Pro", "Dedicated support", "Custom SLA", "Self-hosted option"]).map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
                 <svg className="h-3.5 w-3.5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 {f}
               </li>
             ))}
           </ul>
-          <a href="mailto:sales@featuresignals.com" className="mt-4 block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 transition-all hover:bg-slate-50">
+          <a href="mailto:support@featuresignals.com" className="mt-4 block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 transition-all hover:bg-slate-50">
             Contact Sales
           </a>
         </div>
