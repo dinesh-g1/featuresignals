@@ -1,0 +1,92 @@
+{
+  "currency": "INR",
+  "currency_symbol": "₹",
+  "plans": {
+    "free": {
+      "name": "Free",
+      "tagline": "For individuals and small teams",
+      "price": 0,
+      "display_price": "₹0",
+      "billing_period": "month",
+      "limits": {
+        "projects": 1,
+        "environments": 2,
+        "seats": 3
+      },
+      "features": [
+        "1 project",
+        "2 environments per project",
+        "3 team members",
+        "Unlimited feature flags & evaluations",
+        "A/B experimentation",
+        "All 8 SDKs + OpenFeature",
+        "Community support"
+      ],
+      "cta_label": "Sign Up Free",
+      "cta_url": "https://app.featuresignals.com/register"
+    },
+    "pro": {
+      "name": "Pro",
+      "tagline": "For growing engineering teams",
+      "price": 999,
+      "display_price": "₹999",
+      "billing_period": "month",
+      "limits": {
+        "projects": -1,
+        "environments": -1,
+        "seats": -1
+      },
+      "features": [
+        "Unlimited projects",
+        "Unlimited environments",
+        "Unlimited team members",
+        "Unlimited feature flags & evaluations",
+        "A/B experimentation",
+        "RBAC, audit logs & approvals",
+        "Webhooks & scheduling",
+        "Relay proxy",
+        "Priority email support"
+      ],
+      "cta_label": "Get Started with Pro",
+      "cta_url": "https://app.featuresignals.com/register"
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "tagline": "For large teams with custom needs",
+      "price": null,
+      "display_price": "Custom",
+      "billing_period": null,
+      "limits": {
+        "projects": -1,
+        "environments": -1,
+        "seats": -1
+      },
+      "features": [
+        "Everything in Pro",
+        "Dedicated support (4h SLA)",
+        "Deployment assistance",
+        "Custom integrations",
+        "SSO & advanced RBAC",
+        "Training & onboarding",
+        "On-prem deployment support"
+      ],
+      "cta_label": "Contact Sales",
+      "cta_url": "mailto:support@featuresignals.com"
+    }
+  },
+  "common_features": [
+    "5 flag types (boolean, string, number, JSON, A/B)",
+    "8 SDKs (Go, Node, Python, Java, C#, Ruby, React, Vue)",
+    "Real-time SSE streaming",
+    "OpenFeature — zero vendor lock-in",
+    "Percentage rollouts with consistent hashing",
+    "Kill switch — emergency disable",
+    "Relay proxy — edge caching",
+    "API Playground"
+  ],
+  "self_hosting": [
+    { "tier": "Small Team", "estimate": "~₹800/month", "description": "Single VPS (2 CPU, 4 GB RAM). Runs all services including PostgreSQL." },
+    { "tier": "Growing Team", "estimate": "~₹2,500/month", "description": "Separate API server and PostgreSQL. Add a relay proxy for edge deployments." },
+    { "tier": "Scale", "estimate": "~₹4,000+/month", "description": "Multi-instance API behind a load balancer. Relay proxies per region. Managed PostgreSQL." }
+  ]
+}

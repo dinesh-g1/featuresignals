@@ -27,7 +27,10 @@ const currentPath = Astro.url.pathname;
   <body class="bg-white text-slate-900 font-sans antialiased">
     <nav class="border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50" transition:persist>
       <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="/" class="text-xl font-bold tracking-tight text-indigo-600 transition-colors hover:text-indigo-700">FeatureSignals</a>
+        <a href="/" class="flex items-center gap-2 text-xl font-bold tracking-tight text-indigo-600 transition-colors hover:text-indigo-700">
+          <img src="/favicon.svg" alt="FeatureSignals" class="h-7 w-7" />
+          FeatureSignals
+        </a>
         <div class="hidden items-center gap-8 md:flex">
           <a href="/features" class:list={["text-sm font-medium transition-colors", currentPath === "/features" || currentPath === "/features/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Features</a>
           <a href="/pricing" class:list={["text-sm font-medium transition-colors", currentPath === "/pricing" || currentPath === "/pricing/" ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"]}>Pricing</a>

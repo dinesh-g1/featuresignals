@@ -11,6 +11,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "FeatureSignals Dashboard",
   description: "Feature flag management platform",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

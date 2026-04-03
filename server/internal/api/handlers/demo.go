@@ -334,8 +334,8 @@ func (h *DemoHandler) SelectPlan(w http.ResponseWriter, r *http.Request) {
 		orgPrefix = orgPrefix[:8]
 	}
 	txnid := fmt.Sprintf("DEMO_%s_%d", orgPrefix, time.Now().UnixMilli())
-	amount := "999.00"
-	productinfo := "FeatureSignals Pro Plan"
+	amount := domain.ProPlanAmount()
+	productinfo := domain.ProPlanProductInfo()
 	firstname := user.Name
 	userEmail := user.Email
 	phone := user.Phone

@@ -166,3 +166,142 @@ curl -X POST http://localhost:8080/v1/evaluate \
   -H "Content-Type: application/json" \
   -d '{"flag_key": "my-flag", "context": {"key": "user-1"}}'
 ```
+
+---
+
+## Phone OTP Verification
+
+Send a one-time password to the user's phone via MSG91.
+
+```
+POST /v1/auth/send-otp
+```
+
+**Authentication:** Bearer JWT
+
+### Request
+
+```json
+{
+  "phone": "+919876543210"
+}
+```
+
+### Response `200 OK`
+
+```json
+{
+  "message": "OTP sent"
+}
+```
+
+---
+
+## Verify OTP
+
+Verify the OTP sent to the user's phone.
+
+```
+POST /v1/auth/verify-otp
+```
+
+**Authentication:** Bearer JWT
+
+### Request
+
+```json
+{
+  "otp": "123456"
+}
+```
+
+### Response `200 OK`
+
+```json
+{
+  "message": "Phone verified"
+}
+```
+
+### Error `400 Bad Request`
+
+```json
+{
+  "error": "invalid OTP"
+}
+```
+
+---
+
+## Send Verification Email
+
+Send a verification link to the authenticated user's email address.
+
+```
+POST /v1/auth/send-verification-email
+```
+
+**Authentication:** Bearer JWT
+
+### Response `200 OK`
+
+```json
+{
+  "message": "Verification email sent"
+}
+```
+
+---
+
+## Verify Email
+
+Verify an email address via the link sent by `send-verification-email`.
+
+```
+GET /v1/auth/verify-email?token=<token>&email=<email>
+```
+
+**Authentication:** None (public)
+
+### Response
+
+Redirects to the dashboard login page with `?verified=true` on success.
+
+---
+
+## Token Exchange
+
+Exchange a one-time token for a full JWT pair. Used during cross-domain authentication (e.g., after PayU payment redirects a demo user to the main app domain).
+
+```
+POST /v1/auth/token-exchange
+```
+
+**Authentication:** None (public — the one-time token serves as authentication)
+
+### Request
+
+```json
+{
+  "token": "hex_one_time_token"
+}
+```
+
+### Response `200 OK`
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "jane@company.com",
+    "name": "Jane Smith"
+  },
+  "tokens": {
+    "access_token": "eyJ...",
+    "refresh_token": "eyJ...",
+    "expires_at": 1711929600
+  }
+}
+```
+
+One-time tokens are single-use and expire after 5 minutes. A consumed or expired token returns `401 Unauthorized`.
