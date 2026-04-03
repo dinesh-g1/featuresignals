@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -49,30 +50,9 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Key == "" || req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "key and name are required")
-		return
-	}
-	if !validateFlagKey(req.Key) {
-		httputil.Error(w, http.StatusBadRequest, "key must match pattern: lowercase alphanumeric, hyphens, underscores (max 128 chars)")
-		return
-	}
-	if !validateStringLength(req.Name, 255) {
-		httputil.Error(w, http.StatusBadRequest, "name must be at most 255 characters")
-		return
-	}
-	if !validateStringLength(req.Description, 2000) {
-		httputil.Error(w, http.StatusBadRequest, "description must be at most 2000 characters")
-		return
-	}
-
 	flagType := domain.FlagType(req.FlagType)
 	if flagType == "" {
 		flagType = domain.FlagTypeBoolean
-	}
-	if req.FlagType != "" && !validateFlagType(req.FlagType) {
-		httputil.Error(w, http.StatusBadRequest, "invalid flag_type; must be boolean, string, number, json, or ab")
-		return
 	}
 	defaultVal := req.DefaultValue
 	if defaultVal == nil {
@@ -91,9 +71,18 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		MutualExclusionGroup: req.MutualExclusionGroup,
 	}
 
+	if err := flag.Validate(); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
 		h.l(r).Warn("flag create failed", "project_id", projectID, "key", req.Key, "err", err)
-		httputil.Error(w, http.StatusConflict, "flag key already exists in this project")
+		if errors.Is(err, domain.ErrConflict) {
+			httputil.Error(w, http.StatusConflict, "flag key already exists in this project")
+		} else {
+			httputil.Error(w, http.StatusInternalServerError, "failed to create flag")
+		}
 		return
 	}
 
@@ -142,7 +131,11 @@ func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "flag not found")
+		} else {
+			httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		}
 		return
 	}
 
@@ -158,7 +151,11 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "flag not found")
+		} else {
+			httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		}
 		return
 	}
 
@@ -223,7 +220,11 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "flag not found")
+		} else {
+			httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		}
 		return
 	}
 

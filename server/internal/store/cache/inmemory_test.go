@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/eval"
 )
 
 // --- minimal mock store ---
@@ -347,8 +346,8 @@ func TestConcurrentAccess(t *testing.T) {
 // Verify cache satisfies the handler interface
 func TestCache_ImplementsRulesetCache(t *testing.T) {
 	type RulesetCache interface {
-		GetRuleset(envID string) *eval.Ruleset
-		LoadRuleset(ctx context.Context, projectID, envID string) (*eval.Ruleset, error)
+		GetRuleset(envID string) *domain.Ruleset
+		LoadRuleset(ctx context.Context, projectID, envID string) (*domain.Ruleset, error)
 	}
 	var _ RulesetCache = (*Cache)(nil)
 }

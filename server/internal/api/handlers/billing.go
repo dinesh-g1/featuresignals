@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha512"
-	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -15,47 +13,23 @@ import (
 )
 
 type BillingHandler struct {
-	store           domain.Store
-	payuMerchantKey string
-	payuSalt        string
-	payuMode        string
-	dashboardURL    string
-	appBaseURL      string
-	logger          *slog.Logger
+	store        domain.Store
+	payu         PayUHasher
+	payuMode     string
+	dashboardURL string
+	appBaseURL   string
+	logger       *slog.Logger
 }
 
 func NewBillingHandler(store domain.Store, payuKey, payuSalt, payuMode, dashboardURL, appBaseURL string, logger *slog.Logger) *BillingHandler {
 	return &BillingHandler{
-		store:           store,
-		payuMerchantKey: payuKey,
-		payuSalt:        payuSalt,
-		payuMode:        payuMode,
-		dashboardURL:    dashboardURL,
-		appBaseURL:      appBaseURL,
-		logger:          logger,
+		store:        store,
+		payu:         PayUHasher{MerchantKey: payuKey, Salt: payuSalt},
+		payuMode:     payuMode,
+		dashboardURL: dashboardURL,
+		appBaseURL:   appBaseURL,
+		logger:       logger,
 	}
-}
-
-func (h *BillingHandler) payuEndpoint() string {
-	if h.payuMode == "live" {
-		return "https://secure.payu.in/_payment"
-	}
-	return "https://test.payu.in/_payment"
-}
-
-func (h *BillingHandler) generateHash(txnid, amount, productinfo, firstname, email string) string {
-	hashStr := fmt.Sprintf("%s|%s|%s|%s|%s|%s|||||||||||%s",
-		h.payuMerchantKey, txnid, amount, productinfo, firstname, email, h.payuSalt)
-	hash := sha512.Sum512([]byte(hashStr))
-	return hex.EncodeToString(hash[:])
-}
-
-func (h *BillingHandler) verifyReverseHash(params map[string]string) bool {
-	hashStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
-		h.payuSalt, params["status"], params["email"], params["firstname"],
-		params["productinfo"], params["amount"], params["txnid"], h.payuMerchantKey)
-	computed := sha512.Sum512([]byte(hashStr))
-	return hex.EncodeToString(computed[:]) == params["hash"]
 }
 
 // CreateCheckout returns the PayU form fields the dashboard needs to POST.
@@ -88,7 +62,7 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 		phone = "9999999999"
 	}
 
-	hash := h.generateHash(txnid, amount, productinfo, firstname, email)
+	hash := h.payu.Hash(txnid, amount, productinfo, firstname, email)
 
 	surl := h.appBaseURL + "/v1/billing/payu/callback"
 	furl := h.appBaseURL + "/v1/billing/payu/failure"
@@ -97,8 +71,8 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 	log.Info("payu checkout initiated", "org_id", orgID, "txnid", txnid)
 
 	httputil.JSON(w, http.StatusOK, map[string]string{
-		"payu_url":    h.payuEndpoint(),
-		"key":         h.payuMerchantKey,
+		"payu_url":    h.payu.Endpoint(h.payuMode),
+		"key":         h.payu.MerchantKey,
 		"txnid":       txnid,
 		"hash":        hash,
 		"amount":      amount,
@@ -130,7 +104,7 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 		"mihpayid":    r.FormValue("mihpayid"),
 	}
 
-	if !h.verifyReverseHash(params) {
+	if !h.payu.VerifyReverse(params) {
 		h.logger.Warn("invalid payu reverse hash", "txnid", params["txnid"])
 		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return

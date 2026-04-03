@@ -7,12 +7,9 @@ import (
 	"testing"
 )
 
-func TestBillingHandler_GenerateHash(t *testing.T) {
-	h := &BillingHandler{
-		payuMerchantKey: "testkey",
-		payuSalt:        "testsalt",
-	}
-	hash := h.generateHash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
+func TestPayUHasher_Hash(t *testing.T) {
+	h := PayUHasher{MerchantKey: "testkey", Salt: "testsalt"}
+	hash := h.Hash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
 	if hash == "" {
 		t.Error("hash should not be empty")
 	}
@@ -20,22 +17,19 @@ func TestBillingHandler_GenerateHash(t *testing.T) {
 		t.Errorf("expected 128-char hash (SHA-512), got %d", len(hash))
 	}
 
-	hash2 := h.generateHash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
+	hash2 := h.Hash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
 	if hash != hash2 {
 		t.Error("hash should be deterministic")
 	}
 
-	hash3 := h.generateHash("TXN002", "999.00", "Pro Plan", "John", "john@test.com")
+	hash3 := h.Hash("TXN002", "999.00", "Pro Plan", "John", "john@test.com")
 	if hash == hash3 {
 		t.Error("different txnid should produce different hash")
 	}
 }
 
-func TestBillingHandler_VerifyReverseHash_Valid(t *testing.T) {
-	h := &BillingHandler{
-		payuMerchantKey: "testkey",
-		payuSalt:        "testsalt",
-	}
+func TestPayUHasher_VerifyReverse_Valid(t *testing.T) {
+	h := PayUHasher{MerchantKey: "testkey", Salt: "testsalt"}
 
 	txnid := "TXN001"
 	amount := "999.00"
@@ -45,7 +39,7 @@ func TestBillingHandler_VerifyReverseHash_Valid(t *testing.T) {
 	status := "success"
 
 	reverseStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
-		h.payuSalt, status, email, firstname, productinfo, amount, txnid, h.payuMerchantKey)
+		h.Salt, status, email, firstname, productinfo, amount, txnid, h.MerchantKey)
 	reverseHashBytes := sha512.Sum512([]byte(reverseStr))
 	reverseHash := hex.EncodeToString(reverseHashBytes[:])
 
@@ -59,19 +53,16 @@ func TestBillingHandler_VerifyReverseHash_Valid(t *testing.T) {
 		"hash":        reverseHash,
 	}
 
-	if !h.verifyReverseHash(params) {
+	if !h.VerifyReverse(params) {
 		t.Error("valid reverse hash should verify")
 	}
 }
 
-func TestBillingHandler_VerifyReverseHash_Tampered(t *testing.T) {
-	h := &BillingHandler{
-		payuMerchantKey: "testkey",
-		payuSalt:        "testsalt",
-	}
+func TestPayUHasher_VerifyReverse_Tampered(t *testing.T) {
+	h := PayUHasher{MerchantKey: "testkey", Salt: "testsalt"}
 
 	reverseStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
-		h.payuSalt, "success", "john@test.com", "John", "Pro Plan", "999.00", "TXN001", h.payuMerchantKey)
+		h.Salt, "success", "john@test.com", "John", "Pro Plan", "999.00", "TXN001", h.MerchantKey)
 	reverseHashBytes := sha512.Sum512([]byte(reverseStr))
 	reverseHash := hex.EncodeToString(reverseHashBytes[:])
 
@@ -85,16 +76,13 @@ func TestBillingHandler_VerifyReverseHash_Tampered(t *testing.T) {
 		"hash":        reverseHash,
 	}
 
-	if h.verifyReverseHash(params) {
+	if h.VerifyReverse(params) {
 		t.Error("tampered params should not verify")
 	}
 }
 
-func TestBillingHandler_VerifyReverseHash_WrongHash(t *testing.T) {
-	h := &BillingHandler{
-		payuMerchantKey: "testkey",
-		payuSalt:        "testsalt",
-	}
+func TestPayUHasher_VerifyReverse_WrongHash(t *testing.T) {
+	h := PayUHasher{MerchantKey: "testkey", Salt: "testsalt"}
 
 	params := map[string]string{
 		"txnid":       "TXN001",
@@ -106,12 +94,13 @@ func TestBillingHandler_VerifyReverseHash_WrongHash(t *testing.T) {
 		"hash":        "badhash",
 	}
 
-	if h.verifyReverseHash(params) {
+	if h.VerifyReverse(params) {
 		t.Error("wrong hash should not verify")
 	}
 }
 
-func TestBillingHandler_PayuEndpoint(t *testing.T) {
+func TestPayUHasher_Endpoint(t *testing.T) {
+	h := PayUHasher{MerchantKey: "k", Salt: "s"}
 	tests := []struct {
 		mode string
 		want string
@@ -122,9 +111,8 @@ func TestBillingHandler_PayuEndpoint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.mode, func(t *testing.T) {
-			h := &BillingHandler{payuMode: tt.mode}
-			if got := h.payuEndpoint(); got != tt.want {
-				t.Errorf("payuEndpoint(%q) = %q, want %q", tt.mode, got, tt.want)
+			if got := h.Endpoint(tt.mode); got != tt.want {
+				t.Errorf("Endpoint(%q) = %q, want %q", tt.mode, got, tt.want)
 			}
 		})
 	}
@@ -162,11 +150,8 @@ func TestSplitTxnID(t *testing.T) {
 	}
 }
 
-func TestBillingHandler_GenerateHash_FormatConsistency(t *testing.T) {
-	h := &BillingHandler{
-		payuMerchantKey: "merchant",
-		payuSalt:        "salt",
-	}
+func TestPayUHasher_Hash_FormatConsistency(t *testing.T) {
+	h := PayUHasher{MerchantKey: "merchant", Salt: "salt"}
 
 	txnid := "FS_test1234_1700000000"
 	amount := "999.00"
@@ -175,12 +160,12 @@ func TestBillingHandler_GenerateHash_FormatConsistency(t *testing.T) {
 	email := "test@example.com"
 
 	expected := fmt.Sprintf("%s|%s|%s|%s|%s|%s|||||||||||%s",
-		h.payuMerchantKey, txnid, amount, productinfo, firstname, email, h.payuSalt)
+		h.MerchantKey, txnid, amount, productinfo, firstname, email, h.Salt)
 	expectedHash := sha512.Sum512([]byte(expected))
 	want := hex.EncodeToString(expectedHash[:])
 
-	got := h.generateHash(txnid, amount, productinfo, firstname, email)
+	got := h.Hash(txnid, amount, productinfo, firstname, email)
 	if got != want {
-		t.Errorf("generateHash does not match manual computation")
+		t.Errorf("Hash does not match manual computation")
 	}
 }

@@ -97,7 +97,7 @@ func (m *mockStore) GetOrganization(ctx context.Context, id string) (*domain.Org
 	defer m.mu.RUnlock()
 	org, ok := m.orgs[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return org, nil
 }
@@ -110,14 +110,14 @@ func (m *mockStore) GetOrganizationByIDPrefix(ctx context.Context, prefix string
 			return org, nil
 		}
 	}
-	return nil, fmt.Errorf("not found")
+	return nil, domain.ErrNotFound
 }
 
 func (m *mockStore) CreateUser(ctx context.Context, user *domain.User) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, exists := m.usersByEmail[user.Email]; exists {
-		return fmt.Errorf("email already exists")
+		return domain.WrapConflict("email")
 	}
 	user.ID = m.nextID()
 	m.users[user.ID] = user
@@ -130,7 +130,7 @@ func (m *mockStore) GetUserByEmail(ctx context.Context, email string) (*domain.U
 	defer m.mu.RUnlock()
 	user, ok := m.usersByEmail[email]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return user, nil
 }
@@ -140,7 +140,7 @@ func (m *mockStore) GetUserByID(ctx context.Context, id string) (*domain.User, e
 	defer m.mu.RUnlock()
 	user, ok := m.users[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return user, nil
 }
@@ -160,7 +160,7 @@ func (m *mockStore) GetOrgMemberByID(ctx context.Context, memberID string) (*dom
 	defer m.mu.RUnlock()
 	mem, ok := m.orgMembersByID[memberID]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return mem, nil
 }
@@ -170,7 +170,7 @@ func (m *mockStore) UpdateOrgMemberRole(ctx context.Context, memberID string, ro
 	defer m.mu.Unlock()
 	mem, ok := m.orgMembersByID[memberID]
 	if !ok {
-		return fmt.Errorf("not found")
+		return domain.ErrNotFound
 	}
 	mem.Role = role
 	for i, mm := range m.orgMembers[mem.OrgID] {
@@ -187,7 +187,7 @@ func (m *mockStore) RemoveOrgMember(ctx context.Context, memberID string) error 
 	defer m.mu.Unlock()
 	mem, ok := m.orgMembersByID[memberID]
 	if !ok {
-		return fmt.Errorf("not found")
+		return domain.ErrNotFound
 	}
 	delete(m.orgMembersByID, memberID)
 	members := m.orgMembers[mem.OrgID]
@@ -258,7 +258,7 @@ func (m *mockStore) GetOrgMember(ctx context.Context, orgID, userID string) (*do
 				}
 			}
 		}
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	members := m.orgMembers[orgID]
 	for i := range members {
@@ -266,7 +266,7 @@ func (m *mockStore) GetOrgMember(ctx context.Context, orgID, userID string) (*do
 			return &members[i], nil
 		}
 	}
-	return nil, fmt.Errorf("not found")
+	return nil, domain.ErrNotFound
 }
 
 func (m *mockStore) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgMember, error) {
@@ -296,7 +296,7 @@ func (m *mockStore) GetProject(ctx context.Context, id string) (*domain.Project,
 	defer m.mu.RUnlock()
 	p, ok := m.projects[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return p, nil
 }
@@ -346,7 +346,7 @@ func (m *mockStore) GetEnvironment(ctx context.Context, id string) (*domain.Envi
 	defer m.mu.RUnlock()
 	e, ok := m.envs[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return e, nil
 }
@@ -363,7 +363,7 @@ func (m *mockStore) CreateFlag(ctx context.Context, f *domain.Flag) error {
 	defer m.mu.Unlock()
 	key := f.ProjectID + ":" + f.Key
 	if _, exists := m.flags[key]; exists {
-		return fmt.Errorf("flag key already exists")
+		return domain.WrapConflict("flag key")
 	}
 	f.ID = m.nextID()
 	m.flags[key] = f
@@ -376,7 +376,7 @@ func (m *mockStore) GetFlag(ctx context.Context, projectID, key string) (*domain
 	defer m.mu.RUnlock()
 	f, ok := m.flags[projectID+":"+key]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return f, nil
 }
@@ -402,7 +402,7 @@ func (m *mockStore) UpdateFlag(ctx context.Context, f *domain.Flag) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("not found")
+	return domain.ErrNotFound
 }
 
 func (m *mockStore) DeleteFlag(ctx context.Context, id string) error {
@@ -433,7 +433,7 @@ func (m *mockStore) GetFlagState(ctx context.Context, flagID, envID string) (*do
 	defer m.mu.RUnlock()
 	fs, ok := m.flagStates[flagID+":"+envID]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return fs, nil
 }
@@ -443,7 +443,7 @@ func (m *mockStore) CreateSegment(ctx context.Context, seg *domain.Segment) erro
 	defer m.mu.Unlock()
 	key := seg.ProjectID + ":" + seg.Key
 	if _, exists := m.segments[key]; exists {
-		return fmt.Errorf("segment key already exists")
+		return domain.WrapConflict("segment key")
 	}
 	seg.ID = m.nextID()
 	m.segments[key] = seg
@@ -467,7 +467,7 @@ func (m *mockStore) GetSegment(ctx context.Context, projectID, key string) (*dom
 	defer m.mu.RUnlock()
 	seg, ok := m.segments[projectID+":"+key]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return seg, nil
 }
@@ -481,7 +481,7 @@ func (m *mockStore) UpdateSegment(ctx context.Context, seg *domain.Segment) erro
 			return nil
 		}
 	}
-	return fmt.Errorf("not found")
+	return domain.ErrNotFound
 }
 
 func (m *mockStore) DeleteSegment(ctx context.Context, id string) error {
@@ -511,7 +511,7 @@ func (m *mockStore) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKe
 	defer m.mu.RUnlock()
 	k, ok := m.apiKeysById[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return k, nil
 }
@@ -521,13 +521,13 @@ func (m *mockStore) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domai
 	defer m.mu.RUnlock()
 	k, ok := m.apiKeys[keyHash]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	if k.RevokedAt != nil {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	if k.ExpiresAt != nil && time.Now().After(*k.ExpiresAt) {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return k, nil
 }
@@ -598,7 +598,7 @@ func (m *mockStore) ListenForChanges(ctx context.Context, callback func(payload 
 func (m *mockStore) GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) (*domain.Environment, *domain.APIKey, error) {
 	k, err := m.GetAPIKeyByHash(ctx, keyHash)
 	if err != nil {
-		return nil, nil, fmt.Errorf("api key not found")
+		return nil, nil, domain.ErrNotFound
 	}
 	env, err := m.GetEnvironment(ctx, k.EnvID)
 	if err != nil {
@@ -634,7 +634,7 @@ func (m *mockStore) GetWebhook(ctx context.Context, id string) (*domain.Webhook,
 	defer m.mu.RUnlock()
 	w, ok := m.webhooks[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return w, nil
 }
@@ -655,7 +655,7 @@ func (m *mockStore) UpdateWebhook(ctx context.Context, w *domain.Webhook) error 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.webhooks[w.ID]; !ok {
-		return fmt.Errorf("not found")
+		return domain.ErrNotFound
 	}
 	m.webhooks[w.ID] = w
 	return nil
@@ -708,11 +708,11 @@ func (m *mockStore) GetApprovalRequest(ctx context.Context, id string) (*domain.
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.approvals == nil {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	ar, ok := m.approvals[id]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	cp := *ar
 	return &cp, nil
@@ -746,10 +746,10 @@ func (m *mockStore) UpdateApprovalRequest(ctx context.Context, ar *domain.Approv
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.approvals == nil {
-		return fmt.Errorf("not found")
+		return domain.ErrNotFound
 	}
 	if _, ok := m.approvals[ar.ID]; !ok {
-		return fmt.Errorf("not found")
+		return domain.ErrNotFound
 	}
 	cp := *ar
 	cp.UpdatedAt = time.Now()
@@ -760,7 +760,7 @@ func (m *mockStore) UpdateApprovalRequest(ctx context.Context, ar *domain.Approv
 // --- Billing ---
 
 func (m *mockStore) GetSubscription(ctx context.Context, orgID string) (*domain.Subscription, error) {
-	return nil, fmt.Errorf("not found")
+	return nil, domain.ErrNotFound
 }
 
 func (m *mockStore) UpsertSubscription(ctx context.Context, sub *domain.Subscription) error {
@@ -784,7 +784,7 @@ func (m *mockStore) IncrementUsage(ctx context.Context, orgID, metricName string
 }
 
 func (m *mockStore) GetUsage(ctx context.Context, orgID, metricName string) (*domain.UsageMetric, error) {
-	return nil, fmt.Errorf("not found")
+	return nil, domain.ErrNotFound
 }
 
 func (m *mockStore) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {
@@ -792,7 +792,7 @@ func (m *mockStore) GetOnboardingState(ctx context.Context, orgID string) (*doma
 	defer m.mu.RUnlock()
 	s, ok := m.onboardingStates[orgID]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, domain.ErrNotFound
 	}
 	return s, nil
 }
@@ -812,7 +812,7 @@ func (m *mockStore) GetUserByEmailVerifyToken(ctx context.Context, token string)
 			return u, nil
 		}
 	}
-	return nil, fmt.Errorf("not found")
+	return nil, domain.ErrNotFound
 }
 
 func (m *mockStore) UpdateUserPhone(ctx context.Context, userID, phone string) error {
@@ -946,7 +946,7 @@ func (m *mockStore) ConsumeOneTimeToken(ctx context.Context, token string) (stri
 	defer m.mu.Unlock()
 	entry, ok := m.oneTimeTokens[token]
 	if !ok || entry.used || time.Now().After(entry.expiresAt) {
-		return "", "", fmt.Errorf("invalid or expired token")
+		return "", "", domain.ErrNotFound
 	}
 	entry.used = true
 	return entry.userID, entry.orgID, nil
