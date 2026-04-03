@@ -33,7 +33,7 @@ curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
   }'
 ```
 
-### Via Dashboard
+### Via Flag Engine
 
 1. Open the flag detail page
 2. In the **Prerequisites** section, select flags to depend on

@@ -12,7 +12,8 @@ FeatureSignals is an **open-source feature flag management platform** built for 
 - **Self-hosted & free** — Run on your own infrastructure. No per-seat pricing. Apache-2.0 licensed.
 - **Real-time updates** — Server-Sent Events push flag changes to SDKs instantly.
 - **A/B experimentation** — Built-in variant assignment with consistent hashing and impression tracking.
-- **Multi-environment** — Manage dev, staging, and production from a single dashboard.
+- **Toggle categories** — Classify flags as release, experiment, ops, or permission for lifecycle-aware management.
+- **Multi-environment** — Manage dev, staging, and production from a single Flag Engine.
 - **Enterprise-ready** — RBAC, audit logging, approval workflows, webhooks, and mutual exclusion groups.
 - **SDKs for every stack** — Go, Node.js, Python, Java, and React with OpenFeature support.
 - **Edge-ready** — Relay proxy for low-latency flag evaluation at the edge.
@@ -23,6 +24,7 @@ FeatureSignals is an **open-source feature flag management platform** built for 
 |---|---|
 | Get up and running in 5 minutes | [Quickstart](/getting-started/quickstart) |
 | Understand the core concepts | [Feature Flags](/core-concepts/feature-flags) |
+| Learn about toggle categories | [Toggle Categories](/core-concepts/toggle-categories) |
 | Integrate with your application | [SDKs](/sdks/overview) |
 | Explore the REST API | [API Reference](/api-reference/overview) |
 | Deploy to production | [Self-Hosting](/deployment/self-hosting) |
@@ -32,7 +34,7 @@ FeatureSignals is an **open-source feature flag management platform** built for 
 
 ```
 ┌─────────────┐     ┌─────────────────┐     ┌──────────────┐
-│  Dashboard   │────▶│   Go API Server  │◀───│  PostgreSQL   │
+│ Flag Engine  │────▶│   Go API Server  │◀───│  PostgreSQL   │
 │  (Next.js)   │     │   (chi router)   │     │  (data store) │
 └─────────────┘     └────────┬────────┘     └──────────────┘
                              │

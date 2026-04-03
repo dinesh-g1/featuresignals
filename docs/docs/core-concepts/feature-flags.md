@@ -28,6 +28,8 @@ Every flag has these properties:
 | `description` | Optional description |
 | `flag_type` | One of: `boolean`, `string`, `number`, `json`, `ab` |
 | `default_value` | Value returned when the flag is disabled |
+| `category` | Toggle category: `release`, `experiment`, `ops`, or `permission` (see [Toggle Categories](/core-concepts/toggle-categories)) |
+| `status` | Lifecycle status: `active`, `rolled_out`, `deprecated`, or `archived` |
 | `tags` | Array of strings for organization |
 | `prerequisites` | Other flags that must be enabled first |
 | `mutual_exclusion_group` | Group name for mutually exclusive flags |
@@ -70,6 +72,8 @@ Default values work at two levels:
 ## Best Practices
 
 - **Use descriptive keys** — `enable-dark-mode` is better than `flag-1`
+- **Set a category** — Classify each flag as release, experiment, ops, or permission to set lifecycle expectations (see [Toggle Categories](/core-concepts/toggle-categories))
+- **Track status** — Move flags through `active` → `rolled_out` → `deprecated` → `archived` as they progress
 - **Set expiration dates** — Prevent stale flags from accumulating
 - **Use tags** — Organize flags by team, feature area, or release
 - **Start with boolean** — Only use complex types when needed

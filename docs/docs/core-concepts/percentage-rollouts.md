@@ -37,7 +37,7 @@ curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/environm
 
 This enables the flag for 25% of users.
 
-### Via Dashboard
+### Via Flag Engine
 
 1. Open the flag detail page
 2. Select the environment

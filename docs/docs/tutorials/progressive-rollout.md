@@ -75,7 +75,7 @@ curl -X PUT https://api.featuresignals.com/v1/projects/{projectID}/flags/redesig
   }'
 ```
 
-Or in the dashboard:
+Or in the Flag Engine:
 1. Go to the `redesigned-dashboard` flag
 2. Select the **Production** environment
 3. Toggle **Enabled** on
@@ -88,7 +88,7 @@ Wait 24–48 hours and check:
 
 - **Error rates**: Are flagged users seeing more errors?
 - **Performance**: Any latency regressions?
-- **Evaluation metrics**: Check the dashboard under Metrics → Evaluations
+- **Evaluation metrics**: Check the Flag Engine under Metrics → Evaluations
 - **User feedback**: Support tickets or complaints from the 10% cohort
 
 ## Step 4: Increase to 50%

@@ -55,7 +55,7 @@ This enables:
 
 ## Viewing the Audit Log
 
-### Dashboard
+### Flag Engine
 
 Navigate to **Audit Log** in the sidebar to browse entries.
 

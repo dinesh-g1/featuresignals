@@ -70,7 +70,7 @@ analytics.track("pricing_impression", {
     title: "Kill Switch",
     subtitle: "Instant rollback when things go wrong",
     description: "Wrap risky features in a flag and disable them in one click during incidents. No redeployment, no waiting for CI. The change propagates to all connected SDKs in seconds via SSE streaming.",
-    steps: ["Wrap the risky code path behind a flag", "Deploy with the flag enabled", "If an incident occurs, toggle the flag off in the dashboard", "All SDKs receive the update in seconds via SSE"],
+    steps: ["Wrap the risky code path behind a flag", "Deploy with the flag enabled", "If an incident occurs, toggle the flag off in the Flag Engine", "All SDKs receive the update in seconds via SSE"],
     icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`,
     color: "red",
     code: [
@@ -130,20 +130,75 @@ const enabled = await client.isEnabled("ai-assistant", {
   {
     title: "Multi-Environment Promotion",
     subtitle: "Test in staging, promote to production with confidence",
-    description: "Each environment has its own flag states and targeting rules. Test thoroughly in development and staging before promoting to production. Per-environment API keys ensure isolation between environments.",
-    steps: ["Enable the flag in development and iterate", "Promote to staging — QA verifies targeting rules", "Enable in production with a conservative rollout", "Full rollout after validation"],
+    description: "Each environment has its own flag states and targeting rules. Test thoroughly in development and staging before promoting to production. Use Environment Comparison to spot drift and bulk-sync changes across environments.",
+    steps: ["Enable the flag in development and iterate", "Use Env Comparison to verify staging matches dev", "Bulk-sync selected flags from staging to production", "Full rollout after validation"],
     icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />`,
     color: "sky",
     code: [
-      { lang: "curl", label: "Promote Config", code: `# Copy flag config from staging to production
-curl -X POST https://api.featuresignals.com/v1/projects/proj-1/flags/new-checkout/promote \\
+      { lang: "curl", label: "Compare & Sync", code: `# Compare flag states between staging and production
+curl "https://api.featuresignals.com/v1/projects/proj-1/flags/compare-environments\\
+?source_env_id=env-staging&target_env_id=env-production" \\
+  -H "Authorization: Bearer <token>"
+
+# Bulk-sync selected flags from staging to production
+curl -X POST .../flags/sync-environments \\
   -H "Authorization: Bearer <token>" \\
   -d '{
     "source_env_id": "env-staging",
-    "target_env_id": "env-production"
+    "target_env_id": "env-production",
+    "flag_keys": ["new-checkout", "dark-mode"]
+  }'` }
+    ]
+  },
+  {
+    title: "Customer Support Debugging",
+    subtitle: "\"What does this user see?\" — answered in seconds",
+    description: "When a customer reports an issue, use Entity Inspector to see exactly what flags they experience. Compare two users side-by-side to understand why one sees a feature and another doesn't. No code reading required.",
+    steps: ["Customer reports: 'I can't see the new dashboard'", "Open Entity Inspector, enter their user key and attributes", "Instantly see all flag evaluations with reasons", "Compare with a working user to find the difference"],
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />`,
+    color: "rose",
+    code: [
+      { lang: "curl", label: "Inspect Entity", code: `# See exactly what user-42 experiences
+curl -X POST https://api.featuresignals.com/v1/projects/proj-1/environments/env-prod/inspect-entity \\
+  -H "Authorization: Bearer <token>" \\
+  -d '{
+    "entity_key": "user-42",
+    "attributes": { "plan": "free", "country": "US" }
   }'
 
-# Targeting rules, rollout %, and variants are all copied` }
+# Returns: flag_key, value, reason for every flag
+# → "new-dashboard": false, reason: "ROLLOUT" (not in 10% bucket)` },
+      { lang: "curl", label: "Compare Users", code: `# Why does user-42 not see the feature but user-99 does?
+curl -X POST .../environments/env-prod/compare-entities \\
+  -H "Authorization: Bearer <token>" \\
+  -d '{
+    "entity_a": { "key": "user-42", "attributes": { "plan": "free" } },
+    "entity_b": { "key": "user-99", "attributes": { "plan": "enterprise" } }
+  }'
+# Diff shows: user-99 matched "enterprise" targeting rule` }
+    ]
+  },
+  {
+    title: "Toggle Lifecycle Management",
+    subtitle: "Categorize, track, and clean up flags systematically",
+    description: "Classify every flag into one of four categories — release, experiment, ops, or permission — each with tailored staleness thresholds and management guidance. Track lifecycle status from active through archived. Never let technical debt from stale flags accumulate again.",
+    steps: ["Assign a category when creating each flag", "Flag Health uses category-aware staleness thresholds", "Move flags through active → rolled_out → deprecated → archived", "CI pipeline scans for stale flags and fails the build"],
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />`,
+    color: "teal",
+    code: [
+      { lang: "json", label: "Categories", code: `// Four toggle categories with different lifecycles:
+//
+// RELEASE    → 14-day staleness threshold
+//               Trunk-based dev, canary rollouts
+//
+// EXPERIMENT → 30-day staleness threshold
+//               A/B tests, multivariate experiments
+//
+// OPS        → 90-day staleness threshold
+//               Circuit breakers, maintenance modes
+//
+// PERMISSION → 90-day staleness threshold
+//               Plan gating, feature entitlements` }
     ]
   }
 ];
@@ -155,6 +210,8 @@ const colorMap: Record<string, { bg: string; text: string; ring: string; stepBg:
   emerald: { bg: "bg-emerald-50", text: "text-emerald-600", ring: "ring-emerald-100", stepBg: "bg-emerald-50", stepText: "text-emerald-700" },
   amber:   { bg: "bg-amber-50",   text: "text-amber-600",   ring: "ring-amber-100",   stepBg: "bg-amber-50",   stepText: "text-amber-700" },
   sky:     { bg: "bg-sky-50",     text: "text-sky-600",     ring: "ring-sky-100",     stepBg: "bg-sky-50",     stepText: "text-sky-700" },
+  rose:    { bg: "bg-rose-50",    text: "text-rose-600",    ring: "ring-rose-100",    stepBg: "bg-rose-50",    stepText: "text-rose-700" },
+  teal:    { bg: "bg-teal-50",    text: "text-teal-600",    ring: "ring-teal-100",    stepBg: "bg-teal-50",    stepText: "text-teal-700" },
 };
 ---
 <Layout title="Use Cases" description="See how engineering teams use FeatureSignals to ship faster, test safely, and recover instantly.">

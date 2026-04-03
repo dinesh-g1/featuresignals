@@ -49,14 +49,14 @@ curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/checkout-v2 \
   -d '{"mutual_exclusion_group": "checkout-experiments"}'
 ```
 
-### Via Dashboard
+### Via Flag Engine
 
 1. Open the flag detail page
 2. Find the **Mutual Exclusion Group** section in the Overview tab
 3. Enter the group name (e.g., `checkout-experiments`)
 4. Click **Save**
 
-The dashboard shows how many other flags share the same group.
+The Flag Engine shows how many other flags share the same group.
 
 ## Evaluation Behavior
 

@@ -101,7 +101,7 @@ This single API call:
 - Propagates to all connected SDKs via SSE within milliseconds
 - Gets logged in the audit trail for post-incident review
 
-You can also hit the kill switch from the dashboard: go to the flag → click the **Kill Switch** button.
+You can also hit the kill switch from the Flag Engine: go to the flag → click the **Kill Switch** button.
 
 ## Step 5: Recover
 

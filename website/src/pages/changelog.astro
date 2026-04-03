@@ -12,6 +12,23 @@ import Layout from '../layouts/Layout.astro';
           <time class="text-sm font-medium text-indigo-600">April 2026</time>
           <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">Latest</span>
         </div>
+        <h2 class="mt-3 text-xl font-semibold text-slate-900">Flag Engine &amp; Toggle Categories</h2>
+        <ul class="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
+          <li><strong>Dashboard renamed to Flag Engine</strong> &mdash; The management UI is now called the Flag Engine across all pages, docs, and navigation</li>
+          <li><strong>Toggle Categories</strong> &mdash; Classify flags as release, experiment, ops, or permission with category-aware staleness thresholds (14d, 30d, 90d, 90d)</li>
+          <li><strong>Flag Lifecycle Status</strong> &mdash; Track flags through active &rarr; rolled_out &rarr; deprecated &rarr; archived</li>
+          <li><strong>Environment Comparison</strong> &mdash; Compare and bulk-sync flag states across environments</li>
+          <li><strong>Entity Inspector</strong> &mdash; See exactly what a specific user experiences across all flags</li>
+          <li><strong>Entity Comparison</strong> &mdash; Compare flag evaluations for two users side-by-side</li>
+          <li><strong>Usage Insights</strong> &mdash; View value distribution percentages (true/false) per flag per environment</li>
+          <li><strong>SOLID Architecture</strong> &mdash; Core engine refactored with interface-driven design, evaluation middleware chain, operator registry, and domain error hierarchy</li>
+        </ul>
+      </article>
+
+      <article>
+        <div class="flex items-center gap-3">
+          <time class="text-sm font-medium text-indigo-600">April 2026</time>
+        </div>
         <h2 class="mt-3 text-xl font-semibold text-slate-900">API Security Hardening</h2>
         <ul class="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
           <li><strong>Broken Object Level Authorization fix</strong> &mdash; API key revocation now verifies org ownership to prevent cross-tenant access</li>
@@ -42,9 +59,9 @@ import Layout from '../layouts/Layout.astro';
           <li><strong>A/B Experimentation</strong> &mdash; New <code>ab</code> flag type with weighted variants, consistent hashing assignment, and impression tracking API</li>
           <li><strong>Relay Proxy</strong> &mdash; Lightweight Go binary for edge caching with SSE or polling sync</li>
           <li><strong>Mutual Exclusion Groups</strong> &mdash; Prevent experiment interference with deterministic winner selection</li>
-          <li><strong>Evaluation Metrics</strong> &mdash; In-memory counters, dashboard visualization with top-flags chart and reason breakdown</li>
-          <li><strong>Dashboard: Eval Metrics page</strong> &mdash; Per-environment counts, reason distribution, top evaluated flags</li>
-          <li><strong>Dashboard: Mutex group editor</strong> &mdash; Inline editor in flag detail with group member count</li>
+          <li><strong>Evaluation Metrics</strong> &mdash; In-memory counters, Flag Engine visualization with top-flags chart and reason breakdown</li>
+          <li><strong>Eval Metrics page</strong> &mdash; Per-environment counts, reason distribution, top evaluated flags</li>
+          <li><strong>Mutex group editor</strong> &mdash; Inline editor in flag detail with group member count</li>
           <li><strong>Stale Flag Scanner</strong> &mdash; CLI tool to find unused flag references in code, CI mode with exit code</li>
           <li><strong>Documentation Site</strong> &mdash; 35+ page Docusaurus site covering getting started, concepts, SDKs, API reference, and deployment</li>
         </ul>
@@ -59,13 +76,13 @@ import Layout from '../layouts/Layout.astro';
           <li><strong>Approval Workflows</strong> &mdash; Request-review flow for production changes with automatic application</li>
           <li><strong>Webhook Dispatch</strong> &mdash; Background dispatcher with HMAC-SHA256 signatures, exponential retry, delivery logging</li>
           <li><strong>Flag Scheduling</strong> &mdash; Auto-enable/disable at specified times with 30-second granularity</li>
-          <li><strong>Kill Switch</strong> &mdash; Emergency flag disable with one-click dashboard button</li>
+          <li><strong>Kill Switch</strong> &mdash; Emergency flag disable with one-click Flag Engine button</li>
           <li><strong>Flag Promotion</strong> &mdash; Copy flag configuration between environments</li>
-          <li><strong>Flag Health Dashboard</strong> &mdash; Health scores, stale flags, expiring flags, missing descriptions</li>
+          <li><strong>Flag Health</strong> &mdash; Health scores, stale flags, expiring flags, missing descriptions</li>
           <li><strong>Prerequisite Flags</strong> &mdash; Recursive dependency evaluation</li>
           <li><strong>RBAC</strong> &mdash; Owner/admin/developer/viewer roles with per-environment permissions</li>
           <li><strong>Audit Logging</strong> &mdash; Tamper-evident log with before/after state diffs</li>
-          <li><strong>CI/CD Pipeline</strong> &mdash; GitHub Actions for all SDK tests, server tests, dashboard build, Docker build</li>
+          <li><strong>CI/CD Pipeline</strong> &mdash; GitHub Actions for all SDK tests, server tests, Flag Engine build, Docker build</li>
         </ul>
       </article>
 
@@ -79,7 +96,7 @@ import Layout from '../layouts/Layout.astro';
           <li><strong>Go SDK</strong> &mdash; Polling, SSE, local eval, OpenFeature provider</li>
           <li><strong>Node.js SDK</strong> &mdash; Polling, SSE, local eval, OpenFeature provider</li>
           <li><strong>React SDK</strong> &mdash; Provider component, hooks (useFlag, useFlags, useReady, useError)</li>
-          <li><strong>Dashboard</strong> &mdash; Next.js with flag management, targeting editor, segments, environments</li>
+          <li><strong>Flag Engine</strong> &mdash; Next.js with flag management, targeting editor, segments, environments</li>
           <li><strong>Docker Compose</strong> &mdash; One-command local development setup</li>
         </ul>
       </article>
