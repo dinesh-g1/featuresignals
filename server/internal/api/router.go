@@ -15,7 +15,6 @@ import (
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
-	"github.com/featuresignals/server/internal/sms"
 )
 
 // BillingConfig holds PayU credentials passed through from config.
@@ -40,8 +39,6 @@ func NewRouter(
 	corsOrigins []string,
 	metricsCollector *metrics.Collector,
 	billing BillingConfig,
-	smsClient sms.Sender,
-	emailSender email.VerificationSender,
 	otpSender email.OTPSender,
 	appBaseURL string,
 	dashboardURL string,
@@ -75,7 +72,7 @@ func NewRouter(
 	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
 
 	// Init handlers
-	authH := handlers.NewAuthHandler(store, jwtMgr, smsClient, emailSender, appBaseURL, dashboardURL)
+	authH := handlers.NewAuthHandler(store, jwtMgr, nil, nil, appBaseURL, dashboardURL)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store)
@@ -93,18 +90,6 @@ func NewRouter(
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
 	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender)
 	salesH := handlers.NewSalesHandler(store)
-	demoH := handlers.NewDemoHandler(handlers.DemoHandlerConfig{
-		Store:           store,
-		JWTMgr:          jwtMgr,
-		Logger:          logger,
-		SMSClient:       smsClient,
-		EmailSender:     emailSender,
-		AppBaseURL:      appBaseURL,
-		DashboardURL:    dashboardURL,
-		PayUMerchantKey: billing.PayUMerchantKey,
-		PayUSalt:        billing.PayUSalt,
-		PayUMode:        billing.PayUMode,
-	})
 
 	jwtAuth := middleware.JWTAuth(jwtMgr)
 
@@ -140,18 +125,6 @@ func NewRouter(
 			r.Use(middleware.RateLimit(30))
 			r.Post("/billing/payu/callback", billingH.PayUCallback)
 			r.Post("/billing/payu/failure", billingH.PayUFailure)
-		})
-
-		// Demo routes (session creation is public + rate-limited; convert/feedback require JWT)
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(10))
-			r.Post("/demo/session", demoH.CreateSession)
-		})
-		r.Group(func(r chi.Router) {
-			r.Use(jwtAuth)
-			r.Post("/demo/convert", demoH.Convert)
-			r.Post("/demo/select-plan", demoH.SelectPlan)
-			r.Post("/demo/feedback", demoH.Feedback)
 		})
 
 		// Auth verification (authenticated via JWT)

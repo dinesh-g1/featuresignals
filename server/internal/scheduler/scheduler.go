@@ -13,7 +13,6 @@ type Store interface {
 	ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error)
 	UpsertFlagState(ctx context.Context, fs *domain.FlagState) error
 	CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error
-	DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error)
 	DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error)
 	ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error)
 	SoftDeleteOrganization(ctx context.Context, orgID string) error
@@ -28,7 +27,7 @@ type Scheduler struct {
 	store         Store
 	logger        *slog.Logger
 	interval      time.Duration
-	cleanupTicker int // counts ticks to run demo cleanup hourly
+	cleanupTicker int // counts ticks to run hourly jobs
 }
 
 // New creates a scheduler that ticks at the given interval.
@@ -60,7 +59,6 @@ func (s *Scheduler) Start(ctx context.Context) {
 				ticksPerHour = 1
 			}
 			if s.cleanupTicker%ticksPerHour == 0 {
-				s.cleanupDemoSessions(ctx)
 				s.cleanupPendingRegistrations(ctx)
 				s.autoDowngradeExpiredTrials(ctx)
 				s.softDeleteInactiveOrgs(ctx)
@@ -114,17 +112,6 @@ func (s *Scheduler) tick(ctx context.Context) {
 			ResourceType: "flag",
 			ResourceID:   &fs.FlagID,
 		})
-	}
-}
-
-func (s *Scheduler) cleanupDemoSessions(ctx context.Context) {
-	count, err := s.store.DeleteExpiredDemoOrgs(ctx, time.Now())
-	if err != nil {
-		s.logger.Error("failed to cleanup expired demo sessions", "error", err)
-		return
-	}
-	if count > 0 {
-		s.logger.Info("cleaned up expired demo sessions", "count", count)
 	}
 }
 
@@ -197,7 +184,3 @@ func (s *Scheduler) RunOnce(ctx context.Context) {
 	s.tick(ctx)
 }
 
-// RunDemoCleanup runs a single demo cleanup pass (useful for testing).
-func (s *Scheduler) RunDemoCleanup(ctx context.Context) {
-	s.cleanupDemoSessions(ctx)
-}

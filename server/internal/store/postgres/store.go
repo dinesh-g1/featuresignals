@@ -1074,56 +1074,6 @@ func (s *Store) UpsertOnboardingState(ctx context.Context, state *domain.Onboard
 	return err
 }
 
-// --- Demo / Trial ---
-
-func (s *Store) UpdateOrgDemoExpiry(ctx context.Context, orgID string, expiresAt time.Time) error {
-	_, err := s.pool.Exec(ctx,
-		`UPDATE organizations SET demo_expires_at = $1, updated_at = NOW() WHERE id = $2`,
-		expiresAt, orgID)
-	return err
-}
-
-func (s *Store) DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error) {
-	// Delete in dependency order: the FK cascades handle most,
-	// but we explicitly delete orgs which cascade to everything else.
-	tag, err := s.pool.Exec(ctx,
-		`DELETE FROM organizations WHERE is_demo = true AND demo_expires_at < $1`, before)
-	if err != nil {
-		return 0, err
-	}
-	return int(tag.RowsAffected()), nil
-}
-
-func (s *Store) ConvertDemoUser(ctx context.Context, userID, email, passwordHash, name string) error {
-	_, err := s.pool.Exec(ctx,
-		`UPDATE users SET email = $1, password_hash = $2, name = $3, is_demo = false, updated_at = NOW()
-		 WHERE id = $4`,
-		email, passwordHash, name, userID)
-	return err
-}
-
-func (s *Store) ConvertDemoOrg(ctx context.Context, orgID, name, slug string) error {
-	_, err := s.pool.Exec(ctx,
-		`UPDATE organizations SET name = $1, slug = $2, is_demo = false, demo_expires_at = NULL, updated_at = NOW()
-		 WHERE id = $3`,
-		name, slug, orgID)
-	return err
-}
-
-func (s *Store) CreateDemoFeedback(ctx context.Context, fb *domain.DemoFeedback) error {
-	return s.pool.QueryRow(ctx,
-		`INSERT INTO demo_feedback (org_id, message, email, rating)
-		 VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
-		fb.OrgID, fb.Message, fb.Email, fb.Rating,
-	).Scan(&fb.ID, &fb.CreatedAt)
-}
-
-func (s *Store) DeleteDemoData(ctx context.Context, orgID string) error {
-	_, err := s.pool.Exec(ctx,
-		`DELETE FROM projects WHERE org_id = $1`, orgID)
-	return err
-}
-
 // --- Pending Registrations ---
 
 func (s *Store) UpsertPendingRegistration(ctx context.Context, pr *domain.PendingRegistration) error {

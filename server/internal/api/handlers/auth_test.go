@@ -359,45 +359,7 @@ func TestAuthHandler_VerifyOTP_DisabledByFeatureFlag(t *testing.T) {
 	}
 }
 
-func TestAuthHandler_Register_WithDemoSource(t *testing.T) {
-	h, store := newTestAuthHandler()
-
-	body := `{"email":"demo@example.com","password":"Secure@123","name":"Demo User","org_name":"Demo Org","source":"demo"}`
-	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
-	w := httptest.NewRecorder()
-	h.Register(w, r)
-
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
-	}
-
-	var result map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &result)
-
-	if result["demo_expires_at"] == nil {
-		t.Error("expected demo_expires_at in response for demo source")
-	}
-
-	demoExpiresAt := result["demo_expires_at"].(float64)
-	if demoExpiresAt < float64(time.Now().Add(6*24*time.Hour).Unix()) {
-		t.Error("demo_expires_at should be ~7 days in the future")
-	}
-
-	// Verify sample data was seeded
-	store.mu.RLock()
-	flagCount := len(store.flags)
-	segCount := len(store.segments)
-	store.mu.RUnlock()
-
-	if flagCount < 5 {
-		t.Errorf("expected at least 5 sample flags for demo source, got %d", flagCount)
-	}
-	if segCount < 1 {
-		t.Errorf("expected at least 1 sample segment for demo source, got %d", segCount)
-	}
-}
-
-func TestAuthHandler_Register_NormalSource_NoDemoData(t *testing.T) {
+func TestAuthHandler_Register_NoDemoData(t *testing.T) {
 	h, store := newTestAuthHandler()
 
 	body := `{"email":"normal@example.com","password":"Secure@123","name":"Normal User","org_name":"Normal Org"}`
@@ -409,19 +371,12 @@ func TestAuthHandler_Register_NormalSource_NoDemoData(t *testing.T) {
 		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var result map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &result)
-
-	if result["demo_expires_at"] != nil {
-		t.Error("normal registration should not have demo_expires_at")
-	}
-
 	store.mu.RLock()
 	flagCount := len(store.flags)
 	store.mu.RUnlock()
 
 	if flagCount != 0 {
-		t.Errorf("normal registration should not seed sample flags, got %d", flagCount)
+		t.Errorf("registration should not seed sample flags, got %d", flagCount)
 	}
 }
 

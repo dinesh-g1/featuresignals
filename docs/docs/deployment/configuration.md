@@ -18,6 +18,33 @@ All configuration is done via environment variables.
 | `REFRESH_TTL_HOURS` | `168` | Refresh token lifetime (hours, default 7 days) |
 | `LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
 | `CORS_ORIGIN` | `http://localhost:3000` | Allowed CORS origin |
+| `APP_BASE_URL` | `http://localhost:8080` | Public URL of the API server |
+| `DASHBOARD_URL` | `http://localhost:3000` | Public URL of the dashboard |
+
+### Email OTP (MSG91)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MSG91_AUTH_KEY` | (empty) | MSG91 API auth key — required for OTP email sending |
+| `MSG91_EMAIL_TEMPLATE_ID` | (empty) | MSG91 email template ID for OTP emails |
+| `MSG91_EMAIL_DOMAIN` | `mail.featuresignals.com` | MSG91 verified email domain |
+| `MSG91_EMAIL_FROM` | `noreply@featuresignals.com` | Sender email address |
+| `MSG91_EMAIL_FROM_NAME` | `Feature Signals` | Sender display name |
+
+### SMS (MSG91)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MSG91_TEMPLATE_ID` | (empty) | MSG91 SMS template ID (for phone OTP, when enabled) |
+| `MSG91_SENDER_ID` | `FEATSIG` | MSG91 sender ID |
+
+### PayU Billing
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PAYU_MERCHANT_KEY` | (empty) | PayU merchant key |
+| `PAYU_SALT` | (empty) | PayU salt for hash verification |
+| `PAYU_MODE` | `test` | `test` or `live` |
 
 ### Example
 

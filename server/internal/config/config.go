@@ -31,13 +31,6 @@ type Config struct {
 	MSG91EmailFrom       string
 	MSG91EmailFromName   string
 
-	// Email (SMTP) — legacy link-based verification
-	SMTPHost string
-	SMTPPort int
-	SMTPUser string
-	SMTPPass string
-	SMTPFrom string
-
 	// App
 	AppBaseURL   string
 	DashboardURL string
@@ -65,12 +58,6 @@ func Load() *Config {
 		MSG91EmailDomain:     getEnv("MSG91_EMAIL_DOMAIN", "mail.featuresignals.com"),
 		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@featuresignals.com"),
 		MSG91EmailFromName:   getEnv("MSG91_EMAIL_FROM_NAME", "Feature Signals"),
-
-		SMTPHost: getEnv("SMTP_HOST", "localhost"),
-		SMTPPort: getEnvInt("SMTP_PORT", 587),
-		SMTPUser: os.Getenv("SMTP_USER"),
-		SMTPPass: os.Getenv("SMTP_PASS"),
-		SMTPFrom: getEnv("SMTP_FROM", "noreply@featuresignals.com"),
 
 		AppBaseURL:   getEnv("APP_BASE_URL", "http://localhost:8080"),
 		DashboardURL: getEnv("DASHBOARD_URL", "http://localhost:3000"),
