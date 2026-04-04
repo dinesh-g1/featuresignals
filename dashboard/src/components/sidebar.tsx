@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
+import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -35,6 +36,7 @@ export function Sidebar() {
   const [projects, setProjects] = useState<any[]>([]);
   const [envs, setEnvs] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [envDialogOpen, setEnvDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -61,6 +63,11 @@ export function Sidebar() {
   function handleProjectCreated(created: any) {
     setProjects((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
     setCurrentProject(created.id);
+  }
+
+  function handleEnvironmentCreated(created: any) {
+    setEnvs((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
+    setCurrentEnv(created.id);
   }
 
   const selectedEnv = envs.find((e) => e.id === currentEnvId);
@@ -122,26 +129,52 @@ export function Sidebar() {
       />
 
       {/* Environment selector */}
-      {projectId && envs.length > 0 && (
+      {projectId && (
         <div className="border-b border-slate-200 px-3 py-2">
           <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Environment</label>
-          <div className="relative">
-            <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full`} style={{ backgroundColor: selectedEnv?.color || "#94a3b8" }} />
-            <select
-              value={currentEnvId || ""}
-              onChange={(e) => setCurrentEnv(e.target.value)}
-              className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-8 text-sm font-medium text-slate-700 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          {envs.length === 0 ? (
+            <button
+              onClick={() => setEnvDialogOpen(true)}
+              className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50/50 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
             >
-              {envs.map((env: any) => (
-                <option key={env.id} value={env.id}>{env.name}</option>
-              ))}
-            </select>
-            <svg className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+              + Create Your First Environment
+            </button>
+          ) : (
+            <div className="flex gap-1.5">
+              <div className="relative flex-1 min-w-0">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full" style={{ backgroundColor: selectedEnv?.color || "#94a3b8" }} />
+                <select
+                  value={currentEnvId || ""}
+                  onChange={(e) => setCurrentEnv(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-8 text-sm font-medium text-slate-700 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                >
+                  {envs.map((env: any) => (
+                    <option key={env.id} value={env.id}>{env.name}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              <button
+                onClick={() => setEnvDialogOpen(true)}
+                className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-indigo-600"
+                title="Create new environment"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       )}
+
+      <CreateEnvironmentDialog
+        open={envDialogOpen}
+        onOpenChange={setEnvDialogOpen}
+        onCreated={handleEnvironmentCreated}
+      />
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map((item) => {

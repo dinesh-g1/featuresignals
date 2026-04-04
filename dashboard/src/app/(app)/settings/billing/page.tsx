@@ -1,19 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-
-const settingsTabs = [
-  { href: "/settings/general", label: "General" },
-  { href: "/settings/billing", label: "Billing" },
-  { href: "/settings/api-keys", label: "API Keys" },
-  { href: "/settings/team", label: "Team" },
-  { href: "/settings/webhooks", label: "Webhooks" },
-];
 
 const statusColors: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -30,7 +21,6 @@ const planBadgeColors: Record<string, string> = {
 };
 
 export default function BillingPage() {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const token = useAppStore((s) => s.token);
   const [loading, setLoading] = useState(true);
@@ -101,23 +91,6 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-
-      <nav className="flex gap-1 border-b border-slate-200">
-        {settingsTabs.map((tab) => {
-          const active = pathname === tab.href || pathname === tab.href + "/";
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors ${active ? "border-b-2 border-indigo-600 text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </nav>
-
       {loading ? (
         <div className="flex items-center justify-center py-24">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
