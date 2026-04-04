@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -174,16 +177,26 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	trialExpiry := time.Now().AddDate(0, 0, domain.TrialDurationDays)
+	baseSlug := slugify(pr.OrgName)
 	org := &domain.Organization{
 		Name:           pr.OrgName,
-		Slug:           slugify(pr.OrgName),
+		Slug:           baseSlug,
 		Plan:           domain.PlanTrial,
 		TrialExpiresAt: &trialExpiry,
 	}
 	if err := h.store.CreateOrganization(ctx, org); err != nil {
-		log.Error("failed to create organization", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to create organization")
-		return
+		if errors.Is(err, domain.ErrConflict) {
+			org.Slug = fmt.Sprintf("%s-%s", baseSlug, shortID())
+			if retryErr := h.store.CreateOrganization(ctx, org); retryErr != nil {
+				log.Error("failed to create organization after slug retry", "error", retryErr)
+				httputil.Error(w, http.StatusInternalServerError, "failed to create organization")
+				return
+			}
+		} else {
+			log.Error("failed to create organization", "error", err)
+			httputil.Error(w, http.StatusInternalServerError, "failed to create organization")
+			return
+		}
 	}
 
 	member := &domain.OrgMember{
@@ -297,4 +310,11 @@ func (h *SignupHandler) ResendSignupOTP(w http.ResponseWriter, r *http.Request) 
 		"message":    "New verification code sent to your email",
 		"expires_in": domain.OTPExpiryMinutes * 60,
 	})
+}
+
+// shortID returns a 6-char hex string for deduplicating slugs.
+func shortID() string {
+	b := make([]byte, 3)
+	_, _ = rand.Read(b)
+	return fmt.Sprintf("%x", b)
 }

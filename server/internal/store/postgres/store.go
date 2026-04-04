@@ -55,9 +55,9 @@ func (s *Store) CreateOrganization(ctx context.Context, org *domain.Organization
 	}
 	defaults := domain.PlanDefaults[org.Plan]
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
-		org.Name, org.Slug, org.Plan, defaults.Seats, defaults.Projects, defaults.Environments,
+		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit, trial_expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`,
+		org.Name, org.Slug, org.Plan, defaults.Seats, defaults.Projects, defaults.Environments, org.TrialExpiresAt,
 	).Scan(&org.ID, &org.CreatedAt, &org.UpdatedAt)
 	return wrapConflict(err, "organization")
 }
