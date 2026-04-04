@@ -50,15 +50,15 @@ export function Sidebar() {
   }, [token, projectId, setCurrentProject]);
 
   useEffect(() => {
-    if (!token || !projectId) return;
+    if (!token || !projectId) { setEnvs([]); return; }
     api.listEnvironments(token, projectId).then((list) => {
       const sorted = (list ?? []).sort((a: any, b: any) => a.name.localeCompare(b.name));
       setEnvs(sorted);
-      if (sorted.length > 0 && !currentEnvId) {
+      if (sorted.length > 0) {
         setCurrentEnv(sorted[0].id);
       }
-    }).catch(() => {});
-  }, [token, projectId, currentEnvId, setCurrentEnv]);
+    }).catch(() => { setEnvs([]); });
+  }, [token, projectId, setCurrentEnv]);
 
   function handleProjectCreated(created: any) {
     setProjects((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));

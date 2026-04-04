@@ -98,8 +98,8 @@ func (s *Store) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*
 
 func (s *Store) CreateUser(ctx context.Context, user *domain.User) error {
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at`,
-		user.Email, user.PasswordHash, user.Name,
+		`INSERT INTO users (email, password_hash, name, email_verified) VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at`,
+		user.Email, user.PasswordHash, user.Name, user.EmailVerified,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	return wrapConflict(err, "user")
 }
