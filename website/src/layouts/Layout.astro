@@ -75,7 +75,7 @@ const currentPath = Astro.url.pathname;
 
     <footer class="border-t border-slate-200 bg-slate-50" transition:animate="fade">
       <div class="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-12">
-        <div class="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-5">
+        <div class="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-6">
           <div>
             <h3 class="text-sm font-semibold text-slate-900">Product</h3>
             <ul class="mt-3 space-y-2 text-sm text-slate-500">
@@ -109,9 +109,16 @@ const currentPath = Astro.url.pathname;
               <li><a href="https://docs.featuresignals.com/docs/getting-started/quickstart" class="transition-colors hover:text-slate-900">Quickstart Guide</a></li>
               <li><a href="https://docs.featuresignals.com/docs/tutorials/feature-flag-checkout" class="transition-colors hover:text-slate-900">Tutorials</a></li>
               <li><a href="/about" class="transition-colors hover:text-slate-900">About</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900">Legal</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-500">
+              <li><a href="/terms-and-conditions" class="transition-colors hover:text-slate-900">Terms &amp; Conditions</a></li>
               <li><a href="/privacy-policy" class="transition-colors hover:text-slate-900">Privacy Policy</a></li>
               <li><a href="/refund-policy" class="transition-colors hover:text-slate-900">Refund Policy</a></li>
-              <li><a href="/shipping-returns" class="transition-colors hover:text-slate-900">Shipping &amp; Returns</a></li>
+              <li><a href="/cancellation-policy" class="transition-colors hover:text-slate-900">Cancellation Policy</a></li>
+              <li><a href="/shipping-policy" class="transition-colors hover:text-slate-900">Shipping Policy</a></li>
             </ul>
           </div>
           <div>
@@ -123,13 +130,9 @@ const currentPath = Astro.url.pathname;
             </ul>
           </div>
         </div>
-        <div class="mt-8 border-t border-slate-200 pt-8 text-center text-xs text-slate-500 space-y-2">
-          <p class="text-slate-600">
-            <span class="font-medium text-slate-700">Legal / operating name:</span> FeatureSignals
-            <span class="text-slate-300 mx-1.5" aria-hidden="true">&middot;</span>
-            <span class="font-medium text-slate-700">Business category:</span> IT Services (information technology services / cloud software)
-          </p>
-          <p class="text-slate-400">&copy; 2026 FeatureSignals. Apache-2.0 License.</p>
+        <div class="mt-8 border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
+          <p>&copy; 2026 Vivekananda Technology Labs, trading as FeatureSignals. Apache-2.0 License.</p>
+          <p class="mt-1">Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad, Telangana - 500089, India</p>
         </div>
       </div>
     </footer>
