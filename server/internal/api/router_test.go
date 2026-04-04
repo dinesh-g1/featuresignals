@@ -290,10 +290,12 @@ func TestPublicAuthRoutes_NotFound(t *testing.T) {
 		path   string
 		want   int
 	}{
-		{http.MethodPost, "/v1/auth/register", http.StatusBadRequest},
 		{http.MethodPost, "/v1/auth/login", http.StatusBadRequest},
 		{http.MethodPost, "/v1/auth/refresh", http.StatusBadRequest},
 		{http.MethodGet, "/v1/auth/verify-email", http.StatusBadRequest},
+		{http.MethodPost, "/v1/auth/initiate-signup", http.StatusBadRequest},
+		{http.MethodPost, "/v1/auth/complete-signup", http.StatusBadRequest},
+		{http.MethodPost, "/v1/auth/resend-signup-otp", http.StatusBadRequest},
 	}
 
 	for _, tt := range tests {
@@ -376,7 +378,7 @@ func TestSecurityHeaders(t *testing.T) {
 func TestRequireJSON_BlocksWrongContentType(t *testing.T) {
 	router := newTestRouter(t)
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/auth/register", strings.NewReader("name=test"))
+	req := httptest.NewRequest(http.MethodPost, "/v1/auth/login", strings.NewReader("name=test"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -404,7 +406,7 @@ func TestBodySizeLimit(t *testing.T) {
 	// Router uses 1 MB limit; send >1 MB.
 	oversized := strings.Repeat("a", (1<<20)+1024)
 	body := `{"email":"` + oversized + `"}`
-	req := httptest.NewRequest(http.MethodPost, "/v1/auth/register", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/auth/login", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)

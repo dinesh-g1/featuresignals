@@ -99,12 +99,15 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.otpSender != nil {
-		if err := h.otpSender.SendOTP(ctx, req.Email, req.Name, otp); err != nil {
-			log.Error("failed to send OTP email", "error", err, "email", req.Email)
-			httputil.Error(w, http.StatusInternalServerError, "failed to send verification email")
-			return
-		}
+	if h.otpSender == nil {
+		log.Error("OTP email sender not configured — cannot send verification email")
+		httputil.Error(w, http.StatusServiceUnavailable, "email service is not configured")
+		return
+	}
+	if err := h.otpSender.SendOTP(ctx, req.Email, req.Name, otp); err != nil {
+		log.Error("failed to send OTP email", "error", err, "email", req.Email)
+		httputil.Error(w, http.StatusInternalServerError, "failed to send verification email")
+		return
 	}
 
 	log.Info("signup initiated", "email", req.Email)
@@ -278,12 +281,15 @@ func (h *SignupHandler) ResendSignupOTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if h.otpSender != nil {
-		if err := h.otpSender.SendOTP(ctx, req.Email, pr.Name, otp); err != nil {
-			log.Error("failed to resend OTP email", "error", err, "email", req.Email)
-			httputil.Error(w, http.StatusInternalServerError, "failed to send verification email")
-			return
-		}
+	if h.otpSender == nil {
+		log.Error("OTP email sender not configured — cannot resend verification email")
+		httputil.Error(w, http.StatusServiceUnavailable, "email service is not configured")
+		return
+	}
+	if err := h.otpSender.SendOTP(ctx, req.Email, pr.Name, otp); err != nil {
+		log.Error("failed to resend OTP email", "error", err, "email", req.Email)
+		httputil.Error(w, http.StatusInternalServerError, "failed to send verification email")
+		return
 	}
 
 	log.Info("signup OTP resent", "email", req.Email)

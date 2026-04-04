@@ -49,8 +49,15 @@ services:
       DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
       PORT: "8080"
-      CORS_ORIGIN: https://app.featuresignals.com,https://demo.featuresignals.com
+      CORS_ORIGIN: https://app.featuresignals.com
       LOG_LEVEL: info
+      MSG91_AUTH_KEY: ${MSG91_AUTH_KEY}
+      MSG91_EMAIL_TEMPLATE_ID: ${MSG91_EMAIL_TEMPLATE_ID}
+      MSG91_EMAIL_DOMAIN: ${MSG91_EMAIL_DOMAIN}
+      MSG91_EMAIL_FROM: ${MSG91_EMAIL_FROM}
+      MSG91_EMAIL_FROM_NAME: ${MSG91_EMAIL_FROM_NAME}
+      APP_BASE_URL: ${APP_BASE_URL}
+      DASHBOARD_URL: ${DASHBOARD_URL}
     deploy:
       resources:
         limits:
@@ -67,24 +74,6 @@ services:
       - server
     environment:
       NEXT_PUBLIC_API_URL: https://api.featuresignals.com
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-
-  demo-dashboard:
-    build:
-      context: ./dashboard
-      dockerfile: ../deploy/docker/Dockerfile.dashboard
-      args:
-        NEXT_PUBLIC_API_URL: https://api.featuresignals.com
-        NEXT_PUBLIC_DEMO_MODE: "true"
-    restart: unless-stopped
-    depends_on:
-      - server
-    environment:
-      NEXT_PUBLIC_API_URL: https://api.featuresignals.com
-      NEXT_PUBLIC_DEMO_MODE: "true"
     deploy:
       resources:
         limits:
@@ -115,8 +104,6 @@ services:
       server:
         condition: service_started
       dashboard:
-        condition: service_started
-      demo-dashboard:
         condition: service_started
     ports:
       - "80:80"

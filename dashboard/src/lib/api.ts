@@ -72,8 +72,6 @@ export const api = {
   getPricing: () => request<PricingConfig>("/v1/pricing"),
 
   // Auth
-  register: (data: { email: string; password: string; name: string; org_name: string }) =>
-    request("/v1/auth/register", { method: "POST", body: data }),
   login: (data: { email: string; password: string }) =>
     request<{ user: any; tokens: { access_token: string; refresh_token: string } }>(
       "/v1/auth/login",

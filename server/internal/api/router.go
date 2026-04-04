@@ -102,7 +102,6 @@ func NewRouter(
 		// Public auth routes (rate-limited to prevent brute force)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(20))
-			r.Post("/auth/register", authH.Register)
 			r.Post("/auth/login", authH.Login)
 			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)

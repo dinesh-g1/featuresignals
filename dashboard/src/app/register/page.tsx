@@ -100,7 +100,8 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
           value={d.trim()}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
-          className="h-12 w-12 rounded-lg border border-slate-300 text-center text-lg font-semibold text-slate-900 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          autoComplete="one-time-code"
+          className="h-12 w-12 rounded-lg border border-slate-300 bg-white text-center text-lg font-semibold text-slate-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       ))}
     </div>

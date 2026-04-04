@@ -56,7 +56,7 @@ func Load() *Config {
 
 		MSG91EmailTemplateID: os.Getenv("MSG91_EMAIL_TEMPLATE_ID"),
 		MSG91EmailDomain:     getEnv("MSG91_EMAIL_DOMAIN", "mail.featuresignals.com"),
-		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@featuresignals.com"),
+		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@mail.featuresignals.com"),
 		MSG91EmailFromName:   getEnv("MSG91_EMAIL_FROM_NAME", "Feature Signals"),
 
 		AppBaseURL:   getEnv("APP_BASE_URL", "http://localhost:8080"),
