@@ -14,6 +14,13 @@ type Store interface {
 	UpsertFlagState(ctx context.Context, fs *domain.FlagState) error
 	CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error
 	DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error)
+	DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error)
+	ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error)
+	SoftDeleteOrganization(ctx context.Context, orgID string) error
+	ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time) ([]domain.Organization, error)
+	HardDeleteOrganization(ctx context.Context, orgID string) error
+	DowngradeOrgToFree(ctx context.Context, orgID string) error
+	GetOrganization(ctx context.Context, id string) (*domain.Organization, error)
 }
 
 // Scheduler periodically checks for pending flag schedules and applies them.
@@ -54,6 +61,10 @@ func (s *Scheduler) Start(ctx context.Context) {
 			}
 			if s.cleanupTicker%ticksPerHour == 0 {
 				s.cleanupDemoSessions(ctx)
+				s.cleanupPendingRegistrations(ctx)
+				s.autoDowngradeExpiredTrials(ctx)
+				s.softDeleteInactiveOrgs(ctx)
+				s.hardDeleteExpiredOrgs(ctx)
 			}
 		}
 	}
@@ -114,6 +125,70 @@ func (s *Scheduler) cleanupDemoSessions(ctx context.Context) {
 	}
 	if count > 0 {
 		s.logger.Info("cleaned up expired demo sessions", "count", count)
+	}
+}
+
+func (s *Scheduler) cleanupPendingRegistrations(ctx context.Context) {
+	count, err := s.store.DeleteExpiredPendingRegistrations(ctx, time.Now())
+	if err != nil {
+		s.logger.Error("failed to cleanup expired pending registrations", "error", err)
+		return
+	}
+	if count > 0 {
+		s.logger.Info("cleaned up expired pending registrations", "count", count)
+	}
+}
+
+func (s *Scheduler) autoDowngradeExpiredTrials(ctx context.Context) {
+	// Find trial orgs whose trial has expired by checking all orgs with trial plan
+	// The TrialExpiry middleware handles per-request downgrades, but this covers
+	// orgs that haven't been accessed since expiry.
+	now := time.Now()
+	inactiveTrials, err := s.store.ListInactiveOrgs(ctx, domain.PlanTrial, now.AddDate(0, 0, -domain.TrialDurationDays))
+	if err != nil {
+		s.logger.Error("failed to list inactive trial orgs for downgrade", "error", err)
+		return
+	}
+	for _, org := range inactiveTrials {
+		if org.TrialExpiresAt != nil && now.After(*org.TrialExpiresAt) {
+			if err := s.store.DowngradeOrgToFree(ctx, org.ID); err != nil {
+				s.logger.Error("failed to auto-downgrade trial org", "error", err, "org_id", org.ID)
+			} else {
+				s.logger.Info("auto-downgraded expired trial org", "org_id", org.ID)
+			}
+		}
+	}
+}
+
+func (s *Scheduler) softDeleteInactiveOrgs(ctx context.Context) {
+	cutoff := time.Now().AddDate(0, 0, -domain.SoftDeleteInactiveDays)
+	orgs, err := s.store.ListInactiveOrgs(ctx, domain.PlanFree, cutoff)
+	if err != nil {
+		s.logger.Error("failed to list inactive free orgs for soft-delete", "error", err)
+		return
+	}
+	for _, org := range orgs {
+		if err := s.store.SoftDeleteOrganization(ctx, org.ID); err != nil {
+			s.logger.Error("failed to soft-delete inactive org", "error", err, "org_id", org.ID)
+		} else {
+			s.logger.Info("soft-deleted inactive free org", "org_id", org.ID)
+		}
+	}
+}
+
+func (s *Scheduler) hardDeleteExpiredOrgs(ctx context.Context) {
+	cutoff := time.Now().AddDate(0, 0, -domain.HardDeleteGraceDays)
+	orgs, err := s.store.ListSoftDeletedOrgs(ctx, cutoff)
+	if err != nil {
+		s.logger.Error("failed to list soft-deleted orgs for hard-delete", "error", err)
+		return
+	}
+	for _, org := range orgs {
+		if err := s.store.HardDeleteOrganization(ctx, org.ID); err != nil {
+			s.logger.Error("failed to hard-delete org", "error", err, "org_id", org.ID)
+		} else {
+			s.logger.Info("hard-deleted org", "org_id", org.ID)
+		}
 	}
 }
 

@@ -33,11 +33,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   if (!res.ok) {
     const data = await res.json().catch(() => ({ error: "Unknown error" }));
 
-    if (res.status === 403 && data.error === "demo_expired") {
+    if (res.status === 403 && data.error === "account_deleted") {
       if (typeof window !== "undefined") {
-        window.location.href = "/demo/register";
+        window.location.href = "/register";
       }
-      throw new APIError(403, "demo_expired");
+      throw new APIError(403, data.error);
     }
 
     throw new APIError(res.status, data.error || "Request failed");
@@ -81,12 +81,23 @@ export const api = {
     ),
   refresh: (refreshToken: string) =>
     request("/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
-  sendOTP: (token: string, phone: string) =>
-    request("/v1/auth/send-otp", { method: "POST", body: { phone }, token }),
-  verifyOTP: (token: string, otp: string) =>
-    request("/v1/auth/verify-otp", { method: "POST", body: { otp }, token }),
   sendVerificationEmail: (token: string) =>
     request("/v1/auth/send-verification-email", { method: "POST", token }),
+
+  // Verify-first signup (OTP-based)
+  initiateSignup: (data: { email: string; password: string; name: string; org_name: string }) =>
+    request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", { method: "POST", body: data }),
+  completeSignup: (data: { email: string; otp: string }) =>
+    request<{ user: any; organization: any; tokens: { access_token: string; refresh_token: string; expires_at: number } }>(
+      "/v1/auth/complete-signup",
+      { method: "POST", body: data },
+    ),
+  resendSignupOTP: (email: string) =>
+    request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", { method: "POST", body: { email } }),
+
+  // Sales inquiry
+  submitSalesInquiry: (data: { contact_name: string; email: string; company: string; team_size?: string; message?: string }) =>
+    request<{ message: string }>("/v1/sales/inquiry", { method: "POST", body: data }),
 
   // Projects
   listProjects: (token: string) => request<any[]>("/v1/projects", { token }),
@@ -253,37 +264,7 @@ export const api = {
   updateOnboarding: (token: string, data: Record<string, boolean>) =>
     request("/v1/onboarding", { method: "PATCH", body: data, token }),
 
-  // Demo
-  createDemoSession: () =>
-    request<{
-      user: any;
-      organization: any;
-      tokens: { access_token: string; refresh_token: string; expires_at: number };
-      demo_expires_at: number;
-    }>("/v1/demo/session", { method: "POST" }),
-  convertDemo: (token: string, data: { email: string; password: string; name: string; org_name: string; phone: string }) =>
-    request<{ tokens: { access_token: string; refresh_token: string; expires_at: number }; message: string }>(
-      "/v1/demo/convert",
-      { method: "POST", body: data, token },
-    ),
-  selectDemoPlan: (token: string, data: { plan: string; retain_data: boolean }) =>
-    request<{
-      plan: string;
-      redirect_url?: string;
-      payu_url?: string;
-      key?: string;
-      txnid?: string;
-      hash?: string;
-      amount?: string;
-      productinfo?: string;
-      firstname?: string;
-      email?: string;
-      phone?: string;
-      surl?: string;
-      furl?: string;
-    }>("/v1/demo/select-plan", { method: "POST", body: data, token }),
-  submitDemoFeedback: (token: string, data: { message: string; email?: string; rating?: number }) =>
-    request("/v1/demo/feedback", { method: "POST", body: data, token }),
+  // Token exchange
   exchangeToken: (token: string) =>
     request<{ tokens: { access_token: string; refresh_token: string; expires_at: number }; user: any }>(
       "/v1/auth/token-exchange",

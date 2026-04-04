@@ -12,18 +12,26 @@ type Organization struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 
 	// Billing / plan fields
-	Plan            string `json:"plan" db:"plan"`
-	PayUCustomerRef string `json:"payu_customer_ref,omitempty" db:"payu_customer_ref"`
-	PlanSeatsLimit       int    `json:"plan_seats_limit" db:"plan_seats_limit"`
-	PlanProjectsLimit    int    `json:"plan_projects_limit" db:"plan_projects_limit"`
-	PlanEnvironmentsLimit int   `json:"plan_environments_limit" db:"plan_environments_limit"`
+	Plan                  string `json:"plan" db:"plan"`
+	PayUCustomerRef       string `json:"payu_customer_ref,omitempty" db:"payu_customer_ref"`
+	PlanSeatsLimit        int    `json:"plan_seats_limit" db:"plan_seats_limit"`
+	PlanProjectsLimit     int    `json:"plan_projects_limit" db:"plan_projects_limit"`
+	PlanEnvironmentsLimit int    `json:"plan_environments_limit" db:"plan_environments_limit"`
 
-	// Demo fields
-	IsDemo       bool       `json:"is_demo" db:"is_demo"`
+	// Trial lifecycle
+	TrialExpiresAt *time.Time `json:"trial_expires_at,omitempty" db:"trial_expires_at"`
+
+	// Soft-delete support
+	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+
+	// Deprecated demo fields — kept for migration backward compatibility.
+	// Will be dropped once migration 000016 runs.
+	IsDemo        bool       `json:"is_demo" db:"is_demo"`
 	DemoExpiresAt *time.Time `json:"demo_expires_at,omitempty" db:"demo_expires_at"`
 }
 
 // DemoFeedback stores feedback from demo users.
+// Deprecated: table will be dropped by migration 000016.
 type DemoFeedback struct {
 	ID        string    `json:"id" db:"id"`
 	OrgID     string    `json:"org_id" db:"org_id"`
@@ -32,3 +40,9 @@ type DemoFeedback struct {
 	Rating    int       `json:"rating,omitempty" db:"rating"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
+
+const (
+	TrialDurationDays      = 14
+	SoftDeleteInactiveDays = 90
+	HardDeleteGraceDays    = 90
+)

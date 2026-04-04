@@ -21,6 +21,7 @@ set -euo pipefail
 LOCAL_PORT="${FS_LOCAL_DB_PORT:-15432}"
 REMOTE_PORT="5432"
 SSH_USER="${FS_VPS_USER:-deploy}"
+SSH_KEY="${FS_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 DB_NAME="featuresignals"
 ROLE="admin"
 TUNNEL_ONLY=false
@@ -36,11 +37,13 @@ Options:
   --host HOST             VPS hostname or IP
   --port PORT             Local port for tunnel (default: 15432)
   --ssh-user USER         SSH user (default: deploy)
+  --ssh-key PATH          SSH private key (default: ~/.ssh/id_ed25519)
   -h, --help              Show this help
 
 Environment variables:
   FS_VPS_HOST         VPS hostname or IP
   FS_VPS_USER         SSH user (default: deploy)
+  FS_SSH_KEY          SSH private key path (default: ~/.ssh/id_ed25519)
   FS_LOCAL_DB_PORT    Local tunnel port (default: 15432)
 EOF
   exit 0
@@ -53,6 +56,7 @@ while [[ $# -gt 0 ]]; do
     --host)       VPS_HOST="$2"; shift 2 ;;
     --port)       LOCAL_PORT="$2"; shift 2 ;;
     --ssh-user)   SSH_USER="$2"; shift 2 ;;
+    --ssh-key)    SSH_KEY="$2"; shift 2 ;;
     -h|--help)    usage ;;
     *)            echo "Unknown option: $1"; usage ;;
   esac
@@ -97,7 +101,7 @@ if lsof -i :"$LOCAL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
 fi
 
 echo "Opening SSH tunnel: localhost:${LOCAL_PORT} -> ${VPS_HOST}:${REMOTE_PORT}"
-ssh -f -N -L "${LOCAL_PORT}:127.0.0.1:${REMOTE_PORT}" "${SSH_USER}@${VPS_HOST}"
+ssh -f -N -i "$SSH_KEY" -L "${LOCAL_PORT}:127.0.0.1:${REMOTE_PORT}" "${SSH_USER}@${VPS_HOST}"
 TUNNEL_PID=$(lsof -ti :"$LOCAL_PORT" -sTCP:LISTEN 2>/dev/null || true)
 
 sleep 1
@@ -120,7 +124,7 @@ if [ "$TUNNEL_ONLY" = true ]; then
   echo ""
   echo "Press Ctrl+C to close the tunnel."
   trap cleanup INT
-  wait "$TUNNEL_PID" 2>/dev/null || sleep infinity
+  while kill -0 "$TUNNEL_PID" 2>/dev/null; do sleep 1; done
 else
   echo "Connecting as ${DB_USER}..."
   echo ""

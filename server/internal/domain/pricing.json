@@ -10,12 +10,12 @@
       "billing_period": "month",
       "limits": {
         "projects": 1,
-        "environments": 2,
+        "environments": 3,
         "seats": 3
       },
       "features": [
         "1 project",
-        "2 environments per project",
+        "3 environments per project",
         "3 team members",
         "Unlimited feature flags & evaluations",
         "A/B experimentation",

@@ -25,7 +25,13 @@ type Config struct {
 	MSG91TemplateID string
 	MSG91SenderID   string
 
-	// Email (SMTP)
+	// Email OTP (MSG91 Email API)
+	MSG91EmailTemplateID string
+	MSG91EmailDomain     string
+	MSG91EmailFrom       string
+	MSG91EmailFromName   string
+
+	// Email (SMTP) — legacy link-based verification
 	SMTPHost string
 	SMTPPort int
 	SMTPUser string
@@ -54,6 +60,11 @@ func Load() *Config {
 		MSG91AuthKey:    os.Getenv("MSG91_AUTH_KEY"),
 		MSG91TemplateID: os.Getenv("MSG91_TEMPLATE_ID"),
 		MSG91SenderID:   getEnv("MSG91_SENDER_ID", "FEATSIG"),
+
+		MSG91EmailTemplateID: os.Getenv("MSG91_EMAIL_TEMPLATE_ID"),
+		MSG91EmailDomain:     getEnv("MSG91_EMAIL_DOMAIN", "mail.featuresignals.com"),
+		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@featuresignals.com"),
+		MSG91EmailFromName:   getEnv("MSG91_EMAIL_FROM_NAME", "Feature Signals"),
 
 		SMTPHost: getEnv("SMTP_HOST", "localhost"),
 		SMTPPort: getEnvInt("SMTP_PORT", 587),

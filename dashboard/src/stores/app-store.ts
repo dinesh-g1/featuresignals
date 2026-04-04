@@ -5,13 +5,10 @@ interface AppState {
   token: string | null;
   refreshToken: string | null;
   user: any | null;
+  organization: any | null;
   currentProjectId: string | null;
   currentEnvId: string | null;
-  isDemo: boolean;
-  demoExpiresAt: number | null;
-  setAuth: (token: string, refreshToken: string, user: any) => void;
-  setDemoAuth: (token: string, refreshToken: string, user: any, demoExpiresAt: number) => void;
-  clearDemo: () => void;
+  setAuth: (token: string, refreshToken: string, user: any, organization?: any) => void;
   logout: () => void;
   setCurrentProject: (id: string) => void;
   setCurrentEnv: (id: string) => void;
@@ -23,25 +20,19 @@ export const useAppStore = create<AppState>()(
       token: null,
       refreshToken: null,
       user: null,
+      organization: null,
       currentProjectId: null,
       currentEnvId: null,
-      isDemo: false,
-      demoExpiresAt: null,
-      setAuth: (token, refreshToken, user) =>
-        set({ token, refreshToken, user, isDemo: false, demoExpiresAt: null }),
-      setDemoAuth: (token, refreshToken, user, demoExpiresAt) =>
-        set({ token, refreshToken, user, isDemo: true, demoExpiresAt }),
-      clearDemo: () =>
-        set({ isDemo: false, demoExpiresAt: null }),
+      setAuth: (token, refreshToken, user, organization) =>
+        set({ token, refreshToken, user, organization: organization ?? null }),
       logout: () =>
         set({
           token: null,
           refreshToken: null,
           user: null,
+          organization: null,
           currentProjectId: null,
           currentEnvId: null,
-          isDemo: false,
-          demoExpiresAt: null,
         }),
       setCurrentProject: (id) => set((state) => ({
         currentProjectId: id,

@@ -125,6 +125,19 @@ func (m *mockStore) ConvertDemoUser(_ context.Context, _, _, _, _ string) error 
 func (m *mockStore) ConvertDemoOrg(_ context.Context, _, _, _ string) error { return nil }
 func (m *mockStore) CreateDemoFeedback(_ context.Context, _ *domain.DemoFeedback) error { return nil }
 func (m *mockStore) DeleteDemoData(_ context.Context, _ string) error { return nil }
+func (m *mockStore) UpsertPendingRegistration(_ context.Context, _ *domain.PendingRegistration) error { return nil }
+func (m *mockStore) GetPendingRegistrationByEmail(_ context.Context, _ string) (*domain.PendingRegistration, error) { return nil, nil }
+func (m *mockStore) IncrementPendingAttempts(_ context.Context, _ string) error { return nil }
+func (m *mockStore) DeletePendingRegistration(_ context.Context, _ string) error { return nil }
+func (m *mockStore) DeleteExpiredPendingRegistrations(_ context.Context, _ time.Time) (int, error) { return 0, nil }
+func (m *mockStore) UpdateLastLoginAt(_ context.Context, _ string) error { return nil }
+func (m *mockStore) SoftDeleteOrganization(_ context.Context, _ string) error { return nil }
+func (m *mockStore) RestoreOrganization(_ context.Context, _ string) error { return nil }
+func (m *mockStore) ListSoftDeletedOrgs(_ context.Context, _ time.Time) ([]domain.Organization, error) { return nil, nil }
+func (m *mockStore) HardDeleteOrganization(_ context.Context, _ string) error { return nil }
+func (m *mockStore) ListInactiveOrgs(_ context.Context, _ string, _ time.Time) ([]domain.Organization, error) { return nil, nil }
+func (m *mockStore) DowngradeOrgToFree(_ context.Context, _ string) error { return nil }
+func (m *mockStore) CreateSalesInquiry(_ context.Context, _ *domain.SalesInquiry) error { return nil }
 func (m *mockStore) CreateOneTimeToken(_ context.Context, _, _ string, _ time.Duration) (string, error) {
 	return "test-token", nil
 }

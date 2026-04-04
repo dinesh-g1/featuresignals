@@ -40,6 +40,8 @@ type mockStore struct {
 	approvalsByOrg   map[string][]string                        // orgID -> []approvalID
 	onboardingStates map[string]*domain.OnboardingState         // orgID -> state
 	oneTimeTokens    map[string]*ottEntry                       // token -> entry
+	pendingRegs      map[string]*domain.PendingRegistration     // email -> pending reg
+	salesInquiries   []*domain.SalesInquiry
 
 	idCounter int
 }
@@ -76,6 +78,7 @@ func newMockStore() *mockStore {
 		whDeliveries:     make(map[string][]domain.WebhookDelivery),
 		onboardingStates: make(map[string]*domain.OnboardingState),
 		oneTimeTokens:    make(map[string]*ottEntry),
+		pendingRegs:      make(map[string]*domain.PendingRegistration),
 	}
 }
 
@@ -933,6 +936,151 @@ func (m *mockStore) DeleteDemoData(ctx context.Context, orgID string) error {
 		}
 	}
 	delete(m.projectsByOrg, orgID)
+	return nil
+}
+
+// --- Pending Registrations ---
+
+func (m *mockStore) UpsertPendingRegistration(ctx context.Context, pr *domain.PendingRegistration) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	pr.ID = m.nextID()
+	pr.CreatedAt = time.Now()
+	m.pendingRegs[pr.Email] = pr
+	return nil
+}
+
+func (m *mockStore) GetPendingRegistrationByEmail(ctx context.Context, email string) (*domain.PendingRegistration, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	pr, ok := m.pendingRegs[email]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	return pr, nil
+}
+
+func (m *mockStore) IncrementPendingAttempts(ctx context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, pr := range m.pendingRegs {
+		if pr.ID == id {
+			pr.Attempts++
+			return nil
+		}
+	}
+	return nil
+}
+
+func (m *mockStore) DeletePendingRegistration(ctx context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for email, pr := range m.pendingRegs {
+		if pr.ID == id {
+			delete(m.pendingRegs, email)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (m *mockStore) DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for email, pr := range m.pendingRegs {
+		if pr.ExpiresAt.Before(before) {
+			delete(m.pendingRegs, email)
+			count++
+		}
+	}
+	return count, nil
+}
+
+// --- Trial & Account Lifecycle ---
+
+func (m *mockStore) UpdateLastLoginAt(ctx context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if u, ok := m.users[userID]; ok {
+		now := time.Now()
+		u.LastLoginAt = &now
+	}
+	return nil
+}
+
+func (m *mockStore) SoftDeleteOrganization(ctx context.Context, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		now := time.Now()
+		org.DeletedAt = &now
+	}
+	return nil
+}
+
+func (m *mockStore) RestoreOrganization(ctx context.Context, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		org.DeletedAt = nil
+	}
+	return nil
+}
+
+func (m *mockStore) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time) ([]domain.Organization, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.Organization
+	for _, org := range m.orgs {
+		if org.DeletedAt != nil && org.DeletedAt.Before(deletedBefore) {
+			result = append(result, *org)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockStore) HardDeleteOrganization(ctx context.Context, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.orgs, orgID)
+	return nil
+}
+
+func (m *mockStore) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.Organization
+	for _, org := range m.orgs {
+		if org.Plan == plan && org.DeletedAt == nil {
+			result = append(result, *org)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockStore) DowngradeOrgToFree(ctx context.Context, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		defaults := domain.PlanDefaults[domain.PlanFree]
+		org.Plan = domain.PlanFree
+		org.TrialExpiresAt = nil
+		org.PlanSeatsLimit = defaults.Seats
+		org.PlanProjectsLimit = defaults.Projects
+		org.PlanEnvironmentsLimit = defaults.Environments
+	}
+	return nil
+}
+
+// --- Sales Inquiries ---
+
+func (m *mockStore) CreateSalesInquiry(ctx context.Context, inq *domain.SalesInquiry) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	inq.ID = m.nextID()
+	inq.CreatedAt = time.Now()
+	m.salesInquiries = append(m.salesInquiries, inq)
 	return nil
 }
 

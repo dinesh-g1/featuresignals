@@ -1124,6 +1124,164 @@ func (s *Store) DeleteDemoData(ctx context.Context, orgID string) error {
 	return err
 }
 
+// --- Pending Registrations ---
+
+func (s *Store) UpsertPendingRegistration(ctx context.Context, pr *domain.PendingRegistration) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO pending_registrations (email, name, org_name, password_hash, otp_hash, expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 ON CONFLICT (email) DO UPDATE SET
+		   name = EXCLUDED.name,
+		   org_name = EXCLUDED.org_name,
+		   password_hash = EXCLUDED.password_hash,
+		   otp_hash = EXCLUDED.otp_hash,
+		   expires_at = EXCLUDED.expires_at,
+		   attempts = 0,
+		   created_at = now()
+		 RETURNING id, created_at`,
+		pr.Email, pr.Name, pr.OrgName, pr.PasswordHash, pr.OTPHash, pr.ExpiresAt,
+	).Scan(&pr.ID, &pr.CreatedAt)
+}
+
+func (s *Store) GetPendingRegistrationByEmail(ctx context.Context, email string) (*domain.PendingRegistration, error) {
+	pr := &domain.PendingRegistration{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, email, name, org_name, password_hash, otp_hash, expires_at, attempts, created_at
+		 FROM pending_registrations WHERE email = $1`, email,
+	).Scan(&pr.ID, &pr.Email, &pr.Name, &pr.OrgName, &pr.PasswordHash, &pr.OTPHash,
+		&pr.ExpiresAt, &pr.Attempts, &pr.CreatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "pending registration")
+	}
+	return pr, nil
+}
+
+func (s *Store) IncrementPendingAttempts(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE pending_registrations SET attempts = attempts + 1 WHERE id = $1`, id)
+	return err
+}
+
+func (s *Store) DeletePendingRegistration(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx,
+		`DELETE FROM pending_registrations WHERE id = $1`, id)
+	return err
+}
+
+func (s *Store) DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error) {
+	tag, err := s.pool.Exec(ctx,
+		`DELETE FROM pending_registrations WHERE expires_at < $1`, before)
+	if err != nil {
+		return 0, err
+	}
+	return int(tag.RowsAffected()), nil
+}
+
+// --- Trial & Account Lifecycle ---
+
+func (s *Store) UpdateLastLoginAt(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET last_login_at = now() WHERE id = $1`, userID)
+	return err
+}
+
+func (s *Store) SoftDeleteOrganization(ctx context.Context, orgID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE organizations SET deleted_at = now(), updated_at = now() WHERE id = $1 AND deleted_at IS NULL`, orgID)
+	return err
+}
+
+func (s *Store) RestoreOrganization(ctx context.Context, orgID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE organizations SET deleted_at = NULL, updated_at = now() WHERE id = $1 AND deleted_at IS NOT NULL`, orgID)
+	return err
+}
+
+func (s *Store) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time) ([]domain.Organization, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, name, slug, created_at, updated_at,
+		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
+		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 3),
+		        trial_expires_at, deleted_at
+		 FROM organizations WHERE deleted_at IS NOT NULL AND deleted_at < $1`, deletedBefore)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var orgs []domain.Organization
+	for rows.Next() {
+		var o domain.Organization
+		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt,
+			&o.Plan, &o.PayUCustomerRef,
+			&o.PlanSeatsLimit, &o.PlanProjectsLimit, &o.PlanEnvironmentsLimit,
+			&o.TrialExpiresAt, &o.DeletedAt); err != nil {
+			return nil, err
+		}
+		orgs = append(orgs, o)
+	}
+	return orgs, nil
+}
+
+func (s *Store) HardDeleteOrganization(ctx context.Context, orgID string) error {
+	_, err := s.pool.Exec(ctx,
+		`DELETE FROM organizations WHERE id = $1`, orgID)
+	return err
+}
+
+func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT o.id, o.name, o.slug, o.created_at, o.updated_at,
+		        COALESCE(o.plan, 'free'), COALESCE(o.payu_customer_ref, ''),
+		        COALESCE(o.plan_seats_limit, 3), COALESCE(o.plan_projects_limit, 1), COALESCE(o.plan_environments_limit, 3),
+		        o.trial_expires_at, o.deleted_at
+		 FROM organizations o
+		 WHERE o.plan = $1 AND o.deleted_at IS NULL
+		 AND NOT EXISTS (
+		   SELECT 1 FROM org_members om
+		   JOIN users u ON u.id = om.user_id
+		   WHERE om.org_id = o.id AND u.last_login_at > $2
+		 )`, plan, inactiveSince)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var orgs []domain.Organization
+	for rows.Next() {
+		var o domain.Organization
+		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt,
+			&o.Plan, &o.PayUCustomerRef,
+			&o.PlanSeatsLimit, &o.PlanProjectsLimit, &o.PlanEnvironmentsLimit,
+			&o.TrialExpiresAt, &o.DeletedAt); err != nil {
+			return nil, err
+		}
+		orgs = append(orgs, o)
+	}
+	return orgs, nil
+}
+
+func (s *Store) DowngradeOrgToFree(ctx context.Context, orgID string) error {
+	defaults := domain.PlanDefaults[domain.PlanFree]
+	_, err := s.pool.Exec(ctx,
+		`UPDATE organizations SET
+		   plan = $1, trial_expires_at = NULL,
+		   plan_seats_limit = $2, plan_projects_limit = $3, plan_environments_limit = $4,
+		   updated_at = now()
+		 WHERE id = $5`,
+		domain.PlanFree, defaults.Seats, defaults.Projects, defaults.Environments, orgID)
+	return err
+}
+
+// --- Sales Inquiries ---
+
+func (s *Store) CreateSalesInquiry(ctx context.Context, inq *domain.SalesInquiry) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO sales_inquiries (org_id, contact_name, email, company, team_size, message, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 RETURNING id, created_at`,
+		inq.OrgID, inq.ContactName, inq.Email, inq.Company, inq.TeamSize, inq.Message, domain.SalesStatusNew,
+	).Scan(&inq.ID, &inq.CreatedAt)
+}
+
 // --- One-Time Tokens ---
 
 func (s *Store) CreateOneTimeToken(ctx context.Context, userID, orgID string, ttl time.Duration) (string, error) {
