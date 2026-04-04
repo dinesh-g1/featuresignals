@@ -32,7 +32,6 @@ POST /v1/auth/register
 | `password` | string | Yes | Minimum 8 characters with at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character |
 | `name` | string | Yes | Display name |
 | `org_name` | string | Yes | Organization name |
-| `source` | string | No | Set to `"demo"` to seed sample data and start a 7-day trial |
 
 ### Response `201 Created`
 
@@ -68,7 +67,9 @@ Registration automatically creates:
 - A default project with three environments: `dev`, `staging`, `production`
 - A verification email is sent immediately
 
-When `source` is `"demo"`, the response additionally includes `demo_expires_at` (Unix timestamp) and the project is seeded with sample feature flags, a segment, and API keys. The organization gets a 7-day trial period.
+:::tip Recommended
+For new signups, use the verify-first OTP flow (`POST /v1/auth/initiate-signup` + `POST /v1/auth/complete-signup`) documented in [Signup & Trial](./demo). The legacy register endpoint above does not require email verification before account creation.
+:::
 
 ---
 
@@ -286,7 +287,7 @@ Redirects to the dashboard login page with `?verified=true` on success.
 
 ## Token Exchange
 
-Exchange a one-time token for a full JWT pair. Used during cross-domain authentication (e.g., after PayU payment redirects a demo user to the main app domain).
+Exchange a one-time token for a full JWT pair. Used during cross-domain authentication (e.g., after PayU payment redirect).
 
 ```
 POST /v1/auth/token-exchange

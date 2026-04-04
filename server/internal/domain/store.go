@@ -167,14 +167,6 @@ type Store interface {
 	// ── Sales Inquiries ──────────────────────────────────────────────────
 	CreateSalesInquiry(ctx context.Context, inq *SalesInquiry) error
 
-	// ── Demo / Trial (legacy — will be removed after migration 000016) ──
-	UpdateOrgDemoExpiry(ctx context.Context, orgID string, expiresAt time.Time) error
-	DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error)
-	ConvertDemoUser(ctx context.Context, userID, email, passwordHash, name string) error
-	ConvertDemoOrg(ctx context.Context, orgID, name, slug string) error
-	CreateDemoFeedback(ctx context.Context, fb *DemoFeedback) error
-	DeleteDemoData(ctx context.Context, orgID string) error
-
 	// ── One-Time Tokens (cross-domain auth) ──────────────────────────────
 	CreateOneTimeToken(ctx context.Context, userID, orgID string, ttl time.Duration) (string, error)
 	ConsumeOneTimeToken(ctx context.Context, token string) (userID, orgID string, err error)

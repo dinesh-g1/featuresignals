@@ -1,170 +1,164 @@
 ---
 sidebar_position: 15
-title: Demo & Trial
+title: Signup & Trial
 ---
 
-# Demo & Trial
+# Signup & Trial Lifecycle
 
-FeatureSignals offers a trial experience where users can sign up and explore the platform with pre-populated sample data. Trial accounts expire after 7 days.
-
-**To start a trial:** Register at [app.featuresignals.com/register?source=demo](https://app.featuresignals.com/register?source=demo)
-
----
-
-## How It Works
-
-Instead of anonymous demo sessions, users sign up with a real email at `/register?source=demo`. This:
-
-1. Creates a real account with email verification
-2. Seeds sample feature flags, segments, and API keys
-3. Sets a 7-day trial period on the organization
-4. After email verification, the user selects a plan (Free or Pro)
-
-See [Authentication > Register](/api-reference/authentication#register) for the `source` field documentation.
+FeatureSignals uses a verify-first OTP-based signup flow. Every new account starts with a **14-day free trial** with full Pro-level access. After the trial ends, the account automatically downgrades to the permanent Free plan.
 
 ---
 
-## Create Demo Session (Deprecated)
+## Verify-First Signup (OTP)
+
+New user registration is a 2-step process that verifies email ownership *before* creating any permanent records:
+
+### Step 1 — Initiate Signup
 
 ```
-POST /v1/demo/session
+POST /v1/auth/initiate-signup
 ```
 
-:::danger Deprecated
-This endpoint returns `410 Gone`. Anonymous demo sessions are no longer supported. Users should register at `/register?source=demo` instead.
-:::
+Sends a 6-digit OTP to the user's email via MSG91.
 
-### Response `410 Gone`
-
-```json
-{
-  "error": "demo_sessions_deprecated",
-  "message": "Anonymous demo sessions are no longer available. Please sign up at /register?source=demo to get started with sample data."
-}
-```
-
----
-
-## Convert Demo Account
-
-Convert an existing demo session into a permanent registered account. This endpoint is maintained for users with active legacy demo sessions.
-
-```
-POST /v1/demo/convert
-```
-
-**Authentication:** Bearer JWT (demo user)
-
-### Request
+#### Request
 
 ```json
 {
   "email": "jane@company.com",
   "password": "SecurePass123!",
   "name": "Jane Smith",
-  "org_name": "Acme Inc",
-  "phone": "+919876543210"
+  "org_name": "Acme Inc"
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `email` | string | Yes | Real email address |
-| `password` | string | Yes | Must meet password policy (8+ chars, 1 upper, 1 lower, 1 digit, 1 special) |
-| `name` | string | Yes | Full name |
+| `email` | string | Yes | Must be a valid, non-disposable email |
+| `password` | string | Yes | Min 8 chars, 1 upper, 1 lower, 1 digit, 1 special |
+| `name` | string | Yes | Display name |
 | `org_name` | string | Yes | Organization name |
-| `phone` | string | No | Phone number (only required when phone verification is enabled) |
 
-### Response `200 OK`
+#### Response `200 OK`
 
 ```json
 {
-  "tokens": {
-    "access_token": "eyJ...",
-    "refresh_token": "eyJ...",
-    "expires_at": 1711929600
-  },
-  "message": "Account converted successfully"
+  "message": "Verification code sent to your email",
+  "expires_in": 600
 }
 ```
 
-After conversion, a verification email is sent. An OTP is only sent when phone verification is enabled on the server.
+### Step 2 — Complete Signup
+
+```
+POST /v1/auth/complete-signup
+```
+
+Verifies the OTP and creates the user, organization, and default project atomically.
+
+#### Request
+
+```json
+{
+  "email": "jane@company.com",
+  "otp": "123456"
+}
+```
+
+#### Response `201 Created`
+
+```json
+{
+  "user": { "id": "uuid", "email": "jane@company.com", "name": "Jane Smith", ... },
+  "organization": { "id": "uuid", "name": "Acme Inc", "plan": "trial", "trial_expires_at": "2026-04-18T00:00:00Z", ... },
+  "tokens": { "access_token": "eyJ...", "refresh_token": "eyJ...", "expires_at": 1711929600 }
+}
+```
+
+### Resend OTP
+
+```
+POST /v1/auth/resend-signup-otp
+```
+
+#### Request
+
+```json
+{
+  "email": "jane@company.com"
+}
+```
+
+Rate-limited to one resend every 60 seconds. OTP expires after 10 minutes.
 
 ---
 
-## Select Plan
+## Trial Lifecycle
 
-Choose a subscription plan after converting from demo or registering with `source=demo`. For Pro, returns PayU checkout data.
+| Phase | Duration | Description |
+|-------|----------|-------------|
+| **Trial** | 14 days | Full Pro features, no credit card required |
+| **Free** | Permanent | Auto-downgrade after trial expires. Existing data preserved. |
+| **Pro** | Subscription | Upgrade via PayU at any time |
+| **Enterprise** | Contact Sales | Custom pricing and limits |
+
+### Free Plan Limits
+
+| Resource | Limit |
+|----------|-------|
+| Projects | 3 |
+| Environments per project | 3 |
+| Team seats | 3 |
+
+### Trial Expiry Enforcement
+
+When a trial expires, the `TrialExpiry` middleware automatically downgrades the org to the Free plan. Management API calls continue to work within Free plan limits.
+
+---
+
+## Account Deletion Policy
+
+Free-tier accounts that show no login activity for **90 days** are soft-deleted. Soft-deleted accounts have a **90-day grace period** during which logging back in restores the account. After the grace period, the account is permanently hard-deleted.
+
+---
+
+## Sales Inquiry (Enterprise)
 
 ```
-POST /v1/demo/select-plan
+POST /v1/sales/inquiry
 ```
 
-**Authentication:** Bearer JWT
+Submit an Enterprise plan inquiry.
 
 ### Request
 
 ```json
 {
-  "plan": "pro",
-  "retain_data": true
+  "contact_name": "Jane Smith",
+  "email": "jane@company.com",
+  "company": "Acme Inc",
+  "team_size": "50-100",
+  "message": "We need SSO and custom SLAs."
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `plan` | string | Yes | `"free"` or `"pro"` |
-| `retain_data` | boolean | Yes | Whether to keep sample data after plan selection |
-
-### Response — Free Plan `200 OK`
+### Response `201 Created`
 
 ```json
 {
-  "plan": "free",
-  "redirect_url": "https://app.featuresignals.com/auth/exchange?token=..."
-}
-```
-
-### Response — Pro Plan `200 OK`
-
-Returns PayU checkout fields (same structure as [Billing > Create Checkout](./billing#create-checkout)).
-
----
-
-## Submit Feedback
-
-Submit feedback from a demo/trial user.
-
-```
-POST /v1/demo/feedback
-```
-
-**Authentication:** Bearer JWT
-
-### Request
-
-```json
-{
-  "message": "The targeting rules UI could use a preview mode.",
-  "email": "prospect@company.com",
-  "rating": 4
+  "message": "Thank you! Our team will be in touch within 1 business day."
 }
 ```
 
 ---
 
-## Trial Expiry Enforcement
+## Deprecated Endpoints
 
-Trial sessions (created via `source=demo`) are enforced server-side. When a trial has expired:
+The following demo endpoints have been removed:
 
-- All management API calls return `403 Forbidden`:
+- `POST /v1/demo/session` — Anonymous demo sessions are no longer supported
+- `POST /v1/demo/convert` — Removed (demo-to-permanent conversion)
+- `POST /v1/demo/select-plan` — Removed (plan selection during demo conversion)
+- `POST /v1/demo/feedback` — Removed
 
-```json
-{
-  "error": "demo_expired",
-  "message": "Your trial has expired. Choose a plan to continue using FeatureSignals.",
-  "convert_url": "https://app.featuresignals.com/register?source=demo"
-}
-```
-
-- The dashboard shows a trial expiry banner and prompts the user to upgrade.
+All new users should use the verify-first signup flow above.

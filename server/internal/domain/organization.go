@@ -23,22 +23,6 @@ type Organization struct {
 
 	// Soft-delete support
 	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
-
-	// Deprecated demo fields — kept for migration backward compatibility.
-	// Will be dropped once migration 000016 runs.
-	IsDemo        bool       `json:"is_demo" db:"is_demo"`
-	DemoExpiresAt *time.Time `json:"demo_expires_at,omitempty" db:"demo_expires_at"`
-}
-
-// DemoFeedback stores feedback from demo users.
-// Deprecated: table will be dropped by migration 000016.
-type DemoFeedback struct {
-	ID        string    `json:"id" db:"id"`
-	OrgID     string    `json:"org_id" db:"org_id"`
-	Message   string    `json:"message" db:"message"`
-	Email     string    `json:"email,omitempty" db:"email"`
-	Rating    int       `json:"rating,omitempty" db:"rating"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
 
 const (

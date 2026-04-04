@@ -46,7 +46,6 @@ type RegisterRequest struct {
 	Name     string `json:"name"`
 	OrgName  string `json:"org_name"`
 	Phone    string `json:"phone"`
-	Source   string `json:"source"`
 }
 
 type LoginRequest struct {
@@ -194,19 +193,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isDemoSource := req.Source == "demo"
-
-	projectName := "Default Project"
-	projectSlug := "default"
-	if isDemoSource {
-		projectName = "Sample App"
-		projectSlug = "sample-app"
-	}
-
 	project := &domain.Project{
 		OrgID: org.ID,
-		Name:  projectName,
-		Slug:  projectSlug,
+		Name:  "Default Project",
+		Slug:  "default",
 	}
 	if err := h.store.CreateProject(r.Context(), project); err != nil {
 		log.Error("failed to create default project", "error", err)
@@ -214,36 +204,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bootstrappedEnvs := BootstrapEnvironments(r.Context(), h.store, project.ID)
-
-	if isDemoSource {
-		trialExpiry := time.Now().Add(7 * 24 * time.Hour)
-		org.DemoExpiresAt = &trialExpiry
-		_ = h.store.UpdateOrgDemoExpiry(r.Context(), org.ID, trialExpiry)
-
-		envMap := make(map[string]*domain.Environment)
-		for _, env := range bootstrappedEnvs {
-			envMap[env.Slug] = env
-		}
-		SeedSampleFlags(r.Context(), h.store, project, envMap, log)
-		SeedSampleSegment(r.Context(), h.store, project, log)
-		SeedSampleAPIKeys(r.Context(), h.store, envMap, log)
-	}
-
-	// Send verification email in background (best-effort)
-	if h.emailSender != nil {
-		token, err := generateEmailToken()
-		if err == nil {
-			expires := time.Now().Add(24 * time.Hour)
-			if storeErr := h.store.UpdateUserEmailVerifyToken(r.Context(), user.ID, token, expires); storeErr == nil {
-				go func() {
-					if sendErr := h.emailSender.SendVerificationEmail(user.Email, token, h.appBaseURL); sendErr != nil {
-						log.Error("failed to send verification email", "error", sendErr, "user_id", user.ID)
-					}
-				}()
-			}
-		}
-	}
+	BootstrapEnvironments(r.Context(), h.store, project.ID)
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner))
 	if err != nil {
@@ -252,17 +213,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info("user registered", "user_id", user.ID, "org_id", org.ID, "source", req.Source)
+	log.Info("user registered", "user_id", user.ID, "org_id", org.ID)
 
-	resp := map[string]interface{}{
+	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
 		"user":         sanitizeUser(user),
 		"organization": org,
 		"tokens":       tokens,
-	}
-	if isDemoSource && org.DemoExpiresAt != nil {
-		resp["demo_expires_at"] = org.DemoExpiresAt.Unix()
-	}
-	httputil.JSON(w, http.StatusCreated, resp)
+	})
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {

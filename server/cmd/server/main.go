@@ -19,7 +19,6 @@ import (
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/scheduler"
-	"github.com/featuresignals/server/internal/sms"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/store/postgres"
@@ -92,10 +91,6 @@ func main() {
 	// Evaluation metrics collector
 	metricsCollector := metrics.NewCollector()
 
-	// SMS & Email clients
-	smsClient := sms.NewClient(cfg.MSG91AuthKey, cfg.MSG91TemplateID, cfg.MSG91SenderID)
-	emailSender := email.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
-
 	// OTP email sender (MSG91 Email API)
 	var otpSender email.OTPSender
 	if cfg.MSG91AuthKey != "" && cfg.MSG91EmailTemplateID != "" {
@@ -122,7 +117,7 @@ func main() {
 		PayUMode:        cfg.PayUMode,
 		DashboardURL:    cfg.DashboardURL,
 		AppBaseURL:      cfg.AppBaseURL,
-	}, smsClient, emailSender, otpSender, cfg.AppBaseURL, cfg.DashboardURL)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL)
 
 	// Server
 	srv := &http.Server{

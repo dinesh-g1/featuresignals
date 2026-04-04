@@ -177,14 +177,6 @@ func (s *tierMockStore) GetOnboardingState(context.Context, string) (*domain.Onb
 func (s *tierMockStore) UpsertOnboardingState(context.Context, *domain.OnboardingState) error {
 	return nil
 }
-func (s *tierMockStore) UpdateOrgDemoExpiry(context.Context, string, time.Time) error { return nil }
-func (s *tierMockStore) DeleteExpiredDemoOrgs(context.Context, time.Time) (int, error) { return 0, nil }
-func (s *tierMockStore) ConvertDemoUser(context.Context, string, string, string, string) error {
-	return nil
-}
-func (s *tierMockStore) ConvertDemoOrg(context.Context, string, string, string) error { return nil }
-func (s *tierMockStore) CreateDemoFeedback(context.Context, *domain.DemoFeedback) error { return nil }
-func (s *tierMockStore) DeleteDemoData(context.Context, string) error { return nil }
 func (s *tierMockStore) UpsertPendingRegistration(context.Context, *domain.PendingRegistration) error {
 	return nil
 }

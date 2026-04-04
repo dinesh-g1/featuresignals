@@ -191,17 +191,6 @@ func (noopStore) UpsertOnboardingState(context.Context, *domain.OnboardingState)
 	return errNoop
 }
 
-func (noopStore) UpdateOrgDemoExpiry(context.Context, string, time.Time) error { return errNoop }
-func (noopStore) DeleteExpiredDemoOrgs(context.Context, time.Time) (int, error) { return 0, errNoop }
-func (noopStore) ConvertDemoUser(context.Context, string, string, string, string) error {
-	return errNoop
-}
-func (noopStore) ConvertDemoOrg(context.Context, string, string, string) error { return errNoop }
-func (noopStore) CreateDemoFeedback(context.Context, *domain.DemoFeedback) error {
-	return errNoop
-}
-func (noopStore) DeleteDemoData(context.Context, string) error { return errNoop }
-
 func (noopStore) UpsertPendingRegistration(context.Context, *domain.PendingRegistration) error {
 	return errNoop
 }
@@ -235,16 +224,6 @@ func (noopStore) ConsumeOneTimeToken(context.Context, string) (string, string, e
 	return "", "", errNoop
 }
 
-// ── noopSMS / noopEmail ─────────────────────────────────────────────────────
-
-type noopSMS struct{}
-
-func (noopSMS) SendOTP(string, string) error { return nil }
-
-type noopEmail struct{}
-
-func (noopEmail) SendVerificationEmail(string, string, string) error { return nil }
-
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }
@@ -272,8 +251,6 @@ func newTestRouter(t *testing.T) http.Handler {
 		[]string{"*"},
 		metricsCollector,
 		api.BillingConfig{},
-		noopSMS{},
-		noopEmail{},
 		noopOTPEmail{},
 		"http://localhost:8080",
 		"http://localhost:3000",

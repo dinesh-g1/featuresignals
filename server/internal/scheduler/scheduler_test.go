@@ -63,9 +63,6 @@ func (m *mockScheduleStore) CreateAuditEntry(ctx context.Context, entry *domain.
 	return nil
 }
 
-func (m *mockScheduleStore) DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error) {
-	return 0, nil
-}
 
 func (m *mockScheduleStore) DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error) {
 	return 0, nil

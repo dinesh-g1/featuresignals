@@ -119,12 +119,6 @@ func (m *mockStore) UpdateUserPhoneOTP(_ context.Context, _, _ string, _ time.Ti
 func (m *mockStore) SetPhoneVerified(_ context.Context, _ string) error { return nil }
 func (m *mockStore) UpdateUserEmailVerifyToken(_ context.Context, _, _ string, _ time.Time) error { return nil }
 func (m *mockStore) SetEmailVerified(_ context.Context, _ string) error { return nil }
-func (m *mockStore) UpdateOrgDemoExpiry(_ context.Context, _ string, _ time.Time) error { return nil }
-func (m *mockStore) DeleteExpiredDemoOrgs(_ context.Context, _ time.Time) (int, error) { return 0, nil }
-func (m *mockStore) ConvertDemoUser(_ context.Context, _, _, _, _ string) error { return nil }
-func (m *mockStore) ConvertDemoOrg(_ context.Context, _, _, _ string) error { return nil }
-func (m *mockStore) CreateDemoFeedback(_ context.Context, _ *domain.DemoFeedback) error { return nil }
-func (m *mockStore) DeleteDemoData(_ context.Context, _ string) error { return nil }
 func (m *mockStore) UpsertPendingRegistration(_ context.Context, _ *domain.PendingRegistration) error { return nil }
 func (m *mockStore) GetPendingRegistrationByEmail(_ context.Context, _ string) (*domain.PendingRegistration, error) { return nil, nil }
 func (m *mockStore) IncrementPendingAttempts(_ context.Context, _ string) error { return nil }
