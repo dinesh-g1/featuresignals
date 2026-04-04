@@ -54,6 +54,8 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	BootstrapEnvironments(r.Context(), h.store, project.ID)
+
 	httputil.JSON(w, http.StatusCreated, project)
 }
 

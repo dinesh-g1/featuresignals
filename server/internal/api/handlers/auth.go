@@ -273,8 +273,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	log.Info("user logged in", "user_id", user.ID, "org_id", orgID, "role", role)
 
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"user":   sanitizeUser(user),
-		"tokens": tokens,
+		"user":         sanitizeUser(user),
+		"organization": org,
+		"tokens":       tokens,
 	})
 }
 

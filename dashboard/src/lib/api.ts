@@ -73,7 +73,7 @@ export const api = {
 
   // Auth
   login: (data: { email: string; password: string }) =>
-    request<{ user: any; tokens: { access_token: string; refresh_token: string } }>(
+    request<{ user: any; organization: any; tokens: { access_token: string; refresh_token: string } }>(
       "/v1/auth/login",
       { method: "POST", body: data },
     ),
