@@ -1,15 +1,48 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="About">
-  <section class="mx-auto max-w-4xl px-6 py-24 text-center">
-    <div class="inline-block rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700 mb-6 ring-1 ring-indigo-100">
-      Coming Soon
-    </div>
-    <h1 class="text-4xl font-bold text-slate-900">About FeatureSignals</h1>
-    <p class="mt-4 text-slate-500 max-w-lg mx-auto leading-relaxed">
-      We're building the feature management platform we always wanted — transparent, developer-first, and enterprise-ready. More details coming soon.
+<Layout
+  title="About Us"
+  description="FeatureSignals is built by two software engineers as a developer-first, open-source feature management SaaS."
+>
+  <section class="mx-auto max-w-3xl px-4 sm:px-6 py-12 sm:py-20">
+    <p class="text-sm font-medium text-indigo-600">About us</p>
+    <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Built by engineers, for engineering teams</h1>
+    <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+      FeatureSignals is a software-as-a-service product created and operated by two software engineers who have spent their careers shipping production systems,
+      managing releases, and wrestling with opaque pricing from legacy feature-flag vendors.
     </p>
-    <a href="/" class="mt-8 inline-block rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400">Back to Home</a>
+    <div class="mt-10 space-y-6 text-base leading-relaxed text-slate-600">
+      <p>
+        We started FeatureSignals because we wanted a platform that matches how modern teams actually work: fast evaluation, clear contracts, OpenFeature-native
+        SDKs, and the freedom to self-host when regulations or economics require it. Our focus is reliability, transparency, and tooling that respects developers’ time.
+      </p>
+      <p>
+        The product you see today—dashboard, API, SDKs, and documentation—is the result of that hands-on experience. We are intentionally small, which keeps us close
+        to customers and lets us iterate quickly on the problems that matter in real deployments.
+      </p>
+      <p>
+        Whether you run our managed service or deploy the open-source stack on your own infrastructure, our goal is the same: help you ship features safely,
+        run experiments with confidence, and retain control of your data and your roadmap.
+      </p>
+    </div>
+    <div class="mt-12 rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+      <p class="font-semibold text-slate-900">Business details</p>
+      <p class="mt-2">
+        <span class="text-slate-500">Legal / operating name:</span> FeatureSignals<br />
+        <span class="text-slate-500">Business category:</span> Information Technology (IT) Services — cloud software and related technical services<br />
+        <span class="text-slate-500">Contact:</span>
+        <a href="mailto:support@featuresignals.com" class="font-medium text-indigo-600 hover:text-indigo-700">support@featuresignals.com</a>
+      </p>
+      <p class="mt-3 text-slate-500">
+        For contracts, invoices, or payment-gateway verification, use the same legal name and category above unless we have provided a registered entity name in writing.
+      </p>
+    </div>
+    <div class="mt-10 flex flex-wrap gap-4">
+      <a href="/privacy-policy" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Privacy Policy</a>
+      <a href="/refund-policy" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Refund Policy</a>
+      <a href="/shipping-returns" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Shipping &amp; Returns</a>
+      <a href="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">Back to Home</a>
+    </div>
   </section>
 </Layout>
