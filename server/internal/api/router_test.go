@@ -202,6 +202,32 @@ func (noopStore) CreateDemoFeedback(context.Context, *domain.DemoFeedback) error
 }
 func (noopStore) DeleteDemoData(context.Context, string) error { return errNoop }
 
+func (noopStore) UpsertPendingRegistration(context.Context, *domain.PendingRegistration) error {
+	return errNoop
+}
+func (noopStore) GetPendingRegistrationByEmail(context.Context, string) (*domain.PendingRegistration, error) {
+	return nil, errNoop
+}
+func (noopStore) IncrementPendingAttempts(context.Context, string) error { return errNoop }
+func (noopStore) DeletePendingRegistration(context.Context, string) error { return errNoop }
+func (noopStore) DeleteExpiredPendingRegistrations(context.Context, time.Time) (int, error) {
+	return 0, errNoop
+}
+func (noopStore) UpdateLastLoginAt(context.Context, string) error         { return errNoop }
+func (noopStore) SoftDeleteOrganization(context.Context, string) error    { return errNoop }
+func (noopStore) RestoreOrganization(context.Context, string) error       { return errNoop }
+func (noopStore) ListSoftDeletedOrgs(context.Context, time.Time) ([]domain.Organization, error) {
+	return nil, errNoop
+}
+func (noopStore) HardDeleteOrganization(context.Context, string) error { return errNoop }
+func (noopStore) ListInactiveOrgs(context.Context, string, time.Time) ([]domain.Organization, error) {
+	return nil, errNoop
+}
+func (noopStore) DowngradeOrgToFree(context.Context, string) error        { return errNoop }
+func (noopStore) CreateSalesInquiry(context.Context, *domain.SalesInquiry) error {
+	return errNoop
+}
+
 func (noopStore) CreateOneTimeToken(context.Context, string, string, time.Duration) (string, error) {
 	return "", errNoop
 }
@@ -218,6 +244,10 @@ func (noopSMS) SendOTP(string, string) error { return nil }
 type noopEmail struct{}
 
 func (noopEmail) SendVerificationEmail(string, string, string) error { return nil }
+
+type noopOTPEmail struct{}
+
+func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }
 
 // ── test helpers ────────────────────────────────────────────────────────────
 
@@ -244,6 +274,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		api.BillingConfig{},
 		noopSMS{},
 		noopEmail{},
+		noopOTPEmail{},
 		"http://localhost:8080",
 		"http://localhost:3000",
 	)

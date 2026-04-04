@@ -185,6 +185,29 @@ func (s *tierMockStore) ConvertDemoUser(context.Context, string, string, string,
 func (s *tierMockStore) ConvertDemoOrg(context.Context, string, string, string) error { return nil }
 func (s *tierMockStore) CreateDemoFeedback(context.Context, *domain.DemoFeedback) error { return nil }
 func (s *tierMockStore) DeleteDemoData(context.Context, string) error { return nil }
+func (s *tierMockStore) UpsertPendingRegistration(context.Context, *domain.PendingRegistration) error {
+	return nil
+}
+func (s *tierMockStore) GetPendingRegistrationByEmail(context.Context, string) (*domain.PendingRegistration, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) IncrementPendingAttempts(context.Context, string) error    { return nil }
+func (s *tierMockStore) DeletePendingRegistration(context.Context, string) error   { return nil }
+func (s *tierMockStore) DeleteExpiredPendingRegistrations(context.Context, time.Time) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) UpdateLastLoginAt(context.Context, string) error           { return nil }
+func (s *tierMockStore) SoftDeleteOrganization(context.Context, string) error      { return nil }
+func (s *tierMockStore) RestoreOrganization(context.Context, string) error         { return nil }
+func (s *tierMockStore) ListSoftDeletedOrgs(context.Context, time.Time) ([]domain.Organization, error) {
+	return nil, nil
+}
+func (s *tierMockStore) HardDeleteOrganization(context.Context, string) error      { return nil }
+func (s *tierMockStore) ListInactiveOrgs(context.Context, string, time.Time) ([]domain.Organization, error) {
+	return nil, nil
+}
+func (s *tierMockStore) DowngradeOrgToFree(context.Context, string) error          { return nil }
+func (s *tierMockStore) CreateSalesInquiry(context.Context, *domain.SalesInquiry) error { return nil }
 func (s *tierMockStore) CreateOneTimeToken(context.Context, string, string, time.Duration) (string, error) {
 	return "test-token", nil
 }

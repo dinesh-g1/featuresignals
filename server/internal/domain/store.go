@@ -148,7 +148,26 @@ type Store interface {
 	GetOnboardingState(ctx context.Context, orgID string) (*OnboardingState, error)
 	UpsertOnboardingState(ctx context.Context, state *OnboardingState) error
 
-	// ── Demo / Trial ────────────────────────────────────────────────────
+	// ── Pending Registrations (verify-first signup) ─────────────────────
+	UpsertPendingRegistration(ctx context.Context, pr *PendingRegistration) error
+	GetPendingRegistrationByEmail(ctx context.Context, email string) (*PendingRegistration, error)
+	IncrementPendingAttempts(ctx context.Context, id string) error
+	DeletePendingRegistration(ctx context.Context, id string) error
+	DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error)
+
+	// ── Trial & Account Lifecycle ────────────────────────────────────────
+	UpdateLastLoginAt(ctx context.Context, userID string) error
+	SoftDeleteOrganization(ctx context.Context, orgID string) error
+	RestoreOrganization(ctx context.Context, orgID string) error
+	ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time) ([]Organization, error)
+	HardDeleteOrganization(ctx context.Context, orgID string) error
+	ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]Organization, error)
+	DowngradeOrgToFree(ctx context.Context, orgID string) error
+
+	// ── Sales Inquiries ──────────────────────────────────────────────────
+	CreateSalesInquiry(ctx context.Context, inq *SalesInquiry) error
+
+	// ── Demo / Trial (legacy — will be removed after migration 000016) ──
 	UpdateOrgDemoExpiry(ctx context.Context, orgID string, expiresAt time.Time) error
 	DeleteExpiredDemoOrgs(ctx context.Context, before time.Time) (int, error)
 	ConvertDemoUser(ctx context.Context, userID, email, passwordHash, name string) error

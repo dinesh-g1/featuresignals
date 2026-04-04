@@ -1,25 +1,10 @@
 "use client";
 
-import { Suspense, useState, useRef, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, type PricingConfig } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-
-const PHONE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_PHONE_VERIFICATION === "true";
-
-const COUNTRY_CODES = [
-  { code: "+91", label: "India (+91)" },
-  { code: "+1", label: "US (+1)" },
-  { code: "+44", label: "UK (+44)" },
-  { code: "+61", label: "AU (+61)" },
-  { code: "+49", label: "DE (+49)" },
-  { code: "+33", label: "FR (+33)" },
-  { code: "+81", label: "JP (+81)" },
-  { code: "+86", label: "CN (+86)" },
-  { code: "+971", label: "UAE (+971)" },
-  { code: "+65", label: "SG (+65)" },
-];
 
 function CheckIcon({ met }: { met: boolean }) {
   if (met) {
@@ -64,46 +49,6 @@ function isPasswordStrong(password: string) {
     /[a-z]/.test(password) &&
     /\d/.test(password) &&
     /[^A-Za-z0-9]/.test(password)
-  );
-}
-
-function StepIndicator({ steps, current, completed }: { steps: string[]; current: number; completed: number[] }) {
-  return (
-    <div className="flex items-center justify-center gap-0">
-      {steps.map((label, i) => {
-        const isCompleted = completed.includes(i);
-        const isCurrent = current === i;
-        return (
-          <div key={label} className="flex items-center">
-            {i > 0 && (
-              <div className={`h-0.5 w-10 sm:w-16 ${isCompleted || isCurrent ? "bg-indigo-400" : "bg-slate-200"}`} />
-            )}
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                  isCompleted
-                    ? "bg-emerald-500 text-white"
-                    : isCurrent
-                      ? "bg-indigo-600 text-white ring-4 ring-indigo-100"
-                      : "bg-slate-200 text-slate-500"
-                }`}
-              >
-                {isCompleted ? (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                ) : (
-                  i + 1
-                )}
-              </div>
-              <span className={`text-xs font-medium ${isCurrent ? "text-indigo-600" : isCompleted ? "text-emerald-600" : "text-slate-400"}`}>
-                {label}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -176,39 +121,14 @@ export default function RegisterPage() {
 
 function RegisterForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const source = searchParams.get("source") || "";
-  const isDemoSource = source === "demo";
-
   const setAuth = useAppStore((s) => s.setAuth);
-  const [step, setStep] = useState(0);
-  const [completed, setCompleted] = useState<number[]>([]);
+
+  const [step, setStep] = useState<"form" | "otp">("form");
   const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "" });
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Phone step state (only when PHONE_ENABLED)
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phone, setPhone] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [token, setToken] = useState("");
-
-  // Email step state
-  const [emailSent, setEmailSent] = useState(true);
-
-  // Plan selection state (demo source only)
-  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro">("free");
-  const [retainData, setRetainData] = useState(true);
-  const [pricing, setPricing] = useState<PricingConfig | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (isDemoSource) {
-      api.getPricing().then(setPricing).catch(() => {});
-    }
-  }, [isDemoSource]);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -216,65 +136,33 @@ function RegisterForm() {
     return () => clearTimeout(id);
   }, [countdown]);
 
-  // Build steps dynamically
-  const stepLabels: string[] = ["Account"];
-  if (PHONE_ENABLED) stepLabels.push("Phone");
-  stepLabels.push("Email");
-  if (isDemoSource) stepLabels.push("Plan");
-
-  const phoneStepIndex = PHONE_ENABLED ? 1 : -1;
-  const emailStepIndex = PHONE_ENABLED ? 2 : 1;
-  const planStepIndex = isDemoSource ? (PHONE_ENABLED ? 3 : 2) : -1;
-
-  const canContinueStep1 =
+  const canSubmitForm =
     form.name.trim() !== "" &&
     form.email.trim() !== "" &&
     form.org_name.trim() !== "" &&
     isPasswordStrong(form.password);
 
-  async function handleStep1() {
+  async function handleInitiateSignup() {
     setError("");
     setLoading(true);
     try {
-      const payload: any = { ...form };
-      if (isDemoSource) payload.source = "demo";
-      const data: any = await api.register(payload);
-      setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user);
-      setToken(data.tokens.access_token);
-      setCompleted((c) => [...c, 0]);
-      if (PHONE_ENABLED) {
-        setStep(phoneStepIndex);
-      } else {
-        setStep(emailStepIndex);
-      }
-    } catch (err: any) {
-      setError(err.message || "Registration failed");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSendOTP() {
-    setError("");
-    setLoading(true);
-    try {
-      await api.sendOTP(token, `${countryCode}${phone}`);
-    } catch {
-      // OTP delivery may not be configured yet
-    } finally {
-      setOtpSent(true);
+      await api.initiateSignup(form);
+      setStep("otp");
       setCountdown(60);
+    } catch (err: any) {
+      setError(err.message || "Signup failed");
+    } finally {
       setLoading(false);
     }
   }
 
-  async function handleVerifyOTP() {
+  async function handleCompleteSignup() {
     setError("");
     setLoading(true);
     try {
-      await api.verifyOTP(token, otp);
-      setCompleted((c) => [...c, phoneStepIndex]);
-      setStep(emailStepIndex);
+      const data = await api.completeSignup({ email: form.email, otp });
+      setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization);
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Verification failed");
     } finally {
@@ -282,56 +170,15 @@ function RegisterForm() {
     }
   }
 
-  async function handleResendEmail() {
+  async function handleResendOTP() {
     setError("");
     setLoading(true);
     try {
-      await api.sendVerificationEmail(token);
-      setEmailSent(true);
+      await api.resendSignupOTP(form.email);
+      setCountdown(60);
+      setOtp("");
     } catch (err: any) {
-      setError(err.message || "Failed to send email");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleEmailContinue() {
-    setCompleted((c) => [...c, emailStepIndex]);
-    if (isDemoSource) {
-      setStep(planStepIndex);
-    } else {
-      router.push("/dashboard");
-    }
-  }
-
-  async function handleSelectPlan() {
-    if (!token) return;
-    setError("");
-    setLoading(true);
-    try {
-      const data = await api.selectDemoPlan(token, { plan: selectedPlan, retain_data: retainData });
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
-        return;
-      }
-      if (data.payu_url && formRef.current) {
-        const f = formRef.current;
-        f.action = data.payu_url;
-        (f.querySelector('[name="key"]') as HTMLInputElement).value = data.key || "";
-        (f.querySelector('[name="txnid"]') as HTMLInputElement).value = data.txnid || "";
-        (f.querySelector('[name="hash"]') as HTMLInputElement).value = data.hash || "";
-        (f.querySelector('[name="amount"]') as HTMLInputElement).value = data.amount || "";
-        (f.querySelector('[name="productinfo"]') as HTMLInputElement).value = data.productinfo || "";
-        (f.querySelector('[name="firstname"]') as HTMLInputElement).value = data.firstname || "";
-        (f.querySelector('[name="email"]') as HTMLInputElement).value = data.email || "";
-        (f.querySelector('[name="phone"]') as HTMLInputElement).value = data.phone || "";
-        (f.querySelector('[name="surl"]') as HTMLInputElement).value = data.surl || "";
-        (f.querySelector('[name="furl"]') as HTMLInputElement).value = data.furl || "";
-        f.submit();
-        return;
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to select plan");
+      setError(err.message || "Failed to resend code");
     } finally {
       setLoading(false);
     }
@@ -346,11 +193,46 @@ function RegisterForm() {
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-indigo-600">FeatureSignals</h1>
           <p className="mt-2 text-sm text-slate-500">
-            {isDemoSource ? "Sign up to explore with sample data" : "Create your account"}
+            {step === "form" ? "Create your account" : "Verify your email"}
           </p>
         </div>
 
-        <StepIndicator steps={stepLabels} current={step} completed={completed} />
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-0">
+          {["Account", "Verify Email"].map((label, i) => {
+            const isCompleted = step === "otp" && i === 0;
+            const isCurrent = (step === "form" && i === 0) || (step === "otp" && i === 1);
+            return (
+              <div key={label} className="flex items-center">
+                {i > 0 && (
+                  <div className={`h-0.5 w-16 ${isCompleted || isCurrent ? "bg-indigo-400" : "bg-slate-200"}`} />
+                )}
+                <div className="flex flex-col items-center gap-1">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                      isCompleted
+                        ? "bg-emerald-500 text-white"
+                        : isCurrent
+                          ? "bg-indigo-600 text-white ring-4 ring-indigo-100"
+                          : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    ) : (
+                      i + 1
+                    )}
+                  </div>
+                  <span className={`text-xs font-medium ${isCurrent ? "text-indigo-600" : isCompleted ? "text-emerald-600" : "text-slate-400"}`}>
+                    {label}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-100">
@@ -358,12 +240,12 @@ function RegisterForm() {
           </div>
         )}
 
-        {/* Step: Account Details */}
-        {step === 0 && (
+        {/* Step 1: Account details */}
+        {step === "form" && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleStep1();
+              handleInitiateSignup();
             }}
             className="space-y-4"
           >
@@ -386,226 +268,72 @@ function RegisterForm() {
             </div>
             <button
               type="submit"
-              disabled={!canContinueStep1 || loading}
+              disabled={!canSubmitForm || loading}
               className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Creating account..." : "Continue"}
+              {loading ? "Sending verification code..." : "Continue"}
             </button>
+
+            <div className="text-center">
+              <p className="text-xs text-slate-400">
+                By signing up you agree to our Terms of Service and Privacy Policy.
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                You will start with a <span className="font-semibold text-indigo-600">14-day free trial</span> with full Pro features.
+              </p>
+            </div>
           </form>
         )}
 
-        {/* Step: Phone Verification (only when PHONE_ENABLED) */}
-        {PHONE_ENABLED && step === phoneStepIndex && (
+        {/* Step 2: OTP Verification */}
+        {step === "otp" && (
           <div className="space-y-5">
             <div className="text-center">
-              <h2 className="text-lg font-semibold text-slate-900">Phone Verification</h2>
-              <p className="mt-1 text-sm text-slate-500">We&apos;ll send a one-time code to verify your phone number</p>
-            </div>
-
-            {!otpSent ? (
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">Phone Number <span className="text-red-500">*</span></label>
-                  <div className="mt-1 flex gap-2">
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="rounded-lg border border-slate-300 px-2 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      {COUNTRY_CODES.map((c) => (
-                        <option key={c.code} value={c.code}>{c.label}</option>
-                      ))}
-                    </select>
-                    <input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                      placeholder="Phone number"
-                      className={`flex-1 ${inputCls} !mt-0`}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={handleSendOTP}
-                  disabled={phone.length < 6 || loading}
-                  className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading ? "Sending..." : "Send OTP"}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <p className="text-center text-sm text-slate-500">
-                  Enter the 6-digit code sent to <span className="font-medium text-slate-700">{countryCode} {phone}</span>
-                </p>
-                <OTPInput value={otp} onChange={setOtp} />
-                <button
-                  onClick={handleVerifyOTP}
-                  disabled={otp.length !== 6 || loading}
-                  className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading ? "Verifying..." : "Verify"}
-                </button>
-                <div className="text-center">
-                  {countdown > 0 ? (
-                    <p className="text-sm text-slate-400">Resend OTP in {countdown}s</p>
-                  ) : (
-                    <button
-                      onClick={handleSendOTP}
-                      disabled={loading}
-                      className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
-                    >
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step: Email Verification */}
-        {step === emailStepIndex && (
-          <div className="space-y-5 text-center">
-            <div>
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
                 <svg className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-slate-900">Verify Your Email</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                We&apos;ve sent a verification email to<br />
+              <p className="mt-4 text-sm text-slate-500">
+                We sent a 6-digit verification code to<br />
                 <span className="font-medium text-slate-700">{form.email}</span>
               </p>
             </div>
 
-            {emailSent && (
-              <p className="text-xs text-emerald-600">Verification email sent. Check your inbox.</p>
-            )}
+            <OTPInput value={otp} onChange={setOtp} />
 
             <button
-              onClick={handleResendEmail}
-              disabled={loading}
-              className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700 disabled:opacity-50"
+              onClick={handleCompleteSignup}
+              disabled={otp.length !== 6 || loading}
+              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Sending..." : "Resend Email"}
+              {loading ? "Creating your account..." : "Verify & Create Account"}
             </button>
 
-            <button
-              onClick={handleEmailContinue}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
-            >
-              {isDemoSource ? "Continue to Plan Selection" : "Continue to Flag Engine"}
-            </button>
-
-            <button
-              onClick={handleEmailContinue}
-              className="text-sm text-slate-400 transition-colors hover:text-slate-600"
-            >
-              Skip for now
-            </button>
-          </div>
-        )}
-
-        {/* Step: Plan Selection (demo source only) */}
-        {isDemoSource && step === planStepIndex && (
-          <div className="space-y-5">
             <div className="text-center">
-              <h2 className="text-lg font-semibold text-slate-900">Choose Your Plan</h2>
-              <p className="mt-1 text-sm text-slate-500">Select a plan to get started with FeatureSignals.</p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setSelectedPlan("free")}
-                className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
-                  selectedPlan === "free" ? "border-indigo-600 bg-indigo-50" : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{pricing?.plans?.free?.name ?? "Free"}</h3>
-                    <p className="text-sm text-slate-500">{pricing?.plans?.free?.tagline ?? "For individuals and small projects"}</p>
-                  </div>
-                  <span className="text-lg font-bold text-slate-900">{pricing?.plans?.free?.display_price ?? "₹0"}<span className="text-sm font-normal text-slate-400">/{pricing?.plans?.free?.billing_period ?? "month"}</span></span>
-                </div>
-                <ul className="mt-2 space-y-1 text-xs text-slate-500">
-                  {(pricing?.plans?.free?.features ?? ["1 project, 2 environments, 3 team members", "Unlimited feature flags"]).slice(0, 3).map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedPlan("pro")}
-                className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
-                  selectedPlan === "pro" ? "border-indigo-600 bg-indigo-50" : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-slate-900">{pricing?.plans?.pro?.name ?? "Pro"}</h3>
-                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">Recommended</span>
-                    </div>
-                    <p className="text-sm text-slate-500">{pricing?.plans?.pro?.tagline ?? "For growing teams"}</p>
-                  </div>
-                  <span className="text-lg font-bold text-slate-900">{pricing?.plans?.pro?.display_price ?? "₹999"}<span className="text-sm font-normal text-slate-400">/{pricing?.plans?.pro?.billing_period ?? "month"}</span></span>
-                </div>
-                <ul className="mt-2 space-y-1 text-xs text-slate-500">
-                  {(pricing?.plans?.pro?.features ?? ["Unlimited projects, environments, team members", "Advanced targeting, A/B testing, audit logs"]).slice(0, 3).map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-              </button>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 p-4">
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={retainData}
-                  onChange={(e) => setRetainData(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <div>
-                  <span className="text-sm font-medium text-slate-700">Keep sample data</span>
-                  <p className="text-xs text-slate-400">
-                    Preserve the sample feature flags, segments, environments, and API keys.
-                  </p>
-                </div>
-              </label>
+              {countdown > 0 ? (
+                <p className="text-sm text-slate-400">Resend code in {countdown}s</p>
+              ) : (
+                <button
+                  onClick={handleResendOTP}
+                  disabled={loading}
+                  className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                >
+                  Resend Code
+                </button>
+              )}
             </div>
 
             <button
-              onClick={handleSelectPlan}
-              disabled={loading}
-              className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              onClick={() => { setStep("form"); setOtp(""); setError(""); }}
+              className="w-full text-center text-sm text-slate-400 transition-colors hover:text-slate-600"
             >
-              {loading ? "Processing..." : selectedPlan === "free" ? "Start with Free" : "Continue to Payment"}
+              Back to account details
             </button>
-
-            {/* Hidden PayU form */}
-            <form ref={formRef} method="POST" className="hidden">
-              <input name="key" />
-              <input name="txnid" />
-              <input name="hash" />
-              <input name="amount" />
-              <input name="productinfo" />
-              <input name="firstname" />
-              <input name="email" />
-              <input name="phone" />
-              <input name="surl" />
-              <input name="furl" />
-            </form>
           </div>
         )}
 
-        {step === 0 && (
+        {step === "form" && (
           <p className="text-center text-sm text-slate-500">
             Already have an account? <Link href="/login" className="font-medium text-indigo-600 transition-colors hover:text-indigo-700">Sign in</Link>
           </p>

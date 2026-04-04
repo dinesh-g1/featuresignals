@@ -296,6 +296,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	orgID := member.OrgID
 	role := string(member.Role)
 
+	// Restore soft-deleted org on login (within grace period)
+	org, orgErr := h.store.GetOrganization(r.Context(), orgID)
+	if orgErr == nil && org.DeletedAt != nil {
+		_ = h.store.RestoreOrganization(r.Context(), orgID)
+		log.Info("soft-deleted org restored on login", "org_id", orgID, "user_id", user.ID)
+	}
+
+	// Track last login for inactivity-based cleanup
+	_ = h.store.UpdateLastLoginAt(r.Context(), user.ID)
+
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, orgID, role)
 	if err != nil {
 		log.Error("token generation failed on login", "error", err, "user_id", user.ID)

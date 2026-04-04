@@ -96,6 +96,24 @@ func main() {
 	smsClient := sms.NewClient(cfg.MSG91AuthKey, cfg.MSG91TemplateID, cfg.MSG91SenderID)
 	emailSender := email.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
 
+	// OTP email sender (MSG91 Email API)
+	var otpSender email.OTPSender
+	if cfg.MSG91AuthKey != "" && cfg.MSG91EmailTemplateID != "" {
+		msg91Sender, err := email.NewMSG91Sender(
+			cfg.MSG91AuthKey,
+			cfg.MSG91EmailTemplateID,
+			cfg.MSG91EmailDomain,
+			cfg.MSG91EmailFrom,
+			cfg.MSG91EmailFromName,
+		)
+		if err != nil {
+			logger.Error("failed to create MSG91 email sender", "error", err)
+		} else {
+			otpSender = msg91Sender
+			logger.Info("MSG91 email OTP sender configured", "domain", cfg.MSG91EmailDomain)
+		}
+	}
+
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
@@ -104,7 +122,7 @@ func main() {
 		PayUMode:        cfg.PayUMode,
 		DashboardURL:    cfg.DashboardURL,
 		AppBaseURL:      cfg.AppBaseURL,
-	}, smsClient, emailSender, cfg.AppBaseURL, cfg.DashboardURL)
+	}, smsClient, emailSender, otpSender, cfg.AppBaseURL, cfg.DashboardURL)
 
 	// Server
 	srv := &http.Server{

@@ -42,6 +42,7 @@ func NewRouter(
 	billing BillingConfig,
 	smsClient sms.Sender,
 	emailSender email.VerificationSender,
+	otpSender email.OTPSender,
 	appBaseURL string,
 	dashboardURL string,
 ) http.Handler {
@@ -90,6 +91,8 @@ func NewRouter(
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.PayUMerchantKey, billing.PayUSalt, billing.PayUMode, billing.DashboardURL, billing.AppBaseURL, logger)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
+	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender)
+	salesH := handlers.NewSalesHandler(store)
 	demoH := handlers.NewDemoHandler(handlers.DemoHandlerConfig{
 		Store:           store,
 		JWTMgr:          jwtMgr,
@@ -119,6 +122,17 @@ func NewRouter(
 			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)
+
+			// Verify-first signup flow (OTP-based)
+			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
+			r.Post("/auth/complete-signup", signupH.CompleteSignup)
+			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
+		})
+
+		// Sales inquiry (public, rate-limited)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(10))
+			r.Post("/sales/inquiry", salesH.SubmitInquiry)
 		})
 
 		// PayU callbacks (public, rate-limited)
@@ -168,10 +182,10 @@ func NewRouter(
 			r.Post("/track", metricsH.TrackImpression)
 		})
 
-		// Management API (authenticated via JWT, with demo expiry and tier enforcement)
+		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
-			r.Use(middleware.DemoExpiry(dashboardURL + "/demo/register"))
+			r.Use(middleware.TrialExpiry(store, logger))
 			r.Use(middleware.TierEnforce(store, logger))
 
 			// ── Read-only routes (all authenticated roles) ───────────

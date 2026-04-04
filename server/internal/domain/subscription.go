@@ -40,6 +40,7 @@ type OnboardingState struct {
 
 // Plan tier constants
 const (
+	PlanTrial      = "trial"
 	PlanFree       = "free"
 	PlanPro        = "pro"
 	PlanEnterprise = "enterprise"
@@ -55,6 +56,7 @@ type PlanLimits struct {
 
 func GetPlanDefaults() map[string]PlanLimits {
 	defaults := map[string]PlanLimits{
+		PlanTrial:      {Seats: -1, Projects: -1, Environments: -1}, // same as Pro during trial
 		PlanPro:        {Seats: -1, Projects: -1, Environments: -1},
 		PlanEnterprise: {Seats: -1, Projects: -1, Environments: -1},
 	}
@@ -65,7 +67,7 @@ func GetPlanDefaults() map[string]PlanLimits {
 			Environments: p.Limits.Environments,
 		}
 	} else {
-		defaults[PlanFree] = PlanLimits{Seats: 3, Projects: 1, Environments: 2}
+		defaults[PlanFree] = PlanLimits{Seats: 3, Projects: 1, Environments: 3}
 	}
 	return defaults
 }

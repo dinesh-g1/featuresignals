@@ -67,6 +67,28 @@ func (m *mockScheduleStore) DeleteExpiredDemoOrgs(ctx context.Context, before ti
 	return 0, nil
 }
 
+func (m *mockScheduleStore) DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error) {
+	return 0, nil
+}
+func (m *mockScheduleStore) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error) {
+	return nil, nil
+}
+func (m *mockScheduleStore) SoftDeleteOrganization(ctx context.Context, orgID string) error {
+	return nil
+}
+func (m *mockScheduleStore) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time) ([]domain.Organization, error) {
+	return nil, nil
+}
+func (m *mockScheduleStore) HardDeleteOrganization(ctx context.Context, orgID string) error {
+	return nil
+}
+func (m *mockScheduleStore) DowngradeOrgToFree(ctx context.Context, orgID string) error {
+	return nil
+}
+func (m *mockScheduleStore) GetOrganization(ctx context.Context, id string) (*domain.Organization, error) {
+	return nil, fmt.Errorf("not found")
+}
+
 func (m *mockScheduleStore) DeleteDemoData(ctx context.Context, orgID string) error {
 	return nil
 }
