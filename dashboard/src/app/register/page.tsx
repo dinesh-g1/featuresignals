@@ -88,8 +88,22 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
     [onChange],
   );
 
+  const boxStyle: React.CSSProperties = {
+    width: "48px",
+    height: "48px",
+    border: "2px solid #cbd5e1",
+    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+    textAlign: "center" as const,
+    fontSize: "20px",
+    fontWeight: 600,
+    color: "#1e293b",
+    outline: "none",
+    caretColor: "#6366f1",
+  };
+
   return (
-    <div className="flex justify-center gap-2" onPaste={handlePaste}>
+    <div style={{ display: "flex", justifyContent: "center", gap: "10px" }} onPaste={handlePaste}>
       {digits.map((d, i) => (
         <input
           key={i}
@@ -100,8 +114,10 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
           value={d.trim()}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
+          onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(99,102,241,0.2)"; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.boxShadow = "none"; }}
           autoComplete="one-time-code"
-          className="h-12 w-12 rounded-lg border border-slate-300 bg-white text-center text-lg font-semibold text-slate-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          style={boxStyle}
         />
       ))}
     </div>
