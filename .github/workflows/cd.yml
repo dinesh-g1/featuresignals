@@ -20,13 +20,20 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD
+          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,MSG91_AUTH_KEY,MSG91_EMAIL_TEMPLATE_ID,MSG91_EMAIL_DOMAIN,MSG91_EMAIL_FROM,MSG91_EMAIL_FROM_NAME,APP_BASE_URL,DASHBOARD_URL
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
             DB_ADMIN_PASSWORD=${DB_ADMIN_PASSWORD}
             DB_READONLY_PASSWORD=${DB_READONLY_PASSWORD}
+            MSG91_AUTH_KEY=${MSG91_AUTH_KEY}
+            MSG91_EMAIL_TEMPLATE_ID=${MSG91_EMAIL_TEMPLATE_ID}
+            MSG91_EMAIL_DOMAIN=${MSG91_EMAIL_DOMAIN}
+            MSG91_EMAIL_FROM=${MSG91_EMAIL_FROM}
+            MSG91_EMAIL_FROM_NAME=${MSG91_EMAIL_FROM_NAME}
+            APP_BASE_URL=${APP_BASE_URL}
+            DASHBOARD_URL=${DASHBOARD_URL}
             ENVEOF
             chmod 600 /opt/featuresignals/.env
         env:
@@ -34,6 +41,13 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DB_ADMIN_PASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
           DB_READONLY_PASSWORD: ${{ secrets.DB_READONLY_PASSWORD }}
+          MSG91_AUTH_KEY: ${{ secrets.MSG91_AUTH_KEY }}
+          MSG91_EMAIL_TEMPLATE_ID: ${{ secrets.MSG91_EMAIL_TEMPLATE_ID }}
+          MSG91_EMAIL_DOMAIN: ${{ secrets.MSG91_EMAIL_DOMAIN }}
+          MSG91_EMAIL_FROM: ${{ secrets.MSG91_EMAIL_FROM }}
+          MSG91_EMAIL_FROM_NAME: ${{ secrets.MSG91_EMAIL_FROM_NAME }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
 
       - name: Pre-deploy database backup
         uses: appleboy/ssh-action@v1
@@ -91,10 +105,6 @@ jobs:
             echo ""
             echo "==> Health check: Docs"
             curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://docs.featuresignals.com || echo "WARNING: Docs health check failed"
-
-            echo ""
-            echo "==> Health check: Demo"
-            curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" https://demo.featuresignals.com || echo "WARNING: Demo health check failed"
 
             echo ""
             echo "Deployment verified."
