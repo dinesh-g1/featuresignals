@@ -53,73 +53,100 @@ function isPasswordStrong(password: string) {
 }
 
 function OTPInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, "").slice(0, 6).split("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  const digits = value.padEnd(6, " ").slice(0, 6).split("");
+  const activeIdx = Math.min(value.replace(/\s/g, "").length, 5);
 
-  const handleChange = useCallback(
-    (idx: number, char: string) => {
-      if (char && !/^\d$/.test(char)) return;
-      const next = [...digits];
-      next[idx] = char;
-      const joined = next.join("");
-      onChange(joined.replace(/ /g, ""));
-      if (char && idx < 5) refs.current[idx + 1]?.focus();
-    },
-    [digits, onChange],
-  );
-
-  const handleKeyDown = useCallback(
-    (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Backspace" && !digits[idx] && idx > 0) {
-        refs.current[idx - 1]?.focus();
-      }
-    },
-    [digits],
-  );
-
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      e.preventDefault();
-      const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-      onChange(pasted);
-      const focusIdx = Math.min(pasted.length, 5);
-      refs.current[focusIdx]?.focus();
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/\D/g, "").slice(0, 6);
+      onChange(raw);
     },
     [onChange],
   );
 
-  const boxStyle: React.CSSProperties = {
-    width: "48px",
-    height: "48px",
-    border: "2px solid #cbd5e1",
-    borderRadius: "8px",
-    backgroundColor: "#ffffff",
-    textAlign: "center" as const,
-    fontSize: "20px",
-    fontWeight: 600,
-    color: "#1e293b",
-    outline: "none",
-    caretColor: "#6366f1",
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Backspace" && value.length === 0) {
+        e.preventDefault();
+      }
+    },
+    [value],
+  );
+
+  const focusInput = useCallback(() => {
+    inputRef.current?.focus();
+  }, []);
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", gap: "10px" }} onPaste={handlePaste}>
-      {digits.map((d, i) => (
-        <input
-          key={i}
-          ref={(el) => { refs.current[i] = el; }}
-          type="text"
-          inputMode="numeric"
-          maxLength={1}
-          value={d.trim()}
-          onChange={(e) => handleChange(i, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(99,102,241,0.2)"; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.boxShadow = "none"; }}
-          autoComplete="one-time-code"
-          style={boxStyle}
-        />
-      ))}
+    <div
+      style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}
+      onClick={focusInput}
+    >
+      {/* Hidden real input that captures all keyboard/paste events */}
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        value={value}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        maxLength={6}
+        style={{
+          position: "absolute",
+          opacity: 0,
+          width: "1px",
+          height: "1px",
+          top: 0,
+          left: 0,
+          pointerEvents: "none",
+        }}
+        aria-label="Enter 6-digit verification code"
+      />
+      {/* Visual digit boxes (divs, not inputs — immune to form resets) */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "10px", cursor: "text" }}>
+        {digits.map((d, i) => {
+          const isFilled = d.trim() !== "";
+          const isActive = focused && i === activeIdx;
+          return (
+            <div
+              key={i}
+              style={{
+                width: "50px",
+                height: "56px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "10px",
+                border: isActive ? "2px solid #6366f1" : "2px solid #cbd5e1",
+                backgroundColor: isFilled ? "#f0f0ff" : "#ffffff",
+                boxShadow: isActive ? "0 0 0 3px rgba(99,102,241,0.15)" : "0 1px 2px rgba(0,0,0,0.05)",
+                fontSize: "24px",
+                fontWeight: 700,
+                color: "#1e293b",
+                transition: "all 150ms ease",
+                userSelect: "none",
+              }}
+            >
+              {isFilled ? d : isActive ? (
+                <div style={{
+                  width: "2px",
+                  height: "24px",
+                  backgroundColor: "#6366f1",
+                  borderRadius: "1px",
+                  animation: "blink 1s step-end infinite",
+                }} />
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      {/* Blinking cursor animation */}
+      <style>{`@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }`}</style>
     </div>
   );
 }

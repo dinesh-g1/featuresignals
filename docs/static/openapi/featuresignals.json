@@ -1393,8 +1393,7 @@
           "email": { "type": "string", "format": "email" },
           "password": { "type": "string", "minLength": 8 },
           "name": { "type": "string" },
-          "org_name": { "type": "string" },
-          "source": { "type": "string", "enum": ["demo"], "description": "Set to 'demo' to seed sample data and start a 7-day trial" }
+          "org_name": { "type": "string" }
         }
       },
       "LoginRequest": {
