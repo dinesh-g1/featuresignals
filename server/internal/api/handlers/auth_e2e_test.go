@@ -16,7 +16,7 @@ import (
 func newE2EAuthHandler() (*AuthHandler, *mockStore, *auth.JWTManager) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	handler := NewAuthHandler(store, jwtMgr, nil, nil, "http://localhost:8080", "http://localhost:3000")
+	handler := NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000")
 	return handler, store, jwtMgr
 }
 

@@ -9,26 +9,24 @@ export function VerificationBanner() {
   const token = useAppStore((s) => s.token);
   const user = useAppStore((s) => s.user);
   const [dismissed, setDismissed] = useState(false);
-  const [sending, setSending] = useState<"email" | "phone" | null>(null);
+  const [sending, setSending] = useState(false);
 
   if (!user || dismissed) return null;
 
-  const phoneEnabled = process.env.NEXT_PUBLIC_ENABLE_PHONE_VERIFICATION === "true";
   const needsEmail = user.email_verified === false;
-  const needsPhone = phoneEnabled && user.phone_verified === false;
 
-  if (!needsEmail && !needsPhone) return null;
+  if (!needsEmail) return null;
 
   async function handleResendEmail() {
     if (!token) return;
-    setSending("email");
+    setSending(true);
     try {
       await api.sendVerificationEmail(token);
       toast("Verification email sent", "success");
     } catch (err: any) {
       toast(err.message || "Failed to send email", "error");
     } finally {
-      setSending(null);
+      setSending(false);
     }
   }
 
@@ -40,27 +38,16 @@ export function VerificationBanner() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-amber-800">
-            {needsEmail && (
-              <span className="flex items-center gap-1.5">
-                Verify your email
-                <button
-                  onClick={handleResendEmail}
-                  disabled={sending === "email"}
-                  className="font-medium text-amber-900 underline underline-offset-2 transition-colors hover:text-amber-700 disabled:opacity-50"
-                >
-                  {sending === "email" ? "Sending..." : "Resend"}
-                </button>
-              </span>
-            )}
-            {needsEmail && needsPhone && <span className="text-amber-300">|</span>}
-            {needsPhone && (
-              <span className="flex items-center gap-1.5">
-                Verify your phone
-                <a href="/settings" className="font-medium text-amber-900 underline underline-offset-2 transition-colors hover:text-amber-700">
-                  Verify
-                </a>
-              </span>
-            )}
+            <span className="flex items-center gap-1.5">
+              Verify your email
+              <button
+                onClick={handleResendEmail}
+                disabled={sending}
+                className="font-medium text-amber-900 underline underline-offset-2 transition-colors hover:text-amber-700 disabled:opacity-50"
+              >
+                {sending ? "Sending..." : "Resend"}
+              </button>
+            </span>
           </div>
         </div>
         <button

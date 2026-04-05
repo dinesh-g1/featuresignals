@@ -57,10 +57,7 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 	productinfo := domain.ProPlanProductInfo()
 	firstname := user.Name
 	email := user.Email
-	phone := user.Phone
-	if phone == "" {
-		phone = "9999999999"
-	}
+	phone := "9999999999"
 
 	hash := h.payu.Hash(txnid, amount, productinfo, firstname, email)
 

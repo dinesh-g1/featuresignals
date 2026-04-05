@@ -41,8 +41,6 @@ POST /v1/auth/register
     "id": "uuid",
     "email": "admin@example.com",
     "name": "Admin User",
-    "phone": "+1234567890",
-    "phone_verified": false,
     "email_verified": false,
     "created_at": "2026-04-01T00:00:00Z"
   },
@@ -96,8 +94,6 @@ POST /v1/auth/login
     "id": "uuid",
     "email": "admin@example.com",
     "name": "Admin User",
-    "phone": "+1234567890",
-    "phone_verified": false,
     "email_verified": false,
     "created_at": "2026-04-01T00:00:00Z"
   },
@@ -181,74 +177,6 @@ curl -X POST http://localhost:8080/v1/evaluate \
 
 ---
 
-## Phone OTP Verification
-
-:::caution Feature Flag
-Phone verification is currently **disabled** behind a feature flag. These endpoints return `501 Not Implemented` until phone verification is enabled on the server. Email verification is the default verification method.
-:::
-
-Send a one-time password to the user's phone via MSG91.
-
-```
-POST /v1/auth/send-otp
-```
-
-**Authentication:** Bearer JWT
-
-### Request
-
-```json
-{
-  "phone": "+919876543210"
-}
-```
-
-### Response `200 OK`
-
-```json
-{
-  "message": "OTP sent"
-}
-```
-
----
-
-## Verify OTP
-
-Verify the OTP sent to the user's phone.
-
-```
-POST /v1/auth/verify-otp
-```
-
-**Authentication:** Bearer JWT
-
-### Request
-
-```json
-{
-  "otp": "123456"
-}
-```
-
-### Response `200 OK`
-
-```json
-{
-  "message": "Phone verified"
-}
-```
-
-### Error `400 Bad Request`
-
-```json
-{
-  "error": "invalid OTP"
-}
-```
-
----
-
 ## Send Verification Email
 
 Send a verification link to the authenticated user's email address.
@@ -311,8 +239,6 @@ POST /v1/auth/token-exchange
     "id": "uuid",
     "email": "jane@company.com",
     "name": "Jane Smith",
-    "phone": "+1234567890",
-    "phone_verified": false,
     "email_verified": false,
     "created_at": "2026-04-01T00:00:00Z"
   },

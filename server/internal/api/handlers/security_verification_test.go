@@ -15,7 +15,7 @@ import (
 
 func TestRegister_ResponseExcludesSensitiveFields(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, nil, nil, "", "")
+	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "")
 
 	body := `{"email":"test@example.com","password":"StrongP@ss1","name":"Test User","org_name":"TestOrg"}`
 	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
@@ -37,7 +37,7 @@ func TestRegister_ResponseExcludesSensitiveFields(t *testing.T) {
 		t.Fatalf("failed to decode user: %v", err)
 	}
 
-	sensitiveFields := []string{"password_hash", "phone_otp", "phone_otp_expires", "email_verify_token", "email_verify_expires", "is_demo", "updated_at"}
+	sensitiveFields := []string{"password_hash", "email_verify_token", "email_verify_expires", "is_demo", "updated_at"}
 	for _, field := range sensitiveFields {
 		if _, exists := user[field]; exists {
 			t.Errorf("response should not contain sensitive field '%s'", field)
@@ -54,7 +54,7 @@ func TestRegister_ResponseExcludesSensitiveFields(t *testing.T) {
 
 func TestLogin_ResponseExcludesSensitiveFields(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, nil, nil, "", "")
+	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "")
 
 	hash, _ := auth.HashPassword("StrongP@ss1")
 	store.CreateUser(nil, &domain.User{
@@ -89,7 +89,7 @@ func TestLogin_ResponseExcludesSensitiveFields(t *testing.T) {
 		t.Fatalf("failed to decode user: %v", err)
 	}
 
-	sensitiveFields := []string{"password_hash", "phone_otp", "phone_otp_expires", "email_verify_token", "email_verify_expires", "is_demo", "updated_at"}
+	sensitiveFields := []string{"password_hash", "email_verify_token", "email_verify_expires", "is_demo", "updated_at"}
 	for _, field := range sensitiveFields {
 		if _, exists := user[field]; exists {
 			t.Errorf("login response should not contain sensitive field '%s'", field)

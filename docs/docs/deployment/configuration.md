@@ -31,13 +31,6 @@ All configuration is done via environment variables.
 | `MSG91_EMAIL_FROM` | `noreply@featuresignals.com` | Sender email address |
 | `MSG91_EMAIL_FROM_NAME` | `Feature Signals` | Sender display name |
 
-### SMS (MSG91)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MSG91_TEMPLATE_ID` | (empty) | MSG91 SMS template ID (for phone OTP, when enabled) |
-| `MSG91_SENDER_ID` | `FEATSIG` | MSG91 sender ID |
-
 ### PayU Billing
 
 | Variable | Default | Description |

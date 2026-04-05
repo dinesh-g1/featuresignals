@@ -20,12 +20,8 @@ type Config struct {
 	PayUSalt        string
 	PayUMode        string
 
-	// SMS (MSG91)
-	MSG91AuthKey    string
-	MSG91TemplateID string
-	MSG91SenderID   string
-
 	// Email OTP (MSG91 Email API)
+	MSG91AuthKey         string
 	MSG91EmailTemplateID string
 	MSG91EmailDomain     string
 	MSG91EmailFrom       string
@@ -50,10 +46,7 @@ func Load() *Config {
 		PayUSalt:        os.Getenv("PAYU_SALT"),
 		PayUMode:        getEnv("PAYU_MODE", "test"),
 
-		MSG91AuthKey:    os.Getenv("MSG91_AUTH_KEY"),
-		MSG91TemplateID: os.Getenv("MSG91_TEMPLATE_ID"),
-		MSG91SenderID:   getEnv("MSG91_SENDER_ID", "FEATSIG"),
-
+		MSG91AuthKey:         os.Getenv("MSG91_AUTH_KEY"),
 		MSG91EmailTemplateID: os.Getenv("MSG91_EMAIL_TEMPLATE_ID"),
 		MSG91EmailDomain:     getEnv("MSG91_EMAIL_DOMAIN", "mail.featuresignals.com"),
 		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@mail.featuresignals.com"),

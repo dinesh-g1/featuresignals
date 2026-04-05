@@ -52,11 +52,6 @@ func (s *tierMockStore) GetUserByID(context.Context, string) (*domain.User, erro
 func (s *tierMockStore) GetUserByEmailVerifyToken(context.Context, string) (*domain.User, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) UpdateUserPhone(context.Context, string, string) error           { return nil }
-func (s *tierMockStore) UpdateUserPhoneOTP(context.Context, string, string, time.Time) error {
-	return nil
-}
-func (s *tierMockStore) SetPhoneVerified(context.Context, string) error { return nil }
 func (s *tierMockStore) UpdateUserEmailVerifyToken(context.Context, string, string, time.Time) error {
 	return nil
 }
