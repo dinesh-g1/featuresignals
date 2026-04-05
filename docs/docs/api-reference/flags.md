@@ -36,7 +36,7 @@ POST /v1/projects/{projectID}/flags
 | `name` | string | Yes | — | Display name |
 | `description` | string | No | `""` | Description |
 | `flag_type` | string | No | `boolean` | `boolean`, `string`, `number`, `json`, `ab` |
-| `default_value` | any | No | `false` | Default value when disabled |
+| `default_value` | any | No | Depends on `flag_type` | Value returned when flag is disabled. Defaults: `false` (boolean), `""` (string), `0` (number), `{}` (json/ab). Must match the flag type. |
 | `tags` | string[] | No | `[]` | Tags for organization |
 | `prerequisites` | string[] | No | `[]` | Flag keys that must be enabled |
 | `mutual_exclusion_group` | string | No | `""` | Mutex group name |

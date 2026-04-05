@@ -84,6 +84,65 @@ func TestFlagHandler_Create_DefaultType(t *testing.T) {
 	}
 }
 
+func TestFlagHandler_Create_TypeAwareDefaults(t *testing.T) {
+	tests := []struct {
+		flagType     string
+		wantDefault  string
+	}{
+		{"boolean", "false"},
+		{"string", `""`},
+		{"number", "0"},
+		{"json", "{}"},
+		{"ab", "false"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.flagType, func(t *testing.T) {
+			store := newMockStore()
+			h := NewFlagHandler(store)
+			projID := setupTestProject(store, testOrgID)
+
+			body := `{"key":"flag-` + tt.flagType + `","name":"Test","flag_type":"` + tt.flagType + `"}`
+			r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+			r = requestWithChi(r, map[string]string{"projectID": projID})
+			r = requestWithAuth(r, "user-1", testOrgID, "admin")
+			w := httptest.NewRecorder()
+
+			h.Create(w, r)
+
+			if w.Code != http.StatusCreated {
+				t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+			}
+
+			var flag domain.Flag
+			json.Unmarshal(w.Body.Bytes(), &flag)
+
+			got := string(flag.DefaultValue)
+			if got != tt.wantDefault {
+				t.Errorf("flag_type=%s: expected default_value %s, got %s", tt.flagType, tt.wantDefault, got)
+			}
+		})
+	}
+}
+
+func TestFlagHandler_Create_TypeMismatchRejected(t *testing.T) {
+	store := newMockStore()
+	h := NewFlagHandler(store)
+	projID := setupTestProject(store, testOrgID)
+
+	body := `{"key":"bad-default","name":"Bad","flag_type":"boolean","default_value":"not-a-bool"}`
+	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/flags", strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID})
+	r = requestWithAuth(r, "user-1", testOrgID, "admin")
+	w := httptest.NewRecorder()
+
+	h.Create(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for type mismatch, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
 func TestFlagHandler_Create_MissingFields(t *testing.T) {
 	store := newMockStore()
 	h := NewFlagHandler(store)

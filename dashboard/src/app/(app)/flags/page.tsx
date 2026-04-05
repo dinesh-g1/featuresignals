@@ -7,6 +7,7 @@ import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, EmptyState, Label } from "@/components/ui";
 import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui";
 import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
 
 const FLAG_TYPE_OPTIONS = [
@@ -65,7 +66,7 @@ export default function FlagsPage() {
   const [sortBy, setSortBy] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showCreate, setShowCreate] = useState(false);
-  const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", category: "release", description: "" });
+  const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [flagStates, setFlagStates] = useState<Record<string, any>>({});
@@ -93,16 +94,43 @@ export default function FlagsPage() {
     loadStates();
   }, [token, projectId, currentEnvId, flags]);
 
+  function defaultValueForType(type: string): string {
+    switch (type) {
+      case "string": return '""';
+      case "number": return "0";
+      case "json": return "{}";
+      default: return "false";
+    }
+  }
+
+  function handleTypeChange(type: string) {
+    setNewFlag({ ...newFlag, flag_type: type, default_value: defaultValueForType(type) });
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !projectId) {
       toast("Select a project first", "error");
       return;
     }
+    let parsedDefault: any;
     try {
-      await api.createFlag(token, projectId, newFlag);
+      parsedDefault = JSON.parse(newFlag.default_value);
+    } catch {
+      toast("Default value must be valid JSON", "error");
+      return;
+    }
+    try {
+      await api.createFlag(token, projectId, {
+        key: newFlag.key,
+        name: newFlag.name,
+        flag_type: newFlag.flag_type,
+        category: newFlag.category,
+        description: newFlag.description,
+        default_value: parsedDefault,
+      });
       setShowCreate(false);
-      setNewFlag({ key: "", name: "", flag_type: "boolean", category: "release", description: "" });
+      setNewFlag({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
       toast("Flag created", "success");
       reload();
     } catch (err: any) {
@@ -243,7 +271,7 @@ export default function FlagsPage() {
               <div className="mt-1">
                 <Select
                   value={newFlag.flag_type}
-                  onValueChange={(val) => setNewFlag({ ...newFlag, flag_type: val })}
+                  onValueChange={handleTypeChange}
                   options={CREATE_TYPE_OPTIONS}
                 />
               </div>
@@ -267,6 +295,51 @@ export default function FlagsPage() {
               placeholder="Optional description"
               className="mt-1"
             />
+          </div>
+          <div>
+            <Label>Default Value</Label>
+            <p className="text-xs text-slate-500 mt-0.5 mb-1">
+              {newFlag.flag_type === "boolean" && "The value returned when the flag is disabled."}
+              {newFlag.flag_type === "string" && "A string value returned when the flag is disabled."}
+              {newFlag.flag_type === "number" && "A numeric value returned when the flag is disabled."}
+              {newFlag.flag_type === "json" && "A JSON object or array returned when the flag is disabled."}
+              {newFlag.flag_type === "ab" && "Fallback value when no variant is matched."}
+            </p>
+            {newFlag.flag_type === "boolean" ? (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setNewFlag({ ...newFlag, default_value: newFlag.default_value === "true" ? "false" : "true" })}
+                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${newFlag.default_value === "true" ? "bg-emerald-500" : "bg-slate-300"}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${newFlag.default_value === "true" ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+                <span className="text-sm font-mono text-slate-700">{newFlag.default_value}</span>
+              </div>
+            ) : newFlag.flag_type === "string" ? (
+              <Input
+                value={newFlag.default_value.startsWith('"') ? JSON.parse(newFlag.default_value) : newFlag.default_value}
+                onChange={(e) => setNewFlag({ ...newFlag, default_value: JSON.stringify(e.target.value) })}
+                placeholder='e.g. "Welcome back!"'
+                className="mt-1 font-mono"
+              />
+            ) : newFlag.flag_type === "number" ? (
+              <Input
+                type="number"
+                value={newFlag.default_value}
+                onChange={(e) => setNewFlag({ ...newFlag, default_value: e.target.value || "0" })}
+                placeholder="0"
+                className="mt-1 font-mono"
+              />
+            ) : (
+              <Textarea
+                value={newFlag.default_value}
+                onChange={(e) => setNewFlag({ ...newFlag, default_value: e.target.value })}
+                placeholder='e.g. {"theme": "dark"}'
+                rows={3}
+                className="mt-1 font-mono text-sm"
+              />
+            )}
           </div>
           <div className="flex gap-2">
             <Button type="submit">Create</Button>

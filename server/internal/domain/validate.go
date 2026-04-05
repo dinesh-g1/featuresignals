@@ -96,6 +96,44 @@ func (f *Flag) Validate() error {
 	if f.DefaultValue != nil && !json.Valid(f.DefaultValue) {
 		return NewValidationError("default_value", "must be valid JSON")
 	}
+	if f.DefaultValue != nil && f.FlagType != "" {
+		if err := validateDefaultValueType(f.FlagType, f.DefaultValue); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateDefaultValueType ensures the default_value JSON is compatible with
+// the declared flag_type. For example, a "string" flag must have a JSON string
+// default, not a boolean or number.
+func validateDefaultValueType(ft FlagType, raw json.RawMessage) error {
+	var v interface{}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return NewValidationError("default_value", "must be valid JSON")
+	}
+	switch ft {
+	case FlagTypeBoolean:
+		if _, ok := v.(bool); !ok {
+			return NewValidationError("default_value", "must be a boolean for boolean flags")
+		}
+	case FlagTypeString:
+		if _, ok := v.(string); !ok {
+			return NewValidationError("default_value", "must be a string for string flags")
+		}
+	case FlagTypeNumber:
+		if _, ok := v.(float64); !ok {
+			return NewValidationError("default_value", "must be a number for number flags")
+		}
+	case FlagTypeJSON:
+		switch v.(type) {
+		case map[string]interface{}, []interface{}:
+		default:
+			return NewValidationError("default_value", "must be an object or array for json flags")
+		}
+	case FlagTypeAB:
+		// A/B flags use variants; any valid JSON default is fine.
+	}
 	return nil
 }
 

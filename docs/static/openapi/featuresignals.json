@@ -272,7 +272,7 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/CreateFlagRequest" },
-              "example": { "key": "new-checkout", "name": "New Checkout Flow", "type": "boolean", "description": "Enable the redesigned checkout experience", "defaultValue": false }
+              "example": { "key": "new-checkout", "name": "New Checkout Flow", "flag_type": "boolean", "default_value": false, "description": "Enable the redesigned checkout experience" }
             }
           }
         },
@@ -1425,18 +1425,20 @@
       "Flag": {
         "type": "object",
         "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "project_id": { "type": "string", "format": "uuid" },
           "key": { "type": "string" },
           "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["boolean", "string", "number", "json"] },
+          "flag_type": { "type": "string", "enum": ["boolean", "string", "number", "json", "ab"] },
           "category": { "type": "string", "enum": ["release", "experiment", "ops", "permission"], "description": "Toggle category based on Martin Fowler's taxonomy" },
           "status": { "type": "string", "enum": ["active", "rolled_out", "deprecated", "archived"], "description": "Lifecycle status of the flag" },
           "description": { "type": "string" },
+          "default_value": { "description": "Value returned when flag is disabled. Type must match flag_type." },
           "tags": { "type": "array", "items": { "type": "string" } },
-          "defaultValue": {},
-          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } },
-          "prerequisites": { "type": "array", "items": { "$ref": "#/components/schemas/Prerequisite" } },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "prerequisites": { "type": "array", "items": { "type": "string" }, "description": "Flag keys that must be enabled" },
+          "mutual_exclusion_group": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "Variant": {
@@ -1457,17 +1459,18 @@
       },
       "CreateFlagRequest": {
         "type": "object",
-        "required": ["key", "name", "type"],
+        "required": ["key", "name"],
         "properties": {
-          "key": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-          "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["boolean", "string", "number", "json"] },
+          "key": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$", "description": "Unique flag identifier (immutable)" },
+          "name": { "type": "string", "description": "Display name" },
+          "flag_type": { "type": "string", "enum": ["boolean", "string", "number", "json", "ab"], "default": "boolean", "description": "Value type of the flag" },
           "category": { "type": "string", "enum": ["release", "experiment", "ops", "permission"], "default": "release" },
           "status": { "type": "string", "enum": ["active", "rolled_out", "deprecated", "archived"], "default": "active" },
           "description": { "type": "string" },
-          "defaultValue": {},
+          "default_value": { "description": "Value returned when flag is disabled. Must match flag_type (boolean→bool, string→string, number→number, json→object/array). Auto-assigned if omitted: false, \"\", 0, or {} depending on type." },
           "tags": { "type": "array", "items": { "type": "string" } },
-          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } }
+          "prerequisites": { "type": "array", "items": { "type": "string" }, "description": "Flag keys that must be enabled for this flag to evaluate" },
+          "mutual_exclusion_group": { "type": "string", "description": "Mutex group name — only one flag in the group can be ON per user" }
         }
       },
       "UpdateFlagRequest": {
