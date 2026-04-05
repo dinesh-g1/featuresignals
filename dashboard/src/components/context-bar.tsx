@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
+import type { Project, Environment } from "@/lib/types";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
 import { Select } from "@/components/ui/select";
@@ -15,15 +16,15 @@ export function ContextBar() {
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 
-  const [projects, setProjects] = useState<any[]>([]);
-  const [envs, setEnvs] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [envDialogOpen, setEnvDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     api.listProjects(token).then((list) => {
-      const sorted = (list ?? []).sort((a: any, b: any) => a.name.localeCompare(b.name));
+      const sorted = (list ?? []).sort((a, b) => a.name.localeCompare(b.name));
       setProjects(sorted);
       if (sorted.length > 0 && !projectId) {
         setCurrentProject(sorted[0].id);
@@ -34,7 +35,7 @@ export function ContextBar() {
   useEffect(() => {
     if (!token || !projectId) { setEnvs([]); return; }
     api.listEnvironments(token, projectId).then((list) => {
-      const sorted = (list ?? []).sort((a: any, b: any) => a.name.localeCompare(b.name));
+      const sorted = (list ?? []).sort((a, b) => a.name.localeCompare(b.name));
       setEnvs(sorted);
       if (sorted.length > 0) {
         setCurrentEnv(sorted[0].id);
@@ -42,13 +43,13 @@ export function ContextBar() {
     }).catch(() => { setEnvs([]); });
   }, [token, projectId, setCurrentEnv]);
 
-  function handleProjectCreated(created: any) {
-    setProjects((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
+  function handleProjectCreated(created: Project) {
+    setProjects((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
     setCurrentProject(created.id);
   }
 
-  function handleEnvironmentCreated(created: any) {
-    setEnvs((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
+  function handleEnvironmentCreated(created: Environment) {
+    setEnvs((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
     setCurrentEnv(created.id);
   }
 

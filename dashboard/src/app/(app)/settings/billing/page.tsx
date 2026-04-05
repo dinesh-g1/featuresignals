@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Check } from "lucide-react";
+import type { BillingInfo, CheckoutResponse, UsageInfo } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -39,8 +40,8 @@ function BillingContent() {
   const token = useAppStore((s) => s.token);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [subscription, setSubscription] = useState<any>(null);
-  const [usage, setUsage] = useState<any>(null);
+  const [subscription, setSubscription] = useState<BillingInfo | null>(null);
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [upgrading, setUpgrading] = useState(false);
   const [pricing, setPricing] = useState<PricingConfig | null>(null);
 
@@ -91,14 +92,14 @@ function BillingContent() {
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = field;
-        input.value = (data as any)[field];
+        input.value = data[field as keyof CheckoutResponse];
         form.appendChild(input);
       }
 
       document.body.appendChild(form);
       form.submit();
-    } catch (err: any) {
-      toast(err.message || "Failed to start checkout", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to start checkout", "error");
       setUpgrading(false);
     }
   }

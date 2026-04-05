@@ -25,7 +25,7 @@ vi.mock("@/components/toast", () => ({
 import { api } from "@/lib/api";
 import WebhooksPage from "@/app/(app)/settings/webhooks/page";
 
-const mockApi = api as {
+const mockApi = api as unknown as {
   listWebhooks: ReturnType<typeof vi.fn>;
   createWebhook: ReturnType<typeof vi.fn>;
   deleteWebhook: ReturnType<typeof vi.fn>;
@@ -51,8 +51,8 @@ describe("WebhooksPage", () => {
     useAppStore.getState().setAuth(
       "test-token",
       "test-refresh",
-      { id: "u1", name: "Test", email: "test@test.com", role: "admin", email_verified: true },
-      { id: "org-1", name: "Test Org", plan: "pro" },
+      { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
       9999999999,
     );
     useAppStore.getState().setCurrentProject("proj-1");

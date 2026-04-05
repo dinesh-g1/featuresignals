@@ -11,11 +11,11 @@ import (
 )
 
 type OnboardingHandler struct {
-	store  domain.Store
+	store  domain.OnboardingStore
 	logger *slog.Logger
 }
 
-func NewOnboardingHandler(store domain.Store, logger *slog.Logger) *OnboardingHandler {
+func NewOnboardingHandler(store domain.OnboardingStore, logger *slog.Logger) *OnboardingHandler {
 	return &OnboardingHandler{store: store, logger: logger}
 }
 

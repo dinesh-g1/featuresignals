@@ -30,6 +30,13 @@ function createTestComponent(setup: () => Record<string, unknown>) {
   });
 }
 
+/** Setup return values are not on `ComponentPublicInstance`; narrow via `unknown`. */
+function vmSetup<T extends Record<string, unknown>>(wrapper: {
+  vm: object;
+}): T {
+  return wrapper.vm as unknown as T;
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
 });
@@ -82,7 +89,8 @@ describe("FeatureSignalsPlugin", () => {
 
     await flushPromises();
     await nextTick();
-    flagVal = (wrapper.vm as any).flag;
+    const vm = vmSetup<{ flag: boolean }>(wrapper);
+    flagVal = vm.flag;
     expect(flagVal).toBe(true);
   });
 
@@ -107,7 +115,8 @@ describe("FeatureSignalsPlugin", () => {
 
     await flushPromises();
     await nextTick();
-    expect((wrapper.vm as any).flag).toBe("default-val");
+    const vm = vmSetup<{ flag: string }>(wrapper);
+    expect(vm.flag).toBe("default-val");
   });
 
   it("useFlags returns all flags", async () => {
@@ -131,7 +140,8 @@ describe("FeatureSignalsPlugin", () => {
 
     await flushPromises();
     await nextTick();
-    expect((wrapper.vm as any).flags).toEqual(MOCK_FLAGS);
+    const vm = vmSetup<{ flags: Record<string, unknown> }>(wrapper);
+    expect(vm.flags).toEqual(MOCK_FLAGS);
   });
 
   it("useReady returns false initially, true after fetch", async () => {
@@ -192,7 +202,8 @@ describe("FeatureSignalsPlugin", () => {
 
     await flushPromises();
     await nextTick();
-    expect((wrapper.vm as any).error).toBeNull();
+    const vm = vmSetup<{ error: Error | null }>(wrapper);
+    expect(vm.error).toBeNull();
   });
 
   it("useError returns error on fetch failure", async () => {
@@ -216,8 +227,12 @@ describe("FeatureSignalsPlugin", () => {
 
     await flushPromises();
     await nextTick();
-    const err = (wrapper.vm as any).error;
+    const vm = vmSetup<{ error: Error | null }>(wrapper);
+    const err = vm.error;
     expect(err).toBeInstanceOf(Error);
+    if (!(err instanceof Error)) {
+      throw new Error("expected Error instance");
+    }
     expect(err.message).toBe("HTTP 500");
   });
 

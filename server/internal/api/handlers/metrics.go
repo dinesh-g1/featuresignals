@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"net/http"
@@ -23,13 +24,17 @@ type EvalSummarizer interface {
 	Reset()
 }
 
+type metricsStore interface {
+	GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) (*domain.Environment, *domain.APIKey, error)
+}
+
 type MetricsHandler struct {
-	store       domain.Store
+	store       metricsStore
 	collector   EvalSummarizer
 	impressions ImpressionRecorder
 }
 
-func NewMetricsHandler(store domain.Store, collector EvalSummarizer, impressions ImpressionRecorder) *MetricsHandler {
+func NewMetricsHandler(store metricsStore, collector EvalSummarizer, impressions ImpressionRecorder) *MetricsHandler {
 	return &MetricsHandler{store: store, collector: collector, impressions: impressions}
 }
 

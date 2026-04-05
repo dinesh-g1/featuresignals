@@ -11,11 +11,17 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-type ProjectHandler struct {
-	store domain.Store
+type projectStore interface {
+	domain.ProjectReader
+	domain.ProjectWriter
+	domain.EnvironmentWriter
 }
 
-func NewProjectHandler(store domain.Store) *ProjectHandler {
+type ProjectHandler struct {
+	store projectStore
+}
+
+func NewProjectHandler(store projectStore) *ProjectHandler {
 	return &ProjectHandler{store: store}
 }
 
@@ -100,11 +106,17 @@ func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 // --- Environments ---
 
-type EnvironmentHandler struct {
-	store domain.Store
+type envHandlerStore interface {
+	domain.EnvironmentReader
+	domain.EnvironmentWriter
+	projectGetter
 }
 
-func NewEnvironmentHandler(store domain.Store) *EnvironmentHandler {
+type EnvironmentHandler struct {
+	store envHandlerStore
+}
+
+func NewEnvironmentHandler(store envHandlerStore) *EnvironmentHandler {
 	return &EnvironmentHandler{store: store}
 }
 

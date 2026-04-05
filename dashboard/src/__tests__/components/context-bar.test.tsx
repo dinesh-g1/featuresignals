@@ -64,7 +64,7 @@ vi.mock("@/components/create-environment-dialog", () => ({
 
 import { api } from "@/lib/api";
 
-const mockApi = api as {
+const mockApi = api as unknown as {
   listProjects: ReturnType<typeof vi.fn>;
   listEnvironments: ReturnType<typeof vi.fn>;
 };

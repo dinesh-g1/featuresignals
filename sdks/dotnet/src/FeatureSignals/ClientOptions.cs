@@ -18,6 +18,7 @@ public sealed class ClientOptions
     public bool Streaming { get; init; }
 
     /// <summary>Delay before reconnecting after an SSE connection drop.</summary>
+    [Obsolete("SSE reconnection now uses exponential backoff (1s–30s) with jitter. This property is ignored.")]
     public TimeSpan SseRetry { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>HTTP request timeout.</summary>

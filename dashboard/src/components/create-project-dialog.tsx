@@ -4,11 +4,12 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import type { Project } from "@/lib/types";
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (project: any) => void;
+  onCreated: (project: Project) => void;
 }
 
 export function CreateProjectDialog({ open, onOpenChange, onCreated }: CreateProjectDialogProps) {

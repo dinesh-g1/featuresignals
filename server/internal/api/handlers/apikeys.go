@@ -17,11 +17,17 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-type APIKeyHandler struct {
-	store domain.Store
+type apiKeyHandlerStore interface {
+	domain.APIKeyStore
+	domain.AuditWriter
+	envAndProjectGetter
 }
 
-func NewAPIKeyHandler(store domain.Store) *APIKeyHandler {
+type APIKeyHandler struct {
+	store apiKeyHandlerStore
+}
+
+func NewAPIKeyHandler(store apiKeyHandlerStore) *APIKeyHandler {
 	return &APIKeyHandler{store: store}
 }
 

@@ -8,6 +8,7 @@ import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
 import { PageHeader, Card, CardHeader, CardContent, Button, Input, Label, Badge, CategoryBadge, StatusBadge, EmptyState, LoadingSpinner, Textarea } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { ArrowLeft, Clock, X } from "lucide-react";
+import type { Flag, FlagState, Environment, Segment, AuditEntry, TargetingRule } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function FlagDetailPage() {
@@ -17,22 +18,22 @@ export default function FlagDetailPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const [flag, setFlag] = useState<any>(null);
-  const [state, setState] = useState<any>(null);
-  const [envs, setEnvs] = useState<any[]>([]);
+  const [flag, setFlag] = useState<Flag | null>(null);
+  const [state, setState] = useState<FlagState | null>(null);
+  const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
   const [tab, setTab] = useState<"overview" | "targeting" | "history">("overview");
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [audit, setAudit] = useState<any[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [segments, setSegments] = useState<{ key: string; name: string }[]>([]);
   const [showPromote, setShowPromote] = useState(false);
   const [promoteTarget, setPromoteTarget] = useState("");
   const [promoting, setPromoting] = useState(false);
   const [scheduleEnable, setScheduleEnable] = useState("");
   const [scheduleDisable, setScheduleDisable] = useState("");
-  const [allFlags, setAllFlags] = useState<any[]>([]);
+  const [allFlags, setAllFlags] = useState<Flag[]>([]);
   const [prereqs, setPrereqs] = useState<string[]>([]);
   const [mutexGroup, setMutexGroup] = useState("");
 
@@ -52,7 +53,7 @@ export default function FlagDetailPage() {
       if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
     });
     api.listSegments(token, projectId).then((s) => {
-      setSegments((s ?? []).map((seg: any) => ({ key: seg.key, name: seg.name })));
+      setSegments((s ?? []).map((seg: Segment) => ({ key: seg.key, name: seg.name })));
     }).catch(() => {});
   }, [token, projectId, flagKey, selectedEnv]);
 
@@ -65,7 +66,7 @@ export default function FlagDetailPage() {
     if (!token || tab !== "history") return;
     api.listAudit(token, 50).then((a) => {
       const filtered = (a ?? []).filter(
-        (e: any) => e.resource_type === "flag" && e.resource_id === flag?.id,
+        (e: AuditEntry) => e.resource_type === "flag" && e.resource_id === flag?.id,
       );
       setAudit(filtered);
     }).catch(() => {});
@@ -133,14 +134,14 @@ export default function FlagDetailPage() {
 
   async function cancelSchedule(field: "enable" | "disable") {
     if (!token || !projectId || !selectedEnv) return;
-    const update: any = {};
+    const update: { scheduled_enable_at?: string; scheduled_disable_at?: string } = {};
     if (field === "enable") { update.scheduled_enable_at = ""; setScheduleEnable(""); }
     else { update.scheduled_disable_at = ""; setScheduleDisable(""); }
     await api.updateFlagState(token, projectId, flagKey, selectedEnv, update);
     api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
   }
 
-  async function saveRules(rules: any[]) {
+  async function saveRules(rules: TargetingRule[]) {
     if (!token || !projectId || !selectedEnv) return;
     await api.updateFlagState(token, projectId, flagKey, selectedEnv, { rules });
     api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
@@ -503,7 +504,7 @@ export default function FlagDetailPage() {
             <EmptyState icon={Clock} title="No audit history for this flag yet." />
           ) : (
             <div className="divide-y divide-slate-100">
-              {audit.map((entry: any) => (
+              {audit.map((entry) => (
                 <div key={entry.id} className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
                   <Badge variant="primary">{entry.action}</Badge>
                   <span className="text-xs text-slate-400">{new Date(entry.created_at).toLocaleString()}</span>

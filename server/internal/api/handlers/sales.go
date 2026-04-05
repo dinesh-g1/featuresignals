@@ -8,10 +8,10 @@ import (
 )
 
 type SalesHandler struct {
-	store domain.Store
+	store domain.SalesStore
 }
 
-func NewSalesHandler(store domain.Store) *SalesHandler {
+func NewSalesHandler(store domain.SalesStore) *SalesHandler {
 	return &SalesHandler{store: store}
 }
 

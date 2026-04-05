@@ -1,4 +1,5 @@
-export { FeatureSignalsProvider } from "./provider.tsx";
-export type { FeatureSignalsProviderProps } from "./provider.tsx";
-export { useFlag, useFlags, useReady, useError } from "./hooks.ts";
-export type { FeatureSignalsContextValue } from "./context.ts";
+export { FeatureSignalsProvider } from "./provider.js";
+export type { FeatureSignalsProviderProps } from "./provider.js";
+export { useFlag, useFlags, useReady, useError } from "./hooks.js";
+export type { UseFlagOptions } from "./hooks.js";
+export type { FeatureSignalsContextValue } from "./context.js";

@@ -16,11 +16,11 @@ vi.mock("@/stores/app-store", () => ({
 }));
 
 describe("ProductTour", () => {
-  let onComplete: ReturnType<typeof vi.fn>;
+  let onComplete: ReturnType<typeof vi.fn> & (() => void);
 
   beforeEach(() => {
     vi.clearAllMocks();
-    onComplete = vi.fn();
+    onComplete = vi.fn() as typeof onComplete;
   });
 
   it("renders first step content", () => {

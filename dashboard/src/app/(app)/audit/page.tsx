@@ -5,10 +5,11 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, Card, Button, Input, Badge, EmptyState } from "@/components/ui";
 import { ClipboardList, Search } from "lucide-react";
+import type { AuditEntry } from "@/lib/types";
 
 export default function AuditPage() {
   const token = useAppStore((s) => s.token);
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 50;

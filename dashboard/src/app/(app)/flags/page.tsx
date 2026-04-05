@@ -9,6 +9,7 @@ import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, Emp
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
 import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
+import type { Flag as FlagData, Environment, FlagState } from "@/lib/types";
 
 const FLAG_TYPE_OPTIONS = [
   { value: "all", label: "All Types" },
@@ -56,8 +57,8 @@ export default function FlagsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const [flags, setFlags] = useState<any[]>([]);
-  const [envs, setEnvs] = useState<any[]>([]);
+  const [flags, setFlags] = useState<FlagData[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -69,7 +70,7 @@ export default function FlagsPage() {
   const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
-  const [flagStates, setFlagStates] = useState<Record<string, any>>({});
+  const [flagStates, setFlagStates] = useState<Record<string, FlagState>>({});
 
   function reload() {
     if (!token || !projectId) return;
@@ -82,7 +83,7 @@ export default function FlagsPage() {
   useEffect(() => {
     if (!token || !projectId || !currentEnvId || flags.length === 0) return;
     const loadStates = async () => {
-      const states: Record<string, any> = {};
+      const states: Record<string, FlagState> = {};
       for (const flag of flags) {
         try {
           const st = await api.getFlagState(token, projectId, flag.key, currentEnvId);
@@ -113,7 +114,7 @@ export default function FlagsPage() {
       toast("Select a project first", "error");
       return;
     }
-    let parsedDefault: any;
+    let parsedDefault: unknown;
     try {
       parsedDefault = JSON.parse(newFlag.default_value);
     } catch {
@@ -133,8 +134,8 @@ export default function FlagsPage() {
       setNewFlag({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
       toast("Flag created", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to create flag", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create flag", "error");
     }
   }
 
@@ -145,8 +146,8 @@ export default function FlagsPage() {
       setDeleting(null);
       toast("Flag deleted", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to delete flag", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to delete flag", "error");
       setDeleting(null);
     }
   }
@@ -164,8 +165,8 @@ export default function FlagsPage() {
       });
       const updated = await api.getFlagState(token, projectId, flagKey, currentEnvId);
       setFlagStates((prev) => ({ ...prev, [flagKey]: updated }));
-    } catch (err: any) {
-      toast(err.message || "Failed to toggle flag", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to toggle flag", "error");
     } finally {
       setToggling(null);
     }

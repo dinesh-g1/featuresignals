@@ -11,11 +11,18 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-type ApprovalHandler struct {
-	store domain.Store
+type approvalHandlerStore interface {
+	domain.ApprovalStore
+	domain.FlagReader
+	domain.FlagWriter
+	domain.AuditWriter
 }
 
-func NewApprovalHandler(store domain.Store) *ApprovalHandler {
+type ApprovalHandler struct {
+	store approvalHandlerStore
+}
+
+func NewApprovalHandler(store approvalHandlerStore) *ApprovalHandler {
 	return &ApprovalHandler{store: store}
 }
 

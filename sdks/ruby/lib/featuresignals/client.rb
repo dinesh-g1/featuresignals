@@ -5,6 +5,7 @@ require "json"
 require "uri"
 require "logger"
 
+require_relative "errors"
 require_relative "client_options"
 require_relative "eval_context"
 
@@ -158,7 +159,7 @@ module FeatureSignals
       request["Accept"] = "application/json"
 
       response = http.request(request)
-      raise "HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+      raise HttpError, response.code unless response.is_a?(Net::HTTPSuccess)
 
       data = JSON.parse(response.body)
       set_flags(data)
@@ -176,15 +177,18 @@ module FeatureSignals
     end
 
     def sse_loop
+      delay = 1.0
       until closed?
         begin
           connect_sse
+          delay = 1.0
         rescue StandardError => e
           break if closed?
           emit_error(e)
+          jitter = delay * rand(0.0..0.25)
+          wait_closed(delay + jitter)
+          delay = [delay * 2, 30.0].min
         end
-        break if closed?
-        wait_closed(@options.sse_retry)
       end
     end
 
@@ -195,13 +199,15 @@ module FeatureSignals
 
       http = Net::HTTP.new(url.host, url.port)
       http.use_ssl = url.scheme == "https"
+      http.open_timeout = @options.timeout
+      http.read_timeout = 60
 
       request = Net::HTTP::Get.new(url)
       request["Accept"] = "text/event-stream"
       request["Cache-Control"] = "no-cache"
 
       http.request(request) do |response|
-        raise "SSE HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+        raise SseError, response.code unless response.is_a?(Net::HTTPSuccess)
 
         event_type = ""
         response.read_body do |chunk|

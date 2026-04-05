@@ -162,8 +162,8 @@ function RegisterForm() {
       await api.initiateSignup(form);
       setStep("otp");
       setCountdown(60);
-    } catch (err: any) {
-      setError(err.message || "Signup failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setLoading(false);
     }
@@ -176,8 +176,8 @@ function RegisterForm() {
       const data = await api.completeSignup({ email: form.email, otp });
       setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization, data.tokens.expires_at);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Verification failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -190,8 +190,8 @@ function RegisterForm() {
       await api.resendSignupOTP(form.email);
       setCountdown(60);
       setOtp("");
-    } catch (err: any) {
-      setError(err.message || "Failed to resend code");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to resend code");
     } finally {
       setLoading(false);
     }

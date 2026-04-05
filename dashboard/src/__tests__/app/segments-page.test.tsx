@@ -45,6 +45,7 @@ const mockSegments = [
     match_type: "all",
     rules: [],
     created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
   },
 ];
 
@@ -53,14 +54,14 @@ describe("SegmentsPage", () => {
     vi.clearAllMocks();
 
     const store = useAppStore.getState();
-    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test" }, { id: "org-1" });
+    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
     vi.mocked(api.listSegments).mockResolvedValue(mockSegments);
-    vi.mocked(api.createSegment).mockResolvedValue({ id: "s2" });
-    vi.mocked(api.deleteSegment).mockResolvedValue(undefined as any);
-    vi.mocked(api.updateSegment).mockResolvedValue(undefined as any);
+    vi.mocked(api.createSegment).mockResolvedValue({ id: "s2", key: "new-segment", name: "New Segment", description: "", match_type: "all", rules: [], created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
+    vi.mocked(api.deleteSegment).mockResolvedValue(undefined as never);
+    vi.mocked(api.updateSegment).mockResolvedValue(undefined as never);
   });
 
   afterEach(() => {

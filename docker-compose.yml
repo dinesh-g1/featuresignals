@@ -9,11 +9,17 @@ services:
       POSTGRES_PASSWORD: fsdev
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fs -d featuresignals"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   migrate:
     image: migrate/migrate:v4.17.0
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./server/migrations:/migrations
     command:
@@ -26,8 +32,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - migrate
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: dev-secret-change-in-production

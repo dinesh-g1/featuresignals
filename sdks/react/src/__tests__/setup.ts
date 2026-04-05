@@ -33,10 +33,19 @@ try {
   // Already defined as non-configurable
 }
 
-if (typeof globalThis.requestAnimationFrame === "undefined") {
-  (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 0);
-  (globalThis as any).cancelAnimationFrame = (id: number) => clearTimeout(id);
+type TestGlobalThis = typeof globalThis & {
+  requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
+  cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};
+
+const testGlobal = globalThis as TestGlobalThis;
+
+if (typeof testGlobal.requestAnimationFrame === "undefined") {
+  testGlobal.requestAnimationFrame = (cb: FrameRequestCallback) =>
+    setTimeout(cb, 0) as unknown as number;
+  testGlobal.cancelAnimationFrame = (id: number) => clearTimeout(id);
 }
 
 // React checks this for act() warnings
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+testGlobal.IS_REACT_ACT_ENVIRONMENT = true;

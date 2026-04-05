@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import type { Condition } from "@/lib/types";
 import { SegmentRulesEditor } from "@/components/segment-rules-editor";
 
 vi.mock("@/components/ui/select", () => ({
@@ -27,10 +28,10 @@ vi.mock("@/components/ui/select", () => ({
 }));
 
 describe("SegmentRulesEditor", () => {
-  let onSave: ReturnType<typeof vi.fn>;
+  let onSave: ReturnType<typeof vi.fn> & ((rules: Condition[], matchType: string) => Promise<void>);
 
   beforeEach(() => {
-    onSave = vi.fn().mockResolvedValue(undefined);
+    onSave = vi.fn().mockResolvedValue(undefined) as typeof onSave;
   });
 
   it("renders empty state text when no rules", () => {

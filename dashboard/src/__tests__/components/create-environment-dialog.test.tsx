@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import type { Environment } from "@/lib/types";
 import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
 
 vi.mock("@/lib/api", () => ({
@@ -20,13 +21,13 @@ import { api } from "@/lib/api";
 const mockCreateEnvironment = api.createEnvironment as ReturnType<typeof vi.fn>;
 
 describe("CreateEnvironmentDialog", () => {
-  let onOpenChange: ReturnType<typeof vi.fn>;
-  let onCreated: ReturnType<typeof vi.fn>;
+  let onOpenChange: ReturnType<typeof vi.fn> & ((open: boolean) => void);
+  let onCreated: ReturnType<typeof vi.fn> & ((env: Environment) => void);
 
   beforeEach(() => {
     vi.clearAllMocks();
-    onOpenChange = vi.fn();
-    onCreated = vi.fn();
+    onOpenChange = vi.fn() as typeof onOpenChange;
+    onCreated = vi.fn() as typeof onCreated;
     mockCreateEnvironment.mockResolvedValue({
       id: "env-new",
       name: "Staging",

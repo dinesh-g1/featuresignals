@@ -10,11 +10,16 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-type SegmentHandler struct {
-	store domain.Store
+type segmentStore interface {
+	domain.SegmentStore
+	projectGetter
 }
 
-func NewSegmentHandler(store domain.Store) *SegmentHandler {
+type SegmentHandler struct {
+	store segmentStore
+}
+
+func NewSegmentHandler(store segmentStore) *SegmentHandler {
 	return &SegmentHandler{store: store}
 }
 

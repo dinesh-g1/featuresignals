@@ -8,14 +8,15 @@ import { PageHeader, Card, CardHeader, Button, Badge, EmptyState } from "@/compo
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { ArrowLeftRight } from "lucide-react";
+import type { Environment, EnvComparisonItem, EnvComparisonResponse } from "@/lib/types";
 
 export default function EnvComparisonPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [envs, setEnvs] = useState<any[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
   const [sourceEnv, setSourceEnv] = useState("");
   const [targetEnv, setTargetEnv] = useState("");
-  const [comparison, setComparison] = useState<any>(null);
+  const [comparison, setComparison] = useState<EnvComparisonResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
@@ -42,8 +43,8 @@ export default function EnvComparisonPage() {
       const result = await api.compareEnvironments(token, projectId, sourceEnv, targetEnv);
       setComparison(result);
       setSelected(new Set());
-    } catch (err: any) {
-      toast(err.message || "Failed to compare", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to compare", "error");
     } finally {
       setLoading(false);
     }
@@ -60,8 +61,8 @@ export default function EnvComparisonPage() {
       });
       toast(`Synced ${selected.size} flag(s)`, "success");
       handleCompare();
-    } catch (err: any) {
-      toast(err.message || "Sync failed", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Sync failed", "error");
     } finally {
       setSyncing(false);
     }
@@ -81,7 +82,7 @@ export default function EnvComparisonPage() {
     if (selected.size === comparison.diffs.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(comparison.diffs.map((d: any) => d.flag_key)));
+      setSelected(new Set(comparison.diffs.map((d) => d.flag_key)));
     }
   }
 
@@ -167,7 +168,7 @@ export default function EnvComparisonPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {(comparison.diffs ?? []).map((d: any) => (
+                    {(comparison.diffs ?? []).map((d) => (
                       <tr key={d.flag_key} className="transition-colors hover:bg-indigo-50/30">
                         <td className="px-4 py-3 sm:px-6">
                           <input

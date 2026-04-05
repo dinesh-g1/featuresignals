@@ -6,6 +6,7 @@ import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label, Badge, EmptyState } from "@/components/ui";
 import { UsersRound, X } from "lucide-react";
+import type { CompareEntitiesResult } from "@/lib/types";
 
 function AttrEditor({ attrs, setAttrs }: { attrs: { key: string; value: string }[]; setAttrs: (a: { key: string; value: string }[]) => void }) {
   return (
@@ -45,12 +46,12 @@ export default function EntityComparisonPage() {
   const [keyB, setKeyB] = useState("");
   const [attrsA, setAttrsA] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [attrsB, setAttrsB] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
-  const [results, setResults] = useState<any[] | null>(null);
+  const [results, setResults] = useState<CompareEntitiesResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showDiffOnly, setShowDiffOnly] = useState(false);
 
   function buildAttrs(list: { key: string; value: string }[]) {
-    const attrs: Record<string, any> = {};
+    const attrs: Record<string, unknown> = {};
     list.forEach((a) => { if (a.key.trim()) attrs[a.key.trim()] = a.value; });
     return attrs;
   }
@@ -65,8 +66,8 @@ export default function EntityComparisonPage() {
         entity_b: { key: keyB, attributes: buildAttrs(attrsB) },
       });
       setResults(data);
-    } catch (err: any) {
-      toast(err.message || "Comparison failed", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Comparison failed", "error");
     } finally {
       setLoading(false);
     }
@@ -134,7 +135,7 @@ export default function EntityComparisonPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered?.map((r: any) => (
+                  {filtered?.map((r) => (
                     <tr key={r.flag_key} className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-indigo-50/30"}`}>
                       <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">{r.flag_key}</td>
                       <td className="px-4 py-3">

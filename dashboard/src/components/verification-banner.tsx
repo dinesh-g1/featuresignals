@@ -23,8 +23,8 @@ export function VerificationBanner() {
     try {
       await api.sendVerificationEmail(token);
       toast("Verification email sent", "success");
-    } catch (err: any) {
-      toast(err.message || "Failed to send email", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to send email", "error");
     } finally {
       setSending(false);
     }

@@ -45,7 +45,7 @@ describe("AuthGuard", () => {
   });
 
   it("renders children when token is present after hydration", async () => {
-    useAppStore.getState().setAuth("tok", "ref", { id: "u1" }, undefined, Math.floor(Date.now() / 1000) + 7200);
+    useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, undefined, Math.floor(Date.now() / 1000) + 7200);
 
     render(
       <AuthGuard>
@@ -60,7 +60,7 @@ describe("AuthGuard", () => {
 
   it("triggers proactive refresh immediately when token expires within 5 minutes", async () => {
     const almostExpired = Math.floor(Date.now() / 1000) + 120;
-    useAppStore.getState().setAuth("tok", "ref", { id: "u1" }, undefined, almostExpired);
+    useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, undefined, almostExpired);
 
     mockRefresh.mockResolvedValue({
       tokens: { access_token: "new-tok", refresh_token: "new-ref", expires_at: almostExpired + 3600 },
@@ -81,7 +81,7 @@ describe("AuthGuard", () => {
 
   it("schedules proactive refresh before expiry when token has time remaining", async () => {
     const futureExpiry = Math.floor(Date.now() / 1000) + 600;
-    useAppStore.getState().setAuth("tok", "ref", { id: "u1" }, undefined, futureExpiry);
+    useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, undefined, futureExpiry);
 
     mockRefresh.mockResolvedValue({
       tokens: { access_token: "new-tok", refresh_token: "new-ref", expires_at: futureExpiry + 3600 },
@@ -106,11 +106,9 @@ describe("AuthGuard", () => {
 
   it("updates store with new tokens after proactive refresh succeeds", async () => {
     const almostExpired = Math.floor(Date.now() / 1000) + 60;
-    useAppStore.getState().setAuth("old-tok", "old-ref", { id: "u1" }, { id: "o1" }, almostExpired);
+    useAppStore.getState().setAuth("old-tok", "old-ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "o1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, almostExpired);
 
-    mockRefresh.mockResolvedValue({
-      tokens: { access_token: "new-tok", refresh_token: "new-ref", expires_at: 99999 },
-    });
+    mockRefresh.mockResolvedValue({ access_token: "new-tok", refresh_token: "new-ref", expires_at: 99999 });
 
     render(
       <AuthGuard>
@@ -129,7 +127,7 @@ describe("AuthGuard", () => {
   });
 
   it("does not set up timer when no expiresAt is stored", async () => {
-    useAppStore.getState().setAuth("tok", "ref", { id: "u1" });
+    useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
 
     render(
       <AuthGuard>
@@ -146,7 +144,7 @@ describe("AuthGuard", () => {
 
   it("redirects to login with session_expired when proactive refresh fails", async () => {
     const almostExpired = Math.floor(Date.now() / 1000) + 60;
-    useAppStore.getState().setAuth("tok", "ref", { id: "u1" }, undefined, almostExpired);
+    useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, undefined, almostExpired);
 
     mockRefresh.mockRejectedValue(new Error("refresh failed"));
 

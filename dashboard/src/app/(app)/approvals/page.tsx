@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, Card, Button, Badge, EmptyState, Textarea } from "@/components/ui";
 import { CheckCircle } from "lucide-react";
+import type { ApprovalRequest } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_VARIANT: Record<string, "warning" | "success" | "danger" | "info"> = {
@@ -16,7 +17,7 @@ const STATUS_VARIANT: Record<string, "warning" | "success" | "danger" | "info"> 
 
 export default function ApprovalsPage() {
   const token = useAppStore((s) => s.token);
-  const [approvals, setApprovals] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const [filter, setFilter] = useState("");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -73,7 +74,7 @@ export default function ApprovalsPage() {
           />
         ) : (
           <div className="divide-y divide-slate-100">
-            {approvals.map((ar: any) => {
+            {approvals.map((ar) => {
               const isReviewing = reviewingId === ar.id;
               return (
                 <div key={ar.id} className="px-4 py-3 space-y-2 sm:px-6 sm:py-4">

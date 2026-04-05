@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -19,15 +20,27 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+type authStore interface {
+	domain.UserReader
+	domain.UserWriter
+	domain.OrgReader
+	domain.OrgWriter
+	domain.OrgMemberStore
+	domain.ProjectWriter
+	domain.EnvironmentWriter
+	domain.OneTimeTokenStore
+	RestoreOrganization(ctx context.Context, orgID string) error
+}
+
 type AuthHandler struct {
-	store        domain.Store
+	store        authStore
 	jwtMgr       auth.TokenManager
 	emailSender  email.VerificationSender
 	appBaseURL   string
 	dashboardURL string
 }
 
-func NewAuthHandler(store domain.Store, jwtMgr auth.TokenManager, emailSender email.VerificationSender, appBaseURL, dashboardURL string) *AuthHandler {
+func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, emailSender email.VerificationSender, appBaseURL, dashboardURL string) *AuthHandler {
 	return &AuthHandler{
 		store:        store,
 		jwtMgr:       jwtMgr,

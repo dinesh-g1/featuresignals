@@ -54,7 +54,7 @@ vi.mock("@/components/ui/select", () => ({
 import { api } from "@/lib/api";
 import TeamPage from "@/app/(app)/settings/team/page";
 
-const mockApi = api as {
+const mockApi = api as unknown as {
   listMembers: ReturnType<typeof vi.fn>;
   inviteMember: ReturnType<typeof vi.fn>;
   updateMemberRole: ReturnType<typeof vi.fn>;
@@ -75,8 +75,8 @@ describe("TeamPage", () => {
     useAppStore.getState().setAuth(
       "test-token",
       "test-refresh",
-      { id: "u1", name: "Test", email: "test@test.com", role: "admin", email_verified: true },
-      { id: "org-1", name: "Test Org", plan: "pro" },
+      { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
       9999999999,
     );
     useAppStore.getState().setCurrentProject("proj-1");

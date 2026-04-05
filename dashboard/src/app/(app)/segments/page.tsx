@@ -8,6 +8,7 @@ import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label, EmptyState } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Users, Trash2, ChevronDown } from "lucide-react";
+import type { Segment, Condition } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const MATCH_TYPE_OPTIONS = [
@@ -18,7 +19,7 @@ const MATCH_TYPE_OPTIONS = [
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [segments, setSegments] = useState<any[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ key: "", name: "", description: "", match_type: "all" });
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -43,8 +44,8 @@ export default function SegmentsPage() {
       setForm({ key: "", name: "", description: "", match_type: "all" });
       toast("Segment created", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to create segment", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create segment", "error");
     }
   }
 
@@ -55,20 +56,20 @@ export default function SegmentsPage() {
       setDeleting(null);
       toast("Segment deleted", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to delete segment", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to delete segment", "error");
       setDeleting(null);
     }
   }
 
-  async function handleSaveRules(segKey: string, rules: any[], matchType: string) {
+  async function handleSaveRules(segKey: string, rules: Condition[], matchType: string) {
     if (!token || !projectId) return;
     try {
       await api.updateSegment(token, projectId, segKey, { rules, match_type: matchType });
       toast("Segment rules saved", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to save rules", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to save rules", "error");
     }
   }
 

@@ -134,6 +134,35 @@ public sealed class ClientTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CreateAsync_ReturnsReadyClient()
+    {
+        var opts = new ClientOptions
+        {
+            EnvKey = "dev",
+            BaseUrl = _baseUrl,
+            PollingInterval = TimeSpan.FromSeconds(60)
+        };
+        using var client = await FeatureSignalsClient.CreateAsync("test-key", opts);
+        Assert.True(client.IsReady);
+        Assert.True(client.BoolVariation("feature-a", fallback: false));
+    }
+
+    [Fact]
+    public async Task CreateAsync_RespectsTimeout()
+    {
+        var opts = new ClientOptions
+        {
+            EnvKey = "dev",
+            BaseUrl = "http://127.0.0.1:1",
+            PollingInterval = TimeSpan.FromSeconds(60),
+            Timeout = TimeSpan.FromMilliseconds(200)
+        };
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        await Assert.ThrowsAnyAsync<Exception>(
+            () => FeatureSignalsClient.CreateAsync("test-key", opts, cts.Token));
+    }
+
+    [Fact]
     public void OnReady_CallbackFires()
     {
         var fired = new ManualResetEventSlim(false);
@@ -158,8 +187,9 @@ public sealed class ClientTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Helper that subscribes to OnReady before the constructor's initial fetch
-    /// would complete — achieved by subscribing in the same scope.
+    /// Helper that subscribes to OnReady before the background fetch can
+    /// complete. Subscribe first, then check IsReady to avoid the race where
+    /// OnReady fires between the check and the subscription.
     /// </summary>
     private sealed class ReadyTrackingClient
     {
@@ -168,10 +198,9 @@ public sealed class ClientTests : IAsyncLifetime
         public ReadyTrackingClient(string sdkKey, ClientOptions opts, ManualResetEventSlim signal)
         {
             Client = new FeatureSignalsClient(sdkKey, opts);
+            Client.OnReady += () => signal.Set();
             if (Client.IsReady)
                 signal.Set();
-            else
-                Client.OnReady += () => signal.Set();
         }
     }
 }

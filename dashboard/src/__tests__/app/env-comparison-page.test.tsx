@@ -41,7 +41,7 @@ vi.mock("@/components/ui/select", () => ({
 import { api } from "@/lib/api";
 import EnvComparisonPage from "@/app/(app)/env-comparison/page";
 
-const mockApi = api as Record<string, ReturnType<typeof vi.fn>>;
+const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
 const envs = [
   { id: "env-1", name: "Production", slug: "prod", color: "#4f46e5" },
@@ -49,13 +49,17 @@ const envs = [
 ];
 
 const comparisonResult = {
-  total: 5,
+  total: 1,
   diff_count: 1,
   diffs: [
     {
       flag_key: "enable-feature",
       source_enabled: true,
       target_enabled: false,
+      source_rollout: null,
+      target_rollout: null,
+      source_rules: 0,
+      target_rules: 0,
       differences: ["enabled"],
     },
   ],
@@ -68,8 +72,8 @@ describe("EnvComparisonPage", () => {
       .setAuth(
         "test-token",
         "test-refresh",
-        { id: "u1", name: "Test", email: "test@test.com", role: "admin", email_verified: true },
-        { id: "org-1", name: "Test Org", plan: "pro" },
+        { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+        { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
         9999999999,
       );
     useAppStore.getState().setCurrentProject("proj-1");

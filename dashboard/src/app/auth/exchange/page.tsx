@@ -27,8 +27,8 @@ function ExchangeContent() {
         setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, undefined, data.tokens.expires_at);
         router.replace("/dashboard");
       })
-      .catch((err: any) => {
-        setError(err.message || "Token exchange failed. The link may have expired.");
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Token exchange failed. The link may have expired.");
       });
   }, [searchParams, router, setAuth, exchanged]);
 

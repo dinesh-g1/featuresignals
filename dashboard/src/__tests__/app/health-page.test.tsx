@@ -26,7 +26,7 @@ vi.mock("@/lib/api", () => ({
 import { api } from "@/lib/api";
 import FlagHealthPage from "@/app/(app)/health/page";
 
-const mockApi = api as Record<string, ReturnType<typeof vi.fn>>;
+const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
 const now = new Date();
 const staleDate = new Date(now.getTime() - 100 * 24 * 60 * 60 * 1000).toISOString();
@@ -38,7 +38,12 @@ const mockFlags = [
     id: "f1",
     key: "stale-flag",
     name: "Stale Flag",
+    flag_type: "boolean",
+    default_value: false,
     category: "release",
+    status: "active",
+    tags: [],
+    created_at: staleDate,
     updated_at: staleDate,
     description: "A stale flag",
   },
@@ -46,7 +51,12 @@ const mockFlags = [
     id: "f2",
     key: "fresh-flag",
     name: "Fresh Flag",
+    flag_type: "boolean",
+    default_value: false,
     category: "release",
+    status: "active",
+    tags: [],
+    created_at: recentDate,
     updated_at: recentDate,
     description: "A fresh flag",
   },
@@ -54,7 +64,12 @@ const mockFlags = [
     id: "f3",
     key: "expired-flag",
     name: "Expired Flag",
+    flag_type: "boolean",
+    default_value: false,
     category: "release",
+    status: "active",
+    tags: [],
+    created_at: recentDate,
     updated_at: recentDate,
     expires_at: expiredDate,
     description: "An expired flag",
@@ -68,8 +83,8 @@ describe("FlagHealthPage", () => {
       .setAuth(
         "test-token",
         "test-refresh",
-        { id: "u1", name: "Test", email: "test@test.com", role: "admin", email_verified: true },
-        { id: "org-1", name: "Test Org", plan: "pro" },
+        { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+        { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
         9999999999,
       );
     useAppStore.getState().setCurrentProject("proj-1");

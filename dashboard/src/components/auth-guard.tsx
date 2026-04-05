@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 
+
 const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -26,9 +27,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!currentRefreshToken) return;
 
     try {
-      const data: any = await api.refresh(currentRefreshToken);
-      if (!data) return;
-      const tokens = data.tokens ?? data;
+      const tokens = await api.refresh(currentRefreshToken);
       if (!tokens?.access_token) return;
       const user = useAppStore.getState().user;
       const org = useAppStore.getState().organization;

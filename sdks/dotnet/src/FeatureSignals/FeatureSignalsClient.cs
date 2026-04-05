@@ -11,6 +11,10 @@ namespace FeatureSignals;
 /// </summary>
 public sealed class FeatureSignalsClient : IDisposable
 {
+    private const int SseBackoffBaseMs = 1000;
+    private const int SseBackoffMaxMs = 30000;
+    private const double SseJitterFraction = 0.25;
+
     private readonly string _sdkKey;
     private readonly ClientOptions _options;
     private readonly EvalContext _context;
@@ -30,6 +34,13 @@ public sealed class FeatureSignalsClient : IDisposable
     /// <summary>Fires whenever the local flag cache is updated.</summary>
     public event Action<IReadOnlyDictionary<string, object?>>? OnUpdate;
 
+    /// <summary>
+    /// Creates a new client instance. The constructor performs no blocking I/O;
+    /// flags are fetched asynchronously in the background. Use
+    /// <see cref="CreateAsync"/> for an awaitable factory that returns only
+    /// after the first successful fetch, or call <see cref="WaitForReadyAsync"/>
+    /// to await readiness after construction.
+    /// </summary>
     public FeatureSignalsClient(string sdkKey, ClientOptions options)
     {
         if (string.IsNullOrWhiteSpace(sdkKey))
@@ -40,22 +51,24 @@ public sealed class FeatureSignalsClient : IDisposable
         _sdkKey = sdkKey;
         _options = options;
         _context = options.DefaultContext ?? new EvalContext("server");
-
         _httpClient = new HttpClient { Timeout = options.Timeout };
-
-        try
-        {
-            Refresh();
-            MarkReady();
-        }
-        catch (Exception ex)
-        {
-            EmitError(ex);
-        }
 
         _ = _options.Streaming
             ? Task.Run(SseLoopAsync)
             : Task.Run(PollLoopAsync);
+    }
+
+    /// <summary>
+    /// Async factory that creates a client and awaits the first successful
+    /// flag fetch. Preferred over the constructor when async initialization
+    /// is available.
+    /// </summary>
+    public static async Task<FeatureSignalsClient> CreateAsync(
+        string sdkKey, ClientOptions options, CancellationToken cancellationToken = default)
+    {
+        var client = new FeatureSignalsClient(sdkKey, options);
+        await client.WaitForReadyAsync(cancellationToken: cancellationToken);
+        return client;
     }
 
     // ── Flag access ─────────────────────────────────────────
@@ -117,10 +130,11 @@ public sealed class FeatureSignalsClient : IDisposable
 
     public bool IsReady => _readyTcs.Task.IsCompletedSuccessfully;
 
-    public Task WaitForReadyAsync(TimeSpan? timeout = null)
+    public Task WaitForReadyAsync(
+        TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         var t = timeout ?? TimeSpan.FromSeconds(10);
-        return _readyTcs.Task.WaitAsync(t);
+        return _readyTcs.Task.WaitAsync(t, cancellationToken);
     }
 
     public void Dispose()
@@ -188,7 +202,7 @@ public sealed class FeatureSignalsClient : IDisposable
         catch { /* swallow */ }
     }
 
-    private void Refresh()
+    private async Task RefreshAsync(CancellationToken cancellationToken)
     {
         var envKey = Uri.EscapeDataString(_options.EnvKey);
         var ctxKey = Uri.EscapeDataString(_context.Key);
@@ -198,11 +212,11 @@ public sealed class FeatureSignalsClient : IDisposable
         request.Headers.Add("X-API-Key", _sdkKey);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        using var response = _httpClient.Send(request, _cts.Token);
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        using var stream = response.Content.ReadAsStream();
-        using var doc = JsonDocument.Parse(stream);
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
 
         var flags = new Dictionary<string, JsonElement>();
         foreach (var prop in doc.RootElement.EnumerateObject())
@@ -214,6 +228,21 @@ public sealed class FeatureSignalsClient : IDisposable
     private async Task PollLoopAsync()
     {
         var token = _cts.Token;
+
+        try
+        {
+            await RefreshAsync(token);
+            MarkReady();
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            EmitError(ex);
+        }
+
         while (!token.IsCancellationRequested)
         {
             try
@@ -227,8 +256,12 @@ public sealed class FeatureSignalsClient : IDisposable
 
             try
             {
-                Refresh();
+                await RefreshAsync(token);
                 MarkReady();
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
             catch (Exception ex)
             {
@@ -240,11 +273,30 @@ public sealed class FeatureSignalsClient : IDisposable
     private async Task SseLoopAsync()
     {
         var token = _cts.Token;
+
+        try
+        {
+            await RefreshAsync(token);
+            MarkReady();
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            EmitError(ex);
+        }
+
+        var random = new Random();
+        var attempt = 0;
+
         while (!token.IsCancellationRequested)
         {
             try
             {
                 await ConnectSseAsync(token);
+                attempt = 0;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -257,9 +309,14 @@ public sealed class FeatureSignalsClient : IDisposable
 
             if (token.IsCancellationRequested) return;
 
+            var baseDelayMs = (int)Math.Min(
+                SseBackoffBaseMs * (1L << Math.Min(attempt, 14)), SseBackoffMaxMs);
+            var jitter = (int)(baseDelayMs * SseJitterFraction * random.NextDouble());
+            attempt++;
+
             try
             {
-                await Task.Delay(_options.SseRetry, token);
+                await Task.Delay(baseDelayMs + jitter, token);
             }
             catch (OperationCanceledException)
             {
@@ -289,7 +346,7 @@ public sealed class FeatureSignalsClient : IDisposable
         while (!token.IsCancellationRequested)
         {
             var line = await reader.ReadLineAsync(token);
-            if (line is null) break; // stream closed
+            if (line is null) break;
 
             if (line.StartsWith("event:", StringComparison.Ordinal))
             {
@@ -299,7 +356,8 @@ public sealed class FeatureSignalsClient : IDisposable
             {
                 if (eventType == "flag-update")
                 {
-                    try { Refresh(); }
+                    try { await RefreshAsync(token); }
+                    catch (OperationCanceledException) { throw; }
                     catch (Exception ex) { EmitError(ex); }
                 }
                 eventType = "";
