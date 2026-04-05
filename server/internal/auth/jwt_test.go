@@ -112,8 +112,25 @@ func TestValidateToken_ExpiredToken(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for expired token")
 	}
-	if err != ErrInvalidToken {
-		t.Errorf("expected ErrInvalidToken, got %v", err)
+	if err != ErrTokenExpired {
+		t.Errorf("expected ErrTokenExpired, got %v", err)
+	}
+}
+
+func TestValidateRefreshToken_ExpiredToken(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", -1*time.Minute, -1*time.Minute)
+
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error: %v", err)
+	}
+
+	_, err = mgr.ValidateRefreshToken(pair.RefreshToken)
+	if err == nil {
+		t.Error("expected error for expired refresh token")
+	}
+	if err != ErrTokenExpired {
+		t.Errorf("expected ErrTokenExpired, got %v", err)
 	}
 }
 
@@ -143,6 +160,50 @@ func TestValidateToken_WrongSecret(t *testing.T) {
 	_, err = mgr2.ValidateToken(pair.AccessToken)
 	if err == nil {
 		t.Error("expected error when validating with wrong secret")
+	}
+	if err != ErrInvalidToken {
+		t.Errorf("expected ErrInvalidToken for wrong secret, got %v", err)
+	}
+}
+
+func TestExpiredVsInvalid_AreDifferentErrors(t *testing.T) {
+	if ErrTokenExpired == ErrInvalidToken {
+		t.Error("ErrTokenExpired and ErrInvalidToken should be distinct sentinel errors")
+	}
+}
+
+func TestValidateToken_ExpiredReturnsExpiredNotInvalid(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", -1*time.Minute, 24*time.Hour)
+
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error: %v", err)
+	}
+
+	_, err = mgr.ValidateToken(pair.AccessToken)
+	if err == nil {
+		t.Fatal("expected error for expired token")
+	}
+	if err == ErrInvalidToken {
+		t.Error("expired token should return ErrTokenExpired, not ErrInvalidToken")
+	}
+	if err != ErrTokenExpired {
+		t.Errorf("expected ErrTokenExpired, got %v", err)
+	}
+}
+
+func TestValidateToken_GarbageReturnsInvalidNotExpired(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+
+	_, err := mgr.ValidateToken("not-a-jwt")
+	if err == nil {
+		t.Fatal("expected error for garbage token")
+	}
+	if err == ErrTokenExpired {
+		t.Error("garbage token should return ErrInvalidToken, not ErrTokenExpired")
+	}
+	if err != ErrInvalidToken {
+		t.Errorf("expected ErrInvalidToken, got %v", err)
 	}
 }
 

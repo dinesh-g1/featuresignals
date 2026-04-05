@@ -2,11 +2,12 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/auth"
+	"github.com/featuresignals/server/internal/httputil"
 )
 
 type contextKey string
@@ -35,7 +36,11 @@ func JWTAuth(jwtMgr auth.TokenManager) func(http.Handler) http.Handler {
 
 			claims, err := jwtMgr.ValidateToken(parts[1])
 			if err != nil {
-				httputil.Error(w, http.StatusUnauthorized, "invalid or expired token")
+				if errors.Is(err, auth.ErrTokenExpired) {
+					httputil.Error(w, http.StatusUnauthorized, "token_expired")
+				} else {
+					httputil.Error(w, http.StatusUnauthorized, "invalid or expired token")
+				}
 				return
 			}
 

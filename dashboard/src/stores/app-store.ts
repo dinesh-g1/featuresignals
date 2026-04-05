@@ -4,11 +4,12 @@ import { persist } from "zustand/middleware";
 interface AppState {
   token: string | null;
   refreshToken: string | null;
+  expiresAt: number | null;
   user: any | null;
   organization: any | null;
   currentProjectId: string | null;
   currentEnvId: string | null;
-  setAuth: (token: string, refreshToken: string, user: any, organization?: any) => void;
+  setAuth: (token: string, refreshToken: string, user: any, organization?: any, expiresAt?: number) => void;
   logout: () => void;
   setCurrentProject: (id: string) => void;
   setCurrentEnv: (id: string) => void;
@@ -19,16 +20,18 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       token: null,
       refreshToken: null,
+      expiresAt: null,
       user: null,
       organization: null,
       currentProjectId: null,
       currentEnvId: null,
-      setAuth: (token, refreshToken, user, organization) =>
-        set({ token, refreshToken, user, organization: organization ?? null }),
+      setAuth: (token, refreshToken, user, organization, expiresAt) =>
+        set({ token, refreshToken, user, organization: organization ?? null, expiresAt: expiresAt ?? null }),
       logout: () =>
         set({
           token: null,
           refreshToken: null,
+          expiresAt: null,
           user: null,
           organization: null,
           currentProjectId: null,

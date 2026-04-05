@@ -1,9 +1,12 @@
+import { useAppStore } from "@/stores/app-store";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface RequestOptions {
   method?: string;
   body?: unknown;
   token?: string;
+  _retry?: boolean;
 }
 
 export class APIError extends Error {
@@ -12,6 +15,39 @@ export class APIError extends Error {
     message: string,
   ) {
     super(message);
+  }
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+async function attemptTokenRefresh(): Promise<boolean> {
+  const { refreshToken, logout, setAuth } = useAppStore.getState();
+  if (!refreshToken) return false;
+
+  try {
+    const res = await fetch(`${API_URL}/v1/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return false;
+
+    const data = await res.json();
+    const tokens = data.tokens ?? data;
+    const user = useAppStore.getState().user;
+    const org = useAppStore.getState().organization;
+    setAuth(tokens.access_token, tokens.refresh_token, user, org, tokens.expires_at);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function handleSessionExpired() {
+  const { logout } = useAppStore.getState();
+  logout();
+  if (typeof window !== "undefined") {
+    window.location.href = "/login?session_expired=true";
   }
 }
 
@@ -38,6 +74,26 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         window.location.href = "/register";
       }
       throw new APIError(403, data.error);
+    }
+
+    if (res.status === 401 && data.error === "token_expired" && options.token && !options._retry) {
+      if (!refreshPromise) {
+        refreshPromise = attemptTokenRefresh().finally(() => { refreshPromise = null; });
+      }
+
+      const refreshed = await refreshPromise;
+      if (refreshed) {
+        const newToken = useAppStore.getState().token;
+        return request<T>(path, { ...options, token: newToken!, _retry: true });
+      }
+
+      handleSessionExpired();
+      throw new APIError(401, "session_expired");
+    }
+
+    if (res.status === 401 && options.token) {
+      handleSessionExpired();
+      throw new APIError(401, data.error || "Request failed");
     }
 
     throw new APIError(res.status, data.error || "Request failed");
@@ -73,12 +129,13 @@ export const api = {
 
   // Auth
   login: (data: { email: string; password: string }) =>
-    request<{ user: any; organization: any; tokens: { access_token: string; refresh_token: string } }>(
+    request<{ user: any; organization: any; tokens: { access_token: string; refresh_token: string; expires_at: number } }>(
       "/v1/auth/login",
       { method: "POST", body: data },
     ),
   refresh: (refreshToken: string) =>
-    request("/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
+    request<{ tokens: { access_token: string; refresh_token: string; expires_at: number } }>(
+      "/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
   sendVerificationEmail: (token: string) =>
     request("/v1/auth/send-verification-email", { method: "POST", token }),
 
