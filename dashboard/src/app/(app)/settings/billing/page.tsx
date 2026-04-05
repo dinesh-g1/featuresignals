@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
@@ -34,7 +34,7 @@ const statusBadgeVariant: Record<string, "success" | "warning" | "danger" | "inf
   unpaid: "danger",
 };
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const token = useAppStore((s) => s.token);
   const [loading, setLoading] = useState(true);
@@ -214,6 +214,14 @@ export default function BillingPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner fullPage />}>
+      <BillingContent />
+    </Suspense>
   );
 }
 
