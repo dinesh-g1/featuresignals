@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { createMockProject, createMockFlag, createMockAuditEntry } from "@/__tests__/helpers/fixtures";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -39,8 +40,8 @@ describe("DashboardPage", () => {
     useAppStore.getState().setAuth(
       "test-token",
       "test-refresh",
-      { id: "u1", name: "Test" },
-      { id: "org-1", plan: "pro" },
+      { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
       9999999999,
     );
     useAppStore.getState().setCurrentProject("proj-1");
@@ -75,14 +76,14 @@ describe("DashboardPage", () => {
 
   it("renders stat cards with counts", async () => {
     vi.mocked(api.listProjects).mockResolvedValue([
-      { id: "p1", name: "Proj 1" },
-      { id: "p2", name: "Proj 2" },
+      createMockProject({ id: "p1", name: "Proj 1" }),
+      createMockProject({ id: "p2", name: "Proj 2" }),
     ]);
     vi.mocked(api.listFlags).mockResolvedValue([
-      { id: "f1", key: "flag-1" },
+      createMockFlag({ id: "f1", key: "flag-1" }),
     ]);
     vi.mocked(api.listAudit).mockResolvedValue([
-      { id: "a1", action: "create", resource_type: "flag", created_at: "2024-01-01T00:00:00Z" },
+      createMockAuditEntry({ id: "a1", action: "create", resource_type: "flag", created_at: "2024-01-01T00:00:00Z" }),
     ]);
 
     render(<DashboardPage />);
@@ -95,11 +96,11 @@ describe("DashboardPage", () => {
   });
 
   it("displays recent audit entries", async () => {
-    vi.mocked(api.listProjects).mockResolvedValue([{ id: "proj-1", name: "Test" }]);
+    vi.mocked(api.listProjects).mockResolvedValue([createMockProject({ id: "proj-1", name: "Test" })]);
     vi.mocked(api.listFlags).mockResolvedValue([]);
     vi.mocked(api.listAudit).mockResolvedValue([
-      { id: "a1", action: "create", resource_type: "flag", created_at: "2024-01-01T00:00:00Z" },
-      { id: "a2", action: "update", resource_type: "segment", created_at: "2024-01-02T00:00:00Z" },
+      createMockAuditEntry({ id: "a1", action: "create", resource_type: "flag", created_at: "2024-01-01T00:00:00Z" }),
+      createMockAuditEntry({ id: "a2", action: "update", resource_type: "segment", created_at: "2024-01-02T00:00:00Z" }),
     ]);
 
     render(<DashboardPage />);
@@ -124,7 +125,7 @@ describe("DashboardPage", () => {
 
   it("picks first project if none selected", async () => {
     useAppStore.setState({ currentProjectId: null });
-    vi.mocked(api.listProjects).mockResolvedValue([{ id: "auto-proj", name: "Auto" }]);
+    vi.mocked(api.listProjects).mockResolvedValue([createMockProject({ id: "auto-proj", name: "Auto" })]);
     vi.mocked(api.listFlags).mockResolvedValue([]);
     vi.mocked(api.listAudit).mockResolvedValue([]);
 

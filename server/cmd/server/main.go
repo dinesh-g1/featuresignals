@@ -61,7 +61,7 @@ func main() {
 	// Components
 	store := postgres.NewStore(pool)
 	jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.TokenTTL, cfg.RefreshTTL)
-	engine := eval.NewEngine()
+	engine := eval.Chain(eval.NewEngine(), eval.WithLogging(logger))
 	sseServer := sse.NewServer(logger)
 	evalCache := cache.NewCache(store, logger, sseServer)
 

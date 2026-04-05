@@ -6,6 +6,7 @@ import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label, Badge, EmptyState } from "@/components/ui";
 import { UserSearch, X, Search } from "lucide-react";
+import type { InspectEntityResult } from "@/lib/types";
 
 export default function EntityInspectorPage() {
   const token = useAppStore((s) => s.token);
@@ -13,7 +14,7 @@ export default function EntityInspectorPage() {
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const [entityKey, setEntityKey] = useState("");
   const [attrs, setAttrs] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
-  const [results, setResults] = useState<any[] | null>(null);
+  const [results, setResults] = useState<InspectEntityResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -34,14 +35,14 @@ export default function EntityInspectorPage() {
     if (!token || !projectId || !currentEnvId || !entityKey) return;
     setLoading(true);
     try {
-      const attributes: Record<string, any> = {};
+      const attributes: Record<string, unknown> = {};
       attrs.forEach((a) => {
         if (a.key.trim()) attributes[a.key.trim()] = a.value;
       });
       const data = await api.inspectEntity(token, projectId, currentEnvId, { key: entityKey, attributes });
       setResults(data);
-    } catch (err: any) {
-      toast(err.message || "Inspection failed", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Inspection failed", "error");
     } finally {
       setLoading(false);
     }
@@ -122,7 +123,7 @@ export default function EntityInspectorPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered?.map((r: any) => (
+                  {filtered?.map((r) => (
                     <tr key={r.flag_key} className="transition-colors hover:bg-indigo-50/30">
                       <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">{r.flag_key}</td>
                       <td className="px-4 py-3">

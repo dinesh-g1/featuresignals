@@ -14,13 +14,13 @@ import (
 // InsightsHandler serves the entity inspector, entity comparison,
 // and flag usage insights endpoints.
 type InsightsHandler struct {
-	store     domain.Store
+	store     projectGetter
 	cache     RulesetCache
 	engine    Evaluator
 	collector *metrics.Collector
 }
 
-func NewInsightsHandler(store domain.Store, cache RulesetCache, engine Evaluator, collector *metrics.Collector) *InsightsHandler {
+func NewInsightsHandler(store projectGetter, cache RulesetCache, engine Evaluator, collector *metrics.Collector) *InsightsHandler {
 	return &InsightsHandler{store: store, cache: cache, engine: engine, collector: collector}
 }
 

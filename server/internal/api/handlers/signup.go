@@ -14,16 +14,26 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+type signupStore interface {
+	domain.UserReader
+	domain.UserWriter
+	domain.OrgWriter
+	domain.OrgMemberStore
+	domain.ProjectWriter
+	domain.EnvironmentWriter
+	domain.PendingRegistrationStore
+}
+
 // SignupHandler implements the verify-first 2-step signup flow:
 //   1. InitiateSignup: validate input, hash password + OTP, store in pending_registrations, send OTP email
 //   2. CompleteSignup: verify OTP, create user + org + project + envs atomically
 type SignupHandler struct {
-	store     domain.Store
+	store     signupStore
 	jwtMgr    auth.TokenManager
 	otpSender email.OTPSender
 }
 
-func NewSignupHandler(store domain.Store, jwtMgr auth.TokenManager, otpSender email.OTPSender) *SignupHandler {
+func NewSignupHandler(store signupStore, jwtMgr auth.TokenManager, otpSender email.OTPSender) *SignupHandler {
 	return &SignupHandler{store: store, jwtMgr: jwtMgr, otpSender: otpSender}
 }
 

@@ -79,7 +79,7 @@ var DefaultEnvDefs = []struct {
 }
 
 // BootstrapEnvironments creates the default environment set for a project.
-func BootstrapEnvironments(ctx context.Context, store domain.Store, projectID string) []*domain.Environment {
+func BootstrapEnvironments(ctx context.Context, store domain.EnvironmentWriter, projectID string) []*domain.Environment {
 	envs := make([]*domain.Environment, 0, len(DefaultEnvDefs))
 	for _, d := range DefaultEnvDefs {
 		env := &domain.Environment{
@@ -112,8 +112,12 @@ type sampleFlagState struct {
 	variants          []domain.Variant
 }
 
+type flagSeeder interface {
+	domain.FlagWriter
+}
+
 // SeedSampleFlags creates a curated set of feature flags with per-environment states.
-func SeedSampleFlags(ctx context.Context, store domain.Store, project *domain.Project, envs map[string]*domain.Environment, log *slog.Logger) {
+func SeedSampleFlags(ctx context.Context, store flagSeeder, project *domain.Project, envs map[string]*domain.Environment, log *slog.Logger) {
 	flags := []struct {
 		key, name, desc string
 		flagType        domain.FlagType
@@ -214,7 +218,7 @@ func SeedSampleFlags(ctx context.Context, store domain.Store, project *domain.Pr
 }
 
 // SeedSampleSegment creates a sample user segment.
-func SeedSampleSegment(ctx context.Context, store domain.Store, project *domain.Project, log *slog.Logger) {
+func SeedSampleSegment(ctx context.Context, store domain.SegmentStore, project *domain.Project, log *slog.Logger) {
 	seg := &domain.Segment{
 		ProjectID:   project.ID,
 		Key:         "beta-users",
@@ -231,7 +235,7 @@ func SeedSampleSegment(ctx context.Context, store domain.Store, project *domain.
 }
 
 // SeedSampleAPIKeys creates server and client API keys for each environment.
-func SeedSampleAPIKeys(ctx context.Context, store domain.Store, envs map[string]*domain.Environment, log *slog.Logger) {
+func SeedSampleAPIKeys(ctx context.Context, store domain.APIKeyStore, envs map[string]*domain.Environment, log *slog.Logger) {
 	for slug, env := range envs {
 		for _, keyType := range []domain.APIKeyType{domain.APIKeyServer, domain.APIKeyClient} {
 			rawKey, keyHash, keyPrefix := generateAPIKey(keyType)

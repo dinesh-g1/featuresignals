@@ -4,23 +4,7 @@ import { useState } from "react";
 import { Select } from "@/components/ui/select";
 import { Plus, Trash2, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Condition {
-  attribute: string;
-  operator: string;
-  values: string[];
-}
-
-interface TargetingRule {
-  id: string;
-  priority: number;
-  description: string;
-  conditions: Condition[];
-  segment_keys: string[];
-  percentage: number;
-  value: unknown;
-  match_type: string;
-}
+import type { Condition, TargetingRule } from "@/lib/types";
 
 interface Props {
   rules: TargetingRule[];
@@ -192,9 +176,10 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
     setRules((prev) =>
       prev.map((r) => {
         if (r.id !== ruleId) return r;
-        const keys = r.segment_keys.includes(segKey)
-          ? r.segment_keys.filter((k) => k !== segKey)
-          : [...r.segment_keys, segKey];
+        const current = r.segment_keys ?? [];
+        const keys = current.includes(segKey)
+          ? current.filter((k) => k !== segKey)
+          : [...current, segKey];
         return { ...r, segment_keys: keys };
       }),
     );
@@ -274,7 +259,7 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                       </span>
                       <span className="text-xs text-slate-400">
                         {rule.conditions.length} condition{rule.conditions.length !== 1 ? "s" : ""}
-                        {rule.segment_keys.length > 0 && ` · ${rule.segment_keys.length} segment${rule.segment_keys.length !== 1 ? "s" : ""}`}
+                        {(rule.segment_keys?.length ?? 0) > 0 && ` · ${rule.segment_keys!.length} segment${rule.segment_keys!.length !== 1 ? "s" : ""}`}
                         {` · ${(rule.percentage / 100).toFixed(0)}%`}
                       </span>
                     </div>
@@ -383,7 +368,7 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                           <label className="block text-xs font-medium text-slate-500 mb-2">Target Segments</label>
                           <div className="flex flex-wrap gap-2">
                             {segments.map((seg) => {
-                              const active = rule.segment_keys.includes(seg.key);
+                              const active = (rule.segment_keys ?? []).includes(seg.key);
                               return (
                                 <button
                                   key={seg.key}

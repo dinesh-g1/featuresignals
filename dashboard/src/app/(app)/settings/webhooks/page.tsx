@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Link2, Trash2, ChevronDown, Check, X } from "lucide-react";
+import type { Webhook, WebhookDelivery } from "@/lib/types";
 
 const EVENT_TYPES = [
   "flag.created",
@@ -21,24 +22,6 @@ const EVENT_TYPES = [
   "flag.promoted",
 ];
 
-interface Webhook {
-  id: string;
-  name: string;
-  url: string;
-  secret: string;
-  events: string[];
-  enabled: boolean;
-  created_at: string;
-}
-
-interface Delivery {
-  id: string;
-  event_type: string;
-  response_status: number;
-  success: boolean;
-  delivered_at: string;
-}
-
 export default function WebhooksPage() {
   const token = useAppStore((s) => s.token);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
@@ -46,7 +29,7 @@ export default function WebhooksPage() {
   const [form, setForm] = useState({ name: "", url: "", secret: "", events: [] as string[] });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
 
   function reload() {
     if (!token) return;
@@ -64,8 +47,8 @@ export default function WebhooksPage() {
       setForm({ name: "", url: "", secret: "", events: [] });
       toast("Webhook created", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to create webhook", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create webhook", "error");
     }
   }
 
@@ -76,8 +59,8 @@ export default function WebhooksPage() {
       setDeleting(null);
       toast("Webhook deleted", "success");
       reload();
-    } catch (err: any) {
-      toast(err.message || "Failed to delete webhook", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to delete webhook", "error");
       setDeleting(null);
     }
   }

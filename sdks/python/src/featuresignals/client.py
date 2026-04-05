@@ -9,17 +9,44 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 import threading
-import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 from urllib.request import Request, urlopen
-from urllib.parse import quote, urlencode
-from urllib.error import URLError
+from urllib.parse import quote
 
 from .context import EvalContext
 
 logger = logging.getLogger("featuresignals")
+
+_BACKOFF_BASE = 1.0
+_BACKOFF_MULTIPLIER = 2.0
+_BACKOFF_MAX = 30.0
+_BACKOFF_JITTER_FACTOR = 0.25
+
+
+class FeatureSignalsError(Exception):
+    """Base exception for FeatureSignals SDK errors."""
+
+
+class ConfigError(FeatureSignalsError):
+    """Raised when the SDK is misconfigured."""
+
+
+class APIError(FeatureSignalsError):
+    """Raised when the FeatureSignals API returns a non-success response."""
+
+    def __init__(self, status: int, message: str = "") -> None:
+        self.status = status
+        super().__init__(message or f"HTTP {status}")
+
+
+def _backoff_delay(attempt: int) -> float:
+    """Calculate exponential backoff delay with random jitter."""
+    delay = min(_BACKOFF_BASE * (_BACKOFF_MULTIPLIER ** attempt), _BACKOFF_MAX)
+    jitter = random.uniform(0, _BACKOFF_JITTER_FACTOR * delay)
+    return delay + jitter
 
 
 @dataclass
@@ -44,16 +71,18 @@ class FeatureSignalsClient:
         on_update: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         if not sdk_key:
-            raise ValueError("sdk_key is required")
+            raise ConfigError("sdk_key is required")
         if not options.env_key:
-            raise ValueError("options.env_key is required")
+            raise ConfigError("options.env_key is required")
 
         self._sdk_key = sdk_key
         self._options = options
         self._flags: dict[str, Any] = {}
         self._lock = threading.RLock()
         self._ready = threading.Event()
-        self._closed = threading.Event()
+        self._stop_event = threading.Event()
+        self._sse_response: Any = None
+        self._sse_lock = threading.Lock()
 
         self._on_ready = on_ready
         self._on_error = on_error
@@ -100,7 +129,13 @@ class FeatureSignalsClient:
         return self._ready.wait(timeout)
 
     def close(self) -> None:
-        self._closed.set()
+        self._stop_event.set()
+        with self._sse_lock:
+            if self._sse_response is not None:
+                try:
+                    self._sse_response.close()
+                except Exception:
+                    pass
 
     # ── Internals ───────────────────────────────────────────
 
@@ -145,29 +180,40 @@ class FeatureSignalsClient:
         })
         with urlopen(req, timeout=self._options.timeout) as resp:
             if resp.status != 200:
-                raise RuntimeError(f"HTTP {resp.status}")
+                raise APIError(resp.status)
             data = json.loads(resp.read().decode())
         self._set_flags(data)
 
     def _poll_loop(self) -> None:
-        while not self._closed.wait(self._options.polling_interval):
+        attempt = 0
+        while True:
+            wait = self._options.polling_interval if attempt == 0 else _backoff_delay(attempt - 1)
+            if self._stop_event.wait(wait):
+                return
             try:
                 self._refresh()
                 self._mark_ready()
+                attempt = 0
             except Exception as exc:
                 self._emit_error(exc)
+                attempt += 1
 
     def _sse_loop(self) -> None:
-        while not self._closed.is_set():
+        attempt = 0
+        while not self._stop_event.is_set():
             try:
                 self._connect_sse()
+                attempt = 0
             except Exception as exc:
-                if self._closed.is_set():
+                if self._stop_event.is_set():
                     return
                 self._emit_error(exc)
-            if self._closed.is_set():
+            if self._stop_event.is_set():
                 return
-            self._closed.wait(self._options.sse_retry)
+            delay = _backoff_delay(attempt)
+            attempt += 1
+            if self._stop_event.wait(delay):
+                return
 
     def _connect_sse(self) -> None:
         env_key = quote(self._options.env_key, safe="")
@@ -178,13 +224,16 @@ class FeatureSignalsClient:
             "Accept": "text/event-stream",
             "Cache-Control": "no-cache",
         })
-        with urlopen(req, timeout=None) as resp:
+        resp = urlopen(req, timeout=None)
+        with self._sse_lock:
+            self._sse_response = resp
+        try:
             if resp.status != 200:
-                raise RuntimeError(f"SSE HTTP {resp.status}")
+                raise APIError(resp.status, f"SSE HTTP {resp.status}")
 
             event_type = ""
             for raw_line in resp:
-                if self._closed.is_set():
+                if self._stop_event.is_set():
                     return
                 line = raw_line.decode("utf-8").rstrip("\n\r")
 
@@ -197,3 +246,10 @@ class FeatureSignalsClient:
                         except Exception as exc:
                             self._emit_error(exc)
                     event_type = ""
+        finally:
+            with self._sse_lock:
+                self._sse_response = None
+            try:
+                resp.close()
+            except Exception:
+                pass

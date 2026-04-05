@@ -1,15 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { User, Organization } from "@/lib/types";
 
 interface AppState {
   token: string | null;
   refreshToken: string | null;
   expiresAt: number | null;
-  user: any | null;
-  organization: any | null;
+  user: User | null;
+  organization: Organization | null;
   currentProjectId: string | null;
   currentEnvId: string | null;
-  setAuth: (token: string, refreshToken: string, user: any, organization?: any, expiresAt?: number) => void;
+  setAuth: (token: string, refreshToken: string, user: User | null, organization?: Organization | null, expiresAt?: number) => void;
   logout: () => void;
   setCurrentProject: (id: string) => void;
   setCurrentEnv: (id: string) => void;

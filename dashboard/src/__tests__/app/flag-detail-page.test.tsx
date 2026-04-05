@@ -63,13 +63,14 @@ const mockFlag = {
 };
 
 const mockEnvs = [
-  { id: "env-1", name: "Production", slug: "production", color: "#4f46e5" },
+  { id: "env-1", name: "Production", slug: "production", color: "#4f46e5", created_at: "2025-01-01T00:00:00Z" },
 ];
 
 const mockAuditEntries = [
   {
     id: "a1",
     action: "flag.created",
+    actor_type: "user",
     resource_type: "flag",
     resource_id: "f1",
     created_at: "2025-01-01T00:00:00Z",
@@ -77,6 +78,7 @@ const mockAuditEntries = [
   {
     id: "a2",
     action: "flag.toggled",
+    actor_type: "user",
     resource_type: "flag",
     resource_id: "f1",
     created_at: "2025-01-02T00:00:00Z",
@@ -88,7 +90,7 @@ describe("FlagDetailPage", () => {
     vi.clearAllMocks();
 
     const store = useAppStore.getState();
-    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test" }, { id: "org-1" });
+    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
@@ -97,11 +99,13 @@ describe("FlagDetailPage", () => {
     vi.mocked(api.listEnvironments).mockResolvedValue(mockEnvs);
     vi.mocked(api.listSegments).mockResolvedValue([]);
     vi.mocked(api.getFlagState).mockResolvedValue({
+      id: "fs-1",
       enabled: true,
       percentage_rollout: 0,
       rules: [],
+      updated_at: "2025-01-01T00:00:00Z",
     });
-    vi.mocked(api.updateFlagState).mockResolvedValue({});
+    vi.mocked(api.updateFlagState).mockResolvedValue(undefined as never);
     vi.mocked(api.updateFlag).mockResolvedValue(mockFlag);
     vi.mocked(api.deleteFlag).mockResolvedValue(undefined as any);
     vi.mocked(api.listAudit).mockResolvedValue(mockAuditEntries);

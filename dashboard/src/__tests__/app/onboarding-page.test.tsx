@@ -35,15 +35,17 @@ vi.mock("@/components/toast", () => ({
 import { api } from "@/lib/api";
 import OnboardingPage from "@/app/(app)/onboarding/page";
 
-const mockApi = api as Record<string, ReturnType<typeof vi.fn>>;
+const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
 const mockOnboarding = {
-  steps: {
-    plan_chosen: false,
-    flag_created: false,
-    sdk_installed: false,
-    completed: false,
-  },
+  org_id: "org-1",
+  plan_selected: false,
+  first_flag_created: false,
+  first_sdk_connected: false,
+  first_evaluation: false,
+  tour_completed: false,
+  completed: false,
+  updated_at: "2025-01-01T00:00:00Z",
 };
 
 describe("OnboardingPage", () => {
@@ -53,8 +55,8 @@ describe("OnboardingPage", () => {
       .setAuth(
         "test-token",
         "test-refresh",
-        { id: "u1", name: "Test", email: "test@test.com", role: "admin", email_verified: true },
-        { id: "org-1", name: "Test Org", plan: "pro" },
+        { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+        { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
         9999999999,
       );
     useAppStore.getState().setCurrentProject("proj-1");
@@ -101,7 +103,14 @@ describe("OnboardingPage", () => {
   it("shows SDK code examples", async () => {
     // Arrange – skip to SDK step
     mockApi.getOnboarding.mockResolvedValue({
-      steps: { plan_chosen: true, flag_created: true, sdk_installed: false, completed: false },
+      org_id: "org-1",
+      plan_selected: true,
+      first_flag_created: true,
+      first_sdk_connected: false,
+      first_evaluation: false,
+      tour_completed: false,
+      completed: false,
+      updated_at: "2025-01-01T00:00:00Z",
     });
 
     // Act

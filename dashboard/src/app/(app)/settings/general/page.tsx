@@ -12,13 +12,14 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Building2, FolderOpen, Plus, Server, Trash2 } from "lucide-react";
+import type { Environment, Project } from "@/lib/types";
 
 export default function SettingsGeneralPage() {
   const token = useAppStore((s) => s.token);
   const organization = useAppStore((s) => s.organization);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [envs, setEnvs] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", color: "#6B7280" });
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -47,8 +48,8 @@ export default function SettingsGeneralPage() {
       setForm({ name: "", slug: "", color: "#6B7280" });
       toast("Environment created", "success");
       reloadEnvs();
-    } catch (err: any) {
-      toast(err.message || "Failed to create environment", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create environment", "error");
     }
   }
 
@@ -59,13 +60,13 @@ export default function SettingsGeneralPage() {
       setDeleting(null);
       toast("Environment deleted", "success");
       reloadEnvs();
-    } catch (err: any) {
-      toast(err.message || "Failed to delete environment", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to delete environment", "error");
       setDeleting(null);
     }
   }
 
-  const currentProject = projects.find((p: any) => p.id === projectId);
+  const currentProject = projects.find((p) => p.id === projectId);
   const planLabel = organization?.plan === "trial" ? "Pro Trial" : (organization?.plan || "free").charAt(0).toUpperCase() + (organization?.plan || "free").slice(1);
 
   const planVariant = organization?.plan === "trial" ? "primary" : organization?.plan === "pro" ? "success" : "default";

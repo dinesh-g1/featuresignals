@@ -12,8 +12,18 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+type billingHandlerStore interface {
+	domain.OrgReader
+	domain.UserReader
+	domain.ProjectReader
+	domain.EnvironmentReader
+	domain.OrgMemberStore
+	domain.BillingStore
+	domain.OnboardingStore
+}
+
 type BillingHandler struct {
-	store        domain.Store
+	store        billingHandlerStore
 	payu         PayUHasher
 	payuMode     string
 	dashboardURL string
@@ -21,7 +31,7 @@ type BillingHandler struct {
 	logger       *slog.Logger
 }
 
-func NewBillingHandler(store domain.Store, payuKey, payuSalt, payuMode, dashboardURL, appBaseURL string, logger *slog.Logger) *BillingHandler {
+func NewBillingHandler(store billingHandlerStore, payuKey, payuSalt, payuMode, dashboardURL, appBaseURL string, logger *slog.Logger) *BillingHandler {
 	return &BillingHandler{
 		store:        store,
 		payu:         PayUHasher{MerchantKey: payuKey, Salt: payuSalt},

@@ -1,4 +1,6 @@
-export function createMockProject(overrides: Record<string, any> = {}) {
+import type { Project, Environment, Flag, Segment, AuditEntry, OrgMember, Webhook, ApprovalRequest, APIKey } from "@/lib/types";
+
+export function createMockProject(overrides: Partial<Project> = {}): Project {
   return {
     id: "proj-1",
     name: "Test Project",
@@ -9,7 +11,7 @@ export function createMockProject(overrides: Record<string, any> = {}) {
   };
 }
 
-export function createMockEnvironment(overrides: Record<string, any> = {}) {
+export function createMockEnvironment(overrides: Partial<Environment> = {}): Environment {
   return {
     id: "env-1",
     name: "Production",
@@ -20,7 +22,7 @@ export function createMockEnvironment(overrides: Record<string, any> = {}) {
   };
 }
 
-export function createMockFlag(overrides: Record<string, any> = {}) {
+export function createMockFlag(overrides: Partial<Flag> = {}): Flag {
   return {
     id: "flag-1",
     key: "enable-feature",
@@ -37,7 +39,7 @@ export function createMockFlag(overrides: Record<string, any> = {}) {
   };
 }
 
-export function createMockSegment(overrides: Record<string, any> = {}) {
+export function createMockSegment(overrides: Partial<Segment> = {}): Segment {
   return {
     id: "seg-1",
     key: "beta-users",
@@ -46,25 +48,26 @@ export function createMockSegment(overrides: Record<string, any> = {}) {
     match_type: "all",
     rules: [],
     created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
     ...overrides,
   };
 }
 
-export function createMockAuditEntry(overrides: Record<string, any> = {}) {
+export function createMockAuditEntry(overrides: Partial<AuditEntry> = {}): AuditEntry {
   return {
     id: "audit-1",
     action: "flag.created",
-    actor_email: "test@example.com",
-    entity_type: "flag",
-    entity_id: "flag-1",
+    actor_type: "user",
+    resource_type: "flag",
     created_at: "2025-01-01T00:00:00Z",
     ...overrides,
   };
 }
 
-export function createMockMember(overrides: Record<string, any> = {}) {
+export function createMockMember(overrides: Partial<OrgMember> = {}): OrgMember {
   return {
     id: "member-1",
+    org_id: "org-1",
     name: "Test Member",
     email: "member@example.com",
     role: "developer",
@@ -72,7 +75,7 @@ export function createMockMember(overrides: Record<string, any> = {}) {
   };
 }
 
-export function createMockWebhook(overrides: Record<string, any> = {}) {
+export function createMockWebhook(overrides: Partial<Webhook> = {}): Webhook {
   return {
     id: "wh-1",
     name: "Test Webhook",
@@ -81,29 +84,30 @@ export function createMockWebhook(overrides: Record<string, any> = {}) {
     enabled: true,
     has_secret: false,
     created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
     ...overrides,
   };
 }
 
-export function createMockApproval(overrides: Record<string, any> = {}) {
+export function createMockApproval(overrides: Partial<ApprovalRequest> = {}): ApprovalRequest {
   return {
     id: "appr-1",
     flag_id: "flag-1",
     env_id: "env-1",
     change_type: "toggle",
     status: "pending",
-    requestor_name: "Test User",
     created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
     ...overrides,
   };
 }
 
-export function createMockApiKey(overrides: Record<string, any> = {}) {
+export function createMockApiKey(overrides: Partial<APIKey> = {}): APIKey {
   return {
     id: "key-1",
+    key_prefix: "fs_srv_",
     name: "Server Key",
     type: "server",
-    key: "fs_srv_test123",
     created_at: "2025-01-01T00:00:00Z",
     ...overrides,
   };

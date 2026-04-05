@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { FeatureSignalsContext } from "./context.ts";
+import { FeatureSignalsContext } from "./context.js";
+
+function parseFlagsResponse(data: unknown): Record<string, unknown> {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("flags response must be a JSON object");
+  }
+  return data as Record<string, unknown>;
+}
 
 export interface FeatureSignalsProviderProps {
   /** Environment API key (client-side key, e.g. "fs_cli_..."). */
@@ -33,7 +40,6 @@ export function FeatureSignalsProvider({
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   const fetchFlags = useCallback(async () => {
     try {
@@ -46,7 +52,8 @@ export function FeatureSignalsProvider({
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
-      const data = await res.json();
+      const raw: unknown = await res.json();
+      const data = parseFlagsResponse(raw);
       if (mountedRef.current) {
         setFlags(data);
         setReady(true);
@@ -61,40 +68,44 @@ export function FeatureSignalsProvider({
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchFlags();
+    void fetchFlags();
+
+    let pollTimer: ReturnType<typeof setInterval> | undefined;
+    let es: EventSource | null = null;
+
+    const onFlagUpdate = () => {
+      if (mountedRef.current) void fetchFlags();
+    };
+    const onConnected = () => {
+      if (mountedRef.current) setError(null);
+    };
+    const onSseError = () => {
+      if (mountedRef.current) {
+        setError(new Error("SSE connection error"));
+      }
+    };
 
     if (streaming && typeof EventSource !== "undefined") {
       const encodedEnv = encodeURIComponent(envKey);
       const sseUrl = `${baseURL}/v1/stream/${encodedEnv}?api_key=${encodeURIComponent(sdkKey)}`;
-      const es = new EventSource(sseUrl);
-      eventSourceRef.current = es;
-
-      es.addEventListener("flag-update", () => {
-        if (mountedRef.current) fetchFlags();
-      });
-
-      es.addEventListener("connected", () => {
-        if (mountedRef.current) setError(null);
-      });
-
-      es.onerror = () => {
-        if (mountedRef.current) {
-          setError(new Error("SSE connection error"));
-        }
-      };
+      es = new EventSource(sseUrl);
+      es.addEventListener("flag-update", onFlagUpdate);
+      es.addEventListener("connected", onConnected);
+      es.addEventListener("error", onSseError);
     } else if (pollingIntervalMs > 0) {
-      const interval = setInterval(fetchFlags, pollingIntervalMs);
-      return () => {
-        mountedRef.current = false;
-        clearInterval(interval);
-      };
+      pollTimer = setInterval(() => void fetchFlags(), pollingIntervalMs);
     }
 
     return () => {
       mountedRef.current = false;
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
+      if (pollTimer !== undefined) {
+        clearInterval(pollTimer);
+      }
+      if (es !== null) {
+        es.removeEventListener("flag-update", onFlagUpdate);
+        es.removeEventListener("connected", onConnected);
+        es.removeEventListener("error", onSseError);
+        es.close();
       }
     };
   }, [fetchFlags, pollingIntervalMs, streaming, envKey, sdkKey, baseURL]);

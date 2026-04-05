@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { Select } from "@/components/ui/select";
 import { X } from "lucide-react";
-
-interface Condition {
-  attribute: string;
-  operator: string;
-  values: string[];
-}
+import type { Condition } from "@/lib/types";
 
 interface Props {
   rules: Condition[];

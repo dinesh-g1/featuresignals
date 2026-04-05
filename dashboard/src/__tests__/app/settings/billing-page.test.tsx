@@ -24,7 +24,7 @@ vi.mock("@/components/toast", () => ({
 import { api } from "@/lib/api";
 import BillingPage from "@/app/(app)/settings/billing/page";
 
-const mockApi = api as {
+const mockApi = api as unknown as {
   getPricing: ReturnType<typeof vi.fn>;
   getSubscription: ReturnType<typeof vi.fn>;
   getUsage: ReturnType<typeof vi.fn>;
@@ -56,8 +56,8 @@ describe("BillingPage", () => {
     useAppStore.getState().setAuth(
       "test-token",
       "test-refresh",
-      { id: "u1", name: "Test", email: "test@test.com", role: "admin", email_verified: true },
-      { id: "org-1", name: "Test Org", plan: "pro" },
+      { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
       9999999999,
     );
     useAppStore.getState().setCurrentProject("proj-1");

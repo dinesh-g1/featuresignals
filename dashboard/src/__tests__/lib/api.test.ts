@@ -30,7 +30,7 @@ describe("api.ts request interceptor", () => {
 
   beforeEach(() => {
     fetchMock = vi.fn();
-    globalThis.fetch = fetchMock;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
     useAppStore.getState().logout();
 
     originalLocation = Object.getOwnPropertyDescriptor(window, "location");
@@ -73,7 +73,9 @@ describe("api.ts request interceptor", () => {
   });
 
   it("on 401 token_expired: refreshes token and retries original request", async () => {
-    useAppStore.getState().setAuth("old-token", "valid-refresh", { id: "u1" }, { id: "o1" }, 1000);
+    const testUser = { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
+    const testOrg = { id: "o1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
+    useAppStore.getState().setAuth("old-token", "valid-refresh", testUser, testOrg, 1000);
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
@@ -98,7 +100,7 @@ describe("api.ts request interceptor", () => {
   });
 
   it("on 401 token_expired with failed refresh: logs out and redirects", async () => {
-    useAppStore.getState().setAuth("old-token", "bad-refresh", { id: "u1" }, undefined, 1000);
+    useAppStore.getState().setAuth("old-token", "bad-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, undefined, 1000);
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
@@ -118,7 +120,7 @@ describe("api.ts request interceptor", () => {
   });
 
   it("on 401 token_expired without refresh token: logs out immediately", async () => {
-    useAppStore.setState({ token: "old-token", refreshToken: null, user: { id: "u1" } });
+    useAppStore.setState({ token: "old-token", refreshToken: null, user: { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" } });
 
     fetchMock.mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }));
 
@@ -134,7 +136,7 @@ describe("api.ts request interceptor", () => {
   });
 
   it("on 401 with non-expired error (tampered token): logs out without refresh attempt", async () => {
-    useAppStore.getState().setAuth("bad-token", "valid-refresh", { id: "u1" });
+    useAppStore.getState().setAuth("bad-token", "valid-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
 
     fetchMock.mockResolvedValueOnce(jsonResponse(401, { error: "invalid or expired token" }));
 
@@ -151,7 +153,7 @@ describe("api.ts request interceptor", () => {
   });
 
   it("does not retry a request that has already been retried (_retry flag)", async () => {
-    useAppStore.getState().setAuth("tok", "ref", { id: "u1" });
+    useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
@@ -169,7 +171,7 @@ describe("api.ts request interceptor", () => {
   });
 
   it("concurrent 401s share a single refresh (mutex)", async () => {
-    useAppStore.getState().setAuth("old-token", "valid-refresh", { id: "u1" }, undefined, 1000);
+    useAppStore.getState().setAuth("old-token", "valid-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, undefined, 1000);
 
     let callCount = 0;
     fetchMock.mockImplementation(async (url: string) => {
@@ -232,7 +234,9 @@ describe("api.ts request interceptor", () => {
   });
 
   it("preserves user and organization in store after refresh", async () => {
-    useAppStore.getState().setAuth("old-tok", "old-ref", { id: "u1", name: "User" }, { id: "o1", name: "Org" }, 1000);
+    const testUser = { id: "u1", name: "User", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
+    const testOrg = { id: "o1", name: "Org", slug: "org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
+    useAppStore.getState().setAuth("old-tok", "old-ref", testUser, testOrg, 1000);
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
@@ -242,7 +246,7 @@ describe("api.ts request interceptor", () => {
     await api.listProjects("old-tok");
 
     const state = useAppStore.getState();
-    expect(state.user).toEqual({ id: "u1", name: "User" });
-    expect(state.organization).toEqual({ id: "o1", name: "Org" });
+    expect(state.user).toEqual(testUser);
+    expect(state.organization).toEqual(testOrg);
   });
 });

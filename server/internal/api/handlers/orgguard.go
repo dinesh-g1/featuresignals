@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,7 +11,26 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-func verifyProjectOwnership(store domain.Store, r *http.Request, w http.ResponseWriter) (*domain.Project, bool) {
+// ─── Narrow interfaces for ownership verification ───────────────────────────
+
+type projectGetter interface {
+	GetProject(ctx context.Context, id string) (*domain.Project, error)
+}
+
+type envAndProjectGetter interface {
+	GetEnvironment(ctx context.Context, id string) (*domain.Environment, error)
+	GetProject(ctx context.Context, id string) (*domain.Project, error)
+}
+
+type webhookGetter interface {
+	GetWebhook(ctx context.Context, id string) (*domain.Webhook, error)
+}
+
+type approvalGetter interface {
+	GetApprovalRequest(ctx context.Context, id string) (*domain.ApprovalRequest, error)
+}
+
+func verifyProjectOwnership(store projectGetter, r *http.Request, w http.ResponseWriter) (*domain.Project, bool) {
 	projectID := chi.URLParam(r, "projectID")
 	if projectID == "" {
 		httputil.Error(w, http.StatusBadRequest, "project ID is required")
@@ -29,7 +49,7 @@ func verifyProjectOwnership(store domain.Store, r *http.Request, w http.Response
 	return project, true
 }
 
-func verifyEnvironmentOwnership(store domain.Store, r *http.Request, w http.ResponseWriter) (*domain.Environment, bool) {
+func verifyEnvironmentOwnership(store envAndProjectGetter, r *http.Request, w http.ResponseWriter) (*domain.Environment, bool) {
 	envID := chi.URLParam(r, "envID")
 	if envID == "" {
 		httputil.Error(w, http.StatusBadRequest, "environment ID is required")
@@ -48,7 +68,7 @@ func verifyEnvironmentOwnership(store domain.Store, r *http.Request, w http.Resp
 	return env, true
 }
 
-func verifyWebhookOwnership(store domain.Store, r *http.Request, w http.ResponseWriter) (*domain.Webhook, bool) {
+func verifyWebhookOwnership(store webhookGetter, r *http.Request, w http.ResponseWriter) (*domain.Webhook, bool) {
 	webhookID := chi.URLParam(r, "webhookID")
 	if webhookID == "" {
 		httputil.Error(w, http.StatusBadRequest, "webhook ID is required")
@@ -67,7 +87,7 @@ func verifyWebhookOwnership(store domain.Store, r *http.Request, w http.Response
 	return wh, true
 }
 
-func verifyApprovalOwnership(store domain.Store, r *http.Request, w http.ResponseWriter) (*domain.ApprovalRequest, bool) {
+func verifyApprovalOwnership(store approvalGetter, r *http.Request, w http.ResponseWriter) (*domain.ApprovalRequest, bool) {
 	approvalID := chi.URLParam(r, "approvalID")
 	if approvalID == "" {
 		httputil.Error(w, http.StatusBadRequest, "approval ID is required")

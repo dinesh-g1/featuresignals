@@ -10,7 +10,8 @@ export interface ClientOptions {
   pollingIntervalMs: number;
   /** Enable SSE streaming for real-time flag updates. */
   streaming: boolean;
-  /** SSE reconnect delay in milliseconds (default 5 000). */
+  /** Base SSE reconnect delay in ms (default 1 000). Used as the starting
+   *  point for exponential backoff (×2 per attempt, capped at 30 s, +0–25 % jitter). */
   sseRetryMs: number;
   /** Request timeout in milliseconds (default 10 000). */
   timeoutMs: number;
@@ -22,7 +23,7 @@ const DEFAULT_OPTIONS: Omit<ClientOptions, "envKey"> = {
   baseURL: "https://api.featuresignals.com",
   pollingIntervalMs: 30_000,
   streaming: false,
-  sseRetryMs: 5_000,
+  sseRetryMs: 1_000,
   timeoutMs: 10_000,
   context: { key: "server" },
 };
@@ -46,12 +47,17 @@ export interface ClientEvents {
  *  - `update` — emitted each time the flag map is refreshed
  */
 export class FeatureSignalsClient extends EventEmitter {
+  private static readonly SSE_BACKOFF_MAX_MS = 30_000;
+  private static readonly SSE_BACKOFF_MULTIPLIER = 2;
+  private static readonly SSE_JITTER_FACTOR = 0.25;
+
   private sdkKey: string;
   private options: ClientOptions;
   private flags: Record<string, unknown> = {};
   private _ready = false;
   private pollTimer?: ReturnType<typeof setInterval>;
   private sseAbort?: AbortController;
+  private sseAttempt = 0;
   private closed = false;
 
   constructor(sdkKey: string, options: Pick<ClientOptions, "envKey"> & Partial<Omit<ClientOptions, "envKey">>) {
@@ -90,6 +96,14 @@ export class FeatureSignalsClient extends EventEmitter {
     return typeof val === "number" ? val : fallback;
   }
 
+  /**
+   * Returns the flag value cast to `T`, or `fallback` if the flag is missing.
+   *
+   * **Note:** No runtime shape validation is performed — the caller is
+   * responsible for ensuring the stored value conforms to `T`.  This is a
+   * deliberate SDK design choice; use a schema library (e.g. zod) at the
+   * call-site if strict validation is needed.
+   */
   jsonVariation<T = unknown>(key: string, ctx: EvalContext, fallback: T): T {
     return (this.flags[key] as T) ?? fallback;
   }
@@ -175,15 +189,19 @@ export class FeatureSignalsClient extends EventEmitter {
   }
 
   private async sseLoop(): Promise<void> {
+    this.sseAttempt = 0;
     while (!this.closed) {
       try {
         await this.connectSSE();
+        this.sseAttempt = 0;
       } catch (err) {
         if (this.closed) return;
         this.emitError(err);
       }
       if (this.closed) return;
-      await this.sleep(this.options.sseRetryMs);
+      const delay = this.backoffDelay(this.sseAttempt);
+      this.sseAttempt++;
+      await this.sleep(delay);
     }
   }
 
@@ -235,6 +253,16 @@ export class FeatureSignalsClient extends EventEmitter {
     } finally {
       reader.releaseLock();
     }
+  }
+
+  /** Exponential backoff with random jitter: base × 2^attempt, capped, +0–25 % jitter. */
+  private backoffDelay(attempt: number): number {
+    const base = Math.min(
+      this.options.sseRetryMs * Math.pow(FeatureSignalsClient.SSE_BACKOFF_MULTIPLIER, attempt),
+      FeatureSignalsClient.SSE_BACKOFF_MAX_MS,
+    );
+    const jitter = base * FeatureSignalsClient.SSE_JITTER_FACTOR * Math.random();
+    return base + jitter;
   }
 
   private sleep(ms: number): Promise<void> {

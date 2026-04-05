@@ -18,6 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * FeatureSignals Java SDK client.
@@ -29,6 +30,10 @@ public class FeatureSignalsClient implements AutoCloseable {
     private static final Logger log = Logger.getLogger(FeatureSignalsClient.class.getName());
     private static final Gson gson = new Gson();
     private static final Type FLAG_MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
+    private static final long BACKOFF_INITIAL_MS = 1000;
+    private static final long BACKOFF_MAX_MS = 30_000;
+    private static final double BACKOFF_MULTIPLIER = 2.0;
+    private static final double BACKOFF_JITTER_FACTOR = 0.25;
 
     private final String sdkKey;
     private final ClientOptions options;
@@ -39,9 +44,9 @@ public class FeatureSignalsClient implements AutoCloseable {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ScheduledExecutorService executor;
 
-    private Consumer<Void> onReady;
-    private Consumer<Exception> onError;
-    private Consumer<Map<String, Object>> onUpdate;
+    private volatile Consumer<Void> onReady;
+    private volatile Consumer<Exception> onError;
+    private volatile Consumer<Map<String, Object>> onUpdate;
 
     public FeatureSignalsClient(String sdkKey, ClientOptions options) {
         if (sdkKey == null || sdkKey.isEmpty()) throw new IllegalArgumentException("sdkKey required");
@@ -91,10 +96,18 @@ public class FeatureSignalsClient implements AutoCloseable {
         return val instanceof Number ? ((Number) val).doubleValue() : fallback;
     }
 
+    // Safe because callers provide a typed fallback that constrains T at the call site.
+    // Type erasure prevents a runtime check, but a ClassCastException at the call
+    // site is the correct behavior if the stored value doesn't match the expected type.
     @SuppressWarnings("unchecked")
     public <T> T jsonVariation(String key, EvalContext ctx, T fallback) {
         Object val = getFlag(key);
-        return val != null ? (T) val : fallback;
+        if (val == null) return fallback;
+        try {
+            return (T) val;
+        } catch (ClassCastException e) {
+            return fallback;
+        }
     }
 
     public Map<String, Object> allFlags() {
@@ -179,7 +192,7 @@ public class FeatureSignalsClient implements AutoCloseable {
         try {
             int status = conn.getResponseCode();
             if (status != 200) {
-                throw new RuntimeException("HTTP " + status);
+                throw new FeatureSignalsException("flag refresh failed: HTTP " + status, status);
             }
             try (var reader = new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)) {
                 Map<String, Object> result = gson.fromJson(reader, FLAG_MAP_TYPE);
@@ -191,7 +204,9 @@ public class FeatureSignalsClient implements AutoCloseable {
     }
 
     private void sseLoop() {
+        long backoffMs = BACKOFF_INITIAL_MS;
         while (!closed.get()) {
+            long connectedAtMs = System.nanoTime() / 1_000_000;
             try {
                 connectSSE();
             } catch (Exception e) {
@@ -199,13 +214,26 @@ public class FeatureSignalsClient implements AutoCloseable {
                 emitError(e);
             }
             if (closed.get()) return;
+
+            long connectionDurationMs = (System.nanoTime() / 1_000_000) - connectedAtMs;
+            if (connectionDurationMs > BACKOFF_MAX_MS) {
+                backoffMs = BACKOFF_INITIAL_MS;
+            }
+
+            long sleepMs = withJitter(backoffMs);
             try {
-                Thread.sleep(options.getSseRetry().toMillis());
+                Thread.sleep(sleepMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             }
+            backoffMs = Math.min((long) (backoffMs * BACKOFF_MULTIPLIER), BACKOFF_MAX_MS);
         }
+    }
+
+    private static long withJitter(long baseMs) {
+        long jitter = (long) (baseMs * BACKOFF_JITTER_FACTOR * ThreadLocalRandom.current().nextDouble());
+        return baseMs + jitter;
     }
 
     private void connectSSE() throws Exception {
@@ -223,7 +251,7 @@ public class FeatureSignalsClient implements AutoCloseable {
         try {
             int status = conn.getResponseCode();
             if (status != 200) {
-                throw new RuntimeException("SSE HTTP " + status);
+                throw new FeatureSignalsException("SSE connection failed: HTTP " + status, status);
             }
 
             try (var br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {

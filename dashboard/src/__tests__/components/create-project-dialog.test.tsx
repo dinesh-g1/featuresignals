@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import type { Project } from "@/lib/types";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 
 vi.mock("@/lib/api", () => ({
@@ -20,13 +21,13 @@ import { api } from "@/lib/api";
 const mockCreateProject = api.createProject as ReturnType<typeof vi.fn>;
 
 describe("CreateProjectDialog", () => {
-  let onOpenChange: ReturnType<typeof vi.fn>;
-  let onCreated: ReturnType<typeof vi.fn>;
+  let onOpenChange: ReturnType<typeof vi.fn> & ((open: boolean) => void);
+  let onCreated: ReturnType<typeof vi.fn> & ((project: Project) => void);
 
   beforeEach(() => {
     vi.clearAllMocks();
-    onOpenChange = vi.fn();
-    onCreated = vi.fn();
+    onOpenChange = vi.fn() as typeof onOpenChange;
+    onCreated = vi.fn() as typeof onCreated;
     mockCreateProject.mockResolvedValue({ id: "new-proj", name: "My Project" });
   });
 

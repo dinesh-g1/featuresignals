@@ -1,6 +1,10 @@
 import { reactive } from "vue";
 import type { InjectionKey, Plugin } from "vue";
-import type { FeatureSignalsPluginOptions, FeatureSignalsState } from "./types";
+import type {
+  FeatureSignalsPluginOptions,
+  FeatureSignalsState,
+} from "./types";
+import { parseClientFlagsPayload } from "./types";
 
 export const FEATURE_SIGNALS_KEY: InjectionKey<FeatureSignalsState> =
   Symbol("FeatureSignalsState");
@@ -37,9 +41,9 @@ export const FeatureSignalsPlugin: Plugin<[FeatureSignalsPluginOptions]> = {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
-        const data = await res.json();
+        const data: unknown = await res.json();
         if (!destroyed) {
-          state.flags = data;
+          state.flags = parseClientFlagsPayload(data);
           state.ready = true;
           state.error = null;
         }

@@ -52,28 +52,32 @@ const mockFlags = [
     id: "f1",
     key: "enable-feature",
     name: "Enable Feature",
+    description: "Test flag",
     flag_type: "boolean",
     default_value: false,
     category: "release",
     status: "active",
     tags: [],
     created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
   },
   {
     id: "f2",
     key: "max-items",
     name: "Max Items",
+    description: "Max items flag",
     flag_type: "number",
     default_value: 10,
     category: "ops",
     status: "active",
     tags: [],
     created_at: "2025-01-02T00:00:00Z",
+    updated_at: "2025-01-02T00:00:00Z",
   },
 ];
 
 const mockEnvs = [
-  { id: "env-1", name: "Production", slug: "production", color: "#4f46e5" },
+  { id: "env-1", name: "Production", slug: "production", color: "#4f46e5", created_at: "2025-01-01T00:00:00Z" },
 ];
 
 describe("FlagsPage", () => {
@@ -81,16 +85,16 @@ describe("FlagsPage", () => {
     vi.clearAllMocks();
 
     const store = useAppStore.getState();
-    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test" }, { id: "org-1" });
+    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
     vi.mocked(api.listFlags).mockResolvedValue(mockFlags);
     vi.mocked(api.listEnvironments).mockResolvedValue(mockEnvs);
-    vi.mocked(api.getFlagState).mockResolvedValue({ enabled: true });
-    vi.mocked(api.updateFlagState).mockResolvedValue({});
-    vi.mocked(api.deleteFlag).mockResolvedValue(undefined as any);
-    vi.mocked(api.createFlag).mockResolvedValue({ id: "f3" });
+    vi.mocked(api.getFlagState).mockResolvedValue({ id: "fs-1", enabled: true, rules: [], percentage_rollout: 100, updated_at: "2025-01-01T00:00:00Z" });
+    vi.mocked(api.updateFlagState).mockResolvedValue(undefined as never);
+    vi.mocked(api.deleteFlag).mockResolvedValue(undefined as unknown as void);
+    vi.mocked(api.createFlag).mockResolvedValue({ id: "f3", key: "new-flag", name: "New Flag", description: "", flag_type: "boolean", default_value: false, category: "release", status: "active", tags: [], created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
   });
 
   afterEach(() => {

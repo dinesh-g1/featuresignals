@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import type { TargetingRule } from "@/lib/types";
 import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
 
 vi.mock("@/components/ui/select", () => ({
@@ -39,14 +40,14 @@ const makeRule = (overrides = {}) => ({
 });
 
 describe("TargetingRulesEditor", () => {
-  let onSave: ReturnType<typeof vi.fn>;
+  let onSave: ReturnType<typeof vi.fn> & ((rules: TargetingRule[]) => Promise<void>);
   const segments = [
     { key: "beta-segment", name: "Beta Testers" },
     { key: "vip-segment", name: "VIP Users" },
   ];
 
   beforeEach(() => {
-    onSave = vi.fn().mockResolvedValue(undefined);
+    onSave = vi.fn().mockResolvedValue(undefined) as typeof onSave;
   });
 
   it("renders empty state when no rules", () => {

@@ -12,6 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { KeyRound, Copy } from "lucide-react";
+import type { APIKey, APIKeyCreateResponse, Environment } from "@/lib/types";
 
 const KEY_TYPE_OPTIONS = [
   { value: "server", label: "Server" },
@@ -22,9 +23,9 @@ export default function APIKeysPage() {
   const token = useAppStore((s) => s.token);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [envs, setEnvs] = useState<any[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
-  const [keys, setKeys] = useState<any[]>([]);
+  const [keys, setKeys] = useState<APIKey[]>([]);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", type: "server" });
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -54,13 +55,13 @@ export default function APIKeysPage() {
       return;
     }
     try {
-      const result: any = await api.createAPIKey(token, selectedEnv, form);
-      setNewKey(result.key);
+      const result: APIKeyCreateResponse = await api.createAPIKey(token, selectedEnv, form);
+      setNewKey(result.key ?? null);
       setForm({ name: "", type: "server" });
       toast("API key created", "success");
       reloadKeys();
-    } catch (err: any) {
-      toast(err.message || "Failed to create API key", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create API key", "error");
     }
   }
 
@@ -71,8 +72,8 @@ export default function APIKeysPage() {
       setRevoking(null);
       toast("API key revoked", "success");
       reloadKeys();
-    } catch (err: any) {
-      toast(err.message || "Failed to revoke API key", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to revoke API key", "error");
       setRevoking(null);
     }
   }

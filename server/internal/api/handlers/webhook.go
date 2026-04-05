@@ -10,10 +10,10 @@ import (
 )
 
 type WebhookHandler struct {
-	store domain.Store
+	store domain.WebhookStore
 }
 
-func NewWebhookHandler(store domain.Store) *WebhookHandler {
+func NewWebhookHandler(store domain.WebhookStore) *WebhookHandler {
 	return &WebhookHandler{store: store}
 }
 

@@ -10,10 +10,10 @@ import (
 )
 
 type AuditHandler struct {
-	store domain.Store
+	store domain.AuditReader
 }
 
-func NewAuditHandler(store domain.Store) *AuditHandler {
+func NewAuditHandler(store domain.AuditReader) *AuditHandler {
 	return &AuditHandler{store: store}
 }
 

@@ -305,7 +305,6 @@ func TestClient_OnUpdateCallback(t *testing.T) {
 func TestClient_SSE_RefreshesOnEvent(t *testing.T) {
 	var mu sync.Mutex
 	flags := map[string]interface{}{"v": 1.0}
-	var sseWriter http.Flusher
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/client/prod/flags", func(w http.ResponseWriter, r *http.Request) {
@@ -323,7 +322,6 @@ func TestClient_SSE_RefreshesOnEvent(t *testing.T) {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.WriteHeader(http.StatusOK)
 		flusher.Flush()
-		sseWriter = flusher
 
 		fmt.Fprintf(w, "event: connected\ndata: {}\n\n")
 		flusher.Flush()
@@ -349,8 +347,6 @@ func TestClient_SSE_RefreshesOnEvent(t *testing.T) {
 		WithSSERetryInterval(50*time.Millisecond),
 	)
 	defer c.Close()
-
-	_ = sseWriter
 
 	deadline := time.After(3 * time.Second)
 	for {

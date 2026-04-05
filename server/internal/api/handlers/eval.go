@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -53,8 +54,14 @@ type insightResult = struct {
 	TruePercentage float64 `json:"true_percentage"`
 }
 
+type evalHandlerStore interface {
+	GetEnvironment(ctx context.Context, id string) (*domain.Environment, error)
+	GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) (*domain.Environment, *domain.APIKey, error)
+	UpdateAPIKeyLastUsed(ctx context.Context, id string) error
+}
+
 type EvalHandler struct {
-	store     domain.Store
+	store     evalHandlerStore
 	cache     RulesetCache
 	engine    Evaluator
 	sseServer StreamServer
@@ -62,7 +69,7 @@ type EvalHandler struct {
 	metrics   MetricsRecorder
 }
 
-func NewEvalHandler(store domain.Store, cache RulesetCache, engine Evaluator, sseServer StreamServer, logger *slog.Logger, mc MetricsRecorder) *EvalHandler {
+func NewEvalHandler(store evalHandlerStore, cache RulesetCache, engine Evaluator, sseServer StreamServer, logger *slog.Logger, mc MetricsRecorder) *EvalHandler {
 	return &EvalHandler{
 		store:     store,
 		cache:     cache,
@@ -99,7 +106,13 @@ func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*domain.Ruleset, st
 		return nil, "", fmt.Errorf("invalid API key")
 	}
 
-	go h.store.UpdateAPIKeyLastUsed(r.Context(), key.ID)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.store.UpdateAPIKeyLastUsed(ctx, key.ID); err != nil {
+			h.logger.Warn("failed to update API key last used", "error", err, "key_id", key.ID)
+		}
+	}()
 
 	ruleset := h.cache.GetRuleset(env.ID)
 	if ruleset == nil {
@@ -141,13 +154,6 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 			vr.RecordValue(req.FlagKey, envID, result.Value)
 		}
 	}
-
-	h.logger.Debug("flag evaluated",
-		"flag_key", req.FlagKey,
-		"user_key", req.Context.Key,
-		"value", result.Value,
-		"reason", result.Reason,
-	)
 
 	httputil.JSON(w, http.StatusOK, result)
 }

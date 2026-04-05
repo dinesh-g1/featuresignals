@@ -15,10 +15,19 @@
     "build": "tsc -p tsconfig.build.json",
     "test": "node --test --experimental-strip-types src/__tests__/client.test.ts"
   },
-  "files": ["dist"],
-  "keywords": ["feature-flags", "feature-toggle", "openfeature", "featuresignals"],
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "feature-flags",
+    "feature-toggle",
+    "openfeature",
+    "featuresignals"
+  ],
   "license": "Apache-2.0",
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "devDependencies": {
     "typescript": "^5.0.0"
   }

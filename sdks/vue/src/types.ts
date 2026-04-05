@@ -21,3 +21,13 @@ export interface FeatureSignalsState {
   ready: boolean;
   error: Error | null;
 }
+
+/** API body for `GET /v1/client/{env}/flags` — a flat JSON object of flag key → value. */
+export type ClientFlagsPayload = Record<string, unknown>;
+
+export function parseClientFlagsPayload(data: unknown): ClientFlagsPayload {
+  if (data !== null && typeof data === "object" && !Array.isArray(data)) {
+    return data as ClientFlagsPayload;
+  }
+  return {};
+}

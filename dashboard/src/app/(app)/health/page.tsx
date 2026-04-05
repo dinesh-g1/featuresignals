@@ -6,12 +6,13 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, Card, CardHeader, Badge, LoadingSpinner } from "@/components/ui";
 import { ChevronRight } from "lucide-react";
+import type { Flag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function FlagHealthPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [flags, setFlags] = useState<any[]>([]);
+  const [flags, setFlags] = useState<Flag[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -101,7 +102,7 @@ export default function FlagHealthPage() {
       {expired.length > 0 && (
         <HealthSection title="Expired Flags" subtitle="These flags have passed their expiration date and are being auto-disabled by the eval engine.">
           {expired.map((f) => (
-            <FlagRow key={f.id} flag={f} badge={`Expired ${new Date(f.expires_at).toLocaleDateString()}`} variant="danger" />
+            <FlagRow key={f.id} flag={f} badge={`Expired ${new Date(f.expires_at!).toLocaleDateString()}`} variant="danger" />
           ))}
         </HealthSection>
       )}
@@ -109,7 +110,7 @@ export default function FlagHealthPage() {
       {expiringSoon.length > 0 && (
         <HealthSection title="Expiring Soon" subtitle={`These flags expire within the next ${EXPIRING_SOON_DAYS} days.`}>
           {expiringSoon.map((f) => {
-            const daysLeft = Math.ceil((new Date(f.expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.ceil((new Date(f.expires_at!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             return <FlagRow key={f.id} flag={f} badge={`${daysLeft}d left`} variant="warning" />;
           })}
         </HealthSection>
@@ -170,7 +171,7 @@ function HealthSection({ title, subtitle, children }: { title: string; subtitle:
   );
 }
 
-function FlagRow({ flag, badge, variant }: { flag: any; badge: string; variant: "danger" | "warning" | "default" }) {
+function FlagRow({ flag, badge, variant }: { flag: Flag; badge: string; variant: "danger" | "warning" | "default" }) {
   return (
     <Link href={`/flags/${flag.key}`} className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6">
       <div className="min-w-0">

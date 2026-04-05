@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import type { Environment } from "@/lib/types";
 
 const presetColors = [
   { label: "Green", value: "#22c55e" },
@@ -17,7 +18,7 @@ const presetColors = [
 interface CreateEnvironmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (env: any) => void;
+  onCreated: (env: Environment) => void;
 }
 
 export function CreateEnvironmentDialog({ open, onOpenChange, onCreated }: CreateEnvironmentDialogProps) {
@@ -50,8 +51,8 @@ export function CreateEnvironmentDialog({ open, onOpenChange, onCreated }: Creat
       setError("");
       onCreated(created);
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err?.message || "Failed to create environment. Please try again.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create environment. Please try again.");
     } finally {
       setCreating(false);
     }

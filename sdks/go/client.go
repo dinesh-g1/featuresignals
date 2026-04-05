@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,6 +31,7 @@ type Client struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
 	closeOnce    sync.Once
+	wg           sync.WaitGroup
 	pollInterval time.Duration
 	sseEnabled   bool
 	sseRetry     time.Duration
@@ -106,7 +108,7 @@ func NewClient(sdkKey, envKey string, opts ...Option) *Client {
 		flags:        make(map[string]interface{}),
 		httpClient:   &http.Client{Timeout: 10 * time.Second},
 		pollInterval: 30 * time.Second,
-		sseRetry:     5 * time.Second,
+		sseRetry:     1 * time.Second,
 		readyCh:      make(chan struct{}),
 		ctx:          bgCtx,
 		cancel:       cancel,
@@ -123,6 +125,7 @@ func NewClient(sdkKey, envKey string, opts ...Option) *Client {
 		c.markReady()
 	}
 
+	c.wg.Add(1)
 	if c.sseEnabled {
 		go c.streamLoop()
 	} else {
@@ -203,10 +206,12 @@ func (c *Client) Ready() <-chan struct{} {
 	return c.readyCh
 }
 
-// Close shuts down background polling/streaming and releases resources.
+// Close shuts down background polling/streaming, waits for goroutines to
+// finish, and releases resources. Safe to call multiple times.
 func (c *Client) Close() {
 	c.closeOnce.Do(func() {
 		c.cancel()
+		c.wg.Wait()
 	})
 }
 
@@ -234,7 +239,11 @@ func (c *Client) setFlags(flags map[string]interface{}) {
 	c.flags = flags
 	c.mu.Unlock()
 	if c.onUpdate != nil {
-		c.onUpdate(flags)
+		snapshot := make(map[string]interface{}, len(flags))
+		for k, v := range flags {
+			snapshot[k] = v
+		}
+		c.onUpdate(snapshot)
 	}
 }
 
@@ -258,7 +267,10 @@ func (c *Client) refresh(ctx context.Context) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			c.logger.Warn("failed to read error response body", "error", readErr)
+		}
 		return fmt.Errorf("fetch flags: status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -273,6 +285,7 @@ func (c *Client) refresh(ctx context.Context) error {
 
 // pollLoop periodically refreshes flags from the server.
 func (c *Client) pollLoop() {
+	defer c.wg.Done()
 	ticker := time.NewTicker(c.pollInterval)
 	defer ticker.Stop()
 	for {
@@ -290,16 +303,35 @@ func (c *Client) pollLoop() {
 }
 
 // streamLoop connects to the SSE endpoint, listens for flag_update events,
-// and refreshes flags when notified. Reconnects automatically on failure.
+// and refreshes flags when notified. Reconnects with exponential backoff
+// (starting at sseRetry, doubling up to 30s, with 25% random jitter) on
+// failure. A successful connection resets the backoff.
 func (c *Client) streamLoop() {
+	defer c.wg.Done()
+	backoff := c.sseRetry
+	const maxBackoff = 30 * time.Second
 	for {
 		if err := c.connectSSE(); err != nil {
 			c.logError("SSE connection failed", err)
-		}
-		select {
-		case <-c.ctx.Done():
-			return
-		case <-time.After(c.sseRetry):
+
+			jitter := time.Duration(rand.Int63n(int64(backoff) / 4))
+			select {
+			case <-c.ctx.Done():
+				return
+			case <-time.After(backoff + jitter):
+			}
+
+			backoff *= 2
+			if backoff > maxBackoff {
+				backoff = maxBackoff
+			}
+		} else {
+			backoff = c.sseRetry
+			select {
+			case <-c.ctx.Done():
+				return
+			case <-time.After(c.sseRetry):
+			}
 		}
 	}
 }
@@ -324,7 +356,10 @@ func (c *Client) connectSSE() error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			c.logger.Warn("failed to read SSE error response body", "error", readErr)
+		}
 		return fmt.Errorf("SSE connect: status %d: %s", resp.StatusCode, string(body))
 	}
 

@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, Card, Input, EmptyState, LoadingSpinner } from "@/components/ui";
 import { BarChart3, Search } from "lucide-react";
+import type { FlagInsight } from "@/lib/types";
 
 type SortKey = "flag_key" | "true_percentage" | "total_count";
 
@@ -12,7 +13,7 @@ export default function UsageInsightsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const [insights, setInsights] = useState<any[]>([]);
+  const [insights, setInsights] = useState<FlagInsight[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("flag_key");
@@ -93,7 +94,7 @@ export default function UsageInsightsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((ins: any) => (
+                {filtered.map((ins) => (
                   <tr key={ins.flag_key} className="transition-colors hover:bg-indigo-50/30">
                     <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">{ins.flag_key}</td>
                     <td className="px-4 py-3">

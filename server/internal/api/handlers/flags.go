@@ -20,11 +20,18 @@ func (h *FlagHandler) l(r *http.Request) *slog.Logger {
 	return httputil.LoggerFromContext(r.Context()).With("handler", "flags")
 }
 
-type FlagHandler struct {
-	store domain.Store
+type flagStore interface {
+	domain.FlagReader
+	domain.FlagWriter
+	domain.AuditWriter
+	projectGetter
 }
 
-func NewFlagHandler(store domain.Store) *FlagHandler {
+type FlagHandler struct {
+	store flagStore
+}
+
+func NewFlagHandler(store flagStore) *FlagHandler {
 	return &FlagHandler{store: store}
 }
 

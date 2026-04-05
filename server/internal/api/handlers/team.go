@@ -12,12 +12,19 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+type teamStore interface {
+	domain.OrgMemberStore
+	domain.UserReader
+	domain.UserWriter
+	domain.EnvPermissionStore
+}
+
 type TeamHandler struct {
-	store  domain.Store
+	store  teamStore
 	jwtMgr auth.TokenManager
 }
 
-func NewTeamHandler(store domain.Store, jwtMgr auth.TokenManager) *TeamHandler {
+func NewTeamHandler(store teamStore, jwtMgr auth.TokenManager) *TeamHandler {
 	return &TeamHandler{store: store, jwtMgr: jwtMgr}
 }
 

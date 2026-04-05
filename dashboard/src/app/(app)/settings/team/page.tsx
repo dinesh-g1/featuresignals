@@ -12,6 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Trash2, ChevronDown, Users } from "lucide-react";
+import type { OrgMember, EnvPermission, Environment } from "@/lib/types";
 
 const ROLES = ["owner", "admin", "developer", "viewer"] as const;
 
@@ -24,28 +25,12 @@ const roleBadgeVariant: Record<string, "purple" | "info" | "success" | "default"
   viewer: "default",
 };
 
-interface Member {
-  id: string;
-  org_id: string;
-  role: string;
-  email: string;
-  name: string;
-}
-
-interface EnvPermission {
-  id?: string;
-  member_id: string;
-  env_id: string;
-  can_toggle: boolean;
-  can_edit_rules: boolean;
-}
-
 export default function TeamPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const user = useAppStore((s) => s.user);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [envs, setEnvs] = useState<any[]>([]);
+  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: "", role: "developer" });
   const [editingRole, setEditingRole] = useState<string | null>(null);
@@ -106,7 +91,7 @@ export default function TeamPage() {
     const existing = (permMap[memberId] || []).find((p) => p.env_id === envId);
     const perm: EnvPermission = existing
       ? { ...existing, [field]: !existing[field] }
-      : { member_id: memberId, env_id: envId, can_toggle: field === "can_toggle", can_edit_rules: field === "can_edit_rules" };
+      : { id: "", member_id: memberId, env_id: envId, can_toggle: field === "can_toggle", can_edit_rules: field === "can_edit_rules" };
 
     await api.updateMemberPermissions(token, memberId, [perm]);
     loadPermissions(memberId);

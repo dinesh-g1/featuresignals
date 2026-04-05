@@ -3,8 +3,8 @@ import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderHook, cleanup, act } from "@testing-library/react";
-import { FeatureSignalsContext } from "../context.ts";
-import { useFlag, useFlags, useReady, useError } from "../hooks.ts";
+import { FeatureSignalsContext } from "../context.js";
+import { useFlag, useFlags, useReady, useError } from "../hooks.js";
 
 afterEach(cleanup);
 
@@ -62,6 +62,28 @@ describe("useFlag", () => {
       { wrapper: wrapper({ config: { nested: true } }) }
     );
     assert.deepEqual(result.current, { nested: true });
+  });
+
+  it("returns fallback when validate rejects the value", () => {
+    const { result } = renderHook(
+      () =>
+        useFlag("n", 0, {
+          validate: (v): v is number => typeof v === "number",
+        }),
+      { wrapper: wrapper({ n: "not-a-number" }) }
+    );
+    assert.equal(result.current, 0);
+  });
+
+  it("returns value when validate accepts", () => {
+    const { result } = renderHook(
+      () =>
+        useFlag("n", 0, {
+          validate: (v): v is number => typeof v === "number",
+        }),
+      { wrapper: wrapper({ n: 42 }) }
+    );
+    assert.equal(result.current, 42);
   });
 });
 

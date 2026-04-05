@@ -4,13 +4,13 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import React, { useContext } from "react";
 import { renderHook, cleanup, act, waitFor } from "@testing-library/react";
-import { FeatureSignalsProvider } from "../provider.tsx";
-import { FeatureSignalsContext } from "../context.ts";
+import { FeatureSignalsProvider } from "../provider.js";
+import { FeatureSignalsContext } from "../context.js";
 
 afterEach(cleanup);
 
 function createFlagServer(flags: Record<string, unknown>) {
-  const server = http.createServer((req, res) => {
+  const server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
     const apiKey = req.headers["x-api-key"];
     if (!apiKey) {
       res.writeHead(401);
@@ -95,12 +95,14 @@ describe("FeatureSignalsProvider", () => {
 
   it("defaults userKey to anonymous", async () => {
     let receivedKey = "";
-    const server = http.createServer((req, res) => {
-      const url = new URL(req.url!, "http://localhost");
-      receivedKey = url.searchParams.get("key") ?? "";
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end("{}");
-    });
+    const server = http.createServer(
+      (req: http.IncomingMessage, res: http.ServerResponse) => {
+        const url = new URL(req.url ?? "", "http://localhost");
+        receivedKey = url.searchParams.get("key") ?? "";
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end("{}");
+      }
+    );
     const port = await new Promise<number>((resolve) => {
       server.listen(0, () => {
         resolve((server.address() as { port: number }).port);
@@ -136,12 +138,14 @@ describe("FeatureSignalsProvider", () => {
 
   it("passes custom userKey", async () => {
     let receivedKey = "";
-    const server = http.createServer((req, res) => {
-      const url = new URL(req.url!, "http://localhost");
-      receivedKey = url.searchParams.get("key") ?? "";
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end("{}");
-    });
+    const server = http.createServer(
+      (req: http.IncomingMessage, res: http.ServerResponse) => {
+        const url = new URL(req.url ?? "", "http://localhost");
+        receivedKey = url.searchParams.get("key") ?? "";
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end("{}");
+      }
+    );
     const port = await new Promise<number>((resolve) => {
       server.listen(0, () => {
         resolve((server.address() as { port: number }).port);

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import type { Flag, Segment } from "@/lib/types";
 
 interface PaletteItem {
   id: string;
@@ -59,7 +60,7 @@ export function CommandPalette() {
           api.listFlags(token, projectId),
           api.listSegments(token, projectId),
         ]);
-        (flags || []).forEach((f: any) => {
+        (flags || []).forEach((f: Flag) => {
           results.push({
             id: `flag-${f.key}`,
             label: f.key,
@@ -68,7 +69,7 @@ export function CommandPalette() {
             href: `/flags/${f.key}`,
           });
         });
-        (segments || []).forEach((s: any) => {
+        (segments || []).forEach((s: Segment) => {
           results.push({
             id: `seg-${s.key}`,
             label: s.key,

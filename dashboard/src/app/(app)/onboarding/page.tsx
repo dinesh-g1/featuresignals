@@ -142,9 +142,15 @@ export default function OnboardingPage() {
     if (!token) return;
     api.getOnboarding(token)
       .then((data) => {
-        if (data?.steps) {
-          setCompleted(data.steps);
-          const firstIncomplete = STEPS.findIndex((s) => !data.steps[s.key]);
+        if (data) {
+          const steps: Record<string, boolean> = {
+            plan_chosen: data.plan_selected,
+            flag_created: data.first_flag_created,
+            sdk_installed: data.first_sdk_connected,
+            completed: data.completed,
+          };
+          setCompleted(steps);
+          const firstIncomplete = STEPS.findIndex((s) => !steps[s.key]);
           setCurrentStep(firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete);
         }
       })
@@ -192,8 +198,8 @@ export default function OnboardingPage() {
       }
       document.body.appendChild(form);
       form.submit();
-    } catch (err: any) {
-      toast(err.message || "Failed to start checkout", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to start checkout", "error");
     }
   }
 
@@ -208,13 +214,13 @@ export default function OnboardingPage() {
       await api.createFlag(token, projectId, {
         key: flagForm.key,
         name: flagForm.name,
-        type: "boolean",
+        flag_type: "boolean",
       });
       toast("Flag created successfully!", "success");
       setFlagForm({ key: "", name: "" });
       await markStepComplete("flag_created");
-    } catch (err: any) {
-      toast(err.message || "Failed to create flag", "error");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create flag", "error");
     } finally {
       setCreatingFlag(false);
     }

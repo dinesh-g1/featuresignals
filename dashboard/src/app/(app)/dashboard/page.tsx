@@ -5,14 +5,15 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, StatCard, Card, CardHeader, CardContent, Badge, EmptyState, LoadingSpinner } from "@/components/ui";
 import { Flag, FolderOpen, Clock } from "lucide-react";
+import type { Project, Flag as FlagData, AuditEntry } from "@/lib/types";
 
 export default function DashboardPage() {
   const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [flags, setFlags] = useState<any[]>([]);
-  const [audit, setAudit] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [flags, setFlags] = useState<FlagData[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export default function DashboardPage() {
               description="Create your first flag to get started."
             />
           ) : (
-            audit.map((entry: any) => (
+            audit.map((entry) => (
               <div key={entry.id} className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="primary">{entry.action}</Badge>
