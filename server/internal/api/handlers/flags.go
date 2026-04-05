@@ -40,6 +40,19 @@ type CreateFlagRequest struct {
 	MutualExclusionGroup string          `json:"mutual_exclusion_group,omitempty"`
 }
 
+func defaultValueForType(ft domain.FlagType) json.RawMessage {
+	switch ft {
+	case domain.FlagTypeString:
+		return json.RawMessage(`""`)
+	case domain.FlagTypeNumber:
+		return json.RawMessage(`0`)
+	case domain.FlagTypeJSON:
+		return json.RawMessage(`{}`)
+	default:
+		return json.RawMessage(`false`)
+	}
+}
+
 func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
@@ -66,7 +79,7 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	defaultVal := req.DefaultValue
 	if defaultVal == nil {
-		defaultVal = json.RawMessage(`false`)
+		defaultVal = defaultValueForType(flagType)
 	}
 
 	flag := &domain.Flag{

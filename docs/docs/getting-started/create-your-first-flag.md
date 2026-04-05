@@ -26,6 +26,8 @@ Navigate to **Flags** and click **Create Flag**.
 | Type | `boolean` | Flag type (`boolean`, `string`, `number`, `json`, `ab`) |
 | Default Value | `false` | Returned when the flag is disabled |
 
+The **Default Value** must match the flag type. When you change the type, it auto-resets to a sensible default (`false` for boolean, `""` for string, `0` for number, `{}` for JSON). You can customize it to any value that matches your type.
+
 The flag key is immutable after creation and is what your SDKs reference.
 
 ## Step 3: Enable Per Environment

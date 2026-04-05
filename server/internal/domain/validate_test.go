@@ -44,6 +44,45 @@ func TestFlag_Validate_RequiredFields(t *testing.T) {
 	}
 }
 
+func TestFlag_Validate_DefaultValueTypeMismatch(t *testing.T) {
+	tests := []struct {
+		name    string
+		flag    Flag
+		wantErr string
+	}{
+		{"bool flag with string value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeBoolean, DefaultValue: json.RawMessage(`"hello"`)}, "must be a boolean"},
+		{"string flag with bool value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeString, DefaultValue: json.RawMessage(`true`)}, "must be a string"},
+		{"number flag with string value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeNumber, DefaultValue: json.RawMessage(`"five"`)}, "must be a number"},
+		{"json flag with bool value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeJSON, DefaultValue: json.RawMessage(`true`)}, "must be an object or array"},
+		{"json flag with string value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeJSON, DefaultValue: json.RawMessage(`"str"`)}, "must be an object or array"},
+		{"bool flag with correct value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeBoolean, DefaultValue: json.RawMessage(`true`)}, ""},
+		{"string flag with correct value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeString, DefaultValue: json.RawMessage(`"hello"`)}, ""},
+		{"number flag with correct value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeNumber, DefaultValue: json.RawMessage(`42`)}, ""},
+		{"number flag with float value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeNumber, DefaultValue: json.RawMessage(`3.14`)}, ""},
+		{"json flag with object", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeJSON, DefaultValue: json.RawMessage(`{"k":"v"}`)}, ""},
+		{"json flag with array", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeJSON, DefaultValue: json.RawMessage(`[1,2]`)}, ""},
+		{"ab flag with any value", Flag{Key: "ok", Name: "ok", FlagType: FlagTypeAB, DefaultValue: json.RawMessage(`"anything"`)}, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.flag.Validate()
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Errorf("expected no error, got %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+			}
+			if !contains(err.Error(), tt.wantErr) {
+				t.Errorf("error = %q, want substring %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestSegment_Validate(t *testing.T) {
 	err := (&Segment{Key: "seg", Name: "Seg", MatchType: MatchAll}).Validate()
 	if err != nil {
