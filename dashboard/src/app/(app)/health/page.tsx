@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { PageHeader, Card, CardHeader, Badge, LoadingSpinner } from "@/components/ui";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function FlagHealthPage() {
   const token = useAppStore((s) => s.token);
@@ -74,83 +77,73 @@ export default function FlagHealthPage() {
   const scoreBg = healthScore >= 80 ? "bg-emerald-50 ring-emerald-100" : healthScore >= 50 ? "bg-amber-50 ring-amber-100" : "bg-red-50 ring-red-100";
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-      </div>
-    );
+    return <LoadingSpinner fullPage />;
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Flag Health</h1>
-        <p className="mt-1 text-sm text-slate-500">Monitor technical debt and flag hygiene</p>
-      </div>
+    <div className="space-y-6 sm:space-y-8">
+      <PageHeader
+        title="Flag Health"
+        description="Monitor technical debt and flag hygiene"
+      />
 
-      {/* Score and summary */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
-        <div className={`rounded-xl border border-slate-200 bg-white p-6 text-center ring-1 ${scoreBg}`}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6">
+        <div className={cn("rounded-xl border border-slate-200 bg-white p-4 text-center ring-1 sm:p-6", scoreBg)}>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Health Score</p>
-          <p className={`mt-2 text-5xl font-bold ${scoreColor}`}>{healthScore}</p>
+          <p className={cn("mt-2 text-3xl font-bold sm:text-5xl", scoreColor)}>{healthScore}</p>
           <p className="mt-1 text-xs text-slate-500">out of 100</p>
         </div>
-        <StatCard label="Total Flags" value={flags.length} color="indigo" />
-        <StatCard label="Stale" value={staleFlags.length} color={staleFlags.length > 0 ? "amber" : "emerald"} />
-        <StatCard label="Expired" value={expired.length} color={expired.length > 0 ? "red" : "emerald"} />
+        <HealthStatCard label="Total Flags" value={flags.length} color="indigo" />
+        <HealthStatCard label="Stale" value={staleFlags.length} color={staleFlags.length > 0 ? "amber" : "emerald"} />
+        <HealthStatCard label="Expired" value={expired.length} color={expired.length > 0 ? "red" : "emerald"} />
       </div>
 
-      {/* Expired flags */}
       {expired.length > 0 && (
-        <Section title="Expired Flags" subtitle="These flags have passed their expiration date and are being auto-disabled by the eval engine." color="red">
+        <HealthSection title="Expired Flags" subtitle="These flags have passed their expiration date and are being auto-disabled by the eval engine.">
           {expired.map((f) => (
-            <FlagRow key={f.id} flag={f} badge={`Expired ${new Date(f.expires_at).toLocaleDateString()}`} badgeColor="red" />
+            <FlagRow key={f.id} flag={f} badge={`Expired ${new Date(f.expires_at).toLocaleDateString()}`} variant="danger" />
           ))}
-        </Section>
+        </HealthSection>
       )}
 
-      {/* Expiring soon */}
       {expiringSoon.length > 0 && (
-        <Section title="Expiring Soon" subtitle={`These flags expire within the next ${EXPIRING_SOON_DAYS} days.`} color="amber">
+        <HealthSection title="Expiring Soon" subtitle={`These flags expire within the next ${EXPIRING_SOON_DAYS} days.`}>
           {expiringSoon.map((f) => {
             const daysLeft = Math.ceil((new Date(f.expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-            return <FlagRow key={f.id} flag={f} badge={`${daysLeft}d left`} badgeColor="amber" />;
+            return <FlagRow key={f.id} flag={f} badge={`${daysLeft}d left`} variant="warning" />;
           })}
-        </Section>
+        </HealthSection>
       )}
 
-      {/* Stale flags */}
       {staleFlags.length > 0 && (
-        <Section title="Stale Flags" subtitle="Not updated within their category threshold. Consider cleaning up." color="slate">
+        <HealthSection title="Stale Flags" subtitle="Not updated within their category threshold. Consider cleaning up.">
           {staleFlags.map((f) => {
             const age = Math.floor((now.getTime() - new Date(f.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-            return <FlagRow key={f.id} flag={f} badge={`${age}d old`} badgeColor="slate" />;
+            return <FlagRow key={f.id} flag={f} badge={`${age}d old`} variant="default" />;
           })}
-        </Section>
+        </HealthSection>
       )}
 
-      {/* No description */}
       {noDescription.length > 0 && (
-        <Section title="Missing Description" subtitle="Flags without descriptions are harder for the team to understand." color="slate">
+        <HealthSection title="Missing Description" subtitle="Flags without descriptions are harder for the team to understand.">
           {noDescription.map((f) => (
-            <FlagRow key={f.id} flag={f} badge="No description" badgeColor="slate" />
+            <FlagRow key={f.id} flag={f} badge="No description" variant="default" />
           ))}
-        </Section>
+        </HealthSection>
       )}
 
-      {/* No expiration */}
-      <Section title="No Expiration Set" subtitle={`${noExpiration.length} of ${flags.length} flags have no expiration date. Consider adding one to prevent flag debt.`} color="slate">
-        <div className="text-sm text-slate-500 px-6 py-4">
+      <HealthSection title="No Expiration Set" subtitle={`${noExpiration.length} of ${flags.length} flags have no expiration date. Consider adding one to prevent flag debt.`}>
+        <div className="text-sm text-slate-500 px-4 py-4 sm:px-6">
           {noExpiration.length === 0
             ? "All flags have expiration dates set."
             : `${noExpiration.length} flag${noExpiration.length > 1 ? "s" : ""} without expiration.`}
         </div>
-      </Section>
+      </HealthSection>
     </div>
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function HealthStatCard({ label, value, color }: { label: string; value: number; color: string }) {
   const colors: Record<string, string> = {
     indigo: "text-indigo-600",
     emerald: "text-emerald-600",
@@ -158,44 +151,35 @@ function StatCard({ label, value, color }: { label: string; value: number; color
     red: "text-red-600",
   };
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 text-center transition-all hover:shadow-lg hover:border-slate-300">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 text-center transition-all hover:shadow-lg hover:border-slate-300 sm:p-6">
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${colors[color] || "text-slate-900"}`}>{value}</p>
+      <p className={cn("mt-2 text-2xl font-bold sm:text-3xl", colors[color] || "text-slate-900")}>{value}</p>
     </div>
   );
 }
 
-function Section({ title, subtitle, color, children }: { title: string; subtitle: string; color: string; children: React.ReactNode }) {
+function HealthSection({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:border-slate-300">
-      <div className="border-b border-slate-200 px-6 py-4">
+    <Card className="hover:shadow-lg hover:border-slate-300">
+      <CardHeader>
         <h2 className="font-semibold text-slate-900">{title}</h2>
         <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
-      </div>
+      </CardHeader>
       <div className="divide-y divide-slate-100">{children}</div>
-    </div>
+    </Card>
   );
 }
 
-function FlagRow({ flag, badge, badgeColor }: { flag: any; badge: string; badgeColor: string }) {
-  const colors: Record<string, string> = {
-    red: "bg-red-50 text-red-700 ring-red-200",
-    amber: "bg-amber-50 text-amber-700 ring-amber-200",
-    slate: "bg-slate-100 text-slate-600 ring-slate-200",
-  };
+function FlagRow({ flag, badge, variant }: { flag: any; badge: string; variant: "danger" | "warning" | "default" }) {
   return (
-    <Link href={`/flags/${flag.key}`} className="flex items-center justify-between px-6 py-3 transition-colors hover:bg-indigo-50/30">
+    <Link href={`/flags/${flag.key}`} className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6">
       <div className="min-w-0">
         <p className="font-mono text-sm font-medium text-slate-900">{flag.key}</p>
         <p className="text-xs text-slate-500 truncate">{flag.name}</p>
       </div>
-      <div className="flex items-center gap-3">
-        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ring-1 ${colors[badgeColor] || colors.slate}`}>
-          {badge}
-        </span>
-        <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <Badge variant={variant}>{badge}</Badge>
+        <ChevronRight className="h-4 w-4 text-slate-400" />
       </div>
     </Link>
   );

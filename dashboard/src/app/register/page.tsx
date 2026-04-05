@@ -3,22 +3,20 @@
 import { Suspense, useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, X, Mail } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 function CheckIcon({ met }: { met: boolean }) {
   if (met) {
-    return (
-      <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-      </svg>
-    );
+    return <Check className="h-4 w-4 text-emerald-500" />;
   }
-  return (
-    <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
+  return <X className="h-4 w-4 text-slate-300" />;
 }
 
 function PasswordStrength({ password }: { password: string }) {
@@ -80,11 +78,7 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
   }, []);
 
   return (
-    <div
-      style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}
-      onClick={focusInput}
-    >
-      {/* Hidden real input that captures all keyboard/paste events */}
+    <div className="relative flex flex-col items-center" onClick={focusInput}>
       <input
         ref={inputRef}
         type="text"
@@ -96,57 +90,32 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         maxLength={6}
-        style={{
-          position: "absolute",
-          opacity: 0,
-          width: "1px",
-          height: "1px",
-          top: 0,
-          left: 0,
-          pointerEvents: "none",
-        }}
+        className="absolute opacity-0 w-px h-px top-0 left-0 pointer-events-none"
         aria-label="Enter 6-digit verification code"
       />
-      {/* Visual digit boxes (divs, not inputs — immune to form resets) */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "10px", cursor: "text" }}>
+      <div className="flex justify-center gap-2 sm:gap-2.5 cursor-text">
         {digits.map((d, i) => {
           const isFilled = d.trim() !== "";
           const isActive = focused && i === activeIdx;
           return (
             <div
               key={i}
-              style={{
-                width: "50px",
-                height: "56px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "10px",
-                border: isActive ? "2px solid #6366f1" : "2px solid #cbd5e1",
-                backgroundColor: isFilled ? "#f0f0ff" : "#ffffff",
-                boxShadow: isActive ? "0 0 0 3px rgba(99,102,241,0.15)" : "0 1px 2px rgba(0,0,0,0.05)",
-                fontSize: "24px",
-                fontWeight: 700,
-                color: "#1e293b",
-                transition: "all 150ms ease",
-                userSelect: "none",
-              }}
+              className={cn(
+                "w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center rounded-lg border-2 text-lg sm:text-2xl font-bold text-slate-800 transition-all select-none",
+                isActive
+                  ? "border-indigo-500 shadow-[0_0_0_3px_rgba(99,102,241,0.15)]"
+                  : "border-slate-300 shadow-sm",
+                isFilled ? "bg-indigo-50" : "bg-white",
+              )}
             >
               {isFilled ? d : isActive ? (
-                <div style={{
-                  width: "2px",
-                  height: "24px",
-                  backgroundColor: "#6366f1",
-                  borderRadius: "1px",
-                  animation: "blink 1s step-end infinite",
-                }} />
+                <div className="w-0.5 h-6 bg-indigo-500 rounded-sm animate-blink" />
               ) : null}
             </div>
           );
         })}
       </div>
-      {/* Blinking cursor animation */}
-      <style>{`@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }`}</style>
+      <style>{`@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } } .animate-blink { animation: blink 1s step-end infinite; }`}</style>
     </div>
   );
 }
@@ -228,12 +197,9 @@ function RegisterForm() {
     }
   }
 
-  const inputCls =
-    "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-lg space-y-8 rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+      <Card className="w-full max-w-lg space-y-8 p-6 sm:p-8 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-indigo-600">FeatureSignals</h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -249,27 +215,22 @@ function RegisterForm() {
             return (
               <div key={label} className="flex items-center">
                 {i > 0 && (
-                  <div className={`h-0.5 w-16 ${isCompleted || isCurrent ? "bg-indigo-400" : "bg-slate-200"}`} />
+                  <div className={cn("h-0.5 w-12 sm:w-16", isCompleted || isCurrent ? "bg-indigo-400" : "bg-slate-200")} />
                 )}
                 <div className="flex flex-col items-center gap-1">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors",
                       isCompleted
                         ? "bg-emerald-500 text-white"
                         : isCurrent
                           ? "bg-indigo-600 text-white ring-4 ring-indigo-100"
-                          : "bg-slate-200 text-slate-500"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    ) : (
-                      i + 1
+                          : "bg-slate-200 text-slate-500",
                     )}
+                  >
+                    {isCompleted ? <Check className="h-4 w-4" /> : i + 1}
                   </div>
-                  <span className={`text-xs font-medium ${isCurrent ? "text-indigo-600" : isCompleted ? "text-emerald-600" : "text-slate-400"}`}>
+                  <span className={cn("text-xs font-medium", isCurrent ? "text-indigo-600" : isCompleted ? "text-emerald-600" : "text-slate-400")}>
                     {label}
                   </span>
                 </div>
@@ -293,30 +254,26 @@ function RegisterForm() {
             }}
             className="space-y-4"
           >
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name <span className="text-red-500">*</span></label>
-              <input id="name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className={inputCls} />
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+              <Input id="name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email <span className="text-red-500">*</span></label>
-              <input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className={inputCls} />
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password <span className="text-red-500">*</span></label>
-              <input id="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required className={inputCls} />
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+              <Input id="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
               <PasswordStrength password={form.password} />
             </div>
-            <div>
-              <label htmlFor="org_name" className="block text-sm font-medium text-slate-700">Organization Name <span className="text-red-500">*</span></label>
-              <input id="org_name" type="text" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required className={inputCls} />
+            <div className="space-y-1.5">
+              <Label htmlFor="org_name">Organization Name <span className="text-red-500">*</span></Label>
+              <Input id="org_name" type="text" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required />
             </div>
-            <button
-              type="submit"
-              disabled={!canSubmitForm || loading}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <Button type="submit" disabled={!canSubmitForm || loading} className="w-full">
               {loading ? "Sending verification code..." : "Continue"}
-            </button>
+            </Button>
 
             <div className="text-center">
               <p className="text-xs text-slate-400">
@@ -334,9 +291,7 @@ function RegisterForm() {
           <div className="space-y-5">
             <div className="text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
-                <svg className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
+                <Mail className="h-7 w-7 text-indigo-600" />
               </div>
               <p className="mt-4 text-sm text-slate-500">
                 We sent a 6-digit verification code to<br />
@@ -346,13 +301,13 @@ function RegisterForm() {
 
             <OTPInput value={otp} onChange={setOtp} />
 
-            <button
+            <Button
               onClick={handleCompleteSignup}
               disabled={otp.length !== 6 || loading}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full"
             >
               {loading ? "Creating your account..." : "Verify & Create Account"}
-            </button>
+            </Button>
 
             <div className="text-center">
               {countdown > 0 ? (
@@ -382,7 +337,7 @@ function RegisterForm() {
             Already have an account? <Link href="/login" className="font-medium text-indigo-600 transition-colors hover:text-indigo-700">Sign in</Link>
           </p>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

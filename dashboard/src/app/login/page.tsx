@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md space-y-8 rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+      <Card className="w-full max-w-md space-y-8 p-6 sm:p-8 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-indigo-600">FeatureSignals</h1>
           <p className="mt-2 text-sm text-slate-500">Sign in to your account</p>
@@ -45,44 +49,38 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Signing in..." : "Sign in"}
-          </button>
+          </Button>
         </form>
 
         <p className="text-center text-sm text-slate-500">
           Don&apos;t have an account?{" "}
           <Link href="/register" className="font-medium text-indigo-600 transition-colors hover:text-indigo-700">Sign up</Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

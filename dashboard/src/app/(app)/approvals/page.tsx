@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { PageHeader, Card, Button, Badge, EmptyState, Textarea } from "@/components/ui";
+import { CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  pending: { bg: "bg-amber-50", text: "text-amber-700" },
-  approved: { bg: "bg-emerald-50", text: "text-emerald-700" },
-  rejected: { bg: "bg-red-50", text: "text-red-700" },
-  applied: { bg: "bg-blue-50", text: "text-blue-700" },
+const STATUS_VARIANT: Record<string, "warning" | "success" | "danger" | "info"> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+  applied: "info",
 };
 
 export default function ApprovalsPage() {
@@ -40,61 +43,52 @@ export default function ApprovalsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Approval Requests</h1>
-          <p className="mt-1 text-sm text-slate-500">Review and approve flag changes before they go live</p>
-        </div>
-      </div>
+    <div className="space-y-4 sm:space-y-6">
+      <PageHeader
+        title="Approval Requests"
+        description="Review and approve flag changes before they go live"
+      />
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {["", "pending", "approved", "rejected", "applied"].map((s) => (
           <button
             key={s}
             onClick={() => setFilter(s)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              filter === s ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "text-slate-500 hover:bg-slate-100"
-            }`}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+              filter === s ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "text-slate-500 hover:bg-slate-100",
+            )}
           >
             {s || "All"}
           </button>
         ))}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:border-slate-300">
+      <Card className="hover:shadow-lg hover:border-slate-300">
         {approvals.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="mt-3 text-sm font-medium text-slate-500">No approval requests</p>
-            <p className="mt-1 text-xs text-slate-400">Changes requiring approval will appear here.</p>
-          </div>
+          <EmptyState
+            icon={CheckCircle}
+            title="No approval requests"
+            description="Changes requiring approval will appear here."
+          />
         ) : (
           <div className="divide-y divide-slate-100">
             {approvals.map((ar: any) => {
-              const sc = STATUS_COLORS[ar.status] || STATUS_COLORS.pending;
               const isReviewing = reviewingId === ar.id;
               return (
-                <div key={ar.id} className="px-6 py-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${sc.bg} ${sc.text} ring-1 ring-inset`}>
+                <div key={ar.id} className="px-4 py-3 space-y-2 sm:px-6 sm:py-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                      <Badge variant={STATUS_VARIANT[ar.status] || "default"}>
                         {ar.status}
-                      </span>
+                      </Badge>
                       <span className="text-sm font-medium text-slate-700">{ar.change_type}</span>
                       <span className="text-xs text-slate-400">Flag: {ar.flag_id?.slice(0, 8)}&hellip;</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-400">{new Date(ar.created_at).toLocaleString()}</span>
                       {ar.status === "pending" && !isReviewing && (
-                        <button
-                          onClick={() => setReviewingId(ar.id)}
-                          className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700"
-                        >
-                          Review
-                        </button>
+                        <Button size="sm" onClick={() => setReviewingId(ar.id)}>Review</Button>
                       )}
                     </div>
                   </div>
@@ -106,35 +100,23 @@ export default function ApprovalsPage() {
                   )}
 
                   {isReviewing && (
-                    <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-4 mt-2 space-y-3">
-                      <textarea
+                    <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-3 mt-2 space-y-3 sm:p-4">
+                      <Textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         placeholder="Add a review note (optional)..."
                         rows={2}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleReview(ar.id, "approve")}
-                          disabled={loading}
-                          className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                        >
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => handleReview(ar.id, "approve")} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
                           Approve & Apply
-                        </button>
-                        <button
-                          onClick={() => handleReview(ar.id, "reject")}
-                          disabled={loading}
-                          className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                        >
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleReview(ar.id, "reject")} disabled={loading}>
                           Reject
-                        </button>
-                        <button
-                          onClick={() => { setReviewingId(null); setNote(""); }}
-                          className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-white"
-                        >
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => { setReviewingId(null); setNote(""); }}>
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -143,7 +125,7 @@ export default function ApprovalsPage() {
             })}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

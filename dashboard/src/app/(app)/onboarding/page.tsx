@@ -3,9 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, Sparkles, Copy, ClipboardCheck } from "lucide-react";
 import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 const STEPS = [
   { key: "plan_chosen", label: "Choose Plan" },
@@ -228,9 +234,9 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 py-8">
+    <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           Welcome to <span className="text-indigo-600">FeatureSignals</span>
         </h1>
         <p className="mt-2 text-sm text-slate-500">Let&apos;s get you set up in a few quick steps</p>
@@ -246,28 +252,26 @@ export default function OnboardingPage() {
               <div className="flex flex-col items-center">
                 <button
                   onClick={() => setCurrentStep(idx)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                  className={cn(
+                    "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-xs sm:text-sm font-bold transition-all",
                     done
                       ? "bg-emerald-500 text-white shadow-sm"
                       : active
                         ? "bg-indigo-600 text-white shadow-md ring-4 ring-indigo-100"
-                        : "bg-slate-200 text-slate-500"
-                  }`}
-                >
-                  {done ? (
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    idx + 1
+                        : "bg-slate-200 text-slate-500",
                   )}
+                >
+                  {done ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : idx + 1}
                 </button>
-                <span className={`mt-2 text-xs font-medium ${active ? "text-indigo-700" : done ? "text-emerald-700" : "text-slate-400"}`}>
+                <span className={cn(
+                  "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium",
+                  active ? "text-indigo-700" : done ? "text-emerald-700" : "text-slate-400",
+                )}>
                   {step.label}
                 </span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div className={`mx-2 h-0.5 w-12 sm:w-20 ${done ? "bg-emerald-400" : "bg-slate-200"}`} />
+                <div className={cn("mx-1 sm:mx-2 h-0.5 w-8 sm:w-12 md:w-20", done ? "bg-emerald-400" : "bg-slate-200")} />
               )}
             </div>
           );
@@ -275,7 +279,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Step Content */}
-      <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+      <Card className="p-4 sm:p-6 md:p-8 shadow-sm">
         {currentStep === 0 && <StepChoosePlan onChooseFree={handleChooseFree} onUpgradePro={handleUpgradePro} completed={!!completed.plan_chosen} pricing={pricing} />}
         {currentStep === 1 && (
           <StepCreateFlag
@@ -296,7 +300,7 @@ export default function OnboardingPage() {
           />
         )}
         {currentStep === 3 && <StepComplete onFinish={handleFinish} />}
-      </div>
+      </Card>
 
       <div className="text-center">
         <button
@@ -329,9 +333,7 @@ function StepChoosePlan({
     return (
       <div className="text-center py-8">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+          <Check className="h-8 w-8 text-emerald-600" />
         </div>
         <p className="mt-4 text-lg font-semibold text-slate-900">Plan selected!</p>
         <p className="mt-1 text-sm text-slate-500">You can change your plan anytime in Billing settings.</p>
@@ -344,26 +346,26 @@ function StepChoosePlan({
       <h2 className="text-xl font-semibold text-slate-900">Choose Your Plan</h2>
       <p className="mt-1 text-sm text-slate-500">Start free and upgrade as you grow.</p>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {/* Free */}
-        <div className="rounded-xl border border-slate-200 p-5">
+        <Card className="p-5">
           <h3 className="text-base font-semibold text-slate-900">{free?.name ?? "Free"}</h3>
           <p className="mt-1 text-2xl font-bold text-slate-900">{free?.display_price ?? "₹0"}<span className="text-sm font-normal text-slate-400">/{free?.billing_period ?? "mo"}</span></p>
           <ul className="mt-4 space-y-1.5">
             {(free?.features ?? ["1 project", "2 environments", "3 team members"]).map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                <svg className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <Check className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                 {f}
               </li>
             ))}
           </ul>
-          <button onClick={onChooseFree} className="mt-4 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50">
+          <Button variant="secondary" onClick={onChooseFree} className="mt-4 w-full">
             Continue with Free
-          </button>
-        </div>
+          </Button>
+        </Card>
 
         {/* Pro */}
-        <div className="rounded-xl border-2 border-indigo-300 bg-indigo-50/30 p-5 ring-1 ring-indigo-100 shadow-sm">
+        <Card className="border-2 border-indigo-300 bg-indigo-50/30 p-5 ring-1 ring-indigo-100 shadow-sm">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold text-slate-900">{pro?.name ?? "Pro"}</h3>
             <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">POPULAR</span>
@@ -372,32 +374,32 @@ function StepChoosePlan({
           <ul className="mt-4 space-y-1.5">
             {(pro?.features ?? ["Unlimited projects", "Unlimited environments", "Unlimited team members"]).map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                <svg className="h-3.5 w-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <Check className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
                 {f}
               </li>
             ))}
           </ul>
-          <button onClick={onUpgradePro} className="mt-4 w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">
+          <Button onClick={onUpgradePro} className="mt-4 w-full">
             Upgrade to Pro
-          </button>
-        </div>
+          </Button>
+        </Card>
 
         {/* Enterprise */}
-        <div className="rounded-xl border border-slate-200 p-5">
+        <Card className="p-5 sm:col-span-2 md:col-span-1">
           <h3 className="text-base font-semibold text-slate-900">{enterprise?.name ?? "Enterprise"}</h3>
           <p className="mt-1 text-2xl font-bold text-slate-900">{enterprise?.display_price ?? "Custom"}</p>
           <ul className="mt-4 space-y-1.5">
             {(enterprise?.features ?? ["Everything in Pro", "Dedicated support", "Custom SLA", "Self-hosted option"]).map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                <svg className="h-3.5 w-3.5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <Check className="h-3.5 w-3.5 shrink-0 text-purple-500" />
                 {f}
               </li>
             ))}
           </ul>
-          <a href="mailto:support@featuresignals.com" className="mt-4 block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 transition-all hover:bg-slate-50">
-            Contact Sales
-          </a>
-        </div>
+          <Button variant="secondary" asChild className="mt-4 w-full">
+            <a href="mailto:support@featuresignals.com">Contact Sales</a>
+          </Button>
+        </Card>
       </div>
     </div>
   );
@@ -422,9 +424,7 @@ function StepCreateFlag({
     return (
       <div className="text-center py-8">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+          <Check className="h-8 w-8 text-emerald-600" />
         </div>
         <p className="mt-4 text-lg font-semibold text-slate-900">Flag created!</p>
         <p className="mt-1 text-sm text-slate-500">You can manage flags from the Flags page.</p>
@@ -438,38 +438,32 @@ function StepCreateFlag({
       <p className="mt-1 text-sm text-slate-500">Feature flags let you toggle functionality without redeploying.</p>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Flag Key</label>
-          <input
+        <div className="space-y-1.5">
+          <Label>Flag Key</Label>
+          <Input
             value={form.key}
             onChange={(e) => setForm({ ...form, key: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "-") })}
             placeholder="my-new-feature"
             required
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
-          <p className="mt-1 text-xs text-slate-400">Lowercase letters, numbers, dashes, and underscores only.</p>
+          <p className="text-xs text-slate-400">Lowercase letters, numbers, dashes, and underscores only.</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Display Name</label>
-          <input
+        <div className="space-y-1.5">
+          <Label>Display Name</Label>
+          <Input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="My New Feature"
             required
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={creating}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
-          >
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button type="submit" disabled={creating}>
             {creating ? "Creating..." : "Create Flag"}
-          </button>
-          <button type="button" onClick={onSkip} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
+          </Button>
+          <Button type="button" variant="secondary" onClick={onSkip}>
             Skip this step
-          </button>
+          </Button>
         </div>
       </form>
     </div>
@@ -499,9 +493,7 @@ function StepInstallSdk({
     return (
       <div className="text-center py-8">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+          <Check className="h-8 w-8 text-emerald-600" />
         </div>
         <p className="mt-4 text-lg font-semibold text-slate-900">SDK ready!</p>
         <p className="mt-1 text-sm text-slate-500">You&apos;re all set to start using feature flags in your app.</p>
@@ -519,11 +511,12 @@ function StepInstallSdk({
           <button
             key={tab.id}
             onClick={() => setSelectedSdk(tab.id)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               selectedSdk === tab.id
                 ? "bg-indigo-600 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+            )}
           >
             {tab.label}
           </button>
@@ -534,11 +527,11 @@ function StepInstallSdk({
         <div>
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-slate-500">Installation</span>
-            <button onClick={() => copyText(SDK_INSTALL[selectedSdk], "install")} className="text-xs font-medium text-indigo-600 hover:text-indigo-700">
-              {copied === "install" ? "Copied!" : "Copy"}
+            <button onClick={() => copyText(SDK_INSTALL[selectedSdk], "install")} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+              {copied === "install" ? <><ClipboardCheck className="h-3 w-3" /> Copied!</> : <><Copy className="h-3 w-3" /> Copy</>}
             </button>
           </div>
-          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
+          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 sm:p-4 text-xs sm:text-sm text-slate-100">
             <code>{SDK_INSTALL[selectedSdk]}</code>
           </pre>
         </div>
@@ -546,22 +539,19 @@ function StepInstallSdk({
         <div>
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-slate-500">Quick Start</span>
-            <button onClick={() => copyText(SDK_SNIPPET[selectedSdk], "snippet")} className="text-xs font-medium text-indigo-600 hover:text-indigo-700">
-              {copied === "snippet" ? "Copied!" : "Copy"}
+            <button onClick={() => copyText(SDK_SNIPPET[selectedSdk], "snippet")} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+              {copied === "snippet" ? <><ClipboardCheck className="h-3 w-3" /> Copied!</> : <><Copy className="h-3 w-3" /> Copy</>}
             </button>
           </div>
-          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">
+          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 sm:p-4 text-xs sm:text-sm text-slate-100">
             <code>{SDK_SNIPPET[selectedSdk]}</code>
           </pre>
         </div>
       </div>
 
-      <button
-        onClick={onComplete}
-        className="mt-6 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
-      >
+      <Button onClick={onComplete} className="mt-6">
         Mark as Complete
-      </button>
+      </Button>
     </div>
   );
 }
@@ -570,9 +560,7 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
   return (
     <div className="text-center py-8">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100">
-        <svg className="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-        </svg>
+        <Sparkles className="h-10 w-10 text-indigo-600" />
       </div>
 
       <h2 className="mt-6 text-2xl font-bold text-slate-900">You&apos;re All Set!</h2>
@@ -581,32 +569,20 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
       </p>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Link
-          href="/flags"
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
-        >
-          View Flags
-        </Link>
-        <Link
-          href="/segments"
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
-        >
-          Segments
-        </Link>
-        <Link
-          href="/settings/general"
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
-        >
-          Settings
-        </Link>
+        <Button variant="secondary" asChild>
+          <Link href="/flags">View Flags</Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <Link href="/segments">Segments</Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <Link href="/settings/general">Settings</Link>
+        </Button>
       </div>
 
-      <button
-        onClick={onFinish}
-        className="mt-6 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
-      >
+      <Button onClick={onFinish} className="mt-6" size="lg">
         Go to Flag Engine
-      </button>
+      </Button>
     </div>
   );
 }

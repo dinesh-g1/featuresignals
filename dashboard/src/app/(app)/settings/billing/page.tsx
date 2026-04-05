@@ -5,6 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { api, type PricingConfig } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Check } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -14,10 +20,18 @@ const statusColors: Record<string, string> = {
   unpaid: "bg-red-50 text-red-700 ring-red-100",
 };
 
-const planBadgeColors: Record<string, string> = {
-  free: "bg-slate-100 text-slate-700 ring-slate-200",
-  pro: "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  enterprise: "bg-purple-50 text-purple-700 ring-purple-200",
+const planBadgeVariant: Record<string, "default" | "primary" | "purple"> = {
+  free: "default",
+  pro: "primary",
+  enterprise: "purple",
+};
+
+const statusBadgeVariant: Record<string, "success" | "warning" | "danger" | "info"> = {
+  active: "success",
+  past_due: "warning",
+  canceled: "danger",
+  trialing: "info",
+  unpaid: "danger",
 };
 
 export default function BillingPage() {
@@ -92,33 +106,34 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-        </div>
+        <LoadingSpinner fullPage />
       ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <Card className="border-red-200 bg-red-50 p-4 sm:p-6 text-center">
           <p className="text-sm font-medium text-red-700">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-2 text-xs font-medium text-red-600 hover:text-red-700">
+          <Button variant="destructive-ghost" size="sm" onClick={() => window.location.reload()} className="mt-2">
             Try again
-          </button>
-        </div>
+          </Button>
+        </Card>
       ) : (
         <>
           {/* Current Plan */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
-            <div className="flex items-center justify-between mb-6">
+          <Card className="p-4 sm:p-6 hover:shadow-lg hover:border-slate-300">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Current Plan</h2>
                 <p className="mt-1 text-sm text-slate-500">Manage your subscription and billing</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${planBadgeColors[plan] || planBadgeColors.free}`}>
+                <Badge
+                  variant={planBadgeVariant[plan] || "default"}
+                  className="px-3 py-1 text-sm font-semibold"
+                >
                   {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                </span>
+                </Badge>
                 {status && status !== "none" && (
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${statusColors[status] || statusColors.active}`}>
+                  <Badge variant={statusBadgeVariant[status] || "success"} className="px-2.5 py-0.5 text-xs">
                     {status.replace("_", " ")}
-                  </span>
+                  </Badge>
                 )}
               </div>
             </div>
@@ -132,15 +147,11 @@ export default function BillingPage() {
               </p>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               {!isPaid && (
-                <button
-                  onClick={handleUpgrade}
-                  disabled={upgrading}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
-                >
+                <Button onClick={handleUpgrade} disabled={upgrading}>
                   {upgrading ? "Redirecting to PayU..." : "Upgrade to Pro"}
-                </button>
+                </Button>
               )}
               {isPaid && (
                 <p className="text-sm text-slate-500">
@@ -151,18 +162,18 @@ export default function BillingPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Card>
 
           {/* Usage */}
           {usage && (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:border-slate-300">
+            <Card className="p-4 sm:p-6 hover:shadow-lg hover:border-slate-300">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Usage</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <UsageCard label="Team Seats" used={usage.seats_used ?? 0} limit={usage.seats_limit ?? 3} />
                 <UsageCard label="Projects" used={usage.projects_used ?? 0} limit={usage.projects_limit ?? 1} />
                 <UsageCard label="Environments" used={usage.environments_used ?? 0} limit={usage.environments_limit ?? 2} />
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Plan Comparison */}
@@ -217,7 +228,7 @@ function UsageCard({ label, used, limit }: { label: string; used: number; limit:
       </p>
       <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200">
         <div
-          className={`h-1.5 rounded-full transition-all ${isNearLimit ? "bg-amber-500" : "bg-indigo-500"}`}
+          className={cn("h-1.5 rounded-full transition-all", isNearLimit ? "bg-amber-500" : "bg-indigo-500")}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -243,19 +254,20 @@ function PlanCard({
   action?: { label: string; onClick?: () => void; href?: string; disabled?: boolean };
 }) {
   return (
-    <div
-      className={`rounded-xl border p-6 transition-all ${
+    <Card
+      className={cn(
+        "p-4 sm:p-6",
         highlighted
           ? "border-indigo-300 bg-indigo-50/30 ring-1 ring-indigo-100 shadow-sm"
-          : "border-slate-200 bg-white hover:shadow-lg hover:border-slate-300"
-      }`}
+          : "hover:shadow-lg hover:border-slate-300",
+      )}
     >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">{name}</h3>
         {current && (
-          <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-200">
+          <Badge variant="primary" className="px-2.5 py-0.5 text-xs">
             Current
-          </span>
+          </Badge>
         )}
       </div>
       <div className="mt-2">
@@ -265,9 +277,7 @@ function PlanCard({
       <ul className="mt-4 space-y-2">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
-            <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" strokeWidth={2} />
             {f}
           </li>
         ))}
@@ -275,27 +285,21 @@ function PlanCard({
       {action && (
         <div className="mt-6">
           {action.href ? (
-            <a
-              href={action.href}
-              className="block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
-            >
-              {action.label}
-            </a>
+            <Button variant="secondary" className="w-full" asChild>
+              <a href={action.href}>{action.label}</a>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={action.onClick}
               disabled={action.disabled}
-              className={`w-full rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 ${
-                highlighted
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md"
-                  : "border border-slate-300 text-slate-700 hover:bg-slate-50"
-              }`}
+              variant={highlighted ? "primary" : "secondary"}
+              className="w-full"
             >
               {action.label}
-            </button>
+            </Button>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
