@@ -8,7 +8,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border border-slate-200 bg-white transition-all",
+      "rounded-xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200",
       className,
     )}
     {...props}
@@ -22,7 +22,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-4", className)}
+    className={cn("border-b border-slate-100 px-4 py-3 sm:px-6 sm:py-4", className)}
     {...props}
   />
 ));
@@ -47,7 +47,7 @@ const CardFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "border-t border-slate-200 px-4 py-3 sm:px-6 sm:py-4",
+      "border-t border-slate-100 px-4 py-3 sm:px-6 sm:py-4",
       className,
     )}
     {...props}

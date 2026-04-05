@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,11 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { KeyRound, Copy } from "lucide-react";
+
+const KEY_TYPE_OPTIONS = [
+  { value: "server", label: "Server" },
+  { value: "client", label: "Client" },
+];
 
 export default function APIKeysPage() {
   const token = useAppStore((s) => s.token);
@@ -24,6 +28,8 @@ export default function APIKeysPage() {
   const [newKey, setNewKey] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", type: "server" });
   const [revoking, setRevoking] = useState<string | null>(null);
+
+  const envOptions = useMemo(() => envs.map((e) => ({ value: e.id, label: e.name })), [envs]);
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -79,11 +85,9 @@ export default function APIKeysPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <Label>Environment:</Label>
-        <Select value={selectedEnv} onChange={(e) => setSelectedEnv(e.target.value)} className="sm:w-auto">
-          {envs.map((env) => (
-            <option key={env.id} value={env.id}>{env.name}</option>
-          ))}
-        </Select>
+        <div className="sm:w-auto">
+          <Select value={selectedEnv} onValueChange={setSelectedEnv} options={envOptions} placeholder="Select environment…" />
+        </div>
       </div>
 
       {newKey && (
@@ -108,14 +112,13 @@ export default function APIKeysPage() {
           required
           className="flex-1"
         />
-        <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="sm:w-auto">
-          <option value="server">Server</option>
-          <option value="client">Client</option>
-        </Select>
+        <div className="sm:w-auto">
+          <Select value={form.type} onValueChange={(val) => setForm({ ...form, type: val })} options={KEY_TYPE_OPTIONS} />
+        </div>
         <Button type="submit" className="shrink-0">Create Key</Button>
       </form>
 
-      <Card className="hover:shadow-lg hover:border-slate-300">
+      <Card>
         <div className="divide-y divide-slate-100">
           {keys.length === 0 ? (
             <EmptyState

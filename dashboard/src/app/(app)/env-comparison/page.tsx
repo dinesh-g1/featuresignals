@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -24,6 +24,16 @@ export default function EnvComparisonPage() {
     if (!token || !projectId) return;
     api.listEnvironments(token, projectId).then((e) => setEnvs(e ?? [])).catch(() => {});
   }, [token, projectId]);
+
+  const sourceOptions = useMemo(() => [
+    { value: "", label: "Select source…" },
+    ...envs.map((e) => ({ value: e.id, label: e.name })),
+  ], [envs]);
+
+  const targetOptions = useMemo(() => [
+    { value: "", label: "Select target…" },
+    ...envs.filter((e) => e.id !== sourceEnv).map((e) => ({ value: e.id, label: e.name })),
+  ], [envs, sourceEnv]);
 
   async function handleCompare() {
     if (!token || !projectId || !sourceEnv || !targetEnv) return;
@@ -88,24 +98,18 @@ export default function EnvComparisonPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
         <div className="flex-1">
           <Label>Source Environment</Label>
-          <Select value={sourceEnv} onChange={(e) => setSourceEnv(e.target.value)} className="mt-1">
-            <option value="">Select source...</option>
-            {envs.map((e) => (
-              <option key={e.id} value={e.id}>{e.name}</option>
-            ))}
-          </Select>
+          <div className="mt-1">
+            <Select value={sourceEnv} onValueChange={setSourceEnv} options={sourceOptions} placeholder="Select source…" />
+          </div>
         </div>
         <div className="hidden items-center pb-2 sm:flex">
           <ArrowLeftRight className="h-5 w-5 text-slate-400" />
         </div>
         <div className="flex-1">
           <Label>Target Environment</Label>
-          <Select value={targetEnv} onChange={(e) => setTargetEnv(e.target.value)} className="mt-1">
-            <option value="">Select target...</option>
-            {envs.filter((e) => e.id !== sourceEnv).map((e) => (
-              <option key={e.id} value={e.id}>{e.name}</option>
-            ))}
-          </Select>
+          <div className="mt-1">
+            <Select value={targetEnv} onValueChange={setTargetEnv} options={targetOptions} placeholder="Select target…" />
+          </div>
         </div>
         <Button onClick={handleCompare} disabled={!sourceEnv || !targetEnv || loading}>
           {loading ? "Comparing..." : "Compare"}

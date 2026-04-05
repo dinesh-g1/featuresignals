@@ -1,7 +1,7 @@
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { Card, CardHeader, CardContent, CardFooter } from "./card";
 export { Input } from "./input";
-export { Select } from "./select";
+export { Select, type SelectOption, type SelectProps } from "./select";
 export { Badge, badgeVariants, CategoryBadge, StatusBadge, type BadgeProps } from "./badge";
 export { EmptyState } from "./empty-state";
 export { LoadingSpinner } from "./loading-spinner";

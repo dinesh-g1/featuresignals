@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Select } from "@/components/ui/select";
+import { Plus, Trash2, ChevronDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Condition {
   attribute: string;
@@ -42,6 +45,16 @@ const OPERATORS = [
   { value: "exists", label: "exists" },
 ];
 
+const MATCH_TYPE_OPTIONS = [
+  { value: "all", label: "Match ALL" },
+  { value: "any", label: "Match ANY" },
+];
+
+const BOOLEAN_OPTIONS = [
+  { value: "true", label: "true" },
+  { value: "false", label: "false" },
+];
+
 function generateId() {
   return `rule_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -74,14 +87,12 @@ function ValueInput({
 }) {
   if (flagType === "boolean") {
     return (
-      <select
+      <Select
         value={String(value)}
-        onChange={(e) => onChange(e.target.value === "true")}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-      >
-        <option value="true">true</option>
-        <option value="false">false</option>
-      </select>
+        onValueChange={(v) => onChange(v === "true")}
+        options={BOOLEAN_OPTIONS}
+        size="sm"
+      />
     );
   }
   if (flagType === "number") {
@@ -90,7 +101,7 @@ function ValueInput({
         type="number"
         value={typeof value === "number" ? value : 0}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
       />
     );
   }
@@ -106,7 +117,7 @@ function ValueInput({
           }
         }}
         rows={2}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
         placeholder='{"key": "value"}'
       />
     );
@@ -116,7 +127,7 @@ function ValueInput({
       type="text"
       value={String(value ?? "")}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
       placeholder="Value when rule matches"
     />
   );
@@ -209,18 +220,16 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
         <div className="flex gap-2">
           <button
             onClick={addRule}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 shadow-sm transition-all duration-150 hover:bg-indigo-100 hover:shadow-md"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <Plus className="h-4 w-4" />
             Add Rule
           </button>
           {dirty && (
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Rules"}
             </button>
@@ -229,10 +238,10 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
       </div>
 
       {rules.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 px-6 py-8 text-center">
-          <svg className="mx-auto h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-          </svg>
+        <div className="rounded-xl border border-dashed border-slate-300 px-6 py-8 text-center">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 ring-1 ring-slate-100">
+            <Plus className="h-5 w-5 text-slate-400" />
+          </div>
           <p className="mt-2 text-sm text-slate-500">No targeting rules configured.</p>
           <p className="mt-1 text-xs text-slate-400">
             Click &ldquo;Add Rule&rdquo; to target specific users or segments.
@@ -247,9 +256,11 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
               return (
                 <div
                   key={rule.id}
-                  className={`rounded-xl border bg-white transition-all ${isExpanded ? "border-indigo-300 ring-2 ring-indigo-100 shadow-md" : "border-slate-200 hover:border-slate-300 hover:shadow-sm"}`}
+                  className={cn(
+                    "rounded-xl border bg-white transition-all duration-200",
+                    isExpanded ? "border-indigo-300 ring-2 ring-indigo-100 shadow-md" : "border-slate-200 hover:border-slate-300 hover:shadow-sm",
+                  )}
                 >
-                  {/* Header */}
                   <div
                     className="flex items-center justify-between px-5 py-3 cursor-pointer"
                     onClick={() => setExpandedRule(isExpanded ? null : rule.id)}
@@ -273,29 +284,17 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                           e.stopPropagation();
                           removeRule(rule.id);
                         }}
-                        className="rounded p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                        className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
                         title="Delete rule"
                       >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                      <svg
-                        className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", isExpanded && "rotate-180")} />
                     </div>
                   </div>
 
-                  {/* Expanded form */}
                   {isExpanded && (
-                    <div className="border-t border-slate-100 px-5 py-4 space-y-5">
-                      {/* Basic fields */}
+                    <div className="border-t border-slate-100 px-5 py-4 space-y-5 animate-fade-in">
                       <div className="grid grid-cols-3 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Priority</label>
@@ -304,7 +303,7 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                             min={0}
                             value={rule.priority}
                             onChange={(e) => updateRule(rule.id, { priority: parseInt(e.target.value) || 0 })}
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                           />
                         </div>
                         <div className="col-span-2">
@@ -314,24 +313,21 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                             value={rule.description}
                             onChange={(e) => updateRule(rule.id, { description: e.target.value })}
                             placeholder="e.g. Beta testers, Premium users"
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                           />
                         </div>
                       </div>
 
-                      {/* Conditions */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <label className="text-xs font-medium text-slate-500">Conditions</label>
-                            <select
+                            <Select
                               value={rule.match_type || "all"}
-                              onChange={(e) => updateRule(rule.id, { match_type: e.target.value })}
-                              className="rounded border border-slate-200 px-2 py-0.5 text-xs text-slate-600 focus:border-indigo-500 focus:outline-none"
-                            >
-                              <option value="all">Match ALL</option>
-                              <option value="any">Match ANY</option>
-                            </select>
+                              onValueChange={(val) => updateRule(rule.id, { match_type: val })}
+                              options={MATCH_TYPE_OPTIONS}
+                              size="sm"
+                            />
                           </div>
                           <button
                             onClick={() => addCondition(rule.id)}
@@ -351,17 +347,14 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                                   value={cond.attribute}
                                   onChange={(e) => updateCondition(rule.id, ci, { attribute: e.target.value })}
                                   placeholder="attribute (e.g. plan)"
-                                  className="w-36 rounded border border-slate-200 px-2 py-1.5 text-xs font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                  className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                                 />
-                                <select
+                                <Select
                                   value={cond.operator}
-                                  onChange={(e) => updateCondition(rule.id, ci, { operator: e.target.value })}
-                                  className="rounded border border-slate-200 px-2 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
-                                >
-                                  {OPERATORS.map((op) => (
-                                    <option key={op.value} value={op.value}>{op.label}</option>
-                                  ))}
-                                </select>
+                                  onValueChange={(val) => updateCondition(rule.id, ci, { operator: val })}
+                                  options={OPERATORS}
+                                  size="sm"
+                                />
                                 <input
                                   type="text"
                                   value={cond.values.join(", ")}
@@ -371,15 +364,13 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                                     })
                                   }
                                   placeholder="value(s), comma-separated"
-                                  className="flex-1 rounded border border-slate-200 px-2 py-1.5 text-xs font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                  className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                                 />
                                 <button
                                   onClick={() => removeCondition(rule.id, ci)}
-                                  className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                                  className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
                                 >
-                                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
+                                  <X className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             ))}
@@ -387,7 +378,6 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                         )}
                       </div>
 
-                      {/* Segment targeting */}
                       {segments.length > 0 && (
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-2">Target Segments</label>
@@ -398,11 +388,12 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                                 <button
                                   key={seg.key}
                                   onClick={() => toggleSegment(rule.id, seg.key)}
-                                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                  className={cn(
+                                    "rounded-full px-3 py-1 text-xs font-medium transition-all duration-150",
                                     active
-                                      ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300"
-                                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                                  }`}
+                                      ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300 shadow-sm"
+                                      : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+                                  )}
                                 >
                                   {seg.name || seg.key}
                                 </button>
@@ -412,7 +403,6 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                         </div>
                       )}
 
-                      {/* Percentage and value */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Rollout %</label>
@@ -426,7 +416,7 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                               onChange={(e) => updateRule(rule.id, { percentage: parseInt(e.target.value) })}
                               className="flex-1 accent-indigo-600"
                             />
-                            <span className="rounded bg-indigo-50 px-2 py-0.5 text-xs font-mono font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                            <span className="rounded-lg bg-indigo-50 px-2 py-0.5 text-xs font-mono font-semibold text-indigo-700 ring-1 ring-indigo-100">
                               {(rule.percentage / 100).toFixed(0)}%
                             </span>
                           </div>

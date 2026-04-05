@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         primary:
-          "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md",
+          "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-600/25",
         secondary:
-          "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900",
+          "border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300",
         ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
         destructive:
-          "bg-red-600 text-white hover:bg-red-700 hover:shadow-md",
+          "bg-red-600 text-white shadow-sm shadow-red-600/20 hover:bg-red-700 hover:shadow-md hover:shadow-red-600/25",
         "destructive-ghost":
           "text-red-600 hover:bg-red-50 hover:text-red-700",
         link: "text-indigo-600 underline-offset-4 hover:underline hover:text-indigo-700",
