@@ -50,9 +50,10 @@ export default function MetricsPage() {
 
   const envCounters = useMemo(() => {
     if (!data) return [];
+    const counters = data.counters ?? [];
     return envId
-      ? data.counters.filter((c) => c.env_id === envId)
-      : data.counters;
+      ? counters.filter((c) => c.env_id === envId)
+      : counters;
   }, [data, envId]);
 
   const topFlags = useMemo(() => {

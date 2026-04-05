@@ -193,7 +193,7 @@ export default function FlagsPage() {
 
   const filtered = useMemo(() => {
     let result = flags.filter(
-      (f) => f.key.includes(search) || f.name.toLowerCase().includes(search.toLowerCase()),
+      (f) => (f.key ?? "").includes(search) || (f.name ?? "").toLowerCase().includes(search.toLowerCase()),
     );
     if (typeFilter !== "all") {
       result = result.filter((f) => f.flag_type === typeFilter);

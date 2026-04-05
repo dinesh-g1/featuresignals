@@ -56,7 +56,7 @@ describe("api.ts request interceptor", () => {
     const [url, opts] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`${API_URL}/v1/projects`);
     expect((opts.headers as Record<string, string>)["Authorization"]).toBe("Bearer my-token");
-    expect(result).toEqual({ data: [1, 2, 3] });
+    expect(result).toEqual([1, 2, 3]);
   });
 
   it("throws APIError for non-2xx non-401 responses", async () => {
@@ -91,7 +91,7 @@ describe("api.ts request interceptor", () => {
     const retryCall = fetchMock.mock.calls[2] as [string, RequestInit];
     expect((retryCall[1].headers as Record<string, string>)["Authorization"]).toBe("Bearer new-token");
 
-    expect(result).toEqual({ data: ["project-1"] });
+    expect(result).toEqual(["project-1"]);
     expect(useAppStore.getState().token).toBe("new-token");
     expect(useAppStore.getState().refreshToken).toBe("new-refresh");
     expect(useAppStore.getState().expiresAt).toBe(9999);
@@ -194,7 +194,7 @@ describe("api.ts request interceptor", () => {
     );
     expect(refreshCalls.length).toBe(1);
 
-    results.forEach((r) => expect(r).toEqual({ data: "ok" }));
+    results.forEach((r) => expect(r).toEqual([]));
   });
 
   it("on 403 account_deleted: redirects to /register", async () => {

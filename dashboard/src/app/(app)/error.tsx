@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { ErrorDisplay } from "@/components/ui/error-display";
 
 export default function AppError({
@@ -9,14 +10,14 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error("[AppError]", error);
+  }, [error]);
+
   return (
     <ErrorDisplay
       title="Something went wrong"
-      message={
-        process.env.NODE_ENV === "development" && error.message
-          ? error.message
-          : "An unexpected error occurred. Please try again."
-      }
+      message={error.message || "An unexpected error occurred. Please try again."}
       onRetry={reset}
       showHomeLink
     />

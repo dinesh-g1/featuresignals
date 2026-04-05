@@ -174,6 +174,10 @@ export default function OnboardingPage() {
     if (!token) return;
     try {
       const data = await api.createCheckout(token);
+      if (!data) {
+        toast("Failed to create checkout session", "error");
+        return;
+      }
       await markStepComplete("plan_chosen");
       const form = document.createElement("form");
       form.method = "POST";

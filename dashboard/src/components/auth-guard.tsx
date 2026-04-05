@@ -27,7 +27,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     try {
       const data: any = await api.refresh(currentRefreshToken);
+      if (!data) return;
       const tokens = data.tokens ?? data;
+      if (!tokens?.access_token) return;
       const user = useAppStore.getState().user;
       const org = useAppStore.getState().organization;
       setAuth(tokens.access_token, tokens.refresh_token, user, org, tokens.expires_at);

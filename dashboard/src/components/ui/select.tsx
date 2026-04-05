@@ -71,7 +71,7 @@ function Select({
           align="start"
         >
           <SelectPrimitive.Viewport className="p-1">
-            {options.map((opt) => (
+            {options.filter((opt) => opt.value !== "").map((opt) => (
               <SelectPrimitive.Item
                 key={opt.value}
                 value={opt.value}
