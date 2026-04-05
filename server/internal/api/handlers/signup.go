@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/email"
@@ -238,9 +239,13 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
 		"user":         sanitizeUser(user),
-		"organization": org,
+		"organization": dto.OrganizationFromDomain(org),
 		"tokens":       tokens,
 	})
+}
+
+type resendOTPRequest struct {
+	Email string `json:"email"`
 }
 
 // ResendSignupOTP regenerates and resends the OTP for a pending signup.
@@ -248,9 +253,7 @@ func (h *SignupHandler) ResendSignupOTP(w http.ResponseWriter, r *http.Request) 
 	log := httputil.LoggerFromContext(r.Context())
 	ctx := r.Context()
 
-	var req struct {
-		Email string `json:"email"`
-	}
+	var req resendOTPRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return

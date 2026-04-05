@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -56,20 +56,16 @@ func (h *ApprovalHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusCreated, ar)
+	httputil.JSON(w, http.StatusCreated, dto.ApprovalFromDomain(ar))
 }
 
 // List returns approval requests for the org, optionally filtered by status.
 func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	status := r.URL.Query().Get("status")
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	if limit <= 0 {
-		limit = 50
-	}
+	p := dto.ParsePagination(r)
 
-	results, err := h.store.ListApprovalRequests(r.Context(), orgID, status, limit, offset)
+	results, err := h.store.ListApprovalRequests(r.Context(), orgID, status, p.Limit, p.Offset)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to list approvals")
 		return
@@ -78,7 +74,8 @@ func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 		results = []domain.ApprovalRequest{}
 	}
 
-	httputil.JSON(w, http.StatusOK, results)
+	all := dto.ApprovalSliceFromDomain(results)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, len(all), p.Limit, p.Offset))
 }
 
 // Get returns a single approval request.
@@ -87,7 +84,7 @@ func (h *ApprovalHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	httputil.JSON(w, http.StatusOK, ar)
+	httputil.JSON(w, http.StatusOK, dto.ApprovalFromDomain(ar))
 }
 
 type ReviewRequest struct {
@@ -147,7 +144,7 @@ func (h *ApprovalHandler) Review(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	httputil.JSON(w, http.StatusOK, ar)
+	httputil.JSON(w, http.StatusOK, dto.ApprovalFromDomain(ar))
 }
 
 // applyChange applies the approved flag state change.

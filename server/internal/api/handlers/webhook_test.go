@@ -84,10 +84,13 @@ func TestWebhookHandler_List(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
-	var webhooks []domain.Webhook
-	json.Unmarshal(w.Body.Bytes(), &webhooks)
-	if len(webhooks) != 1 {
-		t.Errorf("expected 1 webhook, got %d", len(webhooks))
+	var resp struct {
+		Data  []domain.Webhook `json:"data"`
+		Total int              `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 1 {
+		t.Errorf("expected 1 webhook, got %d", len(resp.Data))
 	}
 }
 
@@ -108,9 +111,13 @@ func TestWebhookHandler_List_OrgIsolation(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
-	body := strings.TrimSpace(w.Body.String())
-	if body != "[]" {
-		t.Errorf("expected empty array for other org, got %s", body)
+	var resp struct {
+		Data  []json.RawMessage `json:"data"`
+		Total int               `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 0 {
+		t.Errorf("expected 0 webhooks for other org, got %d", len(resp.Data))
 	}
 }
 
@@ -277,9 +284,12 @@ func TestWebhookHandler_ListDeliveries(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
-	var deliveries []domain.WebhookDelivery
-	json.Unmarshal(w.Body.Bytes(), &deliveries)
-	if len(deliveries) != 1 {
-		t.Errorf("expected 1 delivery, got %d", len(deliveries))
+	var resp struct {
+		Data  []domain.WebhookDelivery `json:"data"`
+		Total int                      `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 1 {
+		t.Errorf("expected 1 delivery, got %d", len(resp.Data))
 	}
 }

@@ -16,7 +16,7 @@ func TestSegmentHandler_Create(t *testing.T) {
 	h := NewSegmentHandler(store)
 	projID := setupTestProject(store, testOrgID)
 
-	body := `{"key":"beta-users","name":"Beta Users","description":"Users in beta program","match_type":"all","rules":[{"attribute":"plan","operator":"eq","value":"beta"}]}`
+	body := `{"key":"beta-users","name":"Beta Users","description":"Users in beta program","match_type":"all","rules":[{"attribute":"plan","operator":"eq","values":["beta"]}]}`
 	r := httptest.NewRequest("POST", "/v1/projects/"+projID+"/segments", strings.NewReader(body))
 	r = requestWithChi(r, map[string]string{"projectID": projID})
 	r = requestWithAuth(r, "user-1", testOrgID, "admin")
@@ -157,11 +157,14 @@ func TestSegmentHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var segments []domain.Segment
-	json.Unmarshal(w.Body.Bytes(), &segments)
+	var resp struct {
+		Data  []domain.Segment `json:"data"`
+		Total int              `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(segments) != 2 {
-		t.Errorf("expected 2 segments, got %d", len(segments))
+	if len(resp.Data) != 2 {
+		t.Errorf("expected 2 segments, got %d", len(resp.Data))
 	}
 }
 
@@ -181,9 +184,13 @@ func TestSegmentHandler_List_Empty(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	body := strings.TrimSpace(w.Body.String())
-	if body != "[]" {
-		t.Errorf("expected empty JSON array, got %s", body)
+	var resp struct {
+		Data  []json.RawMessage `json:"data"`
+		Total int               `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 0 {
+		t.Errorf("expected 0 items, got %d", len(resp.Data))
 	}
 }
 

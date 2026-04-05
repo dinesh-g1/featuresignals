@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
@@ -205,7 +206,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
 		"user":         sanitizeUser(user),
-		"organization": org,
+		"organization": dto.OrganizationFromDomain(org),
 		"tokens":       tokens,
 	})
 }
@@ -262,7 +263,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
 		"user":         sanitizeUser(user),
-		"organization": org,
+		"organization": dto.OrganizationFromDomain(org),
 		"tokens":       tokens,
 	})
 }
@@ -364,14 +365,16 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, h.dashboardURL+"/login?email_verified=true", http.StatusFound)
 }
 
+type tokenExchangeRequest struct {
+	Token string `json:"token"`
+}
+
 // TokenExchange swaps a short-lived, single-use one-time token for a standard
 // JWT pair. Used for cross-domain redirects (demo -> main dashboard).
 func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 
-	var req struct {
-		Token string `json:"token"`
-	}
+	var req tokenExchangeRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return

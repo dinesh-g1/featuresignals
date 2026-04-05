@@ -98,3 +98,53 @@ func TestDecodeJSON_EmptyBody(t *testing.T) {
 		t.Error("expected error for empty body")
 	}
 }
+
+func TestDecodeJSON_RejectsUnknownFields(t *testing.T) {
+	body := `{"name": "test", "unknown_field": "bad"}`
+	r := httptest.NewRequest("POST", "/test", strings.NewReader(body))
+
+	var result struct {
+		Name string `json:"name"`
+	}
+
+	err := DecodeJSON(r, &result)
+	if err == nil {
+		t.Fatal("expected error for unknown field, got nil")
+	}
+	if !strings.Contains(err.Error(), "unknown field") {
+		t.Errorf("expected 'unknown field' in error, got: %v", err)
+	}
+}
+
+func TestDecodeJSON_AcceptsValidPayload(t *testing.T) {
+	body := `{"name": "test"}`
+	r := httptest.NewRequest("POST", "/test", strings.NewReader(body))
+
+	var result struct {
+		Name string `json:"name"`
+	}
+
+	if err := DecodeJSON(r, &result); err != nil {
+		t.Fatalf("expected no error for valid payload, got: %v", err)
+	}
+	if result.Name != "test" {
+		t.Errorf("expected name 'test', got '%s'", result.Name)
+	}
+}
+
+func TestDecodeJSON_AcceptsSubsetOfFields(t *testing.T) {
+	body := `{"name": "test"}`
+	r := httptest.NewRequest("POST", "/test", strings.NewReader(body))
+
+	var result struct {
+		Name  string `json:"name"`
+		Value int    `json:"value"`
+	}
+
+	if err := DecodeJSON(r, &result); err != nil {
+		t.Fatalf("expected no error for subset of fields, got: %v", err)
+	}
+	if result.Name != "test" || result.Value != 0 {
+		t.Errorf("unexpected values: name=%s, value=%d", result.Name, result.Value)
+	}
+}

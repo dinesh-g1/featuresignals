@@ -93,6 +93,45 @@ Endpoints for the dashboard and administrative operations.
 | GET/POST | `/v1/metrics/*` | Evaluation metrics |
 | CRUD | `/v1/webhooks/*` | Webhook management |
 
+## Pagination
+
+All list endpoints return paginated responses. Use the `limit` and `offset` query parameters to control the page:
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `limit` | 50 | 100 | Number of items per page |
+| `offset` | 0 | — | Number of items to skip |
+
+Paginated responses use a consistent envelope:
+
+```json
+{
+  "data": [ ... ],
+  "total": 42,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+## Response Compression
+
+The API supports gzip compression. Include `Accept-Encoding: gzip` in your requests to receive compressed responses.
+
+## Caching
+
+Responses include `Cache-Control` headers:
+
+| Endpoint Group | Cache-Control | Rationale |
+|----------------|---------------|-----------|
+| Evaluation API | `no-store` | Always fetch fresh flag values |
+| Pricing | `public, max-age=3600` | Rarely changes |
+| Management API | `private, no-cache` | Revalidate with auth on every request |
+
+## Strict Request Validation
+
+The API rejects unknown fields in request bodies. If your request includes a field that is not part of the endpoint's schema, you will receive a `400 Bad Request` error. This prevents typos from being silently ignored.
+
 ## Error Responses
 
 All errors follow a consistent format:

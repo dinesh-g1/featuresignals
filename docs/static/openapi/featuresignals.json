@@ -144,6 +144,10 @@
         "tags": ["Projects"],
         "summary": "List all projects",
         "description": "Returns all projects the authenticated user has access to.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of projects",
@@ -201,7 +205,11 @@
         "tags": ["Environments"],
         "summary": "List environments",
         "description": "Returns all environments in a project.",
-        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of environments",
@@ -253,7 +261,11 @@
         "tags": ["Flags"],
         "summary": "List all flags",
         "description": "Returns all feature flags in a project.",
-        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of flags",
@@ -582,7 +594,11 @@
         "tags": ["Segments"],
         "summary": "List segments",
         "description": "Returns all segments in a project.",
-        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "parameters": [
+          { "$ref": "#/components/parameters/ProjectID" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of segments",
@@ -671,7 +687,11 @@
         "tags": ["API Keys"],
         "summary": "List API keys",
         "description": "Returns all API keys for an environment.",
-        "parameters": [{ "$ref": "#/components/parameters/EnvID" }],
+        "parameters": [
+          { "$ref": "#/components/parameters/EnvID" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of API keys",
@@ -721,6 +741,10 @@
         "tags": ["Team"],
         "summary": "List team members",
         "description": "Returns all members of the current organization.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of members",
@@ -825,7 +849,9 @@
         "summary": "List approval requests",
         "description": "Returns all pending and recent approval requests.",
         "parameters": [
-          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "approved", "rejected"] }, "description": "Filter by status" }
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "approved", "rejected"] }, "description": "Filter by status" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
         ],
         "responses": {
           "200": {
@@ -896,6 +922,10 @@
         "tags": ["Webhooks"],
         "summary": "List webhooks",
         "description": "Returns all configured webhooks.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "List of webhooks",
@@ -974,7 +1004,11 @@
         "tags": ["Webhooks"],
         "summary": "List webhook deliveries",
         "description": "Returns delivery history for a webhook including status codes and payloads.",
-        "parameters": [{ "$ref": "#/components/parameters/WebhookID" }],
+        "parameters": [
+          { "$ref": "#/components/parameters/WebhookID" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
         "responses": {
           "200": {
             "description": "Delivery history",
@@ -991,8 +1025,8 @@
         "summary": "List audit log entries",
         "description": "Returns a paginated audit log of all actions performed in the organization.",
         "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number" },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 }, "description": "Items per page" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
           { "name": "action", "in": "query", "schema": { "type": "string" }, "description": "Filter by action type (e.g. flag.created)" },
           { "name": "actorID", "in": "query", "schema": { "type": "string" }, "description": "Filter by actor user ID" }
         ],
@@ -1332,8 +1366,30 @@
         "type": "object",
         "properties": {
           "error": { "type": "string" },
-          "message": { "type": "string" },
+          "code": { "type": "string" },
+          "details": { "type": "string" },
           "request_id": { "type": "string" }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": {} },
+          "total": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "has_more": { "type": "boolean" }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "plan": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "MessageResponse": {
@@ -1370,10 +1426,16 @@
       "AuthResponse": {
         "type": "object",
         "properties": {
-          "accessToken": { "type": "string" },
-          "refreshToken": { "type": "string" },
-          "expiresIn": { "type": "integer", "description": "Token lifetime in seconds" },
-          "user": { "$ref": "#/components/schemas/User" }
+          "user": { "$ref": "#/components/schemas/User" },
+          "organization": { "$ref": "#/components/schemas/Organization" },
+          "tokens": {
+            "type": "object",
+            "properties": {
+              "access_token": { "type": "string" },
+              "refresh_token": { "type": "string" },
+              "expires_in": { "type": "integer" }
+            }
+          }
         }
       },
       "User": {
@@ -1391,9 +1453,9 @@
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
-          "description": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "slug": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "CreateProjectRequest": {
@@ -1409,9 +1471,9 @@
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
-          "key": { "type": "string" },
+          "slug": { "type": "string" },
           "color": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
       "CreateEnvironmentRequest": {
@@ -1426,7 +1488,6 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "project_id": { "type": "string", "format": "uuid" },
           "key": { "type": "string" },
           "name": { "type": "string" },
           "flag_type": { "type": "string", "enum": ["boolean", "string", "number", "json", "ab"] },
@@ -1488,12 +1549,15 @@
       "FlagState": {
         "type": "object",
         "properties": {
-          "flagKey": { "type": "string" },
-          "envID": { "type": "string", "format": "uuid" },
+          "id": { "type": "string", "format": "uuid" },
           "enabled": { "type": "boolean" },
-          "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+          "default_value": { "description": "Per-environment override value" },
           "rules": { "type": "array", "items": { "$ref": "#/components/schemas/TargetingRule" } },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "percentage_rollout": { "type": "integer", "minimum": 0, "maximum": 10000 },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/Variant" } },
+          "scheduled_enable_at": { "type": "string", "format": "date-time" },
+          "scheduled_disable_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "TargetingRule": {
@@ -1545,12 +1609,14 @@
       "Segment": {
         "type": "object",
         "properties": {
+          "id": { "type": "string", "format": "uuid" },
           "key": { "type": "string" },
           "name": { "type": "string" },
           "description": { "type": "string" },
+          "match_type": { "type": "string", "enum": ["all", "any"] },
           "rules": { "type": "array", "items": { "$ref": "#/components/schemas/SegmentRule" } },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "SegmentRule": {
@@ -1583,10 +1649,13 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
+          "key_prefix": { "type": "string" },
           "name": { "type": "string" },
           "type": { "type": "string", "enum": ["server", "client"] },
-          "prefix": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "created_at": { "type": "string", "format": "date-time" },
+          "last_used_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "revoked_at": { "type": "string", "format": "date-time" }
         }
       },
       "ApiKeyFull": {
@@ -1648,17 +1717,14 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "flagKey": { "type": "string" },
-          "projectID": { "type": "string", "format": "uuid" },
-          "envID": { "type": "string", "format": "uuid" },
-          "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
-          "changes": { "type": "object" },
-          "description": { "type": "string" },
-          "requestedBy": { "type": "string", "format": "uuid" },
-          "reviewedBy": { "type": "string", "format": "uuid" },
-          "reviewComment": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "reviewedAt": { "type": "string", "format": "date-time" }
+          "flag_id": { "type": "string" },
+          "env_id": { "type": "string", "format": "uuid" },
+          "change_type": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected", "applied"] },
+          "review_note": { "type": "string" },
+          "reviewed_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "CreateApprovalRequest": {
@@ -1676,10 +1742,13 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
           "url": { "type": "string", "format": "uri" },
+          "has_secret": { "type": "boolean" },
           "events": { "type": "array", "items": { "type": "string" } },
-          "active": { "type": "boolean" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "enabled": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "CreateWebhookRequest": {
@@ -1704,26 +1773,22 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "event": { "type": "string" },
-          "statusCode": { "type": "integer" },
+          "event_type": { "type": "string" },
+          "response_status": { "type": "integer" },
           "success": { "type": "boolean" },
-          "requestBody": { "type": "object" },
-          "responseBody": { "type": "string" },
-          "deliveredAt": { "type": "string", "format": "date-time" },
-          "duration": { "type": "integer", "description": "Response time in milliseconds" }
+          "delivered_at": { "type": "string", "format": "date-time" }
         }
       },
       "AuditEntry": {
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
+          "actor_id": { "type": "string", "format": "uuid" },
+          "actor_type": { "type": "string" },
           "action": { "type": "string" },
-          "resourceType": { "type": "string" },
-          "resourceID": { "type": "string" },
-          "actorID": { "type": "string", "format": "uuid" },
-          "actorEmail": { "type": "string", "format": "email" },
-          "metadata": { "type": "object" },
-          "timestamp": { "type": "string", "format": "date-time" }
+          "resource_type": { "type": "string" },
+          "resource_id": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
         }
       },
       "EvaluationMetrics": {

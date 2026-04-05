@@ -27,15 +27,21 @@ GET /v1/members
 ### Response `200 OK`
 
 ```json
-[
-  {
-    "id": "member-uuid",
-    "org_id": "org-uuid",
-    "role": "owner",
-    "email": "admin@example.com",
-    "name": "Admin User"
-  }
-]
+{
+  "data": [
+    {
+      "id": "member-uuid",
+      "org_id": "org-uuid",
+      "role": "owner",
+      "email": "admin@example.com",
+      "name": "Admin User"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
 ```
 
 ---

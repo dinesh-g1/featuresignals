@@ -26,7 +26,11 @@ func TestProjectHandler_Create(t *testing.T) {
 		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var project domain.Project
+	var project struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		Slug string `json:"slug"`
+	}
 	json.Unmarshal(w.Body.Bytes(), &project)
 
 	if project.Name != "My Project" {
@@ -35,8 +39,8 @@ func TestProjectHandler_Create(t *testing.T) {
 	if project.Slug != "my-project" {
 		t.Errorf("expected 'my-project', got '%s'", project.Slug)
 	}
-	if project.OrgID != "org-1" {
-		t.Errorf("expected org 'org-1', got '%s'", project.OrgID)
+	if project.ID == "" {
+		t.Error("expected non-empty project ID")
 	}
 }
 
@@ -97,11 +101,14 @@ func TestProjectHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var projects []domain.Project
-	json.Unmarshal(w.Body.Bytes(), &projects)
+	var resp struct {
+		Data  []domain.Project `json:"data"`
+		Total int              `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(projects) != 2 {
-		t.Errorf("expected 2 projects, got %d", len(projects))
+	if len(resp.Data) != 2 {
+		t.Errorf("expected 2 projects, got %d", len(resp.Data))
 	}
 }
 
@@ -119,9 +126,13 @@ func TestProjectHandler_List_Empty(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	body := strings.TrimSpace(w.Body.String())
-	if body != "[]" {
-		t.Errorf("expected empty JSON array, got %s", body)
+	var resp struct {
+		Data  []json.RawMessage `json:"data"`
+		Total int               `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 0 {
+		t.Errorf("expected 0 items, got %d", len(resp.Data))
 	}
 }
 
@@ -338,11 +349,14 @@ func TestEnvironmentHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var envs []domain.Environment
-	json.Unmarshal(w.Body.Bytes(), &envs)
+	var resp struct {
+		Data  []domain.Environment `json:"data"`
+		Total int                  `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(envs) != 2 {
-		t.Errorf("expected 2 environments, got %d", len(envs))
+	if len(resp.Data) != 2 {
+		t.Errorf("expected 2 environments, got %d", len(resp.Data))
 	}
 }
 
@@ -363,9 +377,13 @@ func TestEnvironmentHandler_List_Empty(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	body := strings.TrimSpace(w.Body.String())
-	if body != "[]" {
-		t.Errorf("expected empty JSON array, got %s", body)
+	var resp struct {
+		Data  []json.RawMessage `json:"data"`
+		Total int               `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 0 {
+		t.Errorf("expected 0 items, got %d", len(resp.Data))
 	}
 }
 

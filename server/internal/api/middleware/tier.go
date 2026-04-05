@@ -83,10 +83,7 @@ func TierEnforce(store domain.Store, logger *slog.Logger) func(next http.Handler
 
 // tierError sends a 402 Payment Required with an upgrade hint.
 func tierError(w http.ResponseWriter, resource string) {
-	httputil.JSON(w, http.StatusPaymentRequired, map[string]string{
-		"error":       "Plan limit reached. Upgrade to Pro for unlimited " + resource + ".",
-		"upgrade_url": "/settings/billing",
-	})
+	httputil.Error(w, http.StatusPaymentRequired, "Plan limit reached. Upgrade to Pro for unlimited "+resource+".")
 }
 
 // isExactProjectCreate returns true for POST /v1/projects (not sub-resources).

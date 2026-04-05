@@ -33,17 +33,19 @@ func (h *OnboardingHandler) GetState(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, state)
 }
 
+type UpdateOnboardingRequest struct {
+	PlanSelected      *bool `json:"plan_selected"`
+	FirstFlagCreated  *bool `json:"first_flag_created"`
+	FirstSDKConnected *bool `json:"first_sdk_connected"`
+	FirstEvaluation   *bool `json:"first_evaluation"`
+}
+
 // UpdateState patches the onboarding state for the authenticated org.
 func (h *OnboardingHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 
-	var req struct {
-		PlanSelected      *bool `json:"plan_selected"`
-		FirstFlagCreated  *bool `json:"first_flag_created"`
-		FirstSDKConnected *bool `json:"first_sdk_connected"`
-		FirstEvaluation   *bool `json:"first_evaluation"`
-	}
+	var req UpdateOnboardingRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return

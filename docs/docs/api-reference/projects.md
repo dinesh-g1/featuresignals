@@ -34,7 +34,6 @@ POST /v1/projects
 ```json
 {
   "id": "uuid",
-  "org_id": "uuid",
   "name": "Mobile App",
   "slug": "mobile-app",
   "created_at": "2026-04-01T00:00:00Z",
@@ -59,16 +58,21 @@ GET /v1/projects
 ### Response `200 OK`
 
 ```json
-[
-  {
-    "id": "uuid",
-    "org_id": "uuid",
-    "name": "Default Project",
-    "slug": "default",
-    "created_at": "2026-04-01T00:00:00Z",
-    "updated_at": "2026-04-01T00:00:00Z"
-  }
-]
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Default Project",
+      "slug": "default",
+      "created_at": "2026-04-01T00:00:00Z",
+      "updated_at": "2026-04-01T00:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
 ```
 
 ---

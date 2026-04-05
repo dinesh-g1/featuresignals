@@ -43,7 +43,6 @@ POST /v1/projects/{projectID}/segments
 ```json
 {
   "id": "uuid",
-  "project_id": "uuid",
   "key": "enterprise-users",
   "name": "Enterprise Users",
   "description": "Users on enterprise plan",
@@ -62,14 +61,42 @@ POST /v1/projects/{projectID}/segments
 ## List Segments
 
 ```
-GET /v1/projects/{projectID}/segments
+GET /v1/projects/{projectID}/segments?limit=50&offset=0
 ```
 
 **Auth**: JWT (All roles)
 
+### Query Parameters
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `limit` | 50 | 100 | Number of segments to return |
+| `offset` | 0 | — | Pagination offset |
+
 ### Response `200 OK`
 
-Returns an array of segment objects.
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "key": "enterprise-users",
+      "name": "Enterprise Users",
+      "description": "Users on enterprise plan",
+      "match_type": "all",
+      "rules": [
+        {"attribute": "plan", "operator": "eq", "values": ["enterprise"]}
+      ],
+      "created_at": "2026-04-01T00:00:00Z",
+      "updated_at": "2026-04-01T00:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
+```
 
 ---
 

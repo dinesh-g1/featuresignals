@@ -124,8 +124,8 @@ func TestTrialExpiry_SoftDeleted_Blocked(t *testing.T) {
 
 	var resp map[string]string
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["error"] != "account_deleted" {
-		t.Errorf("expected error 'account_deleted', got %q", resp["error"])
+	if resp["error"] != "This account has been deactivated. Contact support to restore it." {
+		t.Errorf("expected deactivation error message, got %q", resp["error"])
 	}
 }
 

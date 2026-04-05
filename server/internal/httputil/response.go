@@ -25,5 +25,7 @@ func Error(w http.ResponseWriter, status int, message string) {
 
 func DecodeJSON(r *http.Request, v interface{}) error {
 	defer r.Body.Close()
-	return json.NewDecoder(r.Body).Decode(v)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	return dec.Decode(v)
 }

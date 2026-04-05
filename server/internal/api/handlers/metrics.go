@@ -42,6 +42,12 @@ func (h *MetricsHandler) Reset(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, map[string]string{"status": "reset"})
 }
 
+type TrackImpressionRequest struct {
+	FlagKey    string `json:"flag_key"`
+	VariantKey string `json:"variant_key"`
+	UserKey    string `json:"user_key"`
+}
+
 // TrackImpression receives variant impressions from SDKs.
 // Requires X-API-Key header for authentication.
 func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request) {
@@ -56,11 +62,7 @@ func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var req struct {
-		FlagKey    string `json:"flag_key"`
-		VariantKey string `json:"variant_key"`
-		UserKey    string `json:"user_key"`
-	}
+	var req TrackImpressionRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil || req.FlagKey == "" {
 		httputil.Error(w, http.StatusBadRequest, "flag_key is required")
 		return

@@ -153,11 +153,14 @@ func TestAPIKeyHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var keys []domain.APIKey
-	json.Unmarshal(w.Body.Bytes(), &keys)
+	var resp struct {
+		Data  []domain.APIKey `json:"data"`
+		Total int             `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(keys) != 2 {
-		t.Errorf("expected 2 keys, got %d", len(keys))
+	if len(resp.Data) != 2 {
+		t.Errorf("expected 2 keys, got %d", len(resp.Data))
 	}
 }
 
@@ -177,9 +180,13 @@ func TestAPIKeyHandler_List_Empty(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	body := strings.TrimSpace(w.Body.String())
-	if body != "[]" {
-		t.Errorf("expected empty JSON array, got %s", body)
+	var resp struct {
+		Data  []json.RawMessage `json:"data"`
+		Total int               `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 0 {
+		t.Errorf("expected 0 items, got %d", len(resp.Data))
 	}
 }
 

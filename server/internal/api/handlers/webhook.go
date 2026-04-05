@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -14,6 +15,14 @@ type WebhookHandler struct {
 
 func NewWebhookHandler(store domain.Store) *WebhookHandler {
 	return &WebhookHandler{store: store}
+}
+
+type UpdateWebhookRequest struct {
+	Name    *string  `json:"name"`
+	URL     *string  `json:"url"`
+	Secret  *string  `json:"secret"`
+	Events  []string `json:"events"`
+	Enabled *bool    `json:"enabled"`
 }
 
 type CreateWebhookRequest struct {
@@ -57,7 +66,7 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusCreated, wh)
+	httputil.JSON(w, http.StatusCreated, dto.WebhookFromDomain(wh))
 }
 
 func (h *WebhookHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +81,10 @@ func (h *WebhookHandler) List(w http.ResponseWriter, r *http.Request) {
 		webhooks = []domain.Webhook{}
 	}
 
-	httputil.JSON(w, http.StatusOK, webhooks)
+	all := dto.WebhookSliceFromDomain(webhooks)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 func (h *WebhookHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +92,7 @@ func (h *WebhookHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	httputil.JSON(w, http.StatusOK, wh)
+	httputil.JSON(w, http.StatusOK, dto.WebhookFromDomain(wh))
 }
 
 func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -89,13 +101,7 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req struct {
-		Name    *string  `json:"name"`
-		URL     *string  `json:"url"`
-		Secret  *string  `json:"secret"`
-		Events  []string `json:"events"`
-		Enabled *bool    `json:"enabled"`
-	}
+	var req UpdateWebhookRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -122,7 +128,7 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, existing)
+	httputil.JSON(w, http.StatusOK, dto.WebhookFromDomain(existing))
 }
 
 func (h *WebhookHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -150,5 +156,8 @@ func (h *WebhookHandler) ListDeliveries(w http.ResponseWriter, r *http.Request) 
 	if deliveries == nil {
 		deliveries = []domain.WebhookDelivery{}
 	}
-	httputil.JSON(w, http.StatusOK, deliveries)
+	all := dto.WebhookDeliverySliceFromDomain(deliveries)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
