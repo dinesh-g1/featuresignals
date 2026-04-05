@@ -43,7 +43,7 @@ puts "Feature enabled: #{enabled}"
 ```ruby
 options = FeatureSignals::ClientOptions.new(
   env_key: "production",
-  base_url: "http://localhost:8080",
+  base_url: "https://api.featuresignals.com", # For self-hosted, use your own API URL
   polling_interval: 15,
   streaming: true,
   sse_retry: 3,
@@ -116,7 +116,7 @@ Create an initializer at `config/initializers/feature_signals.rb`:
 Rails.application.config.to_prepare do
   options = FeatureSignals::ClientOptions.new(
     env_key: Rails.env.production? ? "production" : "development",
-    base_url: ENV.fetch("FEATURESIGNALS_URL", "http://localhost:8080"),
+    base_url: ENV.fetch("FEATURESIGNALS_URL", "https://api.featuresignals.com"), # For self-hosted, set FEATURESIGNALS_URL
     streaming: true,
   )
   FEATURE_FLAGS = FeatureSignals::Client.new(

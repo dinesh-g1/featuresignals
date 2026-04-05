@@ -8,8 +8,7 @@
     "license": { "name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0" }
   },
   "servers": [
-    { "url": "https://api.featuresignals.com", "description": "Production" },
-    { "url": "http://localhost:8080", "description": "Local development" }
+    { "url": "https://api.featuresignals.com", "description": "Production" }
   ],
   "tags": [
     { "name": "Auth", "description": "Authentication and account verification" },

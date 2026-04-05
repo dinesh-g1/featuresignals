@@ -46,11 +46,11 @@ You can also compare and sync environments programmatically:
 
 ```bash
 # Compare environments
-curl "http://localhost:8080/v1/projects/$PROJECT_ID/flags/compare-environments?source_env_id=$SOURCE&target_env_id=$TARGET" \
+curl "https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/compare-environments?source_env_id=$SOURCE&target_env_id=$TARGET" \
   -H "Authorization: Bearer $TOKEN"
 
 # Sync selected changes
-curl -X POST "http://localhost:8080/v1/projects/$PROJECT_ID/flags/sync-environments" \
+curl -X POST "https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/sync-environments" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

@@ -22,7 +22,7 @@ import { FeatureSignalsClient } from '@featuresignals/node';
 
 const client = new FeatureSignalsClient('fs_srv_your_api_key', {
   envKey: 'production',
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://api.featuresignals.com', // For self-hosted, use your own API URL
 });
 
 await client.waitForReady();
@@ -49,7 +49,7 @@ const client = FeatureSignals.init('fs_srv_your_api_key', {
 ```typescript
 const client = new FeatureSignalsClient('fs_srv_your_api_key', {
   envKey: 'production',              // Required: environment slug
-  baseURL: 'http://localhost:8080',  // API server URL
+  baseURL: 'https://api.featuresignals.com', // API server URL; for self-hosted, use your own API URL
   pollingIntervalMs: 30000,          // Polling interval in ms
   streaming: false,                  // Use SSE instead of polling
   sseRetryMs: 5000,                 // SSE reconnect interval

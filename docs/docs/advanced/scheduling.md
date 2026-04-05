@@ -28,7 +28,7 @@ The server runs a background scheduler that checks every **30 seconds** for pend
 ### Via API
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -44,7 +44,7 @@ This enables the flag at 9 AM UTC and disables it at 6 PM UTC on April 15.
 Pass an empty string to clear:
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"scheduled_enable_at": "", "scheduled_disable_at": ""}'

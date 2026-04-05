@@ -28,7 +28,7 @@ The change propagates to SDKs within seconds (SSE) or the next poll interval.
 ### Via API
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/kill \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/kill \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"env_id": "production-env-uuid"}'

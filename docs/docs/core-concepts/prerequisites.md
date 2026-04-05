@@ -21,7 +21,7 @@ If `new-api-v2` is disabled, both `new-dashboard` and `new-dashboard-analytics` 
 ### Via API
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

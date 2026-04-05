@@ -18,7 +18,7 @@ Approval workflows add a review step before flag changes are applied, providing 
 ## Creating an Approval Request
 
 ```bash
-curl -X POST http://localhost:8080/v1/approvals \
+curl -X POST https://api.featuresignals.com/v1/approvals \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -38,13 +38,13 @@ The `payload` contains the flag state that will be applied on approval.
 
 ```bash
 # Approve
-curl -X POST http://localhost:8080/v1/approvals/$APPROVAL_ID/review \
+curl -X POST https://api.featuresignals.com/v1/approvals/$APPROVAL_ID/review \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"action": "approve", "note": "Looks good for 50% rollout"}'
 
 # Reject
-curl -X POST http://localhost:8080/v1/approvals/$APPROVAL_ID/review \
+curl -X POST https://api.featuresignals.com/v1/approvals/$APPROVAL_ID/review \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"action": "reject", "note": "Needs more testing in staging first"}'

@@ -10,8 +10,10 @@ The FeatureSignals REST API provides programmatic access to all platform feature
 ## Base URL
 
 ```
-http://localhost:8080/v1
+https://api.featuresignals.com/v1
 ```
+
+For self-hosted installations, replace with your own API server URL.
 
 ## Authentication
 

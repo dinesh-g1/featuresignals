@@ -27,7 +27,7 @@ import (
 
 func main() {
     client := fs.NewClient("fs_srv_your_api_key", "production",
-        fs.WithBaseURL("http://localhost:8080"),
+        fs.WithBaseURL("https://api.featuresignals.com"), // For self-hosted, use your own API URL
     )
     defer client.Close()
 
@@ -47,7 +47,7 @@ func main() {
 
 ```go
 client := fs.NewClient(sdkKey, envKey,
-    fs.WithBaseURL("http://localhost:8080"),       // API server URL
+    fs.WithBaseURL("https://api.featuresignals.com"), // API server URL; for self-hosted, use your own API URL
     fs.WithPollingInterval(30 * time.Second),      // Polling interval
     fs.WithSSE(true),                              // Enable SSE streaming
     fs.WithSSERetryInterval(5 * time.Second),      // SSE reconnect interval

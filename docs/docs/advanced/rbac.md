@@ -56,7 +56,7 @@ This allows scenarios like:
 ### Invite a Member
 
 ```bash
-curl -X POST http://localhost:8080/v1/members/invite \
+curl -X POST https://api.featuresignals.com/v1/members/invite \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"email": "dev@example.com", "role": "developer"}'
@@ -65,7 +65,7 @@ curl -X POST http://localhost:8080/v1/members/invite \
 ### Update a Role
 
 ```bash
-curl -X PUT http://localhost:8080/v1/members/$MEMBER_ID \
+curl -X PUT https://api.featuresignals.com/v1/members/$MEMBER_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"role": "admin"}'
@@ -74,7 +74,7 @@ curl -X PUT http://localhost:8080/v1/members/$MEMBER_ID \
 ### Set Environment Permissions
 
 ```bash
-curl -X PUT http://localhost:8080/v1/members/$MEMBER_ID/permissions \
+curl -X PUT https://api.featuresignals.com/v1/members/$MEMBER_ID/permissions \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

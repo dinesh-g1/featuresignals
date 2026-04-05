@@ -16,7 +16,7 @@ When you register, a **Default Project** is created automatically with the slug 
 ### Creating a Project
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects \
+curl -X POST https://api.featuresignals.com/v1/projects \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Mobile App", "slug": "mobile-app"}'
@@ -48,7 +48,7 @@ This allows safe, progressive rollouts across your deployment pipeline.
 ### Creating Additional Environments
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/environments \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/environments \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "QA", "slug": "qa", "color": "#8b5cf6"}'
@@ -68,7 +68,7 @@ API keys are scoped to a single environment. A `dev` API key cannot access `prod
 ### Creating an API Key
 
 ```bash
-curl -X POST http://localhost:8080/v1/environments/$ENV_ID/api-keys \
+curl -X POST https://api.featuresignals.com/v1/environments/$ENV_ID/api-keys \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Backend Service", "type": "server"}'
@@ -83,7 +83,7 @@ The full API key is shown **only once** in the response. Store it securely.
 FeatureSignals supports promoting flag configurations from one environment to another:
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/promote \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/promote \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"source_env_id": "dev-env-id", "target_env_id": "staging-env-id"}'

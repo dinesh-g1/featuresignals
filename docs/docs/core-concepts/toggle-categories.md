@@ -83,7 +83,7 @@ Permission toggles gate access to features for specific user segments, tenants, 
 When creating a flag via the Flag Engine or API, select the appropriate category:
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

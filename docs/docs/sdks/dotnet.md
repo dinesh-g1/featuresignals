@@ -37,7 +37,7 @@ Console.WriteLine($"Feature enabled: {enabled}");
 var options = new ClientOptions
 {
     EnvKey = "production",
-    BaseUrl = "http://localhost:8080",
+    BaseUrl = "https://api.featuresignals.com", // For self-hosted, use your own API URL
     PollingInterval = TimeSpan.FromSeconds(15),
     Streaming = true,
     SseRetry = TimeSpan.FromSeconds(3),

@@ -9,7 +9,7 @@ The FeatureSignals Flag Engine is a Next.js web application that provides a visu
 
 ## Accessing the Flag Engine
 
-After starting FeatureSignals, open [http://localhost:3000](http://localhost:3000).
+After starting FeatureSignals, open [https://app.featuresignals.com](https://app.featuresignals.com).
 
 ## Navigation
 

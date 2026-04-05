@@ -75,7 +75,7 @@ def verify_signature(payload: bytes, signature: str, secret: str) -> bool:
 View delivery history via the API or Flag Engine:
 
 ```bash
-curl http://localhost:8080/v1/webhooks/$WEBHOOK_ID/deliveries \
+curl https://api.featuresignals.com/v1/webhooks/$WEBHOOK_ID/deliveries \
   -H "Authorization: Bearer $TOKEN"
 ```
 

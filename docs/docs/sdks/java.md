@@ -35,7 +35,7 @@ import com.featuresignals.sdk.*;
 public class Main {
     public static void main(String[] args) throws Exception {
         var options = new ClientOptions("production")
-            .baseURL("http://localhost:8080");
+            .baseURL("https://api.featuresignals.com"); // For self-hosted, use your own API URL
 
         var client = new FeatureSignalsClient("fs_srv_your_api_key", options);
         client.waitForReady(5000);
@@ -56,7 +56,7 @@ public class Main {
 
 ```java
 var options = new ClientOptions("production")
-    .baseURL("http://localhost:8080")          // API server URL
+    .baseURL("https://api.featuresignals.com")   // API server URL; for self-hosted, use your own API URL
     .pollingInterval(Duration.ofSeconds(30))   // Polling interval
     .streaming(true)                           // Enable SSE
     .sseRetry(Duration.ofSeconds(5))          // SSE reconnect delay

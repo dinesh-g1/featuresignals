@@ -162,14 +162,14 @@ Always set a strong `JWT_SECRET` in production. The default is insecure.
 Include the access token in the `Authorization` header for management API calls:
 
 ```bash
-curl http://localhost:8080/v1/projects \
+curl https://api.featuresignals.com/v1/projects \
   -H "Authorization: Bearer eyJ..."
 ```
 
 For SDK/evaluation endpoints, use an API key:
 
 ```bash
-curl -X POST http://localhost:8080/v1/evaluate \
+curl -X POST https://api.featuresignals.com/v1/evaluate \
   -H "X-API-Key: fs_srv_..." \
   -H "Content-Type: application/json" \
   -d '{"flag_key": "my-flag", "context": {"key": "user-1"}}'

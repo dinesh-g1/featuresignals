@@ -56,7 +56,7 @@ const ready = useReady();
 app.use(FeatureSignalsPlugin, {
   sdkKey: "fs_cli_xxx",
   envKey: "production",
-  baseURL: "http://localhost:8080",
+  baseURL: "https://api.featuresignals.com", // For self-hosted, use your own API URL
   userKey: "user-42",
   pollingIntervalMs: 15000,
   streaming: true,
