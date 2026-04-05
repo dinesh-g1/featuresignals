@@ -62,6 +62,13 @@ func NewRouter(
 	r.Use(middleware.Logging(logger))
 	r.Use(middleware.SafeRecoverer)
 
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		httputil.Error(w, http.StatusNotFound, "route not found")
+	})
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		httputil.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+	})
+
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "featuresignals"})

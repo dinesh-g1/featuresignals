@@ -422,6 +422,45 @@ func TestNonexistentRoute_Returns404(t *testing.T) {
 	if w.Code != http.StatusNotFound {
 		t.Errorf("nonexistent route: expected 404, got %d", w.Code)
 	}
+
+	ct := w.Header().Get("Content-Type")
+	if ct != "application/json" {
+		t.Errorf("404 Content-Type: expected application/json, got %q", ct)
+	}
+
+	var body map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("404 response is not valid JSON: %v", err)
+	}
+	if body["error"] != "route not found" {
+		t.Errorf("404 error field: expected %q, got %q", "route not found", body["error"])
+	}
+}
+
+func TestMethodNotAllowed_Returns405(t *testing.T) {
+	router := newTestRouter(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/health", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("POST /health: expected 405, got %d", w.Code)
+	}
+
+	ct := w.Header().Get("Content-Type")
+	if ct != "application/json" {
+		t.Errorf("405 Content-Type: expected application/json, got %q", ct)
+	}
+
+	var body map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("405 response is not valid JSON: %v", err)
+	}
+	if body["error"] != "method not allowed" {
+		t.Errorf("405 error field: expected %q, got %q", "method not allowed", body["error"])
+	}
 }
 
 func TestPricingEndpoint_IsPublic(t *testing.T) {

@@ -9,3 +9,4 @@ export { PageHeader } from "./page-header";
 export { StatCard } from "./stat-card";
 export { Label } from "./label";
 export { Textarea } from "./textarea";
+export { ErrorDisplay, type ErrorDisplayProps } from "./error-display";
