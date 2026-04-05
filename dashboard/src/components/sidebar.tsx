@@ -2,17 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
-import { api } from "@/lib/api";
-import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
 import { cn } from "@/lib/utils";
 import {
   Home, Flag, Users, ArrowLeftRight, UserSearch, UsersRound,
   BarChart3, Heart, PieChart, CheckCircle, ClipboardList,
-  Settings, Sparkles, LogOut, Plus, X, ChevronDown,
+  Settings, Sparkles, LogOut, X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -40,56 +37,16 @@ const navItems: NavItem[] = [
 function SidebarContent() {
   const pathname = usePathname();
   const closeSidebar = useSidebarStore((s) => s.close);
-  const token = useAppStore((s) => s.token);
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 
-  const [projects, setProjects] = useState<any[]>([]);
-  const [envs, setEnvs] = useState<any[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [envDialogOpen, setEnvDialogOpen] = useState(false);
-
+  const prevPathname = useRef(pathname);
   useEffect(() => {
-    if (!token) return;
-    api.listProjects(token).then((list) => {
-      const sorted = (list ?? []).sort((a: any, b: any) => a.name.localeCompare(b.name));
-      setProjects(sorted);
-      if (sorted.length > 0 && !projectId) {
-        setCurrentProject(sorted[0].id);
-      }
-    }).catch(() => {});
-  }, [token, projectId, setCurrentProject]);
-
-  useEffect(() => {
-    if (!token || !projectId) { setEnvs([]); return; }
-    api.listEnvironments(token, projectId).then((list) => {
-      const sorted = (list ?? []).sort((a: any, b: any) => a.name.localeCompare(b.name));
-      setEnvs(sorted);
-      if (sorted.length > 0) {
-        setCurrentEnv(sorted[0].id);
-      }
-    }).catch(() => { setEnvs([]); });
-  }, [token, projectId, setCurrentEnv]);
-
-  useEffect(() => {
-    closeSidebar();
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      closeSidebar();
+    }
   }, [pathname, closeSidebar]);
-
-  function handleProjectCreated(created: any) {
-    setProjects((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
-    setCurrentProject(created.id);
-  }
-
-  function handleEnvironmentCreated(created: any) {
-    setEnvs((prev) => [...prev, created].sort((a: any, b: any) => a.name.localeCompare(b.name)));
-    setCurrentEnv(created.id);
-  }
-
-  const selectedEnv = envs.find((e) => e.id === currentEnvId);
 
   return (
     <>
@@ -105,94 +62,6 @@ function SidebarContent() {
           <X className="h-5 w-5" />
         </button>
       </div>
-
-      {/* Project selector */}
-      <div className="border-b border-slate-200 px-3 py-2">
-        <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Project</label>
-        {projects.length === 0 ? (
-          <button
-            onClick={() => setDialogOpen(true)}
-            className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50/50 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
-          >
-            + Create Your First Project
-          </button>
-        ) : (
-          <div className="flex gap-1.5">
-            <div className="relative flex-1 min-w-0">
-              <select
-                value={projectId || ""}
-                onChange={(e) => {
-                  setCurrentProject(e.target.value);
-                  setCurrentEnv("");
-                }}
-                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-3 pr-8 text-sm font-medium text-slate-700 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-              >
-                {projects.map((p: any) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            </div>
-            <button
-              onClick={() => setDialogOpen(true)}
-              className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-indigo-600"
-              title="Create new project"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <CreateProjectDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onCreated={handleProjectCreated}
-      />
-
-      {/* Environment selector */}
-      {projectId && (
-        <div className="border-b border-slate-200 px-3 py-2">
-          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Environment</label>
-          {envs.length === 0 ? (
-            <button
-              onClick={() => setEnvDialogOpen(true)}
-              className="w-full rounded-lg border border-dashed border-indigo-300 bg-indigo-50/50 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
-            >
-              + Create Your First Environment
-            </button>
-          ) : (
-            <div className="flex gap-1.5">
-              <div className="relative flex-1 min-w-0">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full" style={{ backgroundColor: selectedEnv?.color || "#94a3b8" }} />
-                <select
-                  value={currentEnvId || ""}
-                  onChange={(e) => setCurrentEnv(e.target.value)}
-                  className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-8 text-sm font-medium text-slate-700 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                >
-                  {envs.map((env: any) => (
-                    <option key={env.id} value={env.id}>{env.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              </div>
-              <button
-                onClick={() => setEnvDialogOpen(true)}
-                className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-indigo-600"
-                title="Create new environment"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <CreateEnvironmentDialog
-        open={envDialogOpen}
-        onOpenChange={setEnvDialogOpen}
-        onCreated={handleEnvironmentCreated}
-      />
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map((item) => {
@@ -257,7 +126,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+      <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         <SidebarContent />
       </aside>
 
@@ -265,7 +134,7 @@ export function Sidebar() {
       {isOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={close} aria-hidden="true" />
-          <aside className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
+          <aside className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col bg-white shadow-xl">
             <SidebarContent />
           </aside>
         </div>
