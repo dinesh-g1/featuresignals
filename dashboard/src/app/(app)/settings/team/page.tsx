@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Trash2, ChevronDown, Users } from "lucide-react";
 
 const ROLES = ["owner", "admin", "developer", "viewer"] as const;
+
+const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }));
 
 const roleBadgeVariant: Record<string, "purple" | "info" | "success" | "default"> = {
   owner: "purple",
@@ -141,15 +143,13 @@ export default function TeamPage() {
               </div>
               <div>
                 <Label className="text-xs">Role</Label>
-                <Select
-                  value={inviteForm.role}
-                  onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
-                  className="mt-1"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                  ))}
-                </Select>
+                <div className="mt-1">
+                  <Select
+                    value={inviteForm.role}
+                    onValueChange={(val) => setInviteForm({ ...inviteForm, role: val })}
+                    options={ROLE_OPTIONS}
+                  />
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
@@ -184,18 +184,14 @@ export default function TeamPage() {
                   </div>
                   <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0">
                     {editingRole === member.id ? (
-                      <select
-                        defaultValue={member.role}
-                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                        onBlur={() => setEditingRole(null)}
-                        onClick={(e) => e.stopPropagation()}
-                        autoFocus
-                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none"
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                        ))}
-                      </select>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={member.role}
+                          onValueChange={(val) => handleRoleChange(member.id, val)}
+                          options={ROLE_OPTIONS}
+                          size="sm"
+                        />
+                      </div>
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingRole(member.id); }}
@@ -225,16 +221,16 @@ export default function TeamPage() {
                       )
                     )}
 
-                    <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform", expandedPerms === member.id && "rotate-180")} />
+                    <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", expandedPerms === member.id && "rotate-180")} />
                   </div>
                 </div>
 
                 {expandedPerms === member.id && envs.length > 0 && (
-                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-slate-200 bg-white p-3">
+                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-slate-200 bg-white p-3 animate-fade-in">
                     <p className="text-xs font-semibold text-slate-600 mb-2">Environment Permissions</p>
                     <div className="space-y-1">
                       {envs.map((env) => (
-                        <div key={env.id} className="flex flex-col gap-1 py-1.5 px-2 rounded hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between">
+                        <div key={env.id} className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-2">
                             <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: env.color }} />
                             <span className="text-xs font-medium text-slate-700">{env.name}</span>

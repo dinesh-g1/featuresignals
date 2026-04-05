@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Select } from "@/components/ui/select";
+import { X } from "lucide-react";
 
 interface Condition {
   attribute: string;
@@ -28,6 +30,11 @@ const OPERATORS = [
   { value: "lte", label: "<=" },
   { value: "regex", label: "matches regex" },
   { value: "exists", label: "exists" },
+];
+
+const MATCH_TYPE_OPTIONS = [
+  { value: "all", label: "Match ALL" },
+  { value: "any", label: "Match ANY" },
 ];
 
 export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatchType, onSave }: Props) {
@@ -71,14 +78,12 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-slate-500">Conditions</span>
-          <select
+          <Select
             value={matchType}
-            onChange={(e) => handleMatchTypeChange(e.target.value)}
-            className="rounded border border-slate-200 px-2 py-0.5 text-xs text-slate-600 focus:border-indigo-500 focus:outline-none"
-          >
-            <option value="all">Match ALL</option>
-            <option value="any">Match ANY</option>
-          </select>
+            onValueChange={handleMatchTypeChange}
+            options={MATCH_TYPE_OPTIONS}
+            size="sm"
+          />
         </div>
         <div className="flex gap-2">
           <button
@@ -91,7 +96,7 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow-sm transition-all hover:bg-indigo-700 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
@@ -112,17 +117,14 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
                 value={cond.attribute}
                 onChange={(e) => updateCondition(i, { attribute: e.target.value })}
                 placeholder="attribute (e.g. plan)"
-                className="w-36 rounded border border-slate-200 px-2 py-1.5 text-xs font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
               />
-              <select
+              <Select
                 value={cond.operator}
-                onChange={(e) => updateCondition(i, { operator: e.target.value })}
-                className="rounded border border-slate-200 px-2 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
-              >
-                {OPERATORS.map((op) => (
-                  <option key={op.value} value={op.value}>{op.label}</option>
-                ))}
-              </select>
+                onValueChange={(val) => updateCondition(i, { operator: val })}
+                options={OPERATORS}
+                size="sm"
+              />
               <input
                 type="text"
                 value={cond.values.join(", ")}
@@ -132,15 +134,13 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
                   })
                 }
                 placeholder="value(s), comma-separated"
-                className="flex-1 rounded border border-slate-200 px-2 py-1.5 text-xs font-mono focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
               />
               <button
                 onClick={() => removeCondition(i)}
-                className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}

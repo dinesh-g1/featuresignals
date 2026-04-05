@@ -10,6 +10,11 @@ import { Select } from "@/components/ui/select";
 import { Users, Trash2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const MATCH_TYPE_OPTIONS = [
+  { value: "all", label: "All conditions must match" },
+  { value: "any", label: "Any condition must match" },
+];
+
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
@@ -89,7 +94,7 @@ export default function SegmentsPage() {
       />
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 ring-1 ring-indigo-100 sm:p-6">
+        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Key</Label>
@@ -106,10 +111,9 @@ export default function SegmentsPage() {
           </div>
           <div>
             <Label>Match Type</Label>
-            <Select value={form.match_type} onChange={(e) => setForm({ ...form, match_type: e.target.value })} className="mt-1">
-              <option value="all">All conditions must match</option>
-              <option value="any">Any condition must match</option>
-            </Select>
+            <div className="mt-1">
+              <Select value={form.match_type} onValueChange={(val) => setForm({ ...form, match_type: val })} options={MATCH_TYPE_OPTIONS} />
+            </div>
           </div>
           <div className="flex gap-2">
             <Button type="submit">Create</Button>
@@ -118,7 +122,7 @@ export default function SegmentsPage() {
         </form>
       )}
 
-      <Card className="hover:shadow-lg hover:border-slate-300">
+      <Card>
         <div className="divide-y divide-slate-100">
           {segments.length === 0 ? (
             <EmptyState
@@ -160,11 +164,11 @@ export default function SegmentsPage() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
-                      <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform", isExpanded && "rotate-180")} />
+                      <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", isExpanded && "rotate-180")} />
                     </div>
                   </div>
                   {isExpanded && (
-                    <div className="border-t border-slate-100 px-4 py-4 bg-slate-50/50 sm:px-6">
+                    <div className="border-t border-slate-100 px-4 py-4 bg-slate-50/50 sm:px-6 animate-fade-in">
                       <SegmentRulesEditor
                         rules={seg.rules ?? []}
                         matchType={seg.match_type}

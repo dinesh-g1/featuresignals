@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
@@ -70,6 +70,18 @@ export default function FlagDetailPage() {
     }).catch(() => {});
   }, [token, tab, flag?.id]);
 
+  const envOptions = useMemo(() => envs.map((e) => ({ value: e.id, label: e.name })), [envs]);
+  const promoteOptions = useMemo(() => [
+    { value: "", label: "Select target environment" },
+    ...envs.filter((e) => e.id !== selectedEnv).map((e) => ({ value: e.id, label: e.name })),
+  ], [envs, selectedEnv]);
+  const prereqOptions = useMemo(() => [
+    { value: "", label: "Add prerequisite flag…" },
+    ...allFlags
+      .filter((f) => f.key !== flagKey && !prereqs.includes(f.key))
+      .map((f) => ({ value: f.key, label: `${f.key} — ${f.name}` })),
+  ], [allFlags, flagKey, prereqs]);
+
   async function toggleFlag() {
     if (!token || !projectId || !selectedEnv) return;
     await api.updateFlagState(token, projectId, flagKey, selectedEnv, { enabled: !state?.enabled });
@@ -133,6 +145,13 @@ export default function FlagDetailPage() {
     api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
   }
 
+  function handleAddPrereq(val: string) {
+    if (!val) return;
+    const updated = [...prereqs, val];
+    setPrereqs(updated);
+    if (token && projectId) api.updateFlag(token, projectId, flagKey, { prerequisites: updated }).then(setFlag);
+  }
+
   if (!flag) {
     return <LoadingSpinner fullPage />;
   }
@@ -160,14 +179,10 @@ export default function FlagDetailPage() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-9 sm:ml-0">
           <Select
             value={selectedEnv}
-            onChange={(e) => setSelectedEnv(e.target.value)}
-            className="w-full sm:w-auto"
-            style={{ borderLeftColor: envColors[selectedEnv] || "#6B7280", borderLeftWidth: 4 }}
-          >
-            {envs.map((env) => (
-              <option key={env.id} value={env.id}>{env.name}</option>
-            ))}
-          </Select>
+            onValueChange={setSelectedEnv}
+            options={envOptions}
+            placeholder="Select environment…"
+          />
           <button
             onClick={toggleFlag}
             className={cn("relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors", state?.enabled ? "bg-emerald-500" : "bg-slate-300")}
@@ -204,12 +219,12 @@ export default function FlagDetailPage() {
               <span className="font-semibold">{envs.find((e) => e.id === selectedEnv)?.name || "current"}</span> to:
             </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <Select value={promoteTarget} onChange={(e) => setPromoteTarget(e.target.value)} className="sm:w-auto">
-                <option value="">Select target environment</option>
-                {envs.filter((e) => e.id !== selectedEnv).map((env) => (
-                  <option key={env.id} value={env.id}>{env.name}</option>
-                ))}
-              </Select>
+              <Select
+                value={promoteTarget}
+                onValueChange={setPromoteTarget}
+                options={promoteOptions}
+                placeholder="Select target environment"
+              />
               <Button size="sm" onClick={handlePromote} disabled={!promoteTarget || promoting}>
                 {promoting ? "Promoting..." : "Promote"}
               </Button>
@@ -220,7 +235,7 @@ export default function FlagDetailPage() {
       )}
 
       {editing && (
-        <form onSubmit={handleEdit} className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 ring-1 ring-indigo-100 sm:p-6">
+        <form onSubmit={handleEdit} className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6">
           <div>
             <Label>Name</Label>
             <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="mt-1" />
@@ -244,7 +259,7 @@ export default function FlagDetailPage() {
               key={t}
               onClick={() => setTab(t)}
               className={cn(
-                "whitespace-nowrap px-3 py-2.5 text-sm font-medium capitalize transition-colors sm:px-4",
+                "whitespace-nowrap px-3 py-2.5 text-sm font-medium capitalize transition-all duration-150 sm:px-4",
                 tab === t ? "border-b-2 border-indigo-600 text-indigo-600" : "text-slate-500 hover:text-slate-700",
               )}
             >
@@ -278,28 +293,28 @@ export default function FlagDetailPage() {
           )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
-            <Card className="p-4 hover:shadow-lg hover:border-slate-300 sm:p-6">
+            <Card className="p-4 sm:p-6">
               <h3 className="text-sm font-medium text-slate-500">Status</h3>
               <div className="mt-2 flex items-center gap-2">
                 <div className={cn("h-2.5 w-2.5 rounded-full", state?.enabled ? "bg-emerald-500" : "bg-slate-300")} />
                 <p className="text-lg font-semibold text-slate-900">{state?.enabled ? "Enabled" : "Disabled"}</p>
               </div>
             </Card>
-            <Card className="p-4 hover:shadow-lg hover:border-slate-300 sm:p-6">
+            <Card className="p-4 sm:p-6">
               <h3 className="text-sm font-medium text-slate-500">Type</h3>
               <p className="mt-2 text-lg font-semibold capitalize text-slate-900">{flag.flag_type}</p>
             </Card>
-            <Card className="p-4 hover:shadow-lg hover:border-slate-300 sm:p-6">
+            <Card className="p-4 sm:p-6">
               <h3 className="text-sm font-medium text-slate-500">Default Value</h3>
               <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-2 text-sm font-mono text-slate-700 ring-1 ring-slate-100">{JSON.stringify(flag.default_value)}</pre>
             </Card>
-            <Card className="p-4 hover:shadow-lg hover:border-slate-300 sm:p-6">
+            <Card className="p-4 sm:p-6">
               <h3 className="text-sm font-medium text-slate-500">Description</h3>
               <p className="mt-2 text-sm text-slate-700">{flag.description || "No description"}</p>
             </Card>
           </div>
 
-          <Card className="hover:shadow-lg hover:border-slate-300">
+          <Card>
             <CardContent className="space-y-3">
               <h3 className="text-sm font-medium text-slate-500">Prerequisites</h3>
               <p className="text-xs text-slate-400">This flag will only evaluate when all prerequisite flags are ON.</p>
@@ -321,22 +336,11 @@ export default function FlagDetailPage() {
                   </div>
                 ))}
                 <Select
-                  defaultValue=""
-                  onChange={(e) => {
-                    if (!e.target.value) return;
-                    const updated = [...prereqs, e.target.value];
-                    setPrereqs(updated);
-                    e.target.value = "";
-                    if (token && projectId) api.updateFlag(token, projectId, flagKey, { prerequisites: updated }).then(setFlag);
-                  }}
-                >
-                  <option value="">Add prerequisite flag...</option>
-                  {allFlags
-                    .filter((f) => f.key !== flagKey && !prereqs.includes(f.key))
-                    .map((f) => (
-                      <option key={f.key} value={f.key}>{f.key} — {f.name}</option>
-                    ))}
-                </Select>
+                  value=""
+                  onValueChange={handleAddPrereq}
+                  options={prereqOptions}
+                  placeholder="Add prerequisite flag…"
+                />
                 {prereqs.length === 0 && (
                   <p className="text-xs text-slate-400 italic">No prerequisites configured. This flag evaluates independently.</p>
                 )}
@@ -344,7 +348,7 @@ export default function FlagDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg hover:border-slate-300">
+          <Card>
             <CardContent className="space-y-3">
               <h3 className="text-sm font-medium text-slate-500">Mutual Exclusion Group</h3>
               <p className="text-xs text-slate-400">Flags in the same group are mutually exclusive -- only one can be ON per user.</p>
@@ -396,7 +400,7 @@ export default function FlagDetailPage() {
 
       {tab === "targeting" && (
         <div className="space-y-4 sm:space-y-6">
-          <Card className="hover:shadow-lg hover:border-slate-300">
+          <Card>
             <CardContent className="space-y-4">
               <h3 className="text-sm font-medium text-slate-500">Percentage Rollout</h3>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
@@ -423,7 +427,7 @@ export default function FlagDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg hover:border-slate-300">
+          <Card>
             <CardContent>
               <TargetingRulesEditor
                 rules={state?.rules || []}
@@ -434,7 +438,7 @@ export default function FlagDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg hover:border-slate-300">
+          <Card>
             <CardContent className="space-y-4">
               <h3 className="text-sm font-medium text-slate-500">Schedule</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -454,7 +458,7 @@ export default function FlagDetailPage() {
                         type="datetime-local"
                         value={scheduleEnable}
                         onChange={(e) => setScheduleEnable(e.target.value)}
-                        className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                       />
                       {scheduleEnable && (
                         <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => saveSchedule(new Date(scheduleEnable).toISOString(), "")}>Set</Button>
@@ -478,7 +482,7 @@ export default function FlagDetailPage() {
                         type="datetime-local"
                         value={scheduleDisable}
                         onChange={(e) => setScheduleDisable(e.target.value)}
-                        className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                       />
                       {scheduleDisable && (
                         <Button size="sm" variant="destructive" onClick={() => saveSchedule("", new Date(scheduleDisable).toISOString())}>Set</Button>
@@ -493,7 +497,7 @@ export default function FlagDetailPage() {
       )}
 
       {tab === "history" && (
-        <Card className="hover:shadow-lg hover:border-slate-300">
+        <Card>
           {audit.length === 0 ? (
             <EmptyState icon={Clock} title="No audit history for this flag yet." />
           ) : (

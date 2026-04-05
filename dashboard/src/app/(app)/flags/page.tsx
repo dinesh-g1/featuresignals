@@ -9,9 +9,46 @@ import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, Emp
 import { Select } from "@/components/ui/select";
 import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
 
-const FLAG_TYPES = ["all", "boolean", "string", "number", "json", "ab"];
-const CATEGORIES = ["all", "release", "experiment", "ops", "permission"];
-const STATUSES = ["all", "active", "rolled_out", "deprecated", "archived"];
+const FLAG_TYPE_OPTIONS = [
+  { value: "all", label: "All Types" },
+  { value: "boolean", label: "Boolean" },
+  { value: "string", label: "String" },
+  { value: "number", label: "Number" },
+  { value: "json", label: "JSON" },
+  { value: "ab", label: "A/B" },
+];
+
+const CATEGORY_OPTIONS = [
+  { value: "all", label: "All Categories" },
+  { value: "release", label: "Release" },
+  { value: "experiment", label: "Experiment" },
+  { value: "ops", label: "Ops" },
+  { value: "permission", label: "Permission" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "active", label: "Active" },
+  { value: "rolled_out", label: "Rolled Out" },
+  { value: "deprecated", label: "Deprecated" },
+  { value: "archived", label: "Archived" },
+];
+
+const CREATE_TYPE_OPTIONS = [
+  { value: "boolean", label: "Boolean" },
+  { value: "string", label: "String" },
+  { value: "number", label: "Number" },
+  { value: "json", label: "JSON" },
+  { value: "ab", label: "A/B Experiment" },
+];
+
+const CREATE_CATEGORY_OPTIONS = [
+  { value: "release", label: "Release — short-lived, trunk-based dev" },
+  { value: "experiment", label: "Experiment — A/B tests, cohort analysis" },
+  { value: "ops", label: "Ops — kill switches, circuit breakers" },
+  { value: "permission", label: "Permission — premium features, entitlements" },
+];
+
 type SortKey = "key" | "name" | "created_at" | "updated_at";
 
 export default function FlagsPage() {
@@ -112,6 +149,11 @@ export default function FlagsPage() {
     return Array.from(tags).sort();
   }, [flags]);
 
+  const tagOptions = useMemo(() => [
+    { value: "", label: "All Tags" },
+    ...allTags.map((t) => ({ value: t, label: t })),
+  ], [allTags]);
+
   function handleSort(key: SortKey) {
     if (sortBy === key) {
       setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -172,7 +214,7 @@ export default function FlagsPage() {
       />
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 ring-1 ring-indigo-100 sm:p-6">
+        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Key</Label>
@@ -198,30 +240,23 @@ export default function FlagsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Type</Label>
-              <Select
-                value={newFlag.flag_type}
-                onChange={(e) => setNewFlag({ ...newFlag, flag_type: e.target.value })}
-                className="mt-1"
-              >
-                <option value="boolean">Boolean</option>
-                <option value="string">String</option>
-                <option value="number">Number</option>
-                <option value="json">JSON</option>
-                <option value="ab">A/B Experiment</option>
-              </Select>
+              <div className="mt-1">
+                <Select
+                  value={newFlag.flag_type}
+                  onValueChange={(val) => setNewFlag({ ...newFlag, flag_type: val })}
+                  options={CREATE_TYPE_OPTIONS}
+                />
+              </div>
             </div>
             <div>
               <Label>Category</Label>
-              <Select
-                value={newFlag.category}
-                onChange={(e) => setNewFlag({ ...newFlag, category: e.target.value })}
-                className="mt-1"
-              >
-                <option value="release">Release -- short-lived, trunk-based dev</option>
-                <option value="experiment">Experiment -- A/B tests, cohort analysis</option>
-                <option value="ops">Ops -- kill switches, circuit breakers</option>
-                <option value="permission">Permission -- premium features, entitlements</option>
-              </Select>
+              <div className="mt-1">
+                <Select
+                  value={newFlag.category}
+                  onValueChange={(val) => setNewFlag({ ...newFlag, category: val })}
+                  options={CREATE_CATEGORY_OPTIONS}
+                />
+              </div>
             </div>
           </div>
           <div>
@@ -252,44 +287,19 @@ export default function FlagsPage() {
             className="pl-10"
           />
         </div>
-        <Select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="w-full sm:w-auto"
-        >
-          {FLAG_TYPES.map((t) => (
-            <option key={t} value={t}>{t === "all" ? "All Types" : t === "ab" ? "A/B" : t.charAt(0).toUpperCase() + t.slice(1)}</option>
-          ))}
-        </Select>
-        <Select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="w-full sm:w-auto"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c === "all" ? "All Categories" : c.charAt(0).toUpperCase() + c.slice(1)}</option>
-          ))}
-        </Select>
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full sm:w-auto"
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>{s === "all" ? "All Statuses" : s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
-          ))}
-        </Select>
+        <div className="w-full sm:w-auto">
+          <Select value={typeFilter} onValueChange={setTypeFilter} options={FLAG_TYPE_OPTIONS} size="sm" />
+        </div>
+        <div className="w-full sm:w-auto">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter} options={CATEGORY_OPTIONS} size="sm" />
+        </div>
+        <div className="w-full sm:w-auto">
+          <Select value={statusFilter} onValueChange={setStatusFilter} options={STATUS_OPTIONS} size="sm" />
+        </div>
         {allTags.length > 0 && (
-          <Select
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-            className="w-full sm:w-auto"
-          >
-            <option value="">All Tags</option>
-            {allTags.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </Select>
+          <div className="w-full sm:w-auto">
+            <Select value={tagFilter} onValueChange={setTagFilter} options={tagOptions} size="sm" />
+          </div>
         )}
       </div>
 
@@ -300,7 +310,7 @@ export default function FlagsPage() {
           <button
             key={key}
             onClick={() => handleSort(key)}
-            className={`rounded-md px-2 py-1 transition-colors ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium" : "hover:bg-slate-100"}`}
+            className={`rounded-lg px-2.5 py-1 transition-all duration-150 ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium shadow-sm" : "hover:bg-slate-100"}`}
           >
             {key.replace(/_/g, " ")}
             {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
@@ -308,7 +318,7 @@ export default function FlagsPage() {
         ))}
       </div>
 
-      <Card className="hover:shadow-lg hover:border-slate-300">
+      <Card>
         <div className="divide-y divide-slate-100">
           {filtered.length === 0 ? (
             <EmptyState
