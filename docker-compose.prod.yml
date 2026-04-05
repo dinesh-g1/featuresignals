@@ -49,7 +49,7 @@ services:
       DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
       PORT: "8080"
-      CORS_ORIGIN: https://app.featuresignals.com
+      CORS_ORIGIN: https://app.featuresignals.com,https://docs.featuresignals.com
       LOG_LEVEL: info
       MSG91_AUTH_KEY: ${MSG91_AUTH_KEY}
       MSG91_EMAIL_TEMPLATE_ID: ${MSG91_EMAIL_TEMPLATE_ID}
