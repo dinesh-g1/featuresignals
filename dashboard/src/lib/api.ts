@@ -103,6 +103,24 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return res.json();
 }
 
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+async function requestList<T>(path: string, options: RequestOptions = {}): Promise<T[]> {
+  const response = await request<PaginatedResponse<T> | T[]>(path, options);
+  if (Array.isArray(response)) return response;
+  if (response && typeof response === "object" && "data" in response) {
+    const data = (response as PaginatedResponse<T>).data;
+    return Array.isArray(data) ? data : [];
+  }
+  return [];
+}
+
 export interface PricingPlan {
   name: string;
   tagline: string;
@@ -155,20 +173,20 @@ export const api = {
     request<{ message: string }>("/v1/sales/inquiry", { method: "POST", body: data }),
 
   // Projects
-  listProjects: (token: string) => request<any[]>("/v1/projects", { token }),
+  listProjects: (token: string) => requestList<any>("/v1/projects", { token }),
   createProject: (token: string, data: { name: string; slug?: string }) =>
     request("/v1/projects", { method: "POST", body: data, token }),
   getProject: (token: string, id: string) => request<any>(`/v1/projects/${id}`, { token }),
 
   // Environments
   listEnvironments: (token: string, projectId: string) =>
-    request<any[]>(`/v1/projects/${projectId}/environments`, { token }),
+    requestList<any>(`/v1/projects/${projectId}/environments`, { token }),
   createEnvironment: (token: string, projectId: string, data: { name: string; slug?: string; color?: string }) =>
     request(`/v1/projects/${projectId}/environments`, { method: "POST", body: data, token }),
 
   // Flags
   listFlags: (token: string, projectId: string) =>
-    request<any[]>(`/v1/projects/${projectId}/flags`, { token }),
+    requestList<any>(`/v1/projects/${projectId}/flags`, { token }),
   getFlag: (token: string, projectId: string, flagKey: string) =>
     request<any>(`/v1/projects/${projectId}/flags/${flagKey}`, { token }),
   createFlag: (token: string, projectId: string, data: any) =>
@@ -194,7 +212,7 @@ export const api = {
 
   // Segments
   listSegments: (token: string, projectId: string) =>
-    request<any[]>(`/v1/projects/${projectId}/segments`, { token }),
+    requestList<any>(`/v1/projects/${projectId}/segments`, { token }),
   getSegment: (token: string, projectId: string, segKey: string) =>
     request<any>(`/v1/projects/${projectId}/segments/${segKey}`, { token }),
   createSegment: (token: string, projectId: string, data: any) =>
@@ -206,7 +224,7 @@ export const api = {
 
   // API Keys
   listAPIKeys: (token: string, envId: string) =>
-    request<any[]>(`/v1/environments/${envId}/api-keys`, { token }),
+    requestList<any>(`/v1/environments/${envId}/api-keys`, { token }),
   createAPIKey: (token: string, envId: string, data: { name: string; type: string }) =>
     request(`/v1/environments/${envId}/api-keys`, { method: "POST", body: data, token }),
   revokeAPIKey: (token: string, keyId: string) =>
@@ -214,11 +232,11 @@ export const api = {
 
   // Audit
   listAudit: (token: string, limit?: number, offset?: number) =>
-    request<any[]>(`/v1/audit?limit=${limit || 50}&offset=${offset || 0}`, { token }),
+    requestList<any>(`/v1/audit?limit=${limit || 50}&offset=${offset || 0}`, { token }),
 
   // Team / Members
   listMembers: (token: string) =>
-    request<any[]>("/v1/members", { token }),
+    requestList<any>("/v1/members", { token }),
   inviteMember: (token: string, data: { email: string; role: string }) =>
     request("/v1/members/invite", { method: "POST", body: data, token }),
   updateMemberRole: (token: string, memberId: string, role: string) =>
@@ -226,13 +244,13 @@ export const api = {
   removeMember: (token: string, memberId: string) =>
     request(`/v1/members/${memberId}`, { method: "DELETE", token }),
   getMemberPermissions: (token: string, memberId: string) =>
-    request<any[]>(`/v1/members/${memberId}/permissions`, { token }),
+    requestList<any>(`/v1/members/${memberId}/permissions`, { token }),
   updateMemberPermissions: (token: string, memberId: string, permissions: any[]) =>
     request(`/v1/members/${memberId}/permissions`, { method: "PUT", body: { permissions }, token }),
 
   // Approvals
   listApprovals: (token: string, status?: string) =>
-    request<any[]>(`/v1/approvals${status ? `?status=${status}` : ""}`, { token }),
+    requestList<any>(`/v1/approvals${status ? `?status=${status}` : ""}`, { token }),
   getApproval: (token: string, id: string) =>
     request<any>(`/v1/approvals/${id}`, { token }),
   createApproval: (token: string, data: { flag_id: string; env_id: string; change_type: string; payload: any }) =>
@@ -270,7 +288,7 @@ export const api = {
 
   // Flag Usage Insights
   getFlagInsights: (token: string, projectId: string, envId: string) =>
-    request<any[]>(`/v1/projects/${projectId}/environments/${envId}/flag-insights`, { token }),
+    requestList<any>(`/v1/projects/${projectId}/environments/${envId}/flag-insights`, { token }),
 
   // Evaluation Metrics
   getEvalMetrics: (token: string) =>
@@ -283,7 +301,7 @@ export const api = {
 
   // Webhooks
   listWebhooks: (token: string) =>
-    request<any[]>("/v1/webhooks", { token }),
+    requestList<any>("/v1/webhooks", { token }),
   createWebhook: (token: string, data: { name: string; url: string; secret?: string; events: string[] }) =>
     request("/v1/webhooks", { method: "POST", body: data, token }),
   updateWebhook: (token: string, webhookId: string, data: any) =>
@@ -291,7 +309,7 @@ export const api = {
   deleteWebhook: (token: string, webhookId: string) =>
     request(`/v1/webhooks/${webhookId}`, { method: "DELETE", token }),
   listWebhookDeliveries: (token: string, webhookId: string) =>
-    request<any[]>(`/v1/webhooks/${webhookId}/deliveries`, { token }),
+    requestList<any>(`/v1/webhooks/${webhookId}/deliveries`, { token }),
 
   // Billing
   createCheckout: (token: string) =>

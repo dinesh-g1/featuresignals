@@ -200,7 +200,7 @@ export default function WebhooksPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0 ml-5 sm:ml-0">
                     <div className="flex flex-wrap gap-1">
-                      {wh.events.map((e) => (
+                      {(wh.events ?? []).map((e) => (
                         <Badge key={e} variant="primary" className="text-[10px]">
                           {e}
                         </Badge>

@@ -1,3 +1,5 @@
+"use client";
+
 import { ErrorDisplay } from "@/components/ui/error-display";
 
 export default function NotFound() {

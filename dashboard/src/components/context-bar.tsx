@@ -52,8 +52,12 @@ export function ContextBar() {
     setCurrentEnv(created.id);
   }
 
-  const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
-  const envOptions = envs.map((e) => ({ value: e.id, label: e.name }));
+  const projectOptions = projects
+    .filter((p) => p.id)
+    .map((p) => ({ value: p.id, label: p.name }));
+  const envOptions = envs
+    .filter((e) => e.id)
+    .map((e) => ({ value: e.id, label: e.name }));
 
   return (
     <>

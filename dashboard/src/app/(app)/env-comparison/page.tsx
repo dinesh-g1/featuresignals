@@ -133,13 +133,13 @@ export default function EnvComparisonPage() {
             </Card>
           </div>
 
-          {comparison.diffs.length > 0 && (
+          {(comparison.diffs ?? []).length > 0 && (
             <Card>
               <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
-                    checked={selected.size === comparison.diffs.length}
+                    checked={selected.size === (comparison.diffs ?? []).length}
                     onChange={toggleAll}
                     className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   />
@@ -167,7 +167,7 @@ export default function EnvComparisonPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {comparison.diffs.map((d: any) => (
+                    {(comparison.diffs ?? []).map((d: any) => (
                       <tr key={d.flag_key} className="transition-colors hover:bg-indigo-50/30">
                         <td className="px-4 py-3 sm:px-6">
                           <input
@@ -205,7 +205,7 @@ export default function EnvComparisonPage() {
             </Card>
           )}
 
-          {comparison.diffs.length === 0 && (
+          {(comparison.diffs ?? []).length === 0 && (
             <Card className="px-6 py-12 text-center">
               <p className="text-sm font-medium text-emerald-600">All flags are identical between these environments</p>
             </Card>

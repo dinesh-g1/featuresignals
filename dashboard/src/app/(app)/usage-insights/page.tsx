@@ -37,7 +37,7 @@ export default function UsageInsightsPage() {
   }
 
   const filtered = insights
-    .filter((i) => !search || i.flag_key.toLowerCase().includes(search.toLowerCase()))
+    .filter((i) => !search || (i.flag_key ?? "").toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       const aVal = a[sortBy];
       const bVal = b[sortBy];
@@ -101,15 +101,15 @@ export default function UsageInsightsPage() {
                         <div className="h-2 w-16 rounded-full bg-slate-200 overflow-hidden sm:w-24">
                           <div
                             className="h-full rounded-full bg-emerald-500 transition-all"
-                            style={{ width: `${Math.min(ins.true_percentage, 100)}%` }}
+                            style={{ width: `${Math.min(ins.true_percentage ?? 0, 100)}%` }}
                           />
                         </div>
-                        <span className="text-xs font-medium text-slate-600">{ins.true_percentage.toFixed(1)}%</span>
+                        <span className="text-xs font-medium text-slate-600">{(ins.true_percentage ?? 0).toFixed(1)}%</span>
                       </div>
                     </td>
-                    <td className="hidden px-4 py-3 text-emerald-600 font-medium sm:table-cell">{ins.true_count.toLocaleString()}</td>
-                    <td className="hidden px-4 py-3 text-slate-500 sm:table-cell">{ins.false_count.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-slate-700 font-medium">{ins.total_count.toLocaleString()}</td>
+                    <td className="hidden px-4 py-3 text-emerald-600 font-medium sm:table-cell">{(ins.true_count ?? 0).toLocaleString()}</td>
+                    <td className="hidden px-4 py-3 text-slate-500 sm:table-cell">{(ins.false_count ?? 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-slate-700 font-medium">{(ins.total_count ?? 0).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

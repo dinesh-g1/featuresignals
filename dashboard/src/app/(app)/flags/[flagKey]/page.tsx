@@ -39,8 +39,9 @@ export default function FlagDetailPage() {
   useEffect(() => {
     if (!token || !projectId) return;
     api.getFlag(token, projectId, flagKey).then((f) => {
+      if (!f) return;
       setFlag(f);
-      setEditForm({ name: f.name, description: f.description || "" });
+      setEditForm({ name: f.name ?? "", description: f.description || "" });
       setPrereqs(f.prerequisites || []);
       setMutexGroup(f.mutual_exclusion_group || "");
     }).catch(() => {});
