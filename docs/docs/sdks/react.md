@@ -27,7 +27,7 @@ function App() {
     <FeatureSignalsProvider
       sdkKey="fs_cli_your_client_key"
       envKey="production"
-      baseURL="http://localhost:8080"
+      baseURL="https://api.featuresignals.com" // For self-hosted, use your own API URL
       userKey="user-123"
     >
       <YourApp />
@@ -61,7 +61,7 @@ function MyComponent() {
 <FeatureSignalsProvider
   sdkKey="fs_cli_..."         // Required: client API key
   envKey="production"          // Required: environment slug
-  baseURL="http://localhost:8080" // API server URL (optional)
+  baseURL="https://api.featuresignals.com" // API server URL (optional); for self-hosted, use your own API URL
   userKey="user-123"          // User identifier (default: "anonymous")
   pollingIntervalMs={30000}   // Polling interval (default: 30000, 0 to disable)
   streaming={false}           // Use SSE (default: false)

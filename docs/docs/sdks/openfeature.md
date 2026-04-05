@@ -21,7 +21,7 @@ import (
 
 // Create the FeatureSignals client
 client := fs.NewClient("fs_srv_...", "production",
-    fs.WithBaseURL("http://localhost:8080"),
+    fs.WithBaseURL("https://api.featuresignals.com"), // For self-hosted, use your own API URL
 )
 defer client.Close()
 <-client.Ready()
@@ -47,7 +47,7 @@ import { FeatureSignalsClient, FeatureSignalsProvider } from '@featuresignals/no
 
 const fsClient = new FeatureSignalsClient('fs_srv_...', {
   envKey: 'production',
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://api.featuresignals.com', // For self-hosted, use your own API URL
 });
 
 await fsClient.waitForReady();
@@ -66,7 +66,7 @@ from featuresignals import FeatureSignalsProvider, ClientOptions
 
 provider = FeatureSignalsProvider(
     "fs_srv_...",
-    ClientOptions(env_key="production", base_url="http://localhost:8080"),
+    ClientOptions(env_key="production", base_url="https://api.featuresignals.com"),  # For self-hosted, use your own API URL
 )
 
 provider.client.wait_for_ready()
@@ -95,7 +95,7 @@ provider.resolve_object_evaluation(key, default_value)
 import com.featuresignals.sdk.*;
 
 var options = new ClientOptions("production")
-    .baseURL("http://localhost:8080");
+    .baseURL("https://api.featuresignals.com"); // For self-hosted, use your own API URL
 
 try (var provider = new FeatureSignalsProvider("fs_srv_...", options)) {
     provider.getClient().waitForReady(5000);
@@ -128,7 +128,7 @@ require "featuresignals"
 
 options = FeatureSignals::ClientOptions.new(
   env_key: "production",
-  base_url: "http://localhost:8080"
+  base_url: "https://api.featuresignals.com", # For self-hosted, use your own API URL
 )
 provider = FeatureSignals::OpenFeature::Provider.new("fs_srv_...", options)
 provider.client.wait_for_ready

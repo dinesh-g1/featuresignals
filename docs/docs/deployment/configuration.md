@@ -17,7 +17,7 @@ All configuration is done via environment variables.
 | `TOKEN_TTL_MINUTES` | `60` | Access token lifetime (minutes) |
 | `REFRESH_TTL_HOURS` | `168` | Refresh token lifetime (hours, default 7 days) |
 | `LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
-| `CORS_ORIGIN` | `http://localhost:3000` | Allowed CORS origin |
+| `CORS_ORIGIN` | `http://localhost:3000` | Comma-separated list of allowed CORS origins. Include your dashboard **and** docs site (for the API Playground). |
 | `APP_BASE_URL` | `http://localhost:8080` | Public URL of the API server |
 | `DASHBOARD_URL` | `http://localhost:3000` | Public URL of the dashboard |
 
@@ -44,7 +44,7 @@ All configuration is done via environment variables.
 ```bash
 export DATABASE_URL="postgres://fs:strongpass@db.example.com:5432/featuresignals?sslmode=require"
 export JWT_SECRET="$(openssl rand -hex 32)"
-export CORS_ORIGIN="https://flags.example.com"
+export CORS_ORIGIN="https://app.example.com,https://docs.example.com"
 export PORT=8080
 export LOG_LEVEL=info
 export TOKEN_TTL_MINUTES=30

@@ -33,7 +33,7 @@ Database migrations run automatically on startup.
 
 ## 2. Create Your Account
 
-Open [http://localhost:3000](http://localhost:3000) and register a new account. This creates:
+Open [https://app.featuresignals.com](https://app.featuresignals.com) and register a new account. This creates:
 - Your user account
 - A default organization
 - A **Default Project** with three environments: `dev`, `staging`, `production`
@@ -79,7 +79,7 @@ import { FeatureSignalsClient } from '@featuresignals/node';
 
 const client = new FeatureSignalsClient('YOUR_API_KEY', {
   envKey: 'dev',
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://api.featuresignals.com',
 });
 
 await client.waitForReady();
@@ -105,7 +105,7 @@ import (
 
 func main() {
     client := fs.NewClient("YOUR_API_KEY", "dev",
-        fs.WithBaseURL("http://localhost:8080"),
+        fs.WithBaseURL("https://api.featuresignals.com"),
     )
     defer client.Close()
     <-client.Ready()
@@ -127,7 +127,7 @@ from featuresignals import FeatureSignalsClient, ClientOptions, EvalContext
 
 client = FeatureSignalsClient(
     "YOUR_API_KEY",
-    ClientOptions(env_key="dev", base_url="http://localhost:8080"),
+    ClientOptions(env_key="dev", base_url="https://api.featuresignals.com"),
 )
 client.wait_for_ready()
 
@@ -149,7 +149,7 @@ print("New checkout enabled:", enabled)
 ```java
 import com.featuresignals.sdk.*;
 
-var options = new ClientOptions("dev").baseURL("http://localhost:8080");
+var options = new ClientOptions("dev").baseURL("https://api.featuresignals.com");
 var client = new FeatureSignalsClient("YOUR_API_KEY", options);
 client.waitForReady(5000);
 
@@ -185,7 +185,7 @@ gem install featuresignals
 ```ruby
 require "featuresignals"
 
-options = FeatureSignals::ClientOptions.new(env_key: "dev", base_url: "http://localhost:8080")
+options = FeatureSignals::ClientOptions.new(env_key: "dev", base_url: "https://api.featuresignals.com")
 client = FeatureSignals::Client.new("YOUR_API_KEY", options)
 client.wait_for_ready
 

@@ -22,7 +22,7 @@ from featuresignals import FeatureSignalsClient, ClientOptions, EvalContext
 
 client = FeatureSignalsClient(
     "fs_srv_your_api_key",
-    ClientOptions(env_key="production", base_url="http://localhost:8080"),
+    ClientOptions(env_key="production", base_url="https://api.featuresignals.com"),  # For self-hosted, use your own API URL
 )
 
 client.wait_for_ready()
@@ -41,7 +41,7 @@ from featuresignals import ClientOptions, EvalContext
 
 options = ClientOptions(
     env_key="production",                    # Required: environment slug
-    base_url="http://localhost:8080",        # API server URL
+    base_url="https://api.featuresignals.com",  # API server URL; for self-hosted, use your own API URL
     polling_interval=30.0,                   # Polling interval (seconds)
     streaming=False,                         # Use SSE instead of polling
     sse_retry=5.0,                          # SSE reconnect delay (seconds)

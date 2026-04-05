@@ -9,7 +9,7 @@ This guide walks through creating a feature flag, enabling it per environment, a
 
 ## Step 1: Register and Set Up
 
-After [installing](/getting-started/installation) FeatureSignals, register at [http://localhost:3000](http://localhost:3000). Registration automatically creates:
+After [installing](/getting-started/installation) FeatureSignals, register at [https://app.featuresignals.com](https://app.featuresignals.com). Registration automatically creates:
 
 - Your user with **owner** role
 - A default organization
@@ -59,7 +59,7 @@ import { FeatureSignalsClient } from '@featuresignals/node';
 
 const client = new FeatureSignalsClient('fs_srv_...', {
   envKey: 'dev',
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://api.featuresignals.com',
 });
 
 await client.waitForReady();

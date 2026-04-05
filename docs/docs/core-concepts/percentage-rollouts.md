@@ -29,7 +29,7 @@ This provides granularity down to 0.01%.
 ### Via API
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"enabled": true, "percentage_rollout": 2500}'

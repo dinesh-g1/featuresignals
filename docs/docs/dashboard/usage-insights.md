@@ -32,7 +32,7 @@ For non-boolean flags, true/false represent the two most common values.
 ## API Equivalent
 
 ```bash
-curl "http://localhost:8080/v1/projects/$PROJECT_ID/environments/$ENV_ID/flag-insights" \
+curl "https://api.featuresignals.com/v1/projects/$PROJECT_ID/environments/$ENV_ID/flag-insights" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

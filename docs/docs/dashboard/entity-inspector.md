@@ -45,7 +45,7 @@ The inspector displays a table with one row per flag:
 ## API Equivalent
 
 ```bash
-curl -X POST "http://localhost:8080/v1/projects/$PROJECT_ID/environments/$ENV_ID/inspect-entity" \
+curl -X POST "https://api.featuresignals.com/v1/projects/$PROJECT_ID/environments/$ENV_ID/inspect-entity" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

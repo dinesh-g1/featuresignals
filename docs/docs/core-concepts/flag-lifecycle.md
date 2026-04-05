@@ -21,7 +21,7 @@ Every flag has a `status` field that tracks where it is in its lifecycle:
 Update status via the Flag Engine or API:
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "rolled_out"}'
@@ -50,7 +50,7 @@ Enable in `dev` environment. Test with targeting rules to validate behavior.
 Promote configuration from `dev` to `staging`:
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/promote \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/promote \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"source_env_id": "dev-id", "target_env_id": "staging-id"}'
@@ -68,7 +68,7 @@ Gradually increase the percentage rollout in production:
 Once at 100% with no issues, the flag is fully rolled out. Update the flag's status to `rolled_out`:
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "rolled_out"}'
@@ -92,7 +92,7 @@ The expected cleanup urgency depends on the flag's [category](/core-concepts/tog
 Set an expiration date to automatically disable a flag:
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"expires_at": "2026-06-01T00:00:00Z"}'
@@ -105,7 +105,7 @@ After the expiration time, the flag evaluates as `DISABLED` regardless of its en
 Schedule a flag to enable or disable at a specific time:
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/environments/$ENV_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -121,7 +121,7 @@ The server's background scheduler checks every 30 seconds and applies scheduled 
 In an emergency, instantly disable a flag across an environment:
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags/my-flag/kill \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/my-flag/kill \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"env_id": "production-id"}'

@@ -62,7 +62,7 @@ Navigate to **Audit Log** in the sidebar to browse entries.
 ### API
 
 ```bash
-curl "http://localhost:8080/v1/audit?limit=50&offset=0" \
+curl "https://api.featuresignals.com/v1/audit?limit=50&offset=0" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

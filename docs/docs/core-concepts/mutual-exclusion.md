@@ -31,7 +31,7 @@ Without mutual exclusion, a user could be enrolled in all three, making it impos
 
 ```bash
 # Set the group on flag creation
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -43,7 +43,7 @@ curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
   }'
 
 # Or update an existing flag
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/checkout-v2 \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/checkout-v2 \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"mutual_exclusion_group": "checkout-experiments"}'

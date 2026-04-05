@@ -18,7 +18,7 @@ FeatureSignals has built-in A/B experimentation support. Create flags with the `
 ## Creating an A/B Flag
 
 ```bash
-curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
+curl -X POST https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -34,7 +34,7 @@ curl -X POST http://localhost:8080/v1/projects/$PROJECT_ID/flags \
 Set variants per environment via the flag state:
 
 ```bash
-curl -X PUT http://localhost:8080/v1/projects/$PROJECT_ID/flags/checkout-experiment/environments/$ENV_ID \
+curl -X PUT https://api.featuresignals.com/v1/projects/$PROJECT_ID/flags/checkout-experiment/environments/$ENV_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -92,7 +92,7 @@ const variant = client.stringVariation('checkout-experiment', { key: 'user-123' 
 Record which users saw which variant for analytics:
 
 ```bash
-curl -X POST http://localhost:8080/v1/track \
+curl -X POST https://api.featuresignals.com/v1/track \
   -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -106,11 +106,11 @@ curl -X POST http://localhost:8080/v1/track \
 
 ```bash
 # Aggregated counts
-curl http://localhost:8080/v1/metrics/impressions \
+curl https://api.featuresignals.com/v1/metrics/impressions \
   -H "Authorization: Bearer $TOKEN"
 
 # Flush raw impressions for export
-curl -X POST http://localhost:8080/v1/metrics/impressions/flush \
+curl -X POST https://api.featuresignals.com/v1/metrics/impressions/flush \
   -H "Authorization: Bearer $TOKEN"
 ```
 

@@ -40,7 +40,7 @@ Rows where the two entities receive **different values** are highlighted, making
 ## API Equivalent
 
 ```bash
-curl -X POST "http://localhost:8080/v1/projects/$PROJECT_ID/environments/$ENV_ID/compare-entities" \
+curl -X POST "https://api.featuresignals.com/v1/projects/$PROJECT_ID/environments/$ENV_ID/compare-entities" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
