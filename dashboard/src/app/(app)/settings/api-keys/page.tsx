@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { KeyRound, Copy } from "lucide-react";
 
 export default function APIKeysPage() {
   const token = useAppStore((s) => s.token);
@@ -68,68 +77,73 @@ export default function APIKeysPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-slate-700">Environment:</label>
-        <select value={selectedEnv} onChange={(e) => setSelectedEnv(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <Label>Environment:</Label>
+        <Select value={selectedEnv} onChange={(e) => setSelectedEnv(e.target.value)} className="sm:w-auto">
           {envs.map((env) => (
             <option key={env.id} value={env.id}>{env.name}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {newKey && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 ring-1 ring-emerald-100">
+        <Card className="border-emerald-200 bg-emerald-50 p-4 ring-1 ring-emerald-100">
           <p className="text-sm font-medium text-emerald-800">API key created. Copy it now — it won&apos;t be shown again.</p>
-          <div className="mt-2 flex items-center gap-2">
-            <code className="flex-1 rounded-lg bg-emerald-100 p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200">{newKey}</code>
-            <button onClick={() => copyToClipboard(newKey)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 transition-colors">
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <code className="flex-1 rounded-lg bg-emerald-100 p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">{newKey}</code>
+            <Button size="sm" onClick={() => copyToClipboard(newKey)} className="bg-emerald-600 hover:bg-emerald-700 shrink-0">
+              <Copy className="h-3.5 w-3.5" />
               Copy
-            </button>
+            </Button>
           </div>
           <button onClick={() => setNewKey(null)} className="mt-2 text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700">Dismiss</button>
-        </div>
+        </Card>
       )}
 
-      <form onSubmit={handleCreate} className="flex gap-2">
-        <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Key name" required className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="rounded-lg border border-slate-300 px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+      <form onSubmit={handleCreate} className="flex flex-col gap-2 sm:flex-row">
+        <Input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="Key name"
+          required
+          className="flex-1"
+        />
+        <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="sm:w-auto">
           <option value="server">Server</option>
           <option value="client">Client</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md">Create Key</button>
+        </Select>
+        <Button type="submit" className="shrink-0">Create Key</Button>
       </form>
 
-      <div className="rounded-xl border border-slate-200 bg-white transition-all hover:shadow-lg hover:border-slate-300">
+      <Card className="hover:shadow-lg hover:border-slate-300">
         <div className="divide-y divide-slate-100">
           {keys.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-              </svg>
-              <p className="mt-3 text-sm font-medium text-slate-500">No API keys for this environment</p>
-              <p className="mt-1 text-xs text-slate-400">Create a key to start using the SDK.</p>
-            </div>
+            <EmptyState
+              icon={KeyRound}
+              title="No API keys for this environment"
+              description="Create a key to start using the SDK."
+            />
           ) : (
             keys.map((k) => (
-              <div key={k.id} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-indigo-50/30">
-                <div>
+              <div key={k.id} className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors hover:bg-indigo-50/30">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900">{k.name}</p>
                   <p className="mt-0.5 text-xs text-slate-500">{k.key_prefix}... &middot; {k.type}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${k.revoked_at ? "bg-red-50 text-red-700 ring-red-100" : "bg-emerald-50 text-emerald-700 ring-emerald-100"}`}>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant={k.revoked_at ? "danger" : "success"} className="px-2.5 py-0.5 text-xs">
                     {k.revoked_at ? "Revoked" : "Active"}
-                  </span>
+                  </Badge>
                   {!k.revoked_at && (
                     revoking === k.id ? (
                       <div className="flex items-center gap-1">
-                        <button onClick={() => handleRevoke(k.id)} className="rounded px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100">Revoke</button>
-                        <button onClick={() => setRevoking(null)} className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100">Cancel</button>
+                        <Button variant="destructive-ghost" size="sm" onClick={() => handleRevoke(k.id)} className="h-auto px-2 py-1 text-xs">Revoke</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setRevoking(null)} className="h-auto px-2 py-1 text-xs">Cancel</Button>
                       </div>
                     ) : (
-                      <button onClick={() => setRevoking(k.id)} className="rounded px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors">
+                      <Button variant="destructive-ghost" size="sm" onClick={() => setRevoking(k.id)} className="h-auto px-2 py-1 text-xs">
                         Revoke
-                      </button>
+                      </Button>
                     )
                   )}
                 </div>
@@ -137,7 +151,7 @@ export default function APIKeysPage() {
             ))
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
