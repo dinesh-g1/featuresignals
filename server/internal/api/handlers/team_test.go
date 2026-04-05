@@ -60,13 +60,16 @@ func TestTeamHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", rr.Code, rr.Body.String())
 	}
 
-	var members []MemberResponse
-	json.NewDecoder(rr.Body).Decode(&members)
-	if len(members) != 1 {
-		t.Fatalf("expected 1 member, got %d", len(members))
+	var resp struct {
+		Data  []MemberResponse `json:"data"`
+		Total int              `json:"total"`
 	}
-	if members[0].Email != "owner@test.com" {
-		t.Errorf("expected email owner@test.com, got %s", members[0].Email)
+	json.NewDecoder(rr.Body).Decode(&resp)
+	if len(resp.Data) != 1 {
+		t.Fatalf("expected 1 member, got %d", len(resp.Data))
+	}
+	if resp.Data[0].Email != "owner@test.com" {
+		t.Errorf("expected email owner@test.com, got %s", resp.Data[0].Email)
 	}
 }
 

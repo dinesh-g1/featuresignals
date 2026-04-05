@@ -20,8 +20,6 @@ GET /v1/projects/{projectID}/flags/{flagKey}/environments/{envID}
 ```json
 {
   "id": "uuid",
-  "flag_id": "uuid",
-  "env_id": "uuid",
   "enabled": true,
   "default_value": true,
   "rules": [
@@ -50,8 +48,6 @@ If no state exists for the environment, a synthetic response is returned:
 
 ```json
 {
-  "flag_id": "uuid",
-  "env_id": "uuid",
   "enabled": false
 }
 ```

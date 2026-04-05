@@ -53,6 +53,7 @@ func NewRouter(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	r.Use(chimw.Compress(5))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -95,7 +96,7 @@ func NewRouter(
 
 	r.Route("/v1", func(r chi.Router) {
 		// Public pricing endpoint — single source of truth for all clients
-		r.Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
+		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
 			httputil.JSON(w, http.StatusOK, domain.Pricing)
 		})
 
@@ -145,6 +146,7 @@ func NewRouter(
 		// Evaluation API (authenticated via API key, rate limited)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(1000))
+			r.Use(middleware.CacheControl("no-store"))
 			r.Post("/evaluate", evalH.Evaluate)
 			r.Post("/evaluate/bulk", evalH.BulkEvaluate)
 			r.Get("/client/{envKey}/flags", evalH.ClientFlags)
@@ -155,6 +157,7 @@ func NewRouter(
 		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
+			r.Use(middleware.CacheControl("private, no-cache"))
 			r.Use(middleware.TrialExpiry(store, logger))
 			r.Use(middleware.TierEnforce(store, logger))
 

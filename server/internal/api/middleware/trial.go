@@ -34,10 +34,7 @@ func TrialExpiry(store TrialStore, logger *slog.Logger) func(http.Handler) http.
 			}
 
 			if org.DeletedAt != nil {
-				httputil.JSON(w, http.StatusForbidden, map[string]string{
-					"error":   "account_deleted",
-					"message": "This account has been deactivated. Contact support to restore it.",
-				})
+				httputil.Error(w, http.StatusForbidden, "This account has been deactivated. Contact support to restore it.")
 				return
 			}
 

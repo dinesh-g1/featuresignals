@@ -36,7 +36,6 @@ POST /v1/projects/{projectID}/environments
 ```json
 {
   "id": "uuid",
-  "project_id": "uuid",
   "name": "QA",
   "slug": "qa",
   "color": "#8b5cf6",
@@ -49,19 +48,32 @@ POST /v1/projects/{projectID}/environments
 ## List Environments
 
 ```
-GET /v1/projects/{projectID}/environments
+GET /v1/projects/{projectID}/environments?limit=50&offset=0
 ```
 
 **Auth**: JWT (All roles)
 
+### Query Parameters
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `limit` | 50 | 100 | Number of environments to return |
+| `offset` | 0 | — | Pagination offset |
+
 ### Response `200 OK`
 
 ```json
-[
-  {"id": "uuid", "project_id": "uuid", "name": "Development", "slug": "dev", "color": "#22c55e"},
-  {"id": "uuid", "project_id": "uuid", "name": "Staging", "slug": "staging", "color": "#f59e0b"},
-  {"id": "uuid", "project_id": "uuid", "name": "Production", "slug": "production", "color": "#ef4444"}
-]
+{
+  "data": [
+    {"id": "uuid", "name": "Development", "slug": "dev", "color": "#22c55e"},
+    {"id": "uuid", "name": "Staging", "slug": "staging", "color": "#f59e0b"},
+    {"id": "uuid", "name": "Production", "slug": "production", "color": "#ef4444"}
+  ],
+  "total": 3,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
 ```
 
 ---

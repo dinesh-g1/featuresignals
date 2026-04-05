@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -131,7 +132,10 @@ func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
 	if keys == nil {
 		keys = []domain.APIKey{}
 	}
-	httputil.JSON(w, http.StatusOK, keys)
+	all := dto.APIKeySliceFromDomain(keys)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 func (h *APIKeyHandler) Revoke(w http.ResponseWriter, r *http.Request) {

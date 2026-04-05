@@ -41,12 +41,9 @@ POST /v1/approvals
 ```json
 {
   "id": "uuid",
-  "org_id": "uuid",
-  "requestor_id": "uuid",
   "flag_id": "flag-uuid",
   "env_id": "production-uuid",
   "change_type": "enable",
-  "payload": {"enabled": true, "percentage_rollout": 5000},
   "status": "pending",
   "created_at": "2026-04-01T00:00:00Z",
   "updated_at": "2026-04-01T00:00:00Z"
@@ -70,6 +67,28 @@ GET /v1/approvals?status=pending&limit=50&offset=0
 | `status` | all | Filter by status: `pending`, `approved`, `rejected`, `applied` |
 | `limit` | 50 | Max results (capped at 100) |
 | `offset` | 0 | Pagination offset |
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "flag_id": "flag-uuid",
+      "env_id": "production-uuid",
+      "change_type": "enable",
+      "status": "pending",
+      "created_at": "2026-04-01T00:00:00Z",
+      "updated_at": "2026-04-01T00:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
+```
 
 ---
 

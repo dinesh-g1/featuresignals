@@ -257,11 +257,14 @@ func TestFlagHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var flags []domain.Flag
-	json.Unmarshal(w.Body.Bytes(), &flags)
+	var resp struct {
+		Data  []domain.Flag `json:"data"`
+		Total int           `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(flags) != 2 {
-		t.Errorf("expected 2 flags, got %d", len(flags))
+	if len(resp.Data) != 2 {
+		t.Errorf("expected 2 flags, got %d", len(resp.Data))
 	}
 }
 
@@ -281,9 +284,13 @@ func TestFlagHandler_List_Empty(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	body := strings.TrimSpace(w.Body.String())
-	if body != "[]" {
-		t.Errorf("expected empty JSON array, got %s", body)
+	var resp struct {
+		Data  []json.RawMessage `json:"data"`
+		Total int               `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if len(resp.Data) != 0 {
+		t.Errorf("expected 0 items, got %d", len(resp.Data))
 	}
 }
 
@@ -454,12 +461,13 @@ func TestFlagHandler_Promote(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var promoted domain.FlagState
+	var promoted struct {
+		ID                string `json:"id"`
+		Enabled           bool   `json:"enabled"`
+		PercentageRollout int    `json:"percentage_rollout"`
+	}
 	json.Unmarshal(w.Body.Bytes(), &promoted)
 
-	if promoted.EnvID != "production" {
-		t.Errorf("expected target env production, got %s", promoted.EnvID)
-	}
 	if !promoted.Enabled {
 		t.Error("expected enabled=true in promoted state")
 	}

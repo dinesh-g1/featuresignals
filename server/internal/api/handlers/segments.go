@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
@@ -15,6 +16,13 @@ type SegmentHandler struct {
 
 func NewSegmentHandler(store domain.Store) *SegmentHandler {
 	return &SegmentHandler{store: store}
+}
+
+type UpdateSegmentRequest struct {
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	MatchType   *string            `json:"match_type"`
+	Rules       []domain.Condition `json:"rules"`
 }
 
 type CreateSegmentRequest struct {
@@ -72,7 +80,7 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusCreated, seg)
+	httputil.JSON(w, http.StatusCreated, dto.SegmentFromDomain(seg))
 }
 
 func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +96,10 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	if segments == nil {
 		segments = []domain.Segment{}
 	}
-	httputil.JSON(w, http.StatusOK, segments)
+	all := dto.SegmentSliceFromDomain(segments)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +114,7 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusNotFound, "segment not found")
 		return
 	}
-	httputil.JSON(w, http.StatusOK, seg)
+	httputil.JSON(w, http.StatusOK, dto.SegmentFromDomain(seg))
 }
 
 func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -119,12 +130,7 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req struct {
-		Name        *string            `json:"name"`
-		Description *string            `json:"description"`
-		MatchType   *string            `json:"match_type"`
-		Rules       []domain.Condition `json:"rules"`
-	}
+	var req UpdateSegmentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -148,7 +154,7 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, seg)
+	httputil.JSON(w, http.StatusOK, dto.SegmentFromDomain(seg))
 }
 
 func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {

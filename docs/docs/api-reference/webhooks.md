@@ -57,10 +57,9 @@ POST /v1/webhooks
 ```json
 {
   "id": "uuid",
-  "org_id": "uuid",
   "name": "Slack Notification",
   "url": "https://hooks.slack.com/services/...",
-  "secret": "webhook-secret-for-hmac",
+  "has_secret": true,
   "events": ["flag.created", "flag.updated", "flag.killed"],
   "enabled": true,
   "created_at": "2026-04-01T00:00:00Z",
@@ -73,10 +72,40 @@ POST /v1/webhooks
 ## List Webhooks
 
 ```
-GET /v1/webhooks
+GET /v1/webhooks?limit=50&offset=0
 ```
 
 **Auth**: JWT (Owner, Admin)
+
+### Query Parameters
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `limit` | 50 | 100 | Number of webhooks to return |
+| `offset` | 0 | — | Pagination offset |
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Slack Notification",
+      "url": "https://hooks.slack.com/services/...",
+      "has_secret": true,
+      "events": ["flag.created", "flag.updated", "flag.killed"],
+      "enabled": true,
+      "created_at": "2026-04-01T00:00:00Z",
+      "updated_at": "2026-04-01T00:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
+```
 
 ---
 
@@ -137,21 +166,22 @@ GET /v1/webhooks/{webhookID}/deliveries
 
 ### Response `200 OK`
 
-Returns the last 50 deliveries:
-
 ```json
-[
-  {
-    "id": "uuid",
-    "webhook_id": "uuid",
-    "event_type": "flag.updated",
-    "payload": "...",
-    "response_status": 200,
-    "response_body": "OK",
-    "delivered_at": "2026-04-01T12:00:00Z",
-    "success": true
-  }
-]
+{
+  "data": [
+    {
+      "id": "uuid",
+      "event_type": "flag.updated",
+      "response_status": 200,
+      "success": true,
+      "delivered_at": "2026-04-01T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
 ```
 
 ---

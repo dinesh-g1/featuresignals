@@ -62,26 +62,38 @@ The `key` field contains the **full API key** and is only shown in this response
 ## List API Keys
 
 ```
-GET /v1/environments/{envID}/api-keys
+GET /v1/environments/{envID}/api-keys?limit=50&offset=0
 ```
 
 **Auth**: JWT (All roles)
 
+### Query Parameters
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `limit` | 50 | 100 | Number of API keys to return |
+| `offset` | 0 | — | Pagination offset |
+
 ### Response `200 OK`
 
 ```json
-[
-  {
-    "id": "uuid",
-    "env_id": "uuid",
-    "key_prefix": "fs_srv_abc1",
-    "name": "Backend Service",
-    "type": "server",
-    "created_at": "2026-04-01T00:00:00Z",
-    "expires_at": "2026-07-01T00:00:00Z",
-    "last_used_at": "2026-04-01T12:00:00Z"
-  }
-]
+{
+  "data": [
+    {
+      "id": "uuid",
+      "key_prefix": "fs_srv_abc1",
+      "name": "Backend Service",
+      "type": "server",
+      "created_at": "2026-04-01T00:00:00Z",
+      "expires_at": "2026-07-01T00:00:00Z",
+      "last_used_at": "2026-04-01T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0,
+  "has_more": false
+}
 ```
 
 The `key_prefix` shows the first few characters for identification. The full key and hash are never exposed.

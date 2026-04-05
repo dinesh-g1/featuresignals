@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -18,6 +19,11 @@ func NewProjectHandler(store domain.Store) *ProjectHandler {
 	return &ProjectHandler{store: store}
 }
 
+type CreateProjectRequest struct {
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
 func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
@@ -27,10 +33,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req struct {
-		Name string `json:"name"`
-		Slug string `json:"slug"`
-	}
+	var req CreateProjectRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -56,7 +59,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	BootstrapEnvironments(r.Context(), h.store, project.ID)
 
-	httputil.JSON(w, http.StatusCreated, project)
+	httputil.JSON(w, http.StatusCreated, dto.ProjectFromDomain(project))
 }
 
 func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +72,10 @@ func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	if projects == nil {
 		projects = []domain.Project{}
 	}
-	httputil.JSON(w, http.StatusOK, projects)
+	all := dto.ProjectSliceFromDomain(projects)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +83,7 @@ func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	httputil.JSON(w, http.StatusOK, project)
+	httputil.JSON(w, http.StatusOK, dto.ProjectFromDomain(project))
 }
 
 func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -102,17 +108,19 @@ func NewEnvironmentHandler(store domain.Store) *EnvironmentHandler {
 	return &EnvironmentHandler{store: store}
 }
 
+type CreateEnvironmentRequest struct {
+	Name  string `json:"name"`
+	Slug  string `json:"slug"`
+	Color string `json:"color"`
+}
+
 func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
 	}
 	projectID := chi.URLParam(r, "projectID")
 
-	var req struct {
-		Name  string `json:"name"`
-		Slug  string `json:"slug"`
-		Color string `json:"color"`
-	}
+	var req CreateEnvironmentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -134,7 +142,7 @@ func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusCreated, env)
+	httputil.JSON(w, http.StatusCreated, dto.EnvironmentFromDomain(env))
 }
 
 func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +158,10 @@ func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	if envs == nil {
 		envs = []domain.Environment{}
 	}
-	httputil.JSON(w, http.StatusOK, envs)
+	all := dto.EnvironmentSliceFromDomain(envs)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 func (h *EnvironmentHandler) Delete(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -25,6 +26,10 @@ type FlagHandler struct {
 
 func NewFlagHandler(store domain.Store) *FlagHandler {
 	return &FlagHandler{store: store}
+}
+
+type KillFlagRequest struct {
+	EnvID string `json:"env_id"`
 }
 
 type CreateFlagRequest struct {
@@ -126,7 +131,7 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		AfterState:   afterState,
 	})
 
-	httputil.JSON(w, http.StatusCreated, flag)
+	httputil.JSON(w, http.StatusCreated, dto.FlagFromDomain(flag))
 }
 
 func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +149,10 @@ func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
 		flags = []domain.Flag{}
 	}
 
-	httputil.JSON(w, http.StatusOK, flags)
+	all := dto.FlagSliceFromDomain(flags)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +172,7 @@ func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, flag)
+	httputil.JSON(w, http.StatusOK, dto.FlagFromDomain(flag))
 }
 
 func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -249,7 +257,7 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 		AfterState:   afterState,
 	})
 
-	httputil.JSON(w, http.StatusOK, flag)
+	httputil.JSON(w, http.StatusOK, dto.FlagFromDomain(flag))
 }
 
 func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -381,7 +389,7 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, state)
+	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(state))
 }
 
 type PromoteRequest struct {
@@ -463,7 +471,7 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 		AfterState:   afterState,
 	})
 
-	httputil.JSON(w, http.StatusOK, target)
+	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(target))
 }
 
 // Kill instantly disables a flag in the specified environment. This bypasses
@@ -481,9 +489,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req struct {
-		EnvID string `json:"env_id"`
-	}
+	var req KillFlagRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil || req.EnvID == "" {
 		httputil.Error(w, http.StatusBadRequest, "env_id is required")
 		return
@@ -519,7 +525,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 		AfterState:   afterState,
 	})
 
-	httputil.JSON(w, http.StatusOK, state)
+	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(state))
 }
 
 // --- Environment Comparison ---
@@ -727,13 +733,13 @@ func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {
 
 	state, err := h.store.GetFlagState(r.Context(), flag.ID, envID)
 	if err != nil {
-		httputil.JSON(w, http.StatusOK, &domain.FlagState{
+		httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(&domain.FlagState{
 			FlagID:  flag.ID,
 			EnvID:   envID,
 			Enabled: false,
-		})
+		}))
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, state)
+	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(state))
 }

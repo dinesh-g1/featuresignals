@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
@@ -53,7 +54,9 @@ func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	httputil.JSON(w, http.StatusOK, resp)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(resp, p)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
 }
 
 type InviteRequest struct {

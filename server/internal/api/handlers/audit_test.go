@@ -34,11 +34,14 @@ func TestAuditHandler_List(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var entries []domain.AuditEntry
-	json.Unmarshal(w.Body.Bytes(), &entries)
+	var resp struct {
+		Data  []domain.AuditEntry `json:"data"`
+		Total int                 `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(entries) != 5 {
-		t.Errorf("expected 5 entries, got %d", len(entries))
+	if len(resp.Data) != 5 {
+		t.Errorf("expected 5 entries, got %d", len(resp.Data))
 	}
 }
 
@@ -65,11 +68,14 @@ func TestAuditHandler_List_WithPagination(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var entries []domain.AuditEntry
-	json.Unmarshal(w.Body.Bytes(), &entries)
+	var resp struct {
+		Data  []domain.AuditEntry `json:"data"`
+		Total int                 `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(entries) != 3 {
-		t.Errorf("expected 3 entries (limit=3), got %d", len(entries))
+	if len(resp.Data) != 3 {
+		t.Errorf("expected 3 entries (limit=3), got %d", len(resp.Data))
 	}
 }
 
@@ -97,11 +103,14 @@ func TestAuditHandler_List_DefaultLimit(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var entries []domain.AuditEntry
-	json.Unmarshal(w.Body.Bytes(), &entries)
+	var resp struct {
+		Data  []domain.AuditEntry `json:"data"`
+		Total int                 `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(entries) != 50 {
-		t.Errorf("expected default limit 50 entries, got %d", len(entries))
+	if len(resp.Data) != 50 {
+		t.Errorf("expected default limit 50 entries, got %d", len(resp.Data))
 	}
 }
 
@@ -122,11 +131,14 @@ func TestAuditHandler_List_OrgIsolation(t *testing.T) {
 
 	h.List(w, r)
 
-	var entries []domain.AuditEntry
-	json.Unmarshal(w.Body.Bytes(), &entries)
+	var resp struct {
+		Data  []domain.AuditEntry `json:"data"`
+		Total int                 `json:"total"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if len(entries) != 1 {
-		t.Errorf("expected 1 entry for org-1, got %d", len(entries))
+	if len(resp.Data) != 1 {
+		t.Errorf("expected 1 entry for org-1, got %d", len(resp.Data))
 	}
 }
 
