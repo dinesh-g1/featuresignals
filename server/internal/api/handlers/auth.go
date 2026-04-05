@@ -15,25 +15,21 @@ import (
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/email"
-	"github.com/featuresignals/server/internal/features"
 	"github.com/featuresignals/server/internal/httputil"
-	"github.com/featuresignals/server/internal/sms"
 )
 
 type AuthHandler struct {
 	store        domain.Store
 	jwtMgr       auth.TokenManager
-	smsClient    sms.Sender
 	emailSender  email.VerificationSender
 	appBaseURL   string
 	dashboardURL string
 }
 
-func NewAuthHandler(store domain.Store, jwtMgr auth.TokenManager, smsClient sms.Sender, emailSender email.VerificationSender, appBaseURL, dashboardURL string) *AuthHandler {
+func NewAuthHandler(store domain.Store, jwtMgr auth.TokenManager, emailSender email.VerificationSender, appBaseURL, dashboardURL string) *AuthHandler {
 	return &AuthHandler{
 		store:        store,
 		jwtMgr:       jwtMgr,
-		smsClient:    smsClient,
 		emailSender:  emailSender,
 		appBaseURL:   appBaseURL,
 		dashboardURL: dashboardURL,
@@ -45,7 +41,6 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 	Name     string `json:"name"`
 	OrgName  string `json:"org_name"`
-	Phone    string `json:"phone"`
 }
 
 type LoginRequest struct {
@@ -99,8 +94,6 @@ type safeUser struct {
 	ID            string    `json:"id"`
 	Email         string    `json:"email"`
 	Name          string    `json:"name"`
-	Phone         string    `json:"phone,omitempty"`
-	PhoneVerified bool      `json:"phone_verified"`
 	EmailVerified bool      `json:"email_verified"`
 	CreatedAt     time.Time `json:"created_at"`
 }
@@ -110,8 +103,6 @@ func sanitizeUser(u *domain.User) safeUser {
 		ID:            u.ID,
 		Email:         u.Email,
 		Name:          u.Name,
-		Phone:         u.Phone,
-		PhoneVerified: u.PhoneVerified,
 		EmailVerified: u.EmailVerified,
 		CreatedAt:     u.CreatedAt,
 	}
@@ -162,9 +153,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Email:        req.Email,
 		PasswordHash: hash,
 		Name:         req.Name,
-	}
-	if features.EnablePhoneVerification && req.Phone != "" {
-		user.Phone = req.Phone
 	}
 	if err := h.store.CreateUser(r.Context(), user); err != nil {
 		log.Warn("registration failed: duplicate email")
@@ -307,126 +295,6 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, tokens)
 }
 
-// SendOTP generates a 6-digit OTP, hashes it, stores it with a 5-minute expiry,
-// and sends the plaintext OTP to the user's phone via SMS.
-func (h *AuthHandler) SendOTP(w http.ResponseWriter, r *http.Request) {
-	if !features.EnablePhoneVerification {
-		httputil.Error(w, http.StatusNotImplemented, "phone verification is not enabled")
-		return
-	}
-
-	log := httputil.LoggerFromContext(r.Context())
-	userID := middleware.GetUserID(r.Context())
-
-	var req struct {
-		Phone string `json:"phone"`
-	}
-	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if req.Phone == "" {
-		httputil.Error(w, http.StatusBadRequest, "phone is required")
-		return
-	}
-	if !validatePhone(req.Phone) {
-		httputil.Error(w, http.StatusBadRequest, "invalid phone format (use E.164 or 7-15 digits)")
-		return
-	}
-
-	if err := h.store.UpdateUserPhone(r.Context(), userID, req.Phone); err != nil {
-		log.Error("failed to update phone", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update phone")
-		return
-	}
-
-	otp, err := generateOTP()
-	if err != nil {
-		log.Error("failed to generate OTP", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to generate OTP")
-		return
-	}
-
-	otpHash, err := auth.HashPassword(otp)
-	if err != nil {
-		log.Error("failed to hash OTP", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to hash OTP")
-		return
-	}
-
-	expires := time.Now().Add(5 * time.Minute)
-	if err := h.store.UpdateUserPhoneOTP(r.Context(), userID, otpHash, expires); err != nil {
-		log.Error("failed to store OTP", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to store OTP")
-		return
-	}
-
-	if h.smsClient != nil {
-		if err := h.smsClient.SendOTP(req.Phone, otp); err != nil {
-			log.Error("failed to send OTP via SMS", "error", err, "user_id", userID)
-			httputil.Error(w, http.StatusInternalServerError, "failed to send OTP")
-			return
-		}
-	}
-
-	log.Info("OTP sent", "user_id", userID)
-	httputil.JSON(w, http.StatusOK, map[string]string{"message": "OTP sent"})
-}
-
-// VerifyOTP validates the user-provided OTP against the stored hash.
-func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
-	if !features.EnablePhoneVerification {
-		httputil.Error(w, http.StatusNotImplemented, "phone verification is not enabled")
-		return
-	}
-
-	log := httputil.LoggerFromContext(r.Context())
-	userID := middleware.GetUserID(r.Context())
-
-	var req struct {
-		OTP string `json:"otp"`
-	}
-	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if req.OTP == "" {
-		httputil.Error(w, http.StatusBadRequest, "otp is required")
-		return
-	}
-
-	user, err := h.store.GetUserByID(r.Context(), userID)
-	if err != nil {
-		log.Error("failed to get user", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get user")
-		return
-	}
-
-	if user.PhoneOTP == "" || user.PhoneOTPExpires == nil {
-		httputil.Error(w, http.StatusBadRequest, "no OTP pending")
-		return
-	}
-
-	if time.Now().After(*user.PhoneOTPExpires) {
-		httputil.Error(w, http.StatusBadRequest, "OTP expired")
-		return
-	}
-
-	if !auth.CheckPassword(req.OTP, user.PhoneOTP) {
-		httputil.Error(w, http.StatusBadRequest, "invalid OTP")
-		return
-	}
-
-	if err := h.store.SetPhoneVerified(r.Context(), userID); err != nil {
-		log.Error("failed to set phone verified", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to verify phone")
-		return
-	}
-
-	log.Info("phone verified", "user_id", userID)
-	httputil.JSON(w, http.StatusOK, map[string]bool{"verified": true})
-}
-
 // SendVerificationEmail generates a verification token and sends a verification email.
 func (h *AuthHandler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
@@ -497,7 +365,7 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 // TokenExchange swaps a short-lived, single-use one-time token for a standard
-// JWT pair. Used for cross-domain redirects (demo → main dashboard).
+// JWT pair. Used for cross-domain redirects (demo -> main dashboard).
 func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 

@@ -818,36 +818,6 @@ func (m *mockStore) GetUserByEmailVerifyToken(ctx context.Context, token string)
 	return nil, domain.ErrNotFound
 }
 
-func (m *mockStore) UpdateUserPhone(ctx context.Context, userID, phone string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if u, ok := m.users[userID]; ok {
-		u.Phone = phone
-	}
-	return nil
-}
-
-func (m *mockStore) UpdateUserPhoneOTP(ctx context.Context, userID, otpHash string, expires time.Time) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if u, ok := m.users[userID]; ok {
-		u.PhoneOTP = otpHash
-		u.PhoneOTPExpires = &expires
-	}
-	return nil
-}
-
-func (m *mockStore) SetPhoneVerified(ctx context.Context, userID string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if u, ok := m.users[userID]; ok {
-		u.PhoneVerified = true
-		u.PhoneOTP = ""
-		u.PhoneOTPExpires = nil
-	}
-	return nil
-}
-
 func (m *mockStore) UpdateUserEmailVerifyToken(ctx context.Context, userID, token string, expires time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

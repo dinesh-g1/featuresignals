@@ -27,22 +27,6 @@ func TestValidateEmail(t *testing.T) {
 	}
 }
 
-func TestValidatePhone(t *testing.T) {
-	valid := []string{"+919876543210", "1234567890", "+1234567"}
-	invalid := []string{"", "abc", "12345", "+1-800-CALL-ME", "123456789012345678"}
-
-	for _, p := range valid {
-		if !validatePhone(p) {
-			t.Errorf("expected %q to be valid phone", p)
-		}
-	}
-	for _, p := range invalid {
-		if validatePhone(p) {
-			t.Errorf("expected %q to be invalid phone", p)
-		}
-	}
-}
-
 func TestValidateFlagKey(t *testing.T) {
 	valid := []string{"my-flag", "feature_123", "a", "a-b-c"}
 	invalid := []string{"", "UPPERCASE", "-starts-with-dash", " spaces", "special!chars"}
@@ -110,7 +94,7 @@ func TestValidateWebhookURL(t *testing.T) {
 
 func TestRegister_InvalidEmail(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, nil, nil, "", "")
+	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "")
 
 	body := `{"email":"notanemail","password":"StrongP@ss1","name":"Test","org_name":"TestOrg"}`
 	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
@@ -125,7 +109,7 @@ func TestRegister_InvalidEmail(t *testing.T) {
 
 func TestRegister_NameTooLong(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, nil, nil, "", "")
+	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "")
 
 	longName := strings.Repeat("a", 256)
 	body := `{"email":"test@example.com","password":"StrongP@ss1","name":"` + longName + `","org_name":"TestOrg"}`

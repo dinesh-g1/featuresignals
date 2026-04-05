@@ -72,7 +72,7 @@ func NewRouter(
 	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
 
 	// Init handlers
-	authH := handlers.NewAuthHandler(store, jwtMgr, nil, nil, appBaseURL, dashboardURL)
+	authH := handlers.NewAuthHandler(store, jwtMgr, nil, appBaseURL, dashboardURL)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store)
@@ -129,8 +129,6 @@ func NewRouter(
 		// Auth verification (authenticated via JWT)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
-			r.Post("/auth/send-otp", authH.SendOTP)
-			r.Post("/auth/verify-otp", authH.VerifyOTP)
 			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
 		})
 

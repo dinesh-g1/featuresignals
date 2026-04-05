@@ -19,13 +19,9 @@ type User struct {
 	Email              string     `json:"email" db:"email"`
 	PasswordHash       string     `json:"-" db:"password_hash"`
 	Name               string     `json:"name" db:"name"`
-	Phone              string     `json:"phone" db:"phone"`
-	PhoneVerified      bool       `json:"phone_verified" db:"phone_verified"`
 	EmailVerified      bool       `json:"email_verified" db:"email_verified"`
 	EmailVerifyToken   string     `json:"-" db:"email_verify_token"`
 	EmailVerifyExpires *time.Time `json:"-" db:"email_verify_expires_at"`
-	PhoneOTP           string     `json:"-" db:"phone_otp"`
-	PhoneOTPExpires    *time.Time `json:"-" db:"phone_otp_expires_at"`
 	LastLoginAt        *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`

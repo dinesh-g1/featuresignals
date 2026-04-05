@@ -13,18 +13,6 @@ import (
 	"github.com/featuresignals/server/internal/auth"
 )
 
-type mockSMSSender struct {
-	lastPhone string
-	lastOTP   string
-	err       error
-}
-
-func (m *mockSMSSender) SendOTP(phone, otp string) error {
-	m.lastPhone = phone
-	m.lastOTP = otp
-	return m.err
-}
-
 type mockEmailSender struct {
 	lastEmail string
 	lastToken string
@@ -47,7 +35,7 @@ func newAuthenticatedRequest(method, path string, body string, userID, orgID str
 func newTestAuthHandler() (*AuthHandler, *mockStore) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	return NewAuthHandler(store, jwtMgr, nil, nil, "http://localhost:8080", "http://localhost:3000"), store
+	return NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000"), store
 }
 
 func TestAuthHandler_Register(t *testing.T) {
@@ -323,40 +311,6 @@ func registerAndExtract(t *testing.T, h *AuthHandler, email string) (userID, org
 	user := result["user"].(map[string]interface{})
 	org := result["organization"].(map[string]interface{})
 	return user["id"].(string), org["id"].(string)
-}
-
-// Phone verification is disabled by default (EnablePhoneVerification = false).
-// SendOTP and VerifyOTP should return 501 Not Implemented.
-
-func TestAuthHandler_SendOTP_DisabledByFeatureFlag(t *testing.T) {
-	h, _ := newTestAuthHandler()
-	smsMock := &mockSMSSender{}
-	h.smsClient = smsMock
-
-	userID, orgID := registerAndExtract(t, h, "otp@test.com")
-
-	body := `{"phone":"+919876543210"}`
-	r := newAuthenticatedRequest("POST", "/v1/auth/send-otp", body, userID, orgID)
-	w := httptest.NewRecorder()
-	h.SendOTP(w, r)
-
-	if w.Code != http.StatusNotImplemented {
-		t.Fatalf("expected 501 (phone flag off), got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestAuthHandler_VerifyOTP_DisabledByFeatureFlag(t *testing.T) {
-	h, _ := newTestAuthHandler()
-
-	userID, orgID := registerAndExtract(t, h, "verify-otp@test.com")
-
-	r := newAuthenticatedRequest("POST", "/v1/auth/verify-otp", `{"otp":"123456"}`, userID, orgID)
-	w := httptest.NewRecorder()
-	h.VerifyOTP(w, r)
-
-	if w.Code != http.StatusNotImplemented {
-		t.Fatalf("expected 501 (phone flag off), got %d: %s", w.Code, w.Body.String())
-	}
 }
 
 func TestAuthHandler_Register_NoDemoData(t *testing.T) {

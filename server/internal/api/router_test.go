@@ -43,11 +43,6 @@ func (noopStore) GetUserByID(context.Context, string) (*domain.User, error) { re
 func (noopStore) GetUserByEmailVerifyToken(context.Context, string) (*domain.User, error) {
 	return nil, errNoop
 }
-func (noopStore) UpdateUserPhone(context.Context, string, string) error          { return errNoop }
-func (noopStore) UpdateUserPhoneOTP(context.Context, string, string, time.Time) error {
-	return errNoop
-}
-func (noopStore) SetPhoneVerified(context.Context, string) error { return errNoop }
 func (noopStore) UpdateUserEmailVerifyToken(context.Context, string, string, time.Time) error {
 	return errNoop
 }
@@ -331,7 +326,6 @@ func TestProtectedRoutes_RequireAuth(t *testing.T) {
 		{http.MethodGet, "/v1/approvals"},
 		{http.MethodGet, "/v1/billing/subscription"},
 		{http.MethodGet, "/v1/onboarding"},
-		{http.MethodPost, "/v1/auth/send-otp"},
 		{http.MethodPost, "/v1/webhooks"},
 	}
 
