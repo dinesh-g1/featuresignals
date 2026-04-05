@@ -174,7 +174,7 @@ function RegisterForm() {
     setLoading(true);
     try {
       const data = await api.completeSignup({ email: form.email, otp });
-      setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization);
+      setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization, data.tokens.expires_at);
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Verification failed");

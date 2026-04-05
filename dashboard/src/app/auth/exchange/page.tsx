@@ -24,7 +24,7 @@ function ExchangeContent() {
     api
       .exchangeToken(token)
       .then((data) => {
-        setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user);
+        setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, undefined, data.tokens.expires_at);
         router.replace("/dashboard");
       })
       .catch((err: any) => {

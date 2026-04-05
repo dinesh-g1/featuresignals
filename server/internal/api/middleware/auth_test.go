@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,6 +63,12 @@ func TestJWTAuth_MissingHeader(t *testing.T) {
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", w.Code)
 	}
+
+	var body map[string]string
+	json.NewDecoder(w.Body).Decode(&body)
+	if body["error"] != "missing authorization header" {
+		t.Errorf("expected error 'missing authorization header', got %q", body["error"])
+	}
 }
 
 func TestJWTAuth_InvalidFormat(t *testing.T) {
@@ -72,12 +79,13 @@ func TestJWTAuth_InvalidFormat(t *testing.T) {
 	}))
 
 	tests := []struct {
-		name  string
-		value string
+		name          string
+		value         string
+		expectedError string
 	}{
-		{"no space", "BearerSomeToken"},
-		{"wrong scheme", "Basic abc123"},
-		{"empty bearer", "Bearer "},
+		{"no space", "BearerSomeToken", "invalid authorization format"},
+		{"wrong scheme", "Basic abc123", "invalid authorization format"},
+		{"empty bearer", "Bearer ", "invalid or expired token"},
 	}
 
 	for _, tt := range tests {
@@ -91,7 +99,43 @@ func TestJWTAuth_InvalidFormat(t *testing.T) {
 			if w.Code != http.StatusUnauthorized {
 				t.Errorf("expected 401, got %d", w.Code)
 			}
+
+			var body map[string]string
+			json.NewDecoder(w.Body).Decode(&body)
+			if body["error"] != tt.expectedError {
+				t.Errorf("expected error %q, got %q", tt.expectedError, body["error"])
+			}
 		})
+	}
+}
+
+func TestJWTAuth_WrongSecretReturnsInvalidNotExpired(t *testing.T) {
+	mgr1 := auth.NewJWTManager("secret-one-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	pair, _ := mgr1.GenerateTokenPair("user-123", "org-456", "admin")
+
+	mgr2 := auth.NewJWTManager("secret-two-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+
+	handler := JWTAuth(mgr2)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("handler should not be called")
+	}))
+
+	r := httptest.NewRequest("GET", "/test", nil)
+	r.Header.Set("Authorization", "Bearer "+pair.AccessToken)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", w.Code)
+	}
+
+	var body map[string]string
+	json.NewDecoder(w.Body).Decode(&body)
+	if body["error"] != "invalid or expired token" {
+		t.Errorf("expected 'invalid or expired token' for wrong secret, got %q", body["error"])
+	}
+	if body["error"] == "token_expired" {
+		t.Error("wrong secret should NOT return 'token_expired'")
 	}
 }
 
@@ -112,6 +156,36 @@ func TestJWTAuth_ExpiredToken(t *testing.T) {
 
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", w.Code)
+	}
+
+	var body map[string]string
+	json.NewDecoder(w.Body).Decode(&body)
+	if body["error"] != "token_expired" {
+		t.Errorf("expected error 'token_expired', got %q", body["error"])
+	}
+}
+
+func TestJWTAuth_TamperedToken(t *testing.T) {
+	mgr := newTestJWTManager()
+
+	handler := JWTAuth(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("handler should not be called")
+	}))
+
+	r := httptest.NewRequest("GET", "/test", nil)
+	r.Header.Set("Authorization", "Bearer invalid.token.here")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", w.Code)
+	}
+
+	var body map[string]string
+	json.NewDecoder(w.Body).Decode(&body)
+	if body["error"] != "invalid or expired token" {
+		t.Errorf("expected error 'invalid or expired token', got %q", body["error"])
 	}
 }
 

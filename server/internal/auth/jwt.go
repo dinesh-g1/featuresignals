@@ -11,8 +11,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// ErrInvalidToken is returned when a token cannot be parsed or has expired.
+// ErrInvalidToken is returned when a token cannot be parsed or is otherwise invalid.
 var ErrInvalidToken = errors.New("invalid or expired token")
+
+// ErrTokenExpired is returned when a token is well-formed but has expired.
+// Clients should attempt a refresh when they see this error.
+var ErrTokenExpired = errors.New("token expired")
 
 // TokenManager defines the contract for JWT token operations.
 // Depend on this interface instead of *JWTManager for testability.
@@ -110,6 +114,9 @@ func (m *JWTManager) validateTokenWithIssuer(tokenStr, expectedIssuer string) (*
 		return m.secret, nil
 	})
 	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrTokenExpired
+		}
 		return nil, ErrInvalidToken
 	}
 
