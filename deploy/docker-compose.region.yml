@@ -99,6 +99,7 @@ services:
     depends_on:
       - server
     environment:
+      HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
     deploy:
       resources:
