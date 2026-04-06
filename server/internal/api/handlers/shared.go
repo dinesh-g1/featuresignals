@@ -13,10 +13,11 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 )
 
-// ── PayU hash utilities ─────────────────────────────────────────────────────
+// ── PayU hash utilities (legacy) ─────────────────────────────────────────────
+// Deprecated: Use payment/payu.Provider via the payment.Gateway interface.
+// Retained for backward compatibility with any external callers.
 
-// PayUHasher encapsulates PayU hash generation so the billing and demo
-// handlers don't each carry their own copy (DRY).
+// PayUHasher encapsulates PayU hash generation.
 type PayUHasher struct {
 	MerchantKey string
 	Salt        string

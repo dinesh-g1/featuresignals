@@ -404,6 +404,12 @@ export const api = {
     request<BillingInfo>("/v1/billing/subscription", { token }),
   getUsage: (token: string) =>
     request<UsageInfo>("/v1/billing/usage", { token }),
+  cancelSubscription: (token: string, atPeriodEnd = true) =>
+    request<{ status: string }>("/v1/billing/cancel", { method: "POST", body: { at_period_end: atPeriodEnd }, token }),
+  getBillingPortalURL: (token: string) =>
+    request<{ url: string }>("/v1/billing/portal", { method: "POST", token }),
+  updatePaymentGateway: (token: string, gateway: string) =>
+    request<{ gateway: string }>("/v1/billing/gateway", { method: "PUT", body: { gateway }, token }),
 
   // Onboarding
   getOnboarding: (token: string) =>

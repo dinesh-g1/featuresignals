@@ -17,6 +17,7 @@ type Organization struct {
 	// Billing / plan fields
 	Plan                  string `json:"plan" db:"plan"`
 	PayUCustomerRef       string `json:"payu_customer_ref,omitempty" db:"payu_customer_ref"`
+	PaymentGateway        string `json:"payment_gateway" db:"payment_gateway"`
 	PlanSeatsLimit        int    `json:"plan_seats_limit" db:"plan_seats_limit"`
 	PlanProjectsLimit     int    `json:"plan_projects_limit" db:"plan_projects_limit"`
 	PlanEnvironmentsLimit int    `json:"plan_environments_limit" db:"plan_environments_limit"`

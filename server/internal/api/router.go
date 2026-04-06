@@ -16,17 +16,16 @@ import (
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/pricing"
 	"github.com/featuresignals/server/internal/status"
 )
 
-// BillingConfig holds PayU credentials passed through from config.
+// BillingConfig holds payment gateway registry and URL configuration.
 type BillingConfig struct {
-	PayUMerchantKey string
-	PayUSalt        string
-	PayUMode        string
-	DashboardURL    string
-	AppBaseURL      string
+	Registry     *payment.Registry
+	DashboardURL string
+	AppBaseURL   string
 }
 
 // NewRouter wires all handlers, middleware, and routes. All dependencies are
@@ -105,7 +104,7 @@ func NewRouter(
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
-	billingH := handlers.NewBillingHandler(store, billing.PayUMerchantKey, billing.PayUSalt, billing.PayUMode, billing.DashboardURL, billing.AppBaseURL, logger)
+	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
 	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender)
 	salesH := handlers.NewSalesHandler(store)
@@ -187,11 +186,12 @@ func NewRouter(
 			r.Post("/sales/inquiry", salesH.SubmitInquiry)
 		})
 
-		// PayU callbacks (public, rate-limited)
+		// Payment gateway callbacks (public, rate-limited)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(30))
 			r.Post("/billing/payu/callback", billingH.PayUCallback)
 			r.Post("/billing/payu/failure", billingH.PayUFailure)
+			r.Post("/billing/stripe/webhook", billingH.HandleStripeWebhook)
 		})
 
 		// Auth verification + logout + MFA (authenticated via JWT)
@@ -215,6 +215,9 @@ func NewRouter(
 			r.Post("/billing/checkout", billingH.CreateCheckout)
 			r.Get("/billing/subscription", billingH.GetSubscription)
 			r.Get("/billing/usage", billingH.GetUsage)
+			r.Post("/billing/cancel", billingH.CancelSubscription)
+			r.Post("/billing/portal", billingH.GetBillingPortalURL)
+			r.Put("/billing/gateway", billingH.UpdateGateway)
 			r.Get("/onboarding", onboardingH.GetState)
 			r.Patch("/onboarding", onboardingH.UpdateState)
 		})

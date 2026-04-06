@@ -48,6 +48,7 @@ type mockStore struct {
 	mfaSecrets       map[string]*domain.MFASecret
 	customRoles      map[string]*domain.CustomRole
 	customRolesByOrg map[string][]string // orgID -> []roleID
+	subscriptions    map[string]*domain.Subscription // stripeSubID -> subscription
 
 	idCounter int
 }
@@ -89,6 +90,7 @@ func newMockStore() *mockStore {
 		ssoConfigs:       make(map[string]*domain.SSOConfig),
 		customRoles:      make(map[string]*domain.CustomRole),
 		customRolesByOrg: make(map[string][]string),
+		subscriptions:    make(map[string]*domain.Subscription),
 	}
 }
 
@@ -827,6 +829,32 @@ func (m *mockStore) IncrementUsage(ctx context.Context, orgID, metricName string
 
 func (m *mockStore) GetUsage(ctx context.Context, orgID, metricName string) (*domain.UsageMetric, error) {
 	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) GetSubscriptionByStripeID(ctx context.Context, stripeSubID string) (*domain.Subscription, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if sub, ok := m.subscriptions[stripeSubID]; ok {
+		return sub, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) CreatePaymentEvent(ctx context.Context, event *domain.PaymentEvent) error {
+	return nil
+}
+
+func (m *mockStore) GetPaymentEventByExternalID(ctx context.Context, provider, eventID string) (*domain.PaymentEvent, error) {
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) UpdateOrgPaymentGateway(ctx context.Context, orgID, gateway string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if org, ok := m.orgs[orgID]; ok {
+		org.PaymentGateway = gateway
+	}
+	return nil
 }
 
 func (m *mockStore) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {

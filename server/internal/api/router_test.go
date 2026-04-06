@@ -17,6 +17,7 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/store/cache"
 )
@@ -187,6 +188,14 @@ func (noopStore) IncrementUsage(context.Context, string, string, int64) error { 
 func (noopStore) GetUsage(context.Context, string, string) (*domain.UsageMetric, error) {
 	return nil, errNoop
 }
+func (noopStore) GetSubscriptionByStripeID(context.Context, string) (*domain.Subscription, error) {
+	return nil, errNoop
+}
+func (noopStore) CreatePaymentEvent(context.Context, *domain.PaymentEvent) error { return errNoop }
+func (noopStore) GetPaymentEventByExternalID(context.Context, string, string) (*domain.PaymentEvent, error) {
+	return nil, errNoop
+}
+func (noopStore) UpdateOrgPaymentGateway(context.Context, string, string) error { return errNoop }
 
 func (noopStore) GetOnboardingState(context.Context, string) (*domain.OnboardingState, error) {
 	return nil, errNoop
@@ -285,7 +294,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		logger,
 		[]string{"*"},
 		metricsCollector,
-		api.BillingConfig{},
+		api.BillingConfig{Registry: payment.NewRegistry()},
 		noopOTPEmail{},
 		"http://localhost:8080",
 		"http://localhost:3000",

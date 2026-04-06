@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"time"
@@ -10,6 +12,8 @@ import (
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
+	"github.com/featuresignals/server/internal/payment"
+	payupkg "github.com/featuresignals/server/internal/payment/payu"
 )
 
 type billingHandlerStore interface {
@@ -22,27 +26,32 @@ type billingHandlerStore interface {
 	domain.OnboardingStore
 }
 
+// BillingHandler serves billing and subscription management endpoints.
+// It uses the payment.Registry to dispatch to the correct gateway.
 type BillingHandler struct {
 	store        billingHandlerStore
-	payu         PayUHasher
-	payuMode     string
+	registry     *payment.Registry
 	dashboardURL string
 	appBaseURL   string
 	logger       *slog.Logger
 }
 
-func NewBillingHandler(store billingHandlerStore, payuKey, payuSalt, payuMode, dashboardURL, appBaseURL string, logger *slog.Logger) *BillingHandler {
+func NewBillingHandler(
+	store billingHandlerStore,
+	registry *payment.Registry,
+	dashboardURL, appBaseURL string,
+	logger *slog.Logger,
+) *BillingHandler {
 	return &BillingHandler{
 		store:        store,
-		payu:         PayUHasher{MerchantKey: payuKey, Salt: payuSalt},
-		payuMode:     payuMode,
+		registry:     registry,
 		dashboardURL: dashboardURL,
 		appBaseURL:   appBaseURL,
 		logger:       logger,
 	}
 }
 
-// CreateCheckout returns the PayU form fields the dashboard needs to POST.
+// CreateCheckout initiates a payment session via the org's configured gateway.
 func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
@@ -62,40 +71,80 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	txnid := fmt.Sprintf("FS_%s_%d", orgID[:8], time.Now().UnixMilli())
+	gatewayName := org.PaymentGateway
+	if gatewayName == "" {
+		gatewayName = domain.GatewayPayU
+	}
+
+	gw, err := h.registry.Get(gatewayName)
+	if err != nil {
+		log.Error("payment gateway not found", "gateway", gatewayName, "org_id", orgID)
+		httputil.Error(w, http.StatusBadRequest, "payment gateway not configured")
+		return
+	}
+
 	amount := domain.ProPlanAmount()
-	productinfo := domain.ProPlanProductInfo()
-	firstname := user.Name
-	email := user.Email
-	phone := "9999999999"
+	req := payment.CheckoutRequest{
+		OrgID:     orgID,
+		UserEmail: user.Email,
+		UserName:  user.Name,
+		Plan:      domain.PlanPro,
+		Amount:    amount,
+		Metadata: map[string]string{
+			"timestamp":   fmt.Sprintf("%d", time.Now().UnixMilli()),
+			"productinfo": domain.ProPlanProductInfo(),
+			"phone":       "9999999999",
+		},
+	}
 
-	hash := h.payu.Hash(txnid, amount, productinfo, firstname, email)
+	if gatewayName == domain.GatewayStripe {
+		req.SuccessURL = h.dashboardURL + "/settings/billing?status=success"
+		req.CancelURL = h.dashboardURL + "/settings/billing?status=canceled"
+	} else {
+		req.SuccessURL = h.appBaseURL + "/v1/billing/payu/callback"
+		req.CancelURL = h.appBaseURL + "/v1/billing/payu/failure"
+	}
 
-	surl := h.appBaseURL + "/v1/billing/payu/callback"
-	furl := h.appBaseURL + "/v1/billing/payu/failure"
+	result, err := gw.CreateCheckoutSession(r.Context(), req)
+	if err != nil {
+		log.Error("failed to create checkout session", "error", err, "gateway", gatewayName, "org_id", orgID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to create checkout")
+		return
+	}
 
-	_ = org // used for context logging
-	log.Info("payu checkout initiated", "org_id", orgID, "txnid", txnid)
+	log.Info("checkout session created", "org_id", orgID, "gateway", gatewayName, "session_id", result.SessionID)
 
-	httputil.JSON(w, http.StatusOK, map[string]string{
-		"payu_url":    h.payu.Endpoint(h.payuMode),
-		"key":         h.payu.MerchantKey,
-		"txnid":       txnid,
-		"hash":        hash,
-		"amount":      amount,
-		"productinfo": productinfo,
-		"firstname":   firstname,
-		"email":       email,
-		"phone":       phone,
-		"surl":        surl,
-		"furl":        furl,
-	})
+	resp := map[string]interface{}{
+		"gateway": gatewayName,
+	}
+	if result.RedirectURL != "" {
+		resp["redirect_url"] = result.RedirectURL
+	}
+	for k, v := range result.GatewayData {
+		resp[k] = v
+	}
+
+	httputil.JSON(w, http.StatusOK, resp)
 }
 
 // PayUCallback handles the success redirect from PayU (form-encoded POST).
 func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.logger.Error("failed to parse payu callback form", "error", err)
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
+		return
+	}
+
+	gw, err := h.registry.Get(domain.GatewayPayU)
+	if err != nil {
+		h.logger.Error("payu gateway not registered", "error", err)
+		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
+		return
+	}
+
+	payuGW, ok := gw.(*payupkg.Provider)
+	if !ok {
+		h.logger.Error("payu gateway type assertion failed")
 		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
@@ -111,30 +160,25 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 		"mihpayid":    r.FormValue("mihpayid"),
 	}
 
-	if !h.payu.VerifyReverse(params) {
-		h.logger.Warn("invalid payu reverse hash", "txnid", params["txnid"])
+	event, err := payuGW.HandleCallbackParams(params)
+	if err != nil {
+		h.logger.Warn("invalid payu callback", "error", err, "txnid", params["txnid"])
 		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
-	if params["status"] != "success" {
+	if event.Type != payment.EventCheckoutCompleted {
 		h.logger.Warn("payu payment not successful", "txnid", params["txnid"], "status", params["status"])
 		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
 
-	// Extract orgID from txnid (format: FS_<orgID[:8]>_<timestamp>)
 	txnid := params["txnid"]
 	orgIDPrefix := ""
-	if len(txnid) > 3 {
-		// Parse FS_<8chars>_<timestamp>
-		parts := splitTxnID(txnid)
-		if parts != nil {
-			orgIDPrefix = parts.orgPrefix
-		}
+	if parts := splitTxnID(txnid); parts != nil {
+		orgIDPrefix = parts.orgPrefix
 	}
 
-	// Look up org by prefix match
 	ctx := r.Context()
 	org, err := h.findOrgByTxnPrefix(ctx, orgIDPrefix)
 	if err != nil || org == nil {
@@ -142,6 +186,16 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
 		return
 	}
+
+	// Record payment event for idempotency
+	_ = h.store.CreatePaymentEvent(ctx, &domain.PaymentEvent{
+		OrgID:           org.ID,
+		GatewayProvider: domain.GatewayPayU,
+		EventType:       string(event.Type),
+		EventID:         params["mihpayid"],
+		Payload:         mustMarshal(params),
+		Processed:       true,
+	})
 
 	proLimits := domain.PlanDefaults[domain.PlanPro]
 	if err := h.store.UpdateOrgPlan(ctx, org.ID, domain.PlanPro, proLimits); err != nil {
@@ -153,6 +207,7 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	sub := &domain.Subscription{
 		OrgID:              org.ID,
+		GatewayProvider:    domain.GatewayPayU,
 		PayUTxnID:          params["txnid"],
 		PayUMihpayID:       params["mihpayid"],
 		Plan:               domain.PlanPro,
@@ -184,8 +239,296 @@ func (h *BillingHandler) PayUFailure(w http.ResponseWriter, r *http.Request) {
 	txnid := r.FormValue("txnid")
 	status := r.FormValue("status")
 	h.logger.Warn("payu payment failed", "txnid", txnid, "status", status)
-
 	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
+}
+
+// HandleStripeWebhook processes incoming Stripe webhook events.
+func (h *BillingHandler) HandleStripeWebhook(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<16))
+	if err != nil {
+		h.logger.Error("failed to read stripe webhook body", "error", err)
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	gw, err := h.registry.Get(domain.GatewayStripe)
+	if err != nil {
+		h.logger.Error("stripe gateway not registered", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "stripe not configured")
+		return
+	}
+
+	signature := r.Header.Get("Stripe-Signature")
+	event, err := gw.HandleWebhook(r.Context(), body, signature)
+	if err != nil {
+		h.logger.Warn("stripe webhook verification failed", "error", err)
+		httputil.Error(w, http.StatusBadRequest, "webhook verification failed")
+		return
+	}
+
+	// Idempotency check
+	existing, _ := h.store.GetPaymentEventByExternalID(r.Context(), domain.GatewayStripe, event.GatewayEventID)
+	if existing != nil {
+		httputil.JSON(w, http.StatusOK, map[string]string{"status": "already_processed"})
+		return
+	}
+
+	ctx := r.Context()
+
+	switch event.Type {
+	case payment.EventCheckoutCompleted:
+		h.handleStripeCheckoutCompleted(ctx, event)
+	case payment.EventSubscriptionUpdated:
+		h.handleStripeSubscriptionUpdated(ctx, event)
+	case payment.EventSubscriptionCanceled:
+		h.handleStripeSubscriptionCanceled(ctx, event)
+	case payment.EventPaymentFailed:
+		h.handleStripePaymentFailed(ctx, event)
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *BillingHandler) handleStripeCheckoutCompleted(ctx context.Context, event *payment.WebhookEvent) {
+	orgID := event.Metadata["org_id"]
+	if orgID == "" {
+		h.logger.Error("stripe checkout completed missing org_id in metadata", "event_id", event.GatewayEventID)
+		return
+	}
+
+	_ = h.store.CreatePaymentEvent(ctx, &domain.PaymentEvent{
+		OrgID:           orgID,
+		GatewayProvider: domain.GatewayStripe,
+		EventType:       string(event.Type),
+		EventID:         event.GatewayEventID,
+		Payload:         mustMarshal(event),
+		Processed:       true,
+	})
+
+	proLimits := domain.PlanDefaults[domain.PlanPro]
+	if err := h.store.UpdateOrgPlan(ctx, orgID, domain.PlanPro, proLimits); err != nil {
+		h.logger.Error("failed to update org plan after stripe checkout", "error", err, "org_id", orgID)
+		return
+	}
+
+	now := time.Now()
+	sub := &domain.Subscription{
+		OrgID:                orgID,
+		GatewayProvider:      domain.GatewayStripe,
+		StripeCustomerID:     event.CustomerID,
+		StripeSubscriptionID: event.SubscriptionID,
+		Plan:                 domain.PlanPro,
+		Status:               "active",
+		CurrentPeriodStart:   event.PeriodStart,
+		CurrentPeriodEnd:     event.PeriodEnd,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+	if err := h.store.UpsertSubscription(ctx, sub); err != nil {
+		h.logger.Error("failed to upsert subscription after stripe checkout", "error", err, "org_id", orgID)
+	}
+
+	state, _ := h.store.GetOnboardingState(ctx, orgID)
+	if state == nil {
+		state = &domain.OnboardingState{OrgID: orgID}
+	}
+	state.PlanSelected = true
+	state.UpdatedAt = now
+	_ = h.store.UpsertOnboardingState(ctx, state)
+
+	h.logger.Info("stripe checkout completed — org upgraded to pro", "org_id", orgID, "customer_id", event.CustomerID)
+}
+
+func (h *BillingHandler) handleStripeSubscriptionUpdated(ctx context.Context, event *payment.WebhookEvent) {
+	sub, err := h.store.GetSubscriptionByStripeID(ctx, event.SubscriptionID)
+	if err != nil {
+		h.logger.Warn("stripe subscription update for unknown subscription", "stripe_sub_id", event.SubscriptionID)
+		return
+	}
+
+	sub.Status = event.Status
+	sub.UpdatedAt = time.Now()
+	if err := h.store.UpsertSubscription(ctx, sub); err != nil {
+		h.logger.Error("failed to update subscription from stripe event", "error", err, "org_id", sub.OrgID)
+	}
+
+	_ = h.store.CreatePaymentEvent(ctx, &domain.PaymentEvent{
+		OrgID:           sub.OrgID,
+		GatewayProvider: domain.GatewayStripe,
+		EventType:       string(event.Type),
+		EventID:         event.GatewayEventID,
+		Payload:         mustMarshal(event),
+		Processed:       true,
+	})
+}
+
+func (h *BillingHandler) handleStripeSubscriptionCanceled(ctx context.Context, event *payment.WebhookEvent) {
+	sub, err := h.store.GetSubscriptionByStripeID(ctx, event.SubscriptionID)
+	if err != nil {
+		h.logger.Warn("stripe subscription cancel for unknown subscription", "stripe_sub_id", event.SubscriptionID)
+		return
+	}
+
+	sub.Status = "canceled"
+	sub.UpdatedAt = time.Now()
+	_ = h.store.UpsertSubscription(ctx, sub)
+
+	freeLimits := domain.PlanDefaults[domain.PlanFree]
+	_ = h.store.UpdateOrgPlan(ctx, sub.OrgID, domain.PlanFree, freeLimits)
+
+	_ = h.store.CreatePaymentEvent(ctx, &domain.PaymentEvent{
+		OrgID:           sub.OrgID,
+		GatewayProvider: domain.GatewayStripe,
+		EventType:       string(event.Type),
+		EventID:         event.GatewayEventID,
+		Payload:         mustMarshal(event),
+		Processed:       true,
+	})
+
+	h.logger.Info("stripe subscription canceled — org downgraded to free", "org_id", sub.OrgID)
+}
+
+func (h *BillingHandler) handleStripePaymentFailed(ctx context.Context, event *payment.WebhookEvent) {
+	if event.SubscriptionID == "" {
+		return
+	}
+	sub, err := h.store.GetSubscriptionByStripeID(ctx, event.SubscriptionID)
+	if err != nil {
+		return
+	}
+
+	sub.Status = "past_due"
+	sub.UpdatedAt = time.Now()
+	_ = h.store.UpsertSubscription(ctx, sub)
+
+	_ = h.store.CreatePaymentEvent(ctx, &domain.PaymentEvent{
+		OrgID:           sub.OrgID,
+		GatewayProvider: domain.GatewayStripe,
+		EventType:       string(event.Type),
+		EventID:         event.GatewayEventID,
+		Payload:         mustMarshal(event),
+		Processed:       true,
+	})
+
+	h.logger.Warn("stripe payment failed — subscription past due", "org_id", sub.OrgID)
+}
+
+// CancelSubscription cancels the org's active subscription.
+func (h *BillingHandler) CancelSubscription(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+	orgID := middleware.GetOrgID(r.Context())
+
+	sub, err := h.store.GetSubscription(r.Context(), orgID)
+	if err != nil {
+		log.Warn("no active subscription to cancel", "org_id", orgID)
+		httputil.Error(w, http.StatusNotFound, "no active subscription")
+		return
+	}
+
+	var reqBody struct {
+		AtPeriodEnd bool `json:"at_period_end"`
+	}
+	if err := httputil.DecodeJSON(r, &reqBody); err != nil {
+		reqBody.AtPeriodEnd = true
+	}
+
+	gatewayName := sub.GatewayProvider
+	if gatewayName == "" {
+		gatewayName = domain.GatewayPayU
+	}
+
+	gw, err := h.registry.Get(gatewayName)
+	if err != nil {
+		log.Error("payment gateway not found for cancel", "gateway", gatewayName)
+		httputil.Error(w, http.StatusInternalServerError, "payment gateway not configured")
+		return
+	}
+
+	subscriptionID := sub.StripeSubscriptionID
+	if gatewayName == domain.GatewayPayU {
+		httputil.Error(w, http.StatusBadRequest, "cancellation for PayU subscriptions requires contacting support")
+		return
+	}
+
+	if err := gw.CancelSubscription(r.Context(), subscriptionID, reqBody.AtPeriodEnd); err != nil {
+		log.Error("failed to cancel subscription", "error", err, "org_id", orgID, "gateway", gatewayName)
+		httputil.Error(w, http.StatusInternalServerError, "failed to cancel subscription")
+		return
+	}
+
+	if reqBody.AtPeriodEnd {
+		sub.CancelAtPeriodEnd = true
+	} else {
+		sub.Status = "canceled"
+		freeLimits := domain.PlanDefaults[domain.PlanFree]
+		_ = h.store.UpdateOrgPlan(r.Context(), orgID, domain.PlanFree, freeLimits)
+	}
+	sub.UpdatedAt = time.Now()
+	_ = h.store.UpsertSubscription(r.Context(), sub)
+
+	log.Info("subscription canceled", "org_id", orgID, "gateway", gatewayName, "at_period_end", reqBody.AtPeriodEnd)
+	httputil.JSON(w, http.StatusOK, map[string]string{"status": "canceled"})
+}
+
+// GetBillingPortalURL returns a URL for the customer's billing portal.
+func (h *BillingHandler) GetBillingPortalURL(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+	orgID := middleware.GetOrgID(r.Context())
+
+	sub, err := h.store.GetSubscription(r.Context(), orgID)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "no active subscription")
+		return
+	}
+
+	if sub.GatewayProvider != domain.GatewayStripe || sub.StripeCustomerID == "" {
+		httputil.Error(w, http.StatusBadRequest, "billing portal only available for Stripe subscriptions")
+		return
+	}
+
+	gw, err := h.registry.Get(domain.GatewayStripe)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "stripe not configured")
+		return
+	}
+
+	returnURL := h.dashboardURL + "/settings/billing"
+	portalURL, err := gw.CreateBillingPortalURL(r.Context(), sub.StripeCustomerID, returnURL)
+	if err != nil {
+		log.Error("failed to create billing portal", "error", err, "org_id", orgID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to create billing portal")
+		return
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{"url": portalURL})
+}
+
+// UpdateGateway allows an org admin to change the configured payment gateway.
+func (h *BillingHandler) UpdateGateway(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+	orgID := middleware.GetOrgID(r.Context())
+
+	var req struct {
+		Gateway string `json:"gateway"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if !h.registry.Has(req.Gateway) {
+		httputil.Error(w, http.StatusBadRequest, fmt.Sprintf("unsupported payment gateway: %s", req.Gateway))
+		return
+	}
+
+	if err := h.store.UpdateOrgPaymentGateway(r.Context(), orgID, req.Gateway); err != nil {
+		log.Error("failed to update payment gateway", "error", err, "org_id", orgID, "gateway", req.Gateway)
+		httputil.Error(w, http.StatusInternalServerError, "failed to update payment gateway")
+		return
+	}
+
+	log.Info("payment gateway updated", "org_id", orgID, "gateway", req.Gateway)
+	httputil.JSON(w, http.StatusOK, map[string]string{"gateway": req.Gateway})
 }
 
 // GetSubscription returns the current subscription and plan info for the org.
@@ -207,6 +550,7 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 		"seats_limit":        org.PlanSeatsLimit,
 		"projects_limit":     org.PlanProjectsLimit,
 		"environments_limit": org.PlanEnvironmentsLimit,
+		"gateway":            org.PaymentGateway,
 	}
 
 	if sub != nil {
@@ -214,8 +558,10 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 		resp["current_period_start"] = sub.CurrentPeriodStart
 		resp["current_period_end"] = sub.CurrentPeriodEnd
 		resp["cancel_at_period_end"] = sub.CancelAtPeriodEnd
+		resp["can_manage"] = sub.GatewayProvider == domain.GatewayStripe
 	} else {
 		resp["status"] = "none"
+		resp["can_manage"] = false
 	}
 
 	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
@@ -263,12 +609,10 @@ type txnParts struct {
 }
 
 func splitTxnID(txnid string) *txnParts {
-	// Format: FS_<orgID[:8]>_<timestamp>
 	if len(txnid) < 4 || txnid[:3] != "FS_" {
 		return nil
 	}
 	rest := txnid[3:]
-	// Find the second underscore
 	for i := 0; i < len(rest); i++ {
 		if rest[i] == '_' {
 			return &txnParts{orgPrefix: rest[:i]}
@@ -277,11 +621,17 @@ func splitTxnID(txnid string) *txnParts {
 	return nil
 }
 
-// findOrgByTxnPrefix searches for an organization whose ID starts with the
-// given prefix. This is used to resolve the org from the PayU txnid.
 func (h *BillingHandler) findOrgByTxnPrefix(ctx context.Context, prefix string) (*domain.Organization, error) {
 	if prefix == "" {
 		return nil, fmt.Errorf("empty org prefix")
 	}
 	return h.store.GetOrganizationByIDPrefix(ctx, prefix)
+}
+
+func mustMarshal(v interface{}) json.RawMessage {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return json.RawMessage(b)
 }
