@@ -42,6 +42,10 @@ seed: ## Load seed data into running Postgres
 	@docker compose exec -T postgres psql -U fs -d featuresignals < server/scripts/seed.sql
 	@echo "Seed data loaded"
 
+local-seed: ## Start full-stack Docker with seed data pre-loaded
+	docker compose -f docker-compose.yml -f docker-compose.override.yml --profile seed up --build -d
+	@echo "FeatureSignals running at http://localhost:3000 (with seed data)"
+
 # ─── Database Access ──────────────────────────────────────────────────────────
 
 db-tunnel: ## Open SSH tunnel to production Postgres

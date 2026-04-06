@@ -11,7 +11,9 @@
 set -euo pipefail
 
 PROJECT_DIR="${PROJECT_DIR:-/opt/featuresignals}"
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+DB_NAME="${POSTGRES_DB:-featuresignals}"
+DB_USER="${POSTGRES_USER:-fs}"
 
 cd "$PROJECT_DIR"
 
@@ -39,7 +41,7 @@ fi
 
 echo "==> Setting up PostgreSQL roles..."
 
-docker exec "$CONTAINER" psql -U fs -d featuresignals -v ON_ERROR_STOP=1 <<'EOSQL'
+docker exec "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'EOSQL'
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'fs_admin') THEN
@@ -56,14 +58,13 @@ $$;
 EOSQL
 
 # Set passwords (always runs so rotations take effect)
-docker exec "$CONTAINER" psql -U fs -d featuresignals -v ON_ERROR_STOP=1 \
+docker exec "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 \
   -c "ALTER ROLE fs_admin PASSWORD '${DB_ADMIN_PASSWORD}';" \
   -c "ALTER ROLE fs_readonly PASSWORD '${DB_READONLY_PASSWORD}';"
 
 # Grant privileges
-docker exec "$CONTAINER" psql -U fs -d featuresignals -v ON_ERROR_STOP=1 <<'EOSQL'
--- fs_admin: full access to the featuresignals database
-GRANT ALL PRIVILEGES ON DATABASE featuresignals TO fs_admin;
+docker exec "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 <<EOSQL
+GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO fs_admin;
 GRANT ALL PRIVILEGES ON SCHEMA public TO fs_admin;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO fs_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO fs_admin;
@@ -72,15 +73,13 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO fs_admin;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO fs_admin;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO fs_admin;
 
--- fs_readonly: SELECT only
-GRANT CONNECT ON DATABASE featuresignals TO fs_readonly;
+GRANT CONNECT ON DATABASE $DB_NAME TO fs_readonly;
 GRANT USAGE ON SCHEMA public TO fs_readonly;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO fs_readonly;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO fs_readonly;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO fs_readonly;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO fs_readonly;
 
--- Prevent PUBLIC from creating objects (defense-in-depth for readonly users)
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 EOSQL
 

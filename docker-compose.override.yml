@@ -1,0 +1,40 @@
+# Local full-stack development overrides.
+# Automatically applied by `docker compose up` (Docker Compose convention).
+# Usage: make local-up  (or: docker compose up --build -d)
+#
+# Reads from .env.local when present. Copy deploy/local/.env.local.example to
+# .env.local and adjust values as needed.
+
+services:
+  postgres:
+    env_file:
+      - path: .env.local
+        required: false
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+  server:
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-cloud}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-none}
+
+  dashboard:
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+
+  seed:
+    image: postgres:16-alpine
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./server/scripts/seed.sql:/seed.sql:ro
+    entrypoint: ["sh", "-c", "PGPASSWORD=fsdev psql -h postgres -U fs -d featuresignals -f /seed.sql"]
+    profiles: ["seed"]
