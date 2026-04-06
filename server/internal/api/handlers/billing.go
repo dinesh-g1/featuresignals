@@ -51,6 +51,12 @@ func NewBillingHandler(
 	}
 }
 
+// allowedReturnPaths restricts the return_url parameter to known dashboard routes.
+var allowedReturnPaths = map[string]bool{
+	"/settings/billing": true,
+	"/onboarding":       true,
+}
+
 // CreateCheckout initiates a payment session via the org's configured gateway.
 func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
@@ -69,6 +75,11 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 		log.Error("failed to get user", "error", err, "user_id", userID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to load user")
 		return
+	}
+
+	returnPath := "/settings/billing"
+	if rp := r.URL.Query().Get("return_url"); rp != "" && allowedReturnPaths[rp] {
+		returnPath = rp
 	}
 
 	gatewayName := org.PaymentGateway
@@ -98,8 +109,8 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if gatewayName == domain.GatewayStripe {
-		req.SuccessURL = h.dashboardURL + "/settings/billing?status=success"
-		req.CancelURL = h.dashboardURL + "/settings/billing?status=canceled"
+		req.SuccessURL = h.dashboardURL + returnPath + "?status=success"
+		req.CancelURL = h.dashboardURL + returnPath + "?status=canceled"
 	} else {
 		req.SuccessURL = h.appBaseURL + "/v1/billing/payu/callback"
 		req.CancelURL = h.appBaseURL + "/v1/billing/payu/failure"

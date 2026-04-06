@@ -27,11 +27,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!currentRefreshToken) return;
 
     try {
-      const tokens = await api.refresh(currentRefreshToken);
-      if (!tokens?.access_token) return;
-      const user = useAppStore.getState().user;
-      const org = useAppStore.getState().organization;
-      setAuth(tokens.access_token, tokens.refresh_token, user, org, tokens.expires_at);
+      const data = await api.refresh(currentRefreshToken);
+      if (!data?.access_token) return;
+      const user = data.user ?? useAppStore.getState().user;
+      const org = data.organization ?? useAppStore.getState().organization;
+      setAuth(data.access_token, data.refresh_token, user, org, data.expires_at, data.onboarding_completed);
     } catch {
       logout();
       router.replace("/login?session_expired=true");

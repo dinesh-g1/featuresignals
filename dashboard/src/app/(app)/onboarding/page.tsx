@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Sparkles, Copy, ClipboardCheck } from "lucide-react";
 import { api, type PricingConfig } from "@/lib/api";
@@ -115,9 +115,12 @@ const showFeature = useFlag("my-flag");
 </template>`,
 };
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const token = useAppStore((s) => s.token);
+  const refreshToken = useAppStore((s) => s.refreshToken);
+  const setAuth = useAppStore((s) => s.setAuth);
   const projectId = useAppStore((s) => s.currentProjectId);
 
   const [loading, setLoading] = useState(true);
@@ -139,6 +142,26 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
+    const status = searchParams.get("status");
+    if (status === "success") {
+      toast("Payment successful! Your plan has been upgraded to Pro.", "success");
+      if (refreshToken) {
+        api.refresh(refreshToken).then((data) => {
+          if (data?.access_token) {
+            const user = data.user ?? useAppStore.getState().user;
+            const org = data.organization ?? useAppStore.getState().organization;
+            setAuth(data.access_token, data.refresh_token, user, org, data.expires_at, data.onboarding_completed);
+          }
+        }).catch(() => {});
+      }
+    } else if (status === "failed") {
+      toast("Payment failed. Please try again or contact support.", "error");
+    } else if (status === "canceled") {
+      toast("Checkout canceled. No charges were made.");
+    }
+  }, [searchParams, refreshToken, setAuth]);
+
+  useEffect(() => {
     if (!token) return;
     api.getOnboarding(token)
       .then((data) => {
@@ -149,6 +172,10 @@ export default function OnboardingPage() {
             sdk_installed: data.first_sdk_connected,
             completed: data.completed,
           };
+          const paymentStatus = searchParams.get("status");
+          if (paymentStatus === "success") {
+            steps.plan_chosen = true;
+          }
           setCompleted(steps);
           const firstIncomplete = STEPS.findIndex((s) => !steps[s.key]);
           setCurrentStep(firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete);
@@ -156,7 +183,7 @@ export default function OnboardingPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, searchParams]);
 
   async function markStepComplete(stepKey: string) {
     if (!token) return;
@@ -179,7 +206,7 @@ export default function OnboardingPage() {
   async function handleUpgradePro() {
     if (!token) return;
     try {
-      const data = await api.createCheckout(token);
+      const data = await api.createCheckout(token, "/onboarding");
       if (!data) {
         toast("Failed to create checkout session", "error");
         return;
@@ -332,6 +359,18 @@ export default function OnboardingPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
 

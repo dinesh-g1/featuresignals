@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { TrialBanner } from "@/components/trial-banner";
 
 let mockOrganization: any = null;
@@ -25,6 +25,7 @@ describe("TrialBanner", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockOrganization = null;
+    localStorage.clear();
   });
 
   it("returns null when plan is not 'trial'", () => {
@@ -74,5 +75,37 @@ describe("TrialBanner", () => {
     // Assert
     expect(screen.getByText("Your trial has expired")).toBeInTheDocument();
     expect(screen.getByText("Upgrade to Pro")).toBeInTheDocument();
+  });
+
+  it("shows downgrade interstitial for recently-downgraded free users", () => {
+    const recentExpiry = new Date(Date.now() - 2 * 86400000).toISOString();
+    mockOrganization = { plan: "free", trial_expires_at: recentExpiry };
+
+    render(<TrialBanner />);
+
+    expect(screen.getByText("Your trial has ended")).toBeInTheDocument();
+    expect(screen.getByText("Upgrade to Pro")).toBeInTheDocument();
+    expect(screen.getByText("Continue with Free Plan")).toBeInTheDocument();
+  });
+
+  it("dismisses downgrade interstitial on Continue with Free Plan click", () => {
+    const recentExpiry = new Date(Date.now() - 2 * 86400000).toISOString();
+    mockOrganization = { plan: "free", trial_expires_at: recentExpiry };
+
+    const { rerender } = render(<TrialBanner />);
+    fireEvent.click(screen.getByText("Continue with Free Plan"));
+    rerender(<TrialBanner />);
+
+    expect(screen.queryByText("Your trial has ended")).not.toBeInTheDocument();
+    expect(localStorage.getItem("fs-downgrade-interstitial-dismissed")).toBe("true");
+  });
+
+  it("does not show downgrade interstitial if trial expired over 7 days ago", () => {
+    const oldExpiry = new Date(Date.now() - 10 * 86400000).toISOString();
+    mockOrganization = { plan: "free", trial_expires_at: oldExpiry };
+
+    const { container } = render(<TrialBanner />);
+
+    expect(container.innerHTML).toBe("");
   });
 });

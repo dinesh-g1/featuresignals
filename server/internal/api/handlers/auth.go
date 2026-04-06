@@ -35,6 +35,7 @@ type authStore interface {
 	domain.MFAStore
 	domain.LoginAttemptStore
 	domain.AuditWriter
+	domain.OnboardingStore
 	RestoreOrganization(ctx context.Context, orgID string) error
 }
 
@@ -233,9 +234,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
-		"user":         sanitizeUser(user),
-		"organization": dto.OrganizationFromDomain(org),
-		"tokens":       tokens,
+		"user":                 sanitizeUser(user),
+		"organization":         dto.OrganizationFromDomain(org),
+		"tokens":               tokens,
+		"onboarding_completed": false,
 	})
 }
 
@@ -325,10 +327,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
 	})
 
+	onboardingState, _ := h.store.GetOnboardingState(r.Context(), orgID)
+	onboardingCompleted := onboardingState != nil && onboardingState.Completed
+
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"user":         sanitizeUser(user),
-		"organization": dto.OrganizationFromDomain(org),
-		"tokens":       tokens,
+		"user":                 sanitizeUser(user),
+		"organization":         dto.OrganizationFromDomain(org),
+		"tokens":               tokens,
+		"onboarding_completed": onboardingCompleted,
 	})
 }
 
@@ -387,7 +393,22 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("token refreshed", "user_id", claims.UserID)
 
-	httputil.JSON(w, http.StatusOK, tokens)
+	resp := map[string]interface{}{
+		"access_token":  tokens.AccessToken,
+		"refresh_token": tokens.RefreshToken,
+		"expires_at":    tokens.ExpiresAt,
+	}
+
+	if org, orgErr := h.store.GetOrganization(r.Context(), claims.OrgID); orgErr == nil && org != nil {
+		resp["organization"] = dto.OrganizationFromDomain(org)
+	}
+	if user, userErr := h.store.GetUserByID(r.Context(), claims.UserID); userErr == nil && user != nil {
+		resp["user"] = sanitizeUser(user)
+	}
+	onboardingState, _ := h.store.GetOnboardingState(r.Context(), claims.OrgID)
+	resp["onboarding_completed"] = onboardingState != nil && onboardingState.Completed
+
+	httputil.JSON(w, http.StatusOK, resp)
 }
 
 // SendVerificationEmail generates a verification token and sends a verification email.

@@ -8,9 +8,11 @@ interface AppState {
   expiresAt: number | null;
   user: User | null;
   organization: Organization | null;
+  onboardingCompleted: boolean;
   currentProjectId: string | null;
   currentEnvId: string | null;
-  setAuth: (token: string, refreshToken: string, user: User | null, organization?: Organization | null, expiresAt?: number) => void;
+  setAuth: (token: string, refreshToken: string, user: User | null, organization?: Organization | null, expiresAt?: number, onboardingCompleted?: boolean) => void;
+  setOrganization: (organization: Organization) => void;
   logout: () => void;
   setCurrentProject: (id: string) => void;
   setCurrentEnv: (id: string) => void;
@@ -24,10 +26,19 @@ export const useAppStore = create<AppState>()(
       expiresAt: null,
       user: null,
       organization: null,
+      onboardingCompleted: false,
       currentProjectId: null,
       currentEnvId: null,
-      setAuth: (token, refreshToken, user, organization, expiresAt) =>
-        set({ token, refreshToken, user, organization: organization ?? null, expiresAt: expiresAt ?? null }),
+      setAuth: (token, refreshToken, user, organization, expiresAt, onboardingCompleted) =>
+        set({
+          token,
+          refreshToken,
+          user,
+          organization: organization ?? null,
+          expiresAt: expiresAt ?? null,
+          onboardingCompleted: onboardingCompleted ?? false,
+        }),
+      setOrganization: (organization) => set({ organization }),
       logout: () =>
         set({
           token: null,
@@ -35,6 +46,7 @@ export const useAppStore = create<AppState>()(
           expiresAt: null,
           user: null,
           organization: null,
+          onboardingCompleted: false,
           currentProjectId: null,
           currentEnvId: null,
         }),
