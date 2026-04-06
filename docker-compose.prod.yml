@@ -50,7 +50,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: "8080"
       CORS_ORIGIN: https://app.featuresignals.com,https://docs.featuresignals.com
-      LOG_LEVEL: info
+      LOG_LEVEL: debug
       MSG91_AUTH_KEY: ${MSG91_AUTH_KEY}
       MSG91_EMAIL_TEMPLATE_ID: ${MSG91_EMAIL_TEMPLATE_ID}
       MSG91_EMAIL_DOMAIN: ${MSG91_EMAIL_DOMAIN}
@@ -65,9 +65,9 @@ services:
       OTEL_SERVICE_REGION: ${OTEL_SERVICE_REGION:-us}
       OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-true}
       OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-true}
-      OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-false}
-      OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-warn}
-      OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-0.1}
+      OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-true}
+      OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-debug}
+      OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-1.0}
     deploy:
       resources:
         limits:
