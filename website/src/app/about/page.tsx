@@ -128,6 +128,12 @@ export default function AboutPage() {
                 </dd>
               </div>
               <div>
+                <dt className="font-semibold text-slate-700">
+                  Proprietor / Authorized Signatory
+                </dt>
+                <dd className="mt-0.5 text-slate-600">Gillala Dinesh</dd>
+              </div>
+              <div>
                 <dt className="font-semibold text-slate-700">Trade Name</dt>
                 <dd className="mt-0.5 text-slate-600">FeatureSignals</dd>
               </div>
