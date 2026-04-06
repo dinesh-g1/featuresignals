@@ -15,10 +15,13 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/stores/app-store", () => ({
-  useAppStore: () => ({
-    organization: mockOrganization,
-    logout: mockLogout,
-  }),
+  useAppStore: (selector?: (s: any) => any) => {
+    const state = {
+      organization: mockOrganization,
+      logout: mockLogout,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 describe("TrialBanner", () => {

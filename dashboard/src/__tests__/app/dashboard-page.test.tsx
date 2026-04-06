@@ -29,14 +29,17 @@ vi.mock("@/components/ui", () => ({
   CardContent: ({ children }: any) => <div>{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
   EmptyState: ({ title }: any) => <div data-testid="empty-state">{title}</div>,
-  LoadingSpinner: () => <div data-testid="loading-spinner">Loading...</div>,
+  LoadingSpinner: ({ fullPage }: any) => <div data-testid="loading-spinner" role="status">Loading...</div>,
+  ErrorDisplay: ({ title, message }: any) => <div data-testid="error-display">{title}: {message}</div>,
 }));
 
+import { queryCache } from "@/lib/query-cache";
 import DashboardPage from "@/app/(app)/dashboard/page";
 
 describe("DashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryCache.clear();
     useAppStore.getState().setAuth(
       "test-token",
       "test-refresh",
@@ -49,6 +52,7 @@ describe("DashboardPage", () => {
 
   afterEach(() => {
     useAppStore.getState().logout();
+    queryCache.clear();
   });
 
   it("shows loading spinner initially", () => {

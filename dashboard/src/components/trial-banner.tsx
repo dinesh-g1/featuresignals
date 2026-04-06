@@ -8,12 +8,11 @@ const DOWNGRADE_DISMISSED_KEY = "fs-downgrade-interstitial-dismissed";
 const DOWNGRADE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function TrialBanner() {
-  const { organization, logout } = useAppStore();
+  const plan = useAppStore((s) => s.organization?.plan);
+  const trialExpiresAt = useAppStore((s) => s.organization?.trial_expires_at);
+  const logout = useAppStore((s) => s.logout);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [showDowngradeInterstitial, setShowDowngradeInterstitial] = useState(false);
-
-  const plan = organization?.plan;
-  const trialExpiresAt = organization?.trial_expires_at;
 
   useEffect(() => {
     if (plan === "trial" && trialExpiresAt) {

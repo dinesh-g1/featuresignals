@@ -288,6 +288,8 @@ export const api = {
   // Flag States
   getFlagState: (token: string, projectId: string, flagKey: string, envId: string) =>
     request<FlagState>(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { token }),
+  listFlagStatesByEnv: (token: string, projectId: string, envId: string) =>
+    requestList<FlagState>(`/v1/projects/${projectId}/environments/${envId}/flag-states`, { token }),
   updateFlagState: (token: string, projectId: string, flagKey: string, envId: string, data: Partial<FlagState>) =>
     request<FlagState>(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { method: "PUT", body: data, token }),
 

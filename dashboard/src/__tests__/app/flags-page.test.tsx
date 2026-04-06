@@ -6,6 +6,7 @@ vi.mock("@/lib/api", () => ({
   api: {
     listFlags: vi.fn(),
     listEnvironments: vi.fn(),
+    listFlagStatesByEnv: vi.fn(),
     createFlag: vi.fn(),
     deleteFlag: vi.fn(),
     getFlagState: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 import { api } from "@/lib/api";
+import { queryCache } from "@/lib/query-cache";
 import FlagsPage from "@/app/(app)/flags/page";
 
 const mockFlags = [
@@ -83,6 +85,7 @@ const mockEnvs = [
 describe("FlagsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryCache.clear();
 
     const store = useAppStore.getState();
     store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
@@ -91,6 +94,10 @@ describe("FlagsPage", () => {
 
     vi.mocked(api.listFlags).mockResolvedValue(mockFlags);
     vi.mocked(api.listEnvironments).mockResolvedValue(mockEnvs);
+    vi.mocked(api.listFlagStatesByEnv).mockResolvedValue([
+      { id: "fs-1", flag_id: "f1", enabled: true, rules: [], percentage_rollout: 100, updated_at: "2025-01-01T00:00:00Z" },
+      { id: "fs-2", flag_id: "f2", enabled: false, rules: [], percentage_rollout: 0, updated_at: "2025-01-01T00:00:00Z" },
+    ]);
     vi.mocked(api.getFlagState).mockResolvedValue({ id: "fs-1", enabled: true, rules: [], percentage_rollout: 100, updated_at: "2025-01-01T00:00:00Z" });
     vi.mocked(api.updateFlagState).mockResolvedValue(undefined as never);
     vi.mocked(api.deleteFlag).mockResolvedValue(undefined as unknown as void);
@@ -99,15 +106,17 @@ describe("FlagsPage", () => {
 
   afterEach(() => {
     useAppStore.getState().logout();
+    queryCache.clear();
   });
 
   it("renders loading spinner initially", () => {
     vi.mocked(api.listFlags).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.listEnvironments).mockReturnValue(new Promise(() => {}));
+    vi.mocked(api.listFlagStatesByEnv).mockReturnValue(new Promise(() => {}));
 
     render(<FlagsPage />);
 
-    expect(screen.getByText("0 flags in this project")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
   });
 
   it("loads and renders flag list with names", async () => {
@@ -205,10 +214,6 @@ describe("FlagsPage", () => {
   it("toggle flag state calls api.updateFlagState", async () => {
     render(<FlagsPage />);
     await screen.findByText("enable-feature");
-
-    await waitFor(() => {
-      expect(api.getFlagState).toHaveBeenCalled();
-    });
 
     // Flags sorted by created_at desc: max-items first, enable-feature second
     const toggleButtons = screen.getAllByTitle("Toggle in Production");

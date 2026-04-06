@@ -81,6 +81,7 @@ export interface Flag {
 
 export interface FlagState {
   id: string;
+  flag_id?: string;
   enabled: boolean;
   default_value?: unknown;
   rules: TargetingRule[];
