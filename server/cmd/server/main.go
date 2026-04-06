@@ -12,6 +12,7 @@ import (
 
 	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 
 	"github.com/featuresignals/server/internal/api"
 	"github.com/featuresignals/server/internal/auth"
@@ -62,6 +63,7 @@ func main() {
 			ServiceRegion:  cfg.OTELServiceRegion,
 			TracesEnabled:  cfg.OTELTracesEnabled,
 			MetricsEnabled: cfg.OTELMetricsEnabled,
+			LogsEnabled:    cfg.OTELLogsEnabled,
 			SampleRate:     cfg.OTELSampleRate,
 		})
 		if otelErr != nil {
@@ -71,8 +73,18 @@ func main() {
 				"endpoint", cfg.OTELEndpoint,
 				"service", cfg.OTELServiceName,
 				"region", cfg.OTELServiceRegion,
+				"traces", cfg.OTELTracesEnabled,
+				"metrics", cfg.OTELMetricsEnabled,
+				"logs", cfg.OTELLogsEnabled,
 				"sample_rate", cfg.OTELSampleRate,
 			)
+
+			if cfg.OTELLogsEnabled {
+				otelHandler := otelslog.NewHandler(cfg.OTELServiceName)
+				multiHandler := newMultiHandler(logger.Handler(), otelHandler)
+				logger = slog.New(multiHandler)
+				slog.SetDefault(logger)
+			}
 		}
 	}
 	otelInstruments := observability.NewInstruments()
@@ -218,4 +230,49 @@ func main() {
 	}
 
 	logger.Info("server stopped")
+}
+
+// multiHandler fans out slog records to multiple handlers (stdout + OTEL).
+type multiHandler struct {
+	handlers []slog.Handler
+}
+
+func newMultiHandler(handlers ...slog.Handler) *multiHandler {
+	return &multiHandler{handlers: handlers}
+}
+
+func (m *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *multiHandler) Handle(ctx context.Context, r slog.Record) error {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, r.Level) {
+			if err := h.Handle(ctx, r.Clone()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	handlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		handlers[i] = h.WithAttrs(attrs)
+	}
+	return &multiHandler{handlers: handlers}
+}
+
+func (m *multiHandler) WithGroup(name string) slog.Handler {
+	handlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		handlers[i] = h.WithGroup(name)
+	}
+	return &multiHandler{handlers: handlers}
 }
