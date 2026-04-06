@@ -1,11 +1,23 @@
 package sse
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"sync"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	ometric "go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
+)
+
+var (
+	sseTracer       = otel.Tracer("featuresignals/sse")
+	sseMeter        = otel.Meter("featuresignals/sse")
+	sseConnGauge, _ = sseMeter.Int64UpDownCounter("sse.active_connections", ometric.WithDescription("Currently active SSE connections"))
 )
 
 // Client represents a connected SSE client.
@@ -28,8 +40,13 @@ func NewServer(logger *slog.Logger) *Server {
 	}
 }
 
-// ServeHTTP handles SSE connections. Expects envID in the URL path.
+// HandleStream handles SSE connections. Expects envID in the URL path.
 func (s *Server) HandleStream(w http.ResponseWriter, r *http.Request, envID string) {
+	_, span := sseTracer.Start(r.Context(), "sse.Connect",
+		trace.WithAttributes(attribute.String("env_id", envID)),
+	)
+	defer span.End()
+
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
@@ -102,6 +119,7 @@ func (s *Server) addClient(c *Client) {
 		s.clients[c.envID] = make(map[*Client]bool)
 	}
 	s.clients[c.envID][c] = true
+	sseConnGauge.Add(context.Background(), 1, ometric.WithAttributes(attribute.String("env_id", c.envID)))
 	s.logger.Info("SSE client connected", "env_id", c.envID, "total", len(s.clients[c.envID]))
 }
 
@@ -110,5 +128,6 @@ func (s *Server) removeClient(c *Client) {
 	defer s.mu.Unlock()
 	delete(s.clients[c.envID], c)
 	close(c.events)
+	sseConnGauge.Add(context.Background(), -1, ometric.WithAttributes(attribute.String("env_id", c.envID)))
 	s.logger.Info("SSE client disconnected", "env_id", c.envID, "total", len(s.clients[c.envID]))
 }

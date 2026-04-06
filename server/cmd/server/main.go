@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/featuresignals/server/internal/api"
@@ -18,8 +19,10 @@ import (
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/sse"
+	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/store/postgres"
 	"github.com/featuresignals/server/internal/webhook"
@@ -34,18 +37,60 @@ func main() {
 	}
 
 	// Logger
-	logLevel := slog.LevelInfo
-	if cfg.LogLevel == "debug" {
+	var logLevel slog.Level
+	switch cfg.LogLevel {
+	case "debug":
 		logLevel = slog.LevelDebug
+	case "warn":
+		logLevel = slog.LevelWarn
+	case "error":
+		logLevel = slog.LevelError
+	default:
+		logLevel = slog.LevelInfo
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
 	slog.SetDefault(logger)
 
-	// Database
+	// OpenTelemetry (async, non-blocking -- safe to init before anything else)
+	var otelShutdown func(context.Context) error
+	if cfg.OTELEnabled && cfg.OTELEndpoint != "" {
+		var otelErr error
+		otelShutdown, otelErr = observability.Init(context.Background(), observability.Config{
+			Endpoint:       cfg.OTELEndpoint,
+			IngestionKey:   cfg.OTELIngestionKey,
+			ServiceName:    cfg.OTELServiceName,
+			ServiceRegion:  cfg.OTELServiceRegion,
+			TracesEnabled:  cfg.OTELTracesEnabled,
+			MetricsEnabled: cfg.OTELMetricsEnabled,
+			SampleRate:     cfg.OTELSampleRate,
+		})
+		if otelErr != nil {
+			logger.Warn("failed to initialize OpenTelemetry (continuing without tracing)", "error", otelErr)
+		} else {
+			logger.Info("OpenTelemetry initialized",
+				"endpoint", cfg.OTELEndpoint,
+				"service", cfg.OTELServiceName,
+				"region", cfg.OTELServiceRegion,
+				"sample_rate", cfg.OTELSampleRate,
+			)
+		}
+	}
+	otelInstruments := observability.NewInstruments()
+	_ = otelInstruments // used by handlers via closure; full wiring in router TODO
+
+	// Database (with optional pgx tracing via otelpgx)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pgxCfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("failed to parse database URL", "error", err)
+		os.Exit(1)
+	}
+	if cfg.OTELEnabled && cfg.OTELTracesEnabled {
+		pgxCfg.ConnConfig.Tracer = otelpgx.NewTracer()
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, pgxCfg)
 	if err != nil {
 		logger.Error("failed to connect to database", "error", err)
 		os.Exit(1)
@@ -58,10 +103,19 @@ func main() {
 	}
 	logger.Info("connected to database")
 
+	// DB connection pool metrics (reported every 60s via OTEL async reader)
+	if cfg.OTELEnabled && cfg.OTELMetricsEnabled {
+		observability.StartDBPoolMetrics(context.Background(), pool, cfg.OTELServiceRegion)
+	}
+
 	// Components
 	store := postgres.NewStore(pool)
 	jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.TokenTTL, cfg.RefreshTTL)
-	engine := eval.Chain(eval.NewEngine(), eval.WithLogging(logger))
+	evalMiddlewares := []eval.Middleware{eval.WithLogging(logger)}
+	if cfg.OTELEnabled && cfg.OTELTracesEnabled {
+		evalMiddlewares = append(evalMiddlewares, eval.WithTracing())
+	}
+	engine := eval.Chain(eval.NewEngine(), evalMiddlewares...)
 	sseServer := sse.NewServer(logger)
 	evalCache := cache.NewCache(store, logger, sseServer)
 
@@ -109,6 +163,10 @@ func main() {
 		}
 	}
 
+	// Status handler (public, multi-region health aggregation)
+	poolAdapter := status.NewPgxPoolAdapter(pool)
+	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion)
+
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
@@ -117,7 +175,7 @@ func main() {
 		PayUMode:        cfg.PayUMode,
 		DashboardURL:    cfg.DashboardURL,
 		AppBaseURL:      cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH)
 
 	// Server
 	srv := &http.Server{
@@ -149,5 +207,15 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("shutdown error", "error", err)
 	}
+
+	// Drain pending OTEL telemetry before exiting
+	if otelShutdown != nil {
+		otelDrainCtx, otelDrainCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer otelDrainCancel()
+		if err := otelShutdown(otelDrainCtx); err != nil {
+			logger.Warn("failed to flush OpenTelemetry telemetry", "error", err)
+		}
+	}
+
 	logger.Info("server stopped")
 }

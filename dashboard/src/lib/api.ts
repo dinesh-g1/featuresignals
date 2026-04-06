@@ -36,6 +36,21 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+const REGION_API_ENDPOINTS: Record<string, string> = {
+  us: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+  eu: process.env.NEXT_PUBLIC_API_URL_EU || "https://api.eu.featuresignals.com",
+  in: process.env.NEXT_PUBLIC_API_URL_IN || "https://api.in.featuresignals.com",
+};
+
+function getApiUrl(): string {
+  if (typeof window === "undefined") return API_URL;
+  const org = useAppStore.getState().organization;
+  if (org?.data_region && REGION_API_ENDPOINTS[org.data_region]) {
+    return REGION_API_ENDPOINTS[org.data_region];
+  }
+  return API_URL;
+}
+
 interface RequestOptions {
   method?: string;
   body?: unknown;
@@ -59,7 +74,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
   if (!refreshToken) return false;
 
   try {
-    const res = await fetch(`${API_URL}/v1/auth/refresh`, {
+    const res = await fetch(`${getApiUrl()}/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -94,7 +109,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers["Authorization"] = `Bearer ${options.token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const baseUrl = options.token ? getApiUrl() : API_URL;
+  const res = await fetch(`${baseUrl}${path}`, {
     method: options.method || "GET",
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -182,6 +198,37 @@ export const api = {
   // Auth
   login: (data: { email: string; password: string }) =>
     request<LoginResponse>("/v1/auth/login", { method: "POST", body: data }),
+
+  loginMultiRegion: async (data: { email: string; password: string }): Promise<LoginResponse> => {
+    const regions = Object.entries(REGION_API_ENDPOINTS);
+    let lastError: Error | null = null;
+
+    for (const [, endpoint] of regions) {
+      try {
+        const res = await fetch(`${endpoint}/v1/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (res.ok) {
+          return res.json() as Promise<LoginResponse>;
+        }
+        const errData = await res.json().catch(() => ({ error: "Unknown error" }));
+        if (res.status === 401) {
+          lastError = new APIError(401, errData.error || "Invalid credentials");
+          continue;
+        }
+        if (res.status === 403) {
+          throw new APIError(403, errData.error || "Account suspended");
+        }
+        lastError = new APIError(res.status, errData.error || "Login failed");
+      } catch (err) {
+        if (err instanceof APIError) throw err;
+        lastError = err instanceof Error ? err : new Error("Network error");
+      }
+    }
+    throw lastError || new Error("Login failed across all regions");
+  },
   refresh: (refreshToken: string) =>
     request<AuthTokens>(
       "/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
@@ -189,12 +236,16 @@ export const api = {
     request("/v1/auth/send-verification-email", { method: "POST", token }),
 
   // Verify-first signup (OTP-based)
-  initiateSignup: (data: { email: string; password: string; name: string; org_name: string }) =>
+  initiateSignup: (data: { email: string; password: string; name: string; org_name: string; data_region?: string }) =>
     request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", { method: "POST", body: data }),
   completeSignup: (data: { email: string; otp: string }) =>
     request<SignupResponse>("/v1/auth/complete-signup", { method: "POST", body: data }),
   resendSignupOTP: (email: string) =>
     request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", { method: "POST", body: { email } }),
+
+  // Regions
+  listRegions: () =>
+    request<{ regions: Array<{ code: string; name: string; flag: string; api_endpoint: string; app_endpoint: string }> }>("/v1/regions", {}),
 
   // Sales inquiry
   submitSalesInquiry: (data: { contact_name: string; email: string; company: string; team_size?: string; message?: string }) =>

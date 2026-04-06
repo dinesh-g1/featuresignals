@@ -35,7 +35,7 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const data = await api.login({ email, password });
+      const data = await api.loginMultiRegion({ email, password });
       setAuth(
         data.tokens.access_token,
         data.tokens.refresh_token,

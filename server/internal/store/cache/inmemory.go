@@ -6,7 +6,16 @@ import (
 	"log/slog"
 	"sync"
 
+	"go.opentelemetry.io/otel"
+	ometric "go.opentelemetry.io/otel/metric"
+
 	"github.com/featuresignals/server/internal/domain"
+)
+
+var (
+	cacheMeter   = otel.Meter("featuresignals/cache")
+	cacheHitCtr, _  = cacheMeter.Int64Counter("cache.hit", ometric.WithDescription("Evaluation cache hits"))
+	cacheMissCtr, _ = cacheMeter.Int64Counter("cache.miss", ometric.WithDescription("Evaluation cache misses"))
 )
 
 // Broadcaster pushes flag-change events to connected clients (e.g. via SSE).
@@ -52,8 +61,15 @@ func (c *Cache) SetWebhookNotifier(n WebhookNotifier) {
 // GetRuleset returns the cached ruleset for an environment.
 func (c *Cache) GetRuleset(envID string) *domain.Ruleset {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.rulesets[envID]
+	rs := c.rulesets[envID]
+	c.mu.RUnlock()
+
+	if rs != nil {
+		cacheHitCtr.Add(context.Background(), 1)
+	} else {
+		cacheMissCtr.Add(context.Background(), 1)
+	}
+	return rs
 }
 
 // LoadRuleset fetches the full ruleset from the database and caches it.

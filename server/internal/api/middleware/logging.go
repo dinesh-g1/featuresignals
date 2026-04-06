@@ -61,13 +61,18 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 				level = slog.LevelWarn
 			}
 
-			reqLogger.Log(r.Context(), level, "request completed",
+			logAttrs := []any{
 				"status", rw.status,
 				"duration_ms", duration.Milliseconds(),
 				"bytes_out", rw.bytesOut,
 				"remote", r.RemoteAddr,
 				"user_agent", r.UserAgent(),
-			)
+			}
+			if orgID, _ := r.Context().Value(OrgIDKey).(string); orgID != "" {
+				logAttrs = append(logAttrs, "org_id", orgID)
+			}
+
+			reqLogger.Log(r.Context(), level, "request completed", logAttrs...)
 		})
 	}
 }

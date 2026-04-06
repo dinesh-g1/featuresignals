@@ -1,0 +1,153 @@
+# Parameterized regional deployment template.
+# Usage: REGION=us DOMAIN_API=api.featuresignals.com DOMAIN_APP=app.featuresignals.com docker compose -f docker-compose.region.yml up -d
+#
+# Required env vars (from .env):
+#   REGION, DOMAIN_API, DOMAIN_APP, DOMAIN_MAIN, DOMAIN_DOCS
+#   POSTGRES_PASSWORD, JWT_SECRET, CORS_ORIGIN
+#   OTEL_INGESTION_KEY (optional)
+#
+# Each region runs its own independent stack (Postgres, API, Dashboard, Caddy).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: featuresignals
+      POSTGRES_USER: fs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD:-}
+      DB_READONLY_PASSWORD: ${DB_READONLY_PASSWORD:-}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/pg-init:/docker-entrypoint-initdb.d:ro
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fs -d featuresignals"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate:v4.17.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./server/migrations:/migrations
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable",
+        "up",
+      ]
+
+  server:
+    build:
+      context: ./server
+      dockerfile: ../deploy/docker/Dockerfile.server
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: "8080"
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://${DOMAIN_APP},https://${DOMAIN_DOCS}}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-}
+      MSG91_EMAIL_TEMPLATE_ID: ${MSG91_EMAIL_TEMPLATE_ID:-}
+      MSG91_EMAIL_DOMAIN: ${MSG91_EMAIL_DOMAIN:-}
+      MSG91_EMAIL_FROM: ${MSG91_EMAIL_FROM:-}
+      MSG91_EMAIL_FROM_NAME: ${MSG91_EMAIL_FROM_NAME:-}
+      APP_BASE_URL: https://${DOMAIN_API}
+      DASHBOARD_URL: https://${DOMAIN_APP}
+      # OpenTelemetry
+      OTEL_ENABLED: ${OTEL_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-ingest.us2.signoz.cloud:443}
+      OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-featuresignals-api}
+      OTEL_SERVICE_REGION: ${REGION:-us}
+      OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-true}
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-true}
+      OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-false}
+      OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-warn}
+      OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-0.1}
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: ../deploy/docker/Dockerfile.dashboard
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
+        NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
+        NEXT_PUBLIC_API_URL_EU: ${NEXT_PUBLIC_API_URL_EU:-https://api.eu.featuresignals.com}
+        NEXT_PUBLIC_API_URL_IN: ${NEXT_PUBLIC_API_URL_IN:-https://api.in.featuresignals.com}
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  website-build:
+    build:
+      context: ./website
+      dockerfile: ../deploy/docker/Dockerfile.website
+    volumes:
+      - website-dist:/srv/website
+
+  docs-build:
+    build:
+      context: ./docs
+      dockerfile: ../deploy/docker/Dockerfile.docs
+    volumes:
+      - docs-dist:/srv/docs
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      website-build:
+        condition: service_completed_successfully
+      docs-build:
+        condition: service_completed_successfully
+      server:
+        condition: service_started
+      dashboard:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile.region:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - website-dist:/srv/website:ro
+      - docs-dist:/srv/docs:ro
+    environment:
+      DOMAIN_API: ${DOMAIN_API}
+      DOMAIN_APP: ${DOMAIN_APP}
+      DOMAIN_MAIN: ${DOMAIN_MAIN:-featuresignals.com}
+      DOMAIN_DOCS: ${DOMAIN_DOCS:-docs.featuresignals.com}
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:
+  website-dist:
+  docs-dist:

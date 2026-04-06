@@ -7,6 +7,27 @@ import (
 	"time"
 )
 
+func getEnvBool(key string, fallback bool) bool {
+	if v := os.Getenv(key); v != "" {
+		switch strings.ToLower(v) {
+		case "true", "1", "yes":
+			return true
+		case "false", "0", "no":
+			return false
+		}
+	}
+	return fallback
+}
+
+func getEnvFloat(key string, fallback float64) float64 {
+	if v := os.Getenv(key); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
+		}
+	}
+	return fallback
+}
+
 type Config struct {
 	Port        int
 	DatabaseURL string
@@ -37,6 +58,18 @@ type Config struct {
 
 	// Audit log retention in days (default 90, configurable for enterprise/self-hosted)
 	AuditRetentionDays int
+
+	// OpenTelemetry / SigNoz observability
+	OTELEnabled        bool
+	OTELEndpoint       string
+	OTELIngestionKey   string
+	OTELServiceName    string
+	OTELServiceRegion  string
+	OTELTracesEnabled  bool
+	OTELMetricsEnabled bool
+	OTELLogsEnabled    bool
+	OTELLogLevel       string
+	OTELSampleRate     float64
 }
 
 func Load() *Config {
@@ -66,6 +99,17 @@ func Load() *Config {
 		LicensePublicKey: getEnv("LICENSE_PUBLIC_KEY_PATH", ""),
 
 		AuditRetentionDays: getEnvInt("AUDIT_RETENTION_DAYS", 90),
+
+		OTELEnabled:        getEnvBool("OTEL_ENABLED", false),
+		OTELEndpoint:       getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+		OTELIngestionKey:   os.Getenv("OTEL_INGESTION_KEY"),
+		OTELServiceName:    getEnv("OTEL_SERVICE_NAME", "featuresignals-api"),
+		OTELServiceRegion:  getEnv("OTEL_SERVICE_REGION", "local"),
+		OTELTracesEnabled:  getEnvBool("OTEL_TRACES_ENABLED", true),
+		OTELMetricsEnabled: getEnvBool("OTEL_METRICS_ENABLED", true),
+		OTELLogsEnabled:    getEnvBool("OTEL_LOGS_ENABLED", false),
+		OTELLogLevel:       getEnv("OTEL_LOG_LEVEL", "warn"),
+		OTELSampleRate:     getEnvFloat("OTEL_TRACE_SAMPLE_RATE", 0.1),
 	}
 }
 

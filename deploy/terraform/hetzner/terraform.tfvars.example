@@ -1,0 +1,23 @@
+# US region
+# hcloud_token = "your-hetzner-api-token"
+# region       = "us"
+# location     = "ash"
+# server_type  = "cpx31"
+# domain_api   = "api.featuresignals.com"
+# domain_app   = "app.featuresignals.com"
+
+# EU region
+# hcloud_token = "your-hetzner-api-token"
+# region       = "eu"
+# location     = "fsn1"
+# server_type  = "cpx31"
+# domain_api   = "api.eu.featuresignals.com"
+# domain_app   = "app.eu.featuresignals.com"
+
+# Dev environment
+# hcloud_token = "your-hetzner-api-token"
+# region       = "dev"
+# location     = "fsn1"
+# server_type  = "cpx21"
+# domain_api   = "api.dev.featuresignals.com"
+# domain_app   = "app.dev.featuresignals.com"
