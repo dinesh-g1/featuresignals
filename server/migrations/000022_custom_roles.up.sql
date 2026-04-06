@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS custom_roles (
-    id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id      TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name        TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     base_role   TEXT NOT NULL DEFAULT 'developer',
