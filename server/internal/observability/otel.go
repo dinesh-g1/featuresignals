@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	otellog "go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -23,6 +26,7 @@ type Config struct {
 	ServiceRegion  string
 	TracesEnabled  bool
 	MetricsEnabled bool
+	LogsEnabled    bool
 	SampleRate     float64
 }
 
@@ -94,6 +98,27 @@ func Init(ctx context.Context, cfg Config) (shutdown func(context.Context) error
 		)
 		otel.SetMeterProvider(mp)
 		shutdownFuncs = append(shutdownFuncs, mp.Shutdown)
+	}
+
+	if cfg.LogsEnabled {
+		logExporter, lErr := otlploggrpc.New(ctx,
+			otlploggrpc.WithEndpoint(cfg.Endpoint),
+			otlploggrpc.WithHeaders(headers),
+			otlploggrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, "")),
+		)
+		if lErr != nil {
+			return nil, lErr
+		}
+
+		lp := sdklog.NewLoggerProvider(
+			sdklog.WithResource(res),
+			sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter,
+				sdklog.WithMaxQueueSize(2048),
+				sdklog.WithExportTimeout(30*time.Second),
+			)),
+		)
+		otellog.SetLoggerProvider(lp)
+		shutdownFuncs = append(shutdownFuncs, lp.Shutdown)
 	}
 
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(

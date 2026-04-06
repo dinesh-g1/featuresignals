@@ -20,7 +20,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,MSG91_AUTH_KEY,MSG91_EMAIL_TEMPLATE_ID,MSG91_EMAIL_DOMAIN,MSG91_EMAIL_FROM,MSG91_EMAIL_FROM_NAME,APP_BASE_URL,DASHBOARD_URL
+          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,MSG91_AUTH_KEY,MSG91_EMAIL_TEMPLATE_ID,MSG91_EMAIL_DOMAIN,MSG91_EMAIL_FROM,MSG91_EMAIL_FROM_NAME,APP_BASE_URL,DASHBOARD_URL,OTEL_INGESTION_KEY
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -34,6 +34,7 @@ jobs:
             MSG91_EMAIL_FROM_NAME=${MSG91_EMAIL_FROM_NAME}
             APP_BASE_URL=${APP_BASE_URL}
             DASHBOARD_URL=${DASHBOARD_URL}
+            OTEL_INGESTION_KEY=${OTEL_INGESTION_KEY}
             ENVEOF
             chmod 600 /opt/featuresignals/.env
         env:
@@ -48,6 +49,7 @@ jobs:
           MSG91_EMAIL_FROM_NAME: ${{ secrets.MSG91_EMAIL_FROM_NAME }}
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
           DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
+          OTEL_INGESTION_KEY: ${{ secrets.OTEL_INGESTION_KEY }}
 
       - name: Pre-deploy database backup
         uses: appleboy/ssh-action@v1
