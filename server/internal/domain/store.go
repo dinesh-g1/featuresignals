@@ -52,6 +52,7 @@ type AuditReader interface {
 	ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]AuditEntry, error)
 	ListAuditEntriesForExport(ctx context.Context, orgID string, from, to string) ([]AuditEntry, error)
 	GetLastAuditHash(ctx context.Context, orgID string) (string, error)
+	CountAuditEntries(ctx context.Context, orgID string) (int, error)
 }
 
 // ProjectReader provides read access to projects.
@@ -150,6 +151,7 @@ type ApprovalStore interface {
 	GetApprovalRequest(ctx context.Context, id string) (*ApprovalRequest, error)
 	ListApprovalRequests(ctx context.Context, orgID string, status string, limit, offset int) ([]ApprovalRequest, error)
 	UpdateApprovalRequest(ctx context.Context, ar *ApprovalRequest) error
+	CountApprovalRequests(ctx context.Context, orgID string, status string) (int, error)
 }
 
 // BillingStore provides access to billing and usage data.

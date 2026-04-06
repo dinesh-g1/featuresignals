@@ -167,6 +167,10 @@ func (noopStore) ListAuditEntriesForExport(context.Context, string, string, stri
 	return nil, errNoop
 }
 func (noopStore) GetLastAuditHash(context.Context, string) (string, error) { return "", errNoop }
+func (noopStore) CountAuditEntries(context.Context, string) (int, error)   { return 0, errNoop }
+func (noopStore) CountApprovalRequests(context.Context, string, string) (int, error) {
+	return 0, errNoop
+}
 
 func (noopStore) LoadRuleset(context.Context, string, string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	return nil, nil, nil, errNoop

@@ -75,6 +75,11 @@ services:
       OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-true}
       OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-debug}
       OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-1.0}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -88,9 +93,15 @@ services:
         NEXT_PUBLIC_API_URL: https://api.featuresignals.com
     restart: unless-stopped
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     environment:
       NEXT_PUBLIC_API_URL: https://api.featuresignals.com
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -119,9 +130,9 @@ services:
       docs-build:
         condition: service_completed_successfully
       server:
-        condition: service_started
+        condition: service_healthy
       dashboard:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"

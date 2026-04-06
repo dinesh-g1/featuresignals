@@ -157,6 +157,10 @@ func (s *tierMockStore) ListAuditEntriesForExport(context.Context, string, strin
 	return nil, nil
 }
 func (s *tierMockStore) GetLastAuditHash(context.Context, string) (string, error) { return "", nil }
+func (s *tierMockStore) CountAuditEntries(context.Context, string) (int, error)   { return 0, nil }
+func (s *tierMockStore) CountApprovalRequests(context.Context, string, string) (int, error) {
+	return 0, nil
+}
 func (s *tierMockStore) LoadRuleset(context.Context, string, string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	return nil, nil, nil, nil
 }

@@ -102,6 +102,11 @@ func main() {
 		logger.Error("failed to parse database URL", "error", err)
 		os.Exit(1)
 	}
+	pgxCfg.MaxConns = int32(cfg.DBMaxConns)
+	pgxCfg.MinConns = int32(cfg.DBMinConns)
+	pgxCfg.MaxConnLifetime = 30 * time.Minute
+	pgxCfg.MaxConnIdleTime = 5 * time.Minute
+	logger.Info("database pool configured", "max_conns", cfg.DBMaxConns, "min_conns", cfg.DBMinConns)
 	if cfg.OTELEnabled && cfg.OTELTracesEnabled {
 		pgxCfg.ConnConfig.Tracer = otelpgx.NewTracer()
 	}

@@ -65,7 +65,7 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	BootstrapEnvironments(r.Context(), h.store, project.ID)
+	BootstrapEnvironments(r.Context(), h.store, project.ID, orgID)
 
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(project)
@@ -169,13 +169,13 @@ func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Color = "#6B7280"
 	}
 
-	env := &domain.Environment{ProjectID: projectID, Name: req.Name, Slug: req.Slug, Color: req.Color}
+	orgID := middleware.GetOrgID(r.Context())
+	env := &domain.Environment{ProjectID: projectID, OrgID: orgID, Name: req.Name, Slug: req.Slug, Color: req.Color}
 	if err := h.store.CreateEnvironment(r.Context(), env); err != nil {
 		httputil.Error(w, http.StatusConflict, "environment slug already exists in this project")
 		return
 	}
 
-	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(env)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{

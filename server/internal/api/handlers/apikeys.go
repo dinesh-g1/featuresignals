@@ -77,8 +77,10 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	rawKey, keyHash, keyPrefix := generateAPIKey(keyType)
 
+	orgID := middleware.GetOrgID(r.Context())
 	apiKey := &domain.APIKey{
 		EnvID:     envID,
+		OrgID:     orgID,
 		KeyHash:   keyHash,
 		KeyPrefix: keyPrefix,
 		Name:      req.Name,
@@ -109,7 +111,6 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	actorID := middleware.GetUserID(r.Context())
-	orgID := middleware.GetOrgID(r.Context())
 	keyIDStr := apiKey.ID
 	meta, _ := json.Marshal(map[string]string{"key_prefix": apiKey.KeyPrefix, "env_id": envID})
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{

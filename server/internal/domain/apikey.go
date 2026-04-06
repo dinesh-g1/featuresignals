@@ -18,6 +18,7 @@ const (
 type APIKey struct {
 	ID         string     `json:"id" db:"id"`
 	EnvID      string     `json:"env_id" db:"env_id"`
+	OrgID      string     `json:"org_id" db:"org_id"`
 	KeyHash    string     `json:"-" db:"key_hash"`
 	KeyPrefix  string     `json:"key_prefix" db:"key_prefix"`
 	Name       string     `json:"name" db:"name"`

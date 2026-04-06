@@ -74,8 +74,10 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		matchType = domain.MatchAll
 	}
 
+	orgID := middleware.GetOrgID(r.Context())
 	seg := &domain.Segment{
 		ProjectID:   projectID,
+		OrgID:       orgID,
 		Key:         req.Key,
 		Name:        req.Name,
 		Description: req.Description,
@@ -87,8 +89,6 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusConflict, "segment key already exists in this project")
 		return
 	}
-
-	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(seg)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{

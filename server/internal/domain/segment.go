@@ -7,6 +7,7 @@ import "time"
 type Segment struct {
 	ID          string      `json:"id" db:"id"`
 	ProjectID   string      `json:"project_id" db:"project_id"`
+	OrgID       string      `json:"org_id" db:"org_id"`
 	Key         string      `json:"key" db:"key"`
 	Name        string      `json:"name" db:"name"`
 	Description string      `json:"description" db:"description"`

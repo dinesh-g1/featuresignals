@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -17,7 +18,9 @@ import (
 )
 
 type Store struct {
-	pool *pgxpool.Pool
+	pool     *pgxpool.Pool
+	lockMu   sync.Mutex
+	lockConn *pgxpool.Conn
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
@@ -338,14 +341,14 @@ func (s *Store) DeleteProject(ctx context.Context, id string) error {
 
 func (s *Store) CreateEnvironment(ctx context.Context, e *domain.Environment) error {
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO environments (project_id, name, slug, color) VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
-		e.ProjectID, e.Name, e.Slug, e.Color,
-	).Scan(&e.ID, &e.CreatedAt)
+		`INSERT INTO environments (project_id, org_id, name, slug, color) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at`,
+		e.ProjectID, e.OrgID, e.Name, e.Slug, e.Color,
+	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
 }
 
 func (s *Store) ListEnvironments(ctx context.Context, projectID string) ([]domain.Environment, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, name, slug, color, created_at FROM environments WHERE project_id = $1 ORDER BY created_at`, projectID)
+		`SELECT id, project_id, org_id, name, slug, color, created_at, updated_at FROM environments WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +356,7 @@ func (s *Store) ListEnvironments(ctx context.Context, projectID string) ([]domai
 	envs := []domain.Environment{}
 	for rows.Next() {
 		var e domain.Environment
-		if err := rows.Scan(&e.ID, &e.ProjectID, &e.Name, &e.Slug, &e.Color, &e.CreatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.ProjectID, &e.OrgID, &e.Name, &e.Slug, &e.Color, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
 		envs = append(envs, e)
@@ -364,8 +367,8 @@ func (s *Store) ListEnvironments(ctx context.Context, projectID string) ([]domai
 func (s *Store) GetEnvironment(ctx context.Context, id string) (*domain.Environment, error) {
 	e := &domain.Environment{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, project_id, name, slug, color, created_at FROM environments WHERE id = $1`, id,
-	).Scan(&e.ID, &e.ProjectID, &e.Name, &e.Slug, &e.Color, &e.CreatedAt)
+		`SELECT id, project_id, org_id, name, slug, color, created_at, updated_at FROM environments WHERE id = $1`, id,
+	).Scan(&e.ID, &e.ProjectID, &e.OrgID, &e.Name, &e.Slug, &e.Color, &e.CreatedAt, &e.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "environment")
 	}
@@ -400,9 +403,9 @@ func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
 		f.Status = domain.StatusActive
 	}
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO flags (project_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at, updated_at`,
-		f.ProjectID, f.Key, f.Name, f.Description, f.FlagType, f.Category, f.Status, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup,
+		`INSERT INTO flags (project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id, created_at, updated_at`,
+		f.ProjectID, f.OrgID, f.Key, f.Name, f.Description, f.FlagType, f.Category, f.Status, f.DefaultValue, f.Tags, f.ExpiresAt, f.Prerequisites, f.MutualExclusionGroup,
 	).Scan(&f.ID, &f.CreatedAt, &f.UpdatedAt)
 	return wrapConflict(err, "flag key")
 }
@@ -410,9 +413,9 @@ func (s *Store) CreateFlag(ctx context.Context, f *domain.Flag) error {
 func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error) {
 	f := &domain.Flag{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE project_id = $1 AND key = $2`, projectID, key,
-	).Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt)
+	).Scan(&f.ID, &f.ProjectID, &f.OrgID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "flag")
 	}
@@ -421,7 +424,7 @@ func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Fla
 
 func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
@@ -430,7 +433,7 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 	flags := []domain.Flag{}
 	for rows.Next() {
 		var f domain.Flag
-		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.OrgID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
 			return nil, err
 		}
 		flags = append(flags, f)
@@ -466,25 +469,25 @@ func (s *Store) UpsertFlagState(ctx context.Context, fs *domain.FlagState) error
 		return fmt.Errorf("marshal variants: %w", err)
 	}
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO flag_states (flag_id, env_id, enabled, default_value, rules, percentage_rollout, variants, scheduled_enable_at, scheduled_disable_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		 ON CONFLICT (flag_id, env_id) DO UPDATE SET enabled=$3, default_value=$4, rules=$5, percentage_rollout=$6,
-		   variants=$7, scheduled_enable_at=$8, scheduled_disable_at=$9, updated_at=NOW()
-		 RETURNING id, updated_at`,
-		fs.FlagID, fs.EnvID, fs.Enabled, fs.DefaultValue, rulesJSON, fs.PercentageRollout,
+		`INSERT INTO flag_states (flag_id, env_id, org_id, enabled, default_value, rules, percentage_rollout, variants, scheduled_enable_at, scheduled_disable_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		 ON CONFLICT (flag_id, env_id) DO UPDATE SET enabled=$4, default_value=$5, rules=$6, percentage_rollout=$7,
+		   variants=$8, scheduled_enable_at=$9, scheduled_disable_at=$10, updated_at=NOW()
+		 RETURNING id, created_at, updated_at`,
+		fs.FlagID, fs.EnvID, fs.OrgID, fs.Enabled, fs.DefaultValue, rulesJSON, fs.PercentageRollout,
 		variantsJSON, fs.ScheduledEnableAt, fs.ScheduledDisableAt,
-	).Scan(&fs.ID, &fs.UpdatedAt)
+	).Scan(&fs.ID, &fs.CreatedAt, &fs.UpdatedAt)
 }
 
 func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain.FlagState, error) {
 	fs := &domain.FlagState{}
 	var rulesJSON, variantsJSON []byte
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout,
-		        variants, scheduled_enable_at, scheduled_disable_at, updated_at
+		`SELECT id, flag_id, env_id, org_id, enabled, default_value, rules, percentage_rollout,
+		        variants, scheduled_enable_at, scheduled_disable_at, created_at, updated_at
 		 FROM flag_states WHERE flag_id = $1 AND env_id = $2`, flagID, envID,
-	).Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue, &rulesJSON,
-		&fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt)
+	).Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.OrgID, &fs.Enabled, &fs.DefaultValue, &rulesJSON,
+		&fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.CreatedAt, &fs.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "flag state")
 	}
@@ -501,8 +504,8 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 
 func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, flag_id, env_id, enabled, default_value, rules, percentage_rollout,
-		        variants, scheduled_enable_at, scheduled_disable_at, updated_at
+		`SELECT id, flag_id, env_id, org_id, enabled, default_value, rules, percentage_rollout,
+		        variants, scheduled_enable_at, scheduled_disable_at, created_at, updated_at
 		 FROM flag_states
 		 WHERE (scheduled_enable_at IS NOT NULL AND scheduled_enable_at <= $1)
 		    OR (scheduled_disable_at IS NOT NULL AND scheduled_disable_at <= $1)`, before)
@@ -514,8 +517,8 @@ func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]d
 	for rows.Next() {
 		var fs domain.FlagState
 		var rulesJSON, variantsJSON []byte
-		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue,
-			&rulesJSON, &fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
+		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.OrgID, &fs.Enabled, &fs.DefaultValue,
+			&rulesJSON, &fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.CreatedAt, &fs.UpdatedAt); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
@@ -537,16 +540,16 @@ func (s *Store) CreateSegment(ctx context.Context, seg *domain.Segment) error {
 		return fmt.Errorf("marshal rules: %w", err)
 	}
 	err = s.pool.QueryRow(ctx,
-		`INSERT INTO segments (project_id, key, name, description, match_type, rules)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
-		seg.ProjectID, seg.Key, seg.Name, seg.Description, seg.MatchType, rulesJSON,
+		`INSERT INTO segments (project_id, org_id, key, name, description, match_type, rules)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`,
+		seg.ProjectID, seg.OrgID, seg.Key, seg.Name, seg.Description, seg.MatchType, rulesJSON,
 	).Scan(&seg.ID, &seg.CreatedAt, &seg.UpdatedAt)
 	return wrapConflict(err, "segment key")
 }
 
 func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Segment, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, key, name, description, match_type, rules, created_at, updated_at
+		`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
 		 FROM segments WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
@@ -556,7 +559,7 @@ func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Se
 	for rows.Next() {
 		var seg domain.Segment
 		var rulesJSON []byte
-		if err := rows.Scan(&seg.ID, &seg.ProjectID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.CreatedAt, &seg.UpdatedAt); err != nil {
+		if err := rows.Scan(&seg.ID, &seg.ProjectID, &seg.OrgID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.CreatedAt, &seg.UpdatedAt); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal(rulesJSON, &seg.Rules); err != nil {
@@ -571,9 +574,9 @@ func (s *Store) GetSegment(ctx context.Context, projectID, key string) (*domain.
 	seg := &domain.Segment{}
 	var rulesJSON []byte
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, project_id, key, name, description, match_type, rules, created_at, updated_at
+		`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
 		 FROM segments WHERE project_id = $1 AND key = $2`, projectID, key,
-	).Scan(&seg.ID, &seg.ProjectID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.CreatedAt, &seg.UpdatedAt)
+	).Scan(&seg.ID, &seg.ProjectID, &seg.OrgID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.CreatedAt, &seg.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "segment")
 	}
@@ -605,9 +608,9 @@ func (s *Store) DeleteSegment(ctx context.Context, id string) error {
 
 func (s *Store) CreateAPIKey(ctx context.Context, k *domain.APIKey) error {
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO api_keys (env_id, key_hash, key_prefix, name, type, expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`,
-		k.EnvID, k.KeyHash, k.KeyPrefix, k.Name, k.Type, k.ExpiresAt,
+		`INSERT INTO api_keys (env_id, org_id, key_hash, key_prefix, name, type, expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at`,
+		k.EnvID, k.OrgID, k.KeyHash, k.KeyPrefix, k.Name, k.Type, k.ExpiresAt,
 	).Scan(&k.ID, &k.CreatedAt)
 	return wrapConflict(err, "api key")
 }
@@ -615,9 +618,9 @@ func (s *Store) CreateAPIKey(ctx context.Context, k *domain.APIKey) error {
 func (s *Store) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKey, error) {
 	k := &domain.APIKey{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
+		`SELECT id, env_id, org_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
 		 FROM api_keys WHERE id = $1`, id,
-	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
+	).Scan(&k.ID, &k.EnvID, &k.OrgID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "api key")
 	}
@@ -627,10 +630,10 @@ func (s *Store) GetAPIKeyByID(ctx context.Context, id string) (*domain.APIKey, e
 func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.APIKey, error) {
 	k := &domain.APIKey{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
+		`SELECT id, env_id, org_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
 		 FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL
 		 AND (expires_at IS NULL OR expires_at > NOW())`, keyHash,
-	).Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
+	).Scan(&k.ID, &k.EnvID, &k.OrgID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "api key")
 	}
@@ -639,7 +642,7 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.AP
 
 func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, env_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
+		`SELECT id, env_id, org_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
 		 FROM api_keys WHERE env_id = $1 ORDER BY created_at`, envID)
 	if err != nil {
 		return nil, err
@@ -648,7 +651,7 @@ func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey,
 	keys := []domain.APIKey{}
 	for rows.Next() {
 		var k domain.APIKey
-		if err := rows.Scan(&k.ID, &k.EnvID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt); err != nil {
+		if err := rows.Scan(&k.ID, &k.EnvID, &k.OrgID, &k.KeyHash, &k.KeyPrefix, &k.Name, &k.Type, &k.CreatedAt, &k.LastUsedAt, &k.RevokedAt, &k.ExpiresAt); err != nil {
 			return nil, err
 		}
 		keys = append(keys, k)
@@ -682,13 +685,21 @@ func (s *Store) RotateAPIKey(ctx context.Context, oldKeyID, envID, name, newKeyH
 		return nil, fmt.Errorf("set grace period: %w", err)
 	}
 
+	var oldKey domain.APIKey
+	err = tx.QueryRow(ctx,
+		`SELECT org_id FROM api_keys WHERE id = $1`, oldKeyID,
+	).Scan(&oldKey.OrgID)
+	if err != nil {
+		return nil, fmt.Errorf("get old key org_id: %w", err)
+	}
+
 	var newKey domain.APIKey
 	err = tx.QueryRow(ctx,
-		`INSERT INTO api_keys (env_id, name, key_hash, key_prefix, rotated_from_id)
-		 VALUES ($1, $2, $3, $4, $5)
-		 RETURNING id, env_id, name, key_prefix, created_at`,
-		envID, name, newKeyHash, newKeyPrefix, oldKeyID,
-	).Scan(&newKey.ID, &newKey.EnvID, &newKey.Name, &newKey.KeyPrefix, &newKey.CreatedAt)
+		`INSERT INTO api_keys (env_id, org_id, name, key_hash, key_prefix, rotated_from_id)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 RETURNING id, env_id, org_id, name, key_prefix, created_at`,
+		envID, oldKey.OrgID, name, newKeyHash, newKeyPrefix, oldKeyID,
+	).Scan(&newKey.ID, &newKey.EnvID, &newKey.OrgID, &newKey.Name, &newKey.KeyPrefix, &newKey.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("create rotated key: %w", err)
 	}
@@ -790,17 +801,35 @@ func (s *Store) ListWebhookDeliveries(ctx context.Context, webhookID string, lim
 // --- Audit Log ---
 
 func (s *Store) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error {
-	prevHash, _ := s.GetLastAuditHash(ctx, entry.OrgID)
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin audit tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var prevHash string
+	err = tx.QueryRow(ctx,
+		`SELECT COALESCE(integrity_hash, '') FROM audit_logs WHERE org_id = $1 ORDER BY created_at DESC LIMIT 1`,
+		entry.OrgID).Scan(&prevHash)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("get last audit hash: %w", err)
+	}
+
 	entry.CreatedAt = time.Now().UTC()
 	entry.IntegrityHash = entry.ComputeIntegrityHash(prevHash)
 
-	return s.pool.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`INSERT INTO audit_logs (org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at`,
 		entry.OrgID, entry.ActorID, entry.ActorType, entry.Action, entry.ResourceType, entry.ResourceID,
 		entry.BeforeState, entry.AfterState, entry.Metadata,
 		entry.IPAddress, entry.UserAgent, entry.IntegrityHash,
 	).Scan(&entry.ID, &entry.CreatedAt)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *Store) ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]domain.AuditEntry, error) {
@@ -872,8 +901,8 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 
 	// Load flag states for this environment
 	rows, err := s.pool.Query(ctx,
-		`SELECT fs.id, fs.flag_id, fs.env_id, fs.enabled, fs.default_value, fs.rules,
-		        fs.percentage_rollout, fs.variants, fs.scheduled_enable_at, fs.scheduled_disable_at, fs.updated_at
+		`SELECT fs.id, fs.flag_id, fs.env_id, fs.org_id, fs.enabled, fs.default_value, fs.rules,
+		        fs.percentage_rollout, fs.variants, fs.scheduled_enable_at, fs.scheduled_disable_at, fs.created_at, fs.updated_at
 		 FROM flag_states fs
 		 JOIN flags f ON f.id = fs.flag_id
 		 WHERE f.project_id = $1 AND fs.env_id = $2`, projectID, envID)
@@ -885,8 +914,8 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 	for rows.Next() {
 		var fs domain.FlagState
 		var rulesJSON, variantsJSON []byte
-		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.Enabled, &fs.DefaultValue,
-			&rulesJSON, &fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.UpdatedAt); err != nil {
+		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.OrgID, &fs.Enabled, &fs.DefaultValue,
+			&rulesJSON, &fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.CreatedAt, &fs.UpdatedAt); err != nil {
 			return nil, nil, nil, err
 		}
 		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
@@ -1046,42 +1075,30 @@ func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription
 	if sub.GatewayProvider == "" {
 		sub.GatewayProvider = domain.GatewayPayU
 	}
-	existing, err := s.GetSubscription(ctx, sub.OrgID)
-	if err != nil || existing == nil {
-		return s.pool.QueryRow(ctx,
-			`INSERT INTO subscriptions (org_id, gateway_provider, payu_txnid, payu_mihpayid,
-			    stripe_customer_id, stripe_subscription_id, stripe_payment_intent_id,
-			    plan, status, current_period_start, current_period_end, cancel_at_period_end)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-			 RETURNING id, created_at, updated_at`,
-			sub.OrgID, sub.GatewayProvider, sub.PayUTxnID, sub.PayUMihpayID,
-			sub.StripeCustomerID, sub.StripeSubscriptionID, sub.StripePaymentIntentID,
-			sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
-			sub.CancelAtPeriodEnd,
-		).Scan(&sub.ID, &sub.CreatedAt, &sub.UpdatedAt)
-	}
-
-	_, err = s.pool.Exec(ctx,
-		`UPDATE subscriptions SET
-		   gateway_provider = COALESCE(NULLIF($2, ''), gateway_provider),
-		   payu_txnid = COALESCE(NULLIF($3, ''), payu_txnid),
-		   payu_mihpayid = COALESCE(NULLIF($4, ''), payu_mihpayid),
-		   stripe_customer_id = COALESCE(NULLIF($5, ''), stripe_customer_id),
-		   stripe_subscription_id = COALESCE(NULLIF($6, ''), stripe_subscription_id),
-		   stripe_payment_intent_id = COALESCE(NULLIF($7, ''), stripe_payment_intent_id),
-		   plan = COALESCE(NULLIF($8, ''), plan),
-		   status = COALESCE(NULLIF($9, ''), status),
-		   current_period_start = CASE WHEN $10 = '0001-01-01'::timestamptz THEN current_period_start ELSE $10 END,
-		   current_period_end = CASE WHEN $11 = '0001-01-01'::timestamptz THEN current_period_end ELSE $11 END,
-		   cancel_at_period_end = $12,
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO subscriptions (org_id, gateway_provider, payu_txnid, payu_mihpayid,
+		    stripe_customer_id, stripe_subscription_id, stripe_payment_intent_id,
+		    plan, status, current_period_start, current_period_end, cancel_at_period_end)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		 ON CONFLICT (org_id) DO UPDATE SET
+		   gateway_provider = COALESCE(NULLIF(EXCLUDED.gateway_provider, ''), subscriptions.gateway_provider),
+		   payu_txnid = COALESCE(NULLIF(EXCLUDED.payu_txnid, ''), subscriptions.payu_txnid),
+		   payu_mihpayid = COALESCE(NULLIF(EXCLUDED.payu_mihpayid, ''), subscriptions.payu_mihpayid),
+		   stripe_customer_id = COALESCE(NULLIF(EXCLUDED.stripe_customer_id, ''), subscriptions.stripe_customer_id),
+		   stripe_subscription_id = COALESCE(NULLIF(EXCLUDED.stripe_subscription_id, ''), subscriptions.stripe_subscription_id),
+		   stripe_payment_intent_id = COALESCE(NULLIF(EXCLUDED.stripe_payment_intent_id, ''), subscriptions.stripe_payment_intent_id),
+		   plan = COALESCE(NULLIF(EXCLUDED.plan, ''), subscriptions.plan),
+		   status = COALESCE(NULLIF(EXCLUDED.status, ''), subscriptions.status),
+		   current_period_start = CASE WHEN EXCLUDED.current_period_start = '0001-01-01'::timestamptz THEN subscriptions.current_period_start ELSE EXCLUDED.current_period_start END,
+		   current_period_end = CASE WHEN EXCLUDED.current_period_end = '0001-01-01'::timestamptz THEN subscriptions.current_period_end ELSE EXCLUDED.current_period_end END,
+		   cancel_at_period_end = EXCLUDED.cancel_at_period_end,
 		   updated_at = NOW()
-		 WHERE org_id = $1`,
+		 RETURNING id, created_at, updated_at`,
 		sub.OrgID, sub.GatewayProvider, sub.PayUTxnID, sub.PayUMihpayID,
 		sub.StripeCustomerID, sub.StripeSubscriptionID, sub.StripePaymentIntentID,
 		sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
 		sub.CancelAtPeriodEnd,
-	)
-	return err
+	).Scan(&sub.ID, &sub.CreatedAt, &sub.UpdatedAt)
 }
 
 func (s *Store) UpdateOrgPlan(ctx context.Context, orgID, plan string, limits domain.PlanLimits) error {
@@ -1096,20 +1113,14 @@ func (s *Store) UpdateOrgPlan(ctx context.Context, orgID, plan string, limits do
 // --- Usage ---
 
 func (s *Store) IncrementUsage(ctx context.Context, orgID, metricName string, delta int64) error {
-	existing, err := s.GetUsage(ctx, orgID, metricName)
-	if err != nil || existing == nil {
-		now := time.Now()
-		periodStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-		periodEnd := periodStart.AddDate(0, 1, 0)
-		_, err := s.pool.Exec(ctx,
-			`INSERT INTO usage_metrics (org_id, metric_name, value, period_start, period_end)
-			 VALUES ($1, $2, $3, $4, $5)`,
-			orgID, metricName, delta, periodStart, periodEnd)
-		return err
-	}
-	_, err = s.pool.Exec(ctx,
-		`UPDATE usage_metrics SET value = value + $1 WHERE id = $2`,
-		delta, existing.ID)
+	now := time.Now()
+	periodStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	periodEnd := periodStart.AddDate(0, 1, 0)
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO usage_metrics (org_id, metric_name, value, period_start, period_end)
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (org_id, metric_name) DO UPDATE SET value = usage_metrics.value + EXCLUDED.value`,
+		orgID, metricName, delta, periodStart, periodEnd)
 	return err
 }
 
@@ -1183,7 +1194,7 @@ func (s *Store) GetOnboardingState(ctx context.Context, orgID string) (*domain.O
 	err := s.pool.QueryRow(ctx,
 		`SELECT org_id, plan_selected, first_flag_created, first_sdk_connected,
 		        first_evaluation, completed, completed_at, updated_at
-		 FROM onboarding_state WHERE org_id = $1`, orgID,
+		 FROM onboarding_states WHERE org_id = $1`, orgID,
 	).Scan(&state.OrgID, &state.PlanSelected, &state.FirstFlagCreated,
 		&state.FirstSDKConnected, &state.FirstEvaluation, &state.Completed,
 		&state.CompletedAt, &state.UpdatedAt)
@@ -1195,8 +1206,8 @@ func (s *Store) GetOnboardingState(ctx context.Context, orgID string) (*domain.O
 
 func (s *Store) UpsertOnboardingState(ctx context.Context, state *domain.OnboardingState) error {
 	_, err := s.pool.Exec(ctx,
-		`INSERT INTO onboarding_state (org_id, plan_selected, first_flag_created, first_sdk_connected,
-		                               first_evaluation, completed, completed_at, updated_at)
+		`INSERT INTO onboarding_states (org_id, plan_selected, first_flag_created, first_sdk_connected,
+		                                first_evaluation, completed, completed_at, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
 		 ON CONFLICT (org_id) DO UPDATE SET
 		   plan_selected = $2, first_flag_created = $3, first_sdk_connected = $4,
@@ -1630,6 +1641,71 @@ func (s *Store) UpdateCustomRole(ctx context.Context, role *domain.CustomRole) e
 func (s *Store) DeleteCustomRole(ctx context.Context, id string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM custom_roles WHERE id = $1`, id)
 	return err
+}
+
+// --- Advisory Locks ---
+
+func (s *Store) TryAdvisoryLock(ctx context.Context, lockID int64) (bool, error) {
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return false, fmt.Errorf("acquire conn for advisory lock: %w", err)
+	}
+
+	var acquired bool
+	err = conn.QueryRow(ctx, `SELECT pg_try_advisory_lock($1)`, lockID).Scan(&acquired)
+	if err != nil {
+		conn.Release()
+		return false, fmt.Errorf("try advisory lock: %w", err)
+	}
+
+	if !acquired {
+		conn.Release()
+		return false, nil
+	}
+
+	s.lockMu.Lock()
+	s.lockConn = conn
+	s.lockMu.Unlock()
+
+	return true, nil
+}
+
+func (s *Store) ReleaseAdvisoryLock(ctx context.Context, lockID int64) error {
+	s.lockMu.Lock()
+	conn := s.lockConn
+	s.lockConn = nil
+	s.lockMu.Unlock()
+
+	if conn == nil {
+		return nil
+	}
+	defer conn.Release()
+
+	_, err := conn.Exec(ctx, `SELECT pg_advisory_unlock($1)`, lockID)
+	return err
+}
+
+// --- Pagination Counts ---
+
+func (s *Store) CountAuditEntries(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM audit_logs WHERE org_id = $1`, orgID).Scan(&count)
+	return count, err
+}
+
+func (s *Store) CountApprovalRequests(ctx context.Context, orgID string, status string) (int, error) {
+	var count int
+	if status != "" {
+		err := s.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM approval_requests WHERE org_id = $1 AND status = $2`,
+			orgID, status).Scan(&count)
+		return count, err
+	}
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM approval_requests WHERE org_id = $1`,
+		orgID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) SoftDeleteUser(ctx context.Context, userID string) error {

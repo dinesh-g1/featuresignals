@@ -94,6 +94,10 @@ func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, erro
 func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) { return nil, nil }
 func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ string) ([]domain.AuditEntry, error) { return nil, nil }
 func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error) { return "", nil }
+func (m *mockStore) CountAuditEntries(_ context.Context, _ string) (int, error)   { return 0, nil }
+func (m *mockStore) CountApprovalRequests(_ context.Context, _ string, _ string) (int, error) {
+	return 0, nil
+}
 func (m *mockStore) GetEnvironmentByAPIKeyHash(_ context.Context, _ string) (*domain.Environment, *domain.APIKey, error) { return nil, nil, nil }
 func (m *mockStore) GetOrgMemberByID(_ context.Context, _ string) (*domain.OrgMember, error) { return nil, nil }
 func (m *mockStore) UpdateOrgMemberRole(_ context.Context, _ string, _ domain.Role) error { return nil }

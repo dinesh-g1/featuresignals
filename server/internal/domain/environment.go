@@ -7,8 +7,10 @@ import "time"
 type Environment struct {
 	ID        string    `json:"id" db:"id"`
 	ProjectID string    `json:"project_id" db:"project_id"`
+	OrgID     string    `json:"org_id" db:"org_id"`
 	Name      string    `json:"name" db:"name"`
 	Slug      string    `json:"slug" db:"slug"`
 	Color     string    `json:"color" db:"color"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
