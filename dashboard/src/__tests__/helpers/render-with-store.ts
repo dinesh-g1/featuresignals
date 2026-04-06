@@ -15,7 +15,7 @@ const defaults: Required<AuthSeed> = {
   token: "test-token",
   refreshToken: "test-refresh",
   user: { id: "user-1", name: "Test User", email: "test@example.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
-  organization: { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+  organization: { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
   expiresAt: Math.floor(Date.now() / 1000) + 3600,
   currentProjectId: "proj-1",
   currentEnvId: "env-1",

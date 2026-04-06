@@ -106,7 +106,7 @@ describe("AuthGuard", () => {
 
   it("updates store with new tokens after proactive refresh succeeds", async () => {
     const almostExpired = Math.floor(Date.now() / 1000) + 60;
-    useAppStore.getState().setAuth("old-tok", "old-ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "o1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, almostExpired);
+    useAppStore.getState().setAuth("old-tok", "old-ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "o1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, almostExpired);
 
     mockRefresh.mockResolvedValue({ access_token: "new-tok", refresh_token: "new-ref", expires_at: 99999 });
 

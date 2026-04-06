@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/riandyrn/otelchi"
 
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
@@ -15,6 +16,8 @@ import (
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/pricing"
+	"github.com/featuresignals/server/internal/status"
 )
 
 // BillingConfig holds PayU credentials passed through from config.
@@ -42,6 +45,7 @@ func NewRouter(
 	otpSender email.OTPSender,
 	appBaseURL string,
 	dashboardURL string,
+	statusHandler *status.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -53,6 +57,7 @@ func NewRouter(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	r.Use(otelchi.Middleware("featuresignals-api", otelchi.WithChiRoutes(r)))
 	r.Use(chimw.Compress(5))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
 	r.Use(chimw.RequestID)
@@ -68,10 +73,16 @@ func NewRouter(
 		httputil.Error(w, http.StatusMethodNotAllowed, "method not allowed")
 	})
 
-	// Health check
+	// Health check (no auth, no rate limit)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "featuresignals"})
 	})
+
+	// Status page endpoints (public, cacheable)
+	if statusHandler != nil {
+		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status", statusHandler.HandleLocalStatus)
+		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status/global", statusHandler.HandleGlobalStatus)
+	}
 
 	// Reusable role sets
 	ownerAdmin := []domain.Role{domain.RoleOwner, domain.RoleAdmin}
@@ -145,6 +156,7 @@ func NewRouter(
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
 			httputil.JSON(w, http.StatusOK, domain.Pricing)
 		})
+		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing/regions", pricing.HandleRegionPricing)
 
 		// Public auth routes (rate-limited to prevent brute force)
 		r.Group(func(r chi.Router) {
@@ -158,6 +170,15 @@ func NewRouter(
 			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
 			r.Post("/auth/complete-signup", signupH.CompleteSignup)
 			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
+
+			// Available data regions (public)
+			r.Get("/regions", func(w http.ResponseWriter, r *http.Request) {
+				regions := make([]domain.RegionInfo, 0, len(domain.Regions))
+				for _, code := range domain.RegionCodes() {
+					regions = append(regions, domain.Regions[code])
+				}
+				httputil.JSON(w, http.StatusOK, map[string]interface{}{"regions": regions})
+			})
 		})
 
 		// Sales inquiry (public, rate-limited)

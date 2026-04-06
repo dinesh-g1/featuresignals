@@ -11,6 +11,9 @@ type Organization struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 
+	// Multi-region data residency
+	DataRegion string `json:"data_region" db:"data_region"`
+
 	// Billing / plan fields
 	Plan                  string `json:"plan" db:"plan"`
 	PayUCustomerRef       string `json:"payu_customer_ref,omitempty" db:"payu_customer_ref"`

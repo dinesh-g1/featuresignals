@@ -17,6 +17,7 @@ export interface Organization {
   name: string;
   slug: string;
   plan: string;
+  data_region: string;
   trial_expires_at?: string;
   created_at: string;
   updated_at: string;

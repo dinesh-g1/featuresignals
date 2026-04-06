@@ -38,10 +38,11 @@ func NewSignupHandler(store signupStore, jwtMgr auth.TokenManager, otpSender ema
 }
 
 type initiateSignupRequest struct {
-	Email   string `json:"email"`
-	Name    string `json:"name"`
-	OrgName string `json:"org_name"`
-	Password string `json:"password"`
+	Email      string `json:"email"`
+	Name       string `json:"name"`
+	OrgName    string `json:"org_name"`
+	Password   string `json:"password"`
+	DataRegion string `json:"data_region"`
 }
 
 // InitiateSignup validates input, stores a pending registration, and sends the OTP email.
@@ -69,6 +70,14 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 	}
 	if !ValidatePasswordStrength(req.Password) {
 		httputil.Error(w, http.StatusBadRequest, "password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
+		return
+	}
+
+	if req.DataRegion == "" {
+		req.DataRegion = domain.RegionUS
+	}
+	if !domain.ValidRegion(req.DataRegion) {
+		httputil.Error(w, http.StatusBadRequest, "invalid data region")
 		return
 	}
 
@@ -102,6 +111,7 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 		Email:        req.Email,
 		Name:         req.Name,
 		OrgName:      req.OrgName,
+		DataRegion:   req.DataRegion,
 		PasswordHash: passwordHash,
 		OTPHash:      otpHash,
 		ExpiresAt:    time.Now().Add(time.Duration(domain.OTPExpiryMinutes) * time.Minute),
@@ -193,6 +203,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 		Name:           pr.OrgName,
 		Slug:           baseSlug,
 		Plan:           domain.PlanTrial,
+		DataRegion:     pr.DataRegion,
 		TrialExpiresAt: &trialExpiry,
 	}
 	if err := h.store.CreateOrganization(ctx, org); err != nil {

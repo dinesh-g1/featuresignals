@@ -13,8 +13,14 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/featuresignals/server/internal/domain"
 )
+
+var whTracer = otel.Tracer("featuresignals/webhook")
 
 // Event represents a flag change event dispatched to matching webhooks.
 type Event struct {
@@ -114,6 +120,15 @@ func eventMatches(subscribed []string, eventType string) bool {
 }
 
 func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) {
+	ctx, span := whTracer.Start(ctx, "webhook.Deliver",
+		trace.WithAttributes(
+			attribute.String("webhook_id", wh.ID),
+			attribute.String("webhook_url", wh.URL),
+			attribute.String("event_type", evt.Type),
+		),
+	)
+	defer span.End()
+
 	payload, _ := json.Marshal(evt)
 
 	var lastStatus int
@@ -157,6 +172,11 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 		}
 		d.logger.Warn("webhook non-2xx", "status", resp.StatusCode, "webhook_id", wh.ID, "attempt", attempt+1)
 	}
+
+	span.SetAttributes(
+		attribute.Bool("success", success),
+		attribute.Int("response_status", lastStatus),
+	)
 
 	delivery := &domain.WebhookDelivery{
 		WebhookID:      wh.ID,

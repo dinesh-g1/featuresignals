@@ -9,6 +9,7 @@ type PendingRegistration struct {
 	Email        string    `json:"email" db:"email"`
 	Name         string    `json:"name" db:"name"`
 	OrgName      string    `json:"org_name" db:"org_name"`
+	DataRegion   string    `json:"data_region" db:"data_region"`
 	PasswordHash string    `json:"-" db:"password_hash"`
 	OTPHash      string    `json:"-" db:"otp_hash"`
 	ExpiresAt    time.Time `json:"expires_at" db:"expires_at"`

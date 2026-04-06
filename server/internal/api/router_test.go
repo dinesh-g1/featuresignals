@@ -289,6 +289,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		noopOTPEmail{},
 		"http://localhost:8080",
 		"http://localhost:3000",
+		nil,
 	)
 }
 

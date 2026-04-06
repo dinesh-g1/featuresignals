@@ -53,10 +53,12 @@ const sidebars: SidebarsConfig = {
           type: 'category',
           label: 'Deployment',
           items: [
+            'self-hosting/onboarding-guide',
             'deployment/docker-compose',
             'deployment/self-hosting',
             'deployment/on-premises',
             'deployment/configuration',
+            'operations/incident-runbook',
           ],
         },
       ],

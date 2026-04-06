@@ -53,11 +53,14 @@ func (s *Store) CreateOrganization(ctx context.Context, org *domain.Organization
 	if org.Plan == "" {
 		org.Plan = domain.PlanFree
 	}
+	if org.DataRegion == "" {
+		org.DataRegion = domain.RegionUS
+	}
 	defaults := domain.PlanDefaults[org.Plan]
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit, trial_expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`,
-		org.Name, org.Slug, org.Plan, defaults.Seats, defaults.Projects, defaults.Environments, org.TrialExpiresAt,
+		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit, trial_expires_at, data_region)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at, updated_at`,
+		org.Name, org.Slug, org.Plan, defaults.Seats, defaults.Projects, defaults.Environments, org.TrialExpiresAt, org.DataRegion,
 	).Scan(&org.ID, &org.CreatedAt, &org.UpdatedAt)
 	return wrapConflict(err, "organization")
 }
@@ -67,11 +70,13 @@ func (s *Store) GetOrganization(ctx context.Context, id string) (*domain.Organiz
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, name, slug, created_at, updated_at,
 		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
-		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2)
+		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2),
+		        COALESCE(data_region, 'us')
 		 FROM organizations WHERE id = $1`, id,
 	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
 		&org.Plan, &org.PayUCustomerRef,
-		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
+		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit,
+		&org.DataRegion)
 	if err != nil {
 		return nil, wrapNotFound(err, "organization")
 	}
@@ -83,11 +88,13 @@ func (s *Store) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, name, slug, created_at, updated_at,
 		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
-		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2)
+		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2),
+		        COALESCE(data_region, 'us')
 		 FROM organizations WHERE id LIKE $1 || '%' LIMIT 1`, prefix,
 	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
 		&org.Plan, &org.PayUCustomerRef,
-		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit)
+		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit,
+		&org.DataRegion)
 	if err != nil {
 		return nil, wrapNotFound(err, "organization")
 	}
@@ -1134,29 +1141,33 @@ func (s *Store) UpsertOnboardingState(ctx context.Context, state *domain.Onboard
 // --- Pending Registrations ---
 
 func (s *Store) UpsertPendingRegistration(ctx context.Context, pr *domain.PendingRegistration) error {
+	if pr.DataRegion == "" {
+		pr.DataRegion = domain.RegionUS
+	}
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO pending_registrations (email, name, org_name, password_hash, otp_hash, expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO pending_registrations (email, name, org_name, password_hash, otp_hash, expires_at, data_region)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 ON CONFLICT (email) DO UPDATE SET
 		   name = EXCLUDED.name,
 		   org_name = EXCLUDED.org_name,
 		   password_hash = EXCLUDED.password_hash,
 		   otp_hash = EXCLUDED.otp_hash,
 		   expires_at = EXCLUDED.expires_at,
+		   data_region = EXCLUDED.data_region,
 		   attempts = 0,
 		   created_at = now()
 		 RETURNING id, created_at`,
-		pr.Email, pr.Name, pr.OrgName, pr.PasswordHash, pr.OTPHash, pr.ExpiresAt,
+		pr.Email, pr.Name, pr.OrgName, pr.PasswordHash, pr.OTPHash, pr.ExpiresAt, pr.DataRegion,
 	).Scan(&pr.ID, &pr.CreatedAt)
 }
 
 func (s *Store) GetPendingRegistrationByEmail(ctx context.Context, email string) (*domain.PendingRegistration, error) {
 	pr := &domain.PendingRegistration{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, email, name, org_name, password_hash, otp_hash, expires_at, attempts, created_at
+		`SELECT id, email, name, org_name, password_hash, otp_hash, expires_at, attempts, created_at, COALESCE(data_region, 'us')
 		 FROM pending_registrations WHERE email = $1`, email,
 	).Scan(&pr.ID, &pr.Email, &pr.Name, &pr.OrgName, &pr.PasswordHash, &pr.OTPHash,
-		&pr.ExpiresAt, &pr.Attempts, &pr.CreatedAt)
+		&pr.ExpiresAt, &pr.Attempts, &pr.CreatedAt, &pr.DataRegion)
 	if err != nil {
 		return nil, wrapNotFound(err, "pending registration")
 	}
@@ -1209,7 +1220,7 @@ func (s *Store) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time
 		`SELECT id, name, slug, created_at, updated_at,
 		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
 		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 3),
-		        trial_expires_at, deleted_at
+		        trial_expires_at, deleted_at, COALESCE(data_region, 'us')
 		 FROM organizations WHERE deleted_at IS NOT NULL AND deleted_at < $1`, deletedBefore)
 	if err != nil {
 		return nil, err
@@ -1221,7 +1232,7 @@ func (s *Store) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time
 		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt,
 			&o.Plan, &o.PayUCustomerRef,
 			&o.PlanSeatsLimit, &o.PlanProjectsLimit, &o.PlanEnvironmentsLimit,
-			&o.TrialExpiresAt, &o.DeletedAt); err != nil {
+			&o.TrialExpiresAt, &o.DeletedAt, &o.DataRegion); err != nil {
 			return nil, err
 		}
 		orgs = append(orgs, o)
@@ -1240,7 +1251,7 @@ func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince
 		`SELECT o.id, o.name, o.slug, o.created_at, o.updated_at,
 		        COALESCE(o.plan, 'free'), COALESCE(o.payu_customer_ref, ''),
 		        COALESCE(o.plan_seats_limit, 3), COALESCE(o.plan_projects_limit, 1), COALESCE(o.plan_environments_limit, 3),
-		        o.trial_expires_at, o.deleted_at
+		        o.trial_expires_at, o.deleted_at, COALESCE(o.data_region, 'us')
 		 FROM organizations o
 		 WHERE o.plan = $1 AND o.deleted_at IS NULL
 		 AND NOT EXISTS (
@@ -1258,7 +1269,7 @@ func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince
 		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt,
 			&o.Plan, &o.PayUCustomerRef,
 			&o.PlanSeatsLimit, &o.PlanProjectsLimit, &o.PlanEnvironmentsLimit,
-			&o.TrialExpiresAt, &o.DeletedAt); err != nil {
+			&o.TrialExpiresAt, &o.DeletedAt, &o.DataRegion); err != nil {
 			return nil, err
 		}
 		orgs = append(orgs, o)

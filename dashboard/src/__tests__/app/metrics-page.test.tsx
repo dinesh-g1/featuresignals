@@ -38,7 +38,7 @@ describe("MetricsPage", () => {
         "test-token",
         "test-refresh",
         { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
-        { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+        { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
         9999999999,
       );
     useAppStore.getState().setCurrentProject("proj-1");

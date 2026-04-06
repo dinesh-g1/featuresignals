@@ -85,7 +85,7 @@ describe("FlagsPage", () => {
     vi.clearAllMocks();
 
     const store = useAppStore.getState();
-    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
+    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 

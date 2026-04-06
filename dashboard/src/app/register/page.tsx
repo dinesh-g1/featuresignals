@@ -137,11 +137,17 @@ function RegisterForm() {
   const setAuth = useAppStore((s) => s.setAuth);
 
   const [step, setStep] = useState<"form" | "otp">("form");
-  const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "", data_region: "us" });
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+
+  const regionOptions = [
+    { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}" },
+    { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}" },
+    { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}" },
+  ];
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -271,6 +277,37 @@ function RegisterForm() {
               <Label htmlFor="org_name">Organization Name <span className="text-red-500">*</span></Label>
               <Input id="org_name" type="text" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required />
             </div>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-slate-700">Data Region <span className="text-red-500">*</span></legend>
+              <p className="text-xs text-slate-400">Choose where your data is stored for compliance</p>
+              <div className="grid grid-cols-3 gap-2">
+                {regionOptions.map((region) => (
+                  <label
+                    key={region.code}
+                    className={cn(
+                      "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all",
+                      form.data_region === region.code
+                        ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                        : "border-slate-200 hover:border-slate-300"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="data_region"
+                      value={region.code}
+                      checked={form.data_region === region.code}
+                      onChange={(e) => setForm({ ...form, data_region: e.target.value })}
+                      className="sr-only"
+                    />
+                    <span className="text-xl">{region.flag}</span>
+                    <span className={cn(
+                      "text-xs font-medium",
+                      form.data_region === region.code ? "text-indigo-700" : "text-slate-600"
+                    )}>{region.name}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <Button type="submit" disabled={!canSubmitForm || loading} className="w-full">
               {loading ? "Sending verification code..." : "Continue"}
             </Button>

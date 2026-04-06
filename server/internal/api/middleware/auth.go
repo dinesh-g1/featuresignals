@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/httputil"
 )
@@ -61,6 +64,15 @@ func JWTAuth(jwtMgr auth.TokenManager, revoker ...RevocationChecker) func(http.H
 			ctx = context.WithValue(ctx, OrgIDKey, claims.OrgID)
 			ctx = context.WithValue(ctx, RoleKey, claims.Role)
 			ctx = context.WithValue(ctx, ClaimsKey, claims)
+
+			if span := trace.SpanFromContext(ctx); span.IsRecording() {
+				span.SetAttributes(
+					attribute.String("org_id", claims.OrgID),
+					attribute.String("user_id", claims.UserID),
+					attribute.String("role", claims.Role),
+				)
+			}
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -1,0 +1,87 @@
+# FeatureSignals — On-Premises Deployment
+# Requirements: Docker 24+, Docker Compose v2, 4+ GB RAM
+#
+# Quick start:
+#   1. Copy .env.onprem.example to .env
+#   2. Fill in JWT_SECRET and POSTGRES_PASSWORD
+#   3. docker compose -f docker-compose.onprem.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-127.0.0.1:5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-featuresignals}
+      POSTGRES_USER: ${POSTGRES_USER:-fs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: ${DB_MEMORY_LIMIT:-2G}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fs} -d ${POSTGRES_DB:-featuresignals}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-server:${VERSION:-latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["migrate", "-path", "/migrations", "-database", "postgres://${POSTGRES_USER:-fs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-featuresignals}?sslmode=disable", "up"]
+    volumes:
+      - ./migrations:/migrations:ro
+
+  server:
+    image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-server:${VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-fs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-featuresignals}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      PORT: "8080"
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-90}
+      # License (optional, for enterprise features)
+      LICENSE_KEY: ${LICENSE_KEY:-}
+      # OpenTelemetry (optional)
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-featuresignals-onprem}
+      OTEL_SERVICE_REGION: ${OTEL_SERVICE_REGION:-onprem}
+      OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-false}
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-false}
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEMORY_LIMIT:-1G}
+
+  dashboard:
+    image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-dashboard:${VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    deploy:
+      resources:
+        limits:
+          memory: ${DASHBOARD_MEMORY_LIMIT:-512M}
+
+volumes:
+  pgdata:

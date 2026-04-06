@@ -8,7 +8,13 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
+
+var emailTracer = otel.Tracer("featuresignals/email")
 
 // MSG91Sender sends emails via MSG91's Email Send API using a pre-configured
 // template. It implements OTPSender for signup OTP delivery.
@@ -83,6 +89,10 @@ type msg91Address struct {
 // SendOTP delivers a 6-digit OTP to the given email address via the
 // pre-configured MSG91 email template.
 func (s *MSG91Sender) SendOTP(ctx context.Context, toEmail, toName, otp string) error {
+	ctx, span := emailTracer.Start(ctx, "email.SendOTP",
+		trace.WithAttributes(attribute.String("provider", "msg91")),
+	)
+	defer span.End()
 	payload := msg91EmailRequest{
 		Recipients: []msg91Recipient{
 			{
