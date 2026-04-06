@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -125,14 +126,35 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 
 	log.Info("checkout session created", "org_id", orgID, "gateway", gatewayName, "session_id", result.SessionID)
 
-	resp := map[string]interface{}{
-		"gateway": gatewayName,
-	}
-	if result.RedirectURL != "" {
-		resp["redirect_url"] = result.RedirectURL
+	resp := dto.CheckoutResponse{
+		Gateway:     gatewayName,
+		RedirectURL: result.RedirectURL,
 	}
 	for k, v := range result.GatewayData {
-		resp[k] = v
+		switch k {
+		case "payu_url":
+			resp.PayUURL = v
+		case "key":
+			resp.Key = v
+		case "txnid":
+			resp.Txnid = v
+		case "amount":
+			resp.Amount = v
+		case "productinfo":
+			resp.Productinfo = v
+		case "firstname":
+			resp.Firstname = v
+		case "email":
+			resp.Email = v
+		case "surl":
+			resp.Surl = v
+		case "furl":
+			resp.Furl = v
+		case "hash":
+			resp.Hash = v
+		case "phone":
+			resp.Phone = v
+		}
 	}
 
 	httputil.JSON(w, http.StatusOK, resp)
@@ -280,7 +302,7 @@ func (h *BillingHandler) HandleStripeWebhook(w http.ResponseWriter, r *http.Requ
 	// Idempotency check
 	existing, _ := h.store.GetPaymentEventByExternalID(r.Context(), domain.GatewayStripe, event.GatewayEventID)
 	if existing != nil {
-		httputil.JSON(w, http.StatusOK, map[string]string{"status": "already_processed"})
+		httputil.JSON(w, http.StatusOK, dto.WebhookStatusResponse{Status: "already_processed"})
 		return
 	}
 
@@ -297,7 +319,7 @@ func (h *BillingHandler) HandleStripeWebhook(w http.ResponseWriter, r *http.Requ
 		h.handleStripePaymentFailed(ctx, event)
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.JSON(w, http.StatusOK, dto.WebhookStatusResponse{Status: "ok"})
 }
 
 func (h *BillingHandler) handleStripeCheckoutCompleted(ctx context.Context, event *payment.WebhookEvent) {
@@ -478,7 +500,7 @@ func (h *BillingHandler) CancelSubscription(w http.ResponseWriter, r *http.Reque
 	_ = h.store.UpsertSubscription(r.Context(), sub)
 
 	log.Info("subscription canceled", "org_id", orgID, "gateway", gatewayName, "at_period_end", reqBody.AtPeriodEnd)
-	httputil.JSON(w, http.StatusOK, map[string]string{"status": "canceled"})
+	httputil.JSON(w, http.StatusOK, dto.CancelResponse{Status: "canceled"})
 }
 
 // GetBillingPortalURL returns a URL for the customer's billing portal.
@@ -511,7 +533,7 @@ func (h *BillingHandler) GetBillingPortalURL(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]string{"url": portalURL})
+	httputil.JSON(w, http.StatusOK, dto.PortalResponse{URL: portalURL})
 }
 
 // UpdateGateway allows an org admin to change the configured payment gateway.
@@ -539,7 +561,7 @@ func (h *BillingHandler) UpdateGateway(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info("payment gateway updated", "org_id", orgID, "gateway", req.Gateway)
-	httputil.JSON(w, http.StatusOK, map[string]string{"gateway": req.Gateway})
+	httputil.JSON(w, http.StatusOK, dto.GatewayResponse{Gateway: req.Gateway})
 }
 
 // GetSubscription returns the current subscription and plan info for the org.
@@ -556,29 +578,28 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 
 	sub, _ := h.store.GetSubscription(r.Context(), orgID)
 
-	resp := map[string]interface{}{
-		"plan":               org.Plan,
-		"seats_limit":        org.PlanSeatsLimit,
-		"projects_limit":     org.PlanProjectsLimit,
-		"environments_limit": org.PlanEnvironmentsLimit,
-		"gateway":            org.PaymentGateway,
+	resp := dto.SubscriptionResponse{
+		Plan:              org.Plan,
+		SeatsLimit:        org.PlanSeatsLimit,
+		ProjectsLimit:     org.PlanProjectsLimit,
+		EnvironmentsLimit: org.PlanEnvironmentsLimit,
+		Gateway:           org.PaymentGateway,
 	}
 
 	if sub != nil {
-		resp["status"] = sub.Status
-		resp["current_period_start"] = sub.CurrentPeriodStart
-		resp["current_period_end"] = sub.CurrentPeriodEnd
-		resp["cancel_at_period_end"] = sub.CancelAtPeriodEnd
-		resp["can_manage"] = sub.GatewayProvider == domain.GatewayStripe
+		resp.Status = sub.Status
+		resp.CurrentPeriodStart = &sub.CurrentPeriodStart
+		resp.CurrentPeriodEnd = &sub.CurrentPeriodEnd
+		resp.CancelAtPeriodEnd = sub.CancelAtPeriodEnd
+		resp.CanManage = sub.GatewayProvider == domain.GatewayStripe
 	} else {
-		resp["status"] = "none"
-		resp["can_manage"] = false
+		resp.Status = "none"
 	}
 
 	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
 	projects, _ := h.store.ListProjects(r.Context(), orgID)
-	resp["seats_used"] = len(members)
-	resp["projects_used"] = len(projects)
+	resp.SeatsUsed = len(members)
+	resp.ProjectsUsed = len(projects)
 
 	httputil.JSON(w, http.StatusOK, resp)
 }
@@ -604,14 +625,14 @@ func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 		totalEnvs += len(envs)
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"seats_used":         len(members),
-		"seats_limit":        org.PlanSeatsLimit,
-		"projects_used":      len(projects),
-		"projects_limit":     org.PlanProjectsLimit,
-		"environments_used":  totalEnvs,
-		"environments_limit": org.PlanEnvironmentsLimit,
-		"plan":               org.Plan,
+	httputil.JSON(w, http.StatusOK, dto.UsageResponse{
+		SeatsUsed:         len(members),
+		SeatsLimit:        org.PlanSeatsLimit,
+		ProjectsUsed:      len(projects),
+		ProjectsLimit:     org.PlanProjectsLimit,
+		EnvironmentsUsed:  totalEnvs,
+		EnvironmentsLimit: org.PlanEnvironmentsLimit,
+		Plan:              org.Plan,
 	})
 }
 

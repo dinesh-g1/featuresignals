@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
@@ -61,7 +62,7 @@ func TestTeamHandler_List(t *testing.T) {
 	}
 
 	var resp struct {
-		Data  []MemberResponse `json:"data"`
+		Data  []dto.MemberResponse `json:"data"`
 		Total int              `json:"total"`
 	}
 	json.NewDecoder(rr.Body).Decode(&resp)
@@ -86,7 +87,7 @@ func TestTeamHandler_Invite(t *testing.T) {
 		t.Fatalf("expected 201, got %d: %s", rr.Code, rr.Body.String())
 	}
 
-	var resp MemberResponse
+	var resp dto.MemberResponse
 	json.NewDecoder(rr.Body).Decode(&resp)
 	if resp.Email != "dev@test.com" {
 		t.Errorf("expected dev@test.com, got %s", resp.Email)

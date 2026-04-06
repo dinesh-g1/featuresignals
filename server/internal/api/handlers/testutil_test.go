@@ -453,6 +453,18 @@ func (m *mockStore) GetFlagState(ctx context.Context, flagID, envID string) (*do
 	return fs, nil
 }
 
+func (m *mockStore) ListFlagStatesByEnv(_ context.Context, envID string) ([]domain.FlagState, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var states []domain.FlagState
+	for _, fs := range m.flagStates {
+		if fs.EnvID == envID {
+			states = append(states, *fs)
+		}
+	}
+	return states, nil
+}
+
 func (m *mockStore) CreateSegment(ctx context.Context, seg *domain.Segment) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

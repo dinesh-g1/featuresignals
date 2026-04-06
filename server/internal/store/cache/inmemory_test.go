@@ -74,6 +74,7 @@ func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error { return
 func (m *mockStore) DeleteFlag(_ context.Context, _ string) error { return nil }
 func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error { return nil }
 func (m *mockStore) GetFlagState(_ context.Context, _, _ string) (*domain.FlagState, error) { return nil, nil }
+func (m *mockStore) ListFlagStatesByEnv(_ context.Context, _ string) ([]domain.FlagState, error) { return nil, nil }
 func (m *mockStore) CreateSegment(_ context.Context, _ *domain.Segment) error { return nil }
 func (m *mockStore) ListSegments(_ context.Context, _ string) ([]domain.Segment, error) { return nil, nil }
 func (m *mockStore) GetSegment(_ context.Context, _, _ string) (*domain.Segment, error) { return nil, nil }

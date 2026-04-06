@@ -30,14 +30,6 @@ func NewTeamHandler(store teamStore, jwtMgr auth.TokenManager) *TeamHandler {
 	return &TeamHandler{store: store, jwtMgr: jwtMgr}
 }
 
-type MemberResponse struct {
-	ID    string      `json:"id"`
-	OrgID string      `json:"org_id"`
-	Role  domain.Role `json:"role"`
-	Email string      `json:"email"`
-	Name  string      `json:"name"`
-}
-
 // List returns all org members with user details.
 func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
@@ -48,13 +40,13 @@ func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]MemberResponse, 0, len(members))
+	resp := make([]dto.MemberResponse, 0, len(members))
 	for _, m := range members {
 		user, err := h.store.GetUserByID(r.Context(), m.UserID)
 		if err != nil {
 			continue
 		}
-		resp = append(resp, MemberResponse{
+		resp = append(resp, dto.MemberResponse{
 			ID:    m.ID,
 			OrgID: m.OrgID,
 			Role:  m.Role,
@@ -138,7 +130,7 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		Metadata: meta, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
 	})
 
-	httputil.JSON(w, http.StatusCreated, MemberResponse{
+	httputil.JSON(w, http.StatusCreated, dto.MemberResponse{
 		ID:    member.ID,
 		OrgID: orgID,
 		Role:  req.Role,

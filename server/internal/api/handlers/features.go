@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -18,12 +19,6 @@ func NewFeaturesHandler(orgReader domain.OrgReader) *FeaturesHandler {
 	return &FeaturesHandler{orgReader: orgReader}
 }
 
-type featureItem struct {
-	Feature string `json:"feature"`
-	Enabled bool   `json:"enabled"`
-	MinPlan string `json:"min_plan"`
-}
-
 // List returns all gated features with their enabled status for the org.
 func (h *FeaturesHandler) List(w http.ResponseWriter, r *http.Request) {
 	logger := httputil.LoggerFromContext(r.Context()).With("handler", "features")
@@ -37,17 +32,17 @@ func (h *FeaturesHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	allFeatures := domain.AllFeatures()
-	items := make([]featureItem, 0, len(allFeatures))
+	items := make([]dto.FeatureItemResponse, 0, len(allFeatures))
 	for feat, minPlan := range allFeatures {
-		items = append(items, featureItem{
+		items = append(items, dto.FeatureItemResponse{
 			Feature: feat,
 			Enabled: domain.IsFeatureEnabled(org.Plan, domain.Feature(feat)),
 			MinPlan: minPlan,
 		})
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"plan":     org.Plan,
-		"features": items,
+	httputil.JSON(w, http.StatusOK, dto.FeaturesListResponse{
+		Plan:     org.Plan,
+		Features: items,
 	})
 }

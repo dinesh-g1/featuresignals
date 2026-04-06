@@ -813,3 +813,25 @@ func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(state))
 }
+
+// ListFlagStates returns all flag states for a given environment in one batch.
+func (h *FlagHandler) ListFlagStates(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	envID := chi.URLParam(r, "envID")
+
+	states, err := h.store.ListFlagStatesByEnv(r.Context(), envID)
+	if err != nil {
+		h.l(r).Error("failed to list flag states", "error", err, "env_id", envID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list flag states")
+		return
+	}
+
+	out := make([]dto.FlagStateResponse, 0, len(states))
+	for i := range states {
+		out = append(out, *dto.FlagStateFromDomain(&states[i]))
+	}
+
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(out, len(out), len(out), 0))
+}

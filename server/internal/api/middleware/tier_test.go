@@ -91,6 +91,9 @@ func (s *tierMockStore) UpsertFlagState(context.Context, *domain.FlagState) erro
 func (s *tierMockStore) GetFlagState(context.Context, string, string) (*domain.FlagState, error) {
 	return nil, fmt.Errorf("not found")
 }
+func (s *tierMockStore) ListFlagStatesByEnv(context.Context, string) ([]domain.FlagState, error) {
+	return nil, nil
+}
 func (s *tierMockStore) ListPendingSchedules(context.Context, time.Time) ([]domain.FlagState, error) {
 	return nil, nil
 }

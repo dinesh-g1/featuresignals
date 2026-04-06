@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
@@ -24,10 +25,6 @@ func NewMFAHandler(store mfaStore) *MFAHandler {
 	return &MFAHandler{store: store}
 }
 
-type mfaEnableResponse struct {
-	Secret string `json:"secret"`
-	QRURI  string `json:"qr_uri"`
-}
 
 // Enable generates a new TOTP secret and returns it with a QR URI.
 // MFA is not active until Verify is called.
@@ -56,7 +53,7 @@ func (h *MFAHandler) Enable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uri := auth.TOTPKeyURI(secret, user.Email, "FeatureSignals")
-	httputil.JSON(w, http.StatusOK, mfaEnableResponse{
+	httputil.JSON(w, http.StatusOK, dto.MFAEnableResponse{
 		Secret: secret,
 		QRURI:  uri,
 	})
@@ -102,7 +99,7 @@ func (h *MFAHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	})
 
 	logger.Info("MFA enabled", "user_id", userID)
-	httputil.JSON(w, http.StatusOK, map[string]string{"message": "MFA enabled successfully"})
+	httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: "MFA enabled successfully"})
 }
 
 type mfaDisableRequest struct {
@@ -145,7 +142,7 @@ func (h *MFAHandler) Disable(w http.ResponseWriter, r *http.Request) {
 	})
 
 	logger.Info("MFA disabled", "user_id", userID)
-	httputil.JSON(w, http.StatusOK, map[string]string{"message": "MFA disabled"})
+	httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: "MFA disabled"})
 }
 
 // Status returns the current MFA status for the authenticated user.
@@ -154,13 +151,13 @@ func (h *MFAHandler) Status(w http.ResponseWriter, r *http.Request) {
 
 	mfaSecret, err := h.store.GetMFASecret(r.Context(), userID)
 	if err != nil {
-		httputil.JSON(w, http.StatusOK, map[string]bool{"enabled": false})
+		httputil.JSON(w, http.StatusOK, dto.MFAStatusResponse{Enabled: false})
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"enabled":     mfaSecret.Enabled,
-		"verified_at": mfaSecret.VerifiedAt,
+	httputil.JSON(w, http.StatusOK, dto.MFAStatusResponse{
+		Enabled:    mfaSecret.Enabled,
+		VerifiedAt: mfaSecret.VerifiedAt,
 	})
 }
 

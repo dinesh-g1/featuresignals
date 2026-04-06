@@ -98,6 +98,9 @@ func (noopStore) UpsertFlagState(context.Context, *domain.FlagState) error { ret
 func (noopStore) GetFlagState(context.Context, string, string) (*domain.FlagState, error) {
 	return nil, errNoop
 }
+func (noopStore) ListFlagStatesByEnv(context.Context, string) ([]domain.FlagState, error) {
+	return nil, errNoop
+}
 func (noopStore) ListPendingSchedules(context.Context, time.Time) ([]domain.FlagState, error) {
 	return nil, errNoop
 }

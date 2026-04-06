@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -32,7 +33,7 @@ func (h *CustomRoleHandler) List(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{"data": roles, "total": len(roles)})
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(roles, len(roles), len(roles), 0))
 }
 
 func (h *CustomRoleHandler) Get(w http.ResponseWriter, r *http.Request) {

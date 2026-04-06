@@ -136,9 +136,9 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info("signup initiated", "email", req.Email)
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"message":    "Verification code sent to your email",
-		"expires_in": domain.OTPExpiryMinutes * 60,
+	httputil.JSON(w, http.StatusOK, dto.SignupInitResponse{
+		Message:   "Verification code sent to your email",
+		ExpiresIn: domain.OTPExpiryMinutes * 60,
 	})
 }
 
@@ -259,11 +259,11 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("signup completed", "user_id", user.ID, "org_id", org.ID, "plan", org.Plan)
 
-	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
-		"user":                 sanitizeUser(user),
-		"organization":         dto.OrganizationFromDomain(org),
-		"tokens":               tokens,
-		"onboarding_completed": false,
+	httputil.JSON(w, http.StatusCreated, dto.LoginResponse{
+		User:                sanitizeUser(user),
+		Organization:        dto.OrganizationFromDomain(org),
+		Tokens:              dto.AuthTokensFromPair(tokens),
+		OnboardingCompleted: false,
 	})
 }
 
@@ -332,9 +332,9 @@ func (h *SignupHandler) ResendSignupOTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	log.Info("signup OTP resent", "email", req.Email)
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"message":    "New verification code sent to your email",
-		"expires_in": domain.OTPExpiryMinutes * 60,
+	httputil.JSON(w, http.StatusOK, dto.SignupInitResponse{
+		Message:   "New verification code sent to your email",
+		ExpiresIn: domain.OTPExpiryMinutes * 60,
 	})
 }
 

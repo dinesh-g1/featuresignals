@@ -13,6 +13,7 @@ type FlagReader interface {
 	GetFlag(ctx context.Context, projectID, key string) (*Flag, error)
 	ListFlags(ctx context.Context, projectID string) ([]Flag, error)
 	GetFlagState(ctx context.Context, flagID, envID string) (*FlagState, error)
+	ListFlagStatesByEnv(ctx context.Context, envID string) ([]FlagState, error)
 }
 
 // FlagWriter provides mutating operations on flags and their states.
