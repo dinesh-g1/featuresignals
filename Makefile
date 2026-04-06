@@ -1,4 +1,4 @@
-.PHONY: up down local-up local-down local-reset local-logs seed db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down help
+.PHONY: up down local-up local-up-caddy local-down local-reset local-logs seed local-seed db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down schema-snapshot status help
 
 # ─── Native Dev (DB in Docker, server/dashboard run natively) ────────────────
 
@@ -15,7 +15,20 @@ down: ## Stop Postgres
 
 local-up: ## Start entire product in Docker (server + dashboard + postgres)
 	docker compose -f docker-compose.yml -f docker-compose.override.yml up --build -d
-	@echo "FeatureSignals running at http://localhost:3000"
+	@echo ""
+	@echo "  FeatureSignals running:"
+	@echo "    Dashboard  → http://localhost:3000"
+	@echo "    API Server → http://localhost:8080"
+	@echo ""
+
+local-up-caddy: ## Start with Caddy reverse proxy (everything at http://localhost)
+	docker compose -f docker-compose.yml -f docker-compose.override.yml --profile caddy up --build -d
+	@echo ""
+	@echo "  FeatureSignals running:"
+	@echo "    Unified    → http://localhost"
+	@echo "    Dashboard  → http://localhost:3000"
+	@echo "    API Server → http://localhost:8080"
+	@echo ""
 
 local-down: ## Stop full-stack local environment
 	docker compose -f docker-compose.yml -f docker-compose.override.yml down

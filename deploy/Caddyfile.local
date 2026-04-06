@@ -1,0 +1,24 @@
+# Local development reverse proxy.
+# Serves everything on http://localhost:
+#   /           -> dashboard (port 3000)
+#   /v1/*       -> API server (port 8080)
+#   /health     -> API server (port 8080)
+#   /swagger/*  -> API server (port 8080)
+
+:80 {
+	handle /v1/* {
+		reverse_proxy server:8080
+	}
+
+	handle /health {
+		reverse_proxy server:8080
+	}
+
+	handle /swagger/* {
+		reverse_proxy server:8080
+	}
+
+	handle {
+		reverse_proxy dashboard:3000
+	}
+}
