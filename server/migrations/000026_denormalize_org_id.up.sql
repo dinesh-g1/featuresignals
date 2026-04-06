@@ -3,11 +3,11 @@
 -- and backfills from parent FK chains.
 
 -- 1. Add nullable org_id columns
-ALTER TABLE environments ADD COLUMN IF NOT EXISTS org_id TEXT;
-ALTER TABLE flags ADD COLUMN IF NOT EXISTS org_id TEXT;
-ALTER TABLE segments ADD COLUMN IF NOT EXISTS org_id TEXT;
-ALTER TABLE flag_states ADD COLUMN IF NOT EXISTS org_id TEXT;
-ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS org_id TEXT;
+ALTER TABLE environments ADD COLUMN IF NOT EXISTS org_id UUID;
+ALTER TABLE flags ADD COLUMN IF NOT EXISTS org_id UUID;
+ALTER TABLE segments ADD COLUMN IF NOT EXISTS org_id UUID;
+ALTER TABLE flag_states ADD COLUMN IF NOT EXISTS org_id UUID;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS org_id UUID;
 
 -- 2. Backfill from parent FK chains
 UPDATE environments e SET org_id = p.org_id FROM projects p WHERE e.project_id = p.id AND e.org_id IS NULL;
