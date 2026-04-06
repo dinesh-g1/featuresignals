@@ -29,6 +29,10 @@ if ! docker compose -f "$COMPOSE_FILE" up -d 2>&1; then
   echo "==> Deploy failed. Showing logs for failed services..."
   echo "--- migrate logs ---"
   docker compose -f "$COMPOSE_FILE" logs migrate 2>&1 || true
+  echo "--- server logs ---"
+  docker compose -f "$COMPOSE_FILE" logs server 2>&1 || true
+  echo "--- dashboard logs ---"
+  docker compose -f "$COMPOSE_FILE" logs dashboard 2>&1 || true
   echo "--- postgres logs ---"
   docker compose -f "$COMPOSE_FILE" logs postgres 2>&1 || true
   echo "--- all service status ---"
