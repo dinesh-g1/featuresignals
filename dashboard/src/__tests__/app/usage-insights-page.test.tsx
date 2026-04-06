@@ -49,16 +49,13 @@ describe("UsageInsightsPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows loading state", async () => {
-    // Arrange
+  it("shows loading skeleton", async () => {
     mockApi.getFlagInsights.mockReturnValue(new Promise(() => {}));
 
-    // Act
     const { container } = render(<UsageInsightsPage />);
 
-    // Assert – loading starts false, useEffect sets true
     await waitFor(() => {
-      expect(container.querySelector(".animate-spin")).toBeInTheDocument();
+      expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
     });
   });
 

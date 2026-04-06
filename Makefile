@@ -63,6 +63,13 @@ db-setup-roles: ## Run role provisioning on VPS
 	fi
 	ssh $${FS_VPS_USER:-deploy}@$${FS_VPS_HOST} "cd /opt/featuresignals && bash deploy/pg-setup-roles.sh"
 
+# ─── Schema ───────────────────────────────────────────────────────────────────
+
+schema-snapshot: ## Dump current DB schema to server/schema.snapshot.sql
+	@docker compose exec -T postgres pg_dump -U fs -d featuresignals --schema-only --no-owner --no-acl | \
+		grep -v '^--' | grep -v '^$$' | grep -v '^SET ' | grep -v '^SELECT ' > server/schema.snapshot.sql
+	@echo "Schema snapshot saved to server/schema.snapshot.sql"
+
 # ─── Status ───────────────────────────────────────────────────────────────────
 
 status: ## Show status of all Docker services

@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
-import { PageHeader, Card, CardHeader, CardContent, Button, Input, Label, Badge, CategoryBadge, StatusBadge, EmptyState, LoadingSpinner, Textarea } from "@/components/ui";
+import { Card, CardContent, Button, Input, Label, Badge, CategoryBadge, StatusBadge, EmptyState, LoadingSpinner, Textarea, Switch, Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { Select } from "@/components/ui/select";
+import { toast } from "@/components/toast";
 import { ArrowLeft, Clock, X } from "lucide-react";
 import type { Flag, FlagState, Environment, Segment, AuditEntry, TargetingRule } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,7 @@ export default function FlagDetailPage() {
   const [state, setState] = useState<FlagState | null>(null);
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
-  const [tab, setTab] = useState<"overview" | "targeting" | "history">("overview");
+  const [tab, setTab] = useState("overview");
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -86,8 +87,13 @@ export default function FlagDetailPage() {
 
   async function toggleFlag() {
     if (!token || !projectId || !selectedEnv) return;
-    await api.updateFlagState(token, projectId, flagKey, selectedEnv, { enabled: !state?.enabled });
-    api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
+    try {
+      await api.updateFlagState(token, projectId, flagKey, selectedEnv, { enabled: !state?.enabled });
+      api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
+      toast(state?.enabled ? "Flag disabled" : "Flag enabled", "success");
+    } catch {
+      toast("Failed to toggle flag", "error");
+    }
   }
 
   async function updateRollout(percentage: number) {
@@ -99,9 +105,14 @@ export default function FlagDetailPage() {
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !projectId) return;
-    const updated = await api.updateFlag(token, projectId, flagKey, editForm);
-    setFlag(updated);
-    setEditing(false);
+    try {
+      const updated = await api.updateFlag(token, projectId, flagKey, editForm);
+      setFlag(updated);
+      setEditing(false);
+      toast("Flag updated", "success");
+    } catch {
+      toast("Failed to update flag", "error");
+    }
   }
 
   async function handleDelete() {
@@ -117,7 +128,9 @@ export default function FlagDetailPage() {
       await api.promoteFlag(token, projectId, flagKey, selectedEnv, promoteTarget);
       setShowPromote(false);
       setPromoteTarget("");
+      toast("Flag promoted successfully", "success");
     } catch {
+      toast("Failed to promote flag", "error");
     } finally {
       setPromoting(false);
     }
@@ -185,12 +198,11 @@ export default function FlagDetailPage() {
             options={envOptions}
             placeholder="Select environment…"
           />
-          <button
-            onClick={toggleFlag}
-            className={cn("relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors", state?.enabled ? "bg-emerald-500" : "bg-slate-300")}
-          >
-            <span className={cn("inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform", state?.enabled ? "translate-x-6" : "translate-x-1")} />
-          </button>
+          <Switch
+            checked={state?.enabled ?? false}
+            onCheckedChange={toggleFlag}
+            aria-label="Toggle flag"
+          />
           <Button size="sm" variant="secondary" onClick={() => { setShowPromote(!showPromote); setPromoteTarget(""); }}>
             Promote
           </Button>
@@ -253,25 +265,14 @@ export default function FlagDetailPage() {
         </form>
       )}
 
-      {/* Tab bar */}
-      <nav className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="flex gap-1 border-b border-slate-200 min-w-max">
-          {(["overview", "targeting", "history"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={cn(
-                "whitespace-nowrap px-3 py-2.5 text-sm font-medium capitalize transition-all duration-150 sm:px-4",
-                tab === t ? "border-b-2 border-indigo-600 text-indigo-600" : "text-slate-500 hover:text-slate-700",
-              )}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </nav>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="targeting">Targeting</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
 
-      {tab === "overview" && (
+      <TabsContent value="overview">
         <div className="space-y-4 sm:space-y-6">
           {state?.enabled && (
             <Card className="border-red-200 bg-red-50/50 ring-1 ring-red-100">
@@ -398,9 +399,9 @@ export default function FlagDetailPage() {
             </CardContent>
           </Card>
         </div>
-      )}
+      </TabsContent>
 
-      {tab === "targeting" && (
+      <TabsContent value="targeting">
         <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardContent className="space-y-4">
@@ -496,9 +497,9 @@ export default function FlagDetailPage() {
             </CardContent>
           </Card>
         </div>
-      )}
+      </TabsContent>
 
-      {tab === "history" && (
+      <TabsContent value="history">
         <Card>
           {audit.length === 0 ? (
             <EmptyState icon={Clock} title="No audit history for this flag yet." />
@@ -513,7 +514,8 @@ export default function FlagDetailPage() {
             </div>
           )}
         </Card>
-      )}
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }

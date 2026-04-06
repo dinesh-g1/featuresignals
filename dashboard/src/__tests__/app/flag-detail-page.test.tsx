@@ -37,6 +37,47 @@ vi.mock("@/components/ui/select", () => ({
   ),
 }));
 
+vi.mock("@/components/toast", () => ({
+  toast: vi.fn(),
+}));
+
+vi.mock("@radix-ui/react-tabs", () => {
+  const { useState } = require("react");
+  return {
+    Root: ({ value, onValueChange, children }: any) => {
+      const [val, setVal] = useState(value);
+      return (
+        <div data-testid="tabs-root" data-value={val}>
+          {typeof children === "function"
+            ? children
+            : require("react").Children.map(children, (child: any) =>
+                child ? require("react").cloneElement(child, { __tabValue: val, __setTabValue: (v: string) => { setVal(v); onValueChange?.(v); } }) : null,
+              )}
+        </div>
+      );
+    },
+    List: ({ children, __tabValue, __setTabValue, ...props }: any) => (
+      <div role="tablist" {...props}>
+        {require("react").Children.map(children, (child: any) =>
+          child ? require("react").cloneElement(child, { __tabValue, __setTabValue }) : null,
+        )}
+      </div>
+    ),
+    Trigger: ({ value, children, __tabValue, __setTabValue, ...props }: any) => (
+      <button
+        role="tab"
+        data-state={__tabValue === value ? "active" : "inactive"}
+        onClick={() => __setTabValue?.(value)}
+        {...props}
+      >
+        {children}
+      </button>
+    ),
+    Content: ({ value, children, __tabValue, ...props }: any) =>
+      __tabValue === value ? <div role="tabpanel" {...props}>{children}</div> : null,
+  };
+});
+
 vi.mock("@/components/targeting-rules-editor", () => ({
   TargetingRulesEditor: ({ rules }: any) => (
     <div data-testid="targeting-rules-editor">
@@ -175,7 +216,7 @@ describe("FlagDetailPage", () => {
     render(<FlagDetailPage />);
     await screen.findByText("enable-feature");
 
-    fireEvent.click(screen.getByText("targeting"));
+    fireEvent.click(screen.getByText("Targeting"));
 
     expect(screen.getByTestId("targeting-rules-editor")).toBeInTheDocument();
   });
@@ -184,7 +225,7 @@ describe("FlagDetailPage", () => {
     render(<FlagDetailPage />);
     await screen.findByText("enable-feature");
 
-    fireEvent.click(screen.getByText("history"));
+    fireEvent.click(screen.getByText("History"));
 
     await waitFor(() => {
       expect(screen.getByText("flag.created")).toBeInTheDocument();

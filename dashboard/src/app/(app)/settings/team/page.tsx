@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,16 +60,26 @@ export default function TeamPage() {
 
   async function handleRoleChange(memberId: string, role: string) {
     if (!token) return;
-    await api.updateMemberRole(token, memberId, role);
-    setEditingRole(null);
-    reload();
+    try {
+      await api.updateMemberRole(token, memberId, role);
+      setEditingRole(null);
+      reload();
+      toast("Role updated", "success");
+    } catch {
+      toast("Failed to update role", "error");
+    }
   }
 
   async function handleRemove(memberId: string) {
     if (!token) return;
-    await api.removeMember(token, memberId);
-    setRemoving(null);
-    reload();
+    try {
+      await api.removeMember(token, memberId);
+      setRemoving(null);
+      reload();
+      toast("Member removed", "success");
+    } catch {
+      toast("Failed to remove member", "error");
+    }
   }
 
   async function loadPermissions(memberId: string) {
@@ -93,8 +104,12 @@ export default function TeamPage() {
       ? { ...existing, [field]: !existing[field] }
       : { id: "", member_id: memberId, env_id: envId, can_toggle: field === "can_toggle", can_edit_rules: field === "can_edit_rules" };
 
-    await api.updateMemberPermissions(token, memberId, [perm]);
-    loadPermissions(memberId);
+    try {
+      await api.updateMemberPermissions(token, memberId, [perm]);
+      loadPermissions(memberId);
+    } catch {
+      toast("Failed to update permissions", "error");
+    }
   }
 
   function getPermValue(memberId: string, envId: string, field: "can_toggle" | "can_edit_rules"): boolean {

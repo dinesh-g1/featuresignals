@@ -29,7 +29,7 @@ vi.mock("@/components/ui", () => ({
   CardContent: ({ children }: any) => <div>{children}</div>,
   Badge: ({ children }: any) => <span>{children}</span>,
   EmptyState: ({ title }: any) => <div data-testid="empty-state">{title}</div>,
-  LoadingSpinner: ({ fullPage }: any) => <div data-testid="loading-spinner" role="status">Loading...</div>,
+  DashboardPageSkeleton: () => <div data-testid="dashboard-skeleton">Loading skeleton...</div>,
   ErrorDisplay: ({ title, message }: any) => <div data-testid="error-display">{title}: {message}</div>,
 }));
 
@@ -55,14 +55,14 @@ describe("DashboardPage", () => {
     queryCache.clear();
   });
 
-  it("shows loading spinner initially", () => {
+  it("shows loading skeleton initially", () => {
     vi.mocked(api.listProjects).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.listFlags).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.listAudit).mockReturnValue(new Promise(() => {}));
 
     render(<DashboardPage />);
 
-    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-skeleton")).toBeInTheDocument();
   });
 
   it("shows empty state when no projects", async () => {

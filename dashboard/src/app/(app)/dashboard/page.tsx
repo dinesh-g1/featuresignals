@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
-import { PageHeader, StatCard, Card, CardHeader, Badge, EmptyState, LoadingSpinner } from "@/components/ui";
+import { PageHeader, StatCard, Card, CardHeader, Badge, EmptyState, DashboardPageSkeleton } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
 import { Flag, FolderOpen, Clock, Sparkles, Zap } from "lucide-react";
 import { useProjects, useFlags, useAudit } from "@/hooks/use-data";
@@ -86,7 +86,7 @@ export default function DashboardPage() {
   }, [projects, currentProjectId, setCurrentProject]);
 
   if (projectsLoading) {
-    return <LoadingSpinner fullPage />;
+    return <DashboardPageSkeleton />;
   }
 
   if (projectsError) {

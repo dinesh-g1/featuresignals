@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, Card, Button, Badge, EmptyState, Textarea } from "@/components/ui";
+import { toast } from "@/components/toast";
 import { CheckCircle } from "lucide-react";
 import type { ApprovalRequest } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,9 @@ export default function ApprovalsPage() {
       setReviewingId(null);
       setNote("");
       reload();
+      toast(action === "approve" ? "Approval granted" : "Request rejected", "success");
+    } catch {
+      toast("Failed to submit review", "error");
     } finally {
       setLoading(false);
     }

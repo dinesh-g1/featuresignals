@@ -5,10 +5,10 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, EmptyState, Label } from "@/components/ui";
+import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, EmptyState, Label, Switch, FormField, FlagsPageSkeleton } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
-import { ErrorDisplay, LoadingSpinner } from "@/components/ui";
+import { ErrorDisplay } from "@/components/ui";
 import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
 import { useFlags, useEnvironments, useFlagStates, useFlagStateMap, useCreateFlag, useDeleteFlag } from "@/hooks/use-data";
 import { useMutation } from "@/hooks/use-query";
@@ -220,7 +220,7 @@ export default function FlagsPage() {
   }
 
   if (flagsLoading) {
-    return <LoadingSpinner className="py-24" />;
+    return <FlagsPageSkeleton />;
   }
 
   return (
@@ -301,13 +301,10 @@ export default function FlagsPage() {
             </p>
             {newFlag.flag_type === "boolean" ? (
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setNewFlag({ ...newFlag, default_value: newFlag.default_value === "true" ? "false" : "true" })}
-                  className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${newFlag.default_value === "true" ? "bg-emerald-500" : "bg-slate-300"}`}
-                >
-                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${newFlag.default_value === "true" ? "translate-x-6" : "translate-x-1"}`} />
-                </button>
+                <Switch
+                  checked={newFlag.default_value === "true"}
+                  onCheckedChange={(checked) => setNewFlag({ ...newFlag, default_value: checked ? "true" : "false" })}
+                />
                 <span className="text-sm font-mono text-slate-700">{newFlag.default_value}</span>
               </div>
             ) : newFlag.flag_type === "string" ? (
@@ -416,14 +413,13 @@ export default function FlagsPage() {
                       ))}
 
                       {currentEnvId && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); handleQuickToggle(flag.key); }}
+                        <Switch
+                          size="sm"
+                          checked={st?.enabled ?? false}
+                          onCheckedChange={() => handleQuickToggle(flag.key)}
                           disabled={toggling === flag.key}
-                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${st?.enabled ? "bg-emerald-500" : "bg-slate-300"} ${toggling === flag.key ? "opacity-50" : ""}`}
-                          title={`Toggle in ${currentEnvName || "current env"}`}
-                        >
-                          <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${st?.enabled ? "translate-x-4" : "translate-x-0.5"}`} />
-                        </button>
+                          aria-label={`Toggle in ${currentEnvName || "current env"}`}
+                        />
                       )}
 
                       <span className="hidden text-xs text-slate-400 sm:inline">{new Date(flag.created_at).toLocaleDateString()}</span>

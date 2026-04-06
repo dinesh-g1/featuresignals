@@ -67,8 +67,13 @@ export default function WebhooksPage() {
 
   async function toggleEnabled(wh: Webhook) {
     if (!token) return;
-    await api.updateWebhook(token, wh.id, { enabled: !wh.enabled });
-    reload();
+    try {
+      await api.updateWebhook(token, wh.id, { enabled: !wh.enabled });
+      reload();
+      toast(wh.enabled ? "Webhook disabled" : "Webhook enabled", "success");
+    } catch {
+      toast("Failed to update webhook", "error");
+    }
   }
 
   function toggleEvent(event: string) {
