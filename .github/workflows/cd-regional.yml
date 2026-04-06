@@ -1,10 +1,12 @@
 name: CD Regional
 
+# Disabled until regional accounts and infrastructure are provisioned.
+# Enable by uncommenting the workflow_run trigger below.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  # workflow_run:
+  #   workflows: ["CI"]
+  #   types: [completed]
+  #   branches: [main]
   workflow_dispatch:
     inputs:
       regions:
