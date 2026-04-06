@@ -73,9 +73,9 @@ func seedProject(t *testing.T, store *postgres.Store, orgID string) *domain.Proj
 	return p
 }
 
-func seedEnv(t *testing.T, store *postgres.Store, projectID, slug string) *domain.Environment {
+func seedEnv(t *testing.T, store *postgres.Store, projectID, orgID, slug string) *domain.Environment {
 	t.Helper()
-	e := &domain.Environment{ProjectID: projectID, Name: slug, Slug: slug, Color: "#6366F1"}
+	e := &domain.Environment{ProjectID: projectID, OrgID: orgID, Name: slug, Slug: slug, Color: "#6366F1"}
 	if err := store.CreateEnvironment(context.Background(), e); err != nil {
 		t.Fatalf("create env: %v", err)
 	}
@@ -211,7 +211,7 @@ func TestEnvironment_CRUD(t *testing.T) {
 	org := seedOrg(t, store)
 	proj := seedProject(t, store, org.ID)
 
-	env := &domain.Environment{ProjectID: proj.ID, Name: "Production", Slug: "production", Color: "#10B981"}
+	env := &domain.Environment{ProjectID: proj.ID, OrgID: org.ID, Name: "Production", Slug: "production", Color: "#10B981"}
 	if err := store.CreateEnvironment(ctx, env); err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -248,6 +248,7 @@ func TestFlag_CRUD(t *testing.T) {
 
 	flag := &domain.Flag{
 		ProjectID:    proj.ID,
+		OrgID:        org.ID,
 		Key:          "dark-mode",
 		Name:         "Dark Mode",
 		Description:  "Enable dark mode",
@@ -304,10 +305,11 @@ func TestFlagState_UpsertAndGet(t *testing.T) {
 
 	org := seedOrg(t, store)
 	proj := seedProject(t, store, org.ID)
-	env := seedEnv(t, store, proj.ID, "staging")
+	env := seedEnv(t, store, proj.ID, org.ID, "staging")
 
 	flag := &domain.Flag{
 		ProjectID:    proj.ID,
+		OrgID:        org.ID,
 		Key:          "feature-x",
 		Name:         "Feature X",
 		FlagType:     domain.FlagTypeBoolean,
@@ -319,6 +321,7 @@ func TestFlagState_UpsertAndGet(t *testing.T) {
 	state := &domain.FlagState{
 		FlagID:            flag.ID,
 		EnvID:             env.ID,
+		OrgID:             org.ID,
 		Enabled:           true,
 		DefaultValue:      json.RawMessage(`true`),
 		Rules:             []domain.TargetingRule{},
@@ -360,10 +363,10 @@ func TestFlagState_WithRules(t *testing.T) {
 
 	org := seedOrg(t, store)
 	proj := seedProject(t, store, org.ID)
-	env := seedEnv(t, store, proj.ID, "prod")
+	env := seedEnv(t, store, proj.ID, org.ID, "prod")
 
 	flag := &domain.Flag{
-		ProjectID: proj.ID, Key: "banner", Name: "Banner",
+		ProjectID: proj.ID, OrgID: org.ID, Key: "banner", Name: "Banner",
 		FlagType: domain.FlagTypeString, DefaultValue: json.RawMessage(`"off"`), Tags: []string{},
 	}
 	store.CreateFlag(ctx, flag)
@@ -376,7 +379,7 @@ func TestFlagState_WithRules(t *testing.T) {
 		},
 	}
 	state := &domain.FlagState{
-		FlagID: flag.ID, EnvID: env.ID, Enabled: true,
+		FlagID: flag.ID, EnvID: env.ID, OrgID: org.ID, Enabled: true,
 		Rules: rules, PercentageRollout: 0,
 	}
 	if err := store.UpsertFlagState(ctx, state); err != nil {
@@ -409,6 +412,7 @@ func TestSegment_CRUD(t *testing.T) {
 
 	seg := &domain.Segment{
 		ProjectID:   proj.ID,
+		OrgID:       org.ID,
 		Key:         "beta-users",
 		Name:        "Beta Users",
 		Description: "Users in beta",
@@ -460,10 +464,11 @@ func TestAPIKey_CRUD(t *testing.T) {
 
 	org := seedOrg(t, store)
 	proj := seedProject(t, store, org.ID)
-	env := seedEnv(t, store, proj.ID, "dev")
+	env := seedEnv(t, store, proj.ID, org.ID, "dev")
 
 	key := &domain.APIKey{
 		EnvID:     env.ID,
+		OrgID:     org.ID,
 		KeyHash:   "abc123hash",
 		KeyPrefix: "fs_srv_abc1",
 		Name:      "Dev Key",
@@ -510,10 +515,10 @@ func TestGetEnvironmentByAPIKeyHash(t *testing.T) {
 
 	org := seedOrg(t, store)
 	proj := seedProject(t, store, org.ID)
-	env := seedEnv(t, store, proj.ID, "production")
+	env := seedEnv(t, store, proj.ID, org.ID, "production")
 
 	key := &domain.APIKey{
-		EnvID: env.ID, KeyHash: "keyhash999", KeyPrefix: "fs_srv_key9",
+		EnvID: env.ID, OrgID: org.ID, KeyHash: "keyhash999", KeyPrefix: "fs_srv_key9",
 		Name: "Prod Key", Type: "server",
 	}
 	store.CreateAPIKey(ctx, key)
@@ -538,25 +543,25 @@ func TestLoadRuleset(t *testing.T) {
 
 	org := seedOrg(t, store)
 	proj := seedProject(t, store, org.ID)
-	env := seedEnv(t, store, proj.ID, "staging")
+	env := seedEnv(t, store, proj.ID, org.ID, "staging")
 
 	flag1 := &domain.Flag{
-		ProjectID: proj.ID, Key: "f1", Name: "Flag 1",
+		ProjectID: proj.ID, OrgID: org.ID, Key: "f1", Name: "Flag 1",
 		FlagType: domain.FlagTypeBoolean, DefaultValue: json.RawMessage(`true`), Tags: []string{},
 	}
 	flag2 := &domain.Flag{
-		ProjectID: proj.ID, Key: "f2", Name: "Flag 2",
+		ProjectID: proj.ID, OrgID: org.ID, Key: "f2", Name: "Flag 2",
 		FlagType: domain.FlagTypeString, DefaultValue: json.RawMessage(`"off"`), Tags: []string{},
 	}
 	store.CreateFlag(ctx, flag1)
 	store.CreateFlag(ctx, flag2)
 
 	store.UpsertFlagState(ctx, &domain.FlagState{
-		FlagID: flag1.ID, EnvID: env.ID, Enabled: true, Rules: []domain.TargetingRule{}, PercentageRollout: 10000,
+		FlagID: flag1.ID, EnvID: env.ID, OrgID: org.ID, Enabled: true, Rules: []domain.TargetingRule{}, PercentageRollout: 10000,
 	})
 
 	seg := &domain.Segment{
-		ProjectID: proj.ID, Key: "premium", Name: "Premium", MatchType: "all",
+		ProjectID: proj.ID, OrgID: org.ID, Key: "premium", Name: "Premium", MatchType: "all",
 		Rules: []domain.Condition{{Attribute: "plan", Operator: "eq", Values: []string{"pro"}}},
 	}
 	store.CreateSegment(ctx, seg)
