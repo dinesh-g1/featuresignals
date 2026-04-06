@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
@@ -8,8 +8,11 @@ import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, EmptyState, Label } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
+import { ErrorDisplay, LoadingSpinner } from "@/components/ui";
 import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
-import type { Flag as FlagData, Environment, FlagState } from "@/lib/types";
+import { useFlags, useEnvironments, useFlagStates, useFlagStateMap, useCreateFlag, useDeleteFlag } from "@/hooks/use-data";
+import { useMutation } from "@/hooks/use-query";
+import type { FlagState } from "@/lib/types";
 
 const FLAG_TYPE_OPTIONS = [
   { value: "all", label: "All Types" },
@@ -57,8 +60,12 @@ export default function FlagsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const [flags, setFlags] = useState<FlagData[]>([]);
-  const [envs, setEnvs] = useState<Environment[]>([]);
+
+  const { data: flags, loading: flagsLoading, error: flagsError, refetch: refetchFlags } = useFlags(projectId);
+  const { data: envs } = useEnvironments(projectId);
+  const { data: batchStates } = useFlagStates(projectId, currentEnvId);
+  const stateMap = useFlagStateMap(batchStates, flags);
+
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -70,30 +77,18 @@ export default function FlagsPage() {
   const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
-  const [flagStates, setFlagStates] = useState<Record<string, FlagState>>({});
 
-  function reload() {
-    if (!token || !projectId) return;
-    api.listFlags(token, projectId).then((f) => setFlags(f ?? [])).catch(() => {});
-    api.listEnvironments(token, projectId).then((e) => setEnvs(e ?? [])).catch(() => {});
-  }
+  const createFlag = useCreateFlag(projectId);
+  const deleteFlag = useDeleteFlag(projectId);
 
-  useEffect(() => { reload(); }, [token, projectId]);
-
-  useEffect(() => {
-    if (!token || !projectId || !currentEnvId || flags.length === 0) return;
-    const loadStates = async () => {
-      const states: Record<string, FlagState> = {};
-      for (const flag of flags) {
-        try {
-          const st = await api.getFlagState(token, projectId, flag.key, currentEnvId);
-          states[flag.key] = st;
-        } catch { /* ignore */ }
-      }
-      setFlagStates(states);
-    };
-    loadStates();
-  }, [token, projectId, currentEnvId, flags]);
+  const toggleMutation = useMutation(
+    async ({ flagKey, enabled }: { flagKey: string; enabled: boolean }) => {
+      return api.updateFlagState(token!, projectId!, flagKey, currentEnvId!, { enabled });
+    },
+    {
+      invalidateKeys: projectId && currentEnvId ? [`flag-states:${projectId}:${currentEnvId}`] : [],
+    },
+  );
 
   function defaultValueForType(type: string): string {
     switch (type) {
@@ -121,60 +116,50 @@ export default function FlagsPage() {
       toast("Default value must be valid JSON", "error");
       return;
     }
-    try {
-      await api.createFlag(token, projectId, {
-        key: newFlag.key,
-        name: newFlag.name,
-        flag_type: newFlag.flag_type,
-        category: newFlag.category,
-        description: newFlag.description,
-        default_value: parsedDefault,
-      });
+    const result = await createFlag.mutate({
+      key: newFlag.key,
+      name: newFlag.name,
+      flag_type: newFlag.flag_type,
+      category: newFlag.category,
+      description: newFlag.description,
+      default_value: parsedDefault,
+    });
+    if (result) {
       setShowCreate(false);
       setNewFlag({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
       toast("Flag created", "success");
-      reload();
-    } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to create flag", "error");
+    } else if (createFlag.error) {
+      toast(createFlag.error, "error");
     }
   }
 
   async function handleDelete(flagKey: string) {
-    if (!token || !projectId) return;
-    try {
-      await api.deleteFlag(token, projectId, flagKey);
-      setDeleting(null);
+    const result = await deleteFlag.mutate(flagKey);
+    setDeleting(null);
+    if (result !== undefined) {
       toast("Flag deleted", "success");
-      reload();
-    } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to delete flag", "error");
-      setDeleting(null);
+    } else if (deleteFlag.error) {
+      toast(deleteFlag.error, "error");
     }
   }
 
   async function handleQuickToggle(flagKey: string) {
-    if (!token || !projectId || !currentEnvId) {
+    if (!currentEnvId) {
       toast("Select an environment first", "error");
       return;
     }
     setToggling(flagKey);
-    try {
-      const current = flagStates[flagKey];
-      await api.updateFlagState(token, projectId, flagKey, currentEnvId, {
-        enabled: !current?.enabled,
-      });
-      const updated = await api.getFlagState(token, projectId, flagKey, currentEnvId);
-      setFlagStates((prev) => ({ ...prev, [flagKey]: updated }));
-    } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to toggle flag", "error");
-    } finally {
-      setToggling(null);
+    const current = stateMap.get(flagKey);
+    const result = await toggleMutation.mutate({ flagKey, enabled: !current?.enabled });
+    setToggling(null);
+    if (!result && toggleMutation.error) {
+      toast(toggleMutation.error, "error");
     }
   }
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    flags.forEach((f) => f.tags?.forEach((t: string) => tags.add(t)));
+    (flags ?? []).forEach((f) => f.tags?.forEach((t: string) => tags.add(t)));
     return Array.from(tags).sort();
   }, [flags]);
 
@@ -193,7 +178,7 @@ export default function FlagsPage() {
   }
 
   const filtered = useMemo(() => {
-    let result = flags.filter(
+    let result = (flags ?? []).filter(
       (f) => (f.key ?? "").includes(search) || (f.name ?? "").toLowerCase().includes(search.toLowerCase()),
     );
     if (typeFilter !== "all") {
@@ -217,7 +202,7 @@ export default function FlagsPage() {
     return result;
   }, [flags, search, typeFilter, categoryFilter, statusFilter, tagFilter, sortBy, sortDir]);
 
-  const currentEnvName = envs.find((e) => e.id === currentEnvId)?.name;
+  const currentEnvName = (envs ?? []).find((e) => e.id === currentEnvId)?.name;
 
   if (!projectId) {
     return (
@@ -230,11 +215,19 @@ export default function FlagsPage() {
     );
   }
 
+  if (flagsError) {
+    return <ErrorDisplay title="Failed to load flags" message={flagsError} onRetry={refetchFlags} />;
+  }
+
+  if (flagsLoading) {
+    return <LoadingSpinner className="py-24" />;
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Feature Flags"
-        description={`${flags.length} flags in this project`}
+        description={`${(flags ?? []).length} flags in this project`}
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>
             Create Flag
@@ -343,7 +336,9 @@ export default function FlagsPage() {
             )}
           </div>
           <div className="flex gap-2">
-            <Button type="submit">Create</Button>
+            <Button type="submit" disabled={createFlag.loading}>
+              {createFlag.loading ? "Creating..." : "Create"}
+            </Button>
             <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
           </div>
         </form>
@@ -402,7 +397,7 @@ export default function FlagsPage() {
             />
           ) : (
             filtered.map((flag) => {
-              const st = flagStates[flag.key];
+              const st = stateMap.get(flag.key);
               return (
                 <div key={flag.id} className="px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6 sm:py-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

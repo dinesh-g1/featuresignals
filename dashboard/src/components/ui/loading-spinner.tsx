@@ -28,7 +28,7 @@ export function LoadingSpinner({
   fullPage = false,
 }: LoadingSpinnerProps) {
   const spinner = (
-    <div className={cn(spinnerVariants({ size }), className)} />
+    <div role="status" aria-label="Loading" className={cn(spinnerVariants({ size }), className)} />
   );
 
   if (fullPage) {

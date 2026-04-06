@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { PageHeader, StatCard, Card, CardHeader, CardContent, Badge, EmptyState, LoadingSpinner } from "@/components/ui";
+import { PageHeader, StatCard, Card, CardHeader, Badge, EmptyState, LoadingSpinner } from "@/components/ui";
+import { ErrorDisplay } from "@/components/ui";
 import { Flag, FolderOpen, Clock, Sparkles, Zap } from "lucide-react";
-import type { Project, Flag as FlagData, AuditEntry } from "@/lib/types";
+import { useProjects, useFlags, useAudit } from "@/hooks/use-data";
 
 function UpgradeCard() {
   const organization = useAppStore((s) => s.organization);
@@ -72,37 +72,28 @@ function UpgradeCard() {
 }
 
 export default function DashboardPage() {
-  const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [flags, setFlags] = useState<FlagData[]>([]);
-  const [audit, setAudit] = useState<AuditEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: projects, loading: projectsLoading, error: projectsError, refetch: refetchProjects } = useProjects();
+  const { data: flags } = useFlags(currentProjectId);
+  const { data: audit } = useAudit(10, 0);
 
   useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    api.listProjects(token).then((p) => {
-      const list = p ?? [];
-      setProjects(list);
-      if (list.length > 0 && !currentProjectId) {
-        setCurrentProject(list[0].id);
-      }
-    }).finally(() => setLoading(false));
-    api.listAudit(token, 10).then((a) => setAudit(a ?? [])).catch(() => {});
-  }, [token, currentProjectId, setCurrentProject]);
+    if (projects && projects.length > 0 && !currentProjectId) {
+      setCurrentProject(projects[0].id);
+    }
+  }, [projects, currentProjectId, setCurrentProject]);
 
-  useEffect(() => {
-    if (!token || !currentProjectId) return;
-    api.listFlags(token, currentProjectId).then((f) => setFlags(f ?? [])).catch(() => {});
-  }, [token, currentProjectId]);
-
-  if (loading) {
+  if (projectsLoading) {
     return <LoadingSpinner fullPage />;
   }
 
-  if (!currentProjectId && projects.length === 0) {
+  if (projectsError) {
+    return <ErrorDisplay title="Failed to load projects" message={projectsError} onRetry={refetchProjects} />;
+  }
+
+  if (!currentProjectId && (!projects || projects.length === 0)) {
     return (
       <EmptyState
         icon={Flag}
@@ -121,9 +112,9 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
-        <StatCard label="Projects" value={projects.length} icon={FolderOpen} color="indigo" />
-        <StatCard label="Feature Flags" value={flags.length} icon={Flag} color="emerald" />
-        <StatCard label="Recent Changes" value={audit.length} icon={Clock} color="amber" />
+        <StatCard label="Projects" value={(projects ?? []).length} icon={FolderOpen} color="indigo" />
+        <StatCard label="Feature Flags" value={(flags ?? []).length} icon={Flag} color="emerald" />
+        <StatCard label="Recent Changes" value={(audit ?? []).length} icon={Clock} color="amber" />
       </div>
 
       <UpgradeCard />
@@ -133,7 +124,7 @@ export default function DashboardPage() {
           <h2 className="font-semibold text-slate-900">Recent Activity</h2>
         </CardHeader>
         <div className="divide-y divide-slate-100">
-          {audit.length === 0 ? (
+          {(!audit || audit.length === 0) ? (
             <EmptyState
               icon={Clock}
               title="No recent activity"
