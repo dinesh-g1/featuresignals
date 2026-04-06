@@ -56,6 +56,20 @@ type Config struct {
 	MSG91EmailFrom       string
 	MSG91EmailFromName   string
 
+	// Deployment mode: "cloud" or "onprem"
+	DeploymentMode string
+
+	// Email provider: "msg91", "smtp", or "none"
+	EmailProvider string
+
+	// SMTP settings (used when EmailProvider = "smtp")
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPass     string
+	SMTPFrom     string
+	SMTPFromName string
+
 	// App
 	AppBaseURL   string
 	DashboardURL string
@@ -107,6 +121,16 @@ func Load() *Config {
 		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@mail.featuresignals.com"),
 		MSG91EmailFromName:   getEnv("MSG91_EMAIL_FROM_NAME", "Feature Signals"),
 
+		DeploymentMode: getEnv("DEPLOYMENT_MODE", "cloud"),
+		EmailProvider:  getEnv("EMAIL_PROVIDER", "msg91"),
+
+		SMTPHost:     getEnv("SMTP_HOST", ""),
+		SMTPPort:     getEnvInt("SMTP_PORT", 587),
+		SMTPUser:     os.Getenv("SMTP_USER"),
+		SMTPPass:     os.Getenv("SMTP_PASS"),
+		SMTPFrom:     getEnv("SMTP_FROM", "noreply@localhost"),
+		SMTPFromName: getEnv("SMTP_FROM_NAME", "FeatureSignals"),
+
 		AppBaseURL:   getEnv("APP_BASE_URL", "http://localhost:8080"),
 		DashboardURL: getEnv("DASHBOARD_URL", "http://localhost:3000"),
 
@@ -126,6 +150,14 @@ func Load() *Config {
 		OTELLogLevel:       getEnv("OTEL_LOG_LEVEL", "warn"),
 		OTELSampleRate:     getEnvFloat("OTEL_TRACE_SAMPLE_RATE", 0.1),
 	}
+}
+
+func (c *Config) IsOnPrem() bool {
+	return c.DeploymentMode == "onprem"
+}
+
+func (c *Config) BillingEnabled() bool {
+	return !c.IsOnPrem() && (c.StripeSecretKey != "" || c.PayUMerchantKey != "")
 }
 
 func parseCORSOrigins(raw string) []string {

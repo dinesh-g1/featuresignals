@@ -10,32 +10,6 @@ interface FeatureState {
   loading: boolean;
 }
 
-const PLAN_RANK: Record<string, number> = {
-  free: 0,
-  trial: 2,
-  pro: 2,
-  enterprise: 3,
-};
-
-const FEATURE_MIN_PLAN: Record<string, string> = {
-  approvals: "pro",
-  webhooks: "pro",
-  scheduling: "pro",
-  audit_export: "pro",
-  mfa: "pro",
-  data_export: "pro",
-  sso: "enterprise",
-  scim: "enterprise",
-  ip_allowlist: "enterprise",
-  custom_roles: "enterprise",
-};
-
-function isFeatureEnabledForPlan(plan: string, feature: string): boolean {
-  const minPlan = FEATURE_MIN_PLAN[feature];
-  if (!minPlan) return true;
-  return (PLAN_RANK[plan] ?? 0) >= (PLAN_RANK[minPlan] ?? 0);
-}
-
 export function useFeatures() {
   const token = useAppStore((s) => s.token);
   const organization = useAppStore((s) => s.organization);
@@ -64,22 +38,16 @@ export function useFeatures() {
 
   const isEnabled = useCallback(
     (feature: string): boolean => {
-      if (state.features.length > 0) {
-        const f = state.features.find((item) => item.feature === feature);
-        return f?.enabled ?? true;
-      }
-      return isFeatureEnabledForPlan(plan, feature);
+      const f = state.features.find((item) => item.feature === feature);
+      return f?.enabled ?? true;
     },
-    [state.features, plan],
+    [state.features],
   );
 
   const minPlanFor = useCallback(
     (feature: string): string => {
-      if (state.features.length > 0) {
-        const f = state.features.find((item) => item.feature === feature);
-        return f?.min_plan ?? "free";
-      }
-      return FEATURE_MIN_PLAN[feature] ?? "free";
+      const f = state.features.find((item) => item.feature === feature);
+      return f?.min_plan ?? "free";
     },
     [state.features],
   );
