@@ -156,14 +156,14 @@ export default function PricingPage() {
         <SectionReveal className="mt-10 sm:mt-14">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-xl border border-slate-200 bg-white px-6 py-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Trusted by regulated industries
+              Security built in
             </span>
             {[
-              { label: "SOC 2", color: "text-blue-700 bg-blue-50" },
-              { label: "GDPR", color: "text-emerald-700 bg-emerald-50" },
-              { label: "HIPAA", color: "text-teal-700 bg-teal-50" },
-              { label: "ISO 27001", color: "text-amber-700 bg-amber-50" },
-              { label: "CCPA", color: "text-emerald-700 bg-emerald-50" },
+              { label: "TLS Encryption", color: "text-emerald-700 bg-emerald-50" },
+              { label: "RBAC & MFA", color: "text-blue-700 bg-blue-50" },
+              { label: "SSO (SAML/OIDC)", color: "text-teal-700 bg-teal-50" },
+              { label: "Audit Trails", color: "text-amber-700 bg-amber-50" },
+              { label: "Multi-Region Data", color: "text-violet-700 bg-violet-50" },
               { label: "OpenFeature", color: "text-indigo-700 bg-indigo-50" },
             ].map((b) => (
               <a
