@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -26,10 +27,13 @@ func (h *IPAllowlistHandler) Get(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	enabled, cidrs, err := h.store.GetIPAllowlist(r.Context(), orgID)
 	if err != nil {
-		httputil.JSON(w, http.StatusOK, map[string]interface{}{"enabled": false, "cidr_ranges": []string{}})
+		httputil.JSON(w, http.StatusOK, dto.IPAllowlistResponse{Enabled: false, CIDRRanges: []string{}})
 		return
 	}
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{"enabled": enabled, "cidr_ranges": cidrs})
+	if cidrs == nil {
+		cidrs = []string{}
+	}
+	httputil.JSON(w, http.StatusOK, dto.IPAllowlistResponse{Enabled: enabled, CIDRRanges: cidrs})
 }
 
 type ipAllowlistRequest struct {
@@ -68,5 +72,5 @@ func (h *IPAllowlistHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 	})
 
 	logger.Info("IP allowlist updated", "org_id", orgID, "enabled", req.Enabled, "cidrs", len(req.CIDRRanges))
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{"enabled": req.Enabled, "cidr_ranges": req.CIDRRanges})
+	httputil.JSON(w, http.StatusOK, dto.IPAllowlistResponse{Enabled: req.Enabled, CIDRRanges: req.CIDRRanges})
 }

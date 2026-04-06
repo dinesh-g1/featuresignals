@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
@@ -143,7 +144,7 @@ func TestMFAHandler_Enable(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var resp mfaEnableResponse
+	var resp dto.MFAEnableResponse
 	json.Unmarshal(w.Body.Bytes(), &resp)
 
 	if resp.Secret == "" {

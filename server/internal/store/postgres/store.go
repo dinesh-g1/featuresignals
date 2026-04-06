@@ -502,6 +502,37 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 	return fs, nil
 }
 
+func (s *Store) ListFlagStatesByEnv(ctx context.Context, envID string) ([]domain.FlagState, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, flag_id, env_id, org_id, enabled, default_value, rules, percentage_rollout,
+		        variants, scheduled_enable_at, scheduled_disable_at, created_at, updated_at
+		 FROM flag_states WHERE env_id = $1`, envID)
+	if err != nil {
+		return nil, fmt.Errorf("list flag states by env: %w", err)
+	}
+	defer rows.Close()
+
+	var states []domain.FlagState
+	for rows.Next() {
+		var fs domain.FlagState
+		var rulesJSON, variantsJSON []byte
+		if err := rows.Scan(&fs.ID, &fs.FlagID, &fs.EnvID, &fs.OrgID, &fs.Enabled, &fs.DefaultValue, &rulesJSON,
+			&fs.PercentageRollout, &variantsJSON, &fs.ScheduledEnableAt, &fs.ScheduledDisableAt, &fs.CreatedAt, &fs.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan flag state: %w", err)
+		}
+		if err := json.Unmarshal(rulesJSON, &fs.Rules); err != nil {
+			return nil, fmt.Errorf("unmarshal rules: %w", err)
+		}
+		if len(variantsJSON) > 0 {
+			if err := json.Unmarshal(variantsJSON, &fs.Variants); err != nil {
+				return nil, fmt.Errorf("unmarshal variants: %w", err)
+			}
+		}
+		states = append(states, fs)
+	}
+	return states, rows.Err()
+}
+
 func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, flag_id, env_id, org_id, enabled, default_value, rules, percentage_rollout,

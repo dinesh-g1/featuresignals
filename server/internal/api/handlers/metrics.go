@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
@@ -44,7 +45,7 @@ func (h *MetricsHandler) Summary(w http.ResponseWriter, r *http.Request) {
 
 func (h *MetricsHandler) Reset(w http.ResponseWriter, r *http.Request) {
 	h.collector.Reset()
-	httputil.JSON(w, http.StatusOK, map[string]string{"status": "reset"})
+	httputil.JSON(w, http.StatusOK, dto.MetricsResetResponse{Status: "reset"})
 }
 
 type TrackImpressionRequest struct {

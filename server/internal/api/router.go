@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/riandyrn/otelchi"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
@@ -176,7 +177,7 @@ func NewRouter(
 				for _, code := range domain.RegionCodes() {
 					regions = append(regions, domain.Regions[code])
 				}
-				httputil.JSON(w, http.StatusOK, map[string]interface{}{"regions": regions})
+				httputil.JSON(w, http.StatusOK, dto.RegionsResponse{Regions: regions})
 			})
 		})
 
@@ -265,6 +266,7 @@ func NewRouter(
 				r.Get("/projects/{projectID}/flags", flagH.List)
 				r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
 				r.Get("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.GetState)
+				r.Get("/projects/{projectID}/environments/{envID}/flag-states", flagH.ListFlagStates)
 				r.Get("/projects/{projectID}/flags/compare-environments", flagH.CompareEnvironments)
 				r.Get("/projects/{projectID}/environments/{envID}/flag-insights", insightsH.FlagInsights)
 				r.Get("/projects/{projectID}/segments", segmentH.List)
