@@ -51,6 +51,8 @@ services:
       PORT: "8080"
       CORS_ORIGIN: https://app.featuresignals.com,https://docs.featuresignals.com
       LOG_LEVEL: debug
+      DEPLOYMENT_MODE: cloud
+      EMAIL_PROVIDER: msg91
       MSG91_AUTH_KEY: ${MSG91_AUTH_KEY}
       MSG91_EMAIL_TEMPLATE_ID: ${MSG91_EMAIL_TEMPLATE_ID}
       MSG91_EMAIL_DOMAIN: ${MSG91_EMAIL_DOMAIN}

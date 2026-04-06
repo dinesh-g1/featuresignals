@@ -39,6 +39,10 @@ services:
       JWT_SECRET: dev-secret-change-in-production
       PORT: "8080"
       CORS_ORIGIN: http://localhost:3000
+      DEPLOYMENT_MODE: cloud
+      EMAIL_PROVIDER: none
+      APP_BASE_URL: http://localhost:8080
+      DASHBOARD_URL: http://localhost:3000
       PAYU_MODE: test
       STRIPE_MODE: test
     healthcheck:

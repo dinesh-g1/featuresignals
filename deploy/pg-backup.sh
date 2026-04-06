@@ -6,12 +6,17 @@
 #   crontab -e
 #   0 3 * * * /opt/featuresignals/deploy/pg-backup.sh >> /var/log/fs-backup.log 2>&1
 #
+# All paths are configurable via environment variables.
+#
 set -euo pipefail
 
-BACKUP_DIR="/opt/featuresignals/backups"
-COMPOSE_FILE="/opt/featuresignals/docker-compose.prod.yml"
-DAILY_KEEP=7
-WEEKLY_KEEP=4
+PROJECT_DIR="${PROJECT_DIR:-/opt/featuresignals}"
+BACKUP_DIR="${BACKUP_DIR:-${PROJECT_DIR}/backups}"
+COMPOSE_FILE="${COMPOSE_FILE:-${PROJECT_DIR}/docker-compose.prod.yml}"
+DB_NAME="${POSTGRES_DB:-featuresignals}"
+DB_USER="${POSTGRES_USER:-fs}"
+DAILY_KEEP="${DAILY_KEEP:-7}"
+WEEKLY_KEEP="${WEEKLY_KEEP:-4}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DAY_OF_WEEK=$(date +%u)
 
@@ -23,13 +28,13 @@ if [ -z "$CONTAINER" ]; then
   exit 1
 fi
 
-DAILY_FILE="$BACKUP_DIR/daily/featuresignals_${TIMESTAMP}.sql.gz"
+DAILY_FILE="$BACKUP_DIR/daily/${DB_NAME}_${TIMESTAMP}.sql.gz"
 echo "[$(date)] Starting daily backup -> $DAILY_FILE"
-docker exec "$CONTAINER" pg_dump -U fs featuresignals | gzip > "$DAILY_FILE"
+docker exec "$CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$DAILY_FILE"
 echo "[$(date)] Daily backup complete ($(du -h "$DAILY_FILE" | cut -f1))"
 
 if [ "$DAY_OF_WEEK" -eq 7 ]; then
-  WEEKLY_FILE="$BACKUP_DIR/weekly/featuresignals_${TIMESTAMP}.sql.gz"
+  WEEKLY_FILE="$BACKUP_DIR/weekly/${DB_NAME}_${TIMESTAMP}.sql.gz"
   cp "$DAILY_FILE" "$WEEKLY_FILE"
   echo "[$(date)] Weekly backup copied -> $WEEKLY_FILE"
 fi
