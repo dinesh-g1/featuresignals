@@ -61,6 +61,24 @@ func main() {
 - **Callbacks** — `OnReady`, `OnError`, `OnUpdate` for observability
 - **Immutable context** — `WithAttribute` returns a copy, safe for concurrent use
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature Go SDK and register the FeatureSignals provider:
+
+```go
+import (
+    featuresignals "github.com/featuresignals/sdk-go"
+    of "github.com/open-feature/go-sdk/openfeature"
+)
+
+client := featuresignals.NewClient("fs_srv_...", "production",
+    featuresignals.WithBaseURL("http://localhost:8080"),
+)
+of.SetProviderAndWait(featuresignals.NewProvider(client))
+ofClient := of.NewClient("my-service")
+enabled, _ := ofClient.BooleanValue(context.Background(), "dark-mode", false, of.EvaluationContext{})
+```
+
 ## API Reference
 
 ### Client Creation

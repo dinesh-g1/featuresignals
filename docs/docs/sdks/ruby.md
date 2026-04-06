@@ -162,12 +162,7 @@ end
 
 ## OpenFeature
 
-```ruby
-provider = FeatureSignals::OpenFeature::Provider.new("fs_srv_xxx", options)
-result = provider.resolve_boolean_evaluation("new-feature", false)
-puts "#{result.value} (#{result.reason})"
-provider.shutdown
-```
+This SDK includes a built-in OpenFeature provider. See the [OpenFeature Integration](./openfeature.md) page for details. The provider uses `fetch_*_value` methods compatible with the `openfeature-sdk` gem.
 
 ## Thread Safety
 

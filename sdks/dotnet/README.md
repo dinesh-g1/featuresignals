@@ -39,6 +39,20 @@ string banner = client.StringVariation("banner-text", fallback: "Welcome!");
 double limit  = client.NumberVariation("rate-limit", fallback: 100);
 ```
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature .NET SDK and register the FeatureSignals provider:
+
+```csharp
+using FeatureSignals.OpenFeature;
+using OpenFeature;
+
+var provider = new FeatureSignalsProvider(client);
+await Api.Instance.SetProviderAsync(provider);
+var ofClient = Api.Instance.GetClient();
+var enabled = await ofClient.GetBooleanValueAsync("dark-mode", false);
+```
+
 ## API Reference
 
 ### ClientOptions

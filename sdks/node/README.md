@@ -41,6 +41,21 @@ client.close();
 - **Event emitter** -- `ready`, `error`, `update` events for observability
 - **Graceful degradation** -- falls back to cached flags, then to SDK defaults
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature SDK for Node.js and register the FeatureSignals provider:
+
+```ts
+import { FeatureSignalsClient } from "@featuresignals/node";
+import { FeatureSignalsProvider } from "@featuresignals/node";
+import { OpenFeature } from "@openfeature/server-sdk"; // npm install @openfeature/server-sdk
+
+const fsClient = new FeatureSignalsClient("fs_srv_...", { envKey: "production" });
+await OpenFeature.setProviderAndWait(new FeatureSignalsProvider(fsClient));
+const client = OpenFeature.getClient();
+const enabled = await client.getBooleanValue("dark-mode", false);
+```
+
 ## API Reference
 
 ### Initialization

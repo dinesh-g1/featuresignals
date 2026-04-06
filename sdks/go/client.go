@@ -15,6 +15,18 @@ import (
 	"time"
 )
 
+type clientEventKind int
+
+const (
+	clientEventUpdate clientEventKind = iota
+	clientEventError
+)
+
+type clientEvent struct {
+	kind clientEventKind
+	err  error
+}
+
 // Client is the main FeatureSignals SDK entry point. It fetches flag values
 // from the server, keeps them in memory, and updates them via SSE streaming
 // or polling. All flag reads are local — no network call per evaluation.
@@ -40,6 +52,9 @@ type Client struct {
 	onError      func(error)
 	onUpdate     func(map[string]interface{})
 	userCtx      EvalContext
+
+	eventSubsMu sync.Mutex
+	eventSubs   []chan<- clientEvent
 }
 
 // Option configures the Client.
@@ -234,6 +249,23 @@ func (c *Client) markReady() {
 	})
 }
 
+func (c *Client) addEventSub(ch chan<- clientEvent) {
+	c.eventSubsMu.Lock()
+	c.eventSubs = append(c.eventSubs, ch)
+	c.eventSubsMu.Unlock()
+}
+
+func (c *Client) emitClientEvent(evt clientEvent) {
+	c.eventSubsMu.Lock()
+	defer c.eventSubsMu.Unlock()
+	for _, ch := range c.eventSubs {
+		select {
+		case ch <- evt:
+		default:
+		}
+	}
+}
+
 func (c *Client) setFlags(flags map[string]interface{}) {
 	c.mu.Lock()
 	c.flags = flags
@@ -245,6 +277,7 @@ func (c *Client) setFlags(flags map[string]interface{}) {
 		}
 		c.onUpdate(snapshot)
 	}
+	c.emitClientEvent(clientEvent{kind: clientEventUpdate})
 }
 
 // refresh fetches all flag values from the server.
@@ -392,4 +425,5 @@ func (c *Client) logError(msg string, err error) {
 	if c.onError != nil {
 		c.onError(err)
 	}
+	c.emitClientEvent(clientEvent{kind: clientEventError, err: err})
 }

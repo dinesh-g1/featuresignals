@@ -134,13 +134,7 @@ app.MapGet("/checkout", (FeatureSignalsClient flags, HttpContext ctx) =>
 
 ## OpenFeature
 
-```csharp
-using FeatureSignals.OpenFeature;
-
-var provider = new FeatureSignalsProvider(client);
-var result = provider.ResolveBooleanEvaluation("new-feature", false);
-Console.WriteLine($"{result.Value} ({result.Reason})");
-```
+This SDK includes a built-in OpenFeature provider. See the [OpenFeature Integration](./openfeature.md) page for details. The provider extends the `OpenFeature.FeatureProvider` abstract class.
 
 ## Thread Safety
 

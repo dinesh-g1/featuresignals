@@ -43,6 +43,20 @@ client.close()
 - **Graceful degradation** -- falls back to cached flags, then to SDK defaults
 - **Thread-safe** -- safe for concurrent use in multi-threaded applications
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature Python SDK and register the FeatureSignals provider:
+
+```python
+from openfeature import api as of_api
+from featuresignals import FeatureSignalsProvider, ClientOptions
+
+provider = FeatureSignalsProvider("sdk-key", ClientOptions(env_key="production"))
+of_api.set_provider(provider)
+client = of_api.get_client()
+value = client.get_boolean_value("dark-mode", False)
+```
+
 ## API Reference
 
 ### Client

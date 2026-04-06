@@ -18,6 +18,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 
+dependencies = [
+    "openfeature-sdk>=0.7.0",
+]
+
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 

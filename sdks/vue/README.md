@@ -49,6 +49,23 @@ const ready = useReady();
 </template>
 ```
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature Web SDK and register the FeatureSignals provider:
+
+```ts
+import { OpenFeature } from "@openfeature/web-sdk"; // npm install @openfeature/web-sdk
+import { createOpenFeatureProvider } from "@featuresignals/vue";
+
+const provider = createOpenFeatureProvider({
+  sdkKey: "fs_cli_...",
+  envKey: "production",
+});
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient();
+const enabled = client.getBooleanValue("dark-mode", false);
+```
+
 ## API Reference
 
 ### `FeatureSignalsPlugin`

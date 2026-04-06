@@ -3,103 +3,125 @@
 Implements the OpenFeature provider interface so FeatureSignals can be
 used via the vendor-neutral OpenFeature SDK:
 
-    from openfeature import api
-    from featuresignals import FeatureSignalsProvider, ClientOptions
+    from openfeature import api as of_api
+    from openfeature.provider import AbstractProvider
+
+    from featuresignals.openfeature import FeatureSignalsProvider
 
     provider = FeatureSignalsProvider("sdk-key", ClientOptions(env_key="production"))
-    api.set_provider(provider)
-    client = api.get_client()
+    of_api.set_provider(provider)
+    client = of_api.get_client()
     value = client.get_boolean_value("my-flag", False)
+
+Requires: openfeature-sdk >= 0.7.0
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any
+from typing import Any, List, Optional, Union
+
+from openfeature.exception import ErrorCode
+from openfeature.flag_evaluation import FlagResolutionDetails, Reason
+from openfeature.hook import Hook
+from openfeature.provider import AbstractProvider, Metadata
 
 from .client import FeatureSignalsClient, ClientOptions
 
 
-class ErrorCode(str, Enum):
-    FLAG_NOT_FOUND = "FLAG_NOT_FOUND"
-    TYPE_MISMATCH = "TYPE_MISMATCH"
-    GENERAL = "GENERAL"
+class FeatureSignalsProvider(AbstractProvider):
+    """OpenFeature-compliant provider backed by FeatureSignalsClient.
 
-
-@dataclass
-class ProviderMetadata:
-    name: str = "featuresignals"
-
-
-@dataclass
-class ResolutionDetails:
-    value: Any
-    reason: str = "CACHED"
-    error_code: ErrorCode | None = None
-    error_message: str | None = None
-
-
-class FeatureSignalsProvider:
-    """OpenFeature-compatible provider backed by FeatureSignalsClient."""
+    All evaluations are local lookups against the client's cached flags.
+    """
 
     def __init__(self, sdk_key: str, options: ClientOptions) -> None:
         self._client = FeatureSignalsClient(sdk_key, options)
-        self.metadata = ProviderMetadata()
 
     @property
     def client(self) -> FeatureSignalsClient:
         return self._client
 
-    def resolve_boolean_evaluation(
-        self, flag_key: str, default_value: bool, context: dict[str, Any] | None = None
-    ) -> ResolutionDetails:
-        return self._resolve(flag_key, default_value, bool)
+    def get_metadata(self) -> Metadata:
+        return Metadata(name="featuresignals")
 
-    def resolve_string_evaluation(
-        self, flag_key: str, default_value: str, context: dict[str, Any] | None = None
-    ) -> ResolutionDetails:
-        return self._resolve(flag_key, default_value, str)
+    def get_provider_hooks(self) -> List[Hook]:
+        return []
 
-    def resolve_integer_evaluation(
-        self, flag_key: str, default_value: int, context: dict[str, Any] | None = None
-    ) -> ResolutionDetails:
-        return self._resolve(flag_key, default_value, (int, float))
-
-    def resolve_float_evaluation(
-        self, flag_key: str, default_value: float, context: dict[str, Any] | None = None
-    ) -> ResolutionDetails:
-        return self._resolve(flag_key, default_value, (int, float))
-
-    def resolve_object_evaluation(
-        self, flag_key: str, default_value: Any, context: dict[str, Any] | None = None
-    ) -> ResolutionDetails:
-        flags = self._client.all_flags()
-        val = flags.get(flag_key)
-        if val is None:
-            return ResolutionDetails(
-                value=default_value,
-                error_code=ErrorCode.FLAG_NOT_FOUND,
-                error_message=f"flag '{flag_key}' not found",
-            )
-        return ResolutionDetails(value=val)
+    def initialize(self, evaluation_context: Optional[dict[str, Any]] = None) -> None:
+        self._client.wait_for_ready(timeout=30.0)
 
     def shutdown(self) -> None:
         self._client.close()
 
-    def _resolve(self, flag_key: str, default: Any, expected_type: type | tuple) -> ResolutionDetails:
+    def resolve_boolean_details(
+        self,
+        flag_key: str,
+        default_value: bool,
+        evaluation_context: Optional[dict[str, Any]] = None,
+    ) -> FlagResolutionDetails[bool]:
+        return self._resolve(flag_key, default_value, bool)
+
+    def resolve_string_details(
+        self,
+        flag_key: str,
+        default_value: str,
+        evaluation_context: Optional[dict[str, Any]] = None,
+    ) -> FlagResolutionDetails[str]:
+        return self._resolve(flag_key, default_value, str)
+
+    def resolve_integer_details(
+        self,
+        flag_key: str,
+        default_value: int,
+        evaluation_context: Optional[dict[str, Any]] = None,
+    ) -> FlagResolutionDetails[int]:
+        return self._resolve(flag_key, default_value, (int, float))
+
+    def resolve_float_details(
+        self,
+        flag_key: str,
+        default_value: float,
+        evaluation_context: Optional[dict[str, Any]] = None,
+    ) -> FlagResolutionDetails[float]:
+        return self._resolve(flag_key, default_value, (int, float))
+
+    def resolve_object_details(
+        self,
+        flag_key: str,
+        default_value: Any,
+        evaluation_context: Optional[dict[str, Any]] = None,
+    ) -> FlagResolutionDetails[Any]:
         flags = self._client.all_flags()
         val = flags.get(flag_key)
-        if val is None:
-            return ResolutionDetails(
+        if val is None and flag_key not in flags:
+            return FlagResolutionDetails(
+                value=default_value,
+                reason=Reason.ERROR,
+                error_code=ErrorCode.FLAG_NOT_FOUND,
+                error_message=f"flag '{flag_key}' not found",
+            )
+        return FlagResolutionDetails(value=val, reason=Reason.CACHED)
+
+    def _resolve(
+        self,
+        flag_key: str,
+        default: Any,
+        expected_type: Union[type, tuple[type, ...]],
+    ) -> FlagResolutionDetails[Any]:
+        flags = self._client.all_flags()
+        val = flags.get(flag_key)
+        if val is None and flag_key not in flags:
+            return FlagResolutionDetails(
                 value=default,
+                reason=Reason.ERROR,
                 error_code=ErrorCode.FLAG_NOT_FOUND,
                 error_message=f"flag '{flag_key}' not found",
             )
         if not isinstance(val, expected_type):
-            return ResolutionDetails(
+            return FlagResolutionDetails(
                 value=default,
+                reason=Reason.ERROR,
                 error_code=ErrorCode.TYPE_MISMATCH,
                 error_message=f"expected {expected_type}, got {type(val).__name__}",
             )
-        return ResolutionDetails(value=val)
+        return FlagResolutionDetails(value=val, reason=Reason.CACHED)
