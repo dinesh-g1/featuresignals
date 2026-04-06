@@ -102,8 +102,9 @@ func NewRouter(
 	featuresH := handlers.NewFeaturesHandler(store)
 	ssoH := handlers.NewSSOHandler(store)
 	ssoAuthH := handlers.NewSSOAuthHandler(store, jwtMgr, appBaseURL, dashboardURL)
+	mfaH := handlers.NewMFAHandler(store)
 
-	jwtAuth := middleware.JWTAuth(jwtMgr)
+	jwtAuth := middleware.JWTAuth(jwtMgr, store)
 
 	// SSO public auth endpoints — registered before the main /v1 group
 	// because SAML ACS receives form-encoded POSTs (not JSON) and metadata
@@ -120,10 +121,13 @@ func NewRouter(
 
 	// Feature gate middleware constructors — each wraps a route group to
 	// enforce plan requirements without touching handler code.
+	scimH := handlers.NewSCIMHandler(store)
+
 	webhookGate := middleware.FeatureGate(domain.FeatureWebhooks, store)
 	approvalGate := middleware.FeatureGate(domain.FeatureApprovals, store)
 	auditExportGate := middleware.FeatureGate(domain.FeatureAuditExport, store)
 	ssoGate := middleware.FeatureGate(domain.FeatureSSO, store)
+	scimGate := middleware.FeatureGate(domain.FeatureSCIM, store)
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Use(middleware.RequireJSON)
@@ -160,10 +164,16 @@ func NewRouter(
 			r.Post("/billing/payu/failure", billingH.PayUFailure)
 		})
 
-		// Auth verification (authenticated via JWT)
+		// Auth verification + logout + MFA (authenticated via JWT)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
 			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
+			r.Post("/auth/logout", authH.Logout)
+
+			r.Post("/auth/mfa/enable", mfaH.Enable)
+			r.Post("/auth/mfa/verify", mfaH.Verify)
+			r.Post("/auth/mfa/disable", mfaH.Disable)
+			r.Get("/auth/mfa/status", mfaH.Status)
 		})
 
 		// Billing & onboarding (authenticated via JWT)
@@ -309,6 +319,17 @@ func NewRouter(
 				r.Post("/sso/config", ssoH.Upsert)
 				r.Delete("/sso/config", ssoH.Delete)
 				r.Post("/sso/config/test", ssoH.TestConnection)
+			})
+
+			// ── SCIM 2.0 (Enterprise, admin-only) ─────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(scimGate)
+				r.Get("/scim/Users", scimH.ListUsers)
+				r.Get("/scim/Users/{userID}", scimH.GetUser)
+				r.Post("/scim/Users", scimH.CreateUser)
+				r.Put("/scim/Users/{userID}", scimH.UpdateUser)
+				r.Delete("/scim/Users/{userID}", scimH.DeleteUser)
 			})
 		})
 	})

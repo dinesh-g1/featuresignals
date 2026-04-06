@@ -5,6 +5,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -53,6 +55,12 @@ func NewJWTManager(secret string, tokenTTL, refreshTTL time.Duration) *JWTManage
 	}
 }
 
+func generateJTI() string {
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
 func (m *JWTManager) GenerateTokenPair(userID, orgID, role string) (*TokenPair, error) {
 	now := time.Now()
 	expiresAt := now.Add(m.tokenTTL)
@@ -62,6 +70,7 @@ func (m *JWTManager) GenerateTokenPair(userID, orgID, role string) (*TokenPair, 
 		OrgID:  orgID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        generateJTI(),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    "featuresignals",
@@ -79,6 +88,7 @@ func (m *JWTManager) GenerateTokenPair(userID, orgID, role string) (*TokenPair, 
 		OrgID:  orgID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        generateJTI(),
 			ExpiresAt: jwt.NewNumericDate(now.Add(m.refreshTTL)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    "featuresignals-refresh",

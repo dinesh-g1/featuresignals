@@ -218,3 +218,45 @@ func TestGenerateTokenPair_DifferentUsersGetDifferentTokens(t *testing.T) {
 	}
 }
 
+func TestGenerateTokenPair_ContainsJTI(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	pair, err := mgr.GenerateTokenPair("user-1", "org-1", "admin")
+	if err != nil {
+		t.Fatalf("GenerateTokenPair error: %v", err)
+	}
+
+	claims, err := mgr.ValidateToken(pair.AccessToken)
+	if err != nil {
+		t.Fatalf("ValidateToken error: %v", err)
+	}
+	if claims.ID == "" {
+		t.Fatal("expected non-empty JTI (claims.ID) in access token")
+	}
+
+	refreshClaims, err := mgr.ValidateRefreshToken(pair.RefreshToken)
+	if err != nil {
+		t.Fatalf("ValidateRefreshToken error: %v", err)
+	}
+	if refreshClaims.ID == "" {
+		t.Fatal("expected non-empty JTI (claims.ID) in refresh token")
+	}
+
+	if claims.ID == refreshClaims.ID {
+		t.Fatal("access and refresh tokens should have different JTIs")
+	}
+}
+
+func TestGenerateTokenPair_UniqueJTIs(t *testing.T) {
+	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+
+	pair1, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin")
+	pair2, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin")
+
+	c1, _ := mgr.ValidateToken(pair1.AccessToken)
+	c2, _ := mgr.ValidateToken(pair2.AccessToken)
+
+	if c1.ID == c2.ID {
+		t.Fatal("successive token generations should produce unique JTIs")
+	}
+}
+

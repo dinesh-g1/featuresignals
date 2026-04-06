@@ -217,6 +217,26 @@ func (s *tierMockStore) GetSSOConfigByOrgSlug(context.Context, string) (*domain.
 }
 func (s *tierMockStore) DeleteSSOConfig(context.Context, string) error { return nil }
 
+func (s *tierMockStore) RevokeToken(context.Context, string, string, string, time.Time) error {
+	return nil
+}
+func (s *tierMockStore) IsTokenRevoked(context.Context, string) (bool, error) { return false, nil }
+func (s *tierMockStore) CleanExpiredRevocations(context.Context) error        { return nil }
+func (s *tierMockStore) UpsertMFASecret(context.Context, string, string) error {
+	return nil
+}
+func (s *tierMockStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) EnableMFA(context.Context, string) error                           { return nil }
+func (s *tierMockStore) DisableMFA(context.Context, string) error                          { return nil }
+func (s *tierMockStore) RecordLoginAttempt(context.Context, string, string, string, bool) error {
+	return nil
+}
+func (s *tierMockStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) {
+	return 0, nil
+}
+
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)
 }

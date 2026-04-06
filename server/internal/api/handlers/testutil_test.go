@@ -44,6 +44,8 @@ type mockStore struct {
 	salesInquiries   []*domain.SalesInquiry
 	ssoByOrgID       map[string]*domain.SSOConfig        // orgID -> sso config
 	ssoConfigs       map[string]*domain.SSOConfig        // orgSlug -> sso config
+	revokedTokens    map[string]bool
+	mfaSecrets       map[string]*domain.MFASecret
 
 	idCounter int
 }
@@ -1104,4 +1106,68 @@ func (m *mockStore) DeleteSSOConfig(_ context.Context, orgID string) error {
 	defer m.mu.Unlock()
 	delete(m.ssoByOrgID, orgID)
 	return nil
+}
+
+// --- Token Revocation ---
+
+func (m *mockStore) RevokeToken(_ context.Context, jti, _, _ string, _ time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.revokedTokens == nil {
+		m.revokedTokens = map[string]bool{}
+	}
+	m.revokedTokens[jti] = true
+	return nil
+}
+
+func (m *mockStore) IsTokenRevoked(_ context.Context, jti string) (bool, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.revokedTokens[jti], nil
+}
+
+func (m *mockStore) CleanExpiredRevocations(_ context.Context) error { return nil }
+
+// --- MFA ---
+
+func (m *mockStore) UpsertMFASecret(_ context.Context, userID, secret string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.mfaSecrets == nil {
+		m.mfaSecrets = map[string]*domain.MFASecret{}
+	}
+	m.mfaSecrets[userID] = &domain.MFASecret{UserID: userID, Secret: secret}
+	return nil
+}
+
+func (m *mockStore) GetMFASecret(_ context.Context, userID string) (*domain.MFASecret, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if s, ok := m.mfaSecrets[userID]; ok {
+		return s, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) EnableMFA(_ context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if s, ok := m.mfaSecrets[userID]; ok {
+		s.Enabled = true
+	}
+	return nil
+}
+
+func (m *mockStore) DisableMFA(_ context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.mfaSecrets, userID)
+	return nil
+}
+
+// --- Login Attempts ---
+
+func (m *mockStore) RecordLoginAttempt(_ context.Context, _, _, _ string, _ bool) error { return nil }
+func (m *mockStore) CountRecentFailedAttempts(_ context.Context, _ string, _ time.Time) (int, error) {
+	return 0, nil
 }

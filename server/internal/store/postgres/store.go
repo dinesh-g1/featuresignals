@@ -1338,3 +1338,75 @@ func (s *Store) DeleteSSOConfig(ctx context.Context, orgID string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM sso_configs WHERE org_id = $1`, orgID)
 	return err
 }
+
+// --- Token Revocation ---
+
+func (s *Store) RevokeToken(ctx context.Context, jti, userID, orgID string, expiresAt time.Time) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO token_revocations (token_jti, user_id, org_id, expires_at)
+		 VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+		jti, userID, orgID, expiresAt)
+	return err
+}
+
+func (s *Store) IsTokenRevoked(ctx context.Context, jti string) (bool, error) {
+	var exists bool
+	err := s.pool.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM token_revocations WHERE token_jti = $1)`, jti).Scan(&exists)
+	return exists, err
+}
+
+func (s *Store) CleanExpiredRevocations(ctx context.Context) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM token_revocations WHERE expires_at < NOW()`)
+	return err
+}
+
+// --- MFA ---
+
+func (s *Store) UpsertMFASecret(ctx context.Context, userID, secret string) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO mfa_secrets (user_id, secret) VALUES ($1, $2)
+		 ON CONFLICT (user_id) DO UPDATE SET secret = $2, enabled = false, verified_at = NULL, updated_at = NOW()`,
+		userID, secret)
+	return err
+}
+
+func (s *Store) GetMFASecret(ctx context.Context, userID string) (*domain.MFASecret, error) {
+	var m domain.MFASecret
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, user_id, secret, enabled, verified_at, created_at, updated_at
+		 FROM mfa_secrets WHERE user_id = $1`, userID,
+	).Scan(&m.ID, &m.UserID, &m.Secret, &m.Enabled, &m.VerifiedAt, &m.CreatedAt, &m.UpdatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "mfa_secret")
+	}
+	return &m, nil
+}
+
+func (s *Store) EnableMFA(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE mfa_secrets SET enabled = true, verified_at = NOW(), updated_at = NOW() WHERE user_id = $1`, userID)
+	return err
+}
+
+func (s *Store) DisableMFA(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM mfa_secrets WHERE user_id = $1`, userID)
+	return err
+}
+
+// --- Login Attempts ---
+
+func (s *Store) RecordLoginAttempt(ctx context.Context, email, ip, ua string, success bool) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO login_attempts (email, ip_address, user_agent, success) VALUES ($1, $2, $3, $4)`,
+		email, ip, ua, success)
+	return err
+}
+
+func (s *Store) CountRecentFailedAttempts(ctx context.Context, email string, since time.Time) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM login_attempts WHERE email = $1 AND success = false AND created_at > $2`,
+		email, since).Scan(&count)
+	return count, err
+}
