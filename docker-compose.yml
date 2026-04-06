@@ -39,6 +39,8 @@ services:
       JWT_SECRET: dev-secret-change-in-production
       PORT: "8080"
       CORS_ORIGIN: http://localhost:3000
+      PAYU_MODE: test
+      STRIPE_MODE: test
 
   dashboard:
     build:

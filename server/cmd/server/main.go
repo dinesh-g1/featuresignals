@@ -21,6 +21,9 @@ import (
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/observability"
+	"github.com/featuresignals/server/internal/payment"
+	payupkg "github.com/featuresignals/server/internal/payment/payu"
+	stripepkg "github.com/featuresignals/server/internal/payment/stripe"
 	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
@@ -179,14 +182,23 @@ func main() {
 	poolAdapter := status.NewPgxPoolAdapter(pool)
 	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion)
 
+	// Payment gateway registry (Strategy pattern)
+	paymentRegistry := payment.NewRegistry()
+	if cfg.PayUMerchantKey != "" {
+		paymentRegistry.Register(payupkg.NewProvider(cfg.PayUMerchantKey, cfg.PayUSalt, cfg.PayUMode))
+		logger.Info("PayU payment gateway registered", "mode", cfg.PayUMode)
+	}
+	if cfg.StripeSecretKey != "" {
+		paymentRegistry.Register(stripepkg.NewProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripePriceID))
+		logger.Info("Stripe payment gateway registered", "mode", cfg.StripeMode)
+	}
+
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
-		PayUMerchantKey: cfg.PayUMerchantKey,
-		PayUSalt:        cfg.PayUSalt,
-		PayUMode:        cfg.PayUMode,
-		DashboardURL:    cfg.DashboardURL,
-		AppBaseURL:      cfg.AppBaseURL,
+		Registry:     paymentRegistry,
+		DashboardURL: cfg.DashboardURL,
+		AppBaseURL:   cfg.AppBaseURL,
 	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH)
 
 	// Server

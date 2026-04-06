@@ -41,6 +41,12 @@ type Config struct {
 	PayUSalt        string
 	PayUMode        string
 
+	// Stripe
+	StripeSecretKey      string
+	StripeWebhookSecret  string
+	StripePriceID        string
+	StripeMode           string
+
 	// Email OTP (MSG91 Email API)
 	MSG91AuthKey         string
 	MSG91EmailTemplateID string
@@ -85,6 +91,11 @@ func Load() *Config {
 		PayUMerchantKey: os.Getenv("PAYU_MERCHANT_KEY"),
 		PayUSalt:        os.Getenv("PAYU_SALT"),
 		PayUMode:        getEnv("PAYU_MODE", "test"),
+
+		StripeSecretKey:     os.Getenv("STRIPE_SECRET_KEY"),
+		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripePriceID:       os.Getenv("STRIPE_PRICE_ID"),
+		StripeMode:          getEnv("STRIPE_MODE", "test"),
 
 		MSG91AuthKey:         os.Getenv("MSG91_AUTH_KEY"),
 		MSG91EmailTemplateID: os.Getenv("MSG91_EMAIL_TEMPLATE_ID"),

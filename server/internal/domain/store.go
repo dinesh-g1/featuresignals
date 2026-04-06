@@ -159,6 +159,12 @@ type BillingStore interface {
 	UpdateOrgPlan(ctx context.Context, orgID, plan string, limits PlanLimits) error
 	IncrementUsage(ctx context.Context, orgID, metricName string, delta int64) error
 	GetUsage(ctx context.Context, orgID, metricName string) (*UsageMetric, error)
+
+	// Payment gateway support
+	GetSubscriptionByStripeID(ctx context.Context, stripeSubID string) (*Subscription, error)
+	CreatePaymentEvent(ctx context.Context, event *PaymentEvent) error
+	GetPaymentEventByExternalID(ctx context.Context, provider, eventID string) (*PaymentEvent, error)
+	UpdateOrgPaymentGateway(ctx context.Context, orgID, gateway string) error
 }
 
 // OnboardingStore provides access to onboarding state.

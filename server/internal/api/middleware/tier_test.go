@@ -175,6 +175,14 @@ func (s *tierMockStore) IncrementUsage(context.Context, string, string, int64) e
 func (s *tierMockStore) GetUsage(context.Context, string, string) (*domain.UsageMetric, error) {
 	return nil, fmt.Errorf("not found")
 }
+func (s *tierMockStore) GetSubscriptionByStripeID(context.Context, string) (*domain.Subscription, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) CreatePaymentEvent(context.Context, *domain.PaymentEvent) error { return nil }
+func (s *tierMockStore) GetPaymentEventByExternalID(context.Context, string, string) (*domain.PaymentEvent, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) UpdateOrgPaymentGateway(context.Context, string, string) error { return nil }
 func (s *tierMockStore) GetOnboardingState(context.Context, string) (*domain.OnboardingState, error) {
 	return nil, fmt.Errorf("not found")
 }

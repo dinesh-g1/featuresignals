@@ -165,6 +165,8 @@ export interface ApprovalRequest {
 export interface BillingInfo {
   plan: string;
   status: string;
+  gateway: "payu" | "stripe";
+  can_manage: boolean;
   seats_limit: number;
   projects_limit: number;
   environments_limit: number;
@@ -307,17 +309,19 @@ export interface TokenExchangeResponse {
 }
 
 export interface CheckoutResponse {
-  payu_url: string;
-  key: string;
-  txnid: string;
-  hash: string;
-  amount: string;
-  productinfo: string;
-  firstname: string;
-  email: string;
-  phone: string;
-  surl: string;
-  furl: string;
+  gateway: "payu" | "stripe";
+  redirect_url?: string;
+  payu_url?: string;
+  key?: string;
+  txnid?: string;
+  hash?: string;
+  amount?: string;
+  productinfo?: string;
+  firstname?: string;
+  email?: string;
+  phone?: string;
+  surl?: string;
+  furl?: string;
 }
 
 export interface CreateApprovalPayload {

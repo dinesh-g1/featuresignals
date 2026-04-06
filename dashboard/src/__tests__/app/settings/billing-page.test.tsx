@@ -14,6 +14,9 @@ vi.mock("@/lib/api", () => ({
     getSubscription: vi.fn(),
     getUsage: vi.fn(),
     createCheckout: vi.fn(),
+    cancelSubscription: vi.fn(),
+    getBillingPortalURL: vi.fn(),
+    updatePaymentGateway: vi.fn(),
   },
 }));
 
@@ -29,6 +32,9 @@ const mockApi = api as unknown as {
   getSubscription: ReturnType<typeof vi.fn>;
   getUsage: ReturnType<typeof vi.fn>;
   createCheckout: ReturnType<typeof vi.fn>;
+  cancelSubscription: ReturnType<typeof vi.fn>;
+  getBillingPortalURL: ReturnType<typeof vi.fn>;
+  updatePaymentGateway: ReturnType<typeof vi.fn>;
 };
 
 const mockPricing = {
@@ -64,7 +70,7 @@ describe("BillingPage", () => {
     useAppStore.getState().setCurrentEnv("env-1");
 
     mockApi.getPricing.mockResolvedValue(mockPricing);
-    mockApi.getSubscription.mockResolvedValue({ plan: "free", status: "active" });
+    mockApi.getSubscription.mockResolvedValue({ plan: "free", status: "active", gateway: "payu", can_manage: false });
     mockApi.getUsage.mockResolvedValue({
       seats_used: 1,
       seats_limit: 10,
@@ -118,14 +124,63 @@ describe("BillingPage", () => {
   });
 
   it("upgrade button renders for non-pro plans", async () => {
-    // Arrange — subscription is "free" (default mock)
-
-    // Act
     render(<BillingPage />);
 
-    // Assert
     await waitFor(() => {
       expect(screen.getAllByText("Upgrade to Pro").length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("shows payment gateway section for free plan", async () => {
+    render(<BillingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Payment Gateway")).toBeInTheDocument();
+    });
+  });
+
+  it("shows contact support message for PayU managed subscriptions", async () => {
+    mockApi.getSubscription.mockResolvedValue({
+      plan: "pro",
+      status: "active",
+      gateway: "payu",
+      can_manage: false,
+    });
+
+    render(<BillingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/support@featuresignals.com/)).toBeInTheDocument();
+    });
+  });
+
+  it("shows manage payment button for Stripe subscriptions", async () => {
+    mockApi.getSubscription.mockResolvedValue({
+      plan: "pro",
+      status: "active",
+      gateway: "stripe",
+      can_manage: true,
+    });
+
+    render(<BillingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Manage Payment Method")).toBeInTheDocument();
+    });
+  });
+
+  it("shows cancel button for Stripe subscriptions", async () => {
+    mockApi.getSubscription.mockResolvedValue({
+      plan: "pro",
+      status: "active",
+      gateway: "stripe",
+      can_manage: true,
+    });
+
+    render(<BillingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Cancel Subscription")).toBeInTheDocument();
     });
   });
 });

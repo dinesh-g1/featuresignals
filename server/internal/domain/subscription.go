@@ -1,12 +1,20 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+// Payment gateway constants.
+const (
+	GatewayPayU   = "payu"
+	GatewayStripe = "stripe"
+)
 
 type Subscription struct {
 	ID                 string    `json:"id"`
 	OrgID              string    `json:"org_id"`
-	PayUTxnID          string    `json:"payu_txnid" db:"payu_txnid"`
-	PayUMihpayID       string    `json:"payu_mihpayid" db:"payu_mihpayid"`
+	GatewayProvider    string    `json:"gateway_provider"`
 	Plan               string    `json:"plan"`
 	Status             string    `json:"status"`
 	CurrentPeriodStart time.Time `json:"current_period_start"`
@@ -14,6 +22,27 @@ type Subscription struct {
 	CancelAtPeriodEnd  bool      `json:"cancel_at_period_end"`
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`
+
+	// PayU-specific fields
+	PayUTxnID    string `json:"payu_txnid,omitempty" db:"payu_txnid"`
+	PayUMihpayID string `json:"payu_mihpayid,omitempty" db:"payu_mihpayid"`
+
+	// Stripe-specific fields
+	StripeCustomerID      string `json:"stripe_customer_id,omitempty" db:"stripe_customer_id"`
+	StripeSubscriptionID  string `json:"stripe_subscription_id,omitempty" db:"stripe_subscription_id"`
+	StripePaymentIntentID string `json:"stripe_payment_intent_id,omitempty" db:"stripe_payment_intent_id"`
+}
+
+// PaymentEvent records a payment provider webhook or callback for idempotency and audit.
+type PaymentEvent struct {
+	ID              string          `json:"id"`
+	OrgID           string          `json:"org_id"`
+	GatewayProvider string          `json:"gateway_provider"`
+	EventType       string          `json:"event_type"`
+	EventID         string          `json:"event_id"`
+	Payload         json.RawMessage `json:"payload"`
+	Processed       bool            `json:"processed"`
+	CreatedAt       time.Time       `json:"created_at"`
 }
 
 type UsageMetric struct {

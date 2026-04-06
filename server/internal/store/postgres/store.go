@@ -70,11 +70,12 @@ func (s *Store) GetOrganization(ctx context.Context, id string) (*domain.Organiz
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, name, slug, created_at, updated_at,
 		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
+		        COALESCE(payment_gateway, 'payu'),
 		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2),
 		        COALESCE(data_region, 'us')
 		 FROM organizations WHERE id = $1`, id,
 	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
-		&org.Plan, &org.PayUCustomerRef,
+		&org.Plan, &org.PayUCustomerRef, &org.PaymentGateway,
 		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit,
 		&org.DataRegion)
 	if err != nil {
@@ -88,11 +89,12 @@ func (s *Store) GetOrganizationByIDPrefix(ctx context.Context, prefix string) (*
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, name, slug, created_at, updated_at,
 		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
+		        COALESCE(payment_gateway, 'payu'),
 		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 2),
 		        COALESCE(data_region, 'us')
 		 FROM organizations WHERE id LIKE $1 || '%' LIMIT 1`, prefix,
 	).Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt,
-		&org.Plan, &org.PayUCustomerRef,
+		&org.Plan, &org.PayUCustomerRef, &org.PaymentGateway,
 		&org.PlanSeatsLimit, &org.PlanProjectsLimit, &org.PlanEnvironmentsLimit,
 		&org.DataRegion)
 	if err != nil {
@@ -1023,10 +1025,15 @@ func (s *Store) GetEnvironmentByAPIKeyHash(ctx context.Context, keyHash string) 
 func (s *Store) GetSubscription(ctx context.Context, orgID string) (*domain.Subscription, error) {
 	sub := &domain.Subscription{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, org_id, COALESCE(payu_txnid, ''), COALESCE(payu_mihpayid, ''), plan, status,
-		        current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at
+		`SELECT id, org_id, COALESCE(gateway_provider, 'payu'),
+		        COALESCE(payu_txnid, ''), COALESCE(payu_mihpayid, ''),
+		        COALESCE(stripe_customer_id, ''), COALESCE(stripe_subscription_id, ''), COALESCE(stripe_payment_intent_id, ''),
+		        plan, status, current_period_start, current_period_end,
+		        cancel_at_period_end, created_at, updated_at
 		 FROM subscriptions WHERE org_id = $1`, orgID,
-	).Scan(&sub.ID, &sub.OrgID, &sub.PayUTxnID, &sub.PayUMihpayID,
+	).Scan(&sub.ID, &sub.OrgID, &sub.GatewayProvider,
+		&sub.PayUTxnID, &sub.PayUMihpayID,
+		&sub.StripeCustomerID, &sub.StripeSubscriptionID, &sub.StripePaymentIntentID,
 		&sub.Plan, &sub.Status, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd,
 		&sub.CancelAtPeriodEnd, &sub.CreatedAt, &sub.UpdatedAt)
 	if err != nil {
@@ -1036,14 +1043,19 @@ func (s *Store) GetSubscription(ctx context.Context, orgID string) (*domain.Subs
 }
 
 func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription) error {
+	if sub.GatewayProvider == "" {
+		sub.GatewayProvider = domain.GatewayPayU
+	}
 	existing, err := s.GetSubscription(ctx, sub.OrgID)
 	if err != nil || existing == nil {
 		return s.pool.QueryRow(ctx,
-			`INSERT INTO subscriptions (org_id, payu_txnid, payu_mihpayid, plan, status,
-			                            current_period_start, current_period_end, cancel_at_period_end)
-			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			`INSERT INTO subscriptions (org_id, gateway_provider, payu_txnid, payu_mihpayid,
+			    stripe_customer_id, stripe_subscription_id, stripe_payment_intent_id,
+			    plan, status, current_period_start, current_period_end, cancel_at_period_end)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			 RETURNING id, created_at, updated_at`,
-			sub.OrgID, sub.PayUTxnID, sub.PayUMihpayID,
+			sub.OrgID, sub.GatewayProvider, sub.PayUTxnID, sub.PayUMihpayID,
+			sub.StripeCustomerID, sub.StripeSubscriptionID, sub.StripePaymentIntentID,
 			sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
 			sub.CancelAtPeriodEnd,
 		).Scan(&sub.ID, &sub.CreatedAt, &sub.UpdatedAt)
@@ -1051,16 +1063,21 @@ func (s *Store) UpsertSubscription(ctx context.Context, sub *domain.Subscription
 
 	_, err = s.pool.Exec(ctx,
 		`UPDATE subscriptions SET
-		   payu_txnid = COALESCE(NULLIF($2, ''), payu_txnid),
-		   payu_mihpayid = COALESCE(NULLIF($3, ''), payu_mihpayid),
-		   plan = COALESCE(NULLIF($4, ''), plan),
-		   status = COALESCE(NULLIF($5, ''), status),
-		   current_period_start = CASE WHEN $6 = '0001-01-01'::timestamptz THEN current_period_start ELSE $6 END,
-		   current_period_end = CASE WHEN $7 = '0001-01-01'::timestamptz THEN current_period_end ELSE $7 END,
-		   cancel_at_period_end = $8,
+		   gateway_provider = COALESCE(NULLIF($2, ''), gateway_provider),
+		   payu_txnid = COALESCE(NULLIF($3, ''), payu_txnid),
+		   payu_mihpayid = COALESCE(NULLIF($4, ''), payu_mihpayid),
+		   stripe_customer_id = COALESCE(NULLIF($5, ''), stripe_customer_id),
+		   stripe_subscription_id = COALESCE(NULLIF($6, ''), stripe_subscription_id),
+		   stripe_payment_intent_id = COALESCE(NULLIF($7, ''), stripe_payment_intent_id),
+		   plan = COALESCE(NULLIF($8, ''), plan),
+		   status = COALESCE(NULLIF($9, ''), status),
+		   current_period_start = CASE WHEN $10 = '0001-01-01'::timestamptz THEN current_period_start ELSE $10 END,
+		   current_period_end = CASE WHEN $11 = '0001-01-01'::timestamptz THEN current_period_end ELSE $11 END,
+		   cancel_at_period_end = $12,
 		   updated_at = NOW()
 		 WHERE org_id = $1`,
-		sub.OrgID, sub.PayUTxnID, sub.PayUMihpayID,
+		sub.OrgID, sub.GatewayProvider, sub.PayUTxnID, sub.PayUMihpayID,
+		sub.StripeCustomerID, sub.StripeSubscriptionID, sub.StripePaymentIntentID,
 		sub.Plan, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
 		sub.CancelAtPeriodEnd,
 	)
@@ -1106,6 +1123,57 @@ func (s *Store) GetUsage(ctx context.Context, orgID, metricName string) (*domain
 		return nil, wrapNotFound(err, "usage metric")
 	}
 	return m, nil
+}
+
+// --- Payment Gateway ---
+
+func (s *Store) GetSubscriptionByStripeID(ctx context.Context, stripeSubID string) (*domain.Subscription, error) {
+	sub := &domain.Subscription{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, COALESCE(gateway_provider, 'payu'),
+		        COALESCE(payu_txnid, ''), COALESCE(payu_mihpayid, ''),
+		        COALESCE(stripe_customer_id, ''), COALESCE(stripe_subscription_id, ''), COALESCE(stripe_payment_intent_id, ''),
+		        plan, status, current_period_start, current_period_end,
+		        cancel_at_period_end, created_at, updated_at
+		 FROM subscriptions WHERE stripe_subscription_id = $1`, stripeSubID,
+	).Scan(&sub.ID, &sub.OrgID, &sub.GatewayProvider,
+		&sub.PayUTxnID, &sub.PayUMihpayID,
+		&sub.StripeCustomerID, &sub.StripeSubscriptionID, &sub.StripePaymentIntentID,
+		&sub.Plan, &sub.Status, &sub.CurrentPeriodStart, &sub.CurrentPeriodEnd,
+		&sub.CancelAtPeriodEnd, &sub.CreatedAt, &sub.UpdatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "subscription")
+	}
+	return sub, nil
+}
+
+func (s *Store) CreatePaymentEvent(ctx context.Context, event *domain.PaymentEvent) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO payment_events (org_id, gateway_provider, event_type, event_id, payload, processed)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 ON CONFLICT (gateway_provider, event_id) DO NOTHING
+		 RETURNING id, created_at`,
+		event.OrgID, event.GatewayProvider, event.EventType, event.EventID, event.Payload, event.Processed,
+	).Scan(&event.ID, &event.CreatedAt)
+}
+
+func (s *Store) GetPaymentEventByExternalID(ctx context.Context, provider, eventID string) (*domain.PaymentEvent, error) {
+	ev := &domain.PaymentEvent{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, gateway_provider, event_type, event_id, payload, processed, created_at
+		 FROM payment_events WHERE gateway_provider = $1 AND event_id = $2`, provider, eventID,
+	).Scan(&ev.ID, &ev.OrgID, &ev.GatewayProvider, &ev.EventType, &ev.EventID, &ev.Payload, &ev.Processed, &ev.CreatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "payment event")
+	}
+	return ev, nil
+}
+
+func (s *Store) UpdateOrgPaymentGateway(ctx context.Context, orgID, gateway string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE organizations SET payment_gateway = $1, updated_at = NOW() WHERE id = $2`,
+		gateway, orgID)
+	return err
 }
 
 // --- Onboarding ---
@@ -1219,6 +1287,7 @@ func (s *Store) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, name, slug, created_at, updated_at,
 		        COALESCE(plan, 'free'), COALESCE(payu_customer_ref, ''),
+		        COALESCE(payment_gateway, 'payu'),
 		        COALESCE(plan_seats_limit, 3), COALESCE(plan_projects_limit, 1), COALESCE(plan_environments_limit, 3),
 		        trial_expires_at, deleted_at, COALESCE(data_region, 'us')
 		 FROM organizations WHERE deleted_at IS NOT NULL AND deleted_at < $1`, deletedBefore)
@@ -1230,7 +1299,7 @@ func (s *Store) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time
 	for rows.Next() {
 		var o domain.Organization
 		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt,
-			&o.Plan, &o.PayUCustomerRef,
+			&o.Plan, &o.PayUCustomerRef, &o.PaymentGateway,
 			&o.PlanSeatsLimit, &o.PlanProjectsLimit, &o.PlanEnvironmentsLimit,
 			&o.TrialExpiresAt, &o.DeletedAt, &o.DataRegion); err != nil {
 			return nil, err
@@ -1250,6 +1319,7 @@ func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince
 	rows, err := s.pool.Query(ctx,
 		`SELECT o.id, o.name, o.slug, o.created_at, o.updated_at,
 		        COALESCE(o.plan, 'free'), COALESCE(o.payu_customer_ref, ''),
+		        COALESCE(o.payment_gateway, 'payu'),
 		        COALESCE(o.plan_seats_limit, 3), COALESCE(o.plan_projects_limit, 1), COALESCE(o.plan_environments_limit, 3),
 		        o.trial_expires_at, o.deleted_at, COALESCE(o.data_region, 'us')
 		 FROM organizations o
@@ -1267,7 +1337,7 @@ func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince
 	for rows.Next() {
 		var o domain.Organization
 		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt,
-			&o.Plan, &o.PayUCustomerRef,
+			&o.Plan, &o.PayUCustomerRef, &o.PaymentGateway,
 			&o.PlanSeatsLimit, &o.PlanProjectsLimit, &o.PlanEnvironmentsLimit,
 			&o.TrialExpiresAt, &o.DeletedAt, &o.DataRegion); err != nil {
 			return nil, err
