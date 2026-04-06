@@ -185,19 +185,30 @@ export default function OnboardingPage() {
         return;
       }
       await markStepComplete("plan_chosen");
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = data.payu_url;
-      for (const [key, value] of Object.entries(data)) {
-        if (key === "payu_url") continue;
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
+
+      if (data.gateway === "stripe" && data.redirect_url) {
+        window.location.href = data.redirect_url;
+        return;
       }
-      document.body.appendChild(form);
-      form.submit();
+
+      if (data.gateway === "payu" && data.payu_url) {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = data.payu_url;
+        const fields = ["key", "txnid", "hash", "amount", "productinfo", "firstname", "email", "phone", "surl", "furl"];
+        for (const field of fields) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = field;
+          input.value = (data as unknown as Record<string, string>)[field] ?? "";
+          form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+
+      toast("Unable to start checkout. Please try again.", "error");
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : "Failed to start checkout", "error");
     }
