@@ -237,8 +237,12 @@ func (h *SCIMHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: hash,
 	}
 	if err := h.store.CreateUser(r.Context(), user); err != nil {
-		logger.Error("SCIM create user failed", "error", err, "email", email)
-		scimErr(w, http.StatusConflict, "user already exists")
+		if errors.Is(err, domain.ErrConflict) {
+			scimErr(w, http.StatusConflict, "user already exists")
+		} else {
+			logger.Error("SCIM create user failed", "error", err, "email", email)
+			scimErr(w, http.StatusInternalServerError, "failed to create user")
+		}
 		return
 	}
 
@@ -262,7 +266,11 @@ func (h *SCIMHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
-		scimErr(w, http.StatusNotFound, "user not found")
+		if errors.Is(err, domain.ErrNotFound) {
+			scimErr(w, http.StatusNotFound, "user not found")
+		} else {
+			scimErr(w, http.StatusInternalServerError, "failed to get user")
+		}
 		return
 	}
 

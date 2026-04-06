@@ -122,6 +122,10 @@ func (noopStore) ListAPIKeys(context.Context, string) ([]domain.APIKey, error) {
 	return nil, errNoop
 }
 func (noopStore) RevokeAPIKey(context.Context, string) error        { return errNoop }
+func (noopStore) RotateAPIKey(context.Context, string, string, string, string, string, time.Duration) (*domain.APIKey, error) {
+	return nil, errNoop
+}
+func (noopStore) CleanExpiredGracePeriodKeys(context.Context) error  { return errNoop }
 func (noopStore) UpdateAPIKeyLastUsed(context.Context, string) error { return errNoop }
 
 func (noopStore) CreateWebhook(context.Context, *domain.Webhook) error { return errNoop }
@@ -154,6 +158,7 @@ func (noopStore) UpdateApprovalRequest(context.Context, *domain.ApprovalRequest)
 }
 
 func (noopStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { return errNoop }
+func (noopStore) PurgeAuditEntries(context.Context, time.Time) (int, error) { return 0, errNoop }
 func (noopStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, errNoop
 }
@@ -245,6 +250,8 @@ func (noopStore) EnableMFA(context.Context, string) error                       
 func (noopStore) DisableMFA(context.Context, string) error                                 { return nil }
 func (noopStore) RecordLoginAttempt(context.Context, string, string, string, bool) error    { return nil }
 func (noopStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) { return 0, nil }
+func (noopStore) GetIPAllowlist(context.Context, string) (bool, []string, error)            { return false, nil, nil }
+func (noopStore) UpsertIPAllowlist(context.Context, string, bool, []string) error           { return nil }
 
 type noopOTPEmail struct{}
 
@@ -383,9 +390,12 @@ func TestSecurityHeaders(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	expectedHeaders := map[string]string{
-		"X-Content-Type-Options": "nosniff",
-		"X-Frame-Options":       "DENY",
-		"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+		"X-Content-Type-Options":       "nosniff",
+		"X-Frame-Options":              "DENY",
+		"Cross-Origin-Opener-Policy":   "same-origin",
+		"Cross-Origin-Resource-Policy": "same-origin",
+		"Cross-Origin-Embedder-Policy": "require-corp",
+		"Content-Security-Policy":      "default-src 'none'; frame-ancestors 'none'",
 	}
 
 	for header, want := range expectedHeaders {

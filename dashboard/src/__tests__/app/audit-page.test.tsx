@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api", () => ({
   api: {
     listAudit: vi.fn(),
+    getFeatures: vi.fn().mockResolvedValue({ features: [] }),
   },
 }));
 

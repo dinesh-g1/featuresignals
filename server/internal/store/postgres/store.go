@@ -659,6 +659,44 @@ func (s *Store) UpdateAPIKeyLastUsed(ctx context.Context, id string) error {
 	return err
 }
 
+func (s *Store) RotateAPIKey(ctx context.Context, oldKeyID, envID, name, newKeyHash, newKeyPrefix string, gracePeriod time.Duration) (*domain.APIKey, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin rotate tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	graceExpires := time.Now().Add(gracePeriod)
+	_, err = tx.Exec(ctx,
+		`UPDATE api_keys SET grace_expires_at = $1 WHERE id = $2`, graceExpires, oldKeyID)
+	if err != nil {
+		return nil, fmt.Errorf("set grace period: %w", err)
+	}
+
+	var newKey domain.APIKey
+	err = tx.QueryRow(ctx,
+		`INSERT INTO api_keys (env_id, name, key_hash, key_prefix, rotated_from_id)
+		 VALUES ($1, $2, $3, $4, $5)
+		 RETURNING id, env_id, name, key_prefix, created_at`,
+		envID, name, newKeyHash, newKeyPrefix, oldKeyID,
+	).Scan(&newKey.ID, &newKey.EnvID, &newKey.Name, &newKey.KeyPrefix, &newKey.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("create rotated key: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit rotate tx: %w", err)
+	}
+	return &newKey, nil
+}
+
+func (s *Store) CleanExpiredGracePeriodKeys(ctx context.Context) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE api_keys SET revoked_at = NOW()
+		 WHERE grace_expires_at IS NOT NULL AND grace_expires_at < NOW() AND revoked_at IS NULL`)
+	return err
+}
+
 // --- Webhooks ---
 
 func (s *Store) CreateWebhook(ctx context.Context, w *domain.Webhook) error {
@@ -793,6 +831,15 @@ func (s *Store) ListAuditEntriesForExport(ctx context.Context, orgID string, fro
 		entries = append(entries, e)
 	}
 	return entries, nil
+}
+
+func (s *Store) PurgeAuditEntries(ctx context.Context, olderThan time.Time) (int, error) {
+	tag, err := s.pool.Exec(ctx,
+		`DELETE FROM audit_logs WHERE created_at < $1`, olderThan)
+	if err != nil {
+		return 0, err
+	}
+	return int(tag.RowsAffected()), nil
 }
 
 func (s *Store) GetLastAuditHash(ctx context.Context, orgID string) (string, error) {
@@ -1409,4 +1456,26 @@ func (s *Store) CountRecentFailedAttempts(ctx context.Context, email string, sin
 		`SELECT COUNT(*) FROM login_attempts WHERE email = $1 AND success = false AND created_at > $2`,
 		email, since).Scan(&count)
 	return count, err
+}
+
+// --- IP Allowlist ---
+
+func (s *Store) GetIPAllowlist(ctx context.Context, orgID string) (bool, []string, error) {
+	var enabled bool
+	var cidrs []string
+	err := s.pool.QueryRow(ctx,
+		`SELECT enabled, cidr_ranges FROM ip_allowlists WHERE org_id = $1`, orgID,
+	).Scan(&enabled, &cidrs)
+	if err != nil {
+		return false, nil, err
+	}
+	return enabled, cidrs, nil
+}
+
+func (s *Store) UpsertIPAllowlist(ctx context.Context, orgID string, enabled bool, cidrs []string) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO ip_allowlists (org_id, enabled, cidr_ranges) VALUES ($1, $2, $3)
+		 ON CONFLICT (org_id) DO UPDATE SET enabled = $2, cidr_ranges = $3, updated_at = NOW()`,
+		orgID, enabled, cidrs)
+	return err
 }

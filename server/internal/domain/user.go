@@ -55,3 +55,28 @@ type EnvPermission struct {
 	CanToggle    bool   `json:"can_toggle" db:"can_toggle"`
 	CanEditRules bool   `json:"can_edit_rules" db:"can_edit_rules"`
 }
+
+// IPAllowlist stores org-scoped IP allowlist configuration.
+type IPAllowlist struct {
+	ID         string    `json:"id"`
+	OrgID      string    `json:"org_id"`
+	CIDRRanges []string  `json:"cidr_ranges"`
+	Enabled    bool      `json:"enabled"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// PasswordPolicy stores org-configurable password requirements.
+type PasswordPolicy struct {
+	ID               string    `json:"id"`
+	OrgID            string    `json:"org_id"`
+	MinLength        int       `json:"min_length"`
+	RequireUppercase bool      `json:"require_uppercase"`
+	RequireLowercase bool      `json:"require_lowercase"`
+	RequireNumber    bool      `json:"require_number"`
+	RequireSpecial   bool      `json:"require_special"`
+	MaxAgeDays       int       `json:"max_age_days"`
+	HistoryDepth     int       `json:"history_depth"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}

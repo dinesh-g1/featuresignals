@@ -84,8 +84,13 @@ func (m *mockStore) GetAPIKeyByID(_ context.Context, _ string) (*domain.APIKey, 
 func (m *mockStore) GetAPIKeyByHash(_ context.Context, _ string) (*domain.APIKey, error) { return nil, nil }
 func (m *mockStore) ListAPIKeys(_ context.Context, _ string) ([]domain.APIKey, error) { return nil, nil }
 func (m *mockStore) RevokeAPIKey(_ context.Context, _ string) error { return nil }
+func (m *mockStore) RotateAPIKey(_ context.Context, _, _, _, _, _ string, _ time.Duration) (*domain.APIKey, error) {
+	return nil, nil
+}
+func (m *mockStore) CleanExpiredGracePeriodKeys(_ context.Context) error { return nil }
 func (m *mockStore) UpdateAPIKeyLastUsed(_ context.Context, _ string) error { return nil }
 func (m *mockStore) CreateAuditEntry(_ context.Context, _ *domain.AuditEntry) error { return nil }
+func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error) { return 0, nil }
 func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) { return nil, nil }
 func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ string) ([]domain.AuditEntry, error) { return nil, nil }
 func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error) { return "", nil }
@@ -162,6 +167,8 @@ func (m *mockStore) RecordLoginAttempt(_ context.Context, _, _, _ string, _ bool
 func (m *mockStore) CountRecentFailedAttempts(_ context.Context, _ string, _ time.Time) (int, error) {
 	return 0, nil
 }
+func (m *mockStore) GetIPAllowlist(_ context.Context, _ string) (bool, []string, error) { return false, nil, nil }
+func (m *mockStore) UpsertIPAllowlist(_ context.Context, _ string, _ bool, _ []string) error { return nil }
 
 // --- mock broadcaster ---
 

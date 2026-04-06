@@ -125,6 +125,76 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusCreated, resp)
 }
 
+type rotateRequest struct {
+	Name         string `json:"name"`
+	GraceMinutes int    `json:"grace_minutes"`
+}
+
+func (h *APIKeyHandler) Rotate(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context()).With("handler", "api_keys")
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	oldKeyID := chi.URLParam(r, "keyID")
+
+	var req rotateRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	oldKey, err := h.store.GetAPIKeyByID(r.Context(), oldKeyID)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "API key not found")
+		return
+	}
+
+	env, err := h.store.GetEnvironment(r.Context(), oldKey.EnvID)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "API key not found")
+		return
+	}
+	project, err := h.store.GetProject(r.Context(), env.ProjectID)
+	if err != nil || project.OrgID != orgID {
+		httputil.Error(w, http.StatusNotFound, "API key not found")
+		return
+	}
+
+	name := req.Name
+	if name == "" {
+		name = oldKey.Name + " (rotated)"
+	}
+	gracePeriod := time.Duration(req.GraceMinutes) * time.Minute
+	if gracePeriod == 0 {
+		gracePeriod = 24 * time.Hour
+	}
+
+	rawKey, keyHash, keyPrefix := generateAPIKey(oldKey.Type)
+
+	newKey, err := h.store.RotateAPIKey(r.Context(), oldKeyID, oldKey.EnvID, name, keyHash, keyPrefix, gracePeriod)
+	if err != nil {
+		logger.Error("failed to rotate API key", "error", err, "old_key_id", oldKeyID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to rotate key")
+		return
+	}
+
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "apikey.rotated", ResourceType: "api_key", ResourceID: &newKey.ID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	graceMinutes := req.GraceMinutes
+	if graceMinutes == 0 {
+		graceMinutes = 1440
+	}
+	logger.Info("API key rotated", "old_key_id", oldKeyID, "new_key_id", newKey.ID, "grace_minutes", graceMinutes)
+	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
+		"key":     newKey,
+		"raw_key": rawKey,
+		"message": fmt.Sprintf("Old key will remain valid for %d minutes", graceMinutes),
+	})
+}
+
 func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
 	env, ok := verifyEnvironmentOwnership(h.store, r, w)
 	if !ok {

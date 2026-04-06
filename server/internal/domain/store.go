@@ -44,6 +44,7 @@ type EvalStore interface {
 // AuditWriter provides write access to the audit log.
 type AuditWriter interface {
 	CreateAuditEntry(ctx context.Context, entry *AuditEntry) error
+	PurgeAuditEntries(ctx context.Context, olderThan time.Time) (int, error)
 }
 
 // AuditReader provides read access to the audit log.
@@ -127,6 +128,8 @@ type APIKeyStore interface {
 	GetAPIKeyByHash(ctx context.Context, keyHash string) (*APIKey, error)
 	ListAPIKeys(ctx context.Context, envID string) ([]APIKey, error)
 	RevokeAPIKey(ctx context.Context, id string) error
+	RotateAPIKey(ctx context.Context, oldKeyID, envID, name, newKeyHash, newKeyPrefix string, gracePeriod time.Duration) (*APIKey, error)
+	CleanExpiredGracePeriodKeys(ctx context.Context) error
 }
 
 // WebhookStore provides CRUD for webhooks and their deliveries.
@@ -228,6 +231,12 @@ type LoginAttemptStore interface {
 	CountRecentFailedAttempts(ctx context.Context, email string, since time.Time) (int, error)
 }
 
+// IPAllowlistStore manages per-org IP allowlist configuration.
+type IPAllowlistStore interface {
+	GetIPAllowlist(ctx context.Context, orgID string) (bool, []string, error)
+	UpsertIPAllowlist(ctx context.Context, orgID string, enabled bool, cidrs []string) error
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -259,4 +268,5 @@ type Store interface {
 	TokenRevocationStore
 	MFAStore
 	LoginAttemptStore
+	IPAllowlistStore
 }

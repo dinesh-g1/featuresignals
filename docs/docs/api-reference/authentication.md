@@ -251,3 +251,130 @@ POST /v1/auth/token-exchange
 ```
 
 One-time tokens are single-use and expire after 5 minutes. A consumed or expired token returns `401 Unauthorized`.
+
+---
+
+## Logout
+
+Revoke the current session's JWT. The token is immediately invalidated server-side.
+
+```
+POST /v1/auth/logout
+```
+
+**Authentication:** Bearer JWT
+
+### Response `200 OK`
+
+```json
+{
+  "message": "logged out"
+}
+```
+
+---
+
+## Multi-Factor Authentication (MFA)
+
+TOTP-based multi-factor authentication (RFC 6238). Compatible with Google Authenticator, Authy, and similar apps. Requires **Pro plan** or higher.
+
+### Enable MFA
+
+Generate a TOTP secret. MFA is not active until verified.
+
+```
+POST /v1/auth/mfa/enable
+```
+
+**Authentication:** Bearer JWT
+
+#### Response `200 OK`
+
+```json
+{
+  "secret": "BASE32SECRET",
+  "qr_uri": "otpauth://totp/FeatureSignals:user@example.com?secret=BASE32SECRET&issuer=FeatureSignals"
+}
+```
+
+### Verify MFA
+
+Activate MFA by providing a valid TOTP code.
+
+```
+POST /v1/auth/mfa/verify
+```
+
+#### Request
+
+```json
+{
+  "code": "123456"
+}
+```
+
+#### Response `200 OK`
+
+```json
+{
+  "message": "MFA enabled"
+}
+```
+
+### Disable MFA
+
+Deactivate MFA. Requires current password confirmation.
+
+```
+POST /v1/auth/mfa/disable
+```
+
+#### Request
+
+```json
+{
+  "password": "currentpassword"
+}
+```
+
+### MFA Status
+
+Check whether MFA is enabled for the authenticated user.
+
+```
+GET /v1/auth/mfa/status
+```
+
+#### Response `200 OK`
+
+```json
+{
+  "enabled": true
+}
+```
+
+### Login with MFA
+
+When MFA is enabled, include the `mfa_code` field in the login request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "securepassword",
+  "mfa_code": "123456"
+}
+```
+
+If MFA is enabled and `mfa_code` is missing, the server returns `403` with `{"error": "mfa_required"}`.
+
+---
+
+## Brute-Force Protection
+
+After 10 consecutive failed login attempts within 15 minutes, the account is temporarily locked. The server returns `429 Too Many Requests`:
+
+```json
+{
+  "error": "too many failed login attempts, please try again later"
+}
+```
