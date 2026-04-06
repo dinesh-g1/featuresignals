@@ -65,6 +65,12 @@ const comparisonResult = {
   ],
 };
 
+async function flushEffects() {
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+}
+
 describe("EnvComparisonPage", () => {
   beforeEach(() => {
     useAppStore
@@ -91,64 +97,63 @@ describe("EnvComparisonPage", () => {
   });
 
   it("shows loading state when comparing", async () => {
-    // Arrange
     mockApi.compareEnvironments.mockReturnValue(new Promise(() => {}));
     render(<EnvComparisonPage />);
-    await waitFor(() => expect(mockApi.listEnvironments).toHaveBeenCalled());
-    const selects = screen.getAllByTestId("mock-select");
-    fireEvent.change(selects[0], { target: { value: "env-1" } });
-    fireEvent.change(selects[1], { target: { value: "env-2" } });
+    await flushEffects();
 
-    // Act
+    const selects = screen.getAllByTestId("mock-select");
+    await act(async () => {
+      fireEvent.change(selects[0], { target: { value: "env-1" } });
+      fireEvent.change(selects[1], { target: { value: "env-2" } });
+    });
+
     fireEvent.click(screen.getByText("Compare"));
 
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("Comparing...")).toBeInTheDocument();
     });
   });
 
   it("loads environments on mount", async () => {
-    // Arrange & Act
     render(<EnvComparisonPage />);
 
-    // Assert
     await waitFor(() => {
       expect(mockApi.listEnvironments).toHaveBeenCalledWith("test-token", "proj-1");
     });
   });
 
   it("compare button calls api.compareEnvironments", async () => {
-    // Arrange
     render(<EnvComparisonPage />);
-    await waitFor(() => expect(mockApi.listEnvironments).toHaveBeenCalled());
-    const selects = screen.getAllByTestId("mock-select");
-    fireEvent.change(selects[0], { target: { value: "env-1" } });
-    fireEvent.change(selects[1], { target: { value: "env-2" } });
+    await flushEffects();
 
-    // Act
+    const selects = screen.getAllByTestId("mock-select");
+    await act(async () => {
+      fireEvent.change(selects[0], { target: { value: "env-1" } });
+      fireEvent.change(selects[1], { target: { value: "env-2" } });
+    });
+
     await act(async () => {
       fireEvent.click(screen.getByText("Compare"));
     });
 
-    // Assert
     expect(mockApi.compareEnvironments).toHaveBeenCalledWith("test-token", "proj-1", "env-1", "env-2");
   });
 
   it("displays diff results", async () => {
-    // Arrange
     render(<EnvComparisonPage />);
-    await waitFor(() => expect(mockApi.listEnvironments).toHaveBeenCalled());
-    const selects = screen.getAllByTestId("mock-select");
-    fireEvent.change(selects[0], { target: { value: "env-1" } });
-    fireEvent.change(selects[1], { target: { value: "env-2" } });
+    await flushEffects();
 
-    // Act
+    const selects = screen.getAllByTestId("mock-select");
+    await act(async () => {
+      fireEvent.change(selects[0], { target: { value: "env-1" } });
+      fireEvent.change(selects[1], { target: { value: "env-2" } });
+    });
+
     await act(async () => {
       fireEvent.click(screen.getByText("Compare"));
     });
+    await flushEffects();
 
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("enable-feature")).toBeInTheDocument();
       expect(screen.getByText("enabled")).toBeInTheDocument();
@@ -156,25 +161,27 @@ describe("EnvComparisonPage", () => {
   });
 
   it("sync button calls api.syncEnvironments", async () => {
-    // Arrange
     render(<EnvComparisonPage />);
-    await waitFor(() => expect(mockApi.listEnvironments).toHaveBeenCalled());
+    await flushEffects();
+
     const selects = screen.getAllByTestId("mock-select");
-    fireEvent.change(selects[0], { target: { value: "env-1" } });
-    fireEvent.change(selects[1], { target: { value: "env-2" } });
+    await act(async () => {
+      fireEvent.change(selects[0], { target: { value: "env-1" } });
+      fireEvent.change(selects[1], { target: { value: "env-2" } });
+    });
+
     await act(async () => {
       fireEvent.click(screen.getByText("Compare"));
     });
+    await flushEffects();
     await waitFor(() => expect(screen.getByText("enable-feature")).toBeInTheDocument());
 
-    // Act
     const checkboxes = screen.getAllByRole("checkbox");
     fireEvent.click(checkboxes[1]);
     await act(async () => {
       fireEvent.click(screen.getByText("Apply 1 Change"));
     });
 
-    // Assert
     expect(mockApi.syncEnvironments).toHaveBeenCalledWith("test-token", "proj-1", {
       source_env_id: "env-1",
       target_env_id: "env-2",
@@ -183,19 +190,15 @@ describe("EnvComparisonPage", () => {
   });
 
   it("shows empty state before comparison", () => {
-    // Arrange & Act
     render(<EnvComparisonPage />);
 
-    // Assert
     expect(screen.getByText("Environment Comparison")).toBeInTheDocument();
     expect(screen.queryByText("enable-feature")).not.toBeInTheDocument();
   });
 
   it("renders environment selectors", async () => {
-    // Arrange & Act
     render(<EnvComparisonPage />);
 
-    // Assert
     await waitFor(() => {
       const selects = screen.getAllByTestId("mock-select");
       expect(selects).toHaveLength(2);
