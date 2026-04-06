@@ -34,6 +34,9 @@ type Config struct {
 	// On-Premises Licensing
 	LicenseKey       string
 	LicensePublicKey string
+
+	// Audit log retention in days (default 90, configurable for enterprise/self-hosted)
+	AuditRetentionDays int
 }
 
 func Load() *Config {
@@ -61,6 +64,8 @@ func Load() *Config {
 
 		LicenseKey:       os.Getenv("LICENSE_KEY"),
 		LicensePublicKey: getEnv("LICENSE_PUBLIC_KEY_PATH", ""),
+
+		AuditRetentionDays: getEnvInt("AUDIT_RETENTION_DAYS", 90),
 	}
 }
 

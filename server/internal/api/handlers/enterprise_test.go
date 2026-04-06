@@ -408,12 +408,12 @@ func TestSCIMHandler_GetUser_NotFound(t *testing.T) {
 func TestSCIMHandler_GetUser_Success(t *testing.T) {
 	store := newMockStore()
 	h := NewSCIMHandler(store)
-	_, users := setupSCIMOrg(store)
+	orgID, users := setupSCIMOrg(store)
 
 	targetUser := users[0]
 	r := httptest.NewRequest("GET", "/v1/scim/Users/"+targetUser.ID, nil)
 	r = requestWithChi(r, map[string]string{"userID": targetUser.ID})
-	r = requestWithAuth(r, "user-1", "org-1", "owner")
+	r = requestWithAuth(r, "user-1", orgID, "owner")
 	w := httptest.NewRecorder()
 
 	h.GetUser(w, r)
@@ -430,6 +430,24 @@ func TestSCIMHandler_GetUser_Success(t *testing.T) {
 	}
 	if resp.ID != targetUser.ID {
 		t.Errorf("expected id %q, got %q", targetUser.ID, resp.ID)
+	}
+}
+
+func TestSCIMHandler_GetUser_CrossTenantBlocked(t *testing.T) {
+	store := newMockStore()
+	h := NewSCIMHandler(store)
+	_, users := setupSCIMOrg(store)
+
+	targetUser := users[0]
+	r := httptest.NewRequest("GET", "/v1/scim/Users/"+targetUser.ID, nil)
+	r = requestWithChi(r, map[string]string{"userID": targetUser.ID})
+	r = requestWithAuth(r, "attacker", "other-org-id", "owner")
+	w := httptest.NewRecorder()
+
+	h.GetUser(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for cross-tenant access, got %d: %s", w.Code, w.Body.String())
 	}
 }
 

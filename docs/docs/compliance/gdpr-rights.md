@@ -11,11 +11,10 @@ This document explains how data subjects can exercise their rights under the Gen
 **What**: Obtain a copy of all personal data we hold about you.
 
 **How**:
-- **Dashboard**: Settings > Privacy > Export My Data
-- **API**: `GET /v1/users/me/data`
+- **API**: `GET /v1/users/me/data` (authenticated — returns JSON export of your personal data)
 - **Email**: privacy@featuresignals.com
 
-**Response time**: Within 30 days.
+**Response time**: Instant via API, or within 30 days via email.
 
 ### 2. Right to Rectification (Article 16)
 
@@ -30,8 +29,7 @@ This document explains how data subjects can exercise their rights under the Gen
 **What**: Request deletion of your personal data.
 
 **How**:
-- **Dashboard**: Settings > Privacy > Delete My Account
-- **API**: `DELETE /v1/users/me`
+- **API**: `DELETE /v1/users/me` (authenticated — initiates account deletion with 30-day grace period)
 - **Email**: privacy@featuresignals.com
 
 **Process**:
@@ -47,10 +45,9 @@ This document explains how data subjects can exercise their rights under the Gen
 **What**: Receive your data in a structured, machine-readable format.
 
 **How**:
-- **API**: `POST /v1/organizations/{orgID}/data-export` (generates JSON ZIP)
-- **Dashboard**: Settings > Privacy > Export Organization Data
+- **Email**: privacy@featuresignals.com
 
-The export includes: projects, flags, environments, segments, team members, audit logs, API key metadata, webhooks, and subscription data.
+We will provide an export of your data including: projects, flags, environments, segments, team members, audit logs, API key metadata, webhooks, and subscription data.
 
 ### 5. Right to Restrict Processing (Article 18)
 
@@ -69,8 +66,7 @@ The export includes: projects, flags, environments, segments, team members, audi
 **What**: Withdraw consent for consent-based processing (e.g., marketing emails).
 
 **How**:
-- **Dashboard**: Settings > Privacy > Communication Preferences
-- **Email**: Unsubscribe link in any marketing email
+- **Email**: Unsubscribe link in any marketing email, or contact privacy@featuresignals.com
 
 ## Data Protection Officer
 

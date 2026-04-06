@@ -1,15 +1,26 @@
 ---
-sidebar_position: 14
-title: SCIM Provisioning
+sidebar_label: SCIM
 ---
+# SCIM Provisioning (SCIM 2.0)
 
-# SCIM 2.0 User Provisioning
+Automate user provisioning and deprovisioning from your identity provider (Okta, Azure AD, OneLogin, etc.). When a user is assigned or removed in your IdP, SCIM syncs the change to FeatureSignals automatically.
 
-Automate user lifecycle management through your identity provider (Okta, Azure AD, OneLogin, etc.). Requires **Enterprise plan**.
+## Requirements
 
-**Base path:** `/v1/scim/Users`
+| Requirement | Value |
+|-------------|-------|
+| Plan | Enterprise |
+| Auth | Bearer token (SCIM token) |
 
-**Auth:** JWT (Owner or Admin role)
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v1/scim/Users` | List provisioned users |
+| `POST` | `/v1/scim/Users` | Provision a new user |
+| `GET` | `/v1/scim/Users/{userID}` | Get a single user |
+| `PUT` | `/v1/scim/Users/{userID}` | Update or deactivate a user |
+| `DELETE` | `/v1/scim/Users/{userID}` | Remove a user from the organization |
 
 ---
 
@@ -19,33 +30,27 @@ Automate user lifecycle management through your identity provider (Okta, Azure A
 GET /v1/scim/Users?startIndex=1&count=100
 ```
 
-### Query Parameters
-
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `startIndex` | 1 | 1-based pagination offset |
 | `count` | 100 | Maximum results per page |
-| `filter` | — | SCIM filter expression (e.g., `userName eq "jane@co.com"`) |
+| `filter` | — | SCIM filter (e.g., `userName eq "jane@co.com"`) |
 
 ### Response `200 OK`
 
 ```json
 {
   "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
-  "totalResults": 2,
+  "totalResults": 1,
   "startIndex": 1,
-  "itemsPerPage": 2,
+  "itemsPerPage": 1,
   "Resources": [
     {
       "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
       "id": "uuid",
       "userName": "jane@company.com",
       "name": { "formatted": "Jane Smith" },
-      "active": true,
-      "meta": {
-        "resourceType": "User",
-        "created": "2026-04-01T00:00:00Z"
-      }
+      "active": true
     }
   ]
 }
@@ -53,29 +58,7 @@ GET /v1/scim/Users?startIndex=1&count=100
 
 ---
 
-## Get User
-
-```
-GET /v1/scim/Users/{userID}
-```
-
-### Response `200 OK`
-
-Returns a single SCIM User resource.
-
-### Error `404 Not Found`
-
-```json
-{
-  "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
-  "status": "404",
-  "detail": "user not found"
-}
-```
-
----
-
-## Create User (JIT Provisioning)
+## Create User
 
 ```
 POST /v1/scim/Users
@@ -87,36 +70,36 @@ POST /v1/scim/Users
 {
   "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
   "userName": "newuser@company.com",
-  "name": {
-    "givenName": "New",
-    "familyName": "User"
-  },
-  "emails": [
-    { "value": "newuser@company.com", "primary": true }
-  ]
+  "name": { "givenName": "New", "familyName": "User" },
+  "emails": [{ "value": "newuser@company.com", "primary": true }]
 }
 ```
 
 ### Response `201 Created`
 
-Returns the created SCIM User resource. If the user already exists, returns `200 OK` and ensures organization membership.
+Returns the created SCIM User resource. If the user already exists, returns `200 OK`.
 
 ---
 
-## Update User (Deactivation)
+## Get User
+
+```
+GET /v1/scim/Users/{userID}
+```
+
+### Response `200 OK`
+
+Returns a single SCIM User resource. Returns `404` if the user is not found.
+
+---
+
+## Update User
 
 ```
 PUT /v1/scim/Users/{userID}
 ```
 
-Set `active: false` to remove the user's organization membership:
-
-```json
-{
-  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
-  "active": false
-}
-```
+Set `active: false` to deactivate and remove the user's organization membership.
 
 ### Response `200 OK`
 
@@ -128,6 +111,6 @@ Set `active: false` to remove the user's organization membership:
 DELETE /v1/scim/Users/{userID}
 ```
 
-Removes the user's membership in the current organization. Does not delete the user account.
+Removes the user's membership in the organization. Does not delete the user account.
 
 ### Response `204 No Content`

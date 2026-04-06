@@ -27,18 +27,24 @@ type Store interface {
 
 // Scheduler periodically checks for pending flag schedules and applies them.
 type Scheduler struct {
-	store         Store
-	logger        *slog.Logger
-	interval      time.Duration
-	cleanupTicker int // counts ticks to run hourly jobs
+	store              Store
+	logger             *slog.Logger
+	interval           time.Duration
+	cleanupTicker      int // counts ticks to run hourly jobs
+	auditRetentionDays int
 }
 
 // New creates a scheduler that ticks at the given interval.
-func New(store Store, logger *slog.Logger, interval time.Duration) *Scheduler {
+// auditRetentionDays controls how many days of audit logs to keep (0 = default 90).
+func New(store Store, logger *slog.Logger, interval time.Duration, auditRetentionDays int) *Scheduler {
+	if auditRetentionDays <= 0 {
+		auditRetentionDays = 90
+	}
 	return &Scheduler{
-		store:    store,
-		logger:   logger.With("component", "scheduler"),
-		interval: interval,
+		store:              store,
+		logger:             logger.With("component", "scheduler"),
+		interval:           interval,
+		auditRetentionDays: auditRetentionDays,
 	}
 }
 
@@ -198,14 +204,14 @@ func (s *Scheduler) cleanExpiredGracePeriodKeys(ctx context.Context) {
 }
 
 func (s *Scheduler) purgeOldAuditEntries(ctx context.Context) {
-	cutoff := time.Now().AddDate(0, 0, -90)
+	cutoff := time.Now().AddDate(0, 0, -s.auditRetentionDays)
 	count, err := s.store.PurgeAuditEntries(ctx, cutoff)
 	if err != nil {
 		s.logger.Error("failed to purge old audit entries", "error", err)
 		return
 	}
 	if count > 0 {
-		s.logger.Info("purged old audit entries", "count", count, "older_than_days", 90)
+		s.logger.Info("purged old audit entries", "count", count, "retention_days", s.auditRetentionDays)
 	}
 }
 

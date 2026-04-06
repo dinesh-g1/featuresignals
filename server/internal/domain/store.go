@@ -102,6 +102,7 @@ type UserWriter interface {
 	UpdateUserEmailVerifyToken(ctx context.Context, userID, token string, expires time.Time) error
 	SetEmailVerified(ctx context.Context, userID string) error
 	UpdateLastLoginAt(ctx context.Context, userID string) error
+	SoftDeleteUser(ctx context.Context, userID string) error
 }
 
 // OrgMemberStore provides CRUD for organization members.
@@ -237,6 +238,15 @@ type IPAllowlistStore interface {
 	UpsertIPAllowlist(ctx context.Context, orgID string, enabled bool, cidrs []string) error
 }
 
+// CustomRoleStore provides CRUD for org-scoped custom roles.
+type CustomRoleStore interface {
+	CreateCustomRole(ctx context.Context, role *CustomRole) error
+	GetCustomRole(ctx context.Context, id string) (*CustomRole, error)
+	ListCustomRoles(ctx context.Context, orgID string) ([]CustomRole, error)
+	UpdateCustomRole(ctx context.Context, role *CustomRole) error
+	DeleteCustomRole(ctx context.Context, id string) error
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -269,4 +279,5 @@ type Store interface {
 	MFAStore
 	LoginAttemptStore
 	IPAllowlistStore
+	CustomRoleStore
 }

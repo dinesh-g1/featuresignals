@@ -2,7 +2,11 @@
 
 _Last updated: April 2026_
 
-FeatureSignals is designed as critical infrastructure for your applications. This document provides a comprehensive overview of our security architecture and controls.
+FeatureSignals is designed as critical infrastructure for your applications. This document provides a comprehensive overview of the security controls built into the product.
+
+:::info
+This document describes technical security controls that are implemented in FeatureSignals. Where we reference compliance frameworks (SOC 2, GDPR, HIPAA, ISO 27001), we describe how our controls map to those framework requirements. This does not constitute a formal certification unless explicitly stated.
+:::
 
 ## Architecture Security
 

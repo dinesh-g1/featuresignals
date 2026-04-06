@@ -21,13 +21,17 @@ const NAV_ITEMS: PaletteItem[] = [
   { id: "nav-env-comparison", label: "Env Comparison", category: "navigation", href: "/env-comparison" },
   { id: "nav-entity-inspector", label: "Entity Inspector", category: "navigation", href: "/entity-inspector" },
   { id: "nav-entity-comparison", label: "Entity Comparison", category: "navigation", href: "/entity-comparison" },
+  { id: "nav-metrics", label: "Metrics", category: "navigation", href: "/metrics" },
   { id: "nav-usage-insights", label: "Usage Insights", category: "navigation", href: "/usage-insights" },
   { id: "nav-health", label: "Flag Health", category: "navigation", href: "/health" },
   { id: "nav-audit", label: "Audit Log", category: "navigation", href: "/audit" },
+  { id: "nav-approvals", label: "Approvals", category: "navigation", href: "/approvals" },
   { id: "nav-settings", label: "Settings", category: "navigation", href: "/settings/general" },
   { id: "nav-team", label: "Team", category: "navigation", href: "/settings/team" },
   { id: "nav-api-keys", label: "API Keys", category: "navigation", href: "/settings/api-keys" },
   { id: "nav-webhooks", label: "Webhooks", category: "navigation", href: "/settings/webhooks" },
+  { id: "nav-billing", label: "Billing", category: "navigation", href: "/settings/billing" },
+  { id: "nav-sso", label: "SSO", category: "navigation", href: "/settings/sso" },
 ];
 
 const categoryLabels: Record<string, string> = {

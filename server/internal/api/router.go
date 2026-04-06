@@ -99,6 +99,7 @@ func NewRouter(
 	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender)
 	salesH := handlers.NewSalesHandler(store)
 
+	userPrivacyH := handlers.NewUserPrivacyHandler(store)
 	featuresH := handlers.NewFeaturesHandler(store)
 	ssoH := handlers.NewSSOHandler(store)
 	ssoAuthH := handlers.NewSSOAuthHandler(store, jwtMgr, appBaseURL, dashboardURL)
@@ -123,9 +124,14 @@ func NewRouter(
 	// enforce plan requirements without touching handler code.
 	scimH := handlers.NewSCIMHandler(store)
 
+	dataExportH := handlers.NewDataExportHandler(store)
+	customRoleH := handlers.NewCustomRoleHandler(store)
+
 	webhookGate := middleware.FeatureGate(domain.FeatureWebhooks, store)
 	approvalGate := middleware.FeatureGate(domain.FeatureApprovals, store)
 	auditExportGate := middleware.FeatureGate(domain.FeatureAuditExport, store)
+	dataExportGate := middleware.FeatureGate(domain.FeatureDataExport, store)
+	customRolesGate := middleware.FeatureGate(domain.FeatureCustomRoles, store)
 	ssoGate := middleware.FeatureGate(domain.FeatureSSO, store)
 	scimGate := middleware.FeatureGate(domain.FeatureSCIM, store)
 	mfaGate := middleware.FeatureGate(domain.FeatureMFA, store)
@@ -210,12 +216,20 @@ func NewRouter(
 			r.Use(middleware.CacheControl("private, no-cache"))
 			r.Use(middleware.TrialExpiry(store, logger))
 			r.Use(middleware.TierEnforce(store, logger))
+			r.Use(middleware.TierRateLimit(store))
 
-			// ── Features endpoint (returns plan capabilities) ──────
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireRole(allRoles...))
-				r.Get("/features", featuresH.List)
-			})
+		// ── Features endpoint (returns plan capabilities) ──────
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireRole(allRoles...))
+			r.Get("/features", featuresH.List)
+		})
+
+		// ── User privacy / GDPR data subject rights ─────────
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireRole(allRoles...))
+			r.Get("/users/me/data", userPrivacyH.ExportMyData)
+			r.Delete("/users/me", userPrivacyH.DeleteMyAccount)
+		})
 
 			// ── Read-only routes (all authenticated roles) ───────────
 			r.Group(func(r chi.Router) {
@@ -245,12 +259,19 @@ func NewRouter(
 				r.Get("/approvals/{approvalID}", approvalH.Get)
 			})
 
-			// ── Audit export (Pro+, admin-only) ─────────────────────
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireRole(ownerAdmin...))
-				r.Use(auditExportGate)
-				r.Get("/audit/export", auditExportH.Export)
-			})
+		// ── Audit export (Pro+, admin-only) ─────────────────────
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireRole(ownerAdmin...))
+			r.Use(auditExportGate)
+			r.Get("/audit/export", auditExportH.Export)
+		})
+
+		// ── Data export (Pro+, admin-only) ──────────────────────
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireRole(ownerAdmin...))
+			r.Use(dataExportGate)
+			r.Get("/data/export", dataExportH.Export)
+		})
 
 			// ── Write routes (owner, admin, developer) ───────────────
 			r.Group(func(r chi.Router) {
@@ -340,13 +361,24 @@ func NewRouter(
 				r.Delete("/scim/Users/{userID}", scimH.DeleteUser)
 			})
 
-			// ── IP Allowlist (Enterprise, admin-only) ─────────────
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireRole(ownerAdmin...))
-				r.Use(ipAllowlistGate)
-				r.Get("/ip-allowlist", ipAllowlistH.Get)
-				r.Put("/ip-allowlist", ipAllowlistH.Upsert)
-			})
+		// ── IP Allowlist (Enterprise, admin-only) ─────────────
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireRole(ownerAdmin...))
+			r.Use(ipAllowlistGate)
+			r.Get("/ip-allowlist", ipAllowlistH.Get)
+			r.Put("/ip-allowlist", ipAllowlistH.Upsert)
+		})
+
+		// ── Custom Roles (Enterprise, admin-only) ─────────────
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireRole(ownerAdmin...))
+			r.Use(customRolesGate)
+			r.Get("/roles", customRoleH.List)
+			r.Post("/roles", customRoleH.Create)
+			r.Get("/roles/{roleID}", customRoleH.Get)
+			r.Put("/roles/{roleID}", customRoleH.Update)
+			r.Delete("/roles/{roleID}", customRoleH.Delete)
+		})
 		})
 	})
 

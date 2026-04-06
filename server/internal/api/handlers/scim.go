@@ -170,6 +170,13 @@ func (h *SCIMHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 // GetUser implements GET /v1/scim/Users/{id}
 func (h *SCIMHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userID")
+	orgID := middleware.GetOrgID(r.Context())
+
+	if _, err := h.store.GetOrgMember(r.Context(), orgID, userID); err != nil {
+		scimErr(w, http.StatusNotFound, "user not found")
+		return
+	}
+
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -263,6 +270,11 @@ func (h *SCIMHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (h *SCIMHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userID")
 	orgID := middleware.GetOrgID(r.Context())
+
+	if _, err := h.store.GetOrgMember(r.Context(), orgID, userID); err != nil {
+		scimErr(w, http.StatusNotFound, "user not found")
+		return
+	}
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {

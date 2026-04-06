@@ -8,18 +8,15 @@ This document describes the data retention schedules for FeatureSignals. Retenti
 
 ## Retention Schedule
 
-| Data Type | Free | Pro | Enterprise | Notes |
-|-----------|------|-----|-----------|-------|
-| **User accounts** | Until deletion | Until deletion | Until deletion | 30-day soft-delete grace period |
-| **Organizations** | Until deletion | Until deletion | Until deletion | 90-day inactivity warning for free tier |
-| **Projects & flags** | Until deletion | Until deletion | Until deletion | Cascade-deleted with org |
-| **Flag states** | Until deletion | Until deletion | Until deletion | Historical states not retained |
-| **Audit logs** | 30 days | 90 days | Unlimited (configurable) | Tamper-evident integrity hashing |
-| **Evaluation metrics** | 30-day window | 30-day window | Configurable | Aggregated, no PII |
-| **Login attempts** | 90 days | 90 days | 90 days | For security monitoring |
-| **API request logs** | 7 days | 30 days | 90 days | IP + user agent |
-| **Webhook delivery logs** | 7 days | 30 days | 90 days | Response status only |
-| **Backup snapshots** | 7 days | 30 days | 90 days | Encrypted at rest |
+| Data Type | All Plans | Notes |
+|-----------|-----------|-------|
+| **User accounts** | Until deletion | 30-day soft-delete grace period |
+| **Organizations** | Until deletion | 90-day inactivity warning for free tier |
+| **Projects & flags** | Until deletion | Cascade-deleted with org |
+| **Flag states** | Until deletion | Historical states not retained |
+| **Audit logs** | 90 days | Tamper-evident integrity hashing. Per-tier configurable retention on our roadmap. |
+| **Evaluation metrics** | 30-day window | Aggregated, no PII |
+| **Login attempts** | 90 days | For security monitoring |
 
 ## Automated Purge
 
@@ -38,6 +35,6 @@ When a user requests account deletion:
 4. Audit log entries are anonymized (actor replaced with "deleted-user-xxx")
 5. Evaluation context data is not stored and requires no deletion
 
-## HIPAA Compliance Note
+## Extended Retention (Roadmap)
 
-Organizations requiring HIPAA compliance can configure audit log retention to 6+ years via the Enterprise plan's configurable retention setting.
+Per-tier configurable audit log retention is on our roadmap. Enterprise customers requiring extended retention (e.g., 6+ years for HIPAA) should contact support@featuresignals.com to discuss requirements.

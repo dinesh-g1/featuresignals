@@ -268,6 +268,10 @@ export const api = {
     return request<Blob>(`/v1/audit/export?${params.toString()}`, { token });
   },
 
+  // Data Export
+  exportOrgData: (token: string) =>
+    request<Blob>("/v1/data/export", { token }),
+
   // Team / Members
   listMembers: (token: string) =>
     requestList<OrgMember>("/v1/members", { token }),

@@ -76,7 +76,7 @@ func main() {
 	evalCache.SetWebhookNotifier(webhook.NewNotifier(whDispatcher, store))
 
 	// Flag scheduler (auto-enable/disable at scheduled times)
-	sched := scheduler.New(store, logger, 30*time.Second)
+	sched := scheduler.New(store, logger, 30*time.Second, cfg.AuditRetentionDays)
 	schedCtx, schedCancel := context.WithCancel(context.Background())
 	defer schedCancel()
 	go sched.Start(schedCtx)
