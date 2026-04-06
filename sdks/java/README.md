@@ -59,6 +59,20 @@ public class Main {
 - **Graceful degradation** -- falls back to cached flags, then to SDK defaults
 - **Thread-safe** -- safe for concurrent use in multi-threaded applications
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature Java SDK and register the FeatureSignals provider:
+
+```java
+import com.featuresignals.sdk.*;
+import dev.openfeature.sdk.*;
+
+FeatureSignalsProvider provider = new FeatureSignalsProvider("sdk-key", options);
+OpenFeatureAPI.getInstance().setProviderAndWait(provider);
+Client client = OpenFeatureAPI.getInstance().getClient();
+boolean enabled = client.getBooleanValue("dark-mode", false);
+```
+
 ## API Reference
 
 ### Client

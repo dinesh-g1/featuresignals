@@ -146,6 +146,6 @@ try (var client = new FeatureSignalsClient(key, options)) {
 
 The client implements `AutoCloseable` for use with try-with-resources.
 
-## OpenFeature Integration
+## OpenFeature
 
-See [OpenFeature](/sdks/openfeature) for using the Java SDK with OpenFeature.
+This SDK includes a built-in OpenFeature provider. See the [OpenFeature Integration](./openfeature.md) page for details. The provider implements `dev.openfeature.sdk.FeatureProvider`.

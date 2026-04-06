@@ -156,6 +156,6 @@ client.close();
 
 Stops polling/SSE and cleans up resources.
 
-## OpenFeature Integration
+## OpenFeature
 
-See [OpenFeature](/sdks/openfeature) for using the Node.js SDK with OpenFeature.
+This SDK includes a built-in OpenFeature provider. See the [OpenFeature Integration](./openfeature.md) page for details. Install `@openfeature/server-sdk` and register `new FeatureSignalsProvider(client)` with `OpenFeature.setProviderAndWait()`.

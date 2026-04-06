@@ -43,6 +43,23 @@ function MyComponent() {
 - **Polling fallback** -- configurable interval when SSE is not enabled
 - **Graceful degradation** -- returns fallback values when flags haven't loaded yet
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature Web SDK and register the FeatureSignals provider:
+
+```tsx
+import { OpenFeature } from "@openfeature/web-sdk"; // npm install @openfeature/web-sdk
+import { FeatureSignalsWebProvider } from "@featuresignals/react";
+
+const provider = new FeatureSignalsWebProvider({
+  sdkKey: "fs_cli_...",
+  envKey: "production",
+});
+await OpenFeature.setProviderAndWait(provider);
+const client = OpenFeature.getClient();
+const enabled = client.getBooleanValue("dark-mode", false);
+```
+
 ## API Reference
 
 ### `<FeatureSignalsProvider>`

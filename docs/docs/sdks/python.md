@@ -147,6 +147,6 @@ client.close()
 
 The client uses daemon threads, so they'll be cleaned up on process exit even without calling `close()`.
 
-## OpenFeature Integration
+## OpenFeature
 
-See [OpenFeature](/sdks/openfeature) for using the Python SDK with OpenFeature.
+This SDK includes a built-in OpenFeature provider. See the [OpenFeature Integration](./openfeature.md) page for details. The provider extends `AbstractProvider` from the `openfeature-sdk` package.

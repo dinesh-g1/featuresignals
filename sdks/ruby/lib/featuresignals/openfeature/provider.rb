@@ -6,38 +6,54 @@ require_relative "resolution_details"
 
 module FeatureSignals
   module OpenFeature
-    # OpenFeature-compatible provider backed by FeatureSignals::Client.
+    # OpenFeature-compliant provider backed by FeatureSignals::Client.
     #
-    #   provider = FeatureSignals::OpenFeature::Provider.new("sdk-key",
-    #     FeatureSignals::ClientOptions.new(env_key: "production"))
-    #   # Register with OpenFeature API, then:
-    #   # client.get_boolean_value("my-flag", false)
+    # Implements the method signatures expected by the openfeature-sdk gem
+    # (fetch_boolean_value, fetch_string_value, etc.) with keyword arguments.
+    #
+    #   require "open_feature/sdk"
+    #   require "featuresignals"
+    #
+    #   provider = FeatureSignals::OpenFeature::Provider.new(
+    #     "sdk-key", FeatureSignals::ClientOptions.new(env_key: "production"))
+    #   OpenFeature::SDK.configure do |config|
+    #     config.set_provider(provider)
+    #   end
+    #   client = OpenFeature::SDK.build_client
+    #   value = client.fetch_boolean_value(flag_key: "dark-mode", default_value: false)
     #
     class Provider
       FLAG_NOT_FOUND = "FLAG_NOT_FOUND"
       TYPE_MISMATCH  = "TYPE_MISMATCH"
-      GENERAL        = "GENERAL"
 
       attr_reader :metadata, :client
 
       def initialize(sdk_key, options)
         @client = Client.new(sdk_key, options)
-        @metadata = { name: "featuresignals" }.freeze
+        @metadata = OpenFeature::ProviderMetadata.new("featuresignals")
       end
 
-      def resolve_boolean_evaluation(flag_key, default_value, context = nil)
+      def init(evaluation_context: nil)
+        @client.wait_for_ready
+      end
+
+      def shutdown
+        @client.close
+      end
+
+      def fetch_boolean_value(flag_key:, default_value:, evaluation_context: nil)
         resolve(flag_key, default_value, [TrueClass, FalseClass])
       end
 
-      def resolve_string_evaluation(flag_key, default_value, context = nil)
+      def fetch_string_value(flag_key:, default_value:, evaluation_context: nil)
         resolve(flag_key, default_value, [String])
       end
 
-      def resolve_number_evaluation(flag_key, default_value, context = nil)
+      def fetch_number_value(flag_key:, default_value:, evaluation_context: nil)
         resolve(flag_key, default_value, [Integer, Float])
       end
 
-      def resolve_object_evaluation(flag_key, default_value, context = nil)
+      def fetch_object_value(flag_key:, default_value:, evaluation_context: nil)
         flags = @client.all_flags
         val = flags[flag_key]
         if val.nil? && !flags.key?(flag_key)
@@ -48,10 +64,6 @@ module FeatureSignals
           )
         end
         ResolutionDetails.new(value: val)
-      end
-
-      def shutdown
-        @client.close
       end
 
       private
@@ -77,6 +89,15 @@ module FeatureSignals
         end
 
         ResolutionDetails.new(value: val)
+      end
+    end
+
+    # Simple metadata struct compatible with the openfeature-sdk gem.
+    class ProviderMetadata
+      attr_reader :name
+
+      def initialize(name)
+        @name = name
       end
     end
   end

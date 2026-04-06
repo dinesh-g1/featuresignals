@@ -19,7 +19,11 @@
     "dist"
   ],
   "peerDependencies": {
-    "vue": ">=3.3.0"
+    "vue": ">=3.3.0",
+    "@openfeature/web-sdk": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@openfeature/web-sdk": { "optional": true }
   },
   "devDependencies": {
     "@vue/test-utils": "^2.4.0",

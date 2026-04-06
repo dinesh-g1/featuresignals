@@ -17,4 +17,8 @@
     <PackageTags>feature-flags;feature-toggles;featuresignals</PackageTags>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="OpenFeature" Version="2.2.0" />
+  </ItemGroup>
+
 </Project>

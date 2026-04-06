@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 
 	of "github.com/open-feature/go-sdk/openfeature"
 )
@@ -18,7 +20,7 @@ func newTestProviderClient(t *testing.T, flags map[string]interface{}) (*Client,
 	}))
 	client := NewClient("test-key", "test",
 		WithBaseURL(srv.URL),
-		WithPollingInterval(1<<62), // effectively infinite — no background polls during test
+		WithPollingInterval(1<<62),
 	)
 	<-client.Ready()
 	return client, func() {
@@ -42,6 +44,144 @@ func TestProvider_Hooks(t *testing.T) {
 	p := NewProvider(client)
 	if h := p.Hooks(); h != nil {
 		t.Errorf("expected nil hooks, got %v", h)
+	}
+}
+
+func TestProvider_ImplementsInterfaces(t *testing.T) {
+	var _ of.FeatureProvider = (*Provider)(nil)
+	var _ of.StateHandler = (*Provider)(nil)
+	var _ of.EventHandler = (*Provider)(nil)
+}
+
+func TestProvider_Init_ReadyClient(t *testing.T) {
+	client, cleanup := newTestProviderClient(t, map[string]interface{}{"f": true})
+	defer cleanup()
+	p := NewProvider(client)
+	defer p.Shutdown()
+
+	if err := p.Init(of.EvaluationContext{}); err != nil {
+		t.Fatalf("Init should succeed for ready client: %v", err)
+	}
+}
+
+func TestProvider_Init_WaitsForReady(t *testing.T) {
+	var mu sync.Mutex
+	ready := false
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		isReady := ready
+		mu.Unlock()
+		if !isReady {
+			http.Error(w, "not ready", http.StatusServiceUnavailable)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{"f": true})
+	}))
+	defer srv.Close()
+
+	client := NewClient("key", "test",
+		WithBaseURL(srv.URL),
+		WithLogger(testLogger()),
+		WithPollingInterval(50*time.Millisecond),
+	)
+	defer client.Close()
+
+	mu.Lock()
+	ready = true
+	mu.Unlock()
+
+	p := NewProvider(client)
+	defer p.Shutdown()
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- p.Init(of.EvaluationContext{}) }()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Init should succeed once client becomes ready: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Init timed out")
+	}
+}
+
+func TestProvider_Shutdown_Idempotent(t *testing.T) {
+	client, cleanup := newTestProviderClient(t, map[string]interface{}{})
+	defer cleanup()
+	p := NewProvider(client)
+	_ = p.Init(of.EvaluationContext{})
+	p.Shutdown()
+	p.Shutdown()
+}
+
+func TestProvider_EventChannel_ReceivesConfigChange(t *testing.T) {
+	var mu sync.Mutex
+	flags := map[string]interface{}{"v": 1.0}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		json.NewEncoder(w).Encode(flags)
+	}))
+	defer srv.Close()
+
+	client := NewClient("key", "test",
+		WithBaseURL(srv.URL),
+		WithLogger(testLogger()),
+		WithPollingInterval(50*time.Millisecond),
+	)
+	defer client.Close()
+
+	p := NewProvider(client)
+	defer p.Shutdown()
+	if err := p.Init(of.EvaluationContext{}); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+
+	select {
+	case evt := <-p.EventChannel():
+		if evt.EventType != of.ProviderConfigChange {
+			t.Errorf("expected PROVIDER_CONFIGURATION_CHANGED, got %s", evt.EventType)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for config change event")
+	}
+}
+
+func TestProvider_EventChannel_ReceivesError(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		if callCount == 1 {
+			json.NewEncoder(w).Encode(map[string]interface{}{"f": true})
+			return
+		}
+		http.Error(w, "fail", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	client := NewClient("key", "test",
+		WithBaseURL(srv.URL),
+		WithLogger(testLogger()),
+		WithPollingInterval(50*time.Millisecond),
+	)
+	defer client.Close()
+
+	p := NewProvider(client)
+	defer p.Shutdown()
+	if err := p.Init(of.EvaluationContext{}); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+
+	select {
+	case evt := <-p.EventChannel():
+		if evt.EventType != of.ProviderError && evt.EventType != of.ProviderConfigChange {
+			t.Errorf("expected PROVIDER_ERROR or PROVIDER_CONFIGURATION_CHANGED, got %s", evt.EventType)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for error event")
 	}
 }
 
@@ -201,8 +341,4 @@ func TestProvider_ObjectEvaluation(t *testing.T) {
 			t.Errorf("expected x=1 in fallback, got %v", m["x"])
 		}
 	})
-}
-
-func TestProvider_ImplementsInterface(t *testing.T) {
-	var _ of.FeatureProvider = (*Provider)(nil)
 }

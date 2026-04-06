@@ -154,6 +154,6 @@ defer client.Close()
 
 Cancels background polling/SSE goroutines.
 
-## OpenFeature Integration
+## OpenFeature
 
-See [OpenFeature](/sdks/openfeature) for using the Go SDK with OpenFeature.
+This SDK includes a built-in OpenFeature provider. See the [OpenFeature Integration](./openfeature.md) page for details. Import `featuresignals.NewProvider(client)` and register with `of.SetProviderAndWait()`.

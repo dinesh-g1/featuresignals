@@ -1,86 +1,120 @@
 using System.Text.Json;
+using OpenFeature;
+using OpenFeature.Model;
 
 namespace FeatureSignals.OpenFeature;
 
 /// <summary>
-/// OpenFeature-compatible provider backed by <see cref="FeatureSignalsClient"/>.
+/// OpenFeature-compliant provider backed by <see cref="FeatureSignalsClient"/>.
+///
+/// All evaluations are local lookups against the client's cached flags.
+///
+/// <example>
+/// <code>
+/// var client = await FeatureSignalsClient.CreateAsync("sdk-key", new ClientOptions { EnvKey = "production" });
+/// var provider = new FeatureSignalsProvider(client);
+/// await Api.Instance.SetProviderAsync(provider);
+/// var ofClient = Api.Instance.GetClient();
+/// var enabled = await ofClient.GetBooleanValueAsync("dark-mode", false);
+/// </code>
+/// </example>
 /// </summary>
-public sealed class FeatureSignalsProvider : IDisposable
+public sealed class FeatureSignalsProvider : FeatureProvider, IDisposable
 {
     private readonly FeatureSignalsClient _client;
 
+    /// <summary>Creates a provider wrapping an existing client instance.</summary>
+    public FeatureSignalsProvider(FeatureSignalsClient client)
+    {
+        _client = client;
+    }
+
+    /// <summary>Creates a provider that constructs its own client.</summary>
     public FeatureSignalsProvider(string sdkKey, ClientOptions options)
     {
         _client = new FeatureSignalsClient(sdkKey, options);
     }
 
-    public string Name => "featuresignals";
-
     public FeatureSignalsClient Client => _client;
 
-    public ResolutionDetails<bool> ResolveBooleanEvaluation(
-        string flagKey, bool defaultValue, EvalContext? context = null)
+    public override Metadata GetMetadata() => new("FeatureSignals");
+
+    public override async Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
     {
-        return Resolve(flagKey, defaultValue, val =>
-            val is true or false ? (bool)val : throw new InvalidCastException());
+        await _client.WaitForReadyAsync(cancellationToken: cancellationToken);
     }
 
-    public ResolutionDetails<string> ResolveStringEvaluation(
-        string flagKey, string defaultValue, EvalContext? context = null)
+    public override Task ShutdownAsync(CancellationToken cancellationToken = default)
     {
-        return Resolve(flagKey, defaultValue, val =>
-            val is string s ? s : throw new InvalidCastException());
+        _client.Dispose();
+        return Task.CompletedTask;
     }
 
-    public ResolutionDetails<double> ResolveNumberEvaluation(
-        string flagKey, double defaultValue, EvalContext? context = null)
+    public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(
+        string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
-        return Resolve(flagKey, defaultValue, val => val switch
+        return Task.FromResult(Resolve(flagKey, defaultValue, val =>
+            val is true or false ? (bool)val : throw new InvalidCastException()));
+    }
+
+    public override Task<ResolutionDetails<string>> ResolveStringValueAsync(
+        string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Resolve(flagKey, defaultValue, val =>
+            val is string s ? s : throw new InvalidCastException()));
+    }
+
+    public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(
+        string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Resolve(flagKey, defaultValue, val => val switch
         {
-            long l => l,
+            int i => i,
+            long l => (int)l,
+            double d => (int)d,
+            _ => throw new InvalidCastException()
+        }));
+    }
+
+    public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(
+        string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Resolve(flagKey, defaultValue, val => val switch
+        {
             double d => d,
+            long l => l,
             int i => i,
             _ => throw new InvalidCastException()
-        });
+        }));
     }
 
-    public ResolutionDetails<T> ResolveObjectEvaluation<T>(
-        string flagKey, T defaultValue, EvalContext? context = null)
+    public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(
+        string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         var flags = _client.AllFlags();
         if (!flags.TryGetValue(flagKey, out var raw))
         {
-            return new ResolutionDetails<T>
-            {
-                Value = defaultValue,
-                ErrorCode = ErrorCode.FlagNotFound,
-                ErrorMessage = $"flag '{flagKey}' not found"
-            };
+            return Task.FromResult(new ResolutionDetails<Value>(
+                flagKey, defaultValue, reason: "ERROR", errorType: ErrorType.FlagNotFound,
+                errorMessage: $"flag '{flagKey}' not found"));
         }
 
         try
         {
-            if (raw is T typed)
-                return new ResolutionDetails<T> { Value = typed };
-
             var json = JsonSerializer.Serialize(raw);
-            var deserialized = JsonSerializer.Deserialize<T>(json);
-            return new ResolutionDetails<T> { Value = deserialized! };
+            var structure = JsonSerializer.Deserialize<Value>(json) ?? defaultValue;
+            return Task.FromResult(new ResolutionDetails<Value>(
+                flagKey, structure, reason: "CACHED"));
         }
         catch
         {
-            return new ResolutionDetails<T>
-            {
-                Value = defaultValue,
-                ErrorCode = ErrorCode.TypeMismatch,
-                ErrorMessage = $"cannot convert to {typeof(T).Name}"
-            };
+            return Task.FromResult(new ResolutionDetails<Value>(
+                flagKey, defaultValue, reason: "ERROR", errorType: ErrorType.TypeMismatch,
+                errorMessage: $"cannot convert to Value"));
         }
     }
 
-    public void Shutdown() => _client.Dispose();
-
-    public void Dispose() => Shutdown();
+    public void Dispose() => _client.Dispose();
 
     private ResolutionDetails<T> Resolve<T>(
         string flagKey, T defaultValue, Func<object?, T> cast)
@@ -88,26 +122,23 @@ public sealed class FeatureSignalsProvider : IDisposable
         var flags = _client.AllFlags();
         if (!flags.TryGetValue(flagKey, out var raw))
         {
-            return new ResolutionDetails<T>
-            {
-                Value = defaultValue,
-                ErrorCode = ErrorCode.FlagNotFound,
-                ErrorMessage = $"flag '{flagKey}' not found"
-            };
+            return new ResolutionDetails<T>(
+                flagKey, defaultValue, reason: "ERROR",
+                errorType: ErrorType.FlagNotFound,
+                errorMessage: $"flag '{flagKey}' not found");
         }
 
         try
         {
-            return new ResolutionDetails<T> { Value = cast(raw) };
+            return new ResolutionDetails<T>(
+                flagKey, cast(raw), reason: "CACHED");
         }
         catch
         {
-            return new ResolutionDetails<T>
-            {
-                Value = defaultValue,
-                ErrorCode = ErrorCode.TypeMismatch,
-                ErrorMessage = $"expected {typeof(T).Name}, got {raw?.GetType().Name ?? "null"}"
-            };
+            return new ResolutionDetails<T>(
+                flagKey, defaultValue, reason: "ERROR",
+                errorType: ErrorType.TypeMismatch,
+                errorMessage: $"expected {typeof(T).Name}, got {raw?.GetType().Name ?? "null"}");
         }
     }
 }

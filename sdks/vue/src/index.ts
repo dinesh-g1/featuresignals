@@ -6,3 +6,8 @@ export type {
   FeatureSignalsState,
 } from "./types";
 export { parseClientFlagsPayload } from "./types";
+export {
+  FeatureSignalsWebProvider,
+  createOpenFeatureProvider,
+} from "./openfeature";
+export type { WebProviderOptions, ResolutionDetails } from "./openfeature";

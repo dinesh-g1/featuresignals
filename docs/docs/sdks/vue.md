@@ -209,3 +209,7 @@ const wrapper = mount(MyComponent, {
   },
 });
 ```
+
+## OpenFeature
+
+This SDK includes an optional OpenFeature web provider. See the [OpenFeature Integration](./openfeature.md) page for details. Install `@openfeature/web-sdk` and use `createOpenFeatureProvider()`.

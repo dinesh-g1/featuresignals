@@ -1,69 +1,179 @@
 package com.featuresignals.sdk;
 
+import dev.openfeature.sdk.EvaluationContext;
+import dev.openfeature.sdk.FeatureProvider;
+import dev.openfeature.sdk.Metadata;
+import dev.openfeature.sdk.ProviderEvaluation;
+import dev.openfeature.sdk.ErrorCode;
+import dev.openfeature.sdk.Reason;
+import dev.openfeature.sdk.Structure;
+import dev.openfeature.sdk.Value;
+import dev.openfeature.sdk.Hook;
+
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
- * OpenFeature-compatible provider backed by FeatureSignalsClient.
+ * OpenFeature-compliant provider backed by {@link FeatureSignalsClient}.
  *
- * <p>Implements the resolution methods that the OpenFeature Java SDK expects.
- * Can be used directly without the OpenFeature dependency.
+ * <p>Implements the OpenFeature {@link FeatureProvider} interface. All evaluations
+ * are local lookups against the client's cached flags &mdash; no network calls per
+ * evaluation.
+ *
+ * <pre>{@code
+ * FeatureSignalsProvider provider = new FeatureSignalsProvider("sdk-key", options);
+ * OpenFeatureAPI.getInstance().setProviderAndWait(provider);
+ * Client client = OpenFeatureAPI.getInstance().getClient();
+ * boolean enabled = client.getBooleanValue("dark-mode", false);
+ * }</pre>
  */
-public class FeatureSignalsProvider implements AutoCloseable {
+public class FeatureSignalsProvider implements FeatureProvider, AutoCloseable {
+
     private final FeatureSignalsClient client;
 
     public FeatureSignalsProvider(String sdkKey, ClientOptions options) {
         this.client = new FeatureSignalsClient(sdkKey, options);
     }
 
-    public FeatureSignalsClient getClient() { return client; }
-    public String getName() { return "featuresignals"; }
+    public FeatureSignalsClient getClient() {
+        return client;
+    }
 
-    public ResolutionDetails<Boolean> resolveBooleanEvaluation(String flagKey, boolean defaultValue) {
+    @Override
+    public Metadata getMetadata() {
+        return () -> "FeatureSignals";
+    }
+
+    @Override
+    public List<Hook> getProviderHooks() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void initialize(EvaluationContext evaluationContext) throws Exception {
+        client.waitForReady(30_000);
+    }
+
+    @Override
+    public void shutdown() {
+        client.close();
+    }
+
+    @Override
+    public ProviderEvaluation<Boolean> getBooleanEvaluation(
+            String flagKey, Boolean defaultValue, EvaluationContext ctx) {
         return resolve(flagKey, defaultValue, Boolean.class);
     }
 
-    public ResolutionDetails<String> resolveStringEvaluation(String flagKey, String defaultValue) {
+    @Override
+    public ProviderEvaluation<String> getStringEvaluation(
+            String flagKey, String defaultValue, EvaluationContext ctx) {
         return resolve(flagKey, defaultValue, String.class);
     }
 
-    public ResolutionDetails<Double> resolveNumberEvaluation(String flagKey, double defaultValue) {
+    @Override
+    public ProviderEvaluation<Integer> getIntegerEvaluation(
+            String flagKey, Integer defaultValue, EvaluationContext ctx) {
         Map<String, Object> flags = client.allFlags();
         Object val = flags.get(flagKey);
-        if (val == null) {
-            return new ResolutionDetails<>(defaultValue, "ERROR", "FLAG_NOT_FOUND");
+        if (val == null && !flags.containsKey(flagKey)) {
+            return ProviderEvaluation.<Integer>builder()
+                    .value(defaultValue)
+                    .reason(Reason.ERROR.toString())
+                    .errorCode(ErrorCode.FLAG_NOT_FOUND)
+                    .errorMessage("flag '" + flagKey + "' not found")
+                    .build();
         }
         if (val instanceof Number) {
-            return new ResolutionDetails<>(((Number) val).doubleValue(), "CACHED", null);
+            return ProviderEvaluation.<Integer>builder()
+                    .value(((Number) val).intValue())
+                    .reason(Reason.CACHED.toString())
+                    .build();
         }
-        return new ResolutionDetails<>(defaultValue, "ERROR", "TYPE_MISMATCH");
+        return ProviderEvaluation.<Integer>builder()
+                .value(defaultValue)
+                .reason(Reason.ERROR.toString())
+                .errorCode(ErrorCode.TYPE_MISMATCH)
+                .errorMessage("expected numeric, got " + (val == null ? "null" : val.getClass().getSimpleName()))
+                .build();
     }
 
-    public ResolutionDetails<Object> resolveObjectEvaluation(String flagKey, Object defaultValue) {
+    @Override
+    public ProviderEvaluation<Double> getDoubleEvaluation(
+            String flagKey, Double defaultValue, EvaluationContext ctx) {
         Map<String, Object> flags = client.allFlags();
         Object val = flags.get(flagKey);
-        if (val == null) {
-            return new ResolutionDetails<>(defaultValue, "ERROR", "FLAG_NOT_FOUND");
+        if (val == null && !flags.containsKey(flagKey)) {
+            return ProviderEvaluation.<Double>builder()
+                    .value(defaultValue)
+                    .reason(Reason.ERROR.toString())
+                    .errorCode(ErrorCode.FLAG_NOT_FOUND)
+                    .errorMessage("flag '" + flagKey + "' not found")
+                    .build();
         }
-        return new ResolutionDetails<>(val, "CACHED", null);
+        if (val instanceof Number) {
+            return ProviderEvaluation.<Double>builder()
+                    .value(((Number) val).doubleValue())
+                    .reason(Reason.CACHED.toString())
+                    .build();
+        }
+        return ProviderEvaluation.<Double>builder()
+                .value(defaultValue)
+                .reason(Reason.ERROR.toString())
+                .errorCode(ErrorCode.TYPE_MISMATCH)
+                .errorMessage("expected numeric, got " + (val == null ? "null" : val.getClass().getSimpleName()))
+                .build();
+    }
+
+    @Override
+    public ProviderEvaluation<Value> getObjectEvaluation(
+            String flagKey, Value defaultValue, EvaluationContext ctx) {
+        Map<String, Object> flags = client.allFlags();
+        Object val = flags.get(flagKey);
+        if (val == null && !flags.containsKey(flagKey)) {
+            return ProviderEvaluation.<Value>builder()
+                    .value(defaultValue)
+                    .reason(Reason.ERROR.toString())
+                    .errorCode(ErrorCode.FLAG_NOT_FOUND)
+                    .errorMessage("flag '" + flagKey + "' not found")
+                    .build();
+        }
+        return ProviderEvaluation.<Value>builder()
+                .value(new Value(val))
+                .reason(Reason.CACHED.toString())
+                .build();
     }
 
     @Override
     public void close() {
-        client.close();
+        shutdown();
     }
 
     @SuppressWarnings("unchecked")
-    private <T> ResolutionDetails<T> resolve(String flagKey, T defaultValue, Class<T> type) {
+    private <T> ProviderEvaluation<T> resolve(String flagKey, T defaultValue, Class<T> type) {
         Map<String, Object> flags = client.allFlags();
         Object val = flags.get(flagKey);
-        if (val == null) {
-            return new ResolutionDetails<>(defaultValue, "ERROR", "FLAG_NOT_FOUND");
+        if (val == null && !flags.containsKey(flagKey)) {
+            return ProviderEvaluation.<T>builder()
+                    .value(defaultValue)
+                    .reason(Reason.ERROR.toString())
+                    .errorCode(ErrorCode.FLAG_NOT_FOUND)
+                    .errorMessage("flag '" + flagKey + "' not found")
+                    .build();
         }
         if (type.isInstance(val)) {
-            return new ResolutionDetails<>((T) val, "CACHED", null);
+            return ProviderEvaluation.<T>builder()
+                    .value((T) val)
+                    .reason(Reason.CACHED.toString())
+                    .build();
         }
-        return new ResolutionDetails<>(defaultValue, "ERROR", "TYPE_MISMATCH");
+        return ProviderEvaluation.<T>builder()
+                .value(defaultValue)
+                .reason(Reason.ERROR.toString())
+                .errorCode(ErrorCode.TYPE_MISMATCH)
+                .errorMessage("expected " + type.getSimpleName() + ", got " +
+                        (val == null ? "null" : val.getClass().getSimpleName()))
+                .build();
     }
-
-    public record ResolutionDetails<T>(T value, String reason, String errorCode) {}
 }

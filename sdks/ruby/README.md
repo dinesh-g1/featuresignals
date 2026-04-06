@@ -46,6 +46,21 @@ title = client.string_variation("welcome-title", ctx, "Welcome!")
 limit = client.number_variation("rate-limit", ctx, 100)
 ```
 
+## OpenFeature Usage
+
+FeatureSignals integrates with the [OpenFeature](https://openfeature.dev) standard. Install the OpenFeature Ruby SDK and register the FeatureSignals provider:
+
+```ruby
+require "open_feature/sdk"
+require "featuresignals"
+
+provider = FeatureSignals::OpenFeature::Provider.new("sdk-key",
+  FeatureSignals::ClientOptions.new(env_key: "production"))
+OpenFeature::SDK.configure { |c| c.set_provider(provider) }
+client = OpenFeature::SDK.build_client
+value = client.fetch_boolean_value(flag_key: "dark-mode", default_value: false)
+```
+
 ## API Reference
 
 ### `FeatureSignals::ClientOptions`
