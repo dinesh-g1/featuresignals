@@ -139,10 +139,20 @@ public class FeatureSignalsProvider implements FeatureProvider, AutoCloseable {
                     .errorMessage("flag '" + flagKey + "' not found")
                     .build();
         }
-        return ProviderEvaluation.<Value>builder()
-                .value(new Value(val))
-                .reason(Reason.CACHED.toString())
-                .build();
+        try {
+            return ProviderEvaluation.<Value>builder()
+                    .value(new Value(val))
+                    .reason(Reason.CACHED.toString())
+                    .build();
+        } catch (InstantiationException e) {
+            return ProviderEvaluation.<Value>builder()
+                    .value(defaultValue)
+                    .reason(Reason.ERROR.toString())
+                    .errorCode(ErrorCode.TYPE_MISMATCH)
+                    .errorMessage("unsupported value type: " +
+                            (val == null ? "null" : val.getClass().getSimpleName()))
+                    .build();
+        }
     }
 
     @Override
