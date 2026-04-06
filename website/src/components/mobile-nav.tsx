@@ -86,6 +86,7 @@ function AccordionSection({
 const directLinks = [
   { href: "/pricing", label: "Pricing" },
   { href: "/use-cases", label: "Use Cases" },
+  { href: "/security", label: "Security" },
   { href: "/changelog", label: "Changelog" },
 ];
 

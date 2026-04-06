@@ -148,6 +148,10 @@ func (s *tierMockStore) CreateAuditEntry(context.Context, *domain.AuditEntry) er
 func (s *tierMockStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, nil
 }
+func (s *tierMockStore) ListAuditEntriesForExport(context.Context, string, string, string) ([]domain.AuditEntry, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetLastAuditHash(context.Context, string) (string, error) { return "", nil }
 func (s *tierMockStore) LoadRuleset(context.Context, string, string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	return nil, nil, nil, nil
 }
@@ -201,6 +205,17 @@ func (s *tierMockStore) CreateOneTimeToken(context.Context, string, string, time
 func (s *tierMockStore) ConsumeOneTimeToken(context.Context, string) (string, string, error) {
 	return "user-id", "org-id", nil
 }
+func (s *tierMockStore) UpsertSSOConfig(context.Context, *domain.SSOConfig) error { return nil }
+func (s *tierMockStore) GetSSOConfig(context.Context, string) (*domain.SSOConfig, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetSSOConfigFull(context.Context, string) (*domain.SSOConfig, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetSSOConfigByOrgSlug(context.Context, string) (*domain.SSOConfig, error) {
+	return nil, nil
+}
+func (s *tierMockStore) DeleteSSOConfig(context.Context, string) error { return nil }
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)

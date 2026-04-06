@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
+import { useFeatures } from "@/hooks/use-features";
 import { cn } from "@/lib/utils";
 import {
   Home, Flag, Users, ArrowLeftRight, UserSearch, UsersRound,
   BarChart3, Heart, PieChart, CheckCircle, ClipboardList,
-  Settings, Sparkles, LogOut, X,
+  Settings, Sparkles, LogOut, Lock, X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -17,6 +18,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  gatedFeature?: string;
 }
 
 const navItems: NavItem[] = [
@@ -29,7 +31,7 @@ const navItems: NavItem[] = [
   { href: "/usage-insights", label: "Usage Insights", icon: BarChart3 },
   { href: "/health", label: "Flag Health", icon: Heart },
   { href: "/metrics", label: "Eval Metrics", icon: PieChart },
-  { href: "/approvals", label: "Approvals", icon: CheckCircle },
+  { href: "/approvals", label: "Approvals", icon: CheckCircle, gatedFeature: "approvals" },
   { href: "/audit", label: "Audit Log", icon: ClipboardList },
   { href: "/settings/general", label: "Settings", icon: Settings },
 ];
@@ -39,6 +41,7 @@ function SidebarContent() {
   const closeSidebar = useSidebarStore((s) => s.close);
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
+  const { isEnabled, minPlanFor } = useFeatures();
 
   const prevPathname = useRef(pathname);
   useEffect(() => {
@@ -67,25 +70,35 @@ function SidebarContent() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
+          const locked = item.gatedFeature ? !isEnabled(item.gatedFeature) : false;
+          const requiredPlan = item.gatedFeature ? minPlanFor(item.gatedFeature) : null;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={locked ? "/settings/billing" : item.href}
+              title={locked ? `Upgrade to ${requiredPlan} to unlock ${item.label}` : undefined}
               className={cn(
                 "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-                active
-                  ? "bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100/50"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+                locked
+                  ? "text-slate-400 hover:bg-amber-50 hover:text-amber-700"
+                  : active
+                    ? "bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100/50"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
               )}
             >
-              {active && (
+              {active && !locked && (
                 <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-600" />
               )}
               <Icon className={cn(
                 "h-[18px] w-[18px] shrink-0 transition-colors duration-150",
-                active ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600",
+                locked
+                  ? "text-slate-300"
+                  : active ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600",
               )} strokeWidth={1.5} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {locked && (
+                <Lock className="h-3.5 w-3.5 shrink-0 text-amber-500" strokeWidth={2} />
+              )}
             </Link>
           );
         })}

@@ -94,6 +94,12 @@ const config: Config = {
           label: 'API Reference',
         },
         {
+          type: 'docSidebar',
+          sidebarId: 'compliance',
+          position: 'left',
+          label: 'Security & Compliance',
+        },
+        {
           href: 'https://github.com/dinesh-g1/featuresignals',
           position: 'right',
           className: 'header-github-link',
@@ -134,6 +140,16 @@ const config: Config = {
             {label: 'Ruby', to: '/sdks/ruby'},
             {label: 'React', to: '/sdks/react'},
             {label: 'Vue', to: '/sdks/vue'},
+          ],
+        },
+        {
+          title: 'Security & Compliance',
+          items: [
+            {label: 'Security Overview', to: '/compliance/security-overview'},
+            {label: 'GDPR', to: '/compliance/privacy-policy'},
+            {label: 'SOC 2', to: '/compliance/soc2/controls-matrix'},
+            {label: 'HIPAA', to: '/compliance/hipaa'},
+            {label: 'System Status', href: 'https://featuresignals.com/status'},
           ],
         },
         {

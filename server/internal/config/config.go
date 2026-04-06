@@ -30,6 +30,10 @@ type Config struct {
 	// App
 	AppBaseURL   string
 	DashboardURL string
+
+	// On-Premises Licensing
+	LicenseKey       string
+	LicensePublicKey string
 }
 
 func Load() *Config {
@@ -54,6 +58,9 @@ func Load() *Config {
 
 		AppBaseURL:   getEnv("APP_BASE_URL", "http://localhost:8080"),
 		DashboardURL: getEnv("DASHBOARD_URL", "http://localhost:3000"),
+
+		LicenseKey:       os.Getenv("LICENSE_KEY"),
+		LicensePublicKey: getEnv("LICENSE_PUBLIC_KEY_PATH", ""),
 	}
 }
 

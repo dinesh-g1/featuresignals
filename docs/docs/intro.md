@@ -15,6 +15,7 @@ FeatureSignals is an **open-source feature flag management platform** built for 
 - **Toggle categories** — Classify flags as release, experiment, ops, or permission for lifecycle-aware management.
 - **Multi-environment** — Manage dev, staging, and production from a single Flag Engine.
 - **Enterprise-ready** — RBAC, audit logging, approval workflows, webhooks, and mutual exclusion groups.
+- **Compliance-first** — SOC 2 controls, GDPR, HIPAA, ISO 27001, CCPA/CPRA, DORA, and CSA STAR readiness.
 - **SDKs for every stack** — Go, Node.js, Python, Java, and React with OpenFeature support.
 - **Edge-ready** — Relay proxy for low-latency flag evaluation at the edge.
 
@@ -29,6 +30,7 @@ FeatureSignals is an **open-source feature flag management platform** built for 
 | Explore the REST API | [API Reference](/api-reference/overview) |
 | Deploy to production | [Self-Hosting](/deployment/self-hosting) |
 | Set up A/B experiments | [A/B Experimentation](/core-concepts/ab-experimentation) |
+| Review security & compliance | [Security Overview](/compliance/security-overview) |
 
 ## Architecture at a Glance
 

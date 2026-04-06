@@ -13,6 +13,7 @@ import type {
   EntityInput,
   Environment,
   EvalMetrics,
+  FeaturesResponse,
   Flag,
   FlagInsight,
   FlagState,
@@ -24,6 +25,9 @@ import type {
   Project,
   Segment,
   SignupResponse,
+  SSOConfig,
+  SSODiscovery,
+  SSOTestResult,
   TokenExchangeResponse,
   UsageInfo,
   Webhook,
@@ -257,6 +261,12 @@ export const api = {
   // Audit
   listAudit: (token: string, limit?: number, offset?: number) =>
     requestList<AuditEntry>(`/v1/audit?limit=${limit || 50}&offset=${offset || 0}`, { token }),
+  exportAudit: (token: string, format: "json" | "csv", from?: string, to?: string) => {
+    const params = new URLSearchParams({ format });
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    return request<Blob>(`/v1/audit/export?${params.toString()}`, { token });
+  },
 
   // Team / Members
   listMembers: (token: string) =>
@@ -346,7 +356,25 @@ export const api = {
   updateOnboarding: (token: string, data: Record<string, boolean>) =>
     request<OnboardingState>("/v1/onboarding", { method: "PATCH", body: data, token }),
 
+  // Features (plan-gated capabilities)
+  getFeatures: (token: string) =>
+    request<FeaturesResponse>("/v1/features", { token }),
+
   // Token exchange
   exchangeToken: (token: string) =>
     request<TokenExchangeResponse>("/v1/auth/token-exchange", { method: "POST", body: { token } }),
+
+  // SSO configuration (admin)
+  getSSOConfig: (token: string) =>
+    request<SSOConfig>("/v1/sso/config", { token }),
+  upsertSSOConfig: (token: string, data: Record<string, unknown>) =>
+    request<SSOConfig>("/v1/sso/config", { method: "POST", body: data, token }),
+  deleteSSOConfig: (token: string) =>
+    request("/v1/sso/config", { method: "DELETE", token }),
+  testSSOConnection: (token: string) =>
+    request<SSOTestResult>("/v1/sso/config/test", { method: "POST", token }),
+
+  // SSO discovery (public)
+  discoverSSO: (orgSlug: string) =>
+    request<SSODiscovery>(`/v1/sso/discovery/${orgSlug}`),
 };

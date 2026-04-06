@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/featuresignals/server/internal/api/dto"
@@ -9,11 +10,16 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-type WebhookHandler struct {
-	store domain.WebhookStore
+type webhookHandlerStore interface {
+	domain.WebhookStore
+	domain.AuditWriter
 }
 
-func NewWebhookHandler(store domain.WebhookStore) *WebhookHandler {
+type WebhookHandler struct {
+	store webhookHandlerStore
+}
+
+func NewWebhookHandler(store webhookHandlerStore) *WebhookHandler {
 	return &WebhookHandler{store: store}
 }
 
@@ -65,6 +71,14 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "failed to create webhook")
 		return
 	}
+
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(wh)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "webhook.created", ResourceType: "webhook", ResourceID: &wh.ID,
+		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
 
 	httputil.JSON(w, http.StatusCreated, dto.WebhookFromDomain(wh))
 }
@@ -123,10 +137,21 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 		existing.Enabled = *req.Enabled
 	}
 
+	beforeState, _ := json.Marshal(existing)
 	if err := h.store.UpdateWebhook(r.Context(), existing); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to update webhook")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(existing)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "webhook.updated", ResourceType: "webhook", ResourceID: &existing.ID,
+		BeforeState: beforeState, AfterState: afterState,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
 
 	httputil.JSON(w, http.StatusOK, dto.WebhookFromDomain(existing))
 }
@@ -136,10 +161,20 @@ func (h *WebhookHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	beforeState, _ := json.Marshal(wh)
 	if err := h.store.DeleteWebhook(r.Context(), wh.ID); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete webhook")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "webhook.deleted", ResourceType: "webhook", ResourceID: &wh.ID,
+		BeforeState: beforeState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

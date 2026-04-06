@@ -42,6 +42,8 @@ type mockStore struct {
 	oneTimeTokens    map[string]*ottEntry                       // token -> entry
 	pendingRegs      map[string]*domain.PendingRegistration     // email -> pending reg
 	salesInquiries   []*domain.SalesInquiry
+	ssoByOrgID       map[string]*domain.SSOConfig        // orgID -> sso config
+	ssoConfigs       map[string]*domain.SSOConfig        // orgSlug -> sso config
 
 	idCounter int
 }
@@ -79,6 +81,8 @@ func newMockStore() *mockStore {
 		onboardingStates: make(map[string]*domain.OnboardingState),
 		oneTimeTokens:    make(map[string]*ottEntry),
 		pendingRegs:      make(map[string]*domain.PendingRegistration),
+		ssoByOrgID:       make(map[string]*domain.SSOConfig),
+		ssoConfigs:       make(map[string]*domain.SSOConfig),
 	}
 }
 
@@ -582,6 +586,27 @@ func (m *mockStore) ListAuditEntries(ctx context.Context, orgID string, limit, o
 	return result, nil
 }
 
+func (m *mockStore) ListAuditEntriesForExport(_ context.Context, orgID string, _, _ string) ([]domain.AuditEntry, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.AuditEntry
+	for _, e := range m.auditEntries {
+		if e.OrgID == orgID {
+			result = append(result, e)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if len(m.auditEntries) == 0 {
+		return "", nil
+	}
+	return m.auditEntries[len(m.auditEntries)-1].IntegrityHash, nil
+}
+
 func (m *mockStore) LoadRuleset(ctx context.Context, projectID, envID string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	flags, _ := m.ListFlags(ctx, projectID)
 	var states []domain.FlagState
@@ -1027,4 +1052,56 @@ func setupTestEnv(store *mockStore, orgID string) (projectID, envID string) {
 	env := &domain.Environment{ProjectID: pID, Name: "Dev", Slug: "dev"}
 	store.CreateEnvironment(context.Background(), env)
 	return pID, env.ID
+}
+
+// --- SSO Config mock ---
+
+func (m *mockStore) UpsertSSOConfig(_ context.Context, cfg *domain.SSOConfig) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.ssoByOrgID == nil {
+		m.ssoByOrgID = make(map[string]*domain.SSOConfig)
+	}
+	if cfg.ID == "" {
+		m.idCounter++
+		cfg.ID = fmt.Sprintf("sso-%d", m.idCounter)
+	}
+	cfg.CreatedAt = time.Now()
+	cfg.UpdatedAt = time.Now()
+	m.ssoByOrgID[cfg.OrgID] = cfg
+	return nil
+}
+
+func (m *mockStore) GetSSOConfig(_ context.Context, orgID string) (*domain.SSOConfig, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if cfg, ok := m.ssoByOrgID[orgID]; ok {
+		return cfg, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) GetSSOConfigFull(_ context.Context, orgID string) (*domain.SSOConfig, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if cfg, ok := m.ssoByOrgID[orgID]; ok {
+		return cfg, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) GetSSOConfigByOrgSlug(_ context.Context, slug string) (*domain.SSOConfig, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if cfg, ok := m.ssoConfigs[slug]; ok {
+		return cfg, nil
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (m *mockStore) DeleteSSOConfig(_ context.Context, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.ssoByOrgID, orgID)
+	return nil
 }

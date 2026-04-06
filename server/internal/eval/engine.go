@@ -32,17 +32,13 @@ func NewEngine() *Engine {
 }
 
 // Evaluate evaluates a single flag for the given context.
-//
-// Algorithm:
-//  1. Look up flag by key
-//  2. If not found -> NOT_FOUND
-//  3. Look up flag state for environment
-//  4. If disabled -> return default off value (DISABLED)
-//  5. Evaluate targeting rules in priority order
-//  6. If a rule matches, apply its rollout percentage
-//  7. If no rule matches, apply default rollout
-//  8. Return evaluated value
 func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *domain.Ruleset) domain.EvalResult {
+	return e.evaluate(flagKey, ctx, ruleset, nil)
+}
+
+// evaluate is the internal recursive evaluator that tracks visited flags to
+// detect and break prerequisite cycles.
+func (e *Engine) evaluate(flagKey string, ctx domain.EvalContext, ruleset *domain.Ruleset, visited map[string]bool) domain.EvalResult {
 	flag, ok := ruleset.Flags[flagKey]
 	if !ok {
 		return domain.EvalResult{
@@ -80,10 +76,32 @@ func (e *Engine) Evaluate(flagKey string, ctx domain.EvalContext, ruleset *domai
 	}
 
 	if len(flag.Prerequisites) > 0 {
+		if visited == nil {
+			visited = make(map[string]bool)
+		}
+		visited[flagKey] = true
+
 		for _, prereqKey := range flag.Prerequisites {
-			prereqResult := e.Evaluate(prereqKey, ctx, ruleset)
-			prereqOn, _ := prereqResult.Value.(bool)
-			if prereqResult.Reason == domain.ReasonNotFound || prereqResult.Reason == domain.ReasonDisabled || !prereqOn {
+			if visited[prereqKey] {
+				return domain.EvalResult{
+					FlagKey: flagKey,
+					Value:   parseJSONValue(flag.DefaultValue),
+					Reason:  domain.ReasonPrerequisiteFailed,
+				}
+			}
+			prereqResult := e.evaluate(prereqKey, ctx, ruleset, visited)
+			if prereqResult.Reason == domain.ReasonNotFound || prereqResult.Reason == domain.ReasonDisabled {
+				return domain.EvalResult{
+					FlagKey: flagKey,
+					Value:   parseJSONValue(flag.DefaultValue),
+					Reason:  domain.ReasonPrerequisiteFailed,
+				}
+			}
+			// For boolean prerequisites, require the value to be true.
+			// For non-boolean prerequisites, any non-disabled evaluation is
+			// considered "on" (the prerequisite flag is enabled and returning
+			// a value, regardless of what that value is).
+			if prereqOn, ok := prereqResult.Value.(bool); ok && !prereqOn {
 				return domain.EvalResult{
 					FlagKey: flagKey,
 					Value:   parseJSONValue(flag.DefaultValue),

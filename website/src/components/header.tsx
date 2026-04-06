@@ -16,6 +16,7 @@ import { MobileNav } from "./mobile-nav";
 const topLinks = [
   { href: "/pricing", label: "Pricing" },
   { href: "/use-cases", label: "Use Cases" },
+  { href: "/security", label: "Security" },
   { href: "/changelog", label: "Changelog" },
 ];
 

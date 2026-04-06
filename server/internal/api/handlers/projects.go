@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -15,6 +16,7 @@ type projectStore interface {
 	domain.ProjectReader
 	domain.ProjectWriter
 	domain.EnvironmentWriter
+	domain.AuditWriter
 }
 
 type ProjectHandler struct {
@@ -65,6 +67,14 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	BootstrapEnvironments(r.Context(), h.store, project.ID)
 
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(project)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "project.created", ResourceType: "project", ResourceID: &project.ID,
+		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusCreated, dto.ProjectFromDomain(project))
 }
 
@@ -97,10 +107,20 @@ func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	beforeState, _ := json.Marshal(project)
 	if err := h.store.DeleteProject(r.Context(), project.ID); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete project")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "project.deleted", ResourceType: "project", ResourceID: &project.ID,
+		BeforeState: beforeState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -109,6 +129,7 @@ func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 type envHandlerStore interface {
 	domain.EnvironmentReader
 	domain.EnvironmentWriter
+	domain.AuditWriter
 	projectGetter
 }
 
@@ -154,6 +175,15 @@ func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(env)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "environment.created", ResourceType: "environment", ResourceID: &env.ID,
+		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusCreated, dto.EnvironmentFromDomain(env))
 }
 
@@ -185,5 +215,14 @@ func (h *EnvironmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete environment")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "environment.deleted", ResourceType: "environment", ResourceID: &id,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	w.WriteHeader(http.StatusNoContent)
 }

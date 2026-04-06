@@ -55,6 +55,7 @@ const sidebars: SidebarsConfig = {
           items: [
             'deployment/docker-compose',
             'deployment/self-hosting',
+            'deployment/on-premises',
             'deployment/configuration',
           ],
         },
@@ -115,6 +116,36 @@ const sidebars: SidebarsConfig = {
     'sdks/react',
     'sdks/vue',
     'sdks/openfeature',
+  ],
+  compliance: [
+    'compliance/security-overview',
+    {
+      type: 'category',
+      label: 'GDPR',
+      items: [
+        'compliance/privacy-policy',
+        'compliance/data-retention',
+        'compliance/dpa-template',
+        'compliance/subprocessors',
+        'compliance/gdpr-rights',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'SOC 2',
+      items: [
+        'compliance/soc2/controls-matrix',
+        'compliance/soc2/evidence-collection',
+        'compliance/soc2/incident-response',
+      ],
+    },
+    'compliance/ccpa-cpra',
+    'compliance/iso27701/pims-overview',
+    'compliance/data-privacy-framework',
+    'compliance/iso27001/isms-overview',
+    'compliance/hipaa',
+    'compliance/dora',
+    'compliance/csa-star',
   ],
 };
 

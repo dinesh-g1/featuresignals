@@ -24,6 +24,8 @@ type flagStore interface {
 	domain.FlagReader
 	domain.FlagWriter
 	domain.AuditWriter
+	domain.OrgMemberStore
+	domain.EnvPermissionStore
 	projectGetter
 }
 
@@ -136,6 +138,8 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		ResourceType: "flag",
 		ResourceID:   &flag.ID,
 		AfterState:   afterState,
+		IPAddress:    r.RemoteAddr,
+		UserAgent:    r.UserAgent(),
 	})
 
 	httputil.JSON(w, http.StatusCreated, dto.FlagFromDomain(flag))
@@ -262,6 +266,8 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 		ResourceID:   &flag.ID,
 		BeforeState:  beforeState,
 		AfterState:   afterState,
+		IPAddress:    r.RemoteAddr,
+		UserAgent:    r.UserAgent(),
 	})
 
 	httputil.JSON(w, http.StatusOK, dto.FlagFromDomain(flag))
@@ -303,6 +309,8 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		ResourceType: "flag",
 		ResourceID:   &flag.ID,
 		BeforeState:  beforeState,
+		IPAddress:    r.RemoteAddr,
+		UserAgent:    r.UserAgent(),
 	})
 
 	w.WriteHeader(http.StatusNoContent)
@@ -327,6 +335,8 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	projectID := chi.URLParam(r, "projectID")
 	flagKey := chi.URLParam(r, "flagKey")
 	envID := chi.URLParam(r, "envID")
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
@@ -338,6 +348,19 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+
+	if req.Enabled != nil {
+		if !middleware.CheckEnvPermission(r.Context(), h.store, orgID, userID, envID, "can_toggle") {
+			httputil.Error(w, http.StatusForbidden, "you do not have permission to toggle flags in this environment")
+			return
+		}
+	}
+	if req.Rules != nil || req.PercentageRollout != nil || req.Variants != nil {
+		if !middleware.CheckEnvPermission(r.Context(), h.store, orgID, userID, envID, "can_edit_rules") {
+			httputil.Error(w, http.StatusForbidden, "you do not have permission to edit rules in this environment")
+			return
+		}
 	}
 
 	state := &domain.FlagState{
@@ -391,10 +414,26 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	beforeState, _ := json.Marshal(existing)
+
 	if err := h.store.UpsertFlagState(r.Context(), state); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to update flag state")
 		return
 	}
+
+	afterState, _ := json.Marshal(state)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID:        orgID,
+		ActorID:      &userID,
+		ActorType:    "user",
+		Action:       "flag.state_updated",
+		ResourceType: "flag",
+		ResourceID:   &flag.ID,
+		BeforeState:  beforeState,
+		AfterState:   afterState,
+		IPAddress:    r.RemoteAddr,
+		UserAgent:    r.UserAgent(),
+	})
 
 	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(state))
 }
@@ -429,6 +468,13 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.SourceEnvID == req.TargetEnvID {
 		httputil.Error(w, http.StatusBadRequest, "source and target environments must differ")
+		return
+	}
+
+	promoteOrgID := middleware.GetOrgID(r.Context())
+	promoteUserID := middleware.GetUserID(r.Context())
+	if !middleware.CheckEnvPermission(r.Context(), h.store, promoteOrgID, promoteUserID, req.TargetEnvID, "can_edit_rules") {
+		httputil.Error(w, http.StatusForbidden, "you do not have permission to modify flags in the target environment")
 		return
 	}
 
@@ -476,6 +522,8 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 		ResourceID:   &flag.ID,
 		BeforeState:  beforeState,
 		AfterState:   afterState,
+		IPAddress:    r.RemoteAddr,
+		UserAgent:    r.UserAgent(),
 	})
 
 	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(target))
@@ -496,9 +544,17 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+
 	var req KillFlagRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil || req.EnvID == "" {
 		httputil.Error(w, http.StatusBadRequest, "env_id is required")
+		return
+	}
+
+	if !middleware.CheckEnvPermission(r.Context(), h.store, orgID, userID, req.EnvID, "can_toggle") {
+		httputil.Error(w, http.StatusForbidden, "you do not have permission to toggle flags in this environment")
 		return
 	}
 
@@ -518,8 +574,6 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 
 	h.l(r).Warn("KILL SWITCH activated", "flag_key", flagKey, "env_id", req.EnvID)
 
-	orgID := middleware.GetOrgID(r.Context())
-	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(state)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
@@ -530,6 +584,8 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 		ResourceID:   &flag.ID,
 		BeforeState:  beforeState,
 		AfterState:   afterState,
+		IPAddress:    r.RemoteAddr,
+		UserAgent:    r.UserAgent(),
 	})
 
 	httputil.JSON(w, http.StatusOK, dto.FlagStateFromDomain(state))
@@ -714,6 +770,8 @@ func (h *FlagHandler) SyncEnvironments(w http.ResponseWriter, r *http.Request) {
 			ResourceType: "flag",
 			ResourceID:   &flag.ID,
 			AfterState:   afterState,
+			IPAddress:    r.RemoteAddr,
+			UserAgent:    r.UserAgent(),
 		})
 		synced++
 	}

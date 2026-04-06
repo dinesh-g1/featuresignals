@@ -743,17 +743,22 @@ func (s *Store) ListWebhookDeliveries(ctx context.Context, webhookID string, lim
 // --- Audit Log ---
 
 func (s *Store) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error {
+	prevHash, _ := s.GetLastAuditHash(ctx, entry.OrgID)
+	entry.CreatedAt = time.Now().UTC()
+	entry.IntegrityHash = entry.ComputeIntegrityHash(prevHash)
+
 	return s.pool.QueryRow(ctx,
-		`INSERT INTO audit_logs (org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`,
+		`INSERT INTO audit_logs (org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at`,
 		entry.OrgID, entry.ActorID, entry.ActorType, entry.Action, entry.ResourceType, entry.ResourceID,
 		entry.BeforeState, entry.AfterState, entry.Metadata,
+		entry.IPAddress, entry.UserAgent, entry.IntegrityHash,
 	).Scan(&entry.ID, &entry.CreatedAt)
 }
 
 func (s *Store) ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]domain.AuditEntry, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, created_at
+		`SELECT id, org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash, created_at
 		 FROM audit_logs WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -762,12 +767,43 @@ func (s *Store) ListAuditEntries(ctx context.Context, orgID string, limit, offse
 	entries := []domain.AuditEntry{}
 	for rows.Next() {
 		var e domain.AuditEntry
-		if err := rows.Scan(&e.ID, &e.OrgID, &e.ActorID, &e.ActorType, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Metadata, &e.CreatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.OrgID, &e.ActorID, &e.ActorType, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Metadata, &e.IPAddress, &e.UserAgent, &e.IntegrityHash, &e.CreatedAt); err != nil {
 			return nil, err
 		}
 		entries = append(entries, e)
 	}
 	return entries, nil
+}
+
+func (s *Store) ListAuditEntriesForExport(ctx context.Context, orgID string, from, to string) ([]domain.AuditEntry, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash, created_at
+		 FROM audit_logs WHERE org_id = $1 AND created_at >= $2::timestamptz AND created_at <= $3::timestamptz ORDER BY created_at ASC`,
+		orgID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	entries := []domain.AuditEntry{}
+	for rows.Next() {
+		var e domain.AuditEntry
+		if err := rows.Scan(&e.ID, &e.OrgID, &e.ActorID, &e.ActorType, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Metadata, &e.IPAddress, &e.UserAgent, &e.IntegrityHash, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
+func (s *Store) GetLastAuditHash(ctx context.Context, orgID string) (string, error) {
+	var hash string
+	err := s.pool.QueryRow(ctx,
+		`SELECT COALESCE(integrity_hash, '') FROM audit_logs WHERE org_id = $1 ORDER BY created_at DESC LIMIT 1`,
+		orgID).Scan(&hash)
+	if err != nil {
+		return "", nil
+	}
+	return hash, nil
 }
 
 // --- Ruleset Loading (for evaluation cache) ---
@@ -1238,4 +1274,67 @@ func (s *Store) ConsumeOneTimeToken(ctx context.Context, token string) (string, 
 		return "", "", fmt.Errorf("invalid or expired token")
 	}
 	return userID, orgID, nil
+}
+
+// --- SSO Config ---
+
+func (s *Store) UpsertSSOConfig(ctx context.Context, config *domain.SSOConfig) error {
+	return s.pool.QueryRow(ctx,
+		`INSERT INTO sso_configs (org_id, provider_type, metadata_url, metadata_xml, entity_id, acs_url, certificate, client_id, client_secret, issuer_url, enabled, enforce, default_role)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		 ON CONFLICT (org_id) DO UPDATE SET
+		   provider_type = EXCLUDED.provider_type, metadata_url = EXCLUDED.metadata_url,
+		   metadata_xml = EXCLUDED.metadata_xml, entity_id = EXCLUDED.entity_id,
+		   acs_url = EXCLUDED.acs_url, certificate = EXCLUDED.certificate,
+		   client_id = EXCLUDED.client_id, client_secret = EXCLUDED.client_secret,
+		   issuer_url = EXCLUDED.issuer_url, enabled = EXCLUDED.enabled,
+		   enforce = EXCLUDED.enforce, default_role = EXCLUDED.default_role,
+		   updated_at = NOW()
+		 RETURNING id, created_at, updated_at`,
+		config.OrgID, config.ProviderType, config.MetadataURL, config.MetadataXML,
+		config.EntityID, config.ACSURL, config.Certificate,
+		config.ClientID, config.ClientSecret, config.IssuerURL,
+		config.Enabled, config.Enforce, config.DefaultRole,
+	).Scan(&config.ID, &config.CreatedAt, &config.UpdatedAt)
+}
+
+func (s *Store) GetSSOConfig(ctx context.Context, orgID string) (*domain.SSOConfig, error) {
+	var c domain.SSOConfig
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, provider_type, metadata_url, entity_id, acs_url, client_id, issuer_url, enabled, enforce, default_role, created_at, updated_at
+		 FROM sso_configs WHERE org_id = $1`, orgID,
+	).Scan(&c.ID, &c.OrgID, &c.ProviderType, &c.MetadataURL, &c.EntityID, &c.ACSURL, &c.ClientID, &c.IssuerURL, &c.Enabled, &c.Enforce, &c.DefaultRole, &c.CreatedAt, &c.UpdatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "sso_config")
+	}
+	return &c, nil
+}
+
+func (s *Store) GetSSOConfigFull(ctx context.Context, orgID string) (*domain.SSOConfig, error) {
+	var c domain.SSOConfig
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, provider_type, metadata_url, metadata_xml, entity_id, acs_url, certificate, client_id, client_secret, issuer_url, enabled, enforce, default_role, created_at, updated_at
+		 FROM sso_configs WHERE org_id = $1`, orgID,
+	).Scan(&c.ID, &c.OrgID, &c.ProviderType, &c.MetadataURL, &c.MetadataXML, &c.EntityID, &c.ACSURL, &c.Certificate, &c.ClientID, &c.ClientSecret, &c.IssuerURL, &c.Enabled, &c.Enforce, &c.DefaultRole, &c.CreatedAt, &c.UpdatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "sso_config")
+	}
+	return &c, nil
+}
+
+func (s *Store) GetSSOConfigByOrgSlug(ctx context.Context, slug string) (*domain.SSOConfig, error) {
+	var c domain.SSOConfig
+	err := s.pool.QueryRow(ctx,
+		`SELECT sc.id, sc.org_id, sc.provider_type, sc.metadata_url, sc.metadata_xml, sc.entity_id, sc.acs_url, sc.certificate, sc.client_id, sc.client_secret, sc.issuer_url, sc.enabled, sc.enforce, sc.default_role, sc.created_at, sc.updated_at
+		 FROM sso_configs sc JOIN organizations o ON sc.org_id = o.id WHERE o.slug = $1`, slug,
+	).Scan(&c.ID, &c.OrgID, &c.ProviderType, &c.MetadataURL, &c.MetadataXML, &c.EntityID, &c.ACSURL, &c.Certificate, &c.ClientID, &c.ClientSecret, &c.IssuerURL, &c.Enabled, &c.Enforce, &c.DefaultRole, &c.CreatedAt, &c.UpdatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "sso_config")
+	}
+	return &c, nil
+}
+
+func (s *Store) DeleteSSOConfig(ctx context.Context, orgID string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM sso_configs WHERE org_id = $1`, orgID)
+	return err
 }

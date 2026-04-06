@@ -1,17 +1,20 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/featuresignals/server/internal/api/dto"
+	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
 type segmentStore interface {
 	domain.SegmentStore
+	domain.AuditWriter
 	projectGetter
 }
 
@@ -85,6 +88,15 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(seg)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "segment.created", ResourceType: "segment", ResourceID: &seg.ID,
+		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusCreated, dto.SegmentFromDomain(seg))
 }
 
@@ -154,10 +166,21 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		seg.Rules = req.Rules
 	}
 
+	beforeState, _ := json.Marshal(seg)
 	if err := h.store.UpdateSegment(r.Context(), seg); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to update segment")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(seg)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "segment.updated", ResourceType: "segment", ResourceID: &seg.ID,
+		BeforeState: beforeState, AfterState: afterState,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
 
 	httputil.JSON(w, http.StatusOK, dto.SegmentFromDomain(seg))
 }
@@ -175,9 +198,19 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	beforeState, _ := json.Marshal(seg)
 	if err := h.store.DeleteSegment(r.Context(), seg.ID); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete segment")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "segment.deleted", ResourceType: "segment", ResourceID: &seg.ID,
+		BeforeState: beforeState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	w.WriteHeader(http.StatusNoContent)
 }

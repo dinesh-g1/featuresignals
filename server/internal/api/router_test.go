@@ -157,6 +157,10 @@ func (noopStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { r
 func (noopStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, errNoop
 }
+func (noopStore) ListAuditEntriesForExport(context.Context, string, string, string) ([]domain.AuditEntry, error) {
+	return nil, errNoop
+}
+func (noopStore) GetLastAuditHash(context.Context, string) (string, error) { return "", errNoop }
 
 func (noopStore) LoadRuleset(context.Context, string, string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	return nil, nil, nil, errNoop
@@ -218,6 +222,17 @@ func (noopStore) CreateOneTimeToken(context.Context, string, string, time.Durati
 func (noopStore) ConsumeOneTimeToken(context.Context, string) (string, string, error) {
 	return "", "", errNoop
 }
+func (noopStore) UpsertSSOConfig(context.Context, *domain.SSOConfig) error { return errNoop }
+func (noopStore) GetSSOConfig(context.Context, string) (*domain.SSOConfig, error) {
+	return nil, errNoop
+}
+func (noopStore) GetSSOConfigFull(context.Context, string) (*domain.SSOConfig, error) {
+	return nil, errNoop
+}
+func (noopStore) GetSSOConfigByOrgSlug(context.Context, string) (*domain.SSOConfig, error) {
+	return nil, errNoop
+}
+func (noopStore) DeleteSSOConfig(context.Context, string) error { return errNoop }
 
 type noopOTPEmail struct{}
 
