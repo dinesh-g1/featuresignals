@@ -54,6 +54,7 @@ type Variant struct {
 type Flag struct {
 	ID           string          `json:"id" db:"id"`
 	ProjectID    string          `json:"project_id" db:"project_id"`
+	OrgID        string          `json:"org_id" db:"org_id"`
 	Key          string          `json:"key" db:"key"`
 	Name         string          `json:"name" db:"name"`
 	Description  string          `json:"description" db:"description"`
@@ -78,6 +79,7 @@ type FlagState struct {
 	ID                 string          `json:"id" db:"id"`
 	FlagID             string          `json:"flag_id" db:"flag_id"`
 	EnvID              string          `json:"env_id" db:"env_id"`
+	OrgID              string          `json:"org_id" db:"org_id"`
 	Enabled            bool            `json:"enabled" db:"enabled"`
 	DefaultValue       json.RawMessage `json:"default_value,omitempty" db:"default_value"`
 	Rules              []TargetingRule `json:"rules" db:"rules"`
@@ -85,6 +87,7 @@ type FlagState struct {
 	Variants           []Variant       `json:"variants,omitempty" db:"variants"`
 	ScheduledEnableAt  *time.Time      `json:"scheduled_enable_at,omitempty" db:"scheduled_enable_at"`
 	ScheduledDisableAt *time.Time      `json:"scheduled_disable_at,omitempty" db:"scheduled_disable_at"`
+	CreatedAt          time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time       `json:"updated_at" db:"updated_at"`
 }
 

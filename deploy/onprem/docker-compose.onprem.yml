@@ -29,13 +29,15 @@ services:
       retries: 5
 
   migrate:
-    image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-server:${VERSION:-latest}
+    image: migrate/migrate:v4.17.0
     depends_on:
       postgres:
         condition: service_healthy
-    command: ["migrate", "-path", "/migrations", "-database", "postgres://${POSTGRES_USER:-fs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-featuresignals}?sslmode=disable", "up"]
+    # Migrations must be available at ./migrations relative to this compose file.
+    # Copy from server/migrations/ or symlink before running.
     volumes:
       - ./migrations:/migrations:ro
+    command: ["-path", "/migrations", "-database", "postgres://${POSTGRES_USER:-fs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-featuresignals}?sslmode=disable", "up"]
 
   server:
     image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-server:${VERSION:-latest}
@@ -64,6 +66,11 @@ services:
       OTEL_SERVICE_REGION: ${OTEL_SERVICE_REGION:-onprem}
       OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-false}
       OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-false}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -73,11 +80,17 @@ services:
     image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-dashboard:${VERSION:-latest}
     restart: unless-stopped
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     ports:
       - "${DASHBOARD_PORT:-3000}:3000"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     deploy:
       resources:
         limits:

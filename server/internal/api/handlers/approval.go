@@ -81,8 +81,14 @@ func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 		results = []domain.ApprovalRequest{}
 	}
 
+	total, err := h.store.CountApprovalRequests(r.Context(), orgID, status)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to count approvals")
+		return
+	}
+
 	all := dto.ApprovalSliceFromDomain(results)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, len(all), p.Limit, p.Offset))
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset))
 }
 
 // Get returns a single approval request.

@@ -623,6 +623,18 @@ func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error
 
 func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error) { return 0, nil }
 
+func (m *mockStore) CountAuditEntries(_ context.Context, orgID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	count := 0
+	for _, e := range m.auditEntries {
+		if e.OrgID == orgID {
+			count++
+		}
+	}
+	return count, nil
+}
+
 func (m *mockStore) LoadRuleset(ctx context.Context, projectID, envID string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	flags, _ := m.ListFlags(ctx, projectID)
 	var states []domain.FlagState
@@ -784,6 +796,23 @@ func (m *mockStore) ListApprovalRequests(ctx context.Context, orgID string, stat
 		result = result[:limit]
 	}
 	return result, nil
+}
+
+func (m *mockStore) CountApprovalRequests(_ context.Context, orgID string, status string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	count := 0
+	if m.approvals == nil {
+		return 0, nil
+	}
+	for _, id := range m.approvalsByOrg[orgID] {
+		if ar, ok := m.approvals[id]; ok {
+			if status == "" || string(ar.Status) == status {
+				count++
+			}
+		}
+	}
+	return count, nil
 }
 
 func (m *mockStore) UpdateApprovalRequest(ctx context.Context, ar *domain.ApprovalRequest) error {

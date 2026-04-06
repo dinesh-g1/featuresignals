@@ -23,6 +23,8 @@ type Store interface {
 	CleanExpiredRevocations(ctx context.Context) error
 	CleanExpiredGracePeriodKeys(ctx context.Context) error
 	PurgeAuditEntries(ctx context.Context, olderThan time.Time) (int, error)
+	TryAdvisoryLock(ctx context.Context, lockID int64) (bool, error)
+	ReleaseAdvisoryLock(ctx context.Context, lockID int64) error
 }
 
 // Scheduler periodically checks for pending flag schedules and applies them.
@@ -80,7 +82,23 @@ func (s *Scheduler) Start(ctx context.Context) {
 	}
 }
 
+const schedulerLockID int64 = 1
+
 func (s *Scheduler) tick(ctx context.Context) {
+	acquired, err := s.store.TryAdvisoryLock(ctx, schedulerLockID)
+	if err != nil {
+		s.logger.Error("failed to acquire scheduler advisory lock", "error", err)
+		return
+	}
+	if !acquired {
+		return
+	}
+	defer func() {
+		if err := s.store.ReleaseAdvisoryLock(ctx, schedulerLockID); err != nil {
+			s.logger.Error("failed to release scheduler advisory lock", "error", err)
+		}
+	}()
+
 	now := time.Now()
 	pending, err := s.store.ListPendingSchedules(ctx, now)
 	if err != nil {

@@ -27,6 +27,12 @@ func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	total, err := h.store.CountAuditEntries(r.Context(), orgID)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to count audit entries")
+		return
+	}
+
 	all := dto.AuditEntrySliceFromDomain(entries)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, len(all), p.Limit, p.Offset))
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset))
 }

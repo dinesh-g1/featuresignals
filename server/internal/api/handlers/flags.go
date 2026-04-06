@@ -96,8 +96,10 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		defaultVal = defaultValueForType(flagType)
 	}
 
+	orgID := middleware.GetOrgID(r.Context())
 	flag := &domain.Flag{
 		ProjectID:            projectID,
+		OrgID:                orgID,
 		Key:                  req.Key,
 		Name:                 req.Name,
 		Description:          req.Description,
@@ -127,7 +129,6 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	h.l(r).Info("flag created", "flag_id", flag.ID, "project_id", projectID, "key", req.Key)
 
-	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(flag)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
@@ -366,9 +367,9 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	state := &domain.FlagState{
 		FlagID: flag.ID,
 		EnvID:  envID,
+		OrgID:  orgID,
 	}
 
-	// Try to get existing state
 	existing, err := h.store.GetFlagState(r.Context(), flag.ID, envID)
 	if err == nil {
 		state = existing
@@ -493,6 +494,7 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 	target := &domain.FlagState{
 		FlagID:            flag.ID,
 		EnvID:             req.TargetEnvID,
+		OrgID:             middleware.GetOrgID(r.Context()),
 		Enabled:           source.Enabled,
 		DefaultValue:      source.DefaultValue,
 		Rules:             source.Rules,
@@ -500,6 +502,7 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 	}
 	if existing != nil {
 		target.ID = existing.ID
+		target.OrgID = existing.OrgID
 	}
 
 	if err := h.store.UpsertFlagState(r.Context(), target); err != nil {
@@ -560,7 +563,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 
 	state, err := h.store.GetFlagState(r.Context(), flag.ID, req.EnvID)
 	if err != nil {
-		state = &domain.FlagState{FlagID: flag.ID, EnvID: req.EnvID}
+		state = &domain.FlagState{FlagID: flag.ID, EnvID: req.EnvID, OrgID: orgID}
 	}
 
 	beforeState, _ := json.Marshal(state)
@@ -744,6 +747,7 @@ func (h *FlagHandler) SyncEnvironments(w http.ResponseWriter, r *http.Request) {
 		target := &domain.FlagState{
 			FlagID:            flag.ID,
 			EnvID:             req.TargetEnvID,
+			OrgID:             source.OrgID,
 			Enabled:           source.Enabled,
 			DefaultValue:      source.DefaultValue,
 			Rules:             source.Rules,
@@ -752,6 +756,7 @@ func (h *FlagHandler) SyncEnvironments(w http.ResponseWriter, r *http.Request) {
 		}
 		if existing != nil {
 			target.ID = existing.ID
+			target.OrgID = existing.OrgID
 		}
 
 		if err := h.store.UpsertFlagState(r.Context(), target); err != nil {

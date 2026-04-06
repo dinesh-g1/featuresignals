@@ -80,11 +80,16 @@ var DefaultEnvDefs = []struct {
 }
 
 // BootstrapEnvironments creates the default environment set for a project.
-func BootstrapEnvironments(ctx context.Context, store domain.EnvironmentWriter, projectID string) []*domain.Environment {
+func BootstrapEnvironments(ctx context.Context, store domain.EnvironmentWriter, projectID string, orgID ...string) []*domain.Environment {
+	var oid string
+	if len(orgID) > 0 {
+		oid = orgID[0]
+	}
 	envs := make([]*domain.Environment, 0, len(DefaultEnvDefs))
 	for _, d := range DefaultEnvDefs {
 		env := &domain.Environment{
 			ProjectID: projectID,
+			OrgID:     oid,
 			Name:      d.Name,
 			Slug:      d.Slug,
 			Color:     d.Color,
@@ -188,6 +193,7 @@ func SeedSampleFlags(ctx context.Context, store flagSeeder, project *domain.Proj
 	for _, fd := range flags {
 		flag := &domain.Flag{
 			ProjectID:    project.ID,
+			OrgID:        project.OrgID,
 			Key:          fd.key,
 			Name:         fd.name,
 			Description:  fd.desc,
@@ -206,6 +212,7 @@ func SeedSampleFlags(ctx context.Context, store flagSeeder, project *domain.Proj
 			fs := &domain.FlagState{
 				FlagID:            flag.ID,
 				EnvID:             env.ID,
+				OrgID:             project.OrgID,
 				Enabled:           sd.enabled,
 				DefaultValue:      sd.defaultValue,
 				PercentageRollout: sd.percentageRollout,
@@ -222,6 +229,7 @@ func SeedSampleFlags(ctx context.Context, store flagSeeder, project *domain.Proj
 func SeedSampleSegment(ctx context.Context, store domain.SegmentStore, project *domain.Project, log *slog.Logger) {
 	seg := &domain.Segment{
 		ProjectID:   project.ID,
+		OrgID:       project.OrgID,
 		Key:         "beta-users",
 		Name:        "Beta Users",
 		Description: "Users with @company.com email addresses",
@@ -243,6 +251,7 @@ func SeedSampleAPIKeys(ctx context.Context, store domain.APIKeyStore, envs map[s
 			_ = rawKey
 			ak := &domain.APIKey{
 				EnvID:     env.ID,
+				OrgID:     env.OrgID,
 				KeyHash:   keyHash,
 				KeyPrefix: keyPrefix,
 				Name:      fmt.Sprintf("Sample %s %s key", slug, keyType),

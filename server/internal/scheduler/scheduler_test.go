@@ -92,6 +92,14 @@ func (m *mockScheduleStore) PurgeAuditEntries(_ context.Context, _ time.Time) (i
 	return 0, nil
 }
 
+func (m *mockScheduleStore) TryAdvisoryLock(_ context.Context, _ int64) (bool, error) {
+	return true, nil
+}
+
+func (m *mockScheduleStore) ReleaseAdvisoryLock(_ context.Context, _ int64) error {
+	return nil
+}
+
 func (m *mockScheduleStore) DeleteDemoData(ctx context.Context, orgID string) error {
 	return nil
 }
