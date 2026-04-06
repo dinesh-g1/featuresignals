@@ -207,6 +207,27 @@ type ScheduleReader interface {
 //
 // It composes all focused sub-interfaces above. Implementations must be safe
 // for concurrent use.
+// TokenRevocationStore manages revoked JWT tokens for server-side session invalidation.
+type TokenRevocationStore interface {
+	RevokeToken(ctx context.Context, jti, userID, orgID string, expiresAt time.Time) error
+	IsTokenRevoked(ctx context.Context, jti string) (bool, error)
+	CleanExpiredRevocations(ctx context.Context) error
+}
+
+// MFAStore manages TOTP multi-factor authentication secrets.
+type MFAStore interface {
+	UpsertMFASecret(ctx context.Context, userID, secret string) error
+	GetMFASecret(ctx context.Context, userID string) (*MFASecret, error)
+	EnableMFA(ctx context.Context, userID string) error
+	DisableMFA(ctx context.Context, userID string) error
+}
+
+// LoginAttemptStore records login attempts for brute-force detection.
+type LoginAttemptStore interface {
+	RecordLoginAttempt(ctx context.Context, email, ip, ua string, success bool) error
+	CountRecentFailedAttempts(ctx context.Context, email string, since time.Time) (int, error)
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -235,4 +256,7 @@ type Store interface {
 	OneTimeTokenStore
 	ScheduleReader
 	SSOStore
+	TokenRevocationStore
+	MFAStore
+	LoginAttemptStore
 }

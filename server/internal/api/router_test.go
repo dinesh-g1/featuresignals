@@ -234,6 +234,18 @@ func (noopStore) GetSSOConfigByOrgSlug(context.Context, string) (*domain.SSOConf
 }
 func (noopStore) DeleteSSOConfig(context.Context, string) error { return errNoop }
 
+func (noopStore) RevokeToken(context.Context, string, string, string, time.Time) error { return nil }
+func (noopStore) IsTokenRevoked(context.Context, string) (bool, error)                 { return false, nil }
+func (noopStore) CleanExpiredRevocations(context.Context) error                         { return nil }
+func (noopStore) UpsertMFASecret(context.Context, string, string) error                { return nil }
+func (noopStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
+	return nil, errNoop
+}
+func (noopStore) EnableMFA(context.Context, string) error                                  { return nil }
+func (noopStore) DisableMFA(context.Context, string) error                                 { return nil }
+func (noopStore) RecordLoginAttempt(context.Context, string, string, string, bool) error    { return nil }
+func (noopStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) { return 0, nil }
+
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }

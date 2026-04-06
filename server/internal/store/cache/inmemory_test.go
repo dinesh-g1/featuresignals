@@ -149,6 +149,20 @@ func (m *mockStore) GetSSOConfigByOrgSlug(_ context.Context, _ string) (*domain.
 }
 func (m *mockStore) DeleteSSOConfig(_ context.Context, _ string) error { return nil }
 
+func (m *mockStore) RevokeToken(_ context.Context, _, _, _ string, _ time.Time) error { return nil }
+func (m *mockStore) IsTokenRevoked(_ context.Context, _ string) (bool, error)        { return false, nil }
+func (m *mockStore) CleanExpiredRevocations(_ context.Context) error                  { return nil }
+func (m *mockStore) UpsertMFASecret(_ context.Context, _, _ string) error             { return nil }
+func (m *mockStore) GetMFASecret(_ context.Context, _ string) (*domain.MFASecret, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (m *mockStore) EnableMFA(_ context.Context, _ string) error                           { return nil }
+func (m *mockStore) DisableMFA(_ context.Context, _ string) error                          { return nil }
+func (m *mockStore) RecordLoginAttempt(_ context.Context, _, _, _ string, _ bool) error     { return nil }
+func (m *mockStore) CountRecentFailedAttempts(_ context.Context, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+
 // --- mock broadcaster ---
 
 type mockBroadcaster struct {

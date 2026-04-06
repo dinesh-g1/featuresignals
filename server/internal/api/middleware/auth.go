@@ -19,7 +19,13 @@ const (
 	ClaimsKey contextKey = "claims"
 )
 
-func JWTAuth(jwtMgr auth.TokenManager) func(http.Handler) http.Handler {
+// RevocationChecker checks whether a JWT has been revoked. Implementations
+// should be fast (in-memory cache backed by DB) since this runs on every request.
+type RevocationChecker interface {
+	IsTokenRevoked(ctx context.Context, jti string) (bool, error)
+}
+
+func JWTAuth(jwtMgr auth.TokenManager, revoker ...RevocationChecker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			header := r.Header.Get("Authorization")
@@ -42,6 +48,13 @@ func JWTAuth(jwtMgr auth.TokenManager) func(http.Handler) http.Handler {
 					httputil.Error(w, http.StatusUnauthorized, "invalid or expired token")
 				}
 				return
+			}
+
+			if claims.ID != "" && len(revoker) > 0 && revoker[0] != nil {
+				if revoked, rErr := revoker[0].IsTokenRevoked(r.Context(), claims.ID); rErr == nil && revoked {
+					httputil.Error(w, http.StatusUnauthorized, "token has been revoked")
+					return
+				}
 			}
 
 			ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)

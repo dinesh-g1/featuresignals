@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -30,6 +31,10 @@ type authStore interface {
 	domain.EnvironmentWriter
 	domain.OneTimeTokenStore
 	domain.SSOStore
+	domain.TokenRevocationStore
+	domain.MFAStore
+	domain.LoginAttemptStore
+	domain.AuditWriter
 	RestoreOrganization(ctx context.Context, orgID string) error
 }
 
@@ -61,7 +66,10 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	MFACode  string `json:"mfa_code,omitempty"`
 }
+
+const maxFailedLoginAttempts = 10
 
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
@@ -218,6 +226,12 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("user registered", "user_id", user.ID, "org_id", org.ID)
 
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: org.ID, ActorID: &user.ID, ActorType: "user",
+		Action: "auth.register", ResourceType: "user", ResourceID: &user.ID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
 		"user":         sanitizeUser(user),
 		"organization": dto.OrganizationFromDomain(org),
@@ -234,14 +248,24 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Brute-force lockout: check recent failed attempts before processing.
+	failedCount, _ := h.store.CountRecentFailedAttempts(r.Context(), req.Email, time.Now().Add(-15*time.Minute))
+	if failedCount >= maxFailedLoginAttempts {
+		log.Warn("login blocked: too many failed attempts", "email", req.Email, "count", failedCount)
+		httputil.Error(w, http.StatusTooManyRequests, "Account temporarily locked due to too many failed login attempts. Please try again in 15 minutes.")
+		return
+	}
+
 	user, err := h.store.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
+		_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), false)
 		log.Warn("login failed: unknown email")
 		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
 	if !auth.CheckPassword(req.Password, user.PasswordHash) {
+		_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), false)
 		log.Warn("login failed: bad password", "user_id", user.ID)
 		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
@@ -265,6 +289,17 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// MFA verification: if user has MFA enabled, require a valid TOTP code.
+	if mfaErr := VerifyMFAForLogin(r.Context(), h.store, user.ID, req.MFACode); mfaErr != nil {
+		if errors.Is(mfaErr, domain.ErrMFARequired) {
+			httputil.Error(w, http.StatusForbidden, "mfa_required")
+		} else {
+			_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), false)
+			httputil.Error(w, http.StatusUnauthorized, "invalid MFA code")
+		}
+		return
+	}
+
 	// Restore soft-deleted org on login (within grace period)
 	org, orgErr := h.store.GetOrganization(r.Context(), orgID)
 	if orgErr == nil && org.DeletedAt != nil {
@@ -272,8 +307,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		log.Info("soft-deleted org restored on login", "org_id", orgID, "user_id", user.ID)
 	}
 
-	// Track last login for inactivity-based cleanup
 	_ = h.store.UpdateLastLoginAt(r.Context(), user.ID)
+	_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), true)
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, orgID, role)
 	if err != nil {
@@ -284,11 +319,47 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("user logged in", "user_id", user.ID, "org_id", orgID, "role", role)
 
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &user.ID, ActorType: "user",
+		Action: "auth.login", ResourceType: "session", ResourceID: &user.ID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
 		"user":         sanitizeUser(user),
 		"organization": dto.OrganizationFromDomain(org),
 		"tokens":       tokens,
 	})
+}
+
+// Logout revokes the current access token so it cannot be reused.
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+	claims := middleware.GetClaims(r.Context())
+	if claims == nil || claims.ID == "" {
+		httputil.Error(w, http.StatusBadRequest, "no token to revoke")
+		return
+	}
+
+	expiresAt := time.Now().Add(1 * time.Hour)
+	if claims.ExpiresAt != nil {
+		expiresAt = claims.ExpiresAt.Time
+	}
+
+	if err := h.store.RevokeToken(r.Context(), claims.ID, claims.UserID, claims.OrgID, expiresAt); err != nil {
+		log.Error("failed to revoke token", "error", err, "user_id", claims.UserID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to logout")
+		return
+	}
+
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: claims.OrgID, ActorID: &claims.UserID, ActorType: "user",
+		Action: "auth.logout", ResourceType: "session", ResourceID: &claims.UserID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	log.Info("user logged out", "user_id", claims.UserID, "jti", claims.ID)
+	httputil.JSON(w, http.StatusOK, map[string]string{"message": "logged out"})
 }
 
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
