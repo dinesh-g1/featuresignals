@@ -1,8 +1,10 @@
-name: "CD (Legacy Single-Region — DISABLED)"
+name: CD
 
-# DEPRECATED: Replaced by cd-regional.yml which deploys to all regions.
-# Kept for reference. Remove once regional CD is confirmed working.
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 jobs:

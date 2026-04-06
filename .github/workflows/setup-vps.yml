@@ -1,7 +1,5 @@
-name: "Setup VPS (Legacy Single-Region — DISABLED)"
+name: Setup VPS
 
-# DEPRECATED: Replaced by setup-vps-regional.yml which supports all regions.
-# Kept for reference. Remove once regional setup is confirmed working.
 on:
   workflow_dispatch:
 
