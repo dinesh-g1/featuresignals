@@ -306,6 +306,9 @@ func newTestRouter(t *testing.T) http.Handler {
 		"http://localhost:8080",
 		"http://localhost:3000",
 		nil,
+		"cloud",
+		false,
+		true,
 	)
 }
 

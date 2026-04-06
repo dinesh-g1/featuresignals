@@ -46,6 +46,9 @@ func NewRouter(
 	appBaseURL string,
 	dashboardURL string,
 	statusHandler *status.Handler,
+	deployMode string,
+	billingEnabled bool,
+	regionsEnabled bool,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -178,6 +181,14 @@ func NewRouter(
 					regions = append(regions, domain.Regions[code])
 				}
 				httputil.JSON(w, http.StatusOK, dto.RegionsResponse{Regions: regions})
+			})
+
+			r.Get("/capabilities", func(w http.ResponseWriter, r *http.Request) {
+				httputil.JSON(w, http.StatusOK, dto.CapabilitiesResponse{
+					DeploymentMode: deployMode,
+					BillingEnabled: billingEnabled,
+					RegionsEnabled: regionsEnabled,
+				})
 			})
 		})
 

@@ -165,22 +165,36 @@ func main() {
 	// Evaluation metrics collector
 	metricsCollector := metrics.NewCollector()
 
-	// OTP email sender (MSG91 Email API)
+	// OTP email sender — selected by EMAIL_PROVIDER env var
 	var otpSender email.OTPSender
-	if cfg.MSG91AuthKey != "" && cfg.MSG91EmailTemplateID != "" {
-		msg91Sender, err := email.NewMSG91Sender(
-			cfg.MSG91AuthKey,
-			cfg.MSG91EmailTemplateID,
-			cfg.MSG91EmailDomain,
-			cfg.MSG91EmailFrom,
-			cfg.MSG91EmailFromName,
-		)
-		if err != nil {
-			logger.Error("failed to create MSG91 email sender", "error", err)
+	switch cfg.EmailProvider {
+	case "smtp":
+		if cfg.SMTPHost != "" {
+			otpSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName)
+			logger.Info("SMTP email OTP sender configured", "host", cfg.SMTPHost, "port", cfg.SMTPPort)
 		} else {
-			otpSender = msg91Sender
-			logger.Info("MSG91 email OTP sender configured", "domain", cfg.MSG91EmailDomain)
+			logger.Warn("EMAIL_PROVIDER=smtp but SMTP_HOST not set; email disabled")
 		}
+	case "msg91":
+		if cfg.MSG91AuthKey != "" && cfg.MSG91EmailTemplateID != "" {
+			msg91Sender, err := email.NewMSG91Sender(
+				cfg.MSG91AuthKey,
+				cfg.MSG91EmailTemplateID,
+				cfg.MSG91EmailDomain,
+				cfg.MSG91EmailFrom,
+				cfg.MSG91EmailFromName,
+			)
+			if err != nil {
+				logger.Error("failed to create MSG91 email sender", "error", err)
+			} else {
+				otpSender = msg91Sender
+				logger.Info("MSG91 email OTP sender configured", "domain", cfg.MSG91EmailDomain)
+			}
+		}
+	case "none":
+		logger.Info("email sending disabled (EMAIL_PROVIDER=none)")
+	default:
+		logger.Warn("unknown EMAIL_PROVIDER, email disabled", "provider", cfg.EmailProvider)
 	}
 
 	// Status handler (public, multi-region health aggregation)
@@ -200,11 +214,13 @@ func main() {
 
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
+	regionsEnabled := !cfg.IsOnPrem()
+
 	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled)
 
 	// Server
 	srv := &http.Server{
