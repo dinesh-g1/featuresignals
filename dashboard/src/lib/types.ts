@@ -108,6 +108,9 @@ export interface AuditEntry {
   action: string;
   resource_type: string;
   resource_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  integrity_hash?: string;
   created_at: string;
 }
 
@@ -326,4 +329,45 @@ export interface CreateApprovalPayload {
 export interface EntityInput {
   key: string;
   attributes: Record<string, unknown>;
+}
+
+export interface FeatureItem {
+  feature: string;
+  enabled: boolean;
+  min_plan: string;
+}
+
+export interface FeaturesResponse {
+  plan: string;
+  features: FeatureItem[];
+}
+
+export interface SSOConfig {
+  id: string;
+  org_id: string;
+  provider_type: "saml" | "oidc";
+  metadata_url: string;
+  has_metadata_xml: boolean;
+  entity_id: string;
+  acs_url: string;
+  has_certificate: boolean;
+  client_id: string;
+  has_client_secret: boolean;
+  issuer_url: string;
+  enabled: boolean;
+  enforce: boolean;
+  default_role: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SSOTestResult {
+  success: boolean;
+  message: string;
+}
+
+export interface SSODiscovery {
+  sso_enabled: boolean;
+  provider_type?: "saml" | "oidc";
+  enforce?: boolean;
 }

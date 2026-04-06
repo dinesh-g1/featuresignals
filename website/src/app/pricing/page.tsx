@@ -152,6 +152,31 @@ export default function PricingPage() {
           </div>
         </SectionReveal>
 
+        {/* Compliance trust strip */}
+        <SectionReveal className="mt-10 sm:mt-14">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-xl border border-slate-200 bg-white px-6 py-4">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Trusted by regulated industries
+            </span>
+            {[
+              { label: "SOC 2", color: "text-blue-700 bg-blue-50" },
+              { label: "GDPR", color: "text-emerald-700 bg-emerald-50" },
+              { label: "HIPAA", color: "text-teal-700 bg-teal-50" },
+              { label: "ISO 27001", color: "text-amber-700 bg-amber-50" },
+              { label: "CCPA", color: "text-emerald-700 bg-emerald-50" },
+              { label: "OpenFeature", color: "text-indigo-700 bg-indigo-50" },
+            ].map((b) => (
+              <a
+                key={b.label}
+                href="/security"
+                className={`rounded-full px-3 py-1 text-[11px] font-bold transition-opacity hover:opacity-80 ${b.color}`}
+              >
+                {b.label}
+              </a>
+            ))}
+          </div>
+        </SectionReveal>
+
         <div className="mt-12 text-center">
           <p className="text-sm text-slate-500">Want to explore first?</p>
           <a

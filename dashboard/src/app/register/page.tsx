@@ -337,6 +337,26 @@ function RegisterForm() {
             Already have an account? <Link href="/login" className="font-medium text-indigo-600 transition-colors hover:text-indigo-700">Sign in</Link>
           </p>
         )}
+
+        {/* Trust signals */}
+        <div className="flex flex-col items-center gap-3 border-t border-slate-100 pt-5">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {["SOC 2", "GDPR", "HIPAA", "ISO 27001"].map((badge) => (
+              <span
+                key={badge}
+                className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500"
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <svg className="h-3 w-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Enterprise-grade security &middot; Encrypted &middot; Open source
+          </div>
+        </div>
       </Card>
     </div>
   );

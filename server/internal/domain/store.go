@@ -49,6 +49,8 @@ type AuditWriter interface {
 // AuditReader provides read access to the audit log.
 type AuditReader interface {
 	ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]AuditEntry, error)
+	ListAuditEntriesForExport(ctx context.Context, orgID string, from, to string) ([]AuditEntry, error)
+	GetLastAuditHash(ctx context.Context, orgID string) (string, error)
 }
 
 // ProjectReader provides read access to projects.
@@ -232,4 +234,5 @@ type Store interface {
 	OrgLifecycleStore
 	OneTimeTokenStore
 	ScheduleReader
+	SSOStore
 }

@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { useFeatures } from "@/hooks/use-features";
 import { PageHeader, Card, Button, Input, Badge, EmptyState } from "@/components/ui";
-import { ClipboardList, Search } from "lucide-react";
+import { ClipboardList, Download, Search } from "lucide-react";
 import type { AuditEntry } from "@/lib/types";
 
 export default function AuditPage() {
@@ -12,6 +13,8 @@ export default function AuditPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
+  const { isEnabled } = useFeatures();
+  const canExport = isEnabled("audit_export");
   const limit = 50;
 
   useEffect(() => {
@@ -27,10 +30,25 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <PageHeader
-        title="Audit Log"
-        description="Track every change made to your feature flags"
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Audit Log"
+          description="Track every change made to your feature flags"
+        />
+        {canExport && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (!token) return;
+              api.exportAudit(token, "csv").catch(() => {});
+            }}
+          >
+            <Download className="mr-1.5 h-4 w-4" />
+            Export CSV
+          </Button>
+        )}
+      </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

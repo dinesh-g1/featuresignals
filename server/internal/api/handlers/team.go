@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -17,6 +18,7 @@ type teamStore interface {
 	domain.UserReader
 	domain.UserWriter
 	domain.EnvPermissionStore
+	domain.AuditWriter
 }
 
 type TeamHandler struct {
@@ -128,6 +130,14 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := middleware.GetUserID(r.Context())
+	meta, _ := json.Marshal(map[string]string{"email": req.Email, "role": string(req.Role)})
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "member.invited", ResourceType: "member", ResourceID: &member.ID,
+		Metadata: meta, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusCreated, MemberResponse{
 		ID:    member.ID,
 		OrgID: orgID,
@@ -161,6 +171,15 @@ func (h *TeamHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	meta, _ := json.Marshal(map[string]string{"new_role": string(req.Role)})
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "member.role_changed", ResourceType: "member", ResourceID: &memberID,
+		Metadata: meta, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -184,6 +203,14 @@ func (h *TeamHandler) Remove(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "failed to remove member")
 		return
 	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "member.removed", ResourceType: "member", ResourceID: &memberID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -224,5 +251,15 @@ func (h *TeamHandler) UpdatePermissions(w http.ResponseWriter, r *http.Request) 
 	}
 
 	perms, _ := h.store.ListEnvPermissions(r.Context(), memberID)
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(perms)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		Action: "member.permissions_updated", ResourceType: "member", ResourceID: &memberID,
+		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
 	httputil.JSON(w, http.StatusOK, perms)
 }

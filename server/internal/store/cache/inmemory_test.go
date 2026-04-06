@@ -87,6 +87,8 @@ func (m *mockStore) RevokeAPIKey(_ context.Context, _ string) error { return nil
 func (m *mockStore) UpdateAPIKeyLastUsed(_ context.Context, _ string) error { return nil }
 func (m *mockStore) CreateAuditEntry(_ context.Context, _ *domain.AuditEntry) error { return nil }
 func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) { return nil, nil }
+func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ string) ([]domain.AuditEntry, error) { return nil, nil }
+func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error) { return "", nil }
 func (m *mockStore) GetEnvironmentByAPIKeyHash(_ context.Context, _ string) (*domain.Environment, *domain.APIKey, error) { return nil, nil, nil }
 func (m *mockStore) GetOrgMemberByID(_ context.Context, _ string) (*domain.OrgMember, error) { return nil, nil }
 func (m *mockStore) UpdateOrgMemberRole(_ context.Context, _ string, _ domain.Role) error { return nil }
@@ -135,6 +137,17 @@ func (m *mockStore) CreateOneTimeToken(_ context.Context, _, _ string, _ time.Du
 func (m *mockStore) ConsumeOneTimeToken(_ context.Context, _ string) (string, string, error) {
 	return "user-id", "org-id", nil
 }
+func (m *mockStore) UpsertSSOConfig(_ context.Context, _ *domain.SSOConfig) error { return nil }
+func (m *mockStore) GetSSOConfig(_ context.Context, _ string) (*domain.SSOConfig, error) {
+	return nil, nil
+}
+func (m *mockStore) GetSSOConfigFull(_ context.Context, _ string) (*domain.SSOConfig, error) {
+	return nil, nil
+}
+func (m *mockStore) GetSSOConfigByOrgSlug(_ context.Context, _ string) (*domain.SSOConfig, error) {
+	return nil, nil
+}
+func (m *mockStore) DeleteSSOConfig(_ context.Context, _ string) error { return nil }
 
 // --- mock broadcaster ---
 

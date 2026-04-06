@@ -29,6 +29,7 @@ type authStore interface {
 	domain.ProjectWriter
 	domain.EnvironmentWriter
 	domain.OneTimeTokenStore
+	domain.SSOStore
 	RestoreOrganization(ctx context.Context, orgID string) error
 }
 
@@ -254,6 +255,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	orgID := member.OrgID
 	role := string(member.Role)
+
+	// SSO enforcement: if the org has SSO with enforce=true, block password
+	// login for all roles except owner (break-glass).
+	ssoConfig, ssoErr := h.store.GetSSOConfig(r.Context(), orgID)
+	if ssoErr == nil && ssoConfig.Enabled && ssoConfig.Enforce && member.Role != domain.RoleOwner {
+		log.Warn("login blocked: SSO enforced", "user_id", user.ID, "org_id", orgID)
+		httputil.Error(w, http.StatusForbidden, "This organization requires SSO login. Please use your identity provider to sign in.")
+		return
+	}
 
 	// Restore soft-deleted org on login (within grace period)
 	org, orgErr := h.store.GetOrganization(r.Context(), orgID)

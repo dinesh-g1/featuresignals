@@ -58,7 +58,6 @@ func NewRouter(
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
 	r.Use(middleware.SecurityHeaders)
-	r.Use(middleware.RequireJSON)
 	r.Use(middleware.Logging(logger))
 	r.Use(middleware.SafeRecoverer)
 
@@ -87,6 +86,7 @@ func NewRouter(
 	segmentH := handlers.NewSegmentHandler(store)
 	apiKeyH := handlers.NewAPIKeyHandler(store)
 	auditH := handlers.NewAuditHandler(store)
+	auditExportH := handlers.NewAuditExportHandler(store)
 	teamH := handlers.NewTeamHandler(store, jwtMgr)
 	webhookH := handlers.NewWebhookHandler(store)
 	approvalH := handlers.NewApprovalHandler(store)
@@ -99,9 +99,35 @@ func NewRouter(
 	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender)
 	salesH := handlers.NewSalesHandler(store)
 
+	featuresH := handlers.NewFeaturesHandler(store)
+	ssoH := handlers.NewSSOHandler(store)
+	ssoAuthH := handlers.NewSSOAuthHandler(store, jwtMgr, appBaseURL, dashboardURL)
+
 	jwtAuth := middleware.JWTAuth(jwtMgr)
 
+	// SSO public auth endpoints — registered before the main /v1 group
+	// because SAML ACS receives form-encoded POSTs (not JSON) and metadata
+	// returns XML. These bypass the RequireJSON middleware.
+	r.Route("/v1/sso", func(r chi.Router) {
+		r.Use(middleware.RateLimit(30))
+		r.Get("/discovery/{orgSlug}", ssoAuthH.Discovery)
+		r.Get("/saml/metadata/{orgSlug}", ssoAuthH.SAMLMetadata)
+		r.Get("/saml/login/{orgSlug}", ssoAuthH.SAMLLogin)
+		r.Post("/saml/acs/{orgSlug}", ssoAuthH.SAMLACS)
+		r.Get("/oidc/authorize/{orgSlug}", ssoAuthH.OIDCAuthorize)
+		r.Get("/oidc/callback/{orgSlug}", ssoAuthH.OIDCCallback)
+	})
+
+	// Feature gate middleware constructors — each wraps a route group to
+	// enforce plan requirements without touching handler code.
+	webhookGate := middleware.FeatureGate(domain.FeatureWebhooks, store)
+	approvalGate := middleware.FeatureGate(domain.FeatureApprovals, store)
+	auditExportGate := middleware.FeatureGate(domain.FeatureAuditExport, store)
+	ssoGate := middleware.FeatureGate(domain.FeatureSSO, store)
+
 	r.Route("/v1", func(r chi.Router) {
+		r.Use(middleware.RequireJSON)
+
 		// Public pricing endpoint — single source of truth for all clients
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
 			httputil.JSON(w, http.StatusOK, domain.Pricing)
@@ -168,6 +194,12 @@ func NewRouter(
 			r.Use(middleware.TrialExpiry(store, logger))
 			r.Use(middleware.TierEnforce(store, logger))
 
+			// ── Features endpoint (returns plan capabilities) ──────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(allRoles...))
+				r.Get("/features", featuresH.List)
+			})
+
 			// ── Read-only routes (all authenticated roles) ───────────
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequireRole(allRoles...))
@@ -186,8 +218,21 @@ func NewRouter(
 				r.Get("/audit", auditH.List)
 				r.Get("/members", teamH.List)
 				r.Get("/members/{memberID}/permissions", teamH.ListPermissions)
+			})
+
+			// ── Approval read routes (Pro+, all roles) ──────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(allRoles...))
+				r.Use(approvalGate)
 				r.Get("/approvals", approvalH.List)
 				r.Get("/approvals/{approvalID}", approvalH.Get)
+			})
+
+			// ── Audit export (Pro+, admin-only) ─────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(auditExportGate)
+				r.Get("/audit/export", auditExportH.Export)
 			})
 
 			// ── Write routes (owner, admin, developer) ───────────────
@@ -205,10 +250,16 @@ func NewRouter(
 				r.Post("/projects/{projectID}/flags/sync-environments", flagH.SyncEnvironments)
 				r.Post("/projects/{projectID}/environments/{envID}/inspect-entity", insightsH.InspectEntity)
 				r.Post("/projects/{projectID}/environments/{envID}/compare-entities", insightsH.CompareEntities)
-				r.Post("/approvals", approvalH.Create)
 				r.Post("/projects/{projectID}/segments", segmentH.Create)
 				r.Put("/projects/{projectID}/segments/{segmentKey}", segmentH.Update)
 				r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
+			})
+
+			// ── Approval create (Pro+, writers) ─────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(writers...))
+				r.Use(approvalGate)
+				r.Post("/approvals", approvalH.Create)
 			})
 
 			// ── Admin-only routes (owner, admin) ─────────────────────
@@ -219,7 +270,6 @@ func NewRouter(
 				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
 				r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
 				r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
-				r.Post("/approvals/{approvalID}/review", approvalH.Review)
 				r.Post("/members/invite", teamH.Invite)
 				r.Put("/members/{memberID}", teamH.UpdateRole)
 				r.Delete("/members/{memberID}", teamH.Remove)
@@ -230,14 +280,35 @@ func NewRouter(
 				r.Post("/metrics/evaluations/reset", metricsH.Reset)
 				r.Get("/metrics/impressions", metricsH.ImpressionSummary)
 				r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
+			})
 
-				// Webhooks
+			// ── Approval review (Pro+, admin-only) ──────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(approvalGate)
+				r.Post("/approvals/{approvalID}/review", approvalH.Review)
+			})
+
+			// ── Webhooks (Pro+, admin-only) ─────────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(webhookGate)
 				r.Post("/webhooks", webhookH.Create)
 				r.Get("/webhooks", webhookH.List)
 				r.Get("/webhooks/{webhookID}", webhookH.Get)
 				r.Put("/webhooks/{webhookID}", webhookH.Update)
 				r.Delete("/webhooks/{webhookID}", webhookH.Delete)
 				r.Get("/webhooks/{webhookID}/deliveries", webhookH.ListDeliveries)
+			})
+
+			// ── SSO Config (Enterprise, admin-only) ────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(ssoGate)
+				r.Get("/sso/config", ssoH.Get)
+				r.Post("/sso/config", ssoH.Upsert)
+				r.Delete("/sso/config", ssoH.Delete)
+				r.Post("/sso/config/test", ssoH.TestConnection)
 			})
 		})
 	})
