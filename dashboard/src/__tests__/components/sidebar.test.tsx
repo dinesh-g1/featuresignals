@@ -21,7 +21,8 @@ vi.mock("next/link", () => ({
 vi.mock("@/stores/app-store", () => ({
   useAppStore: (selector: any) => {
     const state = {
-      user: { name: "Test User", email: "test@example.com", tier: "free" },
+      user: { name: "Test User", email: "test@example.com" },
+      organization: { plan: "free" },
       logout: mockLogout,
     };
     return selector(state);
@@ -54,7 +55,7 @@ describe("Sidebar", () => {
     expect(screen.getAllByText("Settings").length).toBeGreaterThan(0);
   });
 
-  it("shows 'Upgrade to Pro' when user.tier is free", () => {
+  it("shows 'Upgrade to Pro' when organization plan is free", () => {
     // Arrange & Act
     render(<Sidebar />);
 

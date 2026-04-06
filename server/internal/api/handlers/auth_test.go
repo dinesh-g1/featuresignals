@@ -154,6 +154,16 @@ func TestAuthHandler_Login(t *testing.T) {
 	if result["user"] == nil {
 		t.Error("expected user in login response")
 	}
+	if _, ok := result["onboarding_completed"]; !ok {
+		t.Error("expected onboarding_completed in login response")
+	}
+	if result["onboarding_completed"] != false {
+		t.Errorf("expected onboarding_completed=false for new user, got %v", result["onboarding_completed"])
+	}
+	org := result["organization"].(map[string]interface{})
+	if _, ok := org["data_region"]; !ok {
+		t.Error("expected data_region in organization response")
+	}
 }
 
 func TestAuthHandler_Login_WrongPassword(t *testing.T) {
@@ -216,6 +226,15 @@ func TestAuthHandler_Refresh(t *testing.T) {
 
 	if result["access_token"] == nil {
 		t.Error("expected access_token in refresh response")
+	}
+	if result["organization"] == nil {
+		t.Error("expected organization in refresh response")
+	}
+	if result["user"] == nil {
+		t.Error("expected user in refresh response")
+	}
+	if _, ok := result["onboarding_completed"]; !ok {
+		t.Error("expected onboarding_completed in refresh response")
 	}
 }
 

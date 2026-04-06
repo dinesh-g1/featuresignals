@@ -4,29 +4,79 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
 
+const DOWNGRADE_DISMISSED_KEY = "fs-downgrade-interstitial-dismissed";
+const DOWNGRADE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
 export function TrialBanner() {
   const { organization, logout } = useAppStore();
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [showDowngradeInterstitial, setShowDowngradeInterstitial] = useState(false);
 
   const plan = organization?.plan;
   const trialExpiresAt = organization?.trial_expires_at;
 
   useEffect(() => {
-    if (plan !== "trial" || !trialExpiresAt) {
-      setDaysRemaining(null);
-      return;
+    if (plan === "trial" && trialExpiresAt) {
+      const update = () => {
+        const expiryMs = new Date(trialExpiresAt).getTime();
+        const remaining = Math.max(0, Math.ceil((expiryMs - Date.now()) / 86400000));
+        setDaysRemaining(remaining);
+      };
+      update();
+      const interval = setInterval(update, 60000);
+      return () => clearInterval(interval);
     }
 
-    const update = () => {
+    setDaysRemaining(null);
+
+    if (plan === "free" && trialExpiresAt) {
       const expiryMs = new Date(trialExpiresAt).getTime();
-      const nowMs = Date.now();
-      const remaining = Math.max(0, Math.ceil((expiryMs - nowMs) / 86400000));
-      setDaysRemaining(remaining);
-    };
-    update();
-    const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
+      const daysSinceExpiry = Date.now() - expiryMs;
+      const alreadyDismissed = localStorage.getItem(DOWNGRADE_DISMISSED_KEY) === "true";
+      if (daysSinceExpiry > 0 && daysSinceExpiry < DOWNGRADE_WINDOW_MS && !alreadyDismissed) {
+        setShowDowngradeInterstitial(true);
+      }
+    }
   }, [plan, trialExpiresAt]);
+
+  function dismissDowngradeInterstitial() {
+    localStorage.setItem(DOWNGRADE_DISMISSED_KEY, "true");
+    setShowDowngradeInterstitial(false);
+  }
+
+  if (showDowngradeInterstitial) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
+        <div className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+            <svg className="h-7 w-7 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <h2 className="text-center text-xl font-bold text-slate-900">Your trial has ended</h2>
+          <p className="mt-2 text-center text-sm text-slate-500">
+            Your 14-day Pro trial has expired. You&apos;ve been moved to the Free plan.
+            Upgrade anytime to unlock unlimited projects, environments, and team members.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              href="/settings/billing"
+              onClick={dismissDowngradeInterstitial}
+              className="block w-full rounded-lg bg-indigo-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Upgrade to Pro
+            </Link>
+            <button
+              onClick={dismissDowngradeInterstitial}
+              className="rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Continue with Free Plan
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (plan !== "trial" || daysRemaining === null) return null;
 

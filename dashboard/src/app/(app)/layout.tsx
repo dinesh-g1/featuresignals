@@ -1,14 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { ContextBar } from "@/components/context-bar";
 import { AuthGuard } from "@/components/auth-guard";
 import { CommandPalette } from "@/components/command-palette";
-import { ToastContainer } from "@/components/toast";
+import { toast, ToastContainer } from "@/components/toast";
 import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
+import { UpgradeBanner } from "@/components/upgrade-banner";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Menu } from "lucide-react";
+
+function UpgradeRequiredListener() {
+  const router = useRouter();
+  useEffect(() => {
+    function handleUpgradeRequired(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      toast(detail?.message || "Plan limit reached. Upgrade to Pro.", "error");
+      router.push("/settings/billing");
+    }
+    window.addEventListener("fs:upgrade-required", handleUpgradeRequired);
+    return () => window.removeEventListener("fs:upgrade-required", handleUpgradeRequired);
+  }, [router]);
+  return null;
+}
 
 function MobileHeader() {
   const open = useSidebarStore((s) => s.open);
@@ -32,6 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <TrialBanner />
+      <UpgradeBanner />
       <VerificationBanner />
       <div className="flex h-screen flex-col bg-slate-50 md:flex-row">
         <Sidebar />
@@ -44,6 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <CommandPalette />
         <ToastContainer />
+        <UpgradeRequiredListener />
       </div>
     </AuthGuard>
   );

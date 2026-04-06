@@ -22,6 +22,7 @@ type signupStore interface {
 	domain.ProjectWriter
 	domain.EnvironmentWriter
 	domain.PendingRegistrationStore
+	domain.OnboardingStore
 }
 
 // SignupHandler implements the verify-first 2-step signup flow:
@@ -259,9 +260,10 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	log.Info("signup completed", "user_id", user.ID, "org_id", org.ID, "plan", org.Plan)
 
 	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
-		"user":         sanitizeUser(user),
-		"organization": dto.OrganizationFromDomain(org),
-		"tokens":       tokens,
+		"user":                 sanitizeUser(user),
+		"organization":         dto.OrganizationFromDomain(org),
+		"tokens":               tokens,
+		"onboarding_completed": false,
 	})
 }
 

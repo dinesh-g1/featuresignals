@@ -79,7 +79,7 @@ describe("api.ts request interceptor", () => {
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
-      .mockResolvedValueOnce(jsonResponse(200, { tokens: { access_token: "new-token", refresh_token: "new-refresh", expires_at: 9999 } }))
+      .mockResolvedValueOnce(jsonResponse(200, { access_token: "new-token", refresh_token: "new-refresh", expires_at: 9999 }))
       .mockResolvedValueOnce(jsonResponse(200, { data: ["project-1"] }));
 
     const result = await api.listProjects("old-token");

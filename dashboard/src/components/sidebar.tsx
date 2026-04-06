@@ -41,6 +41,7 @@ function SidebarContent() {
   const pathname = usePathname();
   const closeSidebar = useSidebarStore((s) => s.close);
   const user = useAppStore((s) => s.user);
+  const organization = useAppStore((s) => s.organization);
   const logout = useAppStore((s) => s.logout);
   const { isEnabled, minPlanFor } = useFeatures();
 
@@ -105,7 +106,7 @@ function SidebarContent() {
         })}
       </nav>
 
-      {user?.tier === "free" && (
+      {organization?.plan === "free" && (
         <div className="border-t border-slate-100 px-2.5 py-2">
           <Link
             href="/settings/billing"

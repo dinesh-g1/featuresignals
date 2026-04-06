@@ -42,8 +42,13 @@ function LoginForm() {
         data.user,
         data.organization,
         data.tokens.expires_at,
+        data.onboarding_completed,
       );
-      router.push("/dashboard");
+      if (!data.onboarding_completed) {
+        router.push("/onboarding");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       if (err instanceof APIError && err.status === 403) {
         setError(err.message);

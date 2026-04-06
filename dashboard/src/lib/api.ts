@@ -19,6 +19,7 @@ import type {
   FlagState,
   InspectEntityResult,
   LoginResponse,
+  RefreshResponse,
   OnboardingState,
   OrgMember,
   EnvPermission,
@@ -82,10 +83,9 @@ async function attemptTokenRefresh(): Promise<boolean> {
     if (!res.ok) return false;
 
     const data = await res.json();
-    const tokens = data.tokens ?? data;
-    const user = useAppStore.getState().user;
-    const org = useAppStore.getState().organization;
-    setAuth(tokens.access_token, tokens.refresh_token, user, org, tokens.expires_at);
+    const user = data.user ?? useAppStore.getState().user;
+    const org = data.organization ?? useAppStore.getState().organization;
+    setAuth(data.access_token, data.refresh_token, user, org, data.expires_at);
     return true;
   } catch {
     return false;
@@ -124,6 +124,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         window.location.href = "/register";
       }
       throw new APIError(403, data.error);
+    }
+
+    if (res.status === 402) {
+      const upgradeError = new APIError(402, data.error || "Plan limit reached. Upgrade to Pro for unlimited access.");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("fs:upgrade-required", {
+          detail: { message: upgradeError.message },
+        }));
+      }
+      throw upgradeError;
     }
 
     if (res.status === 401 && data.error === "token_expired" && options.token && !options._retry) {
@@ -230,7 +240,7 @@ export const api = {
     throw lastError || new Error("Login failed across all regions");
   },
   refresh: (refreshToken: string) =>
-    request<AuthTokens>(
+    request<RefreshResponse>(
       "/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
   sendVerificationEmail: (token: string) =>
     request("/v1/auth/send-verification-email", { method: "POST", token }),
@@ -398,8 +408,10 @@ export const api = {
     requestList<WebhookDelivery>(`/v1/webhooks/${webhookId}/deliveries`, { token }),
 
   // Billing
-  createCheckout: (token: string) =>
-    request<CheckoutResponse>("/v1/billing/checkout", { method: "POST", token }),
+  createCheckout: (token: string, returnUrl?: string) => {
+    const qs = returnUrl ? `?return_url=${encodeURIComponent(returnUrl)}` : "";
+    return request<CheckoutResponse>(`/v1/billing/checkout${qs}`, { method: "POST", token });
+  },
   getSubscription: (token: string) =>
     request<BillingInfo>("/v1/billing/subscription", { token }),
   getUsage: (token: string) =>

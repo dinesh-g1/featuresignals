@@ -52,16 +52,28 @@ function BillingContent() {
     api.getPricing().then(setPricing).catch(() => {});
   }, []);
 
+  const refreshToken = useAppStore((s) => s.refreshToken);
+  const setAuth = useAppStore((s) => s.setAuth);
+
   useEffect(() => {
     const status = searchParams.get("status");
     if (status === "success") {
       toast("Payment successful! Your plan has been upgraded to Pro.", "success");
+      if (refreshToken) {
+        api.refresh(refreshToken).then((data) => {
+          if (data?.access_token) {
+            const user = data.user ?? useAppStore.getState().user;
+            const org = data.organization ?? useAppStore.getState().organization;
+            setAuth(data.access_token, data.refresh_token, user, org, data.expires_at, data.onboarding_completed);
+          }
+        }).catch(() => {});
+      }
     } else if (status === "failed") {
       toast("Payment failed. Please try again or contact support.", "error");
     } else if (status === "canceled") {
       toast("Checkout canceled. No charges were made.");
     }
-  }, [searchParams]);
+  }, [searchParams, refreshToken, setAuth]);
 
   useEffect(() => {
     if (!token) return;

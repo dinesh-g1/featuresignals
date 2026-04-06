@@ -295,12 +295,23 @@ export interface LoginResponse {
   user: User;
   organization: Organization;
   tokens: AuthTokens;
+  onboarding_completed: boolean;
 }
 
 export interface SignupResponse {
   user: User;
   organization: Organization;
   tokens: AuthTokens;
+  onboarding_completed: boolean;
+}
+
+export interface RefreshResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  organization?: Organization;
+  user?: User;
+  onboarding_completed?: boolean;
 }
 
 export interface TokenExchangeResponse {

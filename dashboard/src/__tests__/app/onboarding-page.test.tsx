@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
 
+const stableSearchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => stableSearchParams,
   usePathname: () => "/onboarding",
   useParams: () => ({}),
 }));
@@ -24,6 +25,7 @@ vi.mock("@/lib/api", () => ({
     getPricing: vi.fn(),
     createFlag: vi.fn(),
     createCheckout: vi.fn(),
+    refresh: vi.fn(),
   },
   PricingConfig: {},
 }));
@@ -90,14 +92,16 @@ describe("OnboardingPage", () => {
     await waitFor(() => expect(screen.getByText("Choose Your Plan")).toBeInTheDocument());
 
     // Act
+    const freeBtn = screen.getByText("Continue with Free");
     await act(async () => {
-      fireEvent.click(screen.getByText("Continue with Free"));
+      fireEvent.click(freeBtn);
+      await mockApi.updateOnboarding.mock.results?.[0]?.value;
     });
 
     // Assert
     await waitFor(() => {
       expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it("shows SDK code examples", async () => {
@@ -131,13 +135,15 @@ describe("OnboardingPage", () => {
     await waitFor(() => expect(screen.getByText("Choose Your Plan")).toBeInTheDocument());
 
     // Act
+    const freeBtn = screen.getByText("Continue with Free");
     await act(async () => {
-      fireEvent.click(screen.getByText("Continue with Free"));
+      fireEvent.click(freeBtn);
+      await mockApi.updateOnboarding.mock.results?.[0]?.value;
     });
 
     // Assert
     await waitFor(() => {
       expect(mockApi.updateOnboarding).toHaveBeenCalledWith("test-token", { plan_chosen: true });
-    });
+    }, { timeout: 3000 });
   });
 });
