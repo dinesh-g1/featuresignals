@@ -104,6 +104,18 @@ const sidebars: SidebarsConfig = {
     'api-reference/billing',
     'api-reference/demo',
     'api-reference/onboarding',
+    {
+      type: 'category',
+      label: 'Enterprise',
+      items: [
+        'api-reference/sso',
+        'api-reference/scim',
+        'api-reference/mfa',
+        'api-reference/ip-allowlist',
+        'api-reference/custom-roles',
+        'api-reference/data-export',
+      ],
+    },
   ],
   sdks: [
     'sdks/overview',

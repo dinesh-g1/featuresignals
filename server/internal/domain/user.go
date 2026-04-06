@@ -66,6 +66,26 @@ type IPAllowlist struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+// CustomRole is a named permission template scoped to an organization.
+// It maps to a base built-in role (the access level for route-level RBAC)
+// plus a set of default environment permissions to apply on assignment.
+type CustomRole struct {
+	ID          string              `json:"id" db:"id"`
+	OrgID       string              `json:"org_id" db:"org_id"`
+	Name        string              `json:"name" db:"name"`
+	Description string              `json:"description" db:"description"`
+	BaseRole    Role                `json:"base_role" db:"base_role"`
+	Permissions CustomRolePermissions `json:"permissions" db:"permissions"`
+	CreatedAt   time.Time           `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at" db:"updated_at"`
+}
+
+// CustomRolePermissions defines the default permission set for a custom role.
+type CustomRolePermissions struct {
+	CanToggle    bool `json:"can_toggle"`
+	CanEditRules bool `json:"can_edit_rules"`
+}
+
 // PasswordPolicy stores org-configurable password requirements.
 type PasswordPolicy struct {
 	ID               string    `json:"id"`

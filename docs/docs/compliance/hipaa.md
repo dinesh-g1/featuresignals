@@ -2,6 +2,10 @@
 
 _Last updated: April 2026_
 
+:::info
+This document describes the technical controls FeatureSignals implements that map to HIPAA requirements. FeatureSignals has not undergone a formal HIPAA audit. Organizations requiring HIPAA compliance should evaluate these controls against their specific requirements and consult with their compliance team.
+:::
+
 This document describes how FeatureSignals supports healthcare organizations subject to the Health Insurance Portability and Accountability Act (HIPAA).
 
 ## Applicability

@@ -1479,3 +1479,79 @@ func (s *Store) UpsertIPAllowlist(ctx context.Context, orgID string, enabled boo
 		orgID, enabled, cidrs)
 	return err
 }
+
+// --- Custom Roles ---
+
+func (s *Store) CreateCustomRole(ctx context.Context, role *domain.CustomRole) error {
+	permsJSON, err := json.Marshal(role.Permissions)
+	if err != nil {
+		return fmt.Errorf("marshal permissions: %w", err)
+	}
+	err = s.pool.QueryRow(ctx,
+		`INSERT INTO custom_roles (org_id, name, description, base_role, permissions)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at`,
+		role.OrgID, role.Name, role.Description, role.BaseRole, permsJSON,
+	).Scan(&role.ID, &role.CreatedAt, &role.UpdatedAt)
+	return wrapConflict(err, "custom role")
+}
+
+func (s *Store) GetCustomRole(ctx context.Context, id string) (*domain.CustomRole, error) {
+	role := &domain.CustomRole{}
+	var permsJSON []byte
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, org_id, name, description, base_role, permissions, created_at, updated_at
+		 FROM custom_roles WHERE id = $1`, id,
+	).Scan(&role.ID, &role.OrgID, &role.Name, &role.Description, &role.BaseRole, &permsJSON, &role.CreatedAt, &role.UpdatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "custom role")
+	}
+	if err := json.Unmarshal(permsJSON, &role.Permissions); err != nil {
+		return nil, fmt.Errorf("unmarshal permissions: %w", err)
+	}
+	return role, nil
+}
+
+func (s *Store) ListCustomRoles(ctx context.Context, orgID string) ([]domain.CustomRole, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, org_id, name, description, base_role, permissions, created_at, updated_at
+		 FROM custom_roles WHERE org_id = $1 ORDER BY created_at`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	roles := []domain.CustomRole{}
+	for rows.Next() {
+		var role domain.CustomRole
+		var permsJSON []byte
+		if err := rows.Scan(&role.ID, &role.OrgID, &role.Name, &role.Description, &role.BaseRole, &permsJSON, &role.CreatedAt, &role.UpdatedAt); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(permsJSON, &role.Permissions); err != nil {
+			return nil, fmt.Errorf("unmarshal permissions: %w", err)
+		}
+		roles = append(roles, role)
+	}
+	return roles, nil
+}
+
+func (s *Store) UpdateCustomRole(ctx context.Context, role *domain.CustomRole) error {
+	permsJSON, err := json.Marshal(role.Permissions)
+	if err != nil {
+		return fmt.Errorf("marshal permissions: %w", err)
+	}
+	_, err = s.pool.Exec(ctx,
+		`UPDATE custom_roles SET name = $1, description = $2, base_role = $3, permissions = $4, updated_at = NOW()
+		 WHERE id = $5`,
+		role.Name, role.Description, role.BaseRole, permsJSON, role.ID)
+	return err
+}
+
+func (s *Store) DeleteCustomRole(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM custom_roles WHERE id = $1`, id)
+	return err
+}
+
+func (s *Store) SoftDeleteUser(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx, `UPDATE users SET email = CONCAT('deleted-', id, '@deleted.local'), name = 'Deleted User', password_hash = '', updated_at = NOW() WHERE id = $1`, userID)
+	return err
+}

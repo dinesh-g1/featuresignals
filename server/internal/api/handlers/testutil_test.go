@@ -46,6 +46,8 @@ type mockStore struct {
 	ssoConfigs       map[string]*domain.SSOConfig        // orgSlug -> sso config
 	revokedTokens    map[string]bool
 	mfaSecrets       map[string]*domain.MFASecret
+	customRoles      map[string]*domain.CustomRole
+	customRolesByOrg map[string][]string // orgID -> []roleID
 
 	idCounter int
 }
@@ -85,6 +87,8 @@ func newMockStore() *mockStore {
 		pendingRegs:      make(map[string]*domain.PendingRegistration),
 		ssoByOrgID:       make(map[string]*domain.SSOConfig),
 		ssoConfigs:       make(map[string]*domain.SSOConfig),
+		customRoles:      make(map[string]*domain.CustomRole),
+		customRolesByOrg: make(map[string][]string),
 	}
 }
 
@@ -1186,5 +1190,79 @@ func (m *mockStore) GetIPAllowlist(_ context.Context, _ string) (bool, []string,
 	return false, nil, nil
 }
 func (m *mockStore) UpsertIPAllowlist(_ context.Context, _ string, _ bool, _ []string) error {
+	return nil
+}
+
+// --- Custom Roles ---
+
+func (m *mockStore) CreateCustomRole(_ context.Context, role *domain.CustomRole) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, id := range m.customRolesByOrg[role.OrgID] {
+		if r, ok := m.customRoles[id]; ok && r.Name == role.Name {
+			return domain.ErrConflict
+		}
+	}
+	role.ID = m.nextID()
+	role.CreatedAt = time.Now()
+	role.UpdatedAt = role.CreatedAt
+	cp := *role
+	m.customRoles[role.ID] = &cp
+	m.customRolesByOrg[role.OrgID] = append(m.customRolesByOrg[role.OrgID], role.ID)
+	return nil
+}
+
+func (m *mockStore) GetCustomRole(_ context.Context, id string) (*domain.CustomRole, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	r, ok := m.customRoles[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	cp := *r
+	return &cp, nil
+}
+
+func (m *mockStore) ListCustomRoles(_ context.Context, orgID string) ([]domain.CustomRole, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.CustomRole
+	for _, id := range m.customRolesByOrg[orgID] {
+		if r, ok := m.customRoles[id]; ok {
+			result = append(result, *r)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockStore) UpdateCustomRole(_ context.Context, role *domain.CustomRole) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.customRoles[role.ID]; !ok {
+		return domain.ErrNotFound
+	}
+	role.UpdatedAt = time.Now()
+	cp := *role
+	m.customRoles[role.ID] = &cp
+	return nil
+}
+
+func (m *mockStore) DeleteCustomRole(_ context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.customRoles[id]; !ok {
+		return domain.ErrNotFound
+	}
+	delete(m.customRoles, id)
+	return nil
+}
+
+func (m *mockStore) SoftDeleteUser(_ context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.users[userID]; !ok {
+		return domain.ErrNotFound
+	}
+	delete(m.users, userID)
 	return nil
 }

@@ -1,13 +1,24 @@
 ---
-sidebar_position: 15
-title: IP Allowlist
+sidebar_label: IP Allowlist
 ---
-
 # IP Allowlist
 
-Restrict management API access to specific IP ranges. Requires **Enterprise plan**. The evaluation API is not restricted to ensure SDK connectivity from customer applications.
+Restrict management API access to specific IP address ranges. The evaluation API is not restricted, ensuring SDK connectivity from customer applications.
 
-**Auth:** JWT (Owner or Admin role)
+## Requirements
+
+| Requirement | Value |
+|-------------|-------|
+| Plan | Enterprise |
+| Role | Owner, Admin |
+| Auth | JWT |
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v1/ip-allowlist` | Get current allowlist |
+| `PUT` | `/v1/ip-allowlist` | Update allowlist |
 
 ---
 
@@ -30,7 +41,7 @@ GET /v1/ip-allowlist
 }
 ```
 
-If no allowlist has been configured, returns `enabled: false` with an empty `cidr_ranges` array.
+Returns `enabled: false` with an empty `cidr_ranges` array if no allowlist is configured.
 
 ---
 
@@ -55,7 +66,7 @@ PUT /v1/ip-allowlist
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `enabled` | boolean | Yes | Whether the allowlist is active |
-| `cidr_ranges` | string[] | Yes | List of CIDR ranges (IPv4 or IPv6) |
+| `cidr_ranges` | string[] | Yes | CIDR ranges (IPv4 or IPv6) |
 
 ### Response `200 OK`
 
@@ -65,11 +76,8 @@ PUT /v1/ip-allowlist
 }
 ```
 
-### Validation
-
-- Each entry must be a valid CIDR range (e.g., `10.0.0.0/8`, `2001:db8::/32`)
-- Invalid CIDR notation returns `422 Unprocessable Entity`
+Invalid CIDR notation returns `422 Unprocessable Entity`.
 
 :::danger
-Enabling the allowlist with ranges that exclude your current IP will lock you out of the management API. Always include your current IP range before enabling.
+Enabling the allowlist with ranges that exclude your current IP will lock you out of the management API. Always include your current IP range.
 :::

@@ -26,7 +26,7 @@ California consumers can request:
 Consumers can request deletion of personal information.
 
 **Implementation**:
-- Account deletion via dashboard (Settings > Privacy > Delete Account)
+- Account deletion via API (`DELETE /v1/users/me`) or by contacting privacy@featuresignals.com
 - 30-day grace period before permanent deletion
 - Audit logs anonymized; evaluation data purged
 

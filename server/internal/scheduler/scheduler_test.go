@@ -107,7 +107,7 @@ func (m *mockScheduleStore) ConsumeOneTimeToken(ctx context.Context, token strin
 func TestScheduler_EnableSchedule(t *testing.T) {
 	store := newMockScheduleStore()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	s := New(store, logger, time.Minute)
+	s := New(store, logger, time.Minute, 90)
 
 	past := time.Now().Add(-time.Hour)
 	store.states["f1:e1"] = &domain.FlagState{
@@ -142,7 +142,7 @@ func TestScheduler_EnableSchedule(t *testing.T) {
 func TestScheduler_DisableSchedule(t *testing.T) {
 	store := newMockScheduleStore()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	s := New(store, logger, time.Minute)
+	s := New(store, logger, time.Minute, 90)
 
 	past := time.Now().Add(-time.Minute)
 	store.states["f2:e2"] = &domain.FlagState{
@@ -171,7 +171,7 @@ func TestScheduler_DisableSchedule(t *testing.T) {
 func TestScheduler_FutureScheduleNotApplied(t *testing.T) {
 	store := newMockScheduleStore()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	s := New(store, logger, time.Minute)
+	s := New(store, logger, time.Minute, 90)
 
 	future := time.Now().Add(time.Hour)
 	store.states["f3:e3"] = &domain.FlagState{
@@ -200,7 +200,7 @@ func TestScheduler_FutureScheduleNotApplied(t *testing.T) {
 func TestScheduler_BothSchedules(t *testing.T) {
 	store := newMockScheduleStore()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	s := New(store, logger, time.Minute)
+	s := New(store, logger, time.Minute, 90)
 
 	past := time.Now().Add(-time.Minute)
 	store.states["f4:e4"] = &domain.FlagState{

@@ -11,12 +11,13 @@ import {
   Globe,
   AlertTriangle,
   CheckCircle,
+  Info,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Security & Trust",
   description:
-    "Learn how FeatureSignals protects your data with enterprise-grade security controls, compliance certifications, and privacy-by-design architecture.",
+    "Learn how FeatureSignals protects your data with enterprise-grade security controls and privacy-by-design architecture.",
 };
 
 const securityFeatures = [
@@ -61,45 +62,45 @@ const securityFeatures = [
 const complianceItems = [
   {
     icon: FileCheck,
-    title: "GDPR Ready",
+    title: "GDPR",
     description:
-      "Data subject rights (access, portability, erasure), Data Processing Agreement, privacy-by-design architecture, sub-processor transparency.",
-    status: "Implemented",
+      "Privacy-by-design architecture, tenant isolation, audit trail, encryption, and Data Processing Agreement template. Data subject rights APIs on our roadmap.",
+    status: "Controls Implemented",
   },
   {
     icon: FileCheck,
     title: "SOC 2 Type II",
     description:
-      "Controls mapped to all Trust Service Criteria. Evidence collection automated. Audit-ready documentation maintained continuously.",
-    status: "Controls Implemented",
+      "Technical controls mapped to Trust Service Criteria including access control, audit logging with integrity hashing, and change management.",
+    status: "Controls Mapped",
   },
   {
     icon: FileCheck,
     title: "CCPA / CPRA",
     description:
-      "Do-not-sell compliance, data deletion on request, privacy notice with required disclosures for California residents.",
-    status: "Planned",
+      "No sale or sharing of personal information. Privacy notice with required disclosures. Data deletion capabilities.",
+    status: "Controls Mapped",
   },
   {
     icon: FileCheck,
     title: "ISO 27001",
     description:
-      "Information Security Management System documentation, risk assessment framework, Statement of Applicability.",
-    status: "Planned",
+      "Security controls aligned with Annex A requirements. Formal ISMS certification on our roadmap.",
+    status: "Roadmap",
   },
   {
     icon: FileCheck,
     title: "HIPAA",
     description:
-      "Business Associate Agreement template, PHI safeguards, access controls, and audit logging for covered entities.",
-    status: "Planned",
+      "Technical safeguards including access controls, audit logging, and encryption. BAA template and formal compliance on our roadmap.",
+    status: "Roadmap",
   },
   {
     icon: FileCheck,
     title: "CSA STAR",
     description:
-      "Cloud Security Alliance STAR self-assessment based on Cloud Controls Matrix for cloud-native security assurance.",
-    status: "Planned",
+      "Cloud Controls Matrix alignment for cloud-native security assurance. Formal self-assessment on our roadmap.",
+    status: "Roadmap",
   },
 ];
 
@@ -162,11 +163,12 @@ export default function SecurityPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <SectionReveal>
             <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Compliance & Certifications
+              Compliance Posture
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-              We build toward the highest industry standards so you can adopt
-              FeatureSignals with confidence.
+              We implement the technical controls required by major security and
+              privacy frameworks. Formal certifications are on our roadmap as we
+              scale.
             </p>
           </SectionReveal>
 
@@ -178,14 +180,14 @@ export default function SecurityPage() {
                     <item.icon className="h-6 w-6 text-indigo-600" />
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        item.status === "Implemented"
-                          ? "bg-green-50 text-green-700"
-                          : item.status === "Controls Implemented"
-                            ? "bg-blue-50 text-blue-700"
+                        item.status === "Controls Implemented"
+                          ? "bg-blue-50 text-blue-700"
+                          : item.status === "Controls Mapped"
+                            ? "bg-slate-100 text-slate-700"
                             : "bg-amber-50 text-amber-700"
                       }`}
                     >
-                      {item.status === "Implemented" && (
+                      {item.status === "Controls Implemented" && (
                         <CheckCircle className="h-3 w-3" />
                       )}
                       {item.status}
@@ -201,106 +203,106 @@ export default function SecurityPage() {
               </SectionReveal>
             ))}
           </div>
+
+          <SectionReveal delay={0.2}>
+            <div className="mt-8 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+              <p className="text-sm text-blue-800">
+                &quot;Controls Implemented&quot; means the technical controls
+                are built into the product. &quot;Controls Mapped&quot; means we
+                have documented how our controls align to the framework.
+                &quot;Roadmap&quot; items are planned for formal certification as
+                we grow. For details, see our{" "}
+                <a
+                  href="https://docs.featuresignals.com/compliance/security-overview"
+                  className="font-medium underline decoration-blue-300 hover:text-blue-900"
+                >
+                  security documentation
+                </a>
+                .
+              </p>
+            </div>
+          </SectionReveal>
         </div>
       </section>
 
-      {/* Trust Badges */}
+      {/* What We Actually Build */}
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <SectionReveal>
             <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Industry Certifications & Standards
+              Security Built Into the Product
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-              FeatureSignals aligns with the most rigorous security and privacy
-              frameworks to earn the trust of regulated industries.
+              These are the concrete security capabilities implemented in
+              FeatureSignals today — not aspirational, not planned, but shipping
+              in every deployment.
             </p>
           </SectionReveal>
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                name: "SOC 2 Type II",
-                org: "AICPA",
-                status: "Controls Implemented",
-                statusColor: "text-blue-700 bg-blue-50",
+                name: "Tamper-Evident Audit",
+                org: "Built-in",
                 description:
-                  "All Trust Service Criteria mapped. Evidence collection automated via audit trail with integrity hashing.",
+                  "Every action logged with SHA-256 chain hashing. Exportable in JSON and CSV. Integrity verifiable end-to-end.",
               },
               {
-                name: "GDPR",
-                org: "EU Regulation",
-                status: "Compliant",
-                statusColor: "text-emerald-700 bg-emerald-50",
+                name: "SSO (SAML & OIDC)",
+                org: "Enterprise",
                 description:
-                  "Full data subject rights, DPA template, privacy-by-design architecture, sub-processor transparency.",
+                  "SAML 2.0 and OIDC support for Okta, Azure AD, OneLogin, and any compliant identity provider.",
               },
               {
-                name: "HIPAA",
-                org: "HHS",
-                status: "BAA Available",
-                statusColor: "text-teal-700 bg-teal-50",
+                name: "SCIM Provisioning",
+                org: "Enterprise",
                 description:
-                  "Technical safeguards implemented. Business Associate Agreement available for Enterprise customers.",
+                  "Automated user provisioning and deprovisioning synced with your identity provider.",
               },
               {
-                name: "ISO 27001",
-                org: "ISO/IEC",
-                status: "Controls Mapped",
-                statusColor: "text-amber-700 bg-amber-50",
+                name: "MFA (TOTP)",
+                org: "Pro & Enterprise",
                 description:
-                  "ISMS documentation, Annex A controls mapped, risk assessment framework in place.",
+                  "Time-based one-time passwords compatible with Google Authenticator, Authy, and any RFC 6238 app.",
               },
               {
-                name: "CCPA / CPRA",
-                org: "California",
-                status: "Compliant",
-                statusColor: "text-emerald-700 bg-emerald-50",
+                name: "IP Allowlisting",
+                org: "Enterprise",
                 description:
-                  "Do-not-sell, data deletion, portability. No sale or sharing of personal information.",
+                  "Restrict management API access to specific CIDR ranges. Evaluation API remains open for SDK connectivity.",
               },
               {
-                name: "DORA",
-                org: "EU Regulation",
-                status: "Supported",
-                statusColor: "text-blue-700 bg-blue-50",
+                name: "Webhook HMAC Signing",
+                org: "Pro & Enterprise",
                 description:
-                  "ICT risk management, incident reporting, resilience testing. Enterprise agreements include DORA provisions.",
+                  "All outbound webhooks signed with HMAC-SHA256. Verify authenticity of every event delivery.",
               },
               {
-                name: "CSA STAR",
-                org: "Cloud Security Alliance",
-                status: "Self-Assessed",
-                statusColor: "text-blue-700 bg-blue-50",
+                name: "Approval Workflows",
+                org: "Pro & Enterprise",
                 description:
-                  "Cloud Controls Matrix v4 self-assessment completed across all applicable control domains.",
+                  "Require explicit approval before production flag changes take effect. Full audit trail on every review.",
               },
               {
                 name: "OpenFeature",
-                org: "CNCF",
-                status: "Certified",
-                statusColor: "text-emerald-700 bg-emerald-50",
+                org: "CNCF Standard",
                 description:
-                  "Full OpenFeature specification compliance. All SDKs ship with OpenFeature providers — zero vendor lock-in.",
+                  "All 8 SDKs ship with OpenFeature providers. Zero vendor lock-in — switch providers without code changes.",
               },
-            ].map((cert, i) => (
-              <SectionReveal key={cert.name} delay={i * 0.04}>
+            ].map((item, i) => (
+              <SectionReveal key={item.name} delay={i * 0.04}>
                 <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      {cert.org}
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${cert.statusColor}`}
-                    >
-                      {cert.status}
+                      {item.org}
                     </span>
                   </div>
                   <h3 className="mt-2 text-base font-bold text-slate-900">
-                    {cert.name}
+                    {item.name}
                   </h3>
                   <p className="mt-1.5 flex-1 text-xs leading-relaxed text-slate-500">
-                    {cert.description}
+                    {item.description}
                   </p>
                 </div>
               </SectionReveal>

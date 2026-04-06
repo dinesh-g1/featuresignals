@@ -245,6 +245,16 @@ func (s *tierMockStore) GetIPAllowlist(context.Context, string) (bool, []string,
 	return false, nil, nil
 }
 func (s *tierMockStore) UpsertIPAllowlist(context.Context, string, bool, []string) error { return nil }
+func (s *tierMockStore) CreateCustomRole(context.Context, *domain.CustomRole) error      { return nil }
+func (s *tierMockStore) GetCustomRole(context.Context, string) (*domain.CustomRole, error) {
+	return nil, domain.ErrNotFound
+}
+func (s *tierMockStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, error) {
+	return nil, nil
+}
+func (s *tierMockStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return nil }
+func (s *tierMockStore) DeleteCustomRole(context.Context, string) error             { return nil }
+func (s *tierMockStore) SoftDeleteUser(context.Context, string) error               { return nil }
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)

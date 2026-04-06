@@ -67,9 +67,9 @@ When your application evaluates feature flags, you may pass an **evaluation cont
 
 ### How to Exercise Your Rights
 
-- **Self-service**: Use the dashboard Settings > Privacy page
 - **API**: `GET /v1/users/me/data` (data export), `DELETE /v1/users/me` (account deletion)
 - **Email**: privacy@featuresignals.com
+- **Dashboard**: Account settings for profile and organization management
 
 We will respond to all requests within 30 days (GDPR) or 45 days (CCPA).
 

@@ -169,6 +169,12 @@ func (m *mockStore) CountRecentFailedAttempts(_ context.Context, _ string, _ tim
 }
 func (m *mockStore) GetIPAllowlist(_ context.Context, _ string) (bool, []string, error) { return false, nil, nil }
 func (m *mockStore) UpsertIPAllowlist(_ context.Context, _ string, _ bool, _ []string) error { return nil }
+func (m *mockStore) CreateCustomRole(_ context.Context, _ *domain.CustomRole) error { return nil }
+func (m *mockStore) GetCustomRole(_ context.Context, _ string) (*domain.CustomRole, error) { return nil, domain.ErrNotFound }
+func (m *mockStore) ListCustomRoles(_ context.Context, _ string) ([]domain.CustomRole, error) { return nil, nil }
+func (m *mockStore) UpdateCustomRole(_ context.Context, _ *domain.CustomRole) error { return nil }
+func (m *mockStore) DeleteCustomRole(_ context.Context, _ string) error { return nil }
+func (m *mockStore) SoftDeleteUser(_ context.Context, _ string) error  { return nil }
 
 // --- mock broadcaster ---
 

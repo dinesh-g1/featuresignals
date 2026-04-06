@@ -252,6 +252,12 @@ func (noopStore) RecordLoginAttempt(context.Context, string, string, string, boo
 func (noopStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) { return 0, nil }
 func (noopStore) GetIPAllowlist(context.Context, string) (bool, []string, error)            { return false, nil, nil }
 func (noopStore) UpsertIPAllowlist(context.Context, string, bool, []string) error           { return nil }
+func (noopStore) CreateCustomRole(context.Context, *domain.CustomRole) error                { return errNoop }
+func (noopStore) GetCustomRole(context.Context, string) (*domain.CustomRole, error)         { return nil, errNoop }
+func (noopStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, error)      { return nil, errNoop }
+func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error                { return errNoop }
+func (noopStore) DeleteCustomRole(context.Context, string) error                            { return errNoop }
+func (noopStore) SoftDeleteUser(context.Context, string) error                              { return errNoop }
 
 type noopOTPEmail struct{}
 

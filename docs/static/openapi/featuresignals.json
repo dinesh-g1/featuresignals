@@ -27,7 +27,13 @@
     { "name": "Billing", "description": "Subscription and usage billing" },
     { "name": "Onboarding", "description": "Onboarding progress tracking" },
     { "name": "Demo", "description": "Demo session management and conversion" },
-    { "name": "Pricing", "description": "Public pricing configuration" }
+    { "name": "Pricing", "description": "Public pricing configuration" },
+    { "name": "SSO", "description": "SSO configuration (SAML 2.0 / OIDC) — Enterprise" },
+    { "name": "SCIM", "description": "SCIM 2.0 user provisioning — Enterprise" },
+    { "name": "MFA", "description": "Multi-factor authentication (TOTP) — Pro+" },
+    { "name": "IP Allowlist", "description": "IP allowlist management — Enterprise" },
+    { "name": "Custom Roles", "description": "Custom role templates — Enterprise" },
+    { "name": "Data Export", "description": "Organization data export — Pro+" }
   ],
   "security": [{ "BearerAuth": [] }],
   "paths": {
@@ -1272,6 +1278,63 @@
           "200": { "description": "Feedback submitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } }
         }
       }
+    },
+    "/v1/sso/config": {
+      "get": { "tags": ["SSO"], "summary": "Get SSO configuration", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "SSO configuration" } } },
+      "post": { "tags": ["SSO"], "summary": "Create or update SSO configuration", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "SSO config saved" } } },
+      "delete": { "tags": ["SSO"], "summary": "Delete SSO configuration", "security": [{ "bearerAuth": [] }], "responses": { "204": { "description": "SSO config deleted" } } }
+    },
+    "/v1/scim/Users": {
+      "get": { "tags": ["SCIM"], "summary": "List SCIM users", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "SCIM ListResponse" } } },
+      "post": { "tags": ["SCIM"], "summary": "Provision a user via SCIM", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "User provisioned" } } }
+    },
+    "/v1/scim/Users/{userID}": {
+      "get": { "tags": ["SCIM"], "summary": "Get SCIM user", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "userID", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "SCIM user" } } },
+      "put": { "tags": ["SCIM"], "summary": "Update SCIM user", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "userID", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "User updated" } } },
+      "delete": { "tags": ["SCIM"], "summary": "Deprovision SCIM user", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "userID", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "204": { "description": "User deprovisioned" } } }
+    },
+    "/v1/auth/mfa/enable": {
+      "post": { "tags": ["MFA"], "summary": "Enable MFA (generate TOTP secret)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "TOTP secret and QR URI" } } }
+    },
+    "/v1/auth/mfa/verify": {
+      "post": { "tags": ["MFA"], "summary": "Verify MFA TOTP code", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "MFA verified" } } }
+    },
+    "/v1/auth/mfa/disable": {
+      "post": { "tags": ["MFA"], "summary": "Disable MFA", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "MFA disabled" } } }
+    },
+    "/v1/auth/mfa/status": {
+      "get": { "tags": ["MFA"], "summary": "Get MFA status", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "MFA status" } } }
+    },
+    "/v1/ip-allowlist": {
+      "get": { "tags": ["IP Allowlist"], "summary": "Get IP allowlist configuration", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "IP allowlist config" } } },
+      "put": { "tags": ["IP Allowlist"], "summary": "Update IP allowlist", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "IP allowlist updated" } } }
+    },
+    "/v1/roles": {
+      "get": { "tags": ["Custom Roles"], "summary": "List custom roles", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "List of custom roles" } } },
+      "post": { "tags": ["Custom Roles"], "summary": "Create custom role", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Custom role created" } } }
+    },
+    "/v1/roles/{roleID}": {
+      "get": { "tags": ["Custom Roles"], "summary": "Get custom role", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "roleID", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Custom role" } } },
+      "put": { "tags": ["Custom Roles"], "summary": "Update custom role", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "roleID", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Custom role updated" } } },
+      "delete": { "tags": ["Custom Roles"], "summary": "Delete custom role", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "roleID", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "204": { "description": "Custom role deleted" } } }
+    },
+    "/v1/data/export": {
+      "get": { "tags": ["Data Export"], "summary": "Export organization data as JSON", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "JSON export of all org data" } } }
+    },
+    "/v1/features": {
+      "get": { "tags": ["Billing"], "summary": "List enabled features for current plan", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Feature list with enabled state" } } }
+    },
+    "/v1/audit/export": {
+      "get": { "tags": ["Audit"], "summary": "Export audit log (JSON or CSV)", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "format", "in": "query", "schema": { "type": "string", "enum": ["json", "csv"] } }, { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } }, { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } }], "responses": { "200": { "description": "Audit log export" } } }
+    },
+    "/v1/track": {
+      "post": { "tags": ["Metrics"], "summary": "Track flag impression", "security": [{ "apiKeyAuth": [] }], "responses": { "200": { "description": "Impression tracked" } } }
+    },
+    "/v1/users/me/data": {
+      "get": { "tags": ["Auth"], "summary": "Export personal data (GDPR Article 15/20)", "description": "Returns a JSON export of all personal data held about the authenticated user.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "JSON export of user data" } } }
+    },
+    "/v1/users/me": {
+      "delete": { "tags": ["Auth"], "summary": "Delete account (GDPR Article 17)", "description": "Soft-deletes the authenticated user's account with a 30-day recovery grace period.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Account scheduled for deletion" }, "422": { "description": "Cannot delete — sole org owner" } } }
     }
   },
   "components": {

@@ -2,6 +2,10 @@
 
 _Last updated: April 2026_
 
+:::info
+This document maps SOC 2 Trust Service Criteria to technical controls implemented in FeatureSignals. This is a controls mapping exercise, not evidence of a completed SOC 2 audit or certification. A formal SOC 2 Type II audit is on our roadmap.
+:::
+
 This document maps SOC 2 Trust Service Criteria to FeatureSignals technical controls.
 
 ## CC1 — Control Environment
