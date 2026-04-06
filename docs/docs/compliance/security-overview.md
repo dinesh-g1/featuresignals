@@ -79,10 +79,22 @@ Per-environment permissions allow granular control:
 
 All responses include:
 - `Content-Security-Policy`
-- `Strict-Transport-Security` (HSTS)
+- `Strict-Transport-Security` (HSTS, max-age 1 year, includeSubDomains)
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` (restricted camera, microphone, geolocation, payment)
+- `Cross-Origin-Opener-Policy: same-origin`
+- `Cross-Origin-Resource-Policy: same-origin`
+- `Cross-Origin-Embedder-Policy: require-corp`
+
+### Token Revocation
+
+Server-side token revocation ensures that logged-out sessions are immediately invalidated:
+- Every JWT includes a unique `jti` (JWT ID) claim
+- On logout, the `jti` is added to a revocation store
+- Every authenticated request checks the revocation store
+- Expired revocation entries are cleaned up hourly by the scheduler
 
 ## Network Security
 

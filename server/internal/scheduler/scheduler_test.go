@@ -86,6 +86,12 @@ func (m *mockScheduleStore) GetOrganization(ctx context.Context, id string) (*do
 	return nil, fmt.Errorf("not found")
 }
 
+func (m *mockScheduleStore) CleanExpiredRevocations(_ context.Context) error { return nil }
+func (m *mockScheduleStore) CleanExpiredGracePeriodKeys(_ context.Context) error { return nil }
+func (m *mockScheduleStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error) {
+	return 0, nil
+}
+
 func (m *mockScheduleStore) DeleteDemoData(ctx context.Context, orgID string) error {
 	return nil
 }

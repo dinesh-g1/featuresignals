@@ -128,6 +128,9 @@ func NewRouter(
 	auditExportGate := middleware.FeatureGate(domain.FeatureAuditExport, store)
 	ssoGate := middleware.FeatureGate(domain.FeatureSSO, store)
 	scimGate := middleware.FeatureGate(domain.FeatureSCIM, store)
+	mfaGate := middleware.FeatureGate(domain.FeatureMFA, store)
+	ipAllowlistGate := middleware.FeatureGate(domain.FeatureIPAllowlist, store)
+	ipAllowlistH := handlers.NewIPAllowlistHandler(store)
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Use(middleware.RequireJSON)
@@ -170,10 +173,13 @@ func NewRouter(
 			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
 			r.Post("/auth/logout", authH.Logout)
 
-			r.Post("/auth/mfa/enable", mfaH.Enable)
-			r.Post("/auth/mfa/verify", mfaH.Verify)
-			r.Post("/auth/mfa/disable", mfaH.Disable)
-			r.Get("/auth/mfa/status", mfaH.Status)
+			r.Group(func(r chi.Router) {
+				r.Use(mfaGate)
+				r.Post("/auth/mfa/enable", mfaH.Enable)
+				r.Post("/auth/mfa/verify", mfaH.Verify)
+				r.Post("/auth/mfa/disable", mfaH.Disable)
+				r.Get("/auth/mfa/status", mfaH.Status)
+			})
 		})
 
 		// Billing & onboarding (authenticated via JWT)
@@ -200,6 +206,7 @@ func NewRouter(
 		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
+			r.Use(middleware.IPAllowlist(store))
 			r.Use(middleware.CacheControl("private, no-cache"))
 			r.Use(middleware.TrialExpiry(store, logger))
 			r.Use(middleware.TierEnforce(store, logger))
@@ -280,6 +287,7 @@ func NewRouter(
 				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
 				r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
 				r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
+				r.Post("/api-keys/{keyID}/rotate", apiKeyH.Rotate)
 				r.Post("/members/invite", teamH.Invite)
 				r.Put("/members/{memberID}", teamH.UpdateRole)
 				r.Delete("/members/{memberID}", teamH.Remove)
@@ -330,6 +338,14 @@ func NewRouter(
 				r.Post("/scim/Users", scimH.CreateUser)
 				r.Put("/scim/Users/{userID}", scimH.UpdateUser)
 				r.Delete("/scim/Users/{userID}", scimH.DeleteUser)
+			})
+
+			// ── IP Allowlist (Enterprise, admin-only) ─────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(ipAllowlistGate)
+				r.Get("/ip-allowlist", ipAllowlistH.Get)
+				r.Put("/ip-allowlist", ipAllowlistH.Upsert)
 			})
 		})
 	})

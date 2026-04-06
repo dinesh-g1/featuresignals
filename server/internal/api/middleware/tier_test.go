@@ -115,6 +115,10 @@ func (s *tierMockStore) ListAPIKeys(context.Context, string) ([]domain.APIKey, e
 }
 func (s *tierMockStore) RevokeAPIKey(context.Context, string) error       { return nil }
 func (s *tierMockStore) UpdateAPIKeyLastUsed(context.Context, string) error { return nil }
+func (s *tierMockStore) RotateAPIKey(context.Context, string, string, string, string, string, time.Duration) (*domain.APIKey, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) CleanExpiredGracePeriodKeys(context.Context) error { return nil }
 func (s *tierMockStore) CreateWebhook(context.Context, *domain.Webhook) error {
 	return nil
 }
@@ -145,6 +149,7 @@ func (s *tierMockStore) UpdateApprovalRequest(context.Context, *domain.ApprovalR
 	return nil
 }
 func (s *tierMockStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { return nil }
+func (s *tierMockStore) PurgeAuditEntries(context.Context, time.Time) (int, error) { return 0, nil }
 func (s *tierMockStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, nil
 }
@@ -236,6 +241,10 @@ func (s *tierMockStore) RecordLoginAttempt(context.Context, string, string, stri
 func (s *tierMockStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) {
 	return 0, nil
 }
+func (s *tierMockStore) GetIPAllowlist(context.Context, string) (bool, []string, error) {
+	return false, nil, nil
+}
+func (s *tierMockStore) UpsertIPAllowlist(context.Context, string, bool, []string) error { return nil }
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)

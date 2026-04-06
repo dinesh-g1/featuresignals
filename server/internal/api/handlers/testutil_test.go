@@ -561,6 +561,12 @@ func (m *mockStore) UpdateAPIKeyLastUsed(ctx context.Context, id string) error {
 	return nil
 }
 
+func (m *mockStore) RotateAPIKey(_ context.Context, _, _, _, _, _ string, _ time.Duration) (*domain.APIKey, error) {
+	return &domain.APIKey{ID: m.nextID(), Name: "rotated"}, nil
+}
+
+func (m *mockStore) CleanExpiredGracePeriodKeys(_ context.Context) error { return nil }
+
 func (m *mockStore) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -608,6 +614,8 @@ func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error
 	}
 	return m.auditEntries[len(m.auditEntries)-1].IntegrityHash, nil
 }
+
+func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error) { return 0, nil }
 
 func (m *mockStore) LoadRuleset(ctx context.Context, projectID, envID string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
 	flags, _ := m.ListFlags(ctx, projectID)
@@ -1170,4 +1178,13 @@ func (m *mockStore) DisableMFA(_ context.Context, userID string) error {
 func (m *mockStore) RecordLoginAttempt(_ context.Context, _, _, _ string, _ bool) error { return nil }
 func (m *mockStore) CountRecentFailedAttempts(_ context.Context, _ string, _ time.Time) (int, error) {
 	return 0, nil
+}
+
+// --- IP Allowlist ---
+
+func (m *mockStore) GetIPAllowlist(_ context.Context, _ string) (bool, []string, error) {
+	return false, nil, nil
+}
+func (m *mockStore) UpsertIPAllowlist(_ context.Context, _ string, _ bool, _ []string) error {
+	return nil
 }

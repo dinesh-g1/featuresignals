@@ -116,4 +116,39 @@ Revoked keys immediately stop working for evaluation requests.
 
 ## Key Rotation
 
-Rotate API keys regularly to limit exposure if a key is leaked. As a general practice, create a new key, deploy it across your services, then revoke the old key. **Recommendation:** rotate keys every 60–90 days.
+Rotate an API key with a 24-hour grace period. During the grace period, both the old and new keys are valid, enabling zero-downtime rotation across services.
+
+```
+POST /v1/api-keys/{keyID}/rotate
+```
+
+**Auth**: JWT (Owner, Admin)
+
+### Request
+
+```json
+{
+  "grace_period_hours": 24
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `grace_period_hours` | integer | No | 24 | Hours during which the old key remains valid |
+
+### Response `200 OK`
+
+```json
+{
+  "new_key": "fs_srv_xyz789...",
+  "new_key_id": "uuid",
+  "old_key_id": "uuid",
+  "grace_expires_at": "2026-04-02T12:00:00Z"
+}
+```
+
+:::caution
+The `new_key` field contains the **full new API key** and is only shown in this response. Store it securely.
+:::
+
+After the grace period expires, the old key is automatically cleaned up by the scheduler. **Recommendation:** rotate keys every 60–90 days.

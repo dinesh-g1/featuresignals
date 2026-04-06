@@ -22,8 +22,10 @@ type APIKey struct {
 	KeyPrefix  string     `json:"key_prefix" db:"key_prefix"`
 	Name       string     `json:"name" db:"name"`
 	Type       APIKeyType `json:"type" db:"type"`
-	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
-	LastUsedAt *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
-	RevokedAt  *time.Time `json:"revoked_at,omitempty" db:"revoked_at"`
-	ExpiresAt  *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+	LastUsedAt     *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
+	RevokedAt      *time.Time `json:"revoked_at,omitempty" db:"revoked_at"`
+	ExpiresAt      *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	GraceExpiresAt *time.Time `json:"grace_expires_at,omitempty" db:"grace_expires_at"`
+	RotatedFromID  *string    `json:"rotated_from_id,omitempty" db:"rotated_from_id"`
 }

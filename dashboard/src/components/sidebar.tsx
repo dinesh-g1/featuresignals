@@ -12,6 +12,7 @@ import {
   BarChart3, Heart, PieChart, CheckCircle, ClipboardList,
   Settings, Sparkles, LogOut, Lock, X,
 } from "lucide-react";
+import { ComplianceBadges } from "@/components/compliance-badges";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -133,6 +134,10 @@ function SidebarContent() {
             <LogOut className="h-4 w-4" strokeWidth={1.5} />
           </button>
         </div>
+      </div>
+
+      <div className="border-t border-slate-100">
+        <ComplianceBadges variant="compact" />
       </div>
     </>
   );

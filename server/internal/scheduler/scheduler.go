@@ -20,6 +20,9 @@ type Store interface {
 	HardDeleteOrganization(ctx context.Context, orgID string) error
 	DowngradeOrgToFree(ctx context.Context, orgID string) error
 	GetOrganization(ctx context.Context, id string) (*domain.Organization, error)
+	CleanExpiredRevocations(ctx context.Context) error
+	CleanExpiredGracePeriodKeys(ctx context.Context) error
+	PurgeAuditEntries(ctx context.Context, olderThan time.Time) (int, error)
 }
 
 // Scheduler periodically checks for pending flag schedules and applies them.
@@ -63,6 +66,9 @@ func (s *Scheduler) Start(ctx context.Context) {
 				s.autoDowngradeExpiredTrials(ctx)
 				s.softDeleteInactiveOrgs(ctx)
 				s.hardDeleteExpiredOrgs(ctx)
+				s.cleanExpiredRevocations(ctx)
+				s.cleanExpiredGracePeriodKeys(ctx)
+				s.purgeOldAuditEntries(ctx)
 			}
 		}
 	}
@@ -176,6 +182,30 @@ func (s *Scheduler) hardDeleteExpiredOrgs(ctx context.Context) {
 		} else {
 			s.logger.Info("hard-deleted org", "org_id", org.ID)
 		}
+	}
+}
+
+func (s *Scheduler) cleanExpiredRevocations(ctx context.Context) {
+	if err := s.store.CleanExpiredRevocations(ctx); err != nil {
+		s.logger.Error("failed to clean expired token revocations", "error", err)
+	}
+}
+
+func (s *Scheduler) cleanExpiredGracePeriodKeys(ctx context.Context) {
+	if err := s.store.CleanExpiredGracePeriodKeys(ctx); err != nil {
+		s.logger.Error("failed to clean expired grace-period API keys", "error", err)
+	}
+}
+
+func (s *Scheduler) purgeOldAuditEntries(ctx context.Context) {
+	cutoff := time.Now().AddDate(0, 0, -90)
+	count, err := s.store.PurgeAuditEntries(ctx, cutoff)
+	if err != nil {
+		s.logger.Error("failed to purge old audit entries", "error", err)
+		return
+	}
+	if count > 0 {
+		s.logger.Info("purged old audit entries", "count", count, "older_than_days", 90)
 	}
 }
 
