@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { PageHeader, Card, Input, EmptyState, LoadingSpinner } from "@/components/ui";
+import { PageHeader, Card, Input, EmptyState, SkeletonTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
 import { BarChart3, Search } from "lucide-react";
 import type { FlagInsight } from "@/lib/types";
 
@@ -47,7 +47,12 @@ export default function UsageInsightsPage() {
     });
 
   if (loading) {
-    return <LoadingSpinner fullPage />;
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader title="Usage Insights" description="Per-flag evaluation distribution for the selected environment" />
+        <SkeletonTable rows={8} cols={5} />
+      </div>
+    );
   }
 
   return (
@@ -76,46 +81,44 @@ export default function UsageInsightsPage() {
         </Card>
       ) : (
         <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3 cursor-pointer hover:text-slate-700 sm:px-6" onClick={() => handleSort("flag_key")}>
-                    Flag Key {sortBy === "flag_key" && (sortDir === "asc" ? "\u2191" : "\u2193")}
-                  </th>
-                  <th className="px-4 py-3 cursor-pointer hover:text-slate-700" onClick={() => handleSort("true_percentage")}>
-                    True % {sortBy === "true_percentage" && (sortDir === "asc" ? "\u2191" : "\u2193")}
-                  </th>
-                  <th className="hidden px-4 py-3 sm:table-cell">True Count</th>
-                  <th className="hidden px-4 py-3 sm:table-cell">False Count</th>
-                  <th className="px-4 py-3 cursor-pointer hover:text-slate-700" onClick={() => handleSort("total_count")}>
-                    Total {sortBy === "total_count" && (sortDir === "asc" ? "\u2191" : "\u2193")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((ins) => (
-                  <tr key={ins.flag_key} className="transition-colors hover:bg-indigo-50/30">
-                    <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">{ins.flag_key}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-16 rounded-full bg-slate-200 overflow-hidden sm:w-24">
-                          <div
-                            className="h-full rounded-full bg-emerald-500 transition-all"
-                            style={{ width: `${Math.min(ins.true_percentage ?? 0, 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-slate-600">{(ins.true_percentage ?? 0).toFixed(1)}%</span>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="cursor-pointer hover:text-slate-700" onClick={() => handleSort("flag_key")}>
+                  Flag Key {sortBy === "flag_key" && (sortDir === "asc" ? "\u2191" : "\u2193")}
+                </TableHead>
+                <TableHead className="cursor-pointer hover:text-slate-700" onClick={() => handleSort("true_percentage")}>
+                  True % {sortBy === "true_percentage" && (sortDir === "asc" ? "\u2191" : "\u2193")}
+                </TableHead>
+                <TableHead className="hidden sm:table-cell">True Count</TableHead>
+                <TableHead className="hidden sm:table-cell">False Count</TableHead>
+                <TableHead className="cursor-pointer hover:text-slate-700" onClick={() => handleSort("total_count")}>
+                  Total {sortBy === "total_count" && (sortDir === "asc" ? "\u2191" : "\u2193")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((ins) => (
+                <TableRow key={ins.flag_key}>
+                  <TableCell className="font-mono font-medium text-slate-900">{ins.flag_key}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-16 rounded-full bg-slate-200 overflow-hidden sm:w-24">
+                        <div
+                          className="h-full rounded-full bg-emerald-500 transition-all"
+                          style={{ width: `${Math.min(ins.true_percentage ?? 0, 100)}%` }}
+                        />
                       </div>
-                    </td>
-                    <td className="hidden px-4 py-3 text-emerald-600 font-medium sm:table-cell">{(ins.true_count ?? 0).toLocaleString()}</td>
-                    <td className="hidden px-4 py-3 text-slate-500 sm:table-cell">{(ins.false_count ?? 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-slate-700 font-medium">{(ins.total_count ?? 0).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <span className="text-xs font-medium text-slate-600">{(ins.true_percentage ?? 0).toFixed(1)}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden text-emerald-600 font-medium sm:table-cell">{(ins.true_count ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="hidden text-slate-500 sm:table-cell">{(ins.false_count ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="text-slate-700 font-medium">{(ins.total_count ?? 0).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {filtered.length === 0 && (
             <EmptyState icon={BarChart3} title="No flags match the search." className="py-8" />
           )}

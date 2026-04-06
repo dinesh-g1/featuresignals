@@ -109,14 +109,14 @@ describe("FlagsPage", () => {
     queryCache.clear();
   });
 
-  it("renders loading spinner initially", () => {
+  it("renders loading skeleton initially", () => {
     vi.mocked(api.listFlags).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.listEnvironments).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.listFlagStatesByEnv).mockReturnValue(new Promise(() => {}));
 
-    render(<FlagsPage />);
+    const { container } = render(<FlagsPage />);
 
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
   it("loads and renders flag list with names", async () => {
@@ -215,8 +215,7 @@ describe("FlagsPage", () => {
     render(<FlagsPage />);
     await screen.findByText("enable-feature");
 
-    // Flags sorted by created_at desc: max-items first, enable-feature second
-    const toggleButtons = screen.getAllByTitle("Toggle in Production");
+    const toggleButtons = screen.getAllByLabelText("Toggle in Production");
 
     await act(async () => {
       fireEvent.click(toggleButtons[1]);

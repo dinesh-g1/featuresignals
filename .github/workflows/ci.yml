@@ -49,6 +49,20 @@ jobs:
       - name: Build
         working-directory: server
         run: go build -o bin/server ./cmd/server
+      - name: Schema snapshot check
+        run: |
+          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-current.sql
+          if [ -f server/schema.snapshot.sql ]; then
+            if ! diff -q server/schema.snapshot.sql /tmp/schema-current.sql > /dev/null 2>&1; then
+              echo "::warning::Schema snapshot is out of date. Run 'make schema-snapshot' to update."
+              diff server/schema.snapshot.sql /tmp/schema-current.sql || true
+            else
+              echo "Schema snapshot is up to date."
+            fi
+          else
+            echo "::notice::No schema snapshot found. Consider committing server/schema.snapshot.sql."
+          fi
 
   server-lint:
     name: Server Lint
