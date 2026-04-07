@@ -374,11 +374,12 @@ export default function PricingPage() {
                   {"What's the difference between Free and Pro?"}
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Both plans include the full feature set: all flag types, SDKs,
-                  A/B testing, and more. Free is limited to {free.limits.projects}{" "}
-                  project(s), {free.limits.environments} environments, and{" "}
-                  {free.limits.seats} team members. Pro removes all limits and
-                  adds priority support, RBAC, audit logs, and approval workflows.
+                  The Free plan includes the core flag engine — all flag types,
+                  SDKs, A/B testing, and percentage rollouts. It&apos;s limited to{" "}
+                  {free.limits.projects} project(s), {free.limits.environments}{" "}
+                  environments, and {free.limits.seats} team member(s). Pro
+                  removes all limits and adds advanced capabilities like RBAC,
+                  audit logging, webhooks, and approval workflows.
                 </p>
               </div>
               <div className="border-b border-slate-100 pb-6">

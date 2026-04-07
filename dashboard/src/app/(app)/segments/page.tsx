@@ -90,7 +90,7 @@ export default function SegmentsPage() {
       <PageHeader
         title="Segments"
         description="Reusable audience definitions for targeting"
-        docsUrl="https://docs.featuresignals.com/concepts/segments"
+        docsUrl="https://docs.featuresignals.com/core-concepts/targeting-and-segments"
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>Create Segment</Button>
         }
@@ -134,7 +134,7 @@ export default function SegmentsPage() {
               icon={Users}
               title="No segments yet"
               description="Segments let you define reusable audiences (e.g., beta testers, enterprise customers) and target them across multiple flags."
-              docsUrl="https://docs.featuresignals.com/concepts/segments"
+              docsUrl="https://docs.featuresignals.com/core-concepts/targeting-and-segments"
               docsLabel="Learn about segments"
             />
           ) : (

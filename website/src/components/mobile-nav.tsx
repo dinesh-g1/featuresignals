@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X, ChevronDown, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-  productItems,
+  platformItems,
+  learnMoreItems,
   developerItems,
   type NavItem,
 } from "@/data/nav-links";
@@ -85,15 +86,15 @@ function AccordionSection({
 
 const directLinks = [
   { href: "/pricing", label: "Pricing" },
-  { href: "/use-cases", label: "Use Cases" },
-  { href: "/security", label: "Security" },
-  { href: "/changelog", label: "Changelog" },
+  { href: "/blog", label: "Blog" },
 ];
 
 export function MobileNav({ pathname }: { pathname: string }) {
   const [open, setOpen] = useState(false);
 
   const handleNavigate = () => setOpen(false);
+
+  const allProductItems = [...platformItems, ...learnMoreItems];
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -153,7 +154,7 @@ export function MobileNav({ pathname }: { pathname: string }) {
                   <div className="space-y-1">
                     <AccordionSection
                       title="Product"
-                      items={productItems}
+                      items={allProductItems}
                       onNavigate={handleNavigate}
                     />
                     <AccordionSection
@@ -190,7 +191,7 @@ export function MobileNav({ pathname }: { pathname: string }) {
                     href="https://app.featuresignals.com/register"
                     className="block rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-medium text-white shadow-sm shadow-indigo-600/20 transition-all hover:bg-indigo-700"
                   >
-                    Get Started Free
+                    Start Free
                   </a>
                 </div>
               </motion.div>
