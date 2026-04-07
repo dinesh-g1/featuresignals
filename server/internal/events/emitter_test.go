@@ -37,6 +37,21 @@ func (s *spyEventStore) CountEventsByOrg(_ context.Context, _, _ string, _ time.
 func (s *spyEventStore) CountEventsByUser(_ context.Context, _, _ string, _ time.Time) (int, error) {
 	return 0, nil
 }
+func (s *spyEventStore) CountEventsByCategory(_ context.Context, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (s *spyEventStore) CountDistinctOrgs(_ context.Context, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (s *spyEventStore) CountDistinctUsers(_ context.Context, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (s *spyEventStore) EventFunnel(_ context.Context, _ []string, _ time.Time) (map[string]int, error) {
+	return nil, nil
+}
+func (s *spyEventStore) PlanDistribution(_ context.Context) (map[string]int, error) {
+	return nil, nil
+}
 
 func (s *spyEventStore) collected() []domain.ProductEvent {
 	s.mu.Lock()

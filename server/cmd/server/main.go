@@ -250,6 +250,12 @@ func main() {
 	lifecycleProcessor := lifecycle.NewProcessor(lifecycleMailer, store, eventEmitter, logger)
 	logger.Info("lifecycle processor started")
 
+	// Lifecycle scheduler (trial reminders, weekly digests, re-engagement)
+	lifecycleSched := lifecycle.NewScheduler(store, lifecycleProcessor, eventEmitter, logger, 1*time.Hour)
+	lifecycleSchedCtx, lifecycleSchedCancel := context.WithCancel(context.Background())
+	defer lifecycleSchedCancel()
+	go lifecycleSched.Run(lifecycleSchedCtx)
+
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	regionsEnabled := !cfg.IsOnPrem()

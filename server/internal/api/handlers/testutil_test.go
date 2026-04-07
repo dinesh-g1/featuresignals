@@ -1346,6 +1346,17 @@ func (m *mockStore) CountEventsByOrg(_ context.Context, _, _ string, _ time.Time
 func (m *mockStore) CountEventsByUser(_ context.Context, _, _ string, _ time.Time) (int, error) {
 	return 0, nil
 }
+func (m *mockStore) CountEventsByCategory(_ context.Context, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountDistinctOrgs(_ context.Context, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountDistinctUsers(_ context.Context, _ time.Time) (int, error) { return 0, nil }
+func (m *mockStore) EventFunnel(_ context.Context, _ []string, _ time.Time) (map[string]int, error) {
+	return nil, nil
+}
+func (m *mockStore) PlanDistribution(_ context.Context) (map[string]int, error) { return nil, nil }
 func (m *mockStore) UpdateUserEmailPreferences(_ context.Context, _ string, _ bool, _ string) error {
 	return nil
 }
