@@ -76,7 +76,7 @@ export default function BlogPage() {
             </Link>{" "}
             for product updates, or star us on{" "}
             <a
-              href="https://github.com/featuresignals/featuresignals"
+              href="https://github.com/dinesh-g1/featuresignals"
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-indigo-600 underline hover:text-indigo-700"

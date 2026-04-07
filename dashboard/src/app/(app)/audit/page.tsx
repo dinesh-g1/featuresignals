@@ -34,7 +34,7 @@ export default function AuditPage() {
         <PageHeader
           title="Audit Log"
           description="Track every change made to your feature flags"
-          docsUrl="https://docs.featuresignals.com/concepts/audit-log"
+          docsUrl="https://docs.featuresignals.com/advanced/audit-logging"
         />
         {canExport && (
           <Button
@@ -69,7 +69,7 @@ export default function AuditPage() {
               icon={ClipboardList}
               title="No audit entries yet"
               description="Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
-              docsUrl="https://docs.featuresignals.com/concepts/audit-log"
+              docsUrl="https://docs.featuresignals.com/advanced/audit-logging"
               docsLabel="About the audit log"
             />
           ) : (

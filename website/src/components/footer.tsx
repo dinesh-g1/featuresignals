@@ -6,18 +6,18 @@ const footerSections = [
     title: "Product",
     links: [
       { label: "Features", href: "/features" },
-      { label: "Pricing", href: "/pricing" },
       { label: "Use Cases", href: "/use-cases" },
-      { label: "Changelog", href: "/changelog" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Security & Trust", href: "/security" },
     ],
   },
   {
     title: "Get Started",
     links: [
       { label: "Start Free Trial", href: "https://app.featuresignals.com/register", highlight: true },
-      { label: "Sign Up Free", href: "https://app.featuresignals.com/register" },
       { label: "Log in", href: "https://app.featuresignals.com/login" },
       { label: "Flag Engine", href: "https://app.featuresignals.com" },
+      { label: "Contact Sales", href: "/contact" },
     ],
   },
   {
@@ -32,8 +32,9 @@ const footerSections = [
   {
     title: "Resources",
     links: [
+      { label: "Blog", href: "/blog" },
+      { label: "Changelog", href: "/changelog" },
       { label: "Quickstart Guide", href: "https://docs.featuresignals.com/getting-started/quickstart" },
-      { label: "Tutorials", href: "https://docs.featuresignals.com/tutorials/feature-flag-checkout" },
       { label: "About", href: "/about" },
       { label: "Status", href: "/status" },
     ],
@@ -41,7 +42,6 @@ const footerSections = [
   {
     title: "Legal",
     links: [
-      { label: "Security & Compliance", href: "/security" },
       { label: "Terms & Conditions", href: "/terms-and-conditions" },
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Refund Policy", href: "/refund-policy" },
@@ -138,13 +138,12 @@ export function Footer() {
             {/* Status indicator */}
             <Link
               href="/status"
-              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
             >
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
               </span>
-              All systems operational
+              System Status
             </Link>
 
             {/* Social links */}
