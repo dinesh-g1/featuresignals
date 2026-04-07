@@ -468,6 +468,23 @@ export default function UseCasesPage() {
                         <CodeTabs tabs={uc.code} id={`usecase-${i}`} />
                       </div>
                     )}
+                    <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
+                      <a
+                        href="https://app.featuresignals.com/register"
+                        className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                      >
+                        Try this workflow free &rarr;
+                      </a>
+                      <span className="text-slate-300">|</span>
+                      <a
+                        href="https://docs.featuresignals.com/getting-started/quickstart"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-slate-500 transition-colors hover:text-slate-700"
+                      >
+                        Quickstart guide
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>

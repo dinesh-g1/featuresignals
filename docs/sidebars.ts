@@ -108,7 +108,7 @@ const sidebars: SidebarsConfig = {
     'api-reference/onboarding',
     {
       type: 'category',
-      label: 'Enterprise',
+      label: 'Enterprise APIs',
       items: [
         'api-reference/sso',
         'api-reference/scim',
@@ -116,6 +116,14 @@ const sidebars: SidebarsConfig = {
         'api-reference/ip-allowlist',
         'api-reference/custom-roles',
         'api-reference/data-export',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Enterprise',
+      items: [
+        'enterprise/overview',
+        'enterprise/onboarding',
       ],
     },
   ],

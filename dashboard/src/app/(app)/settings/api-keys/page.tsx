@@ -126,7 +126,7 @@ export default function APIKeysPage() {
               icon={KeyRound}
               title="No API keys for this environment"
               description="API keys authenticate your SDK against this environment. Create a server key to start evaluating flags."
-              docsUrl="https://docs.featuresignals.com/concepts/api-keys"
+              docsUrl="https://docs.featuresignals.com/api-reference/api-keys"
               docsLabel="API key types explained"
             />
           ) : (
