@@ -173,7 +173,7 @@ export default function WebhooksPage() {
               icon={Link2}
               title="No webhooks configured"
               description="Webhooks send real-time HTTP notifications when flags change. Connect your CI/CD pipeline, Slack, or monitoring tools."
-              docsUrl="https://docs.featuresignals.com/concepts/webhooks"
+              docsUrl="https://docs.featuresignals.com/advanced/webhooks"
               docsLabel="Webhook setup guide"
               className="rounded-lg border border-dashed border-slate-300"
             />

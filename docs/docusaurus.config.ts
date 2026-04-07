@@ -76,6 +76,11 @@ const config: Config = {
       },
       items: [
         {
+          href: 'https://featuresignals.com',
+          label: 'Website',
+          position: 'left',
+        },
+        {
           type: 'docSidebar',
           sidebarId: 'docs',
           position: 'left',
@@ -121,6 +126,16 @@ const config: Config = {
     footer: {
       style: 'dark',
       links: [
+        {
+          title: 'Product',
+          items: [
+            {label: 'Website', href: 'https://featuresignals.com'},
+            {label: 'Features', href: 'https://featuresignals.com/features'},
+            {label: 'Pricing', href: 'https://featuresignals.com/pricing'},
+            {label: 'Blog', href: 'https://featuresignals.com/blog'},
+            {label: 'Contact', href: 'https://featuresignals.com/contact'},
+          ],
+        },
         {
           title: 'Documentation',
           items: [

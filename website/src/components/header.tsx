@@ -3,21 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
-import { ChevronDown, ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  productItems,
-  productFooterItem,
+  platformItems,
+  learnMoreItems,
+  productFooterLinks,
   developerItems,
+  developerFooterItem,
   type NavItem,
 } from "@/data/nav-links";
 import { MobileNav } from "./mobile-nav";
 
 const topLinks = [
   { href: "/pricing", label: "Pricing" },
-  { href: "/use-cases", label: "Use Cases" },
-  { href: "/security", label: "Security" },
-  { href: "/changelog", label: "Changelog" },
+  { href: "/blog", label: "Blog" },
 ];
 
 function NavListItem({ item }: { item: NavItem }) {
@@ -71,6 +71,7 @@ export function Header() {
 
         <NavigationMenu.Root className="hidden items-center lg:flex">
           <NavigationMenu.List className="flex items-center gap-1">
+            {/* Product Mega Menu */}
             <NavigationMenu.Item>
               <NavigationMenu.Trigger className="group flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900 data-[state=open]:bg-slate-50 data-[state=open]:text-slate-900">
                 Product
@@ -79,18 +80,48 @@ export function Header() {
                   aria-hidden
                 />
               </NavigationMenu.Trigger>
-              <NavigationMenu.Content className="absolute left-0 top-0 w-[640px] data-[motion=from-end]:animate-enterFromRight data-[motion=from-start]:animate-enterFromLeft data-[motion=to-end]:animate-exitToRight data-[motion=to-start]:animate-exitToLeft">
-                <div className="grid grid-cols-2 gap-1 p-3">
-                  {productItems.map((item) => (
-                    <NavListItem key={item.title} item={item} />
-                  ))}
+              <NavigationMenu.Content className="absolute left-0 top-0 w-[680px] data-[motion=from-end]:animate-enterFromRight data-[motion=from-start]:animate-enterFromLeft data-[motion=to-end]:animate-exitToRight data-[motion=to-start]:animate-exitToLeft">
+                <div className="grid grid-cols-[1fr_auto] divide-x divide-slate-100">
+                  {/* Left: Platform */}
+                  <div className="p-3">
+                    <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Platform
+                    </p>
+                    <div className="space-y-0.5">
+                      {platformItems.map((item) => (
+                        <NavListItem key={item.title} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Right: Learn More */}
+                  <div className="w-[240px] p-3">
+                    <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Learn More
+                    </p>
+                    <div className="space-y-0.5">
+                      {learnMoreItems.map((item) => (
+                        <NavListItem key={item.title} item={item} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="border-t border-slate-100 p-3">
-                  <NavListItem item={productFooterItem} />
+                {/* Footer row */}
+                <div className="flex items-center justify-between border-t border-slate-100 px-6 py-2.5">
+                  {productFooterLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="group flex items-center gap-1 text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-800"
+                    >
+                      {link.title}
+                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  ))}
                 </div>
               </NavigationMenu.Content>
             </NavigationMenu.Item>
 
+            {/* Developers Menu */}
             <NavigationMenu.Item>
               <NavigationMenu.Trigger className="group flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900 data-[state=open]:bg-slate-50 data-[state=open]:text-slate-900">
                 Developers
@@ -105,9 +136,21 @@ export function Header() {
                     <NavListItem key={item.title} item={item} />
                   ))}
                 </div>
+                <div className="border-t border-slate-100 px-6 py-2.5">
+                  <a
+                    href={developerFooterItem.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-1 text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-800"
+                  >
+                    {developerFooterItem.title}
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  </a>
+                </div>
               </NavigationMenu.Content>
             </NavigationMenu.Item>
 
+            {/* Top-level links */}
             {topLinks.map((link) => (
               <NavigationMenu.Item key={link.href}>
                 <NavigationMenu.Link asChild>
@@ -147,7 +190,7 @@ export function Header() {
             href="https://app.featuresignals.com/register"
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-600/20 transition-all duration-150 hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-600/25 active:scale-[0.98]"
           >
-            Get Started Free
+            Start Free
           </a>
         </div>
 

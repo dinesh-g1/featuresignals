@@ -232,7 +232,7 @@ export default function FlagsPage() {
       <PageHeader
         title="Feature Flags"
         description={`${(flags ?? []).length} flags in this project`}
-        docsUrl="https://docs.featuresignals.com/concepts/feature-flags"
+        docsUrl="https://docs.featuresignals.com/core-concepts/feature-flags"
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>
             Create Flag
@@ -400,7 +400,7 @@ export default function FlagsPage() {
               icon={Flag}
               title="No flags yet"
               description="Flags let you control which features your users see. Create your first flag to start shipping safely."
-              docsUrl="https://docs.featuresignals.com/concepts/flags"
+              docsUrl="https://docs.featuresignals.com/core-concepts/feature-flags"
               docsLabel="What are feature flags?"
             />
           ) : (
