@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { ContextBar } from "@/components/context-bar";
@@ -10,6 +10,8 @@ import { toast, ToastContainer } from "@/components/toast";
 import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
 import { UpgradeBanner } from "@/components/upgrade-banner";
+import { ProductTour } from "@/components/product-tour";
+import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Menu } from "lucide-react";
 
@@ -45,6 +47,22 @@ function MobileHeader() {
   );
 }
 
+function TourGate() {
+  const onboardingCompleted = useAppStore((s) => s.onboardingCompleted);
+  const user = useAppStore((s) => s.user);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (!onboardingCompleted && user && !user.tour_completed) {
+      const timer = setTimeout(() => setShow(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [onboardingCompleted, user]);
+
+  if (!show) return null;
+  return <ProductTour onComplete={() => setShow(false)} />;
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
@@ -63,6 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <CommandPalette />
         <ToastContainer />
         <UpgradeRequiredListener />
+        <TourGate />
       </div>
     </AuthGuard>
   );

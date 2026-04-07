@@ -331,6 +331,8 @@ func newTestRouter(t *testing.T) http.Handler {
 		"cloud",
 		false,
 		true,
+		nil,
+		nil,
 	)
 }
 

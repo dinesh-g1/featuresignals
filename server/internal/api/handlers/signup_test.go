@@ -31,7 +31,7 @@ func newTestSignupHandler() (*SignupHandler, *mockStore, *mockOTPSender) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 	sender := &mockOTPSender{}
-	h := NewSignupHandler(store, jwtMgr, sender)
+	h := NewSignupHandler(store, jwtMgr, sender, nil, nil)
 	return h, store, sender
 }
 

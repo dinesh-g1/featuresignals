@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
 
 const stableSearchParams = new URLSearchParams();
@@ -22,12 +22,10 @@ vi.mock("@/lib/api", () => ({
   api: {
     getOnboarding: vi.fn(),
     updateOnboarding: vi.fn(),
-    getPricing: vi.fn(),
     createFlag: vi.fn(),
-    createCheckout: vi.fn(),
+    listAPIKeys: vi.fn(),
     refresh: vi.fn(),
   },
-  PricingConfig: {},
 }));
 
 vi.mock("@/components/toast", () => ({
@@ -66,9 +64,8 @@ describe("OnboardingPage", () => {
 
     mockApi.getOnboarding.mockResolvedValue(mockOnboarding);
     mockApi.updateOnboarding.mockResolvedValue({});
-    mockApi.getPricing.mockResolvedValue(null);
     mockApi.createFlag.mockResolvedValue({});
-    mockApi.createCheckout.mockResolvedValue({});
+    mockApi.listAPIKeys.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -76,74 +73,90 @@ describe("OnboardingPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows first step", async () => {
-    // Arrange & Act
+  it("shows first step — create flag", async () => {
     render(<OnboardingPage />);
 
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByText("Choose Your Plan")).toBeInTheDocument();
-    });
-  });
-
-  it("next button advances to next step", async () => {
-    // Arrange
-    render(<OnboardingPage />);
-    await waitFor(() => expect(screen.getByText("Choose Your Plan")).toBeInTheDocument());
-
-    // Act
-    const freeBtn = screen.getByText("Continue with Free");
-    await act(async () => {
-      fireEvent.click(freeBtn);
-      await mockApi.updateOnboarding.mock.results?.[0]?.value;
-    });
-
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
-    }, { timeout: 3000 });
+    });
   });
 
-  it("shows SDK code examples", async () => {
-    // Arrange – skip to SDK step
+  it("shows SDK step when flag is already created", async () => {
     mockApi.getOnboarding.mockResolvedValue({
-      org_id: "org-1",
-      plan_selected: true,
+      ...mockOnboarding,
       first_flag_created: true,
-      first_sdk_connected: false,
-      first_evaluation: false,
-      tour_completed: false,
-      completed: false,
-      updated_at: "2025-01-01T00:00:00Z",
     });
 
-    // Act
     render(<OnboardingPage />);
 
-    // Assert
     await waitFor(() => {
-      expect(screen.getByText("Install the SDK")).toBeInTheDocument();
+      expect(screen.getByText("Connect Your App")).toBeInTheDocument();
       expect(screen.getByText("Node.js")).toBeInTheDocument();
       expect(screen.getByText("Go")).toBeInTheDocument();
       expect(screen.getByText("Python")).toBeInTheDocument();
     });
   });
 
-  it("complete button calls api.updateOnboarding", async () => {
-    // Arrange
-    render(<OnboardingPage />);
-    await waitFor(() => expect(screen.getByText("Choose Your Plan")).toBeInTheDocument());
-
-    // Act
-    const freeBtn = screen.getByText("Continue with Free");
-    await act(async () => {
-      fireEvent.click(freeBtn);
-      await mockApi.updateOnboarding.mock.results?.[0]?.value;
+  it("shows SDK code examples with language tabs", async () => {
+    mockApi.getOnboarding.mockResolvedValue({
+      ...mockOnboarding,
+      first_flag_created: true,
     });
 
-    // Assert
+    render(<OnboardingPage />);
+
     await waitFor(() => {
-      expect(mockApi.updateOnboarding).toHaveBeenCalledWith("test-token", { plan_chosen: true });
+      expect(screen.getByText("Connect Your App")).toBeInTheDocument();
+    });
+
+    const tabs = ["Node.js", "Go", "Python", "React", "Java", "C#", "Ruby", "Vue"];
+    for (const tab of tabs) {
+      expect(screen.getByText(tab)).toBeInTheDocument();
+    }
+  });
+
+  it("auto-completes plan_chosen on load", async () => {
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(mockApi.updateOnboarding).toHaveBeenCalledWith(
+        "test-token",
+        expect.objectContaining({ plan_chosen: true }),
+      );
+    }, { timeout: 3000 });
+  });
+
+  it("skip onboarding link is visible", async () => {
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Skip onboarding")).toBeInTheDocument();
+    });
+  });
+
+  it("creates flag and advances to SDK step", async () => {
+    mockApi.createFlag.mockResolvedValue({ id: "flag-1", key: "test-flag" });
+
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
+    });
+
+    const skipBtn = screen.getByText("Skip this step");
+    await act(async () => {
+      fireEvent.click(skipBtn);
+    });
+
+    await waitFor(() => {
+      expect(mockApi.updateOnboarding).toHaveBeenCalledWith(
+        "test-token",
+        expect.objectContaining({ flag_created: true }),
+      );
     }, { timeout: 3000 });
   });
 });

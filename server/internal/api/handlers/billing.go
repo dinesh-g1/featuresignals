@@ -35,6 +35,8 @@ type BillingHandler struct {
 	dashboardURL string
 	appBaseURL   string
 	logger       *slog.Logger
+	emitter      domain.EventEmitter
+	lifecycle    LifecycleSender
 }
 
 func NewBillingHandler(
@@ -42,13 +44,23 @@ func NewBillingHandler(
 	registry *payment.Registry,
 	dashboardURL, appBaseURL string,
 	logger *slog.Logger,
+	emitter domain.EventEmitter,
+	lifecycle LifecycleSender,
 ) *BillingHandler {
+	if emitter == nil {
+		emitter = NoopEmitter()
+	}
+	if lifecycle == nil {
+		lifecycle = NoopLifecycle()
+	}
 	return &BillingHandler{
 		store:        store,
 		registry:     registry,
 		dashboardURL: dashboardURL,
 		appBaseURL:   appBaseURL,
 		logger:       logger,
+		emitter:      emitter,
+		lifecycle:    lifecycle,
 	}
 }
 
@@ -263,6 +275,34 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 	_ = h.store.UpsertOnboardingState(ctx, state)
 
 	h.logger.Info("payu payment successful — org upgraded to pro", "org_id", org.ID, "txnid", txnid, "mihpayid", params["mihpayid"])
+
+	h.emitter.Emit(ctx, domain.ProductEvent{
+		Event:    domain.EventCheckoutCompleted,
+		Category: domain.EventCategoryBilling,
+		OrgID:    org.ID,
+		Properties: mustMarshal(map[string]string{
+			"gateway": domain.GatewayPayU,
+			"plan":    string(domain.PlanPro),
+			"txnid":   txnid,
+		}),
+	})
+
+	go func() {
+		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer sendCancel()
+		_ = h.lifecycle.Send(sendCtx, "", domain.EmailMessage{
+			To:       params["email"],
+			Template: domain.TemplatePaymentSuccess,
+			Subject:  "Payment confirmed — you're on FeatureSignals Pro",
+			Data: map[string]string{
+				"ToName":       params["firstname"],
+				"Plan":         "Pro",
+				"Amount":       params["amount"],
+				"DashboardURL": h.dashboardURL,
+			},
+		})
+	}()
+
 	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=success", http.StatusSeeOther)
 }
 
@@ -370,6 +410,34 @@ func (h *BillingHandler) handleStripeCheckoutCompleted(ctx context.Context, even
 	_ = h.store.UpsertOnboardingState(ctx, state)
 
 	h.logger.Info("stripe checkout completed — org upgraded to pro", "org_id", orgID, "customer_id", event.CustomerID)
+
+	h.emitter.Emit(ctx, domain.ProductEvent{
+		Event:    domain.EventCheckoutCompleted,
+		Category: domain.EventCategoryBilling,
+		OrgID:    orgID,
+		Properties: mustMarshal(map[string]string{
+			"gateway": domain.GatewayStripe,
+			"plan":    string(domain.PlanPro),
+		}),
+	})
+
+	go func() {
+		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer sendCancel()
+		email := event.Metadata["email"]
+		name := event.Metadata["name"]
+		_ = h.lifecycle.Send(sendCtx, "", domain.EmailMessage{
+			To:       email,
+			ToName:   name,
+			Template: domain.TemplatePaymentSuccess,
+			Subject:  "Payment confirmed — you're on FeatureSignals Pro",
+			Data: map[string]string{
+				"ToName":       name,
+				"Plan":         "Pro",
+				"DashboardURL": h.dashboardURL,
+			},
+		})
+	}()
 }
 
 func (h *BillingHandler) handleStripeSubscriptionUpdated(ctx context.Context, event *payment.WebhookEvent) {
@@ -444,6 +512,15 @@ func (h *BillingHandler) handleStripePaymentFailed(ctx context.Context, event *p
 	})
 
 	h.logger.Warn("stripe payment failed — subscription past due", "org_id", sub.OrgID)
+
+	h.emitter.Emit(ctx, domain.ProductEvent{
+		Event:    domain.EventPaymentFailed,
+		Category: domain.EventCategoryBilling,
+		OrgID:    sub.OrgID,
+		Properties: mustMarshal(map[string]string{
+			"gateway": domain.GatewayStripe,
+		}),
+	})
 }
 
 // CancelSubscription cancels the org's active subscription.
