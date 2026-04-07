@@ -14,6 +14,10 @@ import {
   ChevronDown,
   Clock,
   Minus,
+  Zap,
+  HardDrive,
+  Radio,
+  Gauge,
 } from "lucide-react";
 
 // --- Types ---
@@ -77,6 +81,9 @@ const SERVICE_ICONS: Record<string, typeof Server> = {
   "API Server": Server,
   Database: Database,
   "Connection Pool": Activity,
+  "Flag Evaluation Engine": Zap,
+  Cache: HardDrive,
+  "Real-time Streaming": Radio,
 };
 
 function useBreakpoint() {
@@ -209,13 +216,14 @@ function RegionGroup({ region, defaultOpen }: { region: RegionStatus; defaultOpe
                       <span className="text-sm font-medium text-slate-700">{svc.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {svc.latency_ms > 0 && (
+                      {svc.latency_ms >= 0 && svc.status === "operational" && (
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          svc.latency_ms === 0 ? "bg-emerald-50 text-emerald-600" :
                           svc.latency_ms < 50 ? "bg-emerald-50 text-emerald-600" :
                           svc.latency_ms < 200 ? "bg-amber-50 text-amber-600" :
                           "bg-red-50 text-red-600"
                         }`}>
-                          {svc.latency_ms}ms
+                          {svc.latency_ms === 0 && svc.name === "Flag Evaluation Engine" ? "< 1ms" : `${svc.latency_ms}ms`}
                         </span>
                       )}
                       <StatusDot status={svc.status} />
@@ -368,6 +376,64 @@ function UptimeBar({
   );
 }
 
+function LatencyCard({
+  label,
+  sublabel,
+  latencyMs,
+  thresholds,
+  subMs,
+}: {
+  label: string;
+  sublabel: string;
+  latencyMs: number | null;
+  thresholds: { green: number; amber: number };
+  subMs?: boolean;
+}) {
+  const displayValue =
+    latencyMs === null ? "—" : subMs && latencyMs === 0 ? "< 1ms" : `${latencyMs}ms`;
+
+  const color =
+    latencyMs === null
+      ? "text-slate-400"
+      : latencyMs <= thresholds.green
+        ? "text-emerald-600"
+        : latencyMs <= thresholds.amber
+          ? "text-amber-600"
+          : "text-red-600";
+
+  const barColor =
+    latencyMs === null
+      ? "bg-slate-100"
+      : latencyMs <= thresholds.green
+        ? "bg-emerald-400"
+        : latencyMs <= thresholds.amber
+          ? "bg-amber-400"
+          : "bg-red-400";
+
+  const barWidth =
+    latencyMs === null
+      ? 0
+      : Math.min(100, Math.max(5, (latencyMs / (thresholds.amber * 2)) * 100));
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">{label}</p>
+          <p className="text-[10px] text-slate-400">{sublabel}</p>
+        </div>
+        <span className={`text-lg font-bold tabular-nums ${color}`}>{displayValue}</span>
+      </div>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+          style={{ width: `${barWidth}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // --- Main Page ---
 
 export default function StatusPage() {
@@ -377,18 +443,23 @@ export default function StatusPage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [apiLatencyMs, setApiLatencyMs] = useState<number | null>(null);
   const barDays = useBreakpoint();
 
   const fetchStatus = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
+    const start = performance.now();
     try {
       const res = await fetch(`${API_BASE}/v1/status/global`, { signal: AbortSignal.timeout(15000) });
+      const elapsed = Math.round(performance.now() - start);
+      setApiLatencyMs(elapsed);
       if (res.ok) {
         setGlobalStatus(await res.json());
       } else {
         setGlobalStatus({ overall_status: "degraded", regions: [], checked_at: new Date().toISOString() });
       }
     } catch {
+      setApiLatencyMs(null);
       setGlobalStatus({ overall_status: "unknown", regions: [], checked_at: new Date().toISOString() });
     } finally {
       setLoading(false);
@@ -419,10 +490,27 @@ export default function StatusPage() {
 
   const overallStatus = globalStatus?.overall_status ?? "unknown";
 
+  const activeRegionServices = useMemo(() => {
+    if (!globalStatus) return [];
+    const active = globalStatus.regions.find((r) => r.status !== "unreachable");
+    return active?.services ?? [];
+  }, [globalStatus]);
+
+  const dbLatency = useMemo(() => {
+    const svc = activeRegionServices.find((s) => s.name === "Database");
+    return svc?.latency_ms ?? null;
+  }, [activeRegionServices]);
+
+  const evalLatency = useMemo(() => {
+    const svc = activeRegionServices.find((s) => s.name === "Flag Evaluation Engine");
+    if (!svc) return null;
+    return svc.latency_ms;
+  }, [activeRegionServices]);
+
   const allComponents = useMemo(() => {
     const components: { region: string; component: string; label: string; isUnreachable: boolean }[] = [];
     const regionOrder = ["in", "us", "eu"];
-    const serviceOrder = ["API Server", "Database", "Connection Pool"];
+    const serviceOrder = ["API Server", "Database", "Connection Pool", "Flag Evaluation Engine", "Cache", "Real-time Streaming"];
 
     for (const rc of regionOrder) {
       const region = globalStatus?.regions.find((r) => r.region === rc);
@@ -525,8 +613,42 @@ export default function StatusPage() {
           </div>
         </SectionReveal>
 
-        {/* Section 3: Uptime History (90-day bars) */}
-        <SectionReveal delay={0.15}>
+        {/* Section 3: Performance Metrics */}
+        {!loading && globalStatus && globalStatus.regions.some((r) => r.status !== "unreachable") && (
+          <SectionReveal delay={0.12}>
+            <div className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Gauge className="h-5 w-5 text-slate-400" />
+                <h2 className="text-base font-semibold text-slate-900">Performance Metrics</h2>
+                <span className="text-xs text-slate-400">(live)</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <LatencyCard
+                  label="API Response"
+                  sublabel="Client round-trip"
+                  latencyMs={apiLatencyMs}
+                  thresholds={{ green: 200, amber: 500 }}
+                />
+                <LatencyCard
+                  label="Database"
+                  sublabel="Server-side query"
+                  latencyMs={dbLatency}
+                  thresholds={{ green: 50, amber: 200 }}
+                />
+                <LatencyCard
+                  label="Flag Evaluation"
+                  sublabel="Hot path latency"
+                  latencyMs={evalLatency}
+                  thresholds={{ green: 1, amber: 5 }}
+                  subMs
+                />
+              </div>
+            </div>
+          </SectionReveal>
+        )}
+
+        {/* Section 4: Uptime History (90-day bars) */}
+        <SectionReveal delay={0.18}>
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-1">
               <Activity className="h-5 w-5 text-slate-400" />
@@ -569,8 +691,8 @@ export default function StatusPage() {
           </div>
         </SectionReveal>
 
-        {/* Section 4: Incident History */}
-        <SectionReveal delay={0.2}>
+        {/* Section 5: Incident History */}
+        <SectionReveal delay={0.24}>
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="h-5 w-5 text-slate-400" />
@@ -586,7 +708,7 @@ export default function StatusPage() {
           </div>
         </SectionReveal>
 
-        <SectionReveal delay={0.25}>
+        <SectionReveal delay={0.28}>
           <div className="mt-8 border-t border-slate-100 pt-8">
             <h2 className="text-base font-semibold text-slate-900">Report an Issue</h2>
             <p className="mt-1 text-sm text-slate-500">

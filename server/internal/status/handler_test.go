@@ -38,11 +38,25 @@ func (m *mockStatusRecorder) GetComponentHistory(_ context.Context, _ int) ([]do
 	return m.history, m.err
 }
 
+type mockCacheHealth struct {
+	listening    bool
+	rulesetCount int
+}
+
+func (m *mockCacheHealth) IsListening() bool  { return m.listening }
+func (m *mockCacheHealth) RulesetCount() int  { return m.rulesetCount }
+
+type mockSSEHealth struct {
+	totalClients int
+}
+
+func (m *mockSSEHealth) TotalClientCount() int { return m.totalClients }
+
 func newTestHandler(hc HealthChecker, ps PoolStats, sr *mockStatusRecorder) *Handler {
 	if sr == nil {
 		sr = &mockStatusRecorder{}
 	}
-	return NewHandler(hc, ps, "us", sr)
+	return NewHandler(hc, ps, "in", sr, &mockCacheHealth{listening: true, rulesetCount: 3}, &mockSSEHealth{totalClients: 5})
 }
 
 func TestHandler_HandleLocalStatus_Operational(t *testing.T) {
@@ -63,11 +77,21 @@ func TestHandler_HandleLocalStatus_Operational(t *testing.T) {
 	if rs.Status != "operational" {
 		t.Errorf("expected operational, got %s", rs.Status)
 	}
-	if rs.Region != "us" {
-		t.Errorf("expected us, got %s", rs.Region)
+	if rs.Region != "in" {
+		t.Errorf("expected in, got %s", rs.Region)
 	}
-	if len(rs.Services) < 2 {
-		t.Fatalf("expected at least 2 services, got %d", len(rs.Services))
+	if len(rs.Services) != 6 {
+		t.Fatalf("expected 6 services, got %d", len(rs.Services))
+	}
+
+	svcMap := make(map[string]ServiceStatus)
+	for _, svc := range rs.Services {
+		svcMap[svc.Name] = svc
+	}
+	for _, name := range []string{"API Server", "Database", "Connection Pool", "Flag Evaluation Engine", "Cache", "Real-time Streaming"} {
+		if _, ok := svcMap[name]; !ok {
+			t.Errorf("missing service: %s", name)
+		}
 	}
 }
 
@@ -77,6 +101,8 @@ func TestHandler_HandleLocalStatus_DBDown(t *testing.T) {
 		&mockPoolStats{acquired: 0, max: 20},
 		"eu",
 		&mockStatusRecorder{},
+		&mockCacheHealth{listening: true},
+		&mockSSEHealth{},
 	)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
@@ -102,6 +128,8 @@ func TestHandler_HandleLocalStatus_PoolDegraded(t *testing.T) {
 		&mockPoolStats{acquired: 19, max: 20},
 		"in",
 		&mockStatusRecorder{},
+		&mockCacheHealth{listening: true},
+		&mockSSEHealth{},
 	)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
@@ -114,6 +142,137 @@ func TestHandler_HandleLocalStatus_PoolDegraded(t *testing.T) {
 	}
 	if rs.Status != "degraded" {
 		t.Errorf("expected degraded, got %s", rs.Status)
+	}
+}
+
+func TestHandler_HandleLocalStatus_CacheDegraded(t *testing.T) {
+	h := NewHandler(
+		&mockHealthChecker{},
+		&mockPoolStats{acquired: 2, max: 20},
+		"in",
+		&mockStatusRecorder{},
+		&mockCacheHealth{listening: false, rulesetCount: 0},
+		&mockSSEHealth{},
+	)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
+
+	h.HandleLocalStatus(w, r)
+
+	var rs RegionStatus
+	if err := json.NewDecoder(w.Body).Decode(&rs); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if rs.Status != "degraded" {
+		t.Errorf("expected degraded, got %s", rs.Status)
+	}
+
+	var cacheSvc *ServiceStatus
+	for i := range rs.Services {
+		if rs.Services[i].Name == "Cache" {
+			cacheSvc = &rs.Services[i]
+			break
+		}
+	}
+	if cacheSvc == nil {
+		t.Fatal("Cache service not found")
+	}
+	if cacheSvc.Status != "degraded" {
+		t.Errorf("expected Cache degraded, got %s", cacheSvc.Status)
+	}
+	if cacheSvc.Message != "PG LISTEN inactive" {
+		t.Errorf("unexpected cache message: %s", cacheSvc.Message)
+	}
+}
+
+func TestHandler_HandleLocalStatus_FlagEvalEngine(t *testing.T) {
+	h := newTestHandler(&mockHealthChecker{}, &mockPoolStats{acquired: 2, max: 20}, nil)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
+
+	h.HandleLocalStatus(w, r)
+
+	var rs RegionStatus
+	if err := json.NewDecoder(w.Body).Decode(&rs); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	var evalSvc *ServiceStatus
+	for i := range rs.Services {
+		if rs.Services[i].Name == "Flag Evaluation Engine" {
+			evalSvc = &rs.Services[i]
+			break
+		}
+	}
+	if evalSvc == nil {
+		t.Fatal("Flag Evaluation Engine service not found")
+	}
+	if evalSvc.Status != "operational" {
+		t.Errorf("expected operational, got %s", evalSvc.Status)
+	}
+}
+
+func TestHandler_HandleLocalStatus_SSEStreaming(t *testing.T) {
+	h := NewHandler(
+		&mockHealthChecker{},
+		&mockPoolStats{acquired: 2, max: 20},
+		"in",
+		&mockStatusRecorder{},
+		&mockCacheHealth{listening: true},
+		&mockSSEHealth{totalClients: 42},
+	)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
+
+	h.HandleLocalStatus(w, r)
+
+	var rs RegionStatus
+	if err := json.NewDecoder(w.Body).Decode(&rs); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	var sseSvc *ServiceStatus
+	for i := range rs.Services {
+		if rs.Services[i].Name == "Real-time Streaming" {
+			sseSvc = &rs.Services[i]
+			break
+		}
+	}
+	if sseSvc == nil {
+		t.Fatal("Real-time Streaming service not found")
+	}
+	if sseSvc.Status != "operational" {
+		t.Errorf("expected operational, got %s", sseSvc.Status)
+	}
+	if sseSvc.Message != "42 SDK clients connected" {
+		t.Errorf("unexpected SSE message: %s", sseSvc.Message)
+	}
+}
+
+func TestHandler_HandleLocalStatus_NilOptionals(t *testing.T) {
+	h := NewHandler(
+		&mockHealthChecker{},
+		nil,
+		"in",
+		&mockStatusRecorder{},
+		nil,
+		nil,
+	)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
+
+	h.HandleLocalStatus(w, r)
+
+	var rs RegionStatus
+	if err := json.NewDecoder(w.Body).Decode(&rs); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if rs.Status != "operational" {
+		t.Errorf("expected operational, got %s", rs.Status)
+	}
+	// API Server + Database + Flag Evaluation Engine = 3 (pool, cache, SSE are nil)
+	if len(rs.Services) != 3 {
+		t.Errorf("expected 3 services with nil optionals, got %d", len(rs.Services))
 	}
 }
 
@@ -139,7 +298,7 @@ func TestHandler_HandleGlobalStatus(t *testing.T) {
 
 	hasLocal := false
 	for _, r := range gs.Regions {
-		if r.Region == "us" {
+		if r.Region == "in" {
 			hasLocal = true
 			if r.Status != "operational" {
 				t.Errorf("local region should be operational, got %s", r.Status)
@@ -166,7 +325,7 @@ func TestHandler_HandleStatusHistory(t *testing.T) {
 			name:  "default 90 days",
 			query: "",
 			history: []domain.DailyComponentStatus{
-				{Date: "2026-04-07", Region: "us", Component: "API Server", UptimePct: 100, TotalChecks: 288, OperationalChecks: 288},
+				{Date: "2026-04-07", Region: "in", Component: "API Server", UptimePct: 100, TotalChecks: 288, OperationalChecks: 288},
 			},
 			wantStatus: http.StatusOK,
 			wantLen:    1,
@@ -252,7 +411,7 @@ func TestHandler_CheckAllRegions(t *testing.T) {
 
 	hasLocal := false
 	for _, r := range gs.Regions {
-		if r.Region == "us" {
+		if r.Region == "in" {
 			hasLocal = true
 			if r.Status != "operational" {
 				t.Errorf("local region should be operational, got %s", r.Status)
@@ -260,7 +419,7 @@ func TestHandler_CheckAllRegions(t *testing.T) {
 		}
 	}
 	if !hasLocal {
-		t.Error("local region 'us' not found")
+		t.Error("local region 'in' not found")
 	}
 
 	if gs.CheckedAt.IsZero() {
