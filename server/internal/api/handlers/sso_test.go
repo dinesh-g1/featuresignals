@@ -313,7 +313,7 @@ func TestAuthHandler_Login_SSOEnforced_BlocksNonOwner(t *testing.T) {
 		OrgID: "org-sso", Enabled: true, Enforce: true, ProviderType: domain.SSOProviderOIDC,
 	}
 
-	h := NewAuthHandler(store, &mockJWTForSSO{}, nil, "", "")
+	h := NewAuthHandler(store, &mockJWTForSSO{}, nil, "", "", nil)
 
 	body := `{"email":"dev@test.com","password":"Test1234!"}`
 	r := httptest.NewRequest("POST", "/v1/auth/login", bytes.NewReader([]byte(body)))
@@ -344,7 +344,7 @@ func TestAuthHandler_Login_SSOEnforced_AllowsOwner(t *testing.T) {
 		OrgID: "org-sso2", Enabled: true, Enforce: true, ProviderType: domain.SSOProviderOIDC,
 	}
 
-	h := NewAuthHandler(store, &mockJWTForSSO{}, nil, "", "")
+	h := NewAuthHandler(store, &mockJWTForSSO{}, nil, "", "", nil)
 
 	body := `{"email":"owner@test.com","password":"Test1234!"}`
 	r := httptest.NewRequest("POST", "/v1/auth/login", bytes.NewReader([]byte(body)))
@@ -375,7 +375,7 @@ func TestAuthHandler_Login_SSONotEnforced_AllowsPassword(t *testing.T) {
 		OrgID: "org-noenforce", Enabled: true, Enforce: false, ProviderType: domain.SSOProviderOIDC,
 	}
 
-	h := NewAuthHandler(store, &mockJWTForSSO{}, nil, "", "")
+	h := NewAuthHandler(store, &mockJWTForSSO{}, nil, "", "", nil)
 
 	body := `{"email":"dev2@test.com","password":"Test1234!"}`
 	r := httptest.NewRequest("POST", "/v1/auth/login", bytes.NewReader([]byte(body)))

@@ -40,20 +40,22 @@ type authStore interface {
 }
 
 type AuthHandler struct {
-	store        authStore
-	jwtMgr       auth.TokenManager
-	emailSender  email.VerificationSender
-	appBaseURL   string
-	dashboardURL string
+	store           authStore
+	jwtMgr          auth.TokenManager
+	emailSender     email.VerificationSender
+	internalChecker dto.InternalChecker
+	appBaseURL      string
+	dashboardURL    string
 }
 
-func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, emailSender email.VerificationSender, appBaseURL, dashboardURL string) *AuthHandler {
+func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, emailSender email.VerificationSender, appBaseURL, dashboardURL string, internalChecker dto.InternalChecker) *AuthHandler {
 	return &AuthHandler{
-		store:        store,
-		jwtMgr:       jwtMgr,
-		emailSender:  emailSender,
-		appBaseURL:   appBaseURL,
-		dashboardURL: dashboardURL,
+		store:           store,
+		jwtMgr:          jwtMgr,
+		emailSender:     emailSender,
+		internalChecker: internalChecker,
+		appBaseURL:      appBaseURL,
+		dashboardURL:    dashboardURL,
 	}
 }
 
@@ -114,8 +116,8 @@ func generateOTP() (string, error) {
 	return otp, nil
 }
 
-func sanitizeUser(u *domain.User) *dto.SafeUserResponse {
-	return dto.SafeUserFromDomain(u)
+func (h *AuthHandler) sanitizeUser(u *domain.User) *dto.SafeUserResponse {
+	return dto.SafeUserFromDomain(u, h.internalChecker)
 }
 
 func generateEmailToken() (string, error) {
@@ -220,7 +222,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 
 	httputil.JSON(w, http.StatusCreated, dto.LoginResponse{
-		User:                sanitizeUser(user),
+		User:                h.sanitizeUser(user),
 		Organization:        dto.OrganizationFromDomain(org),
 		Tokens:              dto.AuthTokensFromPair(tokens),
 		OnboardingCompleted: false,
@@ -317,7 +319,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	onboardingCompleted := onboardingState != nil && onboardingState.Completed
 
 	httputil.JSON(w, http.StatusOK, dto.LoginResponse{
-		User:                sanitizeUser(user),
+		User:                h.sanitizeUser(user),
 		Organization:        dto.OrganizationFromDomain(org),
 		Tokens:              dto.AuthTokensFromPair(tokens),
 		OnboardingCompleted: onboardingCompleted,
@@ -389,7 +391,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		resp.Organization = dto.OrganizationFromDomain(org)
 	}
 	if user, userErr := h.store.GetUserByID(r.Context(), claims.UserID); userErr == nil && user != nil {
-		resp.User = sanitizeUser(user)
+		resp.User = h.sanitizeUser(user)
 	}
 	onboardingState, _ := h.store.GetOnboardingState(r.Context(), claims.OrgID)
 	resp.OnboardingCompleted = onboardingState != nil && onboardingState.Completed
@@ -512,7 +514,7 @@ func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 		Tokens: dto.AuthTokensFromPair(tokens),
 	}
 	if user != nil {
-		resp.User = sanitizeUser(user)
+		resp.User = h.sanitizeUser(user)
 	}
 	httputil.JSON(w, http.StatusOK, resp)
 }

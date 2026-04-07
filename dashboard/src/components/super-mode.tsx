@@ -1,3 +1,26 @@
+/**
+ * Super Mode -- Internal developer tools panel.
+ *
+ * **Activation** is server-controlled via environment variables on the API server.
+ * No database changes needed — the server injects `tier: "internal"` in the login
+ * response for matching users. This is invisible and inaccessible to all other users.
+ *
+ * Set one or both env vars on the server:
+ *   SUPER_MODE_DOMAIN=featuresignals.com    (all @featuresignals.com emails get access)
+ *   SUPER_MODE_EMAILS=dev@gmail.com,qa@corp.co  (explicit allowlist for non-domain emails)
+ *
+ * After setting the env var and restarting the server, log out and back in.
+ * A purple bug icon appears at the bottom-left of the dashboard.
+ *
+ * **Features:**
+ * - Plan Simulation: Switch between free/trial/pro/enterprise to test gating, nudges, billing UI.
+ * - Feature Gate Overrides: Force-enable Pro/Enterprise features (approvals, SSO, etc.).
+ * - A/B Experiments: Override variant assignments for dashboard experiments.
+ * - Reset Onboarding: Re-test the first-time user flow via POST /v1/internal/reset-onboarding.
+ *
+ * All overrides are stored in `sessionStorage` and do not affect other users or the database.
+ * The panel is invisible when `user.tier !== "internal"` (returns null).
+ */
 "use client";
 
 import { useState, useEffect } from "react";

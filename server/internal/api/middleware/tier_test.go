@@ -305,6 +305,12 @@ func (s *tierMockStore) GetDismissedHints(context.Context, string) ([]string, er
 func (s *tierMockStore) SetTourCompleted(context.Context, string) error { return nil }
 
 func (s *tierMockStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }
+func (s *tierMockStore) InsertStatusChecks(_ context.Context, _ []domain.StatusCheck) error {
+	return nil
+}
+func (s *tierMockStore) GetComponentHistory(_ context.Context, _ int) ([]domain.DailyComponentStatus, error) {
+	return nil, nil
+}
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)

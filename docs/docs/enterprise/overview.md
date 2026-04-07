@@ -24,7 +24,7 @@ FeatureSignals is built to scale with your organization — from a single team t
 ## Deployment Options
 
 ### Cloud (Managed)
-FeatureSignals manages infrastructure, scaling, backups, and updates. Available in US, EU, and IN regions. [Contact sales →](https://app.featuresignals.com/contact)
+FeatureSignals manages infrastructure, scaling, backups, and updates. Available in US, EU, and IN regions. [Contact sales →](https://featuresignals.com/contact)
 
 ### Self-Hosted
 Run FeatureSignals on your own infrastructure using Docker, Kubernetes, or bare metal. Ideal for regulated industries (healthcare, finance, government) where data must stay within your perimeter.
@@ -52,7 +52,7 @@ See the [compliance documentation](/compliance/security-overview) for details, i
 
 ## Getting Started
 
-1. [Contact sales](https://app.featuresignals.com/contact) to discuss your requirements
+1. [Contact sales](https://featuresignals.com/contact) to discuss your requirements
 2. Start a proof-of-concept with our [quickstart guide](/getting-started/quickstart)
 3. Review the [architecture overview](/architecture/overview) for integration planning
 4. Set up [SSO](/api-reference/sso) and [RBAC](/advanced/rbac) for your team

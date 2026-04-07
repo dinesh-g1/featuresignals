@@ -81,6 +81,12 @@ type Config struct {
 	// Audit log retention in days (default 90, configurable for enterprise/self-hosted)
 	AuditRetentionDays int
 
+	// Super Mode: server-controlled internal developer access.
+	// SUPER_MODE_DOMAIN matches any user with this email domain (e.g., "featuresignals.com").
+	// SUPER_MODE_EMAILS is a comma-separated allowlist of specific emails.
+	SuperModeDomain string
+	SuperModeEmails []string
+
 	// OpenTelemetry / SigNoz observability
 	OTELEnabled        bool
 	OTELEndpoint       string
@@ -139,6 +145,9 @@ func Load() *Config {
 
 		AuditRetentionDays: getEnvInt("AUDIT_RETENTION_DAYS", 90),
 
+		SuperModeDomain: strings.ToLower(strings.TrimSpace(os.Getenv("SUPER_MODE_DOMAIN"))),
+		SuperModeEmails: parseSuperModeEmails(os.Getenv("SUPER_MODE_EMAILS")),
+
 		OTELEnabled:        getEnvBool("OTEL_ENABLED", false),
 		OTELEndpoint:       getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
 		OTELIngestionKey:   os.Getenv("OTEL_INGESTION_KEY"),
@@ -187,4 +196,34 @@ func getEnvInt(key string, fallback int) int {
 		}
 	}
 	return fallback
+}
+
+// IsInternalUser checks if an email matches the super mode domain or explicit allowlist.
+func (c *Config) IsInternalUser(email string) bool {
+	email = strings.ToLower(strings.TrimSpace(email))
+	if email == "" {
+		return false
+	}
+	if c.SuperModeDomain != "" {
+		parts := strings.SplitN(email, "@", 2)
+		if len(parts) == 2 && parts[1] == c.SuperModeDomain {
+			return true
+		}
+	}
+	for _, allowed := range c.SuperModeEmails {
+		if allowed == email {
+			return true
+		}
+	}
+	return false
+}
+
+func parseSuperModeEmails(raw string) []string {
+	var emails []string
+	for _, e := range strings.Split(raw, ",") {
+		if trimmed := strings.ToLower(strings.TrimSpace(e)); trimmed != "" {
+			emails = append(emails, trimmed)
+		}
+	}
+	return emails
 }

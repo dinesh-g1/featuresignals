@@ -203,7 +203,7 @@ func main() {
 
 	// Status handler (public, multi-region health aggregation)
 	poolAdapter := status.NewPgxPoolAdapter(pool)
-	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion)
+	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion, store)
 
 	// Payment gateway registry (Strategy pattern)
 	paymentRegistry := payment.NewRegistry()
@@ -256,6 +256,11 @@ func main() {
 	defer lifecycleSchedCancel()
 	go lifecycleSched.Run(lifecycleSchedCtx)
 
+	// Status recorder (records health checks every 5 minutes for uptime history)
+	statusRecorderCtx, statusRecorderCancel := context.WithCancel(context.Background())
+	defer statusRecorderCancel()
+	go runStatusRecorder(statusRecorderCtx, store, statusH, logger)
+
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	regionsEnabled := !cfg.IsOnPrem()
@@ -264,7 +269,7 @@ func main() {
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg)
 
 	// Server
 	srv := &http.Server{
@@ -307,6 +312,65 @@ func main() {
 	}
 
 	logger.Info("server stopped")
+}
+
+// runStatusRecorder periodically records health checks for uptime history.
+// It checks all regions every 5 minutes and persists per-component status,
+// then prunes records older than 91 days to bound table growth.
+func runStatusRecorder(ctx context.Context, store domain.StatusRecorder, statusH *status.Handler, logger *slog.Logger) {
+	const interval = 5 * time.Minute
+	const retentionDays = 91
+
+	logger.Info("status recorder started", "interval", interval.String(), "retention_days", retentionDays)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	record := func() {
+		start := time.Now()
+		checkCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		gs := statusH.CheckAllRegions(checkCtx)
+		now := time.Now().UTC()
+
+		var checks []domain.StatusCheck
+		for _, region := range gs.Regions {
+			for _, svc := range region.Services {
+				checks = append(checks, domain.StatusCheck{
+					Region:    region.Region,
+					Component: svc.Name,
+					Status:    svc.Status,
+					LatencyMs: int(svc.Latency),
+					Message:   svc.Message,
+					CheckedAt: now,
+				})
+			}
+		}
+
+		if err := store.InsertStatusChecks(checkCtx, checks); err != nil {
+			logger.Error("status recorder: failed to insert checks", "error", err, "check_count", len(checks))
+			return
+		}
+
+		logger.Info("status recorder: checks recorded",
+			"check_count", len(checks),
+			"regions", len(gs.Regions),
+			"duration_ms", time.Since(start).Milliseconds(),
+		)
+	}
+
+	record()
+
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("status recorder stopped")
+			return
+		case <-ticker.C:
+			record()
+		}
+	}
 }
 
 // multiHandler fans out slog records to multiple handlers (stdout + OTEL).

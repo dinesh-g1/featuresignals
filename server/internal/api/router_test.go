@@ -19,6 +19,7 @@ import (
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/sse"
+	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
 )
 
@@ -309,10 +310,23 @@ func (noopStore) GetDismissedHints(context.Context, string) ([]string, error) {
 func (noopStore) SetTourCompleted(context.Context, string) error { return nil }
 
 func (noopStore) InsertFeedback(context.Context, *domain.Feedback) error { return nil }
+func (noopStore) InsertStatusChecks(context.Context, []domain.StatusCheck) error { return nil }
+func (noopStore) GetComponentHistory(context.Context, int) ([]domain.DailyComponentStatus, error) {
+	return nil, nil
+}
 
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }
+
+type noopHealthChecker struct{}
+
+func (noopHealthChecker) Ping(context.Context) error { return nil }
+
+type noopPoolStats struct{}
+
+func (noopPoolStats) AcquiredConns() int32 { return 0 }
+func (noopPoolStats) MaxConns() int32      { return 10 }
 
 // ── test helpers ────────────────────────────────────────────────────────────
 
@@ -327,6 +341,8 @@ func newTestRouter(t *testing.T) http.Handler {
 	sseServer := sse.NewServer(logger)
 	metricsCollector := metrics.NewCollector()
 
+	statusH := status.NewHandler(noopHealthChecker{}, noopPoolStats{}, "us", store)
+
 	return api.NewRouter(
 		store,
 		jwtMgr,
@@ -340,10 +356,11 @@ func newTestRouter(t *testing.T) http.Handler {
 		noopOTPEmail{},
 		"http://localhost:8080",
 		"http://localhost:3000",
-		nil,
+		statusH,
 		"cloud",
 		false,
 		true,
+		nil,
 		nil,
 		nil,
 	)
@@ -572,5 +589,27 @@ func TestPricingEndpoint_IsPublic(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Errorf("GET /v1/pricing: expected 200, got %d", w.Code)
+	}
+}
+
+func TestStatusHistoryEndpoint_IsPublic(t *testing.T) {
+	router := newTestRouter(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/status/history", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("GET /v1/status/history: expected 200, got %d", w.Code)
+	}
+
+	ct := w.Header().Get("Content-Type")
+	if ct != "application/json" {
+		t.Errorf("Content-Type: expected application/json, got %q", ct)
+	}
+
+	cc := w.Header().Get("Cache-Control")
+	if cc != "public, max-age=300" {
+		t.Errorf("Cache-Control: expected %q, got %q", "public, max-age=300", cc)
 	}
 }
