@@ -198,9 +198,9 @@ function SidebarContent() {
           <button
             onClick={logout}
             className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-all duration-150 hover:bg-slate-100 hover:text-slate-600"
-            title="Sign out"
+            aria-label="Sign out"
           >
-            <LogOut className="h-4 w-4" strokeWidth={1.5} />
+            <LogOut className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -226,7 +226,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {isOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm animate-fade-in" onClick={close} aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm animate-fade-in" onClick={close} role="presentation" />
           <aside className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col bg-white shadow-2xl animate-slide-in-left">
             <SidebarContent />
           </aside>

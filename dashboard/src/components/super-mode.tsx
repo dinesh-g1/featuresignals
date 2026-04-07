@@ -74,9 +74,9 @@ export function SuperMode() {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-16 left-4 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-all hover:bg-purple-700 sm:bottom-6"
-        title="Super Mode (Internal)"
+        aria-label="Open Super Mode (Internal)"
       >
-        <Bug className="h-3.5 w-3.5" />
+        <Bug className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     );
   }
@@ -89,11 +89,11 @@ export function SuperMode() {
           <span className="text-xs font-semibold text-purple-800">Super Mode</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setMinimized(!minimized)} className="p-0.5 text-purple-400 hover:text-purple-600">
-            {minimized ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          <button onClick={() => setMinimized(!minimized)} className="p-0.5 text-purple-400 hover:text-purple-600" aria-label={minimized ? "Expand panel" : "Minimize panel"}>
+            {minimized ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}
           </button>
-          <button onClick={() => setOpen(false)} className="p-0.5 text-purple-400 hover:text-purple-600">
-            <X className="h-3.5 w-3.5" />
+          <button onClick={() => setOpen(false)} className="p-0.5 text-purple-400 hover:text-purple-600" aria-label="Close Super Mode">
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>

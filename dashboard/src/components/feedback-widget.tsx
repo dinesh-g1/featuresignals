@@ -89,16 +89,20 @@ export function FeedbackWidget() {
                   key={s.value}
                   type="button"
                   onClick={() => setSentiment(s.value)}
+                  aria-label={s.value}
+                  aria-pressed={sentiment === s.value}
                   className={`rounded-md p-1.5 transition-colors ${
                     sentiment === s.value ? s.activeColor : "text-slate-400 hover:bg-slate-100"
                   }`}
                 >
-                  <s.Icon className="h-4 w-4" />
+                  <s.Icon className="h-4 w-4" aria-hidden="true" />
                 </button>
               ))}
             </div>
 
+            <label htmlFor="feedback-message" className="sr-only">Feedback message</label>
             <textarea
+              id="feedback-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={
