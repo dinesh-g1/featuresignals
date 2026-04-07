@@ -102,23 +102,27 @@ jobs:
 
       - name: npm audit (dashboard)
         working-directory: dashboard
-        run: npm install && npm audit --audit-level=high || true
+        run: npm install && npm audit --audit-level=high
 
       - name: npm audit (docs)
         working-directory: docs
-        run: npm install && npm audit --audit-level=high || true
+        run: npm install && npm audit --audit-level=high
+
+      - name: npm audit (website)
+        working-directory: website
+        run: npm install && npm audit --audit-level=high
 
       - name: npm audit (Node SDK)
         working-directory: sdks/node
-        run: npm install && npm audit --audit-level=high || true
+        run: npm install && npm audit --audit-level=high
 
       - name: npm audit (React SDK)
         working-directory: sdks/react
-        run: npm install && npm audit --audit-level=high || true
+        run: npm install && npm audit --audit-level=high
 
       - name: npm audit (Vue SDK)
         working-directory: sdks/vue
-        run: npm install && npm audit --audit-level=high || true
+        run: npm install && npm audit --audit-level=high
 
   go-sdk-test:
     name: Go SDK Tests
