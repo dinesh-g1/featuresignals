@@ -1368,3 +1368,5 @@ func (m *mockStore) GetDismissedHints(_ context.Context, _ string) ([]string, er
 	return nil, nil
 }
 func (m *mockStore) SetTourCompleted(_ context.Context, _ string) error { return nil }
+
+func (m *mockStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }

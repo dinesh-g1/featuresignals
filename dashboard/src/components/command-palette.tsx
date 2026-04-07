@@ -10,8 +10,9 @@ interface PaletteItem {
   id: string;
   label: string;
   description?: string;
-  category: "flag" | "segment" | "navigation";
+  category: "flag" | "segment" | "navigation" | "create" | "help" | "docs";
   href: string;
+  external?: boolean;
 }
 
 const NAV_ITEMS: PaletteItem[] = [
@@ -31,20 +32,64 @@ const NAV_ITEMS: PaletteItem[] = [
   { id: "nav-api-keys", label: "API Keys", category: "navigation", href: "/settings/api-keys" },
   { id: "nav-webhooks", label: "Webhooks", category: "navigation", href: "/settings/webhooks" },
   { id: "nav-billing", label: "Billing", category: "navigation", href: "/settings/billing" },
+  { id: "nav-notifications", label: "Notifications", category: "navigation", href: "/settings/notifications" },
   { id: "nav-sso", label: "SSO", category: "navigation", href: "/settings/sso" },
+];
+
+const CREATE_ITEMS: PaletteItem[] = [
+  { id: "create-flag", label: "Create Flag", description: "Create a new feature flag", category: "create", href: "/flags?create=true" },
+  { id: "create-segment", label: "Create Segment", description: "Create a new user segment", category: "create", href: "/segments?create=true" },
+  { id: "create-project", label: "Create Project", description: "Set up a new project", category: "create", href: "/onboarding" },
+  { id: "create-api-key", label: "Create API Key", description: "Generate a new API key", category: "create", href: "/settings/api-keys" },
+  { id: "create-webhook", label: "Create Webhook", description: "Set up a new webhook endpoint", category: "create", href: "/settings/webhooks" },
+  { id: "invite-member", label: "Invite Team Member", description: "Add someone to your team", category: "create", href: "/settings/team" },
+];
+
+const HELP_ITEMS: PaletteItem[] = [
+  { id: "help-quickstart", label: "Quickstart Guide", description: "Get up and running in 5 minutes", category: "help", href: "https://docs.featuresignals.com/getting-started/quickstart", external: true },
+  { id: "help-sdks", label: "SDK Documentation", description: "Go, Node, Python, Java, React, Vue...", category: "help", href: "https://docs.featuresignals.com/sdks", external: true },
+  { id: "help-api", label: "API Reference", description: "Full REST API documentation", category: "help", href: "https://docs.featuresignals.com/api", external: true },
+  { id: "help-targeting", label: "Targeting Rules", description: "How to target users with flag rules", category: "help", href: "https://docs.featuresignals.com/concepts/targeting-rules", external: true },
+  { id: "help-segments", label: "Segments Guide", description: "Create reusable user segments", category: "help", href: "https://docs.featuresignals.com/concepts/segments", external: true },
+  { id: "help-experiments", label: "A/B Experiments", description: "Set up A/B tests with variants", category: "help", href: "https://docs.featuresignals.com/concepts/ab-experimentation", external: true },
+  { id: "help-approvals", label: "Approval Workflows", description: "Require reviews for production changes", category: "help", href: "https://docs.featuresignals.com/concepts/approval-workflows", external: true },
+  { id: "help-webhooks", label: "Webhooks Guide", description: "Set up event notifications", category: "help", href: "https://docs.featuresignals.com/concepts/webhooks", external: true },
+  { id: "help-rbac", label: "Roles & Permissions", description: "RBAC with environment-level control", category: "help", href: "https://docs.featuresignals.com/concepts/rbac", external: true },
+  { id: "help-deploy", label: "Deployment Guide", description: "Docker, Kubernetes, self-hosted setup", category: "help", href: "https://docs.featuresignals.com/deployment", external: true },
+  { id: "help-support", label: "Contact Support", description: "Email support@featuresignals.com", category: "help", href: "mailto:support@featuresignals.com", external: true },
+];
+
+const DOCS_ITEMS: PaletteItem[] = [
+  { id: "docs-flags", label: "Feature Flags", description: "Concepts: types, lifecycle, categories", category: "docs", href: "https://docs.featuresignals.com/concepts/feature-flags", external: true },
+  { id: "docs-environments", label: "Environments", description: "Dev, staging, production setup", category: "docs", href: "https://docs.featuresignals.com/concepts/environments", external: true },
+  { id: "docs-eval-engine", label: "Evaluation Engine", description: "How flag evaluation works", category: "docs", href: "https://docs.featuresignals.com/concepts/evaluation-engine", external: true },
+  { id: "docs-openfeature", label: "OpenFeature", description: "Vendor-neutral flag evaluation", category: "docs", href: "https://docs.featuresignals.com/concepts/openfeature", external: true },
+  { id: "docs-relay-proxy", label: "Relay Proxy", description: "Edge caching for low latency", category: "docs", href: "https://docs.featuresignals.com/concepts/relay-proxy", external: true },
 ];
 
 const categoryLabels: Record<string, string> = {
   navigation: "Go to",
   flag: "Flags",
   segment: "Segments",
+  create: "Create",
+  help: "Help & Docs",
+  docs: "Documentation",
 };
 
 const categoryIcons: Record<string, string> = {
   navigation: "\u2192",
   flag: "\u2691",
   segment: "\u25A8",
+  create: "+",
+  help: "?",
+  docs: "\u2139",
 };
+
+function getPlaceholder(query: string): string {
+  if (query.startsWith("help:")) return "Search documentation and guides...";
+  if (query.startsWith("create:")) return "What do you want to create?";
+  return "Search flags, segments, or type help: / create: ...";
+}
 
 export function CommandPalette() {
   const router = useRouter();
@@ -107,13 +152,37 @@ export function CommandPalette() {
     }
   }, [open, loadItems]);
 
-  const filtered = items.filter(
-    (item) =>
-      item.label.toLowerCase().includes(query.toLowerCase()) ||
-      item.description?.toLowerCase().includes(query.toLowerCase()),
-  );
+  let searchQuery = query;
+  let filteredItems: PaletteItem[] = [];
 
-  const grouped = filtered.reduce<Record<string, PaletteItem[]>>((acc, item) => {
+  if (query.startsWith("help:")) {
+    searchQuery = query.slice(5).trim();
+    filteredItems = [...HELP_ITEMS, ...DOCS_ITEMS].filter(
+      (item) =>
+        !searchQuery ||
+        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  } else if (query.startsWith("create:")) {
+    searchQuery = query.slice(7).trim();
+    filteredItems = CREATE_ITEMS.filter(
+      (item) =>
+        !searchQuery ||
+        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  } else {
+    filteredItems = items.filter(
+      (item) =>
+        item.label.toLowerCase().includes(query.toLowerCase()) ||
+        item.description?.toLowerCase().includes(query.toLowerCase()),
+    );
+    if (!query) {
+      filteredItems = [...CREATE_ITEMS.slice(0, 3), ...filteredItems];
+    }
+  }
+
+  const grouped = filteredItems.reduce<Record<string, PaletteItem[]>>((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
@@ -123,7 +192,11 @@ export function CommandPalette() {
 
   function handleSelect(item: PaletteItem) {
     setOpen(false);
-    router.push(item.href);
+    if (item.external) {
+      window.open(item.href, "_blank", "noopener,noreferrer");
+    } else {
+      router.push(item.href);
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -157,15 +230,36 @@ export function CommandPalette() {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setSelected(0); }}
             onKeyDown={handleKeyDown}
-            placeholder="Search flags, segments, or navigate..."
+            placeholder={getPlaceholder(query)}
             className="flex-1 border-0 bg-transparent px-3 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
           />
           <kbd className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">ESC</kbd>
         </div>
 
+        {/* Prefix hints */}
+        {!query && (
+          <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2">
+            <button
+              onClick={() => { setQuery("create:"); inputRef.current?.focus(); }}
+              className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+            >
+              create:
+            </button>
+            <button
+              onClick={() => { setQuery("help:"); inputRef.current?.focus(); }}
+              className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              help:
+            </button>
+            <span className="text-[10px] text-slate-400">Type a prefix to filter</span>
+          </div>
+        )}
+
         <div className="max-h-80 overflow-y-auto p-2">
           {flatFiltered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-slate-400">No results found.</div>
+            <div className="px-4 py-8 text-center text-sm text-slate-400">
+              {query.startsWith("help:") ? "No matching docs found." : "No results found."}
+            </div>
           ) : (
             Object.entries(grouped).map(([category, categoryItems]) => (
               <div key={category} className="mb-1">
@@ -192,6 +286,9 @@ export function CommandPalette() {
                           <p className="text-xs text-slate-400 truncate">{item.description}</p>
                         )}
                       </div>
+                      {item.external && (
+                        <span className="shrink-0 text-[10px] text-slate-400">\u2197</span>
+                      )}
                       {selected === idx && (
                         <kbd className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
                           &crarr;

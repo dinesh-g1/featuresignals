@@ -50,6 +50,18 @@ type EventContext struct {
 	Referrer  string `json:"referrer,omitempty"`
 }
 
+// Feedback captures in-product user feedback (bug reports, feature requests,
+// general comments) along with sentiment and the page context.
+type Feedback struct {
+	ID        string `json:"id" db:"id"`
+	UserID    string `json:"user_id" db:"user_id"`
+	OrgID     string `json:"org_id" db:"org_id"`
+	Type      string `json:"type" db:"type"`
+	Sentiment string `json:"sentiment" db:"sentiment"`
+	Message   string `json:"message" db:"message"`
+	Page      string `json:"page" db:"page"`
+}
+
 // EventEmitter is the port for recording product events. Implementations
 // must be safe for concurrent use and must never block the caller —
 // event emission is fire-and-forget from the business logic perspective.
