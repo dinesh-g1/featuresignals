@@ -39,9 +39,9 @@ import type {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 const REGION_API_ENDPOINTS: Record<string, string> = {
-  us: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+  in: API_URL,
+  us: process.env.NEXT_PUBLIC_API_URL_US || "https://api.us.featuresignals.com",
   eu: process.env.NEXT_PUBLIC_API_URL_EU || "https://api.eu.featuresignals.com",
-  in: process.env.NEXT_PUBLIC_API_URL_IN || "https://api.in.featuresignals.com",
 };
 
 function getApiUrl(): string {

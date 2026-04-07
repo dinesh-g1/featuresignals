@@ -93,8 +93,8 @@ services:
       args:
         NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
         NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
+        NEXT_PUBLIC_API_URL_US: ${NEXT_PUBLIC_API_URL_US:-https://api.us.featuresignals.com}
         NEXT_PUBLIC_API_URL_EU: ${NEXT_PUBLIC_API_URL_EU:-https://api.eu.featuresignals.com}
-        NEXT_PUBLIC_API_URL_IN: ${NEXT_PUBLIC_API_URL_IN:-https://api.in.featuresignals.com}
     restart: unless-stopped
     depends_on:
       - server

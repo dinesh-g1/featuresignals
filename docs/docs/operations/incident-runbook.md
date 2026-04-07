@@ -94,7 +94,7 @@ $COMPOSE logs --tail=100 caddy server postgres
 
 1. **DNS / traffic steering:** At your DNS or CDN (e.g. geo records or health-checked failover), point the failing region’s hostnames to a healthy region’s edge **only if** that region can legally and technically serve those users (latency, data residency, org `data_region` — see product policy). Otherwise keep DNS as-is and restore the region.
 2. **Temporary redirect (example):** Lower TTL on affected names (e.g. `api.eu.…`) ahead of changes; swap A/AAAA to a standby IP or to US edge if approved.
-3. **Dashboard multi-region URLs:** `NEXT_PUBLIC_API_URL_EU` / `NEXT_PUBLIC_API_URL_IN` must match live API endpoints after any DNS change; redeploy dashboard if those envs change at build time.
+3. **Dashboard multi-region URLs:** `NEXT_PUBLIC_API_URL_US` / `NEXT_PUBLIC_API_URL_EU` must match live API endpoints after any DNS change; redeploy dashboard if those envs change at build time. India (primary) uses the base `NEXT_PUBLIC_API_URL`.
 
 **Bring region back**
 
