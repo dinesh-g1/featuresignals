@@ -10,7 +10,7 @@ import (
 
 func newTestSalesHandler() (*SalesHandler, *mockStore) {
 	store := newMockStore()
-	return NewSalesHandler(store), store
+	return NewSalesHandler(store, nil, ""), store
 }
 
 func TestSalesHandler_SubmitInquiry_Success(t *testing.T) {

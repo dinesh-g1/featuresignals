@@ -30,7 +30,7 @@ func ValidRegion(code string) bool {
 	return ok
 }
 
-// RegionCodes returns a sorted list of supported region codes.
+// RegionCodes returns the list of supported region codes, primary region first.
 func RegionCodes() []string {
-	return []string{RegionUS, RegionEU, RegionIN}
+	return []string{RegionIN, RegionUS, RegionEU}
 }

@@ -81,6 +81,9 @@ type Config struct {
 	// Audit log retention in days (default 90, configurable for enterprise/self-hosted)
 	AuditRetentionDays int
 
+	// Sales inquiry notification email (where contact form submissions are sent).
+	SalesNotifyEmail string
+
 	// Super Mode: server-controlled internal developer access.
 	// SUPER_MODE_DOMAIN matches any user with this email domain (e.g., "featuresignals.com").
 	// SUPER_MODE_EMAILS is a comma-separated allowlist of specific emails.
@@ -144,6 +147,8 @@ func Load() *Config {
 		LicensePublicKey: getEnv("LICENSE_PUBLIC_KEY_PATH", ""),
 
 		AuditRetentionDays: getEnvInt("AUDIT_RETENTION_DAYS", 90),
+
+		SalesNotifyEmail: getEnv("SALES_NOTIFY_EMAIL", "dineshreddy@featuresignals.com"),
 
 		SuperModeDomain: strings.ToLower(strings.TrimSpace(os.Getenv("SUPER_MODE_DOMAIN"))),
 		SuperModeEmails: parseSuperModeEmails(os.Getenv("SUPER_MODE_EMAILS")),

@@ -1,18 +1,27 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-type SalesHandler struct {
-	store domain.SalesStore
+// SalesNotifier sends a single notification email (ISP — narrower than domain.Mailer).
+type SalesNotifier interface {
+	Send(ctx context.Context, msg domain.EmailMessage) error
 }
 
-func NewSalesHandler(store domain.SalesStore) *SalesHandler {
-	return &SalesHandler{store: store}
+type SalesHandler struct {
+	store    domain.SalesStore
+	notifier SalesNotifier
+	notifyTo string
+}
+
+func NewSalesHandler(store domain.SalesStore, notifier SalesNotifier, notifyTo string) *SalesHandler {
+	return &SalesHandler{store: store, notifier: notifier, notifyTo: notifyTo}
 }
 
 type salesInquiryRequest struct {
@@ -65,6 +74,34 @@ func (h *SalesHandler) SubmitInquiry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info("sales inquiry received", "email", req.Email, "company", req.Company)
+
+	if h.notifier != nil && h.notifyTo != "" {
+		teamSize := req.TeamSize
+		if teamSize == "" {
+			teamSize = "Not specified"
+		}
+		msg := req.Message
+		if msg == "" {
+			msg = "(no message)"
+		}
+		go func() {
+			if err := h.notifier.Send(r.Context(), domain.EmailMessage{
+				To:       h.notifyTo,
+				Subject:  fmt.Sprintf("New Sales Inquiry from %s (%s)", req.ContactName, req.Company),
+				Template: domain.TemplateEnterpriseAck,
+				Data: map[string]string{
+					"ContactName": req.ContactName,
+					"Email":       req.Email,
+					"Company":     req.Company,
+					"TeamSize":    teamSize,
+					"Message":     msg,
+				},
+			}); err != nil {
+				log.Error("failed to send sales inquiry notification", "error", err, "to", h.notifyTo)
+			}
+		}()
+	}
+
 	httputil.JSON(w, http.StatusCreated, map[string]string{
 		"message": "Thank you for your interest! Our team will reach out within 24 hours.",
 	})

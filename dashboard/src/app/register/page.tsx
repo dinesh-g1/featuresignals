@@ -137,16 +137,16 @@ function RegisterForm() {
   const setAuth = useAppStore((s) => s.setAuth);
 
   const [step, setStep] = useState<"form" | "otp">("form");
-  const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "", data_region: "us" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "", data_region: "in" });
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
   const regionOptions = [
+    { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}" },
     { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}" },
     { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}" },
-    { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}" },
   ];
 
   useEffect(() => {
