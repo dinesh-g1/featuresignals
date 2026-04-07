@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
@@ -25,6 +27,17 @@ type HealthChecker interface {
 type PoolStats interface {
 	AcquiredConns() int32
 	MaxConns() int32
+}
+
+// CacheHealth reports the health of the in-memory evaluation cache.
+type CacheHealth interface {
+	IsListening() bool
+	RulesetCount() int
+}
+
+// SSEHealth reports the health of the real-time streaming server.
+type SSEHealth interface {
+	TotalClientCount() int
 }
 
 // ServiceStatus represents the health of a single service component.
@@ -58,15 +71,17 @@ type Handler struct {
 	store      domain.StatusRecorder
 	region     string
 	regionName string
+	cache      CacheHealth // optional, nil-safe
+	sse        SSEHealth   // optional, nil-safe
 }
 
 // NewHandler creates a status handler for the current region.
-func NewHandler(db HealthChecker, poolStats PoolStats, region string, store domain.StatusRecorder) *Handler {
+func NewHandler(db HealthChecker, poolStats PoolStats, region string, store domain.StatusRecorder, cache CacheHealth, sse SSEHealth) *Handler {
 	name := region
 	if info, ok := domain.Regions[region]; ok {
 		name = info.Name
 	}
-	return &Handler{db: db, poolStats: poolStats, region: region, regionName: name, store: store}
+	return &Handler{db: db, poolStats: poolStats, region: region, regionName: name, store: store, cache: cache, sse: sse}
 }
 
 // HandleLocalStatus returns the health of the current region's services.
@@ -203,6 +218,43 @@ func (h *Handler) checkLocal(ctx context.Context) RegionStatus {
 			Name:    "Connection Pool",
 			Status:  poolStatus,
 			Message: poolMsg,
+		})
+	}
+
+	// Flag Evaluation Engine: run a synthetic eval to prove the hot path works.
+	evalStart := time.Now()
+	syntheticRuleset := &domain.Ruleset{
+		Flags:    map[string]*domain.Flag{"_health": {Key: "_health", Name: "health", FlagType: "boolean"}},
+		States:   map[string]*domain.FlagState{"_health": {Enabled: true}},
+		Segments: map[string]*domain.Segment{},
+	}
+	eval.NewEngine().Evaluate("_health", domain.EvalContext{}, syntheticRuleset)
+	evalLatency := time.Since(evalStart)
+	services = append(services, ServiceStatus{
+		Name:    "Flag Evaluation Engine",
+		Status:  "operational",
+		Latency: evalLatency.Milliseconds(),
+	})
+
+	if h.cache != nil {
+		cacheStatus := "operational"
+		cacheMsg := fmt.Sprintf("%d environments cached", h.cache.RulesetCount())
+		if !h.cache.IsListening() {
+			cacheStatus = "degraded"
+			cacheMsg = "PG LISTEN inactive"
+		}
+		services = append(services, ServiceStatus{
+			Name:    "Cache",
+			Status:  cacheStatus,
+			Message: cacheMsg,
+		})
+	}
+
+	if h.sse != nil {
+		services = append(services, ServiceStatus{
+			Name:    "Real-time Streaming",
+			Status:  "operational",
+			Message: fmt.Sprintf("%d SDK clients connected", h.sse.TotalClientCount()),
 		})
 	}
 

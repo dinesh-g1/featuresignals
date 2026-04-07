@@ -21,7 +21,7 @@ export function DashboardFooter() {
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
         <div className="flex items-center gap-4">
           <a
-            href="https://status.featuresignals.com"
+            href="https://featuresignals.com/status"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"
@@ -38,7 +38,7 @@ export function DashboardFooter() {
         </div>
         <div className="flex items-center gap-4">
           <a
-            href="https://github.com/featuresignals/featuresignals"
+            href="https://github.com/dinesh-g1/featuresignals"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"

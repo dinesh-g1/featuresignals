@@ -203,7 +203,7 @@ func main() {
 
 	// Status handler (public, multi-region health aggregation)
 	poolAdapter := status.NewPgxPoolAdapter(pool)
-	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion, store)
+	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion, store, evalCache, sseServer)
 
 	// Payment gateway registry (Strategy pattern)
 	paymentRegistry := payment.NewRegistry()

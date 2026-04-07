@@ -40,6 +40,7 @@ type Cache struct {
 	logger          *slog.Logger
 	broadcaster     Broadcaster
 	webhookNotifier WebhookNotifier
+	listening       bool
 }
 
 // NewCache creates an evaluation cache. Pass nil for broadcaster/notifier
@@ -109,9 +110,23 @@ func (c *Cache) LoadRuleset(ctx context.Context, projectID, envID string) (*doma
 	return ruleset, nil
 }
 
+// IsListening reports whether the cache is subscribed to PG NOTIFY for invalidation.
+func (c *Cache) IsListening() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.listening
+}
+
+// RulesetCount returns the number of environments with a cached ruleset.
+func (c *Cache) RulesetCount() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.rulesets)
+}
+
 // StartListening subscribes to PostgreSQL NOTIFY and refreshes cache on flag changes.
 func (c *Cache) StartListening(ctx context.Context) error {
-	return c.store.ListenForChanges(ctx, func(payload string) {
+	err := c.store.ListenForChanges(ctx, func(payload string) {
 		var change struct {
 			FlagID string `json:"flag_id"`
 			EnvID  string `json:"env_id"`
@@ -141,4 +156,10 @@ func (c *Cache) StartListening(ctx context.Context) error {
 			c.webhookNotifier.NotifyFlagChange(change.EnvID, change.FlagID, change.Action)
 		}
 	})
+	if err == nil {
+		c.mu.Lock()
+		c.listening = true
+		c.mu.Unlock()
+	}
+	return err
 }

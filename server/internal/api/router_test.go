@@ -341,7 +341,7 @@ func newTestRouter(t *testing.T) http.Handler {
 	sseServer := sse.NewServer(logger)
 	metricsCollector := metrics.NewCollector()
 
-	statusH := status.NewHandler(noopHealthChecker{}, noopPoolStats{}, "us", store)
+	statusH := status.NewHandler(noopHealthChecker{}, noopPoolStats{}, "us", store, evalCache, sseServer)
 
 	return api.NewRouter(
 		store,

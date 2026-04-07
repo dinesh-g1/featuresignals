@@ -112,6 +112,17 @@ func (s *Server) ClientCount(envID string) int {
 	return len(s.clients[envID])
 }
 
+// TotalClientCount returns the total number of connected SSE clients across all environments.
+func (s *Server) TotalClientCount() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	total := 0
+	for _, clients := range s.clients {
+		total += len(clients)
+	}
+	return total
+}
+
 func (s *Server) addClient(c *Client) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

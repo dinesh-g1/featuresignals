@@ -184,7 +184,10 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-8 border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
-          <p>
+          <p className="font-medium text-slate-500">
+            Proudly built in Bharat, engineered for the world.
+          </p>
+          <p className="mt-2">
             &copy; {new Date().getFullYear()} Vivekananda Technology Labs,
             trading as FeatureSignals. Apache-2.0 License.
           </p>
