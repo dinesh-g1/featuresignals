@@ -40,12 +40,12 @@ variable "ssh_key_id" {
 
 variable "domain_api" {
   type    = string
-  default = "api.in.featuresignals.com"
+  default = "api.featuresignals.com"
 }
 
 variable "domain_app" {
   type    = string
-  default = "app.in.featuresignals.com"
+  default = "app.featuresignals.com"
 }
 
 variable "server_hostname" {

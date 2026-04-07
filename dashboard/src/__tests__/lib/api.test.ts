@@ -74,7 +74,7 @@ describe("api.ts request interceptor", () => {
 
   it("on 401 token_expired: refreshes token and retries original request", async () => {
     const testUser = { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
-    const testOrg = { id: "o1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
+    const testOrg = { id: "o1", name: "Test Org", slug: "test-org", plan: "free", data_region: "in", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
     useAppStore.getState().setAuth("old-token", "valid-refresh", testUser, testOrg, 1000);
 
     fetchMock
@@ -235,7 +235,7 @@ describe("api.ts request interceptor", () => {
 
   it("preserves user and organization in store after refresh", async () => {
     const testUser = { id: "u1", name: "User", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
-    const testOrg = { id: "o1", name: "Org", slug: "org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
+    const testOrg = { id: "o1", name: "Org", slug: "org", plan: "free", data_region: "in", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" };
     useAppStore.getState().setAuth("old-tok", "old-ref", testUser, testOrg, 1000);
 
     fetchMock

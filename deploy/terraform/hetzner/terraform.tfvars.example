@@ -1,10 +1,18 @@
+# IN region (primary — uses base domains)
+# hcloud_token = "your-hetzner-api-token"
+# region       = "in"
+# location     = "fsn1"
+# server_type  = "cpx31"
+# domain_api   = "api.featuresignals.com"
+# domain_app   = "app.featuresignals.com"
+
 # US region
 # hcloud_token = "your-hetzner-api-token"
 # region       = "us"
 # location     = "ash"
 # server_type  = "cpx31"
-# domain_api   = "api.featuresignals.com"
-# domain_app   = "app.featuresignals.com"
+# domain_api   = "api.us.featuresignals.com"
+# domain_app   = "app.us.featuresignals.com"
 
 # EU region
 # hcloud_token = "your-hetzner-api-token"

@@ -25,24 +25,24 @@ jobs:
       matrix:
         region: [us, eu, in]
         include:
-          - region: us
-            host_secret: VPS_HOST_US
+          - region: in
+            host_secret: VPS_HOST_IN
             domain_api: api.featuresignals.com
             domain_app: app.featuresignals.com
             domain_main: featuresignals.com
             domain_docs: docs.featuresignals.com
+          - region: us
+            host_secret: VPS_HOST_US
+            domain_api: api.us.featuresignals.com
+            domain_app: app.us.featuresignals.com
+            domain_main: us.featuresignals.com
+            domain_docs: docs.us.featuresignals.com
           - region: eu
             host_secret: VPS_HOST_EU
             domain_api: api.eu.featuresignals.com
             domain_app: app.eu.featuresignals.com
             domain_main: eu.featuresignals.com
             domain_docs: docs.eu.featuresignals.com
-          - region: in
-            host_secret: VPS_HOST_IN
-            domain_api: api.in.featuresignals.com
-            domain_app: app.in.featuresignals.com
-            domain_main: in.featuresignals.com
-            domain_docs: docs.in.featuresignals.com
 
     steps:
       - name: Check if region should deploy
@@ -66,7 +66,7 @@ jobs:
           host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,MSG91_AUTH_KEY,MSG91_EMAIL_TEMPLATE_ID,MSG91_EMAIL_DOMAIN,MSG91_EMAIL_FROM,MSG91_EMAIL_FROM_NAME,OTEL_INGESTION_KEY,NEXT_PUBLIC_API_URL_EU,NEXT_PUBLIC_API_URL_IN
+          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,MSG91_AUTH_KEY,MSG91_EMAIL_TEMPLATE_ID,MSG91_EMAIL_DOMAIN,MSG91_EMAIL_FROM,MSG91_EMAIL_FROM_NAME,OTEL_INGESTION_KEY,NEXT_PUBLIC_API_URL_US,NEXT_PUBLIC_API_URL_EU
           script: |
             cat > /opt/featuresignals/.env << 'ENVEOF'
             REGION=${{ matrix.region }}
@@ -93,8 +93,8 @@ jobs:
             OTEL_LOGS_ENABLED=false
             OTEL_LOG_LEVEL=warn
             OTEL_TRACE_SAMPLE_RATE=0.1
+            NEXT_PUBLIC_API_URL_US=${NEXT_PUBLIC_API_URL_US}
             NEXT_PUBLIC_API_URL_EU=${NEXT_PUBLIC_API_URL_EU}
-            NEXT_PUBLIC_API_URL_IN=${NEXT_PUBLIC_API_URL_IN}
             ENVEOF
             chmod 600 /opt/featuresignals/.env
         env:
@@ -108,8 +108,8 @@ jobs:
           MSG91_EMAIL_FROM: ${{ secrets.MSG91_EMAIL_FROM }}
           MSG91_EMAIL_FROM_NAME: ${{ secrets.MSG91_EMAIL_FROM_NAME }}
           OTEL_INGESTION_KEY: ${{ secrets.OTEL_INGESTION_KEY }}
+          NEXT_PUBLIC_API_URL_US: https://api.us.featuresignals.com
           NEXT_PUBLIC_API_URL_EU: https://api.eu.featuresignals.com
-          NEXT_PUBLIC_API_URL_IN: https://api.in.featuresignals.com
 
       - name: Pre-deploy database backup
         if: steps.check.outputs.deploy == 'true'
