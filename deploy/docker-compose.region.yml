@@ -59,7 +59,7 @@ services:
       DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
       PORT: "8080"
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://${DOMAIN_APP},https://${DOMAIN_DOCS}}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://${DOMAIN_APP},https://${DOMAIN_DOCS},https://${DOMAIN_MAIN},https://www.${DOMAIN_MAIN}}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DEPLOYMENT_MODE: cloud
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-msg91}
