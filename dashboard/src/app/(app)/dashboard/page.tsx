@@ -8,6 +8,7 @@ import { ErrorDisplay } from "@/components/ui";
 import { Flag, FolderOpen, Clock, Sparkles, Zap } from "lucide-react";
 import { useProjects, useFlags, useAudit } from "@/hooks/use-data";
 import { useUpgradeNudge } from "@/hooks/use-upgrade-nudge";
+import { WorkspaceHealth } from "@/components/workspace-health";
 
 function UpgradeCard() {
   const organization = useAppStore((s) => s.organization);
@@ -129,6 +130,8 @@ export default function DashboardPage() {
         <StatCard label="Feature Flags" value={(flags ?? []).length} icon={Flag} color="emerald" />
         <StatCard label="Recent Changes" value={(audit ?? []).length} icon={Clock} color="amber" />
       </div>
+
+      <WorkspaceHealth />
 
       <UpgradeCard />
 

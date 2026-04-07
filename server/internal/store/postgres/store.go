@@ -2048,6 +2048,49 @@ func (s *Store) ListActiveDigestUsers(ctx context.Context) ([]lifecycle.DigestRo
 	return result, rows.Err()
 }
 
+// --- Feature Spotlight (re-onboarding) ---
+
+func (s *Store) ListUsersWithoutFeatureUsage(ctx context.Context, feature string, daysSinceSignup int) ([]lifecycle.UserRow, error) {
+	var eventPattern string
+	switch feature {
+	case "segments":
+		eventPattern = "segment.%"
+	case "webhooks":
+		eventPattern = "webhook.%"
+	case "team_invite":
+		eventPattern = "team.member_invited"
+	default:
+		return nil, nil
+	}
+
+	rows, err := s.pool.Query(ctx,
+		`SELECT u.id, u.email, u.name, u.last_login_at, u.created_at
+		 FROM users u
+		 WHERE u.email_consent = TRUE
+		   AND COALESCE(u.email_preference, 'all') IN ('all', 'important')
+		   AND u.created_at < NOW() - make_interval(days => $1)
+		   AND u.created_at > NOW() - INTERVAL '90 days'
+		   AND u.deleted_at IS NULL
+		   AND NOT EXISTS (
+		       SELECT 1 FROM product_events pe
+		       WHERE pe.user_id = u.id AND pe.event LIKE $2
+		   )
+		 LIMIT 200`, daysSinceSignup, eventPattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.UserRow
+	for rows.Next() {
+		var u lifecycle.UserRow
+		if err := rows.Scan(&u.UserID, &u.Email, &u.Name, &u.LastLoginAt, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, u)
+	}
+	return result, rows.Err()
+}
+
 // --- Feedback ---
 
 func (s *Store) InsertFeedback(ctx context.Context, fb *domain.Feedback) error {
