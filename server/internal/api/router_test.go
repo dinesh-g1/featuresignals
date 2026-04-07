@@ -308,6 +308,8 @@ func (noopStore) GetDismissedHints(context.Context, string) ([]string, error) {
 }
 func (noopStore) SetTourCompleted(context.Context, string) error { return nil }
 
+func (noopStore) InsertFeedback(context.Context, *domain.Feedback) error { return nil }
+
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }

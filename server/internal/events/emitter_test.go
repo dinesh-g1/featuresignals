@@ -53,6 +53,8 @@ func (s *spyEventStore) PlanDistribution(_ context.Context) (map[string]int, err
 	return nil, nil
 }
 
+func (s *spyEventStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }
+
 func (s *spyEventStore) collected() []domain.ProductEvent {
 	s.mu.Lock()
 	defer s.mu.Unlock()

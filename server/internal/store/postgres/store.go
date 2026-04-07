@@ -2047,3 +2047,14 @@ func (s *Store) ListActiveDigestUsers(ctx context.Context) ([]lifecycle.DigestRo
 	}
 	return result, rows.Err()
 }
+
+// --- Feedback ---
+
+func (s *Store) InsertFeedback(ctx context.Context, fb *domain.Feedback) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO feedback (user_id, org_id, type, sentiment, message, page, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+		fb.UserID, fb.OrgID, fb.Type, fb.Sentiment, fb.Message, fb.Page,
+	)
+	return err
+}

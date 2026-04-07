@@ -304,6 +304,8 @@ func (s *tierMockStore) GetDismissedHints(context.Context, string) ([]string, er
 }
 func (s *tierMockStore) SetTourCompleted(context.Context, string) error { return nil }
 
+func (s *tierMockStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }
+
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)
 }

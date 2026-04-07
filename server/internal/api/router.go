@@ -119,6 +119,7 @@ func NewRouter(
 	featuresH := handlers.NewFeaturesHandler(store)
 	analyticsH := handlers.NewAnalyticsHandler(store)
 	preferencesH := handlers.NewPreferencesHandler(store)
+	feedbackH := handlers.NewFeedbackHandler(store, emitter)
 	ssoH := handlers.NewSSOHandler(store)
 	ssoAuthH := handlers.NewSSOAuthHandler(store, jwtMgr, appBaseURL, dashboardURL)
 	mfaH := handlers.NewMFAHandler(store)
@@ -272,6 +273,7 @@ func NewRouter(
 			r.Get("/users/me/hints", preferencesH.GetHints)
 			r.Post("/users/me/hints", preferencesH.DismissHint)
 			r.Put("/users/me/email-preferences", preferencesH.UpdateEmailPreferences)
+			r.Post("/feedback", feedbackH.Submit)
 		})
 
 			// ── Read-only routes (all authenticated roles) ───────────

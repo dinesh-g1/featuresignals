@@ -465,4 +465,8 @@ export const api = {
     request("/v1/users/me/hints", { method: "POST", body: { hint_id: hintID }, token }),
   updateEmailPreferences: (token: string, data: { consent: boolean; preference: string }) =>
     request("/v1/users/me/email-preferences", { method: "PUT", body: data, token }),
+
+  // Feedback
+  submitFeedback: (token: string, data: { type: string; sentiment: string; message: string; page: string }) =>
+    request("/v1/feedback", { method: "POST", body: data, token }),
 };
