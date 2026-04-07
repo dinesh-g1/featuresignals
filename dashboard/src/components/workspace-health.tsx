@@ -63,9 +63,10 @@ function getOverallScore(checks: HealthCheck[]): number {
 }
 
 const StatusIcon = ({ status }: { status: "pass" | "warn" | "fail" }) => {
-  if (status === "pass") return <Check className="h-3.5 w-3.5 text-emerald-500" />;
-  if (status === "warn") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />;
-  return <AlertTriangle className="h-3.5 w-3.5 text-red-500" />;
+  const label = status === "pass" ? "Passing" : status === "warn" ? "Needs attention" : "Action required";
+  if (status === "pass") return <Check className="h-3.5 w-3.5 text-emerald-500" aria-label={label} role="img" />;
+  if (status === "warn") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-label={label} role="img" />;
+  return <AlertTriangle className="h-3.5 w-3.5 text-red-500" aria-label={label} role="img" />;
 };
 
 export function WorkspaceHealth() {
@@ -104,7 +105,7 @@ export function WorkspaceHealth() {
         </div>
       </div>
 
-      <div className="h-1.5 w-full rounded-full bg-slate-100 mb-4">
+      <div className="h-1.5 w-full rounded-full bg-slate-100 mb-4" role="progressbar" aria-valuenow={score} aria-valuemin={0} aria-valuemax={100} aria-label={`Workspace health: ${score}%`}>
         <div
           className={cn(
             "h-1.5 rounded-full transition-all",

@@ -352,10 +352,11 @@ export default function FlagsPage() {
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:w-auto">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <Input
             type="text"
             placeholder="Search flags..."
+            aria-label="Search flags"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -449,8 +450,8 @@ export default function FlagsPage() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
-                      <Link href={`/flags/${flag.key}`}>
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      <Link href={`/flags/${flag.key}`} aria-label={`Open flag ${flag.key}`}>
+                        <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
                       </Link>
                     </div>
                   </div>
