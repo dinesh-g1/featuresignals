@@ -7,11 +7,13 @@ import { PageHeader, StatCard, Card, CardHeader, Badge, EmptyState, DashboardPag
 import { ErrorDisplay } from "@/components/ui";
 import { Flag, FolderOpen, Clock, Sparkles, Zap } from "lucide-react";
 import { useProjects, useFlags, useAudit } from "@/hooks/use-data";
+import { useUpgradeNudge } from "@/hooks/use-upgrade-nudge";
 
 function UpgradeCard() {
   const organization = useAppStore((s) => s.organization);
   const plan = organization?.plan;
   const trialExpiresAt = organization?.trial_expires_at;
+  const { usage } = useUpgradeNudge();
 
   if (plan === "pro" || plan === "enterprise") return null;
 
@@ -45,6 +47,13 @@ function UpgradeCard() {
     );
   }
 
+  const usageLines: string[] = [];
+  if (usage) {
+    if (usage.projects_limit > 0) usageLines.push(`${usage.projects_used}/${usage.projects_limit} projects`);
+    if (usage.seats_limit > 0) usageLines.push(`${usage.seats_used}/${usage.seats_limit} team seats`);
+    if (usage.environments_limit > 0) usageLines.push(`${usage.environments_used}/${usage.environments_limit} environments`);
+  }
+
   return (
     <Card className="border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -55,7 +64,9 @@ function UpgradeCard() {
           <div>
             <h3 className="font-semibold text-slate-900">Unlock the full power of FeatureSignals</h3>
             <p className="mt-0.5 text-sm text-slate-600">
-              You&apos;re on the Free plan (1 project, 3 environments, 3 seats). Upgrade to Pro for unlimited everything.
+              {usageLines.length > 0
+                ? `You're using ${usageLines.join(", ")} on the Free plan. Upgrade to Pro for unlimited everything.`
+                : "You're on the Free plan. Upgrade to Pro for unlimited projects, environments, and team members."}
             </p>
           </div>
         </div>
@@ -98,7 +109,9 @@ export default function DashboardPage() {
       <EmptyState
         icon={Flag}
         title="Welcome to FeatureSignals"
-        description="Create your first project to start managing feature flags. Use the &quot;+ Create Your First Project&quot; button in the sidebar to get started."
+        description="Create your first project to start managing feature flags. Projects group related flags for a single application or service."
+        docsUrl="https://docs.featuresignals.com/getting-started/quickstart"
+        docsLabel="Quickstart guide"
         className="py-24"
       />
     );
@@ -128,7 +141,7 @@ export default function DashboardPage() {
             <EmptyState
               icon={Clock}
               title="No recent activity"
-              description="Create your first flag to get started."
+              description="Actions like creating flags, toggling states, and inviting team members will appear here."
             />
           ) : (
             audit.map((entry) => (

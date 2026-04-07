@@ -10,6 +10,8 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
 import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
+import { ContextualHint, HINTS } from "@/components/contextual-hint";
+import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { useFlags, useEnvironments, useFlagStates, useFlagStateMap, useCreateFlag, useDeleteFlag } from "@/hooks/use-data";
 import { useMutation } from "@/hooks/use-query";
 import type { FlagState } from "@/lib/types";
@@ -209,7 +211,9 @@ export default function FlagsPage() {
       <EmptyState
         icon={Flag}
         title="No project selected"
-        description="Create a project using the sidebar to start managing flags."
+        description="Create a project first, then come back here to manage your feature flags."
+        docsUrl="https://docs.featuresignals.com/getting-started/quickstart"
+        docsLabel="Quickstart guide"
         className="py-24"
       />
     );
@@ -234,6 +238,9 @@ export default function FlagsPage() {
           </Button>
         }
       />
+
+      <ContextualHint hint={HINTS.flagsFirstVisit} />
+      <UpgradeNudge context="projects" />
 
       {showCreate && (
         <form onSubmit={handleCreate} className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6">
@@ -389,8 +396,10 @@ export default function FlagsPage() {
           {filtered.length === 0 ? (
             <EmptyState
               icon={Flag}
-              title="No flags found"
-              description="Create your first flag to get started."
+              title="No flags yet"
+              description="Flags let you control which features your users see. Create your first flag to start shipping safely."
+              docsUrl="https://docs.featuresignals.com/concepts/flags"
+              docsLabel="What are feature flags?"
             />
           ) : (
             filtered.map((flag) => {

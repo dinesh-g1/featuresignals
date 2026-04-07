@@ -67,7 +67,9 @@ export default function AuditPage() {
             <EmptyState
               icon={ClipboardList}
               title="No audit entries yet"
-              description="Changes to flags, segments, and settings will appear here."
+              description="Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
+              docsUrl="https://docs.featuresignals.com/concepts/audit-log"
+              docsLabel="About the audit log"
             />
           ) : (
             filtered.map((entry) => (

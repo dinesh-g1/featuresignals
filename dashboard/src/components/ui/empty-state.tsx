@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface EmptyStateProps {
@@ -6,6 +7,8 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  docsUrl?: string;
+  docsLabel?: string;
   className?: string;
 }
 
@@ -14,6 +17,8 @@ export function EmptyState({
   title,
   description,
   action,
+  docsUrl,
+  docsLabel,
   className,
 }: EmptyStateProps) {
   return (
@@ -26,6 +31,17 @@ export function EmptyState({
         <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-slate-400">{description}</p>
       )}
       {action && <div className="mt-5">{action}</div>}
+      {docsUrl && (
+        <a
+          href={docsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
+        >
+          {docsLabel || "Learn more in docs"}
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      )}
     </div>
   );
 }

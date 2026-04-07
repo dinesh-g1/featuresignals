@@ -18,6 +18,7 @@ const settingsTabs: SettingsTab[] = [
   { href: "/settings/api-keys", label: "API Keys" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/webhooks", label: "Webhooks", gatedFeature: "webhooks" },
+  { href: "/settings/notifications", label: "Notifications" },
   { href: "/settings/sso", label: "SSO", gatedFeature: "sso" },
 ];
 

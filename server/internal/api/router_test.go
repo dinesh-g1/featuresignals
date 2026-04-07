@@ -285,6 +285,17 @@ func (noopStore) CountEventsByOrg(context.Context, string, string, time.Time) (i
 func (noopStore) CountEventsByUser(context.Context, string, string, time.Time) (int, error) {
 	return 0, nil
 }
+func (noopStore) CountEventsByCategory(context.Context, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (noopStore) CountDistinctOrgs(context.Context, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (noopStore) CountDistinctUsers(context.Context, time.Time) (int, error) { return 0, nil }
+func (noopStore) EventFunnel(context.Context, []string, time.Time) (map[string]int, error) {
+	return nil, nil
+}
+func (noopStore) PlanDistribution(context.Context) (map[string]int, error) { return nil, nil }
 func (noopStore) UpdateUserEmailPreferences(context.Context, string, bool, string) error {
 	return nil
 }

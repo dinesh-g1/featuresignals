@@ -11,6 +11,7 @@ import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
 import { UpgradeBanner } from "@/components/upgrade-banner";
 import { ProductTour } from "@/components/product-tour";
+import { DashboardFooter } from "@/components/dashboard-footer";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Menu } from "lucide-react";
@@ -77,6 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             {children}
           </main>
+          <DashboardFooter />
         </div>
         <CommandPalette />
         <ToastContainer />

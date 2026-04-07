@@ -75,7 +75,9 @@ export default function UsageInsightsPage() {
           <EmptyState
             icon={BarChart3}
             title="No evaluation data yet"
-            description="Start evaluating flags to see usage insights."
+            description="Connect an SDK to your application and start evaluating flags. Usage data will appear here in real-time."
+            docsUrl="https://docs.featuresignals.com/sdks"
+            docsLabel="Install an SDK"
             className="py-16"
           />
         </Card>

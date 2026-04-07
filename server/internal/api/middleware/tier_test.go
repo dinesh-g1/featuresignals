@@ -281,6 +281,17 @@ func (s *tierMockStore) CountEventsByOrg(context.Context, string, string, time.T
 func (s *tierMockStore) CountEventsByUser(context.Context, string, string, time.Time) (int, error) {
 	return 0, nil
 }
+func (s *tierMockStore) CountEventsByCategory(context.Context, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) CountDistinctOrgs(context.Context, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) CountDistinctUsers(context.Context, time.Time) (int, error) { return 0, nil }
+func (s *tierMockStore) EventFunnel(context.Context, []string, time.Time) (map[string]int, error) {
+	return nil, nil
+}
+func (s *tierMockStore) PlanDistribution(context.Context) (map[string]int, error) { return nil, nil }
 func (s *tierMockStore) UpdateUserEmailPreferences(context.Context, string, bool, string) error {
 	return nil
 }

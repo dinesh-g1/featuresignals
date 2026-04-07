@@ -64,6 +64,11 @@ type EventStore interface {
 	InsertProductEvents(ctx context.Context, events []ProductEvent) error
 	CountEventsByOrg(ctx context.Context, orgID string, event string, since time.Time) (int, error)
 	CountEventsByUser(ctx context.Context, userID string, event string, since time.Time) (int, error)
+	CountEventsByCategory(ctx context.Context, category string, since time.Time) (int, error)
+	CountDistinctOrgs(ctx context.Context, event string, since time.Time) (int, error)
+	CountDistinctUsers(ctx context.Context, since time.Time) (int, error)
+	EventFunnel(ctx context.Context, events []string, since time.Time) (map[string]int, error)
+	PlanDistribution(ctx context.Context) (map[string]int, error)
 }
 
 // ─── Well-known event names ─────────────────────────────────────────────────
