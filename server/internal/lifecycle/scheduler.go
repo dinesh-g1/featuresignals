@@ -17,6 +17,7 @@ type SchedulerStore interface {
 	ListInactiveUsers(ctx context.Context, since time.Time) ([]UserRow, error)
 	ListRenewalOrgs(ctx context.Context, withinDays int) ([]OrgUserPair, error)
 	ListActiveDigestUsers(ctx context.Context) ([]DigestRow, error)
+	ListUsersWithoutFeatureUsage(ctx context.Context, feature string, daysSinceSignup int) ([]UserRow, error)
 }
 
 // OrgUserPair associates an organization with its owner for email delivery.
@@ -101,6 +102,7 @@ func (s *Scheduler) runOnce(ctx context.Context) {
 	s.sendTrialExpired(ctx)
 	s.sendReEngagement(ctx)
 	s.sendRenewalReminders(ctx)
+	s.sendFeatureSpotlight(ctx)
 
 	if isWeeklyDigestDay() {
 		s.sendWeeklyDigest(ctx)
@@ -272,6 +274,46 @@ func (s *Scheduler) sendWeeklyDigest(ctx context.Context) {
 	}
 	if len(rows) > 0 {
 		s.logger.Info("sent weekly digest emails", "count", len(rows))
+	}
+}
+
+// featureSpotlight defines a re-onboarding email that teaches the user
+// about a feature they haven't explored yet.
+type featureSpotlight struct {
+	feature     string
+	minDaysSince int
+	template    domain.TemplateID
+	subject     string
+}
+
+var spotlights = []featureSpotlight{
+	{"segments", 7, domain.TemplateFeatureSpotlightSegments, "Unlock precise targeting with Segments"},
+	{"webhooks", 14, domain.TemplateFeatureSpotlightWebhooks, "Real-time notifications with Webhooks"},
+	{"team_invite", 5, domain.TemplateFeatureSpotlightTeam, "Ship faster — invite your team"},
+}
+
+func (s *Scheduler) sendFeatureSpotlight(ctx context.Context) {
+	for _, sp := range spotlights {
+		users, err := s.store.ListUsersWithoutFeatureUsage(ctx, sp.feature, sp.minDaysSince)
+		if err != nil {
+			s.logger.Error("failed to list spotlight users", "error", err, "feature", sp.feature)
+			continue
+		}
+		for _, u := range users {
+			_ = s.sender.Send(ctx, u.UserID, domain.EmailMessage{
+				To:       u.Email,
+				ToName:   u.Name,
+				Template: sp.template,
+				Subject:  sp.subject,
+				Data: map[string]string{
+					"ToName":       u.Name,
+					"DashboardURL": "https://app.featuresignals.com",
+				},
+			})
+		}
+		if len(users) > 0 {
+			s.logger.Info("sent feature spotlight emails", "feature", sp.feature, "count", len(users))
+		}
 	}
 }
 

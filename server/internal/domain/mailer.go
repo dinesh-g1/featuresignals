@@ -34,6 +34,10 @@ const (
 	TemplateSecurityAlert      TemplateID = "security_alert"
 	TemplateAPIKeyCreated      TemplateID = "api_key_created"
 	TemplateExportReady        TemplateID = "export_ready"
+
+	TemplateFeatureSpotlightSegments TemplateID = "feature_spotlight_segments"
+	TemplateFeatureSpotlightWebhooks TemplateID = "feature_spotlight_webhooks"
+	TemplateFeatureSpotlightTeam     TemplateID = "feature_spotlight_team"
 )
 
 // EmailPriority determines whether the email is transactional (always sent)
@@ -75,6 +79,10 @@ var TemplateMeta = map[TemplateID]EmailPriority{
 	TemplateSecurityAlert:      EmailTransactional,
 	TemplateAPIKeyCreated:      EmailImportant,
 	TemplateExportReady:        EmailTransactional,
+
+	TemplateFeatureSpotlightSegments: EmailLifecycle,
+	TemplateFeatureSpotlightWebhooks: EmailLifecycle,
+	TemplateFeatureSpotlightTeam:     EmailLifecycle,
 }
 
 // EmailMessage represents a fully resolved email ready for delivery.
