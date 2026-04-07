@@ -3,8 +3,13 @@ package status
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
+	"net"
 	"net/http"
+	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
@@ -50,17 +55,18 @@ type GlobalStatus struct {
 type Handler struct {
 	db         HealthChecker
 	poolStats  PoolStats
+	store      domain.StatusRecorder
 	region     string
 	regionName string
 }
 
 // NewHandler creates a status handler for the current region.
-func NewHandler(db HealthChecker, poolStats PoolStats, region string) *Handler {
+func NewHandler(db HealthChecker, poolStats PoolStats, region string, store domain.StatusRecorder) *Handler {
 	name := region
 	if info, ok := domain.Regions[region]; ok {
 		name = info.Name
 	}
-	return &Handler{db: db, poolStats: poolStats, region: region, regionName: name}
+	return &Handler{db: db, poolStats: poolStats, region: region, regionName: name, store: store}
 }
 
 // HandleLocalStatus returns the health of the current region's services.
@@ -69,9 +75,16 @@ func (h *Handler) HandleLocalStatus(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, status)
 }
 
-// HandleGlobalStatus aggregates health from all regions by calling their /v1/status endpoints.
+// HandleGlobalStatus aggregates health from all regions.
 func (h *Handler) HandleGlobalStatus(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	gs := h.CheckAllRegions(r.Context())
+	httputil.JSON(w, http.StatusOK, gs)
+}
+
+// CheckAllRegions probes all regions and returns the aggregated status.
+// Exported for reuse by the background status recorder.
+func (h *Handler) CheckAllRegions(ctx context.Context) GlobalStatus {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	var mu sync.Mutex
@@ -102,6 +115,9 @@ func (h *Handler) HandleGlobalStatus(w http.ResponseWriter, r *http.Request) {
 
 	overall := "operational"
 	for _, rs := range regions {
+		if rs.Status == "unreachable" {
+			continue
+		}
 		if rs.Status == "down" {
 			overall = "partial_outage"
 			break
@@ -111,10 +127,43 @@ func (h *Handler) HandleGlobalStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	httputil.JSON(w, http.StatusOK, GlobalStatus{
+	return GlobalStatus{
 		OverallStatus: overall,
 		Regions:       regions,
 		CheckedAt:     time.Now().UTC(),
+	}
+}
+
+// HandleStatusHistory returns per-component, per-region uptime history.
+func (h *Handler) HandleStatusHistory(w http.ResponseWriter, r *http.Request) {
+	logger := slog.Default().With("handler", "status_history")
+
+	daysStr := r.URL.Query().Get("days")
+	days := 90
+	if daysStr != "" {
+		parsed, err := strconv.Atoi(daysStr)
+		if err != nil || parsed < 1 || parsed > 90 {
+			httputil.Error(w, http.StatusBadRequest, "days must be between 1 and 90")
+			return
+		}
+		days = parsed
+	}
+
+	history, err := h.store.GetComponentHistory(r.Context(), days)
+	if err != nil {
+		logger.Error("failed to get component history", "error", err, "days", days)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	if history == nil {
+		history = []domain.DailyComponentStatus{}
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]any{
+		"components": history,
+		"regions":    domain.RegionCodes(),
+		"checked_at": time.Now().UTC(),
 	})
 }
 
@@ -177,6 +226,26 @@ func (h *Handler) checkLocal(ctx context.Context) RegionStatus {
 	}
 }
 
+// isUnreachableError distinguishes "not yet deployed" (connection refused, DNS failure)
+// from "deployed but failing" (timeout, HTTP errors).
+func isUnreachableError(err error) bool {
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		if errors.Is(opErr.Err, syscall.ECONNREFUSED) {
+			return true
+		}
+		var dnsErr *net.DNSError
+		if errors.As(opErr.Err, &dnsErr) {
+			return true
+		}
+	}
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return true
+	}
+	return false
+}
+
 func probeRemoteRegion(ctx context.Context, regionCode string, info domain.RegionInfo) RegionStatus {
 	healthURL := info.APIEndpoint + "/health"
 
@@ -196,11 +265,15 @@ func probeRemoteRegion(ctx context.Context, regionCode string, info domain.Regio
 	resp, err := client.Do(req)
 	latency := time.Since(start).Milliseconds()
 	if err != nil {
+		status := "down"
+		if isUnreachableError(err) {
+			status = "unreachable"
+		}
 		return RegionStatus{
 			Region:    regionCode,
 			Name:      info.Name,
-			Status:    "down",
-			Services:  []ServiceStatus{{Name: "API Server", Status: "down", Latency: latency, Message: "unreachable"}},
+			Status:    status,
+			Services:  []ServiceStatus{{Name: "API Server", Status: status, Latency: latency, Message: status}},
 			CheckedAt: time.Now().UTC(),
 		}
 	}

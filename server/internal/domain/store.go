@@ -271,6 +271,12 @@ type FeedbackWriter interface {
 	InsertFeedback(ctx context.Context, fb *Feedback) error
 }
 
+// StatusRecorder records and queries infrastructure health checks.
+type StatusRecorder interface {
+	InsertStatusChecks(ctx context.Context, checks []StatusCheck) error
+	GetComponentHistory(ctx context.Context, days int) ([]DailyComponentStatus, error)
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -307,4 +313,5 @@ type Store interface {
 	EventStore
 	UserPreferenceStore
 	FeedbackWriter
+	StatusRecorder
 }

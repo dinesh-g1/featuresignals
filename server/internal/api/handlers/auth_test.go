@@ -35,7 +35,7 @@ func newAuthenticatedRequest(method, path string, body string, userID, orgID str
 func newTestAuthHandler() (*AuthHandler, *mockStore) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	return NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000"), store
+	return NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000", nil), store
 }
 
 func TestAuthHandler_Register(t *testing.T) {

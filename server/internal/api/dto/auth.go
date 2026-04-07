@@ -12,20 +12,32 @@ type SafeUserResponse struct {
 	Email         string    `json:"email"`
 	Name          string    `json:"name"`
 	EmailVerified bool      `json:"email_verified"`
+	TourCompleted bool      `json:"tour_completed,omitempty"`
+	Tier          string    `json:"tier,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-func SafeUserFromDomain(u *domain.User) *SafeUserResponse {
+// InternalChecker determines if a user email qualifies for internal access.
+type InternalChecker interface {
+	IsInternalUser(email string) bool
+}
+
+func SafeUserFromDomain(u *domain.User, checker InternalChecker) *SafeUserResponse {
 	if u == nil {
 		return nil
 	}
-	return &SafeUserResponse{
+	resp := &SafeUserResponse{
 		ID:            u.ID,
 		Email:         u.Email,
 		Name:          u.Name,
 		EmailVerified: u.EmailVerified,
+		TourCompleted: u.TourCompleted,
 		CreatedAt:     u.CreatedAt,
 	}
+	if checker != nil && checker.IsInternalUser(u.Email) {
+		resp.Tier = "internal"
+	}
+	return resp
 }
 
 type AuthTokensResponse struct {
