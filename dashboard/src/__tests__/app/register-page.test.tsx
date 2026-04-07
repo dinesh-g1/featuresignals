@@ -98,7 +98,7 @@ describe("RegisterPage", () => {
         email: "test@example.com",
         password: "StrongP@ss1",
         org_name: "Test Org",
-        data_region: "us",
+        data_region: "in",
       });
     });
   });

@@ -3,20 +3,46 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SectionReveal } from "@/components/section-reveal";
-import { Building2, Mail, MessageSquare, Users, Check, Loader2, Shield, Globe } from "lucide-react";
+import { Building2, Mail, MessageSquare, Users, Check, Loader2, Shield, Globe, AlertCircle } from "lucide-react";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.featuresignals.com";
 const TEAM_SIZES = ["1-10", "11-50", "51-200", "201-1000", "1000+"];
 
 export default function ContactPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitted(true);
-    setSubmitting(false);
+    setError("");
+
+    const form = e.currentTarget;
+    const data = {
+      contact_name: (form.elements.namedItem("name") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      company: (form.elements.namedItem("company") as HTMLInputElement).value,
+      team_size: (form.elements.namedItem("team-size") as HTMLSelectElement).value,
+      message: (form.elements.namedItem("message") as HTMLTextAreaElement).value,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/v1/sales/inquiry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Something went wrong. Please try again.");
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -150,6 +176,13 @@ export default function ContactPage() {
                 placeholder="Tell us about your use case, deployment requirements, or questions..."
               />
             </div>
+
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {error}
+              </div>
+            )}
 
             <button
               type="submit"
