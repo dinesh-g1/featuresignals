@@ -13,6 +13,7 @@ import { UpgradeBanner } from "@/components/upgrade-banner";
 import { ProductTour } from "@/components/product-tour";
 import { DashboardFooter } from "@/components/dashboard-footer";
 import { FeedbackWidget } from "@/components/feedback-widget";
+import { SuperMode } from "@/components/super-mode";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Menu } from "lucide-react";
@@ -86,6 +87,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <UpgradeRequiredListener />
         <TourGate />
         <FeedbackWidget />
+        <SuperMode />
       </div>
     </AuthGuard>
   );

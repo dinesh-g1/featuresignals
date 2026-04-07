@@ -469,4 +469,8 @@ export const api = {
   // Feedback
   submitFeedback: (token: string, data: { type: string; sentiment: string; message: string; page: string }) =>
     request("/v1/feedback", { method: "POST", body: data, token }),
+
+  // Internal / Super Mode
+  resetOnboarding: (token: string) =>
+    request("/v1/internal/reset-onboarding", { method: "POST", token }),
 };
