@@ -1335,3 +1335,25 @@ func (m *mockStore) SoftDeleteUser(_ context.Context, userID string) error {
 	delete(m.users, userID)
 	return nil
 }
+
+func (m *mockStore) InsertProductEvent(_ context.Context, _ *domain.ProductEvent) error { return nil }
+func (m *mockStore) InsertProductEvents(_ context.Context, _ []domain.ProductEvent) error {
+	return nil
+}
+func (m *mockStore) CountEventsByOrg(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountEventsByUser(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) UpdateUserEmailPreferences(_ context.Context, _ string, _ bool, _ string) error {
+	return nil
+}
+func (m *mockStore) GetUserEmailPreferences(_ context.Context, _ string) (bool, string, error) {
+	return false, "", nil
+}
+func (m *mockStore) DismissHint(_ context.Context, _, _ string) error { return nil }
+func (m *mockStore) GetDismissedHints(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+func (m *mockStore) SetTourCompleted(_ context.Context, _ string) error { return nil }

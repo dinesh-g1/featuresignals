@@ -1743,3 +1743,110 @@ func (s *Store) SoftDeleteUser(ctx context.Context, userID string) error {
 	_, err := s.pool.Exec(ctx, `UPDATE users SET email = CONCAT('deleted-', id, '@deleted.local'), name = 'Deleted User', password_hash = '', updated_at = NOW() WHERE id = $1`, userID)
 	return err
 }
+
+// --- Product Events ---
+
+func (s *Store) InsertProductEvent(ctx context.Context, event *domain.ProductEvent) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO product_events (event, category, user_id, org_id, properties, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		event.Event, event.Category, nilIfEmpty(event.UserID), nilIfEmpty(event.OrgID),
+		event.Properties, event.CreatedAt,
+	)
+	return err
+}
+
+func (s *Store) InsertProductEvents(ctx context.Context, events []domain.ProductEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+	batch := &pgx.Batch{}
+	for i := range events {
+		batch.Queue(
+			`INSERT INTO product_events (event, category, user_id, org_id, properties, created_at)
+			 VALUES ($1, $2, $3, $4, $5, $6)`,
+			events[i].Event, events[i].Category,
+			nilIfEmpty(events[i].UserID), nilIfEmpty(events[i].OrgID),
+			events[i].Properties, events[i].CreatedAt,
+		)
+	}
+	br := s.pool.SendBatch(ctx, batch)
+	defer br.Close()
+	for range events {
+		if _, err := br.Exec(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) CountEventsByOrg(ctx context.Context, orgID, event string, since time.Time) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM product_events WHERE org_id = $1 AND event = $2 AND created_at >= $3`,
+		orgID, event, since,
+	).Scan(&count)
+	return count, err
+}
+
+func (s *Store) CountEventsByUser(ctx context.Context, userID, event string, since time.Time) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM product_events WHERE user_id = $1 AND event = $2 AND created_at >= $3`,
+		userID, event, since,
+	).Scan(&count)
+	return count, err
+}
+
+func nilIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+// --- User Preferences ---
+
+func (s *Store) UpdateUserEmailPreferences(ctx context.Context, userID string, consent bool, preference string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET email_consent = $2, email_preference = $3, email_consent_at = NOW(), updated_at = NOW() WHERE id = $1`,
+		userID, consent, preference,
+	)
+	return err
+}
+
+func (s *Store) GetUserEmailPreferences(ctx context.Context, userID string) (consent bool, preference string, err error) {
+	err = s.pool.QueryRow(ctx,
+		`SELECT email_consent, email_preference FROM users WHERE id = $1`, userID,
+	).Scan(&consent, &preference)
+	err = wrapNotFound(err, "user")
+	return
+}
+
+func (s *Store) DismissHint(ctx context.Context, userID, hintID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET dismissed_hints = array_append(dismissed_hints, $2), updated_at = NOW()
+		 WHERE id = $1 AND NOT ($2 = ANY(dismissed_hints))`,
+		userID, hintID,
+	)
+	return err
+}
+
+func (s *Store) GetDismissedHints(ctx context.Context, userID string) ([]string, error) {
+	var hints []string
+	err := s.pool.QueryRow(ctx,
+		`SELECT COALESCE(dismissed_hints, '{}') FROM users WHERE id = $1`, userID,
+	).Scan(&hints)
+	if err != nil {
+		return nil, wrapNotFound(err, "user")
+	}
+	return hints, nil
+}
+
+func (s *Store) SetTourCompleted(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET tour_completed = TRUE, tour_completed_at = NOW(), updated_at = NOW() WHERE id = $1`,
+		userID,
+	)
+	return err
+}
