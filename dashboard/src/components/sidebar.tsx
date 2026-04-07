@@ -22,20 +22,89 @@ interface NavItem {
   gatedFeature?: string;
 }
 
-const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Overview", icon: Home },
-  { href: "/flags", label: "Flags", icon: Flag },
-  { href: "/segments", label: "Segments", icon: Users },
-  { href: "/env-comparison", label: "Env Comparison", icon: ArrowLeftRight },
-  { href: "/entity-inspector", label: "Entity Inspector", icon: UserSearch },
-  { href: "/entity-comparison", label: "Entity Comparison", icon: UsersRound },
-  { href: "/usage-insights", label: "Usage Insights", icon: BarChart3 },
-  { href: "/health", label: "Flag Health", icon: Heart },
-  { href: "/metrics", label: "Eval Metrics", icon: PieChart },
-  { href: "/approvals", label: "Approvals", icon: CheckCircle, gatedFeature: "approvals" },
-  { href: "/audit", label: "Audit Log", icon: ClipboardList },
-  { href: "/settings/general", label: "Settings", icon: Settings },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Core",
+    items: [
+      { href: "/dashboard", label: "Overview", icon: Home },
+      { href: "/flags", label: "Flags", icon: Flag },
+      { href: "/segments", label: "Segments", icon: Users },
+    ],
+  },
+  {
+    label: "Analyze",
+    items: [
+      { href: "/usage-insights", label: "Usage Insights", icon: BarChart3 },
+      { href: "/metrics", label: "Eval Metrics", icon: PieChart },
+      { href: "/health", label: "Flag Health", icon: Heart },
+    ],
+  },
+  {
+    label: "Debug",
+    items: [
+      { href: "/env-comparison", label: "Env Comparison", icon: ArrowLeftRight },
+      { href: "/entity-inspector", label: "Entity Inspector", icon: UserSearch },
+      { href: "/entity-comparison", label: "Entity Compare", icon: UsersRound },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { href: "/approvals", label: "Approvals", icon: CheckCircle, gatedFeature: "approvals" },
+      { href: "/audit", label: "Audit Log", icon: ClipboardList },
+    ],
+  },
 ];
+
+function NavLink({
+  item,
+  active,
+  locked,
+  requiredPlan,
+}: {
+  item: NavItem;
+  active: boolean;
+  locked: boolean;
+  requiredPlan: string | null;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={locked ? "/settings/billing" : item.href}
+      title={locked ? `Upgrade to ${requiredPlan} to unlock ${item.label}` : undefined}
+      className={cn(
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+        locked
+          ? "text-slate-400 hover:bg-amber-50 hover:text-amber-700"
+          : active
+            ? "bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100/50"
+            : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+      )}
+    >
+      {active && !locked && (
+        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-600" />
+      )}
+      <Icon
+        className={cn(
+          "h-[18px] w-[18px] shrink-0 transition-colors duration-150",
+          locked
+            ? "text-slate-300"
+            : active ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600",
+        )}
+        strokeWidth={1.5}
+      />
+      <span className="flex-1">{item.label}</span>
+      {locked && (
+        <Lock className="h-3.5 w-3.5 shrink-0 text-amber-500" strokeWidth={2} />
+      )}
+    </Link>
+  );
+}
 
 function SidebarContent() {
   const pathname = usePathname();
@@ -68,42 +137,41 @@ function SidebarContent() {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-2.5">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = pathname.startsWith(item.href);
-          const locked = item.gatedFeature ? !isEnabled(item.gatedFeature) : false;
-          const requiredPlan = item.gatedFeature ? minPlanFor(item.gatedFeature) : null;
-          return (
-            <Link
-              key={item.href}
-              href={locked ? "/settings/billing" : item.href}
-              title={locked ? `Upgrade to ${requiredPlan} to unlock ${item.label}` : undefined}
-              className={cn(
-                "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-                locked
-                  ? "text-slate-400 hover:bg-amber-50 hover:text-amber-700"
-                  : active
-                    ? "bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100/50"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
-              )}
-            >
-              {active && !locked && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-600" />
-              )}
-              <Icon className={cn(
-                "h-[18px] w-[18px] shrink-0 transition-colors duration-150",
-                locked
-                  ? "text-slate-300"
-                  : active ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600",
-              )} strokeWidth={1.5} />
-              <span className="flex-1">{item.label}</span>
-              {locked && (
-                <Lock className="h-3.5 w-3.5 shrink-0 text-amber-500" strokeWidth={2} />
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto px-2.5 py-2" aria-label="Main navigation">
+        {navGroups.map((group, gi) => (
+          <div key={group.label} className={cn(gi > 0 && "mt-4")}>
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = pathname.startsWith(item.href);
+                const locked = item.gatedFeature ? !isEnabled(item.gatedFeature) : false;
+                const requiredPlan = item.gatedFeature ? minPlanFor(item.gatedFeature) : null;
+                return (
+                  <NavLink
+                    key={item.href}
+                    item={item}
+                    active={active}
+                    locked={locked}
+                    requiredPlan={requiredPlan}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div className="mt-4">
+          <div className="space-y-0.5">
+            <NavLink
+              item={{ href: "/settings/general", label: "Settings", icon: Settings }}
+              active={pathname.startsWith("/settings")}
+              locked={false}
+              requiredPlan={null}
+            />
+          </div>
+        </div>
       </nav>
 
       {organization?.plan === "free" && (
@@ -130,9 +198,9 @@ function SidebarContent() {
           <button
             onClick={logout}
             className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-all duration-150 hover:bg-slate-100 hover:text-slate-600"
-            title="Sign out"
+            aria-label="Sign out"
           >
-            <LogOut className="h-4 w-4" strokeWidth={1.5} />
+            <LogOut className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -158,7 +226,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {isOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm animate-fade-in" onClick={close} aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm animate-fade-in" onClick={close} role="presentation" />
           <aside className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col bg-white shadow-2xl animate-slide-in-left">
             <SidebarContent />
           </aside>

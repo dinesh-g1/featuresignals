@@ -125,7 +125,9 @@ export default function APIKeysPage() {
             <EmptyState
               icon={KeyRound}
               title="No API keys for this environment"
-              description="Create a key to start using the SDK."
+              description="API keys authenticate your SDK against this environment. Create a server key to start evaluating flags."
+              docsUrl="https://docs.featuresignals.com/concepts/api-keys"
+              docsLabel="API key types explained"
             />
           ) : (
             keys.map((k) => (

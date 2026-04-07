@@ -8,6 +8,8 @@ vi.mock("@/lib/api", () => ({
     createSegment: vi.fn(),
     deleteSegment: vi.fn(),
     updateSegment: vi.fn(),
+    getDismissedHints: vi.fn().mockResolvedValue({ hints: [] }),
+    dismissHint: vi.fn().mockResolvedValue({}),
   },
 }));
 

@@ -5,6 +5,10 @@ title: Webhooks
 
 # Webhooks
 
+:::tip Open in Dashboard
+Configure webhooks in [Settings → Webhooks →](https://app.featuresignals.com/settings/webhooks)
+:::
+
 Webhooks notify external systems when flag changes occur. Use them to trigger CI/CD pipelines, send Slack notifications, update monitoring dashboards, or sync with other tools.
 
 ## Setting Up a Webhook

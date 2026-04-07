@@ -1,5 +1,6 @@
 import { useAppStore } from "@/stores/app-store";
 import type {
+  AnalyticsOverview,
   APIKey,
   APIKeyCreateResponse,
   ApprovalRequest,
@@ -452,4 +453,24 @@ export const api = {
   // SSO discovery (public)
   discoverSSO: (orgSlug: string) =>
     request<SSODiscovery>(`/v1/sso/discovery/${orgSlug}`),
+
+  // Internal analytics (admin)
+  getAnalyticsOverview: (token: string, period?: string) =>
+    request<AnalyticsOverview>(`/v1/analytics/overview${period ? `?period=${period}` : ""}`, { token }),
+
+  // User preferences
+  getDismissedHints: (token: string) =>
+    request<{ hints: string[] }>("/v1/users/me/hints", { token }),
+  dismissHint: (token: string, hintID: string) =>
+    request("/v1/users/me/hints", { method: "POST", body: { hint_id: hintID }, token }),
+  updateEmailPreferences: (token: string, data: { consent: boolean; preference: string }) =>
+    request("/v1/users/me/email-preferences", { method: "PUT", body: data, token }),
+
+  // Feedback
+  submitFeedback: (token: string, data: { type: string; sentiment: string; message: string; page: string }) =>
+    request("/v1/feedback", { method: "POST", body: data, token }),
+
+  // Internal / Super Mode
+  resetOnboarding: (token: string) =>
+    request("/v1/internal/reset-onboarding", { method: "POST", token }),
 };

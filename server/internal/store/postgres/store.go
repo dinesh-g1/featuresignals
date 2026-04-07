@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/lifecycle"
 )
 
 type Store struct {
@@ -1798,6 +1799,68 @@ func (s *Store) CountEventsByUser(ctx context.Context, userID, event string, sin
 	return count, err
 }
 
+func (s *Store) CountEventsByCategory(ctx context.Context, category string, since time.Time) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM product_events WHERE category = $1 AND created_at >= $2`,
+		category, since,
+	).Scan(&count)
+	return count, err
+}
+
+func (s *Store) CountDistinctOrgs(ctx context.Context, event string, since time.Time) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(DISTINCT org_id) FROM product_events WHERE event = $1 AND created_at >= $2 AND org_id IS NOT NULL`,
+		event, since,
+	).Scan(&count)
+	return count, err
+}
+
+func (s *Store) CountDistinctUsers(ctx context.Context, since time.Time) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(DISTINCT user_id) FROM product_events WHERE created_at >= $1 AND user_id IS NOT NULL`,
+		since,
+	).Scan(&count)
+	return count, err
+}
+
+func (s *Store) EventFunnel(ctx context.Context, events []string, since time.Time) (map[string]int, error) {
+	result := make(map[string]int, len(events))
+	for _, evt := range events {
+		var count int
+		err := s.pool.QueryRow(ctx,
+			`SELECT COUNT(DISTINCT COALESCE(user_id, org_id)) FROM product_events WHERE event = $1 AND created_at >= $2`,
+			evt, since,
+		).Scan(&count)
+		if err != nil {
+			return nil, err
+		}
+		result[evt] = count
+	}
+	return result, nil
+}
+
+func (s *Store) PlanDistribution(ctx context.Context) (map[string]int, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT COALESCE(plan, 'free'), COUNT(*) FROM organizations WHERE deleted_at IS NULL GROUP BY plan`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]int)
+	for rows.Next() {
+		var plan string
+		var count int
+		if err := rows.Scan(&plan, &count); err != nil {
+			return nil, err
+		}
+		result[plan] = count
+	}
+	return result, rows.Err()
+}
+
 func nilIfEmpty(s string) interface{} {
 	if s == "" {
 		return nil
@@ -1847,6 +1910,194 @@ func (s *Store) SetTourCompleted(ctx context.Context, userID string) error {
 	_, err := s.pool.Exec(ctx,
 		`UPDATE users SET tour_completed = TRUE, tour_completed_at = NOW(), updated_at = NOW() WHERE id = $1`,
 		userID,
+	)
+	return err
+}
+
+// --- Lifecycle Scheduler Queries ---
+
+func (s *Store) ListTrialOrgsExpiringSoon(ctx context.Context, withinDays int) ([]lifecycle.OrgUserPair, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT o.id, o.name, u.id, u.email, u.name, o.plan, o.trial_expires_at
+		 FROM organizations o
+		 JOIN org_members om ON om.org_id = o.id
+		 JOIN users u ON u.id = om.user_id
+		 WHERE o.plan = 'trial'
+		   AND o.trial_expires_at IS NOT NULL
+		   AND o.trial_expires_at BETWEEN NOW() AND NOW() + make_interval(days => $1)
+		   AND o.deleted_at IS NULL
+		   AND om.role = 'owner'`, withinDays)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.OrgUserPair
+	for rows.Next() {
+		var p lifecycle.OrgUserPair
+		if err := rows.Scan(&p.OrgID, &p.OrgName, &p.UserID, &p.UserEmail, &p.UserName, &p.Plan, &p.ExpiresAt); err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	return result, rows.Err()
+}
+
+func (s *Store) ListExpiredTrialOrgs(ctx context.Context) ([]lifecycle.OrgUserPair, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT o.id, o.name, u.id, u.email, u.name, o.plan, o.trial_expires_at
+		 FROM organizations o
+		 JOIN org_members om ON om.org_id = o.id
+		 JOIN users u ON u.id = om.user_id
+		 WHERE o.plan = 'trial'
+		   AND o.trial_expires_at IS NOT NULL
+		   AND o.trial_expires_at < NOW()
+		   AND o.trial_expires_at > NOW() - INTERVAL '1 day'
+		   AND o.deleted_at IS NULL
+		   AND om.role = 'owner'`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.OrgUserPair
+	for rows.Next() {
+		var p lifecycle.OrgUserPair
+		if err := rows.Scan(&p.OrgID, &p.OrgName, &p.UserID, &p.UserEmail, &p.UserName, &p.Plan, &p.ExpiresAt); err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	return result, rows.Err()
+}
+
+func (s *Store) ListInactiveUsers(ctx context.Context, since time.Time) ([]lifecycle.UserRow, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, email, name, last_login_at, created_at
+		 FROM users
+		 WHERE (last_login_at IS NULL OR last_login_at < $1)
+		   AND deleted_at IS NULL
+		 LIMIT 500`, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.UserRow
+	for rows.Next() {
+		var u lifecycle.UserRow
+		if err := rows.Scan(&u.UserID, &u.Email, &u.Name, &u.LastLoginAt, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, u)
+	}
+	return result, rows.Err()
+}
+
+func (s *Store) ListRenewalOrgs(ctx context.Context, withinDays int) ([]lifecycle.OrgUserPair, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT o.id, o.name, u.id, u.email, u.name, o.plan, s.current_period_end
+		 FROM organizations o
+		 JOIN org_members om ON om.org_id = o.id
+		 JOIN users u ON u.id = om.user_id
+		 LEFT JOIN subscriptions s ON s.org_id = o.id
+		 WHERE o.plan = 'pro'
+		   AND s.current_period_end IS NOT NULL
+		   AND s.current_period_end BETWEEN NOW() AND NOW() + make_interval(days => $1)
+		   AND s.status = 'active'
+		   AND o.deleted_at IS NULL
+		   AND om.role = 'owner'`, withinDays)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.OrgUserPair
+	for rows.Next() {
+		var p lifecycle.OrgUserPair
+		if err := rows.Scan(&p.OrgID, &p.OrgName, &p.UserID, &p.UserEmail, &p.UserName, &p.Plan, &p.ExpiresAt); err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	return result, rows.Err()
+}
+
+func (s *Store) ListActiveDigestUsers(ctx context.Context) ([]lifecycle.DigestRow, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT u.id, u.email, u.name, o.id, o.name,
+		        COALESCE((SELECT COUNT(*) FROM flags f JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id), 0),
+		        0
+		 FROM users u
+		 JOIN org_members om ON om.user_id = u.id
+		 JOIN organizations o ON o.id = om.org_id
+		 WHERE u.email_consent = TRUE
+		   AND COALESCE(u.email_preference, 'all') = 'all'
+		   AND u.last_login_at > NOW() - INTERVAL '30 days'
+		   AND u.deleted_at IS NULL
+		   AND o.deleted_at IS NULL
+		 LIMIT 1000`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.DigestRow
+	for rows.Next() {
+		var d lifecycle.DigestRow
+		if err := rows.Scan(&d.UserID, &d.Email, &d.Name, &d.OrgID, &d.OrgName, &d.FlagCount, &d.EvalCount); err != nil {
+			return nil, err
+		}
+		result = append(result, d)
+	}
+	return result, rows.Err()
+}
+
+// --- Feature Spotlight (re-onboarding) ---
+
+func (s *Store) ListUsersWithoutFeatureUsage(ctx context.Context, feature string, daysSinceSignup int) ([]lifecycle.UserRow, error) {
+	var eventPattern string
+	switch feature {
+	case "segments":
+		eventPattern = "segment.%"
+	case "webhooks":
+		eventPattern = "webhook.%"
+	case "team_invite":
+		eventPattern = "team.member_invited"
+	default:
+		return nil, nil
+	}
+
+	rows, err := s.pool.Query(ctx,
+		`SELECT u.id, u.email, u.name, u.last_login_at, u.created_at
+		 FROM users u
+		 WHERE u.email_consent = TRUE
+		   AND COALESCE(u.email_preference, 'all') IN ('all', 'important')
+		   AND u.created_at < NOW() - make_interval(days => $1)
+		   AND u.created_at > NOW() - INTERVAL '90 days'
+		   AND u.deleted_at IS NULL
+		   AND NOT EXISTS (
+		       SELECT 1 FROM product_events pe
+		       WHERE pe.user_id = u.id AND pe.event LIKE $2
+		   )
+		 LIMIT 200`, daysSinceSignup, eventPattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []lifecycle.UserRow
+	for rows.Next() {
+		var u lifecycle.UserRow
+		if err := rows.Scan(&u.UserID, &u.Email, &u.Name, &u.LastLoginAt, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, u)
+	}
+	return result, rows.Err()
+}
+
+// --- Feedback ---
+
+func (s *Store) InsertFeedback(ctx context.Context, fb *domain.Feedback) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO feedback (user_id, org_id, type, sentiment, message, page, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+		fb.UserID, fb.OrgID, fb.Type, fb.Sentiment, fb.Message, fb.Page,
 	)
 	return err
 }

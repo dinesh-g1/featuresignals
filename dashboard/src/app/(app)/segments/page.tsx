@@ -8,6 +8,7 @@ import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label, EmptyState } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Users, Trash2, ChevronDown } from "lucide-react";
+import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import type { Segment, Condition } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -89,10 +90,13 @@ export default function SegmentsPage() {
       <PageHeader
         title="Segments"
         description="Reusable audience definitions for targeting"
+        docsUrl="https://docs.featuresignals.com/concepts/segments"
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>Create Segment</Button>
         }
       />
+
+      <ContextualHint hint={HINTS.segmentsIntro} />
 
       {showCreate && (
         <form onSubmit={handleCreate} className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6">
@@ -129,7 +133,9 @@ export default function SegmentsPage() {
             <EmptyState
               icon={Users}
               title="No segments yet"
-              description="Create a segment to define reusable audiences."
+              description="Segments let you define reusable audiences (e.g., beta testers, enterprise customers) and target them across multiple flags."
+              docsUrl="https://docs.featuresignals.com/concepts/segments"
+              docsLabel="Learn about segments"
             />
           ) : (
             segments.map((seg) => {

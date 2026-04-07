@@ -13,6 +13,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Trash2, ChevronDown, Users } from "lucide-react";
+import { UpgradeNudge } from "@/components/upgrade-nudge";
 import type { OrgMember, EnvPermission, Environment } from "@/lib/types";
 
 const ROLES = ["owner", "admin", "developer", "viewer"] as const;
@@ -119,6 +120,7 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
+      <UpgradeNudge context="seats" />
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-900">Team Members</h2>

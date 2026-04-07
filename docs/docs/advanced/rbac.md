@@ -5,6 +5,10 @@ title: RBAC
 
 # Role-Based Access Control
 
+:::tip Open in Dashboard
+Manage team roles in [Settings → Team →](https://app.featuresignals.com/settings/team)
+:::
+
 FeatureSignals implements RBAC to control what team members can do within the platform.
 
 ## Roles

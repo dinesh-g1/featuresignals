@@ -5,6 +5,10 @@ title: Feature Flags
 
 # Feature Flags
 
+:::tip Open in Dashboard
+Manage your feature flags directly in the [Flag Engine →](https://app.featuresignals.com/flags)
+:::
+
 A feature flag (also called a feature toggle) is a mechanism that lets you enable or disable functionality in your application without deploying new code. FeatureSignals supports multiple flag types for different use cases.
 
 ## Flag Types
