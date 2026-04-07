@@ -25,7 +25,22 @@ type User struct {
 	LastLoginAt        *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
+
+	// Lifecycle communication preferences
+	EmailConsent   bool       `json:"email_consent" db:"email_consent"`
+	EmailConsentAt *time.Time `json:"-" db:"email_consent_at"`
+	EmailPref      string     `json:"email_preference" db:"email_preference"`
+	DismissedHints []string   `json:"-" db:"dismissed_hints"`
+	TourCompleted  bool       `json:"tour_completed" db:"tour_completed"`
+	TourCompletedAt *time.Time `json:"-" db:"tour_completed_at"`
 }
+
+// EmailPreference constants control which lifecycle emails a user receives.
+const (
+	EmailPrefAll           = "all"           // All lifecycle + marketing emails
+	EmailPrefImportant     = "important"     // Trial, payment, security only
+	EmailPrefTransactional = "transactional" // OTP and receipts only
+)
 
 // OrgMember links a User to an Organization with a specific Role.
 type OrgMember struct {

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Subject}}</title>
+<style>
+  body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+  .card { background: #ffffff; border-radius: 8px; padding: 40px 32px; border: 1px solid #e2e8f0; }
+  .logo { color: #4f46e5; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
+  h1 { color: #0f172a; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
+  p { color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
+  .btn { display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin: 8px 0 24px; }
+  .receipt { background: #f8fafc; border-radius: 6px; padding: 20px; margin: 16px 0; border: 1px solid #e2e8f0; }
+  .receipt-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+  .receipt-row:last-child { border-bottom: none; font-weight: 600; }
+  .receipt-label { color: #64748b; }
+  .receipt-value { color: #0f172a; }
+  .footer { text-align: center; padding: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
+  .footer a { color: #64748b; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="card">
+    <div class="logo">FeatureSignals</div>
+    <h1>Payment confirmed</h1>
+    <p>Hi {{.ToName}},</p>
+    <p>Your payment has been processed successfully. Here's your receipt:</p>
+
+    <div class="receipt">
+      <div class="receipt-row"><span class="receipt-label">Plan</span><span class="receipt-value">{{.PlanName}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Amount</span><span class="receipt-value">{{.Amount}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Next renewal</span><span class="receipt-value">{{.NextRenewal}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Payment method</span><span class="receipt-value">{{.PaymentMethod}}</span></div>
+    </div>
+
+    <a href="{{.BillingURL}}" class="btn">Manage Billing</a>
+  </div>
+  <div class="footer">
+    <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
+    <p><a href="{{.UnsubscribeURL}}">Manage email preferences</a></p>
+  </div>
+</div>
+</body>
+</html>
