@@ -256,6 +256,16 @@ type CustomRoleStore interface {
 	DeleteCustomRole(ctx context.Context, id string) error
 }
 
+// UserPreferenceStore manages user-level product preferences (email consent,
+// communication settings, dismissed hints, product tour state).
+type UserPreferenceStore interface {
+	UpdateUserEmailPreferences(ctx context.Context, userID string, consent bool, preference string) error
+	GetUserEmailPreferences(ctx context.Context, userID string) (consent bool, preference string, err error)
+	DismissHint(ctx context.Context, userID, hintID string) error
+	GetDismissedHints(ctx context.Context, userID string) ([]string, error)
+	SetTourCompleted(ctx context.Context, userID string) error
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -289,4 +299,6 @@ type Store interface {
 	LoginAttemptStore
 	IPAllowlistStore
 	CustomRoleStore
+	EventStore
+	UserPreferenceStore
 }

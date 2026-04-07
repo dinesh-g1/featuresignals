@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Subject}}</title>
+<style>
+  body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+  .card { background: #ffffff; border-radius: 8px; padding: 40px 32px; border: 1px solid #e2e8f0; }
+  .logo { color: #4f46e5; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
+  h1 { color: #0f172a; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
+  p { color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
+  .btn { display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin: 8px 0 24px; }
+  .stats { background: #eef2ff; border-radius: 6px; padding: 20px; margin: 16px 0; }
+  .stat-row { padding: 6px 0; font-size: 14px; color: #3730a3; }
+  .stat-row strong { color: #1e1b4b; }
+  .footer { text-align: center; padding: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
+  .footer a { color: #64748b; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="card">
+    <div class="logo">FeatureSignals</div>
+    <h1>Your Pro trial ends in {{.DaysLeft}} days</h1>
+    <p>Hi {{.ToName}},</p>
+    <p>Here's what you've built during your trial:</p>
+
+    <div class="stats">
+      <div class="stat-row"><strong>{{.FlagCount}}</strong> feature flags</div>
+      <div class="stat-row"><strong>{{.MemberCount}}</strong> team members</div>
+      <div class="stat-row"><strong>{{.EvalCount}}</strong> evaluations</div>
+    </div>
+
+    <p>Upgrade now to keep unlimited projects, environments, and team members. Or continue on Free with basic limits — your flags and data are safe either way.</p>
+
+    <a href="{{.UpgradeURL}}" class="btn">Upgrade to Pro</a>
+
+    <p style="font-size:13px;color:#64748b;">Questions? Reply to this email or visit <a href="{{.PricingURL}}" style="color:#4f46e5;">pricing details</a>.</p>
+  </div>
+  <div class="footer">
+    <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
+    <p><a href="{{.UnsubscribeURL}}">Manage email preferences</a></p>
+  </div>
+</div>
+</body>
+</html>
