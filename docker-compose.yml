@@ -45,9 +45,7 @@ services:
       DASHBOARD_URL: http://localhost:3000
       PAYU_MODE: test
       STRIPE_MODE: test
-      # Super Mode: uncomment and set to enable internal developer tools
-      # SUPER_MODE_DOMAIN: featuresignals.com
-      # SUPER_MODE_EMAILS: dev@gmail.com
+      SUPER_MODE_DOMAIN: featuresignals.com
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 10s
