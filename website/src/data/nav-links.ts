@@ -33,19 +33,19 @@ export const platformItems: NavItem[] = [
   {
     title: "Experimentation",
     description: "A/B tests, weighted variants, mutual exclusion",
-    href: "/features#experiment-and-measure",
+    href: "/features#experiment-measure",
     icon: FlaskConical,
   },
   {
     title: "Debugging",
     description: "Entity inspector, environment comparison",
-    href: "/features#debug-and-troubleshoot",
+    href: "/features#debug-troubleshoot",
     icon: Search,
   },
   {
     title: "Governance",
     description: "Audit logs, RBAC, approval workflows",
-    href: "/features#govern-and-comply",
+    href: "/features#govern-comply",
     icon: ShieldCheck,
   },
   {
