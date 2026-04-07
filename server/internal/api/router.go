@@ -52,6 +52,8 @@ func NewRouter(
 	emitter domain.EventEmitter,
 	lifecycle handlers.LifecycleSender,
 	internalChecker dto.InternalChecker,
+	salesNotifier handlers.SalesNotifier,
+	salesNotifyEmail string,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -115,7 +117,7 @@ func NewRouter(
 	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger, emitter, lifecycle)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
 	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker)
-	salesH := handlers.NewSalesHandler(store)
+	salesH := handlers.NewSalesHandler(store, salesNotifier, salesNotifyEmail)
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)
 	featuresH := handlers.NewFeaturesHandler(store)

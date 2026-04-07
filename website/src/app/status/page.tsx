@@ -10,7 +10,6 @@ import {
   Globe,
   Server,
   Database,
-  Info,
   RefreshCw,
   ChevronDown,
   Clock,
@@ -422,7 +421,7 @@ export default function StatusPage() {
 
   const allComponents = useMemo(() => {
     const components: { region: string; component: string; label: string; isUnreachable: boolean }[] = [];
-    const regionOrder = ["us", "eu", "in"];
+    const regionOrder = ["in", "us", "eu"];
     const serviceOrder = ["API Server", "Database", "Connection Pool"];
 
     for (const rc of regionOrder) {
@@ -440,7 +439,7 @@ export default function StatusPage() {
     return components;
   }, [globalStatus]);
 
-  const regionOrder = ["us", "eu", "in"];
+  const regionOrder = ["in", "us", "eu"];
   const sortedRegions = useMemo(() => {
     if (!globalStatus) return [];
     return regionOrder
@@ -587,28 +586,7 @@ export default function StatusPage() {
           </div>
         </SectionReveal>
 
-        {/* Section 5: Info + Report Issue */}
         <SectionReveal delay={0.25}>
-          <div className="mt-10 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-            <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
-            <div className="text-sm text-blue-800">
-              <p>
-                This page queries{" "}
-                <code className="rounded bg-blue-100 px-1 py-0.5 text-xs font-mono">/v1/status/global</code>{" "}
-                for live health and{" "}
-                <code className="rounded bg-blue-100 px-1 py-0.5 text-xs font-mono">/v1/status/history</code>{" "}
-                for uptime history. Each region independently reports API, database, and connection pool health.
-              </p>
-              <p className="mt-2">
-                For self-hosted deployments, set{" "}
-                <code className="rounded bg-blue-100 px-1 py-0.5 text-xs font-mono">NEXT_PUBLIC_API_URL</code>{" "}
-                to point to your instance.
-              </p>
-            </div>
-          </div>
-        </SectionReveal>
-
-        <SectionReveal delay={0.3}>
           <div className="mt-8 border-t border-slate-100 pt-8">
             <h2 className="text-base font-semibold text-slate-900">Report an Issue</h2>
             <p className="mt-1 text-sm text-slate-500">

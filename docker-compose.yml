@@ -45,6 +45,7 @@ services:
       DASHBOARD_URL: http://localhost:3000
       PAYU_MODE: test
       STRIPE_MODE: test
+      SALES_NOTIFY_EMAIL: dineshreddy@featuresignals.com
       SUPER_MODE_DOMAIN: featuresignals.com
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
