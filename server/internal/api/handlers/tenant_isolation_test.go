@@ -27,8 +27,8 @@ func setupTenantIsolation(t *testing.T) *mockStore {
 	store.projects["proj-alpha"] = &domain.Project{ID: "proj-alpha", Name: "Alpha Project", OrgID: orgAlpha}
 	store.projects["proj-beta"] = &domain.Project{ID: "proj-beta", Name: "Beta Project", OrgID: orgBeta}
 
-	store.flags["flag-alpha"] = &domain.Flag{ID: "flag-alpha", Key: "alpha-feature", Name: "Alpha Feature", ProjectID: "proj-alpha"}
-	store.flags["flag-beta"] = &domain.Flag{ID: "flag-beta", Key: "beta-feature", Name: "Beta Feature", ProjectID: "proj-beta"}
+	store.flags["proj-alpha:alpha-feature"] = &domain.Flag{ID: "flag-alpha", Key: "alpha-feature", Name: "Alpha Feature", ProjectID: "proj-alpha"}
+	store.flags["proj-beta:beta-feature"] = &domain.Flag{ID: "flag-beta", Key: "beta-feature", Name: "Beta Feature", ProjectID: "proj-beta"}
 
 	return store
 }
@@ -40,9 +40,11 @@ func authRequest(r *http.Request, userID, orgID, role string) *http.Request {
 	return r.WithContext(ctx)
 }
 
-func withURLParam(r *http.Request, key, value string) *http.Request {
+func withURLParams(r *http.Request, params map[string]string) *http.Request {
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add(key, value)
+	for k, v := range params {
+		rctx.URLParams.Add(k, v)
+	}
 	return r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 }
 
@@ -83,7 +85,7 @@ func TestTenantIsolation_ProjectAccess(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := httptest.NewRequest("GET", "/v1/projects/"+tc.projectID, nil)
 			r = authRequest(r, "user-1", tc.userOrg, "admin")
-			r = withURLParam(r, "projectID", tc.projectID)
+			r = withURLParams(r, map[string]string{"projectID": tc.projectID})
 			w := httptest.NewRecorder()
 
 			h.Get(w, r)
@@ -128,8 +130,7 @@ func TestTenantIsolation_FlagAccess(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := httptest.NewRequest("GET", "/v1/projects/"+tc.projectID+"/flags/"+tc.flagKey, nil)
 			r = authRequest(r, "user-1", tc.userOrg, "admin")
-			r = withURLParam(r, "projectID", tc.projectID)
-			r = withURLParam(r, "flagKey", tc.flagKey)
+			r = withURLParams(r, map[string]string{"projectID": tc.projectID, "flagKey": tc.flagKey})
 			w := httptest.NewRecorder()
 
 			h.Get(w, r)

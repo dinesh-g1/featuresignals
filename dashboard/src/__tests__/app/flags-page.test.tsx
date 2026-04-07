@@ -12,6 +12,9 @@ vi.mock("@/lib/api", () => ({
     getFlagState: vi.fn(),
     updateFlagState: vi.fn(),
     updateFlag: vi.fn(),
+    getUsage: vi.fn().mockResolvedValue({ projects_used: 1, projects_limit: 3, seats_used: 1, seats_limit: 5, environments_used: 1, environments_limit: 3 }),
+    getDismissedHints: vi.fn().mockResolvedValue({ hints: [] }),
+    dismissHint: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -157,7 +160,7 @@ describe("FlagsPage", () => {
     await waitFor(() => {
       expect(api.listFlags).toHaveBeenCalled();
     });
-    expect(screen.getByText("No flags found")).toBeInTheDocument();
+    expect(screen.getByText("No flags yet")).toBeInTheDocument();
   });
 
   it("calls api.listFlags with token and project ID", async () => {
