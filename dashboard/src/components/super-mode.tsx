@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { toast } from "@/components/toast";
 import { cn } from "@/lib/utils";
 import {
-  Bug, ChevronDown, ChevronUp, Eye, FlaskConical,
+  Bug, ChevronDown, ChevronUp, Eye, FlaskConical, Beaker,
   RotateCcw, Sparkles, ToggleLeft, X,
 } from "lucide-react";
 
@@ -188,6 +188,34 @@ export function SuperMode() {
                 <X className="h-3 w-3" />
                 Clear All Overrides
               </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              <Beaker className="inline h-3 w-3 mr-0.5" /> A/B Experiments
+            </p>
+            <div className="space-y-2">
+              {["onboarding_flow", "dashboard_layout", "upgrade_cta_copy", "empty_state_style"].map((expName) => (
+                <div key={expName} className="text-xs">
+                  <span className="font-medium text-slate-600">{expName}</span>
+                  <div className="mt-0.5 flex flex-wrap gap-1">
+                    {["control", "variant_a", "variant_b"].map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => {
+                          const expKey = `exp_${expName}`;
+                          sessionStorage.setItem(`fs-exp-${expKey}`, v);
+                          toast(`Experiment ${expName} → ${v}`, "success");
+                        }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 hover:bg-purple-100 hover:text-purple-700"
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
