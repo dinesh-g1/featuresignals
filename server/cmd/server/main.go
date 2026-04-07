@@ -21,6 +21,7 @@ import (
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/events"
+	"github.com/featuresignals/server/internal/lifecycle"
 	"github.com/featuresignals/server/internal/mailer"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/observability"
@@ -245,9 +246,9 @@ func main() {
 		logger.Info("lifecycle mailer using noop (no SMTP configured)")
 	}
 
-	// Suppress unused variable warnings — these will be wired into handlers in Phase 1
-	_ = eventEmitter
-	_ = lifecycleMailer
+	// Lifecycle processor gates email delivery via user preferences
+	lifecycleProcessor := lifecycle.NewProcessor(lifecycleMailer, store, eventEmitter, logger)
+	logger.Info("lifecycle processor started")
 
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
@@ -257,7 +258,7 @@ func main() {
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor)
 
 	// Server
 	srv := &http.Server{

@@ -40,7 +40,7 @@ func teamCtx(ctx context.Context, userID, orgID, role string) context.Context {
 
 func setupTeamTest() (*mockStore, *TeamHandler) {
 	store := newMockStore()
-	handler := NewTeamHandler(store, &stubTokenManager{})
+	handler := NewTeamHandler(store, &stubTokenManager{}, nil, nil)
 
 	store.CreateOrganization(context.Background(), &domain.Organization{Name: "Org", Slug: "org"})
 	store.CreateUser(context.Background(), &domain.User{Email: "owner@test.com", Name: "Owner", PasswordHash: "x"})

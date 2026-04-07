@@ -30,11 +30,15 @@ type flagStore interface {
 }
 
 type FlagHandler struct {
-	store flagStore
+	store   flagStore
+	emitter domain.EventEmitter
 }
 
-func NewFlagHandler(store flagStore) *FlagHandler {
-	return &FlagHandler{store: store}
+func NewFlagHandler(store flagStore, emitter domain.EventEmitter) *FlagHandler {
+	if emitter == nil {
+		emitter = NoopEmitter()
+	}
+	return &FlagHandler{store: store, emitter: emitter}
 }
 
 type KillFlagRequest struct {
@@ -141,6 +145,18 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		AfterState:   afterState,
 		IPAddress:    r.RemoteAddr,
 		UserAgent:    r.UserAgent(),
+	})
+
+	h.emitter.Emit(r.Context(), domain.ProductEvent{
+		Event:    domain.EventFlagCreated,
+		Category: domain.EventCategoryFlag,
+		UserID:   userID,
+		OrgID:    orgID,
+		Properties: eventProps(map[string]string{
+			"flag_key":   flag.Key,
+			"flag_type":  string(flag.FlagType),
+			"project_id": projectID,
+		}),
 	})
 
 	httputil.JSON(w, http.StatusCreated, dto.FlagFromDomain(flag))
