@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SectionReveal } from "@/components/section-reveal";
 
 export const metadata: Metadata = {
@@ -316,6 +317,18 @@ export default function ChangelogPage() {
           </article>
         </SectionReveal>
       </div>
+
+      <SectionReveal delay={0.16}>
+        <div className="mt-12 rounded-xl border border-indigo-100 bg-indigo-50/50 p-6 text-center">
+          <p className="text-sm text-slate-600">
+            Want deeper dives into feature management?{" "}
+            <Link href="/blog" className="font-medium text-indigo-600 underline hover:text-indigo-700">
+              Read our blog
+            </Link>{" "}
+            for best practices and engineering guides.
+          </p>
+        </div>
+      </SectionReveal>
     </section>
   );
 }

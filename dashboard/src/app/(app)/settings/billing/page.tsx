@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Check, CreditCard, ExternalLink } from "lucide-react";
+import { Check, CreditCard, ExternalLink, ShieldCheck, Lock, Sparkles, PartyPopper } from "lucide-react";
 import type { BillingInfo, CheckoutResponse, UsageInfo } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -47,6 +47,7 @@ function BillingContent() {
   const [canceling, setCanceling] = useState(false);
   const [pricing, setPricing] = useState<PricingConfig | null>(null);
   const [showGatewaySelect, setShowGatewaySelect] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     api.getPricing().then(setPricing).catch(() => {});
@@ -58,7 +59,7 @@ function BillingContent() {
   useEffect(() => {
     const status = searchParams.get("status");
     if (status === "success") {
-      toast("Payment successful! Your plan has been upgraded to Pro.", "success");
+      setShowCelebration(true);
       if (refreshToken) {
         api.refresh(refreshToken).then((data) => {
           if (data?.access_token) {
@@ -179,6 +180,8 @@ function BillingContent() {
 
   return (
     <div className="space-y-6">
+      {showCelebration && <CelebrationModal onDismiss={() => setShowCelebration(false)} />}
+
       {loading ? (
         <LoadingSpinner fullPage />
       ) : error ? (
@@ -295,6 +298,9 @@ function BillingContent() {
               )}
             </Card>
           )}
+
+          {/* Trust Signals */}
+          {!isPaid && <PaymentTrustSignals gateway={gateway} />}
 
           {/* Usage */}
           {usage && (
@@ -441,5 +447,59 @@ function PlanCard({
         </div>
       )}
     </Card>
+  );
+}
+
+function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+      <div className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100">
+          <PartyPopper className="h-8 w-8 text-indigo-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900">Welcome to Pro!</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Your upgrade is complete. You now have unlimited projects, environments, and team members.
+          All Pro features are unlocked and ready to use.
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {["Unlimited Projects", "Unlimited Environments", "Unlimited Seats", "Approvals", "Webhooks", "RBAC"].map((f) => (
+            <span key={f} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+              <Check className="h-3 w-3" />
+              {f}
+            </span>
+          ))}
+        </div>
+        <button
+          onClick={onDismiss}
+          className="mt-6 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+        >
+          Start Exploring
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PaymentTrustSignals({ gateway }: { gateway: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3">
+      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+        <Lock className="h-3.5 w-3.5 text-slate-400" />
+        256-bit SSL encrypted
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+        <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+        PCI DSS compliant
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+        <CreditCard className="h-3.5 w-3.5 text-slate-400" />
+        Processed by {gateway === "stripe" ? "Stripe" : "PayU"}
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+        <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+        14-day money-back guarantee
+      </span>
+    </div>
   );
 }
