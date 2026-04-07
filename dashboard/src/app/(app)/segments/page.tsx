@@ -90,6 +90,7 @@ export default function SegmentsPage() {
       <PageHeader
         title="Segments"
         description="Reusable audience definitions for targeting"
+        docsUrl="https://docs.featuresignals.com/concepts/segments"
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>Create Segment</Button>
         }

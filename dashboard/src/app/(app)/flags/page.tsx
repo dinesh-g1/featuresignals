@@ -232,6 +232,7 @@ export default function FlagsPage() {
       <PageHeader
         title="Feature Flags"
         description={`${(flags ?? []).length} flags in this project`}
+        docsUrl="https://docs.featuresignals.com/concepts/feature-flags"
         actions={
           <Button onClick={() => setShowCreate(!showCreate)}>
             Create Flag

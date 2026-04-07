@@ -34,6 +34,7 @@ export default function AuditPage() {
         <PageHeader
           title="Audit Log"
           description="Track every change made to your feature flags"
+          docsUrl="https://docs.featuresignals.com/concepts/audit-log"
         />
         {canExport && (
           <Button
