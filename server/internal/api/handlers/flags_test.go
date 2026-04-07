@@ -33,7 +33,7 @@ const testOrgID = "org-1"
 
 func TestFlagHandler_Create(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"new-feature","name":"New Feature","flag_type":"boolean"}`
@@ -61,7 +61,7 @@ func TestFlagHandler_Create(t *testing.T) {
 
 func TestFlagHandler_Create_DefaultType(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"test","name":"Test"}`
@@ -99,7 +99,7 @@ func TestFlagHandler_Create_TypeAwareDefaults(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.flagType, func(t *testing.T) {
 			store := newMockStore()
-			h := NewFlagHandler(store)
+			h := NewFlagHandler(store, nil)
 			projID := setupTestProject(store, testOrgID)
 
 			body := `{"key":"flag-` + tt.flagType + `","name":"Test","flag_type":"` + tt.flagType + `"}`
@@ -127,7 +127,7 @@ func TestFlagHandler_Create_TypeAwareDefaults(t *testing.T) {
 
 func TestFlagHandler_Create_TypeMismatchRejected(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"bad-default","name":"Bad","flag_type":"boolean","default_value":"not-a-bool"}`
@@ -145,7 +145,7 @@ func TestFlagHandler_Create_TypeMismatchRejected(t *testing.T) {
 
 func TestFlagHandler_Create_MissingFields(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"","name":""}`
@@ -163,7 +163,7 @@ func TestFlagHandler_Create_MissingFields(t *testing.T) {
 
 func TestFlagHandler_Create_DuplicateKey(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"dup-flag","name":"Dup Flag"}`
@@ -186,7 +186,7 @@ func TestFlagHandler_Create_DuplicateKey(t *testing.T) {
 
 func TestFlagHandler_Create_InvalidFlagType(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"bad-type","name":"Bad Type","flag_type":"invalid"}`
@@ -204,7 +204,7 @@ func TestFlagHandler_Create_InvalidFlagType(t *testing.T) {
 
 func TestFlagHandler_Create_InvalidKey(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"UPPER-CASE","name":"Bad Key"}`
@@ -222,7 +222,7 @@ func TestFlagHandler_Create_InvalidKey(t *testing.T) {
 
 func TestFlagHandler_Create_OrgIsolation(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"hack-flag","name":"Hack Flag"}`
@@ -240,7 +240,7 @@ func TestFlagHandler_Create_OrgIsolation(t *testing.T) {
 
 func TestFlagHandler_List(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "flag-1", Name: "Flag 1"})
@@ -270,7 +270,7 @@ func TestFlagHandler_List(t *testing.T) {
 
 func TestFlagHandler_List_Empty(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags", nil)
@@ -296,7 +296,7 @@ func TestFlagHandler_List_Empty(t *testing.T) {
 
 func TestFlagHandler_Get(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "my-flag", Name: "My Flag"})
@@ -315,7 +315,7 @@ func TestFlagHandler_Get(t *testing.T) {
 
 func TestFlagHandler_Get_NotFound(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	r := httptest.NewRequest("GET", "/v1/projects/"+projID+"/flags/nonexistent", nil)
@@ -332,7 +332,7 @@ func TestFlagHandler_Get_NotFound(t *testing.T) {
 
 func TestFlagHandler_Update(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "upd-flag", Name: "Original"})
@@ -359,7 +359,7 @@ func TestFlagHandler_Update(t *testing.T) {
 
 func TestFlagHandler_Delete(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "del-flag", Name: "Delete Me"})
@@ -378,7 +378,7 @@ func TestFlagHandler_Delete(t *testing.T) {
 
 func TestFlagHandler_UpdateState(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "state-flag", Name: "State Flag"})
@@ -408,7 +408,7 @@ func TestFlagHandler_UpdateState(t *testing.T) {
 
 func TestFlagHandler_GetState(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	flag := &domain.Flag{ProjectID: projID, Key: "gs-flag", Name: "Get State"}
@@ -435,7 +435,7 @@ func TestFlagHandler_GetState(t *testing.T) {
 
 func TestFlagHandler_Promote(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	flag := &domain.Flag{ProjectID: projID, Key: "promo-flag", Name: "Promo Flag"}
@@ -486,7 +486,7 @@ func TestFlagHandler_Promote(t *testing.T) {
 
 func TestFlagHandler_Promote_SameEnv(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "f1", Name: "F1"})
@@ -506,7 +506,7 @@ func TestFlagHandler_Promote_SameEnv(t *testing.T) {
 
 func TestFlagHandler_Promote_MissingSource(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "f2", Name: "F2"})
@@ -528,7 +528,7 @@ func TestFlagHandler_Promote_MissingSource(t *testing.T) {
 
 func TestFlagHandler_Create_WithCategory(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"experiment-flag","name":"Experiment","category":"experiment","status":"active"}`
@@ -556,7 +556,7 @@ func TestFlagHandler_Create_WithCategory(t *testing.T) {
 
 func TestFlagHandler_Create_DefaultCategoryStatus(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"default-cat","name":"Default Cat"}`
@@ -584,7 +584,7 @@ func TestFlagHandler_Create_DefaultCategoryStatus(t *testing.T) {
 
 func TestFlagHandler_Create_InvalidCategory(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"bad-cat","name":"Bad Cat","category":"invalid"}`
@@ -602,7 +602,7 @@ func TestFlagHandler_Create_InvalidCategory(t *testing.T) {
 
 func TestFlagHandler_Create_InvalidStatus(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	body := `{"key":"bad-status","name":"Bad Status","status":"invalid"}`
@@ -620,7 +620,7 @@ func TestFlagHandler_Create_InvalidStatus(t *testing.T) {
 
 func TestFlagHandler_Update_CategoryStatus(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{
@@ -653,7 +653,7 @@ func TestFlagHandler_Update_CategoryStatus(t *testing.T) {
 
 func TestFlagHandler_Update_InvalidCategory(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID := setupTestProject(store, testOrgID)
 
 	store.CreateFlag(context.Background(), &domain.Flag{ProjectID: projID, Key: "upd-bad", Name: "Bad"})
@@ -675,7 +675,7 @@ func TestFlagHandler_Update_InvalidCategory(t *testing.T) {
 
 func TestFlagHandler_CompareEnvironments(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID, envID1 := setupTestEnv(store, testOrgID)
 	env2 := &domain.Environment{ProjectID: projID, Name: "Staging", Slug: "staging"}
 	store.CreateEnvironment(context.Background(), env2)
@@ -716,7 +716,7 @@ func TestFlagHandler_CompareEnvironments(t *testing.T) {
 
 func TestFlagHandler_CompareEnvironments_SameEnv(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID, envID := setupTestEnv(store, testOrgID)
 
 	r := httptest.NewRequest("GET",
@@ -734,7 +734,7 @@ func TestFlagHandler_CompareEnvironments_SameEnv(t *testing.T) {
 
 func TestFlagHandler_SyncEnvironments(t *testing.T) {
 	store := newMockStore()
-	h := NewFlagHandler(store)
+	h := NewFlagHandler(store, nil)
 	projID, envID1 := setupTestEnv(store, testOrgID)
 	env2 := &domain.Environment{ProjectID: projID, Name: "Prod", Slug: "prod"}
 	store.CreateEnvironment(context.Background(), env2)

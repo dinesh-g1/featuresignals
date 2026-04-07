@@ -75,7 +75,7 @@ func TestBillingHandler_CreateCheckout_StripeRedirect(t *testing.T) {
 	registry := payment.NewRegistry()
 	registry.Register(stripeGW)
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/billing/checkout", nil)
 	ctx := billingCtx(req, orgID, userID)
@@ -127,7 +127,7 @@ func TestBillingHandler_CreateCheckout_PayUFormFields(t *testing.T) {
 	registry := payment.NewRegistry()
 	registry.Register(payuGW)
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/billing/checkout", nil)
 	ctx := billingCtx(req, orgID, userID)
@@ -163,7 +163,7 @@ func TestBillingHandler_CreateCheckout_GatewayNotFound(t *testing.T) {
 
 	registry := payment.NewRegistry()
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/billing/checkout", nil)
 	ctx := billingCtx(req, orgID, userID)
@@ -189,7 +189,7 @@ func TestBillingHandler_GetSubscription_WithActiveSubscription(t *testing.T) {
 	store.users[userID] = &domain.User{ID: userID, Email: "user@test.com", Name: "Test"}
 
 	registry := payment.NewRegistry()
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/billing/subscription", nil)
 	ctx := billingCtx(req, orgID, userID)
@@ -224,7 +224,7 @@ func TestBillingHandler_GetUsage(t *testing.T) {
 	store.users[userID] = &domain.User{ID: userID, Email: "user@test.com"}
 
 	registry := payment.NewRegistry()
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/billing/usage", nil)
 	ctx := billingCtx(req, orgID, userID)
@@ -253,7 +253,7 @@ func TestBillingHandler_UpdateGateway_Valid(t *testing.T) {
 	registry.Register(stripeGW)
 	registry.Register(payuGW)
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	body := `{"gateway":"stripe"}`
 	req := httptest.NewRequest(http.MethodPut, "/v1/billing/gateway", strings.NewReader(body))
@@ -286,7 +286,7 @@ func TestBillingHandler_UpdateGateway_InvalidGateway(t *testing.T) {
 	registry := payment.NewRegistry()
 	registry.Register(&mockGateway{name: "payu"})
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	body := `{"gateway":"razorpay"}`
 	req := httptest.NewRequest(http.MethodPut, "/v1/billing/gateway", strings.NewReader(body))
@@ -317,7 +317,7 @@ func TestBillingHandler_CancelSubscription_PayUReturnsError(t *testing.T) {
 	registry := payment.NewRegistry()
 	registry.Register(&mockGateway{name: "payu"})
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/billing/cancel", strings.NewReader(`{}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -344,7 +344,7 @@ func TestBillingHandler_GetBillingPortalURL_NotStripe(t *testing.T) {
 	registry := payment.NewRegistry()
 	registry.Register(&mockGateway{name: "payu"})
 
-	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger())
+	h := NewBillingHandler(store, registry, "https://app.example.com", "https://api.example.com", testLogger(), nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/billing/portal", nil)
 	ctx := billingCtx(req, orgID, userID)

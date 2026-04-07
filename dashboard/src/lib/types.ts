@@ -6,6 +6,7 @@ export interface User {
   email: string;
   name: string;
   email_verified: boolean;
+  tour_completed?: boolean;
   last_login_at?: string;
   tier?: string;
   created_at: string;
