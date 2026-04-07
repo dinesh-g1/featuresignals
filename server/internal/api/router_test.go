@@ -275,6 +275,28 @@ func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error    
 func (noopStore) DeleteCustomRole(context.Context, string) error                            { return errNoop }
 func (noopStore) SoftDeleteUser(context.Context, string) error                              { return errNoop }
 
+func (noopStore) InsertProductEvent(context.Context, *domain.ProductEvent) error { return nil }
+func (noopStore) InsertProductEvents(context.Context, []domain.ProductEvent) error {
+	return nil
+}
+func (noopStore) CountEventsByOrg(context.Context, string, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (noopStore) CountEventsByUser(context.Context, string, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (noopStore) UpdateUserEmailPreferences(context.Context, string, bool, string) error {
+	return nil
+}
+func (noopStore) GetUserEmailPreferences(context.Context, string) (bool, string, error) {
+	return false, "", nil
+}
+func (noopStore) DismissHint(context.Context, string, string) error { return nil }
+func (noopStore) GetDismissedHints(context.Context, string) ([]string, error) {
+	return nil, nil
+}
+func (noopStore) SetTourCompleted(context.Context, string) error { return nil }
+
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }

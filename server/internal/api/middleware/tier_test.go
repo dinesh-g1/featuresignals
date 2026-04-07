@@ -271,6 +271,28 @@ func (s *tierMockStore) UpdateCustomRole(context.Context, *domain.CustomRole) er
 func (s *tierMockStore) DeleteCustomRole(context.Context, string) error             { return nil }
 func (s *tierMockStore) SoftDeleteUser(context.Context, string) error               { return nil }
 
+func (s *tierMockStore) InsertProductEvent(context.Context, *domain.ProductEvent) error { return nil }
+func (s *tierMockStore) InsertProductEvents(context.Context, []domain.ProductEvent) error {
+	return nil
+}
+func (s *tierMockStore) CountEventsByOrg(context.Context, string, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) CountEventsByUser(context.Context, string, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) UpdateUserEmailPreferences(context.Context, string, bool, string) error {
+	return nil
+}
+func (s *tierMockStore) GetUserEmailPreferences(context.Context, string) (bool, string, error) {
+	return false, "", nil
+}
+func (s *tierMockStore) DismissHint(context.Context, string, string) error { return nil }
+func (s *tierMockStore) GetDismissedHints(context.Context, string) ([]string, error) {
+	return nil, nil
+}
+func (s *tierMockStore) SetTourCompleted(context.Context, string) error { return nil }
+
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)
 }

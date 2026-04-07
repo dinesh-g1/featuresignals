@@ -17,8 +17,11 @@ import (
 	"github.com/featuresignals/server/internal/api"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/config"
+	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/eval"
+	"github.com/featuresignals/server/internal/events"
+	"github.com/featuresignals/server/internal/mailer"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
@@ -211,6 +214,40 @@ func main() {
 		paymentRegistry.Register(stripepkg.NewProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripePriceID))
 		logger.Info("Stripe payment gateway registered", "mode", cfg.StripeMode)
 	}
+
+	// Product event emitter (async, non-blocking, batched writes)
+	eventEmitter := events.NewAsyncEmitter(store, logger)
+	defer func() {
+		drainCtx, drainCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer drainCancel()
+		eventEmitter.Close(drainCtx)
+	}()
+	logger.Info("product event emitter started")
+
+	// Lifecycle mailer (renders HTML templates and delivers via SMTP or logs)
+	var lifecycleMailer domain.Mailer
+	switch cfg.EmailProvider {
+	case "smtp":
+		if cfg.SMTPHost != "" {
+			m, err := mailer.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
+			if err != nil {
+				logger.Warn("failed to initialize SMTP mailer, falling back to noop", "error", err)
+				lifecycleMailer = mailer.NewNoopMailer(logger)
+			} else {
+				lifecycleMailer = m
+				logger.Info("lifecycle SMTP mailer configured", "host", cfg.SMTPHost)
+			}
+		} else {
+			lifecycleMailer = mailer.NewNoopMailer(logger)
+		}
+	default:
+		lifecycleMailer = mailer.NewNoopMailer(logger)
+		logger.Info("lifecycle mailer using noop (no SMTP configured)")
+	}
+
+	// Suppress unused variable warnings — these will be wired into handlers in Phase 1
+	_ = eventEmitter
+	_ = lifecycleMailer
 
 	// Router
 	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
