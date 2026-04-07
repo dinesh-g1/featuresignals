@@ -68,7 +68,7 @@ describe("Sidebar", () => {
     render(<Sidebar />);
 
     // Act
-    const logoutButtons = screen.getAllByTitle("Sign out");
+     const logoutButtons = screen.getAllByLabelText("Sign out");
     fireEvent.click(logoutButtons[0]);
 
     // Assert

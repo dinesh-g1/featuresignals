@@ -389,3 +389,12 @@ export interface SSODiscovery {
   provider_type?: "saml" | "oidc";
   enforce?: boolean;
 }
+
+export interface AnalyticsOverview {
+  period: string;
+  active_workspaces: number;
+  active_users: number;
+  funnel: Record<string, number>;
+  plan_distribution: Record<string, number>;
+  event_counts: Record<string, number>;
+}

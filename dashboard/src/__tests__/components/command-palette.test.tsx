@@ -48,7 +48,7 @@ describe("CommandPalette", () => {
     // Assert
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText("Search flags, segments, or navigate..."),
+        screen.getByPlaceholderText("Search flags, segments, or type help: / create: ..."),
       ).toBeInTheDocument();
     });
   });
@@ -59,18 +59,18 @@ describe("CommandPalette", () => {
     fireEvent.keyDown(document, { key: "k", ctrlKey: true });
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText("Search flags, segments, or navigate..."),
+        screen.getByPlaceholderText("Search flags, segments, or type help: / create: ..."),
       ).toBeInTheDocument();
     });
 
     // Act
-    const input = screen.getByPlaceholderText("Search flags, segments, or navigate...");
+    const input = screen.getByPlaceholderText("Search flags, segments, or type help: / create: ...");
     fireEvent.keyDown(input, { key: "Escape" });
 
     // Assert
     await waitFor(() => {
       expect(
-        screen.queryByPlaceholderText("Search flags, segments, or navigate..."),
+        screen.queryByPlaceholderText("Search flags, segments, or type help: / create: ..."),
       ).not.toBeInTheDocument();
     });
   });
@@ -84,7 +84,7 @@ describe("CommandPalette", () => {
 
     // Assert
     await waitFor(() => {
-      const input = screen.getByPlaceholderText("Search flags, segments, or navigate...");
+      const input = screen.getByPlaceholderText("Search flags, segments, or type help: / create: ...");
       expect(input).toBeInTheDocument();
       expect(input.tagName).toBe("INPUT");
     });

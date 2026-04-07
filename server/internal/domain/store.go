@@ -266,6 +266,11 @@ type UserPreferenceStore interface {
 	SetTourCompleted(ctx context.Context, userID string) error
 }
 
+// FeedbackWriter persists in-product user feedback.
+type FeedbackWriter interface {
+	InsertFeedback(ctx context.Context, fb *Feedback) error
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -301,4 +306,5 @@ type Store interface {
 	CustomRoleStore
 	EventStore
 	UserPreferenceStore
+	FeedbackWriter
 }

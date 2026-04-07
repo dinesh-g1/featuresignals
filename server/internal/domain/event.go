@@ -50,6 +50,18 @@ type EventContext struct {
 	Referrer  string `json:"referrer,omitempty"`
 }
 
+// Feedback captures in-product user feedback (bug reports, feature requests,
+// general comments) along with sentiment and the page context.
+type Feedback struct {
+	ID        string `json:"id" db:"id"`
+	UserID    string `json:"user_id" db:"user_id"`
+	OrgID     string `json:"org_id" db:"org_id"`
+	Type      string `json:"type" db:"type"`
+	Sentiment string `json:"sentiment" db:"sentiment"`
+	Message   string `json:"message" db:"message"`
+	Page      string `json:"page" db:"page"`
+}
+
 // EventEmitter is the port for recording product events. Implementations
 // must be safe for concurrent use and must never block the caller —
 // event emission is fire-and-forget from the business logic perspective.
@@ -64,6 +76,11 @@ type EventStore interface {
 	InsertProductEvents(ctx context.Context, events []ProductEvent) error
 	CountEventsByOrg(ctx context.Context, orgID string, event string, since time.Time) (int, error)
 	CountEventsByUser(ctx context.Context, userID string, event string, since time.Time) (int, error)
+	CountEventsByCategory(ctx context.Context, category string, since time.Time) (int, error)
+	CountDistinctOrgs(ctx context.Context, event string, since time.Time) (int, error)
+	CountDistinctUsers(ctx context.Context, since time.Time) (int, error)
+	EventFunnel(ctx context.Context, events []string, since time.Time) (map[string]int, error)
+	PlanDistribution(ctx context.Context) (map[string]int, error)
 }
 
 // ─── Well-known event names ─────────────────────────────────────────────────

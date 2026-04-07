@@ -5,6 +5,10 @@ title: Targeting & Segments
 
 # Targeting & Segments
 
+:::tip Open in Dashboard
+Create and manage segments in the [Segments page →](https://app.featuresignals.com/segments)
+:::
+
 Targeting lets you deliver different flag values to different users based on their attributes. Segments are reusable groups of targeting conditions.
 
 ## Targeting Rules

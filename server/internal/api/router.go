@@ -117,6 +117,9 @@ func NewRouter(
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)
 	featuresH := handlers.NewFeaturesHandler(store)
+	analyticsH := handlers.NewAnalyticsHandler(store)
+	preferencesH := handlers.NewPreferencesHandler(store)
+	feedbackH := handlers.NewFeedbackHandler(store, emitter)
 	ssoH := handlers.NewSSOHandler(store)
 	ssoAuthH := handlers.NewSSOAuthHandler(store, jwtMgr, appBaseURL, dashboardURL)
 	mfaH := handlers.NewMFAHandler(store)
@@ -267,6 +270,10 @@ func NewRouter(
 			r.Use(middleware.RequireRole(allRoles...))
 			r.Get("/users/me/data", userPrivacyH.ExportMyData)
 			r.Delete("/users/me", userPrivacyH.DeleteMyAccount)
+			r.Get("/users/me/hints", preferencesH.GetHints)
+			r.Post("/users/me/hints", preferencesH.DismissHint)
+			r.Put("/users/me/email-preferences", preferencesH.UpdateEmailPreferences)
+			r.Post("/feedback", feedbackH.Submit)
 		})
 
 			// ── Read-only routes (all authenticated roles) ───────────
@@ -353,11 +360,14 @@ func NewRouter(
 				r.Delete("/members/{memberID}", teamH.Remove)
 				r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
 
-				// Metrics
-				r.Get("/metrics/evaluations", metricsH.Summary)
-				r.Post("/metrics/evaluations/reset", metricsH.Reset)
-				r.Get("/metrics/impressions", metricsH.ImpressionSummary)
-				r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
+			// Metrics
+			r.Get("/metrics/evaluations", metricsH.Summary)
+			r.Post("/metrics/evaluations/reset", metricsH.Reset)
+			r.Get("/metrics/impressions", metricsH.ImpressionSummary)
+			r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
+
+			// Internal KPI analytics
+			r.Get("/analytics/overview", analyticsH.Overview)
 			})
 
 			// ── Approval review (Pro+, admin-only) ──────────────────

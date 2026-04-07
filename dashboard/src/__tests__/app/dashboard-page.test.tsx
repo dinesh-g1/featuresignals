@@ -9,6 +9,7 @@ vi.mock("@/lib/api", () => ({
     listProjects: vi.fn(),
     listFlags: vi.fn(),
     listAudit: vi.fn(),
+    getUsage: vi.fn().mockResolvedValue({ projects_used: 1, projects_limit: 3, seats_used: 1, seats_limit: 5, environments_used: 1, environments_limit: 3 }),
   },
 }));
 
