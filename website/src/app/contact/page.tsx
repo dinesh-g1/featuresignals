@@ -55,8 +55,8 @@ export default function ContactPage() {
       </SectionReveal>
 
       <div className="mt-12 grid gap-8 md:grid-cols-5">
-        <SectionReveal delay={0.05}>
-          <div className="space-y-6 md:col-span-2">
+        <SectionReveal delay={0.05} className="md:col-span-2">
+          <div className="space-y-6">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 space-y-4">
               <h2 className="font-semibold text-slate-900">Why teams choose FeatureSignals</h2>
               <div className="space-y-3">
@@ -86,12 +86,12 @@ export default function ContactPage() {
           </div>
         </SectionReveal>
 
-        <SectionReveal delay={0.1}>
+        <SectionReveal delay={0.1} className="md:col-span-3">
           <form
             onSubmit={handleSubmit}
-            className="rounded-xl border border-slate-200 bg-white p-6 md:col-span-3 space-y-4"
+            className="rounded-xl border border-slate-200 bg-white p-6 space-y-4"
           >
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-slate-700">Full Name</label>
                 <input
@@ -114,7 +114,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="company" className="block text-sm font-medium text-slate-700">Company</label>
                 <input
@@ -154,7 +154,7 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60 sm:w-auto"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
               {submitting ? "Sending..." : "Send Message"}

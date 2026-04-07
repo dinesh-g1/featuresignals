@@ -2101,3 +2101,60 @@ func (s *Store) InsertFeedback(ctx context.Context, fb *domain.Feedback) error {
 	)
 	return err
 }
+
+// --- Status Checks ---
+
+func (s *Store) InsertStatusChecks(ctx context.Context, checks []domain.StatusCheck) error {
+	if len(checks) == 0 {
+		return nil
+	}
+	batch := &pgx.Batch{}
+	for i := range checks {
+		batch.Queue(
+			`INSERT INTO status_checks (region, component, status, latency_ms, message, checked_at)
+			 VALUES ($1, $2, $3, $4, $5, $6)`,
+			checks[i].Region, checks[i].Component, checks[i].Status,
+			checks[i].LatencyMs, checks[i].Message, checks[i].CheckedAt,
+		)
+	}
+	br := s.pool.SendBatch(ctx, batch)
+	defer br.Close()
+	for range checks {
+		if _, err := br.Exec(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) GetComponentHistory(ctx context.Context, days int) ([]domain.DailyComponentStatus, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT
+			TO_CHAR(DATE(checked_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
+			region,
+			component,
+			COUNT(*) AS total_checks,
+			COUNT(*) FILTER (WHERE status = 'operational') AS operational_checks
+		 FROM status_checks
+		 WHERE checked_at >= NOW() - make_interval(days => $1)
+		   AND status != 'unreachable'
+		 GROUP BY day, region, component
+		 ORDER BY day, region, component`, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []domain.DailyComponentStatus
+	for rows.Next() {
+		var d domain.DailyComponentStatus
+		if err := rows.Scan(&d.Date, &d.Region, &d.Component, &d.TotalChecks, &d.OperationalChecks); err != nil {
+			return nil, err
+		}
+		if d.TotalChecks > 0 {
+			d.UptimePct = float64(d.OperationalChecks) / float64(d.TotalChecks) * 100
+		}
+		result = append(result, d)
+	}
+	return result, rows.Err()
+}
