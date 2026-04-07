@@ -30,11 +30,12 @@ type signupStore interface {
 //   1. InitiateSignup: validate input, hash password + OTP, store in pending_registrations, send OTP email
 //   2. CompleteSignup: verify OTP, create user + org + project + envs atomically
 type SignupHandler struct {
-	store     signupStore
-	jwtMgr    auth.TokenManager
-	otpSender email.OTPSender
-	emitter   domain.EventEmitter
-	lifecycle LifecycleSender
+	store           signupStore
+	jwtMgr          auth.TokenManager
+	otpSender       email.OTPSender
+	emitter         domain.EventEmitter
+	lifecycle       LifecycleSender
+	internalChecker dto.InternalChecker
 }
 
 func NewSignupHandler(
@@ -43,6 +44,7 @@ func NewSignupHandler(
 	otpSender email.OTPSender,
 	emitter domain.EventEmitter,
 	lifecycle LifecycleSender,
+	internalChecker dto.InternalChecker,
 ) *SignupHandler {
 	if emitter == nil {
 		emitter = NoopEmitter()
@@ -51,11 +53,12 @@ func NewSignupHandler(
 		lifecycle = NoopLifecycle()
 	}
 	return &SignupHandler{
-		store:     store,
-		jwtMgr:    jwtMgr,
-		otpSender: otpSender,
-		emitter:   emitter,
-		lifecycle: lifecycle,
+		store:           store,
+		jwtMgr:          jwtMgr,
+		otpSender:       otpSender,
+		emitter:         emitter,
+		lifecycle:       lifecycle,
+		internalChecker: internalChecker,
 	}
 }
 
@@ -315,7 +318,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	httputil.JSON(w, http.StatusCreated, dto.LoginResponse{
-		User:                sanitizeUser(user),
+		User:                dto.SafeUserFromDomain(user, h.internalChecker),
 		Organization:        dto.OrganizationFromDomain(org),
 		Tokens:              dto.AuthTokensFromPair(tokens),
 		OnboardingCompleted: false,

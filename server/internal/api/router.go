@@ -51,6 +51,7 @@ func NewRouter(
 	regionsEnabled bool,
 	emitter domain.EventEmitter,
 	lifecycle handlers.LifecycleSender,
+	internalChecker dto.InternalChecker,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -87,6 +88,7 @@ func NewRouter(
 	if statusHandler != nil {
 		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status", statusHandler.HandleLocalStatus)
 		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status/global", statusHandler.HandleGlobalStatus)
+		r.With(middleware.CacheControl("public, max-age=300")).Get("/v1/status/history", statusHandler.HandleStatusHistory)
 	}
 
 	// Reusable role sets
@@ -95,7 +97,7 @@ func NewRouter(
 	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
 
 	// Init handlers
-	authH := handlers.NewAuthHandler(store, jwtMgr, nil, appBaseURL, dashboardURL)
+	authH := handlers.NewAuthHandler(store, jwtMgr, nil, appBaseURL, dashboardURL, internalChecker)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store, emitter)
@@ -112,7 +114,7 @@ func NewRouter(
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger, emitter, lifecycle)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
-	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle)
+	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker)
 	salesH := handlers.NewSalesHandler(store)
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)
