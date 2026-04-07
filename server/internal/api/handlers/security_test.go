@@ -127,7 +127,7 @@ func TestRegister_NameTooLong(t *testing.T) {
 
 func TestTeamInvite_InvalidEmail(t *testing.T) {
 	store := newMockStore()
-	h := NewTeamHandler(store, &stubTokenManager{})
+	h := NewTeamHandler(store, &stubTokenManager{}, nil, nil)
 
 	body := `{"email":"badformat","role":"developer"}`
 	r := httptest.NewRequest("POST", "/v1/members/invite", strings.NewReader(body))

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -32,10 +33,30 @@ type SignupHandler struct {
 	store     signupStore
 	jwtMgr    auth.TokenManager
 	otpSender email.OTPSender
+	emitter   domain.EventEmitter
+	lifecycle LifecycleSender
 }
 
-func NewSignupHandler(store signupStore, jwtMgr auth.TokenManager, otpSender email.OTPSender) *SignupHandler {
-	return &SignupHandler{store: store, jwtMgr: jwtMgr, otpSender: otpSender}
+func NewSignupHandler(
+	store signupStore,
+	jwtMgr auth.TokenManager,
+	otpSender email.OTPSender,
+	emitter domain.EventEmitter,
+	lifecycle LifecycleSender,
+) *SignupHandler {
+	if emitter == nil {
+		emitter = NoopEmitter()
+	}
+	if lifecycle == nil {
+		lifecycle = NoopLifecycle()
+	}
+	return &SignupHandler{
+		store:     store,
+		jwtMgr:    jwtMgr,
+		otpSender: otpSender,
+		emitter:   emitter,
+		lifecycle: lifecycle,
+	}
 }
 
 type initiateSignupRequest struct {
@@ -258,6 +279,40 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info("signup completed", "user_id", user.ID, "org_id", org.ID, "plan", org.Plan)
+
+	h.emitter.Emit(ctx, domain.ProductEvent{
+		Event:    domain.EventSignupCompleted,
+		Category: domain.EventCategoryAuth,
+		UserID:   user.ID,
+		OrgID:    org.ID,
+		Properties: eventProps(map[string]string{
+			"org_name":    org.Name,
+			"data_region": org.DataRegion,
+		}),
+	})
+
+	h.emitter.Emit(ctx, domain.ProductEvent{
+		Event:    domain.EventTrialStarted,
+		Category: domain.EventCategoryBilling,
+		UserID:   user.ID,
+		OrgID:    org.ID,
+	})
+
+	go func() {
+		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer sendCancel()
+		_ = h.lifecycle.Send(sendCtx, user.ID, domain.EmailMessage{
+			To:       user.Email,
+			ToName:   user.Name,
+			Template: domain.TemplateWelcome,
+			Subject:  "Welcome to FeatureSignals",
+			Data: map[string]string{
+				"ToName":       user.Name,
+				"OrgName":      org.Name,
+				"DashboardURL": "https://app.featuresignals.com",
+			},
+		})
+	}()
 
 	httputil.JSON(w, http.StatusCreated, dto.LoginResponse{
 		User:                sanitizeUser(user),

@@ -2,8 +2,14 @@
 
 import { SectionReveal } from "@/components/section-reveal";
 import pricingData from "@/data/pricing.json";
-import { Check, Play } from "lucide-react";
+import { Check, Minus, Play } from "lucide-react";
 import { useState } from "react";
+
+function renderCell(value: string) {
+  if (value === "yes") return <Check className="mx-auto h-4 w-4 text-emerald-500" aria-label="Included" />;
+  if (value === "no") return <Minus className="mx-auto h-4 w-4 text-slate-300" aria-label="Not included" />;
+  return <span className="text-sm font-medium text-slate-700">{value}</span>;
+}
 
 const free = pricingData.plans.free;
 const pro = pricingData.plans.pro;
@@ -36,8 +42,8 @@ export default function PricingPage() {
             Start free. Scale as you grow.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-slate-500 sm:text-lg">
-            Every plan includes the full feature set. Pick the one that matches
-            your team size and support needs.
+            Every plan gets the core flag engine. Pro unlocks team features,
+            and Enterprise adds dedicated support and compliance.
           </p>
           <p className="mt-3 text-sm text-slate-400">
             Not sure yet?{" "}
@@ -193,10 +199,11 @@ export default function PricingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <SectionReveal>
             <h2 className="text-center text-xl font-bold text-slate-900 sm:text-2xl">
-              Every plan includes
+              Core flag engine — included in every plan
             </h2>
             <p className="mt-2 text-center text-sm text-slate-500 sm:text-base">
-              No feature gating. The full platform from day one.
+              The evaluation engine is the same on Free, Pro, and Enterprise. No
+              limits on flags or evaluations.
             </p>
             <div className="mx-auto mt-8 grid max-w-4xl grid-cols-1 gap-3 sm:mt-10 sm:grid-cols-2 sm:gap-4 md:grid-cols-4">
               {pricingData.common_features.map((f) => (
@@ -207,6 +214,51 @@ export default function PricingPage() {
                   <p className="text-sm font-semibold text-slate-900">{f}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Comparison matrix */}
+            <div className="mx-auto mt-12 max-w-4xl overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="pb-3 pr-6 font-semibold text-slate-900">Feature</th>
+                    <th className="pb-3 px-4 text-center font-semibold text-slate-900">Free</th>
+                    <th className="pb-3 px-4 text-center font-semibold text-indigo-600">Pro</th>
+                    <th className="pb-3 px-4 text-center font-semibold text-slate-900">Enterprise</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {([
+                    ["Feature flags & evaluations", "Unlimited", "Unlimited", "Unlimited"],
+                    ["Projects", "1", "Unlimited", "Unlimited"],
+                    ["Environments", "2", "Unlimited", "Unlimited"],
+                    ["Team members", "3", "Unlimited", "Unlimited"],
+                    ["A/B experimentation", "yes", "yes", "yes"],
+                    ["SDKs (8 languages)", "yes", "yes", "yes"],
+                    ["Real-time SSE streaming", "yes", "yes", "yes"],
+                    ["Kill switch", "yes", "yes", "yes"],
+                    ["RBAC & per-env permissions", "no", "yes", "yes"],
+                    ["Audit logs & export", "no", "yes", "yes"],
+                    ["Approval workflows", "no", "yes", "yes"],
+                    ["Webhooks & scheduling", "no", "yes", "yes"],
+                    ["Relay proxy", "no", "yes", "yes"],
+                    ["SSO (SAML/OIDC)", "no", "no", "yes"],
+                    ["SCIM provisioning", "no", "no", "yes"],
+                    ["IP allowlist", "no", "no", "yes"],
+                    ["Custom roles", "no", "no", "yes"],
+                    ["MFA enforcement", "no", "no", "yes"],
+                    ["Dedicated support (4h SLA)", "no", "no", "yes"],
+                    ["Support", "Community", "Priority email", "Dedicated + SLA"],
+                  ] as const).map(([label, f, p, e]) => (
+                    <tr key={label}>
+                      <td className="py-2.5 pr-6 text-slate-700">{label}</td>
+                      <td className="py-2.5 px-4 text-center">{renderCell(f)}</td>
+                      <td className="py-2.5 px-4 text-center">{renderCell(p)}</td>
+                      <td className="py-2.5 px-4 text-center">{renderCell(e)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </SectionReveal>
         </div>
@@ -351,9 +403,9 @@ export default function PricingPage() {
                   How does billing work?
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Billing is handled via PayU. You can upgrade to Pro from the
-                  Flag Engine at any time. Subscriptions are monthly and can be
-                  cancelled anytime.
+                  Billing is handled via Stripe or PayU depending on your region.
+                  You can upgrade to Pro from the dashboard at any time.
+                  Subscriptions are monthly and can be cancelled anytime.
                 </p>
               </div>
               <div>
@@ -387,19 +439,13 @@ export default function PricingPage() {
               href="https://app.featuresignals.com/register"
               className="inline-block w-full rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md sm:w-auto"
             >
-              Start Free Trial
+              Start Free — No Credit Card
             </a>
             <a
-              href="https://app.featuresignals.com/register"
+              href="https://docs.featuresignals.com/getting-started/quickstart"
               className="inline-block w-full rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
             >
-              Sign Up Free
-            </a>
-            <a
-              href="https://docs.featuresignals.com"
-              className="inline-block w-full rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
-            >
-              Read the Docs
+              Self-Host in 5 Minutes
             </a>
           </div>
         </SectionReveal>

@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -22,12 +24,30 @@ type teamStore interface {
 }
 
 type TeamHandler struct {
-	store  teamStore
-	jwtMgr auth.TokenManager
+	store     teamStore
+	jwtMgr    auth.TokenManager
+	emitter   domain.EventEmitter
+	lifecycle LifecycleSender
 }
 
-func NewTeamHandler(store teamStore, jwtMgr auth.TokenManager) *TeamHandler {
-	return &TeamHandler{store: store, jwtMgr: jwtMgr}
+func NewTeamHandler(
+	store teamStore,
+	jwtMgr auth.TokenManager,
+	emitter domain.EventEmitter,
+	lifecycle LifecycleSender,
+) *TeamHandler {
+	if emitter == nil {
+		emitter = NoopEmitter()
+	}
+	if lifecycle == nil {
+		lifecycle = NoopLifecycle()
+	}
+	return &TeamHandler{
+		store:     store,
+		jwtMgr:    jwtMgr,
+		emitter:   emitter,
+		lifecycle: lifecycle,
+	}
 }
 
 // List returns all org members with user details.
@@ -129,6 +149,34 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		Action: "member.invited", ResourceType: "member", ResourceID: &member.ID,
 		Metadata: meta, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
 	})
+
+	h.emitter.Emit(r.Context(), domain.ProductEvent{
+		Event:    domain.EventMemberInvited,
+		Category: domain.EventCategoryTeam,
+		UserID:   userID,
+		OrgID:    orgID,
+		Properties: eventProps(map[string]string{
+			"invited_email": req.Email,
+			"role":          string(req.Role),
+		}),
+	})
+
+	go func() {
+		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer sendCancel()
+		_ = h.lifecycle.Send(sendCtx, user.ID, domain.EmailMessage{
+			To:       req.Email,
+			ToName:   user.Name,
+			Template: domain.TemplateTeamInvite,
+			Subject:  "You've been invited to FeatureSignals",
+			Data: map[string]string{
+				"ToName":       user.Name,
+				"OrgName":      orgID,
+				"Role":         string(req.Role),
+				"DashboardURL": "https://app.featuresignals.com",
+			},
+		})
+	}()
 
 	httputil.JSON(w, http.StatusCreated, dto.MemberResponse{
 		ID:    member.ID,

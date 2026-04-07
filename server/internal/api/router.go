@@ -49,6 +49,8 @@ func NewRouter(
 	deployMode string,
 	billingEnabled bool,
 	regionsEnabled bool,
+	emitter domain.EventEmitter,
+	lifecycle handlers.LifecycleSender,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -96,21 +98,21 @@ func NewRouter(
 	authH := handlers.NewAuthHandler(store, jwtMgr, nil, appBaseURL, dashboardURL)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
-	flagH := handlers.NewFlagHandler(store)
+	flagH := handlers.NewFlagHandler(store, emitter)
 	segmentH := handlers.NewSegmentHandler(store)
 	apiKeyH := handlers.NewAPIKeyHandler(store)
 	auditH := handlers.NewAuditHandler(store)
 	auditExportH := handlers.NewAuditExportHandler(store)
-	teamH := handlers.NewTeamHandler(store, jwtMgr)
+	teamH := handlers.NewTeamHandler(store, jwtMgr, emitter, lifecycle)
 	webhookH := handlers.NewWebhookHandler(store)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
-	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger)
+	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger, emitter, lifecycle)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
-	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender)
+	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle)
 	salesH := handlers.NewSalesHandler(store)
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)

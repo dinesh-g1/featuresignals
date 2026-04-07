@@ -52,23 +52,17 @@ export default function HomePage() {
                 href="https://app.featuresignals.com/register"
                 className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
               >
-                Start Free Trial
+                Start Free — No Credit Card
               </Link>
               <Link
-                href="https://app.featuresignals.com/register"
-                className="inline-flex items-center justify-center rounded-lg border border-indigo-300 bg-white px-6 py-3 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50"
-              >
-                Sign Up Free
-              </Link>
-              <Link
-                href="https://docs.featuresignals.com"
+                href="https://docs.featuresignals.com/getting-started/quickstart"
                 className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
-                View Docs
+                Quickstart Guide
               </Link>
             </div>
             <p className="mt-4 text-sm text-slate-500">
-              14-day free trial with full Pro features. No credit card required.
+              14-day Pro trial included. Self-host or use our cloud. Open source, Apache 2.0.
             </p>
           </div>
 
@@ -220,19 +214,13 @@ export default function HomePage() {
                 href="https://app.featuresignals.com/register"
                 className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
               >
-                Start Free Trial
-              </Link>
-              <Link
-                href="https://app.featuresignals.com/register"
-                className="inline-flex items-center justify-center rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                Sign Up Free
+                Start Free — No Credit Card
               </Link>
               <Link
                 href="https://docs.featuresignals.com/getting-started/quickstart"
                 className="inline-flex items-center justify-center rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
-                Quickstart Guide
+                Self-Host in 5 Minutes
               </Link>
             </div>
           </div>
