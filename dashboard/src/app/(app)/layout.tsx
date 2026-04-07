@@ -51,16 +51,16 @@ function MobileHeader() {
 }
 
 function TourGate() {
-  const onboardingCompleted = useAppStore((s) => s.onboardingCompleted);
+  const tourCompleted = useAppStore((s) => s.tourCompleted);
   const user = useAppStore((s) => s.user);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!onboardingCompleted && user && !user.tour_completed) {
+    if (!tourCompleted && user && !user.tour_completed) {
       const timer = setTimeout(() => setShow(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, [onboardingCompleted, user]);
+  }, [tourCompleted, user]);
 
   if (!show) return null;
   return <ProductTour onComplete={() => setShow(false)} />;
@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex min-h-0 flex-1 flex-col">
           <MobileHeader />
           <ContextBar />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <main data-tour="main-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             {children}
           </main>
           <DashboardFooter />

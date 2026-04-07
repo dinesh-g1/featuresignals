@@ -136,7 +136,7 @@ function SidebarContent() {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2.5 py-2" aria-label="Main navigation">
+      <nav data-tour="sidebar-nav" className="flex-1 overflow-y-auto px-2.5 py-2" aria-label="Main navigation">
         {navGroups.map((group, gi) => (
           <div key={group.label} className={cn(gi > 0 && "mt-4")}>
             <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -188,7 +188,7 @@ function SidebarContent() {
         </div>
       )}
 
-      <div className="border-t border-slate-100 p-2.5">
+      <div data-tour="sidebar-profile" className="border-t border-slate-100 p-2.5">
         <div className="flex items-center justify-between rounded-lg p-2 transition-all duration-150 hover:bg-slate-50">
           <div className="min-w-0 text-sm">
             <p className="truncate font-medium text-slate-700">{user?.name || "User"}</p>
@@ -215,7 +215,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-slate-200/60 bg-white md:flex">
+      <aside data-tour="sidebar" className="hidden h-full w-56 shrink-0 flex-col border-r border-slate-200/60 bg-white md:flex">
         <SidebarContent />
       </aside>
 
