@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-
-type TooltipPlacement = "right" | "bottom" | "bottom-left";
 
 interface TourStep {
   title: string;
   description: string;
   targetSelector: string;
-  placement: TooltipPlacement;
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -19,28 +16,24 @@ const TOUR_STEPS: TourStep[] = [
     description:
       "Access your projects, flags, segments, and settings from the sidebar. Switch between different sections of your workspace here.",
     targetSelector: '[data-tour="sidebar-nav"]',
-    placement: "right",
   },
   {
     title: "Project & Environment",
     description:
       "Switch between projects and environments here. Each environment has independent flag states for development, staging, and production.",
     targetSelector: '[data-tour="context-bar"]',
-    placement: "bottom-left",
   },
   {
     title: "Create Your First Flag",
     description:
       "This is your workspace. Create feature flags, set up targeting rules, and manage rollouts all from this central area.",
     targetSelector: '[data-tour="main-content"]',
-    placement: "bottom-left",
   },
   {
     title: "Your Profile",
     description:
       "View your account details, manage settings, and sign out from here.",
     targetSelector: '[data-tour="sidebar-profile"]',
-    placement: "right",
   },
 ];
 
@@ -51,43 +44,54 @@ interface Rect {
   height: number;
 }
 
-const PADDING = 6;
+const SPOTLIGHT_PAD = 6;
+const TOOLTIP_GAP = 12;
+const VIEWPORT_PAD = 12;
 
 function getTargetRect(selector: string): Rect | null {
   const el = document.querySelector(selector);
   if (!el) return null;
   const r = el.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return null;
   return {
-    top: r.top - PADDING,
-    left: r.left - PADDING,
-    width: r.width + PADDING * 2,
-    height: r.height + PADDING * 2,
+    top: r.top - SPOTLIGHT_PAD,
+    left: r.left - SPOTLIGHT_PAD,
+    width: r.width + SPOTLIGHT_PAD * 2,
+    height: r.height + SPOTLIGHT_PAD * 2,
   };
 }
 
-function computeTooltipStyle(
-  rect: Rect,
-  placement: TooltipPlacement,
+function clampToViewport(
+  targetRect: Rect,
+  tooltipW: number,
+  tooltipH: number,
 ): React.CSSProperties {
-  const TOOLTIP_GAP = 12;
-  switch (placement) {
-    case "right":
-      return {
-        top: rect.top,
-        left: rect.left + rect.width + TOOLTIP_GAP,
-      };
-    case "bottom":
-      return {
-        top: rect.top + rect.height + TOOLTIP_GAP,
-        left: rect.left + rect.width / 2,
-        transform: "translateX(-50%)",
-      };
-    case "bottom-left":
-      return {
-        top: rect.top + rect.height + TOOLTIP_GAP,
-        left: rect.left,
-      };
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const rightOfTarget = targetRect.left + targetRect.width + TOOLTIP_GAP;
+  const belowTarget = targetRect.top + targetRect.height + TOOLTIP_GAP;
+  const fitsRight = rightOfTarget + tooltipW + VIEWPORT_PAD <= vw;
+  const fitsBelow = belowTarget + tooltipH + VIEWPORT_PAD <= vh;
+
+  let top: number;
+  let left: number;
+
+  if (fitsRight) {
+    left = rightOfTarget;
+    top = targetRect.top + targetRect.height / 2 - tooltipH / 2;
+  } else if (fitsBelow) {
+    top = belowTarget;
+    left = targetRect.left;
+  } else {
+    top = targetRect.top - tooltipH - TOOLTIP_GAP;
+    left = targetRect.left;
   }
+
+  top = Math.max(VIEWPORT_PAD, Math.min(top, vh - tooltipH - VIEWPORT_PAD));
+  left = Math.max(VIEWPORT_PAD, Math.min(left, vw - tooltipW - VIEWPORT_PAD));
+
+  return { top, left };
 }
 
 function buildClipPath(rect: Rect): string {
@@ -120,29 +124,41 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(true);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<React.CSSProperties>({});
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
 
   const step = TOUR_STEPS[currentStep];
 
-  const measureTarget = useCallback(() => {
+  const measure = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
-      setTargetRect(getTargetRect(step.targetSelector));
+      const rect = getTargetRect(step.targetSelector);
+      setTargetRect(rect);
+      if (rect && tooltipRef.current) {
+        const { offsetWidth, offsetHeight } = tooltipRef.current;
+        setTooltipPos(clampToViewport(rect, offsetWidth, offsetHeight));
+      }
     });
   }, [step.targetSelector]);
 
   useEffect(() => {
-    measureTarget();
-
-    window.addEventListener("resize", measureTarget);
-    window.addEventListener("scroll", measureTarget, true);
-
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
     return () => {
       cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize", measureTarget);
-      window.removeEventListener("scroll", measureTarget, true);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
     };
-  }, [measureTarget]);
+  }, [measure]);
+
+  useLayoutEffect(() => {
+    if (targetRect && tooltipRef.current) {
+      const { offsetWidth, offsetHeight } = tooltipRef.current;
+      setTooltipPos(clampToViewport(targetRect, offsetWidth, offsetHeight));
+    }
+  }, [targetRect, currentStep]);
 
   const finish = useCallback(async () => {
     setVisible(false);
@@ -151,7 +167,7 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
       try {
         await api.updateOnboarding(token, { tour_completed: true });
       } catch {
-        // non-critical — local persistence is the source of truth
+        // non-critical
       }
     }
     onComplete?.();
@@ -165,34 +181,45 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
     }
   }, [currentStep, finish]);
 
-  if (!visible || !targetRect) return null;
+  if (!visible) return null;
 
   const isLast = currentStep === TOUR_STEPS.length - 1;
-  const tooltipStyle = computeTooltipStyle(targetRect, step.placement);
+  const hasTarget = targetRect !== null;
 
   return (
     <div className="fixed inset-0 z-[100]" aria-modal="true" role="dialog">
-      {/* Overlay with spotlight cutout */}
-      <div
-        className="absolute inset-0 bg-slate-900/60 transition-all duration-300"
-        style={{ clipPath: buildClipPath(targetRect) }}
-      />
+      {/* Overlay */}
+      {hasTarget ? (
+        <div
+          className="absolute inset-0 bg-slate-900/60 transition-all duration-300"
+          style={{ clipPath: buildClipPath(targetRect) }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-slate-900/60" />
+      )}
 
       {/* Spotlight border */}
-      <div
-        className="pointer-events-none absolute rounded-lg ring-2 ring-indigo-400 ring-offset-2 transition-all duration-300"
-        style={{
-          top: targetRect.top,
-          left: targetRect.left,
-          width: targetRect.width,
-          height: targetRect.height,
-        }}
-      />
+      {hasTarget && (
+        <div
+          className="pointer-events-none absolute rounded-lg ring-2 ring-indigo-400 ring-offset-2 transition-all duration-300"
+          style={{
+            top: targetRect.top,
+            left: targetRect.left,
+            width: targetRect.width,
+            height: targetRect.height,
+          }}
+        />
+      )}
 
-      {/* Tooltip */}
+      {/* Tooltip — positioned absolutely when target exists, centered otherwise */}
       <div
-        className="absolute z-10 w-80 rounded-xl border border-slate-200 bg-white p-5 shadow-2xl transition-all duration-300"
-        style={tooltipStyle}
+        ref={tooltipRef}
+        className={
+          hasTarget
+            ? "absolute z-10 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-4 shadow-2xl transition-all duration-300 sm:p-5"
+            : "fixed left-1/2 top-1/2 z-10 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5"
+        }
+        style={hasTarget ? tooltipPos : undefined}
       >
         <div className="mb-1 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-900">
@@ -202,12 +229,12 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
             {currentStep + 1} of {TOUR_STEPS.length}
           </span>
         </div>
-        <p className="mb-4 text-sm leading-relaxed text-slate-500">
+        <p className="mb-3 text-sm leading-relaxed text-slate-500 sm:mb-4">
           {step.description}
         </p>
 
         {/* Progress dots */}
-        <div className="mb-4 flex gap-1.5">
+        <div className="mb-3 flex gap-1.5 sm:mb-4">
           {TOUR_STEPS.map((_, i) => (
             <div
               key={i}

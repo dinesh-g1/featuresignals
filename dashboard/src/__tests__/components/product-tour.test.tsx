@@ -124,13 +124,14 @@ describe("ProductTour", () => {
     expect(mockSetTourCompleted).toHaveBeenCalledTimes(1);
   });
 
-  it("renders nothing when target element is missing", () => {
+  it("renders centered tooltip when target element is missing", () => {
     targets.forEach((el) => el.remove());
     targets = [];
 
-    const { container } = render(<ProductTour onComplete={onComplete} />);
+    render(<ProductTour onComplete={onComplete} />);
 
-    expect(container.innerHTML).toBe("");
+    expect(screen.getByText("Sidebar Navigation")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("has dialog role for accessibility", () => {
