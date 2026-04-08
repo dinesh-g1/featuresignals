@@ -18,7 +18,7 @@ ufw --force enable
 # SSH hardening
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 sed -i 's/PermitRootLogin yes/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
-systemctl restart sshd
+systemctl restart ssh
 
 # Docker
 curl -fsSL https://get.docker.com | sh

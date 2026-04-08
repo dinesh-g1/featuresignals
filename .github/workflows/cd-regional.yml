@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       regions:
-        description: "Comma-separated regions to deploy (us,eu)"
+        description: "Comma-separated regions to deploy (us,eu,in)"
         required: false
-        default: "us,eu"
+        default: "us,eu,in"
 
 jobs:
   deploy:
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        region: [us, eu]
+        region: [us, eu, in]
         include:
           - region: us
             host_secret: VPS_HOST_US
@@ -37,6 +37,13 @@ jobs:
             domain_main: eu.featuresignals.com
             domain_docs: docs.eu.featuresignals.com
             payment_gateway: stripe
+          - region: in
+            host_secret: VPS_HOST_IN
+            domain_api: api.featuresignals.com
+            domain_app: app.featuresignals.com
+            domain_main: featuresignals.com
+            domain_docs: docs.featuresignals.com
+            payment_gateway: payu
 
     steps:
       - name: Check if region should deploy
@@ -60,7 +67,7 @@ jobs:
           host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
-          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,NEXT_PUBLIC_API_URL_US,NEXT_PUBLIC_API_URL_EU,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE
+          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,NEXT_PUBLIC_API_URL_US,NEXT_PUBLIC_API_URL_EU,NEXT_PUBLIC_API_URL_IN,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=${{ matrix.region }}
@@ -85,6 +92,7 @@ jobs:
             OTEL_TRACE_SAMPLE_RATE=0.1
             NEXT_PUBLIC_API_URL_US=${NEXT_PUBLIC_API_URL_US}
             NEXT_PUBLIC_API_URL_EU=${NEXT_PUBLIC_API_URL_EU}
+            NEXT_PUBLIC_API_URL_IN=${NEXT_PUBLIC_API_URL_IN}
             PAYMENT_GATEWAY=${{ matrix.payment_gateway }}
             PAYU_MERCHANT_KEY=${PAYU_MERCHANT_KEY}
             PAYU_SALT=${PAYU_SALT}
@@ -104,6 +112,7 @@ jobs:
           OTEL_INGESTION_KEY: ${{ secrets.OTEL_INGESTION_KEY }}
           NEXT_PUBLIC_API_URL_US: https://api.us.featuresignals.com
           NEXT_PUBLIC_API_URL_EU: https://api.eu.featuresignals.com
+          NEXT_PUBLIC_API_URL_IN: https://api.featuresignals.com
           PAYU_MERCHANT_KEY: ${{ secrets.PAYU_MERCHANT_KEY }}
           PAYU_SALT: ${{ secrets.PAYU_SALT }}
           PAYU_MODE: ${{ secrets.PAYU_MODE }}
