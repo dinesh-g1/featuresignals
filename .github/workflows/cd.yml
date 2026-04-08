@@ -1,11 +1,10 @@
 name: CD
 
 on:
-  # TODO: Re-enable after adding fs-deploy SSH key to IN production server
-  # workflow_run:
-  #   workflows: ["CI"]
-  #   types: [completed]
-  #   branches: [main]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
