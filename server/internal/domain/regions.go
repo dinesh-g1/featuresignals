@@ -24,6 +24,18 @@ var Regions = map[string]RegionInfo{
 	RegionEU: {Code: RegionEU, Name: "Europe", Flag: "🇪🇺", APIEndpoint: "https://api.eu.featuresignals.com", AppEndpoint: "https://app.eu.featuresignals.com"},
 }
 
+// OverrideEndpoints merges config-driven endpoint URLs into the Regions map.
+// Call once at startup so that all consumers (status probes, proxy, etc.)
+// share the same resolved endpoints.
+func OverrideEndpoints(overrides map[string]string) {
+	for code, endpoint := range overrides {
+		if info, ok := Regions[code]; ok {
+			info.APIEndpoint = endpoint
+			Regions[code] = info
+		}
+	}
+}
+
 // ValidRegion returns true if the given region code is supported.
 func ValidRegion(code string) bool {
 	_, ok := Regions[code]

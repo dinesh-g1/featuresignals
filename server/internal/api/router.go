@@ -93,6 +93,7 @@ func NewRouter(
 		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status", statusHandler.HandleLocalStatus)
 		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status/global", statusHandler.HandleGlobalStatus)
 		r.With(middleware.CacheControl("public, max-age=300")).Get("/v1/status/history", statusHandler.HandleStatusHistory)
+		r.With(middleware.CacheControl("public, max-age=60")).Get("/v1/status/sla", statusHandler.HandleSLA)
 	}
 
 	// Reusable role sets

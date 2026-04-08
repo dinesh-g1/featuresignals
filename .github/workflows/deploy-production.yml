@@ -1,28 +1,53 @@
-name: CD Regional
+name: "Deploy to Production Regions"
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       regions:
-        description: "Comma-separated regions to deploy (us,eu,in)"
+        description: "Comma-separated regions to deploy (in,us,eu)"
         required: false
-        default: "us,eu,in"
+        default: "in,us,eu"
+      image_tag:
+        description: "Image tag to deploy (sha-xxx, v1.2.3, or latest)"
+        required: false
+        default: "latest"
+      rollback_commit:
+        description: "Git commit SHA to rollback to (leave empty for normal deploy)"
+        required: false
+        default: ""
+      skip_canary_soak:
+        description: "Skip the 60s canary soak period after IN deploy"
+        type: boolean
+        default: false
+      build_locally:
+        description: "Build images on the VPS instead of pulling from GHCR"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
+  # Sequential rolling deploy: IN (canary) -> US -> EU.
+  # fail-fast + max-parallel=1 ensures a failed canary halts the pipeline.
   deploy:
-    name: Deploy ${{ matrix.region }}
+    name: "Deploy ${{ matrix.region }} region"
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     strategy:
-      fail-fast: false
+      fail-fast: true
+      max-parallel: 1
       matrix:
-        region: [us, eu, in]
+        region: [in, us, eu]
         include:
+          - region: in
+            host_secret: VPS_HOST_IN
+            domain_api: api.featuresignals.com
+            domain_app: app.featuresignals.com
+            domain_main: featuresignals.com
+            domain_docs: docs.featuresignals.com
+            payment_gateway: payu
           - region: us
             host_secret: VPS_HOST_US
             domain_api: api.us.featuresignals.com
@@ -37,27 +62,16 @@ jobs:
             domain_main: eu.featuresignals.com
             domain_docs: docs.eu.featuresignals.com
             payment_gateway: stripe
-          - region: in
-            host_secret: VPS_HOST_IN
-            domain_api: api.featuresignals.com
-            domain_app: app.featuresignals.com
-            domain_main: featuresignals.com
-            domain_docs: docs.featuresignals.com
-            payment_gateway: payu
 
     steps:
       - name: Check if region should deploy
         id: check
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            REGIONS="${{ github.event.inputs.regions }}"
-            if echo "$REGIONS" | grep -q "${{ matrix.region }}"; then
-              echo "deploy=true" >> $GITHUB_OUTPUT
-            else
-              echo "deploy=false" >> $GITHUB_OUTPUT
-            fi
-          else
+          REGIONS="${{ github.event.inputs.regions }}"
+          if echo "$REGIONS" | grep -q "${{ matrix.region }}"; then
             echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Write environment file
@@ -67,7 +81,7 @@ jobs:
           host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
-          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,LOCAL_REGION,REGION_ENDPOINTS,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE
+          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,LOCAL_REGION,REGION_ENDPOINTS,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE,IMAGE_TAG,USE_REGISTRY
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=${{ matrix.region }}
@@ -100,6 +114,8 @@ jobs:
             STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
             STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
             STRIPE_MODE=${STRIPE_MODE}
+            IMAGE_TAG=${IMAGE_TAG}
+            USE_REGISTRY=${USE_REGISTRY}
             ENVEOF
             chmod 600 /opt/featuresignals/.env
         env:
@@ -118,6 +134,8 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
           STRIPE_MODE: ${{ secrets.STRIPE_MODE }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+          USE_REGISTRY: ${{ github.event.inputs.build_locally == 'true' && 'false' || 'true' }}
 
       - name: Pre-deploy database backup
         if: steps.check.outputs.deploy == 'true'
@@ -142,15 +160,19 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
           command_timeout: 15m
-          envs: REPO_TOKEN
+          envs: REPO_TOKEN,ROLLBACK_COMMIT,IMAGE_TAG
           script: |
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
+            export ROLLBACK_COMMIT="${ROLLBACK_COMMIT}"
+            export IMAGE_TAG="${IMAGE_TAG}"
             bash deploy/deploy-region.sh
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
+          ROLLBACK_COMMIT: ${{ github.event.inputs.rollback_commit }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
 
-      - name: Health check
+      - name: Verify deployment health
         if: steps.check.outputs.deploy == 'true'
         uses: appleboy/ssh-action@v1
         with:
@@ -175,3 +197,58 @@ jobs:
 
             echo ""
             echo "Deployment verified for ${{ matrix.region }}"
+
+      - name: Canary soak period
+        if: steps.check.outputs.deploy == 'true' && matrix.region == 'in' && !inputs.skip_canary_soak
+        run: |
+          echo "Canary soak: waiting 60s before proceeding to next region..."
+          sleep 60
+          echo "Verifying canary health..."
+          curl -sf --max-time 10 https://${{ matrix.domain_api }}/health || {
+            echo "::error::Canary health check failed after soak period"
+            exit 1
+          }
+          echo "Canary healthy — proceeding to remaining regions"
+
+  notify:
+    name: "Post-Deploy Notification"
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+    steps:
+      - name: Set deploy status
+        id: status
+        run: |
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "state=success" >> $GITHUB_OUTPUT
+            echo "description=Production deploy succeeded" >> $GITHUB_OUTPUT
+          else
+            echo "state=failure" >> $GITHUB_OUTPUT
+            echo "description=Production deploy failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create commit status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: '${{ steps.status.outputs.state }}',
+              description: '${{ steps.status.outputs.description }}',
+              context: 'deploy/production'
+            });
+
+      - name: Post deploy summary
+        run: |
+          echo "## Production Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Result** | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Regions** | ${{ github.event.inputs.regions || 'in,us,eu' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image Tag** | ${{ github.event.inputs.image_tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Rollback** | ${{ github.event.inputs.rollback_commit || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY

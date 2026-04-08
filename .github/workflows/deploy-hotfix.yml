@@ -1,0 +1,139 @@
+name: "Emergency Hotfix Deploy"
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "Target region for the hotfix"
+        required: true
+        type: choice
+        options:
+          - in
+          - us
+          - eu
+      branch:
+        description: "Branch or commit SHA to deploy (e.g., hotfix/fix-auth, abc1234)"
+        required: true
+        type: string
+      skip_tests:
+        description: "Skip tests entirely (absolute emergency only)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: hotfix-${{ github.event.inputs.region }}
+  cancel-in-progress: false
+
+jobs:
+  quick-validation:
+    name: "Validate Hotfix Code"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fs
+          POSTGRES_PASSWORD: fsdev
+          POSTGRES_DB: featuresignals
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.9'
+          cache-dependency-path: server/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run migrations
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
+      - name: Server tests
+        working-directory: server
+        run: go test ./... -count=1 -timeout 120s -race
+        env:
+          TEST_DATABASE_URL: postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable
+      - name: Dashboard tests
+        working-directory: dashboard
+        run: npm ci && npm run test:coverage
+
+  deploy-hotfix:
+    name: "Deploy hotfix to ${{ github.event.inputs.region }}"
+    runs-on: ubuntu-latest
+    needs: [quick-validation]
+    if: ${{ always() && (needs.quick-validation.result == 'success' || inputs.skip_tests) }}
+    steps:
+      - name: Resolve region config
+        id: region
+        run: |
+          REGION="${{ github.event.inputs.region }}"
+          case "$REGION" in
+            in)
+              echo "host_secret=VPS_HOST_IN" >> $GITHUB_OUTPUT
+              echo "domain_api=api.featuresignals.com" >> $GITHUB_OUTPUT
+              echo "domain_app=app.featuresignals.com" >> $GITHUB_OUTPUT
+              ;;
+            us)
+              echo "host_secret=VPS_HOST_US" >> $GITHUB_OUTPUT
+              echo "domain_api=api.us.featuresignals.com" >> $GITHUB_OUTPUT
+              echo "domain_app=app.us.featuresignals.com" >> $GITHUB_OUTPUT
+              ;;
+            eu)
+              echo "host_secret=VPS_HOST_EU" >> $GITHUB_OUTPUT
+              echo "domain_api=api.eu.featuresignals.com" >> $GITHUB_OUTPUT
+              echo "domain_app=app.eu.featuresignals.com" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Deploy hotfix
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets[steps.region.outputs.host_secret] }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
+          command_timeout: 15m
+          envs: REPO_TOKEN,HOTFIX_REF
+          script: |
+            cd /opt/featuresignals
+            git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
+            git fetch origin
+            git checkout "${HOTFIX_REF}"
+            USE_REGISTRY=false bash deploy/deploy-region.sh
+        env:
+          REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
+          HOTFIX_REF: ${{ github.event.inputs.branch }}
+
+      - name: Verify hotfix health
+        run: |
+          sleep 15
+          echo "==> Hotfix health check: API"
+          curl -sf --max-time 10 "https://${{ steps.region.outputs.domain_api }}/health" || {
+            echo "::error::Hotfix health check failed for ${{ github.event.inputs.region }}"
+            exit 1
+          }
+          echo "==> Hotfix health check: Dashboard"
+          curl -sf --max-time 10 -o /dev/null -w "HTTP %{http_code}" \
+            "https://${{ steps.region.outputs.domain_app }}" || {
+            echo "::warning::Dashboard health check failed"
+          }
+          echo "Hotfix deployed and verified for ${{ github.event.inputs.region }}"
+
+      - name: Post hotfix summary
+        if: always()
+        run: |
+          echo "## Emergency Hotfix Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Region** | ${{ github.event.inputs.region }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch/Commit** | \`${{ github.event.inputs.branch }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tests Skipped** | ${{ inputs.skip_tests }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY

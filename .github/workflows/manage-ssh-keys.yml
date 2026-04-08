@@ -1,0 +1,94 @@
+name: "Manage VPS SSH Keys"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - add_key
+          - list_keys
+          - remove_key
+      public_key:
+        description: "SSH public key to add/remove (full key string)"
+        required: false
+        type: string
+      target_host_secret:
+        description: "GitHub secret name for the target VPS host"
+        required: true
+        type: string
+        default: "VPS_HOST_IN"
+      target_user:
+        description: "User to manage keys for"
+        required: false
+        type: string
+        default: "deploy"
+
+jobs:
+  manage-keys:
+    name: "${{ github.event.inputs.action }} SSH key on ${{ github.event.inputs.target_host_secret }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add SSH key
+        if: github.event.inputs.action == 'add_key'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets[github.event.inputs.target_host_secret] }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
+          envs: PUBLIC_KEY,TARGET_USER
+          script: |
+            AUTH_FILE="/home/${TARGET_USER}/.ssh/authorized_keys"
+            if grep -qF "$PUBLIC_KEY" "$AUTH_FILE" 2>/dev/null; then
+              echo "Key already present, skipping."
+            else
+              echo "$PUBLIC_KEY" >> "$AUTH_FILE"
+              chmod 600 "$AUTH_FILE"
+              echo "Key added successfully."
+            fi
+            echo "Current authorized_keys count:"
+            wc -l "$AUTH_FILE"
+        env:
+          PUBLIC_KEY: ${{ github.event.inputs.public_key }}
+          TARGET_USER: ${{ github.event.inputs.target_user }}
+
+      - name: List SSH keys
+        if: github.event.inputs.action == 'list_keys'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets[github.event.inputs.target_host_secret] }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
+          envs: TARGET_USER
+          script: |
+            AUTH_FILE="/home/${TARGET_USER}/.ssh/authorized_keys"
+            echo "Keys for ${TARGET_USER}:"
+            cat "$AUTH_FILE" 2>/dev/null | awk '{print NR": "$0}' || echo "No keys found"
+        env:
+          TARGET_USER: ${{ github.event.inputs.target_user }}
+
+      - name: Remove SSH key
+        if: github.event.inputs.action == 'remove_key'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets[github.event.inputs.target_host_secret] }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
+          envs: PUBLIC_KEY,TARGET_USER
+          script: |
+            AUTH_FILE="/home/${TARGET_USER}/.ssh/authorized_keys"
+            if grep -qF "$PUBLIC_KEY" "$AUTH_FILE" 2>/dev/null; then
+              grep -vF "$PUBLIC_KEY" "$AUTH_FILE" > "${AUTH_FILE}.tmp"
+              mv "${AUTH_FILE}.tmp" "$AUTH_FILE"
+              chmod 600 "$AUTH_FILE"
+              echo "Key removed."
+            else
+              echo "Key not found."
+            fi
+            echo "Remaining keys:"
+            wc -l "$AUTH_FILE"
+        env:
+          PUBLIC_KEY: ${{ github.event.inputs.public_key }}
+          TARGET_USER: ${{ github.event.inputs.target_user }}
