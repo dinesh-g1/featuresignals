@@ -1,6 +1,6 @@
 module github.com/featuresignals/server
 
-go 1.25.3
+go 1.25.9
 
 require (
 	github.com/coreos/go-oidc/v3 v3.17.0
