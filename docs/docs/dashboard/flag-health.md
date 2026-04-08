@@ -41,7 +41,7 @@ Flags that have been at 100% rollout for an extended period can likely be:
 ## Related Pages
 
 - **[Usage Insights](/dashboard/usage-insights)** — See flag value distributions to identify flags that always return the same value
-- **[Entity Inspector](/dashboard/entity-inspector)** — Debug flag evaluation for specific users
+- **[Target Inspector](/dashboard/target-inspector)** — Debug flag evaluation for specific users
 - **[Env Comparison](/dashboard/env-comparison)** — Detect configuration drift between environments
 
 ## Best Practices

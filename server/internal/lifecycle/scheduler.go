@@ -55,25 +55,27 @@ type DigestRow struct {
 // the main server process. It checks every interval for users who need
 // trial reminders, re-engagement emails, weekly digests, and renewal notices.
 type Scheduler struct {
-	store    SchedulerStore
-	sender   Sender
-	emitter  domain.EventEmitter
-	logger   *slog.Logger
-	interval time.Duration
+	store        SchedulerStore
+	sender       Sender
+	emitter      domain.EventEmitter
+	logger       *slog.Logger
+	interval     time.Duration
+	dashboardURL string
 }
 
 // NewScheduler creates a lifecycle scheduler. The interval controls how
 // often the scheduler polls for pending emails (typically 1 hour).
-func NewScheduler(store SchedulerStore, sender Sender, emitter domain.EventEmitter, logger *slog.Logger, interval time.Duration) *Scheduler {
+func NewScheduler(store SchedulerStore, sender Sender, emitter domain.EventEmitter, logger *slog.Logger, interval time.Duration, dashboardURL string) *Scheduler {
 	if interval < time.Minute {
 		interval = time.Hour
 	}
 	return &Scheduler{
-		store:    store,
-		sender:   sender,
-		emitter:  emitter,
-		logger:   logger.With("component", "lifecycle_scheduler"),
-		interval: interval,
+		store:        store,
+		sender:       sender,
+		emitter:      emitter,
+		logger:       logger.With("component", "lifecycle_scheduler"),
+		interval:     interval,
+		dashboardURL: dashboardURL,
 	}
 }
 
@@ -124,7 +126,7 @@ func (s *Scheduler) sendTrialMidpoint(ctx context.Context) {
 			Data: map[string]string{
 				"ToName":       o.UserName,
 				"OrgName":      o.OrgName,
-				"DashboardURL": "https://app.featuresignals.com",
+				"DashboardURL": s.dashboardURL,
 			},
 		})
 	}
@@ -155,7 +157,7 @@ func (s *Scheduler) sendTrialEnding(ctx context.Context) {
 			Data: map[string]string{
 				"ToName":       o.UserName,
 				"DaysLeft":     fmt.Sprintf("%d", daysLeft),
-				"DashboardURL": "https://app.featuresignals.com/settings/billing",
+				"DashboardURL": s.dashboardURL + "/settings/billing",
 			},
 		})
 	}
@@ -178,7 +180,7 @@ func (s *Scheduler) sendTrialExpired(ctx context.Context) {
 			Subject:  "Your Pro trial has ended",
 			Data: map[string]string{
 				"ToName":       o.UserName,
-				"DashboardURL": "https://app.featuresignals.com/settings/billing",
+				"DashboardURL": s.dashboardURL + "/settings/billing",
 			},
 		})
 	}
@@ -218,7 +220,7 @@ func (s *Scheduler) sendReEngagement(ctx context.Context) {
 			Subject:  subject,
 			Data: map[string]string{
 				"ToName":       u.Name,
-				"DashboardURL": "https://app.featuresignals.com",
+				"DashboardURL": s.dashboardURL,
 			},
 		})
 	}
@@ -242,7 +244,7 @@ func (s *Scheduler) sendRenewalReminders(ctx context.Context) {
 			Data: map[string]string{
 				"ToName":       o.UserName,
 				"OrgName":      o.OrgName,
-				"DashboardURL": "https://app.featuresignals.com/settings/billing",
+				"DashboardURL": s.dashboardURL + "/settings/billing",
 			},
 		})
 	}
@@ -268,7 +270,7 @@ func (s *Scheduler) sendWeeklyDigest(ctx context.Context) {
 				"OrgName":      r.OrgName,
 				"FlagCount":    fmt.Sprintf("%d", r.FlagCount),
 				"EvalCount":    fmt.Sprintf("%d", r.EvalCount),
-				"DashboardURL": "https://app.featuresignals.com",
+				"DashboardURL": s.dashboardURL,
 			},
 		})
 	}
@@ -307,7 +309,7 @@ func (s *Scheduler) sendFeatureSpotlight(ctx context.Context) {
 				Subject:  sp.subject,
 				Data: map[string]string{
 					"ToName":       u.Name,
-					"DashboardURL": "https://app.featuresignals.com",
+					"DashboardURL": s.dashboardURL,
 				},
 			})
 		}

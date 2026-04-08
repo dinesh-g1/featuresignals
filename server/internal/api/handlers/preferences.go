@@ -22,6 +22,7 @@ func NewPreferencesHandler(store preferencesStore) *PreferencesHandler {
 }
 
 func (h *PreferencesHandler) GetHints(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
 		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
@@ -29,6 +30,7 @@ func (h *PreferencesHandler) GetHints(w http.ResponseWriter, r *http.Request) {
 	}
 	hints, err := h.store.GetDismissedHints(r.Context(), claims.UserID)
 	if err != nil {
+		logger.Error("failed to get dismissed hints", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -40,6 +42,7 @@ type dismissHintRequest struct {
 }
 
 func (h *PreferencesHandler) DismissHint(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
 		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
@@ -51,6 +54,7 @@ func (h *PreferencesHandler) DismissHint(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if err := h.store.DismissHint(r.Context(), claims.UserID, req.HintID); err != nil {
+		logger.Error("failed to dismiss hint", "error", err, "hint_id", req.HintID)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -63,6 +67,7 @@ type emailPreferencesRequest struct {
 }
 
 func (h *PreferencesHandler) UpdateEmailPreferences(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
 		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
@@ -84,6 +89,7 @@ func (h *PreferencesHandler) UpdateEmailPreferences(w http.ResponseWriter, r *ht
 	}
 
 	if err := h.store.UpdateUserEmailPreferences(r.Context(), claims.UserID, req.Consent, req.Preference); err != nil {
+		logger.Error("failed to update email preferences", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}

@@ -8,17 +8,17 @@ import type {
   AuthTokens,
   BillingInfo,
   CheckoutResponse,
-  CompareEntitiesResult,
+  CompareTargetsResult,
   CreateApprovalPayload,
   EnvComparisonResponse,
-  EntityInput,
+  TargetInput,
   Environment,
   EvalMetrics,
   FeaturesResponse,
   Flag,
   FlagInsight,
   FlagState,
-  InspectEntityResult,
+  InspectTargetResult,
   LoginResponse,
   RefreshResponse,
   OnboardingState,
@@ -37,25 +37,6 @@ import type {
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-const REGION_API_ENDPOINTS: Record<string, string> = {
-  in: API_URL,
-  us: process.env.NEXT_PUBLIC_API_URL_US || "https://api.us.featuresignals.com",
-  eu: process.env.NEXT_PUBLIC_API_URL_EU || "https://api.eu.featuresignals.com",
-};
-
-function getApiUrl(): string {
-  if (typeof window === "undefined") return API_URL;
-  const org = useAppStore.getState().organization;
-  if (org?.data_region && REGION_API_ENDPOINTS[org.data_region]) {
-    return REGION_API_ENDPOINTS[org.data_region];
-  }
-  return API_URL;
-}
-
-export function getRegionalApiUrl(regionCode: string): string {
-  return REGION_API_ENDPOINTS[regionCode] || API_URL;
-}
 
 interface RequestOptions {
   method?: string;
@@ -80,7 +61,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
   if (!refreshToken) return false;
 
   try {
-    const res = await fetch(`${getApiUrl()}/v1/auth/refresh`, {
+    const res = await fetch(`${API_URL}/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -114,8 +95,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers["Authorization"] = `Bearer ${options.token}`;
   }
 
-  const baseUrl = options.token ? getApiUrl() : API_URL;
-  const res = await fetch(`${baseUrl}${path}`, {
+  const res = await fetch(`${API_URL}${path}`, {
     method: options.method || "GET",
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -213,37 +193,6 @@ export const api = {
   // Auth
   login: (data: { email: string; password: string }) =>
     request<LoginResponse>("/v1/auth/login", { method: "POST", body: data }),
-
-  loginMultiRegion: async (data: { email: string; password: string }): Promise<LoginResponse> => {
-    const regions = Object.entries(REGION_API_ENDPOINTS);
-    let lastError: Error | null = null;
-
-    for (const [, endpoint] of regions) {
-      try {
-        const res = await fetch(`${endpoint}/v1/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (res.ok) {
-          return res.json() as Promise<LoginResponse>;
-        }
-        const errData = await res.json().catch(() => ({ error: "Unknown error" }));
-        if (res.status === 401) {
-          lastError = new APIError(401, errData.error || "Invalid credentials");
-          continue;
-        }
-        if (res.status === 403) {
-          throw new APIError(403, errData.error || "Account suspended");
-        }
-        lastError = new APIError(res.status, errData.error || "Login failed");
-      } catch (err) {
-        if (err instanceof APIError) throw err;
-        lastError = err instanceof Error ? err : new Error("Network error");
-      }
-    }
-    throw lastError || new Error("Login failed across all regions");
-  },
   refresh: (refreshToken: string) =>
     request<RefreshResponse>(
       "/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
@@ -254,10 +203,13 @@ export const api = {
   initiateSignup: (data: { email: string; password: string; name: string; org_name: string; data_region?: string }) =>
     request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", { method: "POST", body: data }),
   completeSignup: async (data: { email: string; otp: string }, regionCode?: string): Promise<SignupResponse> => {
-    const baseUrl = regionCode ? getRegionalApiUrl(regionCode) : API_URL;
-    const res = await fetch(`${baseUrl}/v1/auth/complete-signup`, {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (regionCode) {
+      headers["X-Target-Region"] = regionCode;
+    }
+    const res = await fetch(`${API_URL}/v1/auth/complete-signup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(data),
     });
     if (!res.ok) {
@@ -397,11 +349,11 @@ export const api = {
   syncEnvironments: (token: string, projectId: string, data: { source_env_id: string; target_env_id: string; flag_keys: string[] }) =>
     request(`/v1/projects/${projectId}/flags/sync-environments`, { method: "POST", body: data, token }),
 
-  // Entity Inspector & Comparison
-  inspectEntity: (token: string, projectId: string, envId: string, data: EntityInput) =>
-    request<InspectEntityResult[]>(`/v1/projects/${projectId}/environments/${envId}/inspect-entity`, { method: "POST", body: data, token }),
-  compareEntities: (token: string, projectId: string, envId: string, data: { entity_a: EntityInput; entity_b: EntityInput }) =>
-    request<CompareEntitiesResult[]>(`/v1/projects/${projectId}/environments/${envId}/compare-entities`, { method: "POST", body: data, token }),
+  // Target Inspector & Comparison
+  inspectTarget: (token: string, projectId: string, envId: string, data: TargetInput) =>
+    request<InspectTargetResult[]>(`/v1/projects/${projectId}/environments/${envId}/inspect-entity`, { method: "POST", body: data, token }),
+  compareTargets: (token: string, projectId: string, envId: string, data: { entity_a: TargetInput; entity_b: TargetInput }) =>
+    request<CompareTargetsResult[]>(`/v1/projects/${projectId}/environments/${envId}/compare-entities`, { method: "POST", body: data, token }),
 
   // Flag Usage Insights
   getFlagInsights: (token: string, projectId: string, envId: string) =>

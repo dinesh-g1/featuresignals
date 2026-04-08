@@ -6,7 +6,7 @@ import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label, Badge, EmptyState } from "@/components/ui";
 import { UsersRound, X } from "lucide-react";
-import type { CompareEntitiesResult } from "@/lib/types";
+import type { CompareTargetsResult } from "@/lib/types";
 
 function AttrEditor({ attrs, setAttrs }: { attrs: { key: string; value: string }[]; setAttrs: (a: { key: string; value: string }[]) => void }) {
   return (
@@ -37,7 +37,7 @@ function AttrEditor({ attrs, setAttrs }: { attrs: { key: string; value: string }
   );
 }
 
-export default function EntityComparisonPage() {
+export default function TargetComparisonPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
@@ -46,7 +46,7 @@ export default function EntityComparisonPage() {
   const [keyB, setKeyB] = useState("");
   const [attrsA, setAttrsA] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
   const [attrsB, setAttrsB] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
-  const [results, setResults] = useState<CompareEntitiesResult[] | null>(null);
+  const [results, setResults] = useState<CompareTargetsResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showDiffOnly, setShowDiffOnly] = useState(false);
 
@@ -61,7 +61,7 @@ export default function EntityComparisonPage() {
     if (!token || !projectId || !currentEnvId || !keyA || !keyB) return;
     setLoading(true);
     try {
-      const data = await api.compareEntities(token, projectId, currentEnvId, {
+      const data = await api.compareTargets(token, projectId, currentEnvId, {
         entity_a: { key: keyA, attributes: buildAttrs(attrsA) },
         entity_b: { key: keyB, attributes: buildAttrs(attrsB) },
       });
@@ -79,26 +79,26 @@ export default function EntityComparisonPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
-        title="Entity Comparison"
-        description="Compare flag evaluations for two entities side by side"
+        title="Target Comparison"
+        description="Compare flag evaluations for two targets side by side"
       />
 
       <form onSubmit={handleCompare} className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">Entity A</h3>
-            <Input value={keyA} onChange={(e) => setKeyA(e.target.value)} placeholder="Entity key (e.g. user-123)" required />
+            <h3 className="text-sm font-semibold text-slate-700">Target A</h3>
+            <Input value={keyA} onChange={(e) => setKeyA(e.target.value)} placeholder="Target key (e.g. user-123)" required />
             <AttrEditor attrs={attrsA} setAttrs={setAttrsA} />
           </div>
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">Entity B</h3>
-            <Input value={keyB} onChange={(e) => setKeyB(e.target.value)} placeholder="Entity key (e.g. user-456)" required />
+            <h3 className="text-sm font-semibold text-slate-700">Target B</h3>
+            <Input value={keyB} onChange={(e) => setKeyB(e.target.value)} placeholder="Target key (e.g. user-456)" required />
             <AttrEditor attrs={attrsB} setAttrs={setAttrsB} />
           </div>
         </div>
         <div className="mt-4">
           <Button type="submit" disabled={loading || !keyA || !keyB || !currentEnvId}>
-            {loading ? "Comparing..." : "Compare Entities"}
+            {loading ? "Comparing..." : "Compare Targets"}
           </Button>
         </div>
       </form>
@@ -129,8 +129,8 @@ export default function EntityComparisonPage() {
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-3 sm:px-6">Flag Key</th>
-                    <th className="px-4 py-3">{keyA || "Entity A"} Value</th>
-                    <th className="px-4 py-3">{keyB || "Entity B"} Value</th>
+                    <th className="px-4 py-3">{keyA || "Target A"} Value</th>
+                    <th className="px-4 py-3">{keyB || "Target B"} Value</th>
                     <th className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
@@ -162,7 +162,7 @@ export default function EntityComparisonPage() {
               <EmptyState
                 icon={UsersRound}
                 title={showDiffOnly ? "No differences found" : "No results."}
-                description={showDiffOnly ? "Both entities get the same flag values." : undefined}
+                description={showDiffOnly ? "Both targets get the same flag values." : undefined}
                 className="py-8"
               />
             )}

@@ -338,7 +338,7 @@ func (h *SSOAuthHandler) provisionAndLogin(ctx context.Context, cfg *domain.SSOC
 
 	_ = h.store.UpdateLastLoginAt(ctx, user.ID)
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, cfg.OrgID, string(member.Role))
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, cfg.OrgID, string(member.Role), "")
 	if err != nil {
 		return nil, fmt.Errorf("generate tokens: %w", err)
 	}

@@ -24,10 +24,11 @@ type teamStore interface {
 }
 
 type TeamHandler struct {
-	store     teamStore
-	jwtMgr    auth.TokenManager
-	emitter   domain.EventEmitter
-	lifecycle LifecycleSender
+	store        teamStore
+	jwtMgr       auth.TokenManager
+	emitter      domain.EventEmitter
+	lifecycle    LifecycleSender
+	dashboardURL string
 }
 
 func NewTeamHandler(
@@ -35,6 +36,7 @@ func NewTeamHandler(
 	jwtMgr auth.TokenManager,
 	emitter domain.EventEmitter,
 	lifecycle LifecycleSender,
+	dashboardURL string,
 ) *TeamHandler {
 	if emitter == nil {
 		emitter = NoopEmitter()
@@ -43,19 +45,22 @@ func NewTeamHandler(
 		lifecycle = NoopLifecycle()
 	}
 	return &TeamHandler{
-		store:     store,
-		jwtMgr:    jwtMgr,
-		emitter:   emitter,
-		lifecycle: lifecycle,
+		store:        store,
+		jwtMgr:       jwtMgr,
+		emitter:      emitter,
+		lifecycle:    lifecycle,
+		dashboardURL: dashboardURL,
 	}
 }
 
 // List returns all org members with user details.
 func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 
 	members, err := h.store.ListOrgMembers(r.Context(), orgID)
 	if err != nil {
+		logger.Error("failed to list members", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list members")
 		return
 	}
@@ -64,6 +69,7 @@ func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
 	for _, m := range members {
 		user, err := h.store.GetUserByID(r.Context(), m.UserID)
 		if err != nil {
+			logger.Warn("failed to get user for member", "error", err, "user_id", m.UserID, "member_id", m.ID)
 			continue
 		}
 		resp = append(resp, dto.MemberResponse{
@@ -88,6 +94,7 @@ type InviteRequest struct {
 // Invite adds a user to the organization. If the user doesn't exist yet,
 // a stub account is created with a random password (they must reset it).
 func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 
 	var req InviteRequest
@@ -121,6 +128,7 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 			PasswordHash: hash,
 		}
 		if err := h.store.CreateUser(r.Context(), user); err != nil {
+			logger.Warn("failed to create invited user", "error", err, "email", req.Email)
 			httputil.Error(w, http.StatusConflict, "failed to create user")
 			return
 		}
@@ -138,6 +146,7 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		Role:   req.Role,
 	}
 	if err := h.store.AddOrgMember(r.Context(), member); err != nil {
+		logger.Error("failed to add member", "error", err, "email", req.Email)
 		httputil.Error(w, http.StatusInternalServerError, "failed to add member")
 		return
 	}
@@ -173,7 +182,7 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 				"ToName":       user.Name,
 				"OrgName":      orgID,
 				"Role":         string(req.Role),
-				"DashboardURL": "https://app.featuresignals.com",
+				"DashboardURL": h.dashboardURL,
 			},
 		})
 	}()
@@ -193,6 +202,7 @@ type UpdateRoleRequest struct {
 
 // UpdateRole changes a member's role within the organization.
 func (h *TeamHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	memberID := chi.URLParam(r, "memberID")
 
 	var req UpdateRoleRequest
@@ -207,6 +217,7 @@ func (h *TeamHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.UpdateOrgMemberRole(r.Context(), memberID, req.Role); err != nil {
+		logger.Warn("failed to update member role", "error", err, "member_id", memberID)
 		httputil.Error(w, http.StatusNotFound, "member not found")
 		return
 	}
@@ -225,11 +236,13 @@ func (h *TeamHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 
 // Remove deletes a member from the organization.
 func (h *TeamHandler) Remove(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	memberID := chi.URLParam(r, "memberID")
 	callerID := middleware.GetUserID(r.Context())
 
 	member, err := h.store.GetOrgMemberByID(r.Context(), memberID)
 	if err != nil {
+		logger.Warn("failed to get member", "error", err, "member_id", memberID)
 		httputil.Error(w, http.StatusNotFound, "member not found")
 		return
 	}
@@ -240,6 +253,7 @@ func (h *TeamHandler) Remove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.RemoveOrgMember(r.Context(), memberID); err != nil {
+		logger.Error("failed to remove member", "error", err, "member_id", memberID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to remove member")
 		return
 	}
@@ -257,10 +271,12 @@ func (h *TeamHandler) Remove(w http.ResponseWriter, r *http.Request) {
 
 // ListPermissions returns the per-environment permissions for a member.
 func (h *TeamHandler) ListPermissions(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	memberID := chi.URLParam(r, "memberID")
 
 	perms, err := h.store.ListEnvPermissions(r.Context(), memberID)
 	if err != nil {
+		logger.Error("failed to list permissions", "error", err, "member_id", memberID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list permissions")
 		return
 	}
@@ -274,6 +290,7 @@ type UpdatePermissionsRequest struct {
 
 // UpdatePermissions replaces the per-environment permissions for a member.
 func (h *TeamHandler) UpdatePermissions(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	memberID := chi.URLParam(r, "memberID")
 
 	var req UpdatePermissionsRequest
@@ -285,12 +302,16 @@ func (h *TeamHandler) UpdatePermissions(w http.ResponseWriter, r *http.Request) 
 	for i := range req.Permissions {
 		req.Permissions[i].MemberID = memberID
 		if err := h.store.UpsertEnvPermission(r.Context(), &req.Permissions[i]); err != nil {
+			logger.Error("failed to upsert environment permission", "error", err, "member_id", memberID)
 			httputil.Error(w, http.StatusInternalServerError, "failed to update permissions")
 			return
 		}
 	}
 
-	perms, _ := h.store.ListEnvPermissions(r.Context(), memberID)
+	perms, err := h.store.ListEnvPermissions(r.Context(), memberID)
+	if err != nil {
+		logger.Warn("failed to re-read permissions after update", "error", err, "member_id", memberID)
+	}
 
 	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())

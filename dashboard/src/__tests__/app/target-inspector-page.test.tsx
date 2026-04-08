@@ -5,13 +5,13 @@ import { useAppStore } from "@/stores/app-store";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/entity-inspector",
+  usePathname: () => "/target-inspector",
   useParams: () => ({}),
 }));
 
 vi.mock("@/lib/api", () => ({
   api: {
-    inspectEntity: vi.fn(),
+    inspectTarget: vi.fn(),
     listEnvironments: vi.fn(),
   },
 }));
@@ -21,7 +21,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 import { api } from "@/lib/api";
-import EntityInspectorPage from "@/app/(app)/entity-inspector/page";
+import TargetInspectorPage from "@/app/(app)/target-inspector/page";
 
 const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
@@ -30,7 +30,7 @@ const mockResults = [
   { flag_key: "dark-mode", value: false, reason: "default" },
 ];
 
-describe("EntityInspectorPage", () => {
+describe("TargetInspectorPage", () => {
   beforeEach(() => {
     useAppStore
       .getState()
@@ -44,7 +44,7 @@ describe("EntityInspectorPage", () => {
     useAppStore.getState().setCurrentProject("proj-1");
     useAppStore.getState().setCurrentEnv("env-1");
 
-    mockApi.inspectEntity.mockResolvedValue(mockResults);
+    mockApi.inspectTarget.mockResolvedValue(mockResults);
     mockApi.listEnvironments.mockResolvedValue([]);
   });
 
@@ -53,74 +53,60 @@ describe("EntityInspectorPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders entity key input", () => {
-    // Arrange & Act
-    render(<EntityInspectorPage />);
+  it("renders target key input", () => {
+    render(<TargetInspectorPage />);
 
-    // Assert
     expect(screen.getByPlaceholderText("user-123")).toBeInTheDocument();
-    expect(screen.getByText("Entity Key")).toBeInTheDocument();
+    expect(screen.getByText("Target Key")).toBeInTheDocument();
   });
 
   it("add attribute button adds a row", () => {
-    // Arrange
-    render(<EntityInspectorPage />);
+    render(<TargetInspectorPage />);
     expect(screen.getAllByPlaceholderText("key (e.g. plan)")).toHaveLength(1);
 
-    // Act
     fireEvent.click(screen.getByText("+ Add attribute"));
 
-    // Assert
     expect(screen.getAllByPlaceholderText("key (e.g. plan)")).toHaveLength(2);
   });
 
   it("remove attribute button removes row", () => {
-    // Arrange
-    render(<EntityInspectorPage />);
+    render(<TargetInspectorPage />);
     fireEvent.click(screen.getByText("+ Add attribute"));
     expect(screen.getAllByPlaceholderText("key (e.g. plan)")).toHaveLength(2);
 
-    // Act – icon-only remove buttons have no text content
     const allButtons = screen.getAllByRole("button");
     const removeBtn = allButtons.find((btn) => !btn.textContent?.trim());
     fireEvent.click(removeBtn!);
 
-    // Assert
     expect(screen.getAllByPlaceholderText("key (e.g. plan)")).toHaveLength(1);
   });
 
-  it("submit calls api.inspectEntity", async () => {
-    // Arrange
-    render(<EntityInspectorPage />);
+  it("submit calls api.inspectTarget", async () => {
+    render(<TargetInspectorPage />);
     fireEvent.change(screen.getByPlaceholderText("user-123"), {
       target: { value: "user-abc" },
     });
 
-    // Act
     await act(async () => {
-      fireEvent.submit(screen.getByText("Inspect Entity").closest("form")!);
+      fireEvent.submit(screen.getByText("Inspect Target").closest("form")!);
     });
 
-    // Assert
-    expect(mockApi.inspectEntity).toHaveBeenCalledWith("test-token", "proj-1", "env-1", {
+    expect(mockApi.inspectTarget).toHaveBeenCalledWith("test-token", "proj-1", "env-1", {
       key: "user-abc",
       attributes: {},
     });
   });
 
   it("displays evaluation results", async () => {
-    // Arrange
-    render(<EntityInspectorPage />);
+    render(<TargetInspectorPage />);
     fireEvent.change(screen.getByPlaceholderText("user-123"), {
       target: { value: "user-abc" },
     });
 
-    // Act
     await act(async () => {
-      fireEvent.submit(screen.getByText("Inspect Entity").closest("form")!);
+      fireEvent.submit(screen.getByText("Inspect Target").closest("form")!);
     });
 
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("enable-feature")).toBeInTheDocument();
       expect(screen.getByText("true")).toBeInTheDocument();
@@ -129,22 +115,19 @@ describe("EntityInspectorPage", () => {
   });
 
   it("search filter on results", async () => {
-    // Arrange
-    render(<EntityInspectorPage />);
+    render(<TargetInspectorPage />);
     fireEvent.change(screen.getByPlaceholderText("user-123"), {
       target: { value: "user-abc" },
     });
     await act(async () => {
-      fireEvent.submit(screen.getByText("Inspect Entity").closest("form")!);
+      fireEvent.submit(screen.getByText("Inspect Target").closest("form")!);
     });
     await waitFor(() => expect(screen.getByText("enable-feature")).toBeInTheDocument());
 
-    // Act
     fireEvent.change(screen.getByPlaceholderText("Filter results..."), {
       target: { value: "dark" },
     });
 
-    // Assert
     expect(screen.getByText("dark-mode")).toBeInTheDocument();
     expect(screen.queryByText("enable-feature")).not.toBeInTheDocument();
   });

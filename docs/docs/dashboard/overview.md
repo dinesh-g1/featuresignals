@@ -23,8 +23,8 @@ The sidebar provides access to all major sections:
 | **Eval Metrics** | Monitor flag evaluation statistics |
 | **Flag Health** | Identify stale or problematic flags with category-aware thresholds |
 | **Env Comparison** | Compare and sync flag states across environments |
-| **Entity Inspector** | See what a specific user experiences across all flags |
-| **Entity Comparison** | Compare flag evaluations between two users side-by-side |
+| **Target Inspector** | See what a specific user experiences across all flags |
+| **Target Comparison** | Compare flag evaluations between two users side-by-side |
 | **Usage Insights** | View flag value distributions (true/false percentages) |
 | **Webhooks** | Configure event notifications |
 | **Audit Log** | Review change history |
@@ -48,8 +48,8 @@ The sidebar provides access to all major sections:
 - Kill switch for emergency disable
 
 ### Flag Intelligence
-- **Entity Inspector** — See all flag evaluations for a specific user
-- **Entity Comparison** — Compare what two different users experience
+- **Target Inspector** — See all flag evaluations for a specific user
+- **Target Comparison** — Compare what two different users experience
 - **Usage Insights** — View value distribution percentages per flag
 
 ### Real-Time Updates

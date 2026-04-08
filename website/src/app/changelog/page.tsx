@@ -51,11 +51,11 @@ export default function ChangelogPage() {
                 flag states across environments
               </li>
               <li>
-                <strong>Entity Inspector</strong> — See exactly what a specific
+                <strong>Target Inspector</strong> — See exactly what a specific
                 user experiences across all flags
               </li>
               <li>
-                <strong>Entity Comparison</strong> — Compare flag evaluations
+                <strong>Target Comparison</strong> — Compare flag evaluations
                 for two users side-by-side
               </li>
               <li>

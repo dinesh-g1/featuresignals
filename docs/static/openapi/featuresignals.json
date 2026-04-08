@@ -476,15 +476,15 @@
     "/v1/projects/{projectID}/environments/{envID}/inspect-entity": {
       "post": {
         "tags": ["Insights"],
-        "summary": "Inspect entity — evaluate all flags for one entity",
-        "description": "Evaluates all flags for a specific entity context and returns per-flag values, reasons, and targeting info.",
+        "summary": "Inspect target — evaluate all flags for one target",
+        "description": "Evaluates all flags for a specific target context and returns per-flag values, reasons, and targeting info.",
         "parameters": [ { "$ref": "#/components/parameters/ProjectID" }, { "$ref": "#/components/parameters/EnvID" } ],
         "requestBody": {
           "required": true,
           "content": { "application/json": { "schema": { "type": "object", "required": ["key"], "properties": { "key": { "type": "string" }, "attributes": { "type": "object", "additionalProperties": {} } } } } }
         },
         "responses": {
-          "200": { "description": "Entity inspection results", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "value": {}, "reason": { "type": "string" }, "variant_key": { "type": "string" }, "individually_targeted": { "type": "boolean" } } } } } } },
+          "200": { "description": "Target inspection results", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "value": {}, "reason": { "type": "string" }, "variant_key": { "type": "string" }, "individually_targeted": { "type": "boolean" } } } } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
@@ -493,15 +493,15 @@
     "/v1/projects/{projectID}/environments/{envID}/compare-entities": {
       "post": {
         "tags": ["Insights"],
-        "summary": "Compare two entities side by side",
-        "description": "Evaluates all flags for two different entity contexts and returns a diff.",
+        "summary": "Compare two targets side by side",
+        "description": "Evaluates all flags for two different target contexts and returns a diff.",
         "parameters": [ { "$ref": "#/components/parameters/ProjectID" }, { "$ref": "#/components/parameters/EnvID" } ],
         "requestBody": {
           "required": true,
           "content": { "application/json": { "schema": { "type": "object", "required": ["entity_a", "entity_b"], "properties": { "entity_a": { "type": "object", "properties": { "key": { "type": "string" }, "attributes": { "type": "object" } } }, "entity_b": { "type": "object", "properties": { "key": { "type": "string" }, "attributes": { "type": "object" } } } } } } }
         },
         "responses": {
-          "200": { "description": "Entity comparison results", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "value_a": {}, "value_b": {}, "reason_a": { "type": "string" }, "reason_b": { "type": "string" }, "is_different": { "type": "boolean" } } } } } } },
+          "200": { "description": "Target comparison results", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "properties": { "flag_key": { "type": "string" }, "value_a": {}, "value_b": {}, "reason_a": { "type": "string" }, "reason_b": { "type": "string" }, "is_different": { "type": "boolean" } } } } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }

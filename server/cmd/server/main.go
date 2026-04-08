@@ -248,7 +248,7 @@ func main() {
 	logger.Info("lifecycle processor started")
 
 	// Lifecycle scheduler (trial reminders, weekly digests, re-engagement)
-	lifecycleSched := lifecycle.NewScheduler(store, lifecycleProcessor, eventEmitter, logger, 1*time.Hour)
+	lifecycleSched := lifecycle.NewScheduler(store, lifecycleProcessor, eventEmitter, logger, 1*time.Hour, cfg.DashboardURL)
 	lifecycleSchedCtx, lifecycleSchedCancel := context.WithCancel(context.Background())
 	defer lifecycleSchedCancel()
 	go lifecycleSched.Run(lifecycleSchedCtx)
@@ -266,7 +266,7 @@ func main() {
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, cfg)
 
 	// Server
 	srv := &http.Server{

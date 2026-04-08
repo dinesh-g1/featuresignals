@@ -89,6 +89,10 @@ type Config struct {
 	SuperModeDomain string
 	SuperModeEmails []string
 
+	// Multi-region routing
+	LocalRegion     string
+	RegionEndpoints map[string]string
+
 	// OpenTelemetry / SigNoz observability
 	OTELEnabled        bool
 	OTELEndpoint       string
@@ -151,6 +155,9 @@ func Load() *Config {
 		SuperModeDomain: strings.ToLower(strings.TrimSpace(os.Getenv("SUPER_MODE_DOMAIN"))),
 		SuperModeEmails: parseSuperModeEmails(os.Getenv("SUPER_MODE_EMAILS")),
 
+		LocalRegion:     getEnv("LOCAL_REGION", "in"),
+		RegionEndpoints: parseRegionEndpoints(os.Getenv("REGION_ENDPOINTS")),
+
 		OTELEnabled:        getEnvBool("OTEL_ENABLED", false),
 		OTELEndpoint:       getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
 		OTELIngestionKey:   os.Getenv("OTEL_INGESTION_KEY"),
@@ -170,6 +177,27 @@ func (c *Config) IsOnPrem() bool {
 
 func (c *Config) BillingEnabled() bool {
 	return !c.IsOnPrem() && (c.StripeSecretKey != "" || c.PayUMerchantKey != "")
+}
+
+func (c *Config) IsGlobalRouter() bool {
+	return len(c.RegionEndpoints) > 0
+}
+
+// parseRegionEndpoints parses REGION_ENDPOINTS env var.
+// Format: "us=https://api.us.example.com,eu=https://api.eu.example.com"
+func parseRegionEndpoints(raw string) map[string]string {
+	m := make(map[string]string)
+	if raw == "" {
+		return m
+	}
+	for _, pair := range strings.Split(raw, ",") {
+		pair = strings.TrimSpace(pair)
+		parts := strings.SplitN(pair, "=", 2)
+		if len(parts) == 2 {
+			m[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		}
+	}
+	return m
 }
 
 func parseCORSOrigins(raw string) []string {

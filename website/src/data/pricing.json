@@ -48,7 +48,8 @@
         "Community support"
       ],
       "cta_label": "Sign Up Free",
-      "cta_url": "https://app.featuresignals.com/register"
+      "cta_url": "https://app.featuresignals.com/register",
+      "_cta_url_note": "Absolute URL required: website is served from a different domain"
     },
     "pro": {
       "name": "Pro",
@@ -73,7 +74,8 @@
         "Priority email support"
       ],
       "cta_label": "Get Started with Pro",
-      "cta_url": "https://app.featuresignals.com/register?plan=pro"
+      "cta_url": "https://app.featuresignals.com/register?plan=pro",
+      "_cta_url_note": "Absolute URL required: website is served from a different domain"
     },
     "enterprise": {
       "name": "Enterprise",

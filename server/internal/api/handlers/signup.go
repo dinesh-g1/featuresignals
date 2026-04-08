@@ -35,6 +35,7 @@ type SignupHandler struct {
 	emitter         domain.EventEmitter
 	lifecycle       LifecycleSender
 	internalChecker dto.InternalChecker
+	dashboardURL    string
 }
 
 func NewSignupHandler(
@@ -44,6 +45,7 @@ func NewSignupHandler(
 	emitter domain.EventEmitter,
 	lifecycle LifecycleSender,
 	internalChecker dto.InternalChecker,
+	dashboardURL string,
 ) *SignupHandler {
 	if emitter == nil {
 		emitter = NoopEmitter()
@@ -58,6 +60,7 @@ func NewSignupHandler(
 		emitter:         emitter,
 		lifecycle:       lifecycle,
 		internalChecker: internalChecker,
+		dashboardURL:    dashboardURL,
 	}
 }
 
@@ -273,7 +276,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	// Clean up pending registration
 	_ = h.store.DeletePendingRegistration(ctx, pr.ID)
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner))
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), org.DataRegion)
 	if err != nil {
 		log.Error("token generation failed", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
@@ -311,7 +314,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 			Data: map[string]string{
 				"ToName":       user.Name,
 				"OrgName":      org.Name,
-				"DashboardURL": "https://app.featuresignals.com",
+				"DashboardURL": h.dashboardURL,
 			},
 		})
 	}()

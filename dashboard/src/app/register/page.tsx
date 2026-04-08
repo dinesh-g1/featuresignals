@@ -278,20 +278,20 @@ function RegisterForm() {
           >
             <div className="space-y-1.5">
               <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-              <Input id="name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Input id="name" name="name" type="text" autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <Input id="email" name="email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
-              <Input id="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+              <Input id="password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
               <PasswordStrength password={form.password} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="org_name">Organization Name <span className="text-red-500">*</span></Label>
-              <Input id="org_name" type="text" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required />
+              <Input id="org_name" name="organization" type="text" autoComplete="organization" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required />
             </div>
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium text-slate-700">Data Region <span className="text-red-500">*</span></legend>

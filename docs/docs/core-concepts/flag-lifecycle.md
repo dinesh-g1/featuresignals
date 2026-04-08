@@ -136,4 +136,4 @@ The Flag Engine's **[Flag Health](/dashboard/flag-health)** page shows:
 - Flags past their expiration date
 - Flags that have been at 100% rollout for extended periods
 
-Use **[Usage Insights](/dashboard/usage-insights)** to monitor value distributions and **[Entity Inspector](/dashboard/entity-inspector)** to debug flag evaluation for specific users.
+Use **[Usage Insights](/dashboard/usage-insights)** to monitor value distributions and **[Target Inspector](/dashboard/target-inspector)** to debug flag evaluation for specific users.

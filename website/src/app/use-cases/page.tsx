@@ -318,10 +318,10 @@ curl -X POST .../flags/sync-environments \\
     title: "Customer Support Debugging",
     subtitle: '"What does this user see?" — answered in seconds',
     description:
-      "When a customer reports an issue, use Entity Inspector to see exactly what flags they experience. Compare two users side-by-side to understand why one sees a feature and another doesn't. No code reading required.",
+      "When a customer reports an issue, use Target Inspector to see exactly what flags they experience. Compare two users side-by-side to understand why one sees a feature and another doesn't. No code reading required.",
     steps: [
       "Customer reports: 'I can't see the new dashboard'",
-      "Open Entity Inspector, enter their user key and attributes",
+      "Open Target Inspector, enter their user key and attributes",
       "Instantly see all flag evaluations with reasons",
       "Compare with a working user to find the difference",
     ],
@@ -330,12 +330,12 @@ curl -X POST .../flags/sync-environments \\
     code: [
       {
         lang: "curl",
-        label: "Inspect Entity",
+        label: "Inspect Target",
         code: `# See exactly what user-42 experiences
 curl -X POST https://api.featuresignals.com/v1/projects/proj-1/environments/env-prod/inspect-entity \\
   -H "Authorization: Bearer <token>" \\
   -d '{
-    "entity_key": "user-42",
+    "key": "user-42",
     "attributes": { "plan": "free", "country": "US" }
   }'
 
