@@ -1,0 +1,358 @@
+name: "Test, Lint, Build & Publish Images"
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_sdk_tests:
+        description: "Skip SDK tests (faster feedback for server/dashboard-only changes)"
+        type: boolean
+        default: false
+      skip_security_scan:
+        description: "Skip dependency security scan"
+        type: boolean
+        default: false
+      force_push_images:
+        description: "Push images even on non-main branches (for testing)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ── Server ─────────────────────────────────────────────────────────────────
+  server-tests:
+    name: "Server: Test & Coverage"
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fs
+          POSTGRES_PASSWORD: fsdev
+          POSTGRES_DB: featuresignals
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.9'
+          cache-dependency-path: server/go.sum
+      - name: Run migrations
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
+      - name: Run tests with coverage
+        working-directory: server
+        run: go test ./... -count=1 -timeout 120s -v -coverprofile=coverage.out -covermode=atomic
+        env:
+          TEST_DATABASE_URL: postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable
+      - name: Print coverage summary
+        working-directory: server
+        run: |
+          echo "=== Server Test Coverage ==="
+          go tool cover -func=coverage.out | tail -1
+          echo ""
+          go tool cover -func=coverage.out
+      - name: Build binaries
+        working-directory: server
+        run: |
+          go build -o bin/server ./cmd/server
+          go build -o bin/stalescan ./cmd/stalescan
+      - name: Schema snapshot check
+        run: |
+          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-current.sql
+          if [ -f server/schema.snapshot.sql ]; then
+            if ! diff -q server/schema.snapshot.sql /tmp/schema-current.sql > /dev/null 2>&1; then
+              echo "::warning::Schema snapshot is out of date. Run 'make schema-snapshot' to update."
+              diff server/schema.snapshot.sql /tmp/schema-current.sql || true
+            else
+              echo "Schema snapshot is up to date."
+            fi
+          else
+            echo "::notice::No schema snapshot found. Consider committing server/schema.snapshot.sql."
+          fi
+
+  server-lint:
+    name: "Server: Lint & Vet"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.9'
+          cache-dependency-path: server/go.sum
+      - name: Vet
+        working-directory: server
+        run: go vet ./...
+
+  migration-roundtrip:
+    name: "Server: Migration Round-Trip Safety"
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fs
+          POSTGRES_PASSWORD: fsdev
+          POSTGRES_DB: featuresignals
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.9'
+          cache-dependency-path: server/go.sum
+      - name: Install migrate CLI
+        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - name: Migrate UP
+        run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
+      - name: Snapshot schema after UP
+        run: |
+          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-up.sql
+      - name: Migrate DOWN (all)
+        run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" down -all
+      - name: Migrate UP again
+        run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
+      - name: Verify schema matches round-trip
+        run: |
+          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-roundtrip.sql
+          if ! diff -q /tmp/schema-up.sql /tmp/schema-roundtrip.sql > /dev/null 2>&1; then
+            echo "::error::Migration round-trip produced different schemas. DOWN migrations are not fully reversible."
+            diff /tmp/schema-up.sql /tmp/schema-roundtrip.sql
+            exit 1
+          fi
+          echo "Migration round-trip verified: schemas match."
+
+  # ── Dashboard ──────────────────────────────────────────────────────────────
+  dashboard-tests:
+    name: "Dashboard: Test, Build & Coverage"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install
+        working-directory: dashboard
+        run: npm ci
+      - name: Test with coverage
+        working-directory: dashboard
+        run: npm run test:coverage
+      - name: Build
+        working-directory: dashboard
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+
+  # ── Documentation ──────────────────────────────────────────────────────────
+  docs-build:
+    name: "Docs: Build Verification"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install & Build
+        working-directory: docs
+        run: npm install && npm run build
+
+  # ── SDK Tests ──────────────────────────────────────────────────────────────
+  go-sdk-tests:
+    name: "SDK: Go Tests"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_sdk_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.9'
+          cache-dependency-path: sdks/go/go.sum
+      - name: Test with coverage
+        working-directory: sdks/go
+        run: |
+          go test ./... -count=1 -v -coverprofile=coverage.out -covermode=atomic
+          echo "=== Go SDK Coverage ==="
+          go tool cover -func=coverage.out | tail -1
+      - name: Build
+        working-directory: sdks/go
+        run: go build ./...
+
+  node-sdk-tests:
+    name: "SDK: Node.js Tests"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_sdk_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install & Test
+        working-directory: sdks/node
+        run: |
+          npm install
+          node --test --experimental-strip-types --experimental-test-coverage src/__tests__/client.test.ts
+
+  python-sdk-tests:
+    name: "SDK: Python Tests"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_sdk_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install & Test
+        working-directory: sdks/python
+        run: |
+          pip install -e ".[dev]" pytest-cov
+          python -m pytest tests/ -v --cov=featuresignals --cov-report=term-missing
+
+  java-sdk-tests:
+    name: "SDK: Java Tests"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_sdk_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+      - name: Test
+        working-directory: sdks/java
+        run: mvn -B test
+
+  # ── Security ───────────────────────────────────────────────────────────────
+  security-scan:
+    name: "Security: Dependency Vulnerability Scan"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_security_scan }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.9'
+          cache-dependency-path: server/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Go vulnerability check (server)
+        working-directory: server
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+      - name: Go vulnerability check (Go SDK)
+        working-directory: sdks/go
+        run: govulncheck ./...
+      - name: npm audit (dashboard)
+        working-directory: dashboard
+        run: npm install && npm audit --audit-level=high
+      - name: npm audit (docs)
+        working-directory: docs
+        run: npm install && npm audit --audit-level=high
+      - name: npm audit (website)
+        working-directory: website
+        run: npm install && npm audit --audit-level=high
+      - name: npm audit (Node SDK)
+        working-directory: sdks/node
+        run: npm install && npm audit --audit-level=high
+      - name: npm audit (React SDK)
+        working-directory: sdks/react
+        run: npm install && npm audit --audit-level=high
+      - name: npm audit (Vue SDK)
+        working-directory: sdks/vue
+        run: npm install && npm audit --audit-level=high
+
+  # ── Docker Images ──────────────────────────────────────────────────────────
+  build-and-publish-images:
+    name: "Docker: Build & Publish to GHCR"
+    runs-on: ubuntu-latest
+    needs: [server-tests, migration-roundtrip, dashboard-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+
+          TAGS="sha-${SHA_SHORT}"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            TAGS="${TAGS},latest"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+            TAGS="${TAGS},${VERSION}"
+          fi
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+
+          SHOULD_PUSH="false"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            SHOULD_PUSH="true"
+          fi
+          if [ "${{ inputs.force_push_images }}" = "true" ]; then
+            SHOULD_PUSH="true"
+          fi
+          echo "should_push=$SHOULD_PUSH" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        if: steps.tags.outputs.should_push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build server image
+        run: |
+          IFS=',' read -ra TAG_LIST <<< "${{ steps.tags.outputs.tags }}"
+          TAG_ARGS=""
+          for t in "${TAG_LIST[@]}"; do
+            TAG_ARGS="$TAG_ARGS -t ghcr.io/${{ github.repository_owner }}/featuresignals-server:$t"
+          done
+          docker build -f deploy/docker/Dockerfile.server $TAG_ARGS ./server
+
+      - name: Build dashboard image
+        run: |
+          IFS=',' read -ra TAG_LIST <<< "${{ steps.tags.outputs.tags }}"
+          TAG_ARGS=""
+          for t in "${TAG_LIST[@]}"; do
+            TAG_ARGS="$TAG_ARGS -t ghcr.io/${{ github.repository_owner }}/featuresignals-dashboard:$t"
+          done
+          docker build -f deploy/docker/Dockerfile.dashboard $TAG_ARGS ./dashboard
+
+      - name: Push images to GHCR
+        if: steps.tags.outputs.should_push == 'true'
+        run: |
+          docker push --all-tags ghcr.io/${{ github.repository_owner }}/featuresignals-server
+          docker push --all-tags ghcr.io/${{ github.repository_owner }}/featuresignals-dashboard
+
+      - name: Post build summary
+        run: |
+          echo "## Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Tags | Pushed |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| featuresignals-server | ${{ steps.tags.outputs.tags }} | ${{ steps.tags.outputs.should_push }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| featuresignals-dashboard | ${{ steps.tags.outputs.tags }} | ${{ steps.tags.outputs.should_push }} |" >> $GITHUB_STEP_SUMMARY

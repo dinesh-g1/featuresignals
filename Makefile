@@ -1,4 +1,17 @@
-.PHONY: up down local-up local-up-caddy local-down local-reset local-logs seed local-seed db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down schema-snapshot status help
+.PHONY: up down local-up local-up-caddy local-down local-reset local-logs seed local-seed \
+	db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down \
+	schema-snapshot status help setup dev test test-server test-dash lint \
+	migrate-new deploy-staging deploy-prod release
+
+# ─── One-Time Setup ──────────────────────────────────────────────────────────
+
+setup: ## One-time dev setup (hooks, deps)
+	git config core.hooksPath .githooks
+	cd server && go mod download
+	cd dashboard && npm ci
+	@echo ""
+	@echo "  Setup complete. Pre-commit hooks installed."
+	@echo ""
 
 # ─── Native Dev (DB in Docker, server/dashboard run natively) ────────────────
 
@@ -10,6 +23,13 @@ up: ## Start Postgres via Docker for native dev
 
 down: ## Stop Postgres
 	docker compose down
+
+dev: up ## Start DB + native server + dashboard (requires tmux or multiple terminals)
+	@echo ""
+	@echo "  Postgres started. Now run in separate terminals:"
+	@echo "    Terminal 1: cd server && make dev"
+	@echo "    Terminal 2: cd dashboard && npm run dev"
+	@echo ""
 
 # ─── Full-Stack Local Docker ─────────────────────────────────────────────────
 
@@ -59,6 +79,34 @@ local-seed: ## Start full-stack Docker with seed data pre-loaded
 	docker compose -f docker-compose.yml -f docker-compose.override.yml --profile seed up --build -d
 	@echo "FeatureSignals running at http://localhost:3000 (with seed data)"
 
+# ─── Testing ─────────────────────────────────────────────────────────────────
+
+test: test-server test-dash ## Run all tests
+
+test-server: ## Run server tests with coverage
+	cd server && go test ./... -count=1 -timeout 120s -race -coverprofile=coverage.out
+	@echo ""
+	cd server && go tool cover -func=coverage.out | tail -1
+
+test-dash: ## Run dashboard tests with coverage
+	cd dashboard && npm run test:coverage
+
+lint: ## Run all linters (server + dashboard)
+	cd server && go vet ./...
+	cd dashboard && npx tsc --noEmit
+	@echo "All lints passed"
+
+# ─── Migrations ──────────────────────────────────────────────────────────────
+
+migrate-new: ## Create a new migration pair (usage: make migrate-new NAME=add_foo)
+	@if [ -z "$(NAME)" ]; then echo "Usage: make migrate-new NAME=description"; exit 1; fi
+	@NEXT=$$(printf "%06d" $$(($$(ls server/migrations/*.up.sql 2>/dev/null | wc -l) + 1))); \
+	touch "server/migrations/$${NEXT}_$(NAME).up.sql" \
+	      "server/migrations/$${NEXT}_$(NAME).down.sql"; \
+	echo "Created:"; \
+	echo "  server/migrations/$${NEXT}_$(NAME).up.sql"; \
+	echo "  server/migrations/$${NEXT}_$(NAME).down.sql"
+
 # ─── Database Access ──────────────────────────────────────────────────────────
 
 db-tunnel: ## Open SSH tunnel to production Postgres
@@ -82,6 +130,24 @@ schema-snapshot: ## Dump current DB schema to server/schema.snapshot.sql
 	@docker compose exec -T postgres pg_dump -U fs -d featuresignals --schema-only --no-owner --no-acl | \
 		grep -v '^--' | grep -v '^$$' | grep -v '^SET ' | grep -v '^SELECT ' > server/schema.snapshot.sql
 	@echo "Schema snapshot saved to server/schema.snapshot.sql"
+
+# ─── Deploy (via GitHub Actions CLI) ─────────────────────────────────────────
+
+deploy-staging: ## Trigger staging deploy via GitHub CLI
+	gh workflow run deploy-staging.yml
+	@echo "Staging deploy triggered. Monitor at: gh run list --workflow=deploy-staging.yml"
+
+deploy-prod: ## Trigger production deploy via GitHub CLI (with confirmation)
+	@echo "WARNING: This will deploy to ALL production regions (IN -> US -> EU)."
+	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	gh workflow run deploy-production.yml
+	@echo "Production deploy triggered. Monitor at: gh run list --workflow=deploy-production.yml"
+
+release: ## Create a new release (usage: make release V=1.2.3)
+	@if [ -z "$(V)" ]; then echo "Usage: make release V=1.2.3"; exit 1; fi
+	git tag -a "v$(V)" -m "Release v$(V)"
+	git push origin "v$(V)"
+	@echo "Release v$(V) created. CI will build and publish images."
 
 # ─── Status ───────────────────────────────────────────────────────────────────
 
