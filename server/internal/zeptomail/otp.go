@@ -162,6 +162,7 @@ func (s *OTPSender) doSend(ctx context.Context, to, toName, subject, html string
 	s.logger.Error("zeptomail api error",
 		"status_code", resp.StatusCode,
 		"raw_body", string(respBody),
+		"request_body", string(body),
 		"parsed_code", er.Error.Code,
 		"parsed_message", er.Error.Message,
 	)
