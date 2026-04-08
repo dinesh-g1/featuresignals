@@ -120,7 +120,8 @@ jobs:
             else
               cd /opt/featuresignals
               git remote set-url origin "${REPO_URL}"
-              git pull origin main
+              git fetch origin main
+              git reset --hard origin/main
             fi
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}

@@ -106,7 +106,7 @@ jobs:
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
             git fetch origin
-            git checkout "${HOTFIX_REF}"
+            git reset --hard "origin/${HOTFIX_REF}" || git checkout "${HOTFIX_REF}"
             USE_REGISTRY=false bash deploy/deploy-region.sh
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}

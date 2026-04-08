@@ -24,6 +24,9 @@ on:
         type: boolean
         default: false
 
+permissions:
+  statuses: write
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -164,6 +167,8 @@ jobs:
           script: |
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
+            git fetch origin main
+            git reset --hard origin/main
             export ROLLBACK_COMMIT="${ROLLBACK_COMMIT}"
             export IMAGE_TAG="${IMAGE_TAG}"
             bash deploy/deploy-region.sh
