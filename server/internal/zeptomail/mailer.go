@@ -44,7 +44,7 @@ type Mailer struct {
 // NewMailer creates a ZeptoMail lifecycle mailer. It validates required
 // fields and initialises the shared template renderer.
 func NewMailer(token, fromEmail, fromName, baseURL string, logger *slog.Logger) (*Mailer, error) {
-	token = strings.TrimSpace(token)
+	token = sanitizeToken(token)
 	if token == "" {
 		return nil, fmt.Errorf("zeptomail: send mail token is required")
 	}
@@ -288,6 +288,14 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 	)
 
 	return er.RequestID, resp.StatusCode, fmt.Errorf("zeptomail %d: %s (code=%s)", resp.StatusCode, er.Error.Message, er.Error.Code)
+}
+
+// sanitizeToken strips whitespace and the "Zoho-enczapikey " prefix if
+// someone stored the full Authorization header value instead of the raw key.
+func sanitizeToken(token string) string {
+	token = strings.TrimSpace(token)
+	token = strings.TrimPrefix(token, "Zoho-enczapikey ")
+	return strings.TrimSpace(token)
 }
 
 // marshalJSON encodes v without escaping HTML characters (<, >, &) to
