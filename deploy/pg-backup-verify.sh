@@ -4,6 +4,7 @@
 #
 # Restores the latest daily backup into a temporary container and runs
 # sanity queries to prove the backup is restorable and contains data.
+# Supports both encrypted (.gpg) and plain (.gz) backup files.
 #
 # Usage (weekly cron):
 #   0 6 * * 0 /opt/featuresignals/deploy/pg-backup-verify.sh >> /var/log/fs-backup-verify.log 2>&1
@@ -15,7 +16,7 @@ VERIFY_CONTAINER="fs-backup-verify"
 DB_NAME="${POSTGRES_DB:-featuresignals}"
 DB_USER="${POSTGRES_USER:-fs}"
 
-LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/*.sql.gz 2>/dev/null | head -1)
+LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/*.sql.gz* 2>/dev/null | head -1)
 if [ -z "$LATEST_BACKUP" ]; then
   echo "[$(date)] ERROR: No backup files found in $BACKUP_DIR"
   exit 1
@@ -47,7 +48,12 @@ for i in $(seq 1 30); do
 done
 
 echo "[$(date)] Restoring backup..."
-gunzip -c "$LATEST_BACKUP" | docker exec -i "$VERIFY_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -q 2>/dev/null
+if [[ "$LATEST_BACKUP" == *.gpg ]]; then
+  gpg --decrypt --quiet "$LATEST_BACKUP" | gunzip | \
+    docker exec -i "$VERIFY_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -q 2>/dev/null
+else
+  gunzip -c "$LATEST_BACKUP" | docker exec -i "$VERIFY_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -q 2>/dev/null
+fi
 
 echo "[$(date)] Running sanity queries..."
 ERRORS=0

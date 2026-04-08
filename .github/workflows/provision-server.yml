@@ -43,9 +43,23 @@ jobs:
             apt update && apt upgrade -y
             apt install -y curl git ufw fail2ban
 
+            echo "==> Configuring unattended security upgrades..."
+            apt install -y unattended-upgrades
+            cat > /etc/apt/apt.conf.d/20auto-upgrades << 'APT_EOF'
+            APT::Periodic::Update-Package-Lists "1";
+            APT::Periodic::Unattended-Upgrade "1";
+            APT::Periodic::AutocleanInterval "7";
+            APT_EOF
+            systemctl enable unattended-upgrades
+
             echo "==> Creating deploy user..."
             id -u deploy &>/dev/null || adduser --disabled-password --gecos "" deploy
-            echo "deploy ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/deploy
+            cat > /etc/sudoers.d/deploy << 'SUDOERS_EOF'
+            deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart ssh, /usr/bin/systemctl restart sshd
+            deploy ALL=(ALL) NOPASSWD: /usr/sbin/ufw status
+            deploy ALL=(ALL) NOPASSWD: /usr/bin/journalctl --vacuum-time=*
+            deploy ALL=(ALL) NOPASSWD: /usr/bin/docker *
+            SUDOERS_EOF
             chmod 440 /etc/sudoers.d/deploy
 
             echo "==> Configuring SSH for deploy user..."
@@ -162,8 +176,14 @@ jobs:
             sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
             sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
             sudo sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+            sudo sed -i 's/^#*MaxAuthTries.*/MaxAuthTries 3/' /etc/ssh/sshd_config
+            sudo sed -i 's/^#*ClientAliveInterval.*/ClientAliveInterval 300/' /etc/ssh/sshd_config
+            sudo sed -i 's/^#*ClientAliveCountMax.*/ClientAliveCountMax 2/' /etc/ssh/sshd_config
+            grep -q "^MaxAuthTries" /etc/ssh/sshd_config || echo "MaxAuthTries 3" | sudo tee -a /etc/ssh/sshd_config
+            grep -q "^ClientAliveInterval" /etc/ssh/sshd_config || echo "ClientAliveInterval 300" | sudo tee -a /etc/ssh/sshd_config
+            grep -q "^ClientAliveCountMax" /etc/ssh/sshd_config || echo "ClientAliveCountMax 2" | sudo tee -a /etc/ssh/sshd_config
             sudo systemctl restart ssh || sudo systemctl restart sshd
-            echo "SSH hardened: root login disabled, password auth disabled."
+            echo "SSH hardened: root login disabled, password auth disabled, max 3 auth attempts, 5min idle timeout."
 
       - name: Verify setup
         uses: appleboy/ssh-action@v1

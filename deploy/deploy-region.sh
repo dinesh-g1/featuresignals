@@ -135,9 +135,18 @@ if [ "$healthy" = false ]; then
   exit 1
 fi
 
-# ── Cleanup ──────────────────────────────────────────────────────────────────
-echo "==> Cleaning up dangling images..."
-docker image prune -f
+# ── Post-deploy cleanup ──────────────────────────────────────────────────────
+echo "==> Post-deploy cleanup..."
+docker container prune -f 2>/dev/null || true
+docker image prune -a -f --filter "until=48h" 2>/dev/null || true
+docker builder prune -f --filter "until=48h" 2>/dev/null || true
+docker volume prune -f 2>/dev/null || true
+if [ -d "/root/go/pkg/mod/cache" ]; then
+  rm -rf /root/go/pkg/mod/cache 2>/dev/null || true
+fi
+if [ -d "/home/deploy/go/pkg/mod/cache" ]; then
+  rm -rf /home/deploy/go/pkg/mod/cache 2>/dev/null || true
+fi
 
 echo "==> Service status:"
 $DC ps

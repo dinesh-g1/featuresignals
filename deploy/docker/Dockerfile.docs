@@ -4,8 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run build && npm cache clean --force
 
 FROM alpine:3.19
-COPY --from=builder /app/build /dist
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+COPY --from=builder --chown=appuser:appgroup /app/build /dist
+
+USER appuser
 CMD ["sh", "-c", "cp -r /dist/* /srv/docs/ && echo 'Docs ready'"]

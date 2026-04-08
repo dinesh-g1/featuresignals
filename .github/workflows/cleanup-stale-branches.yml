@@ -1,0 +1,74 @@
+name: "Cleanup Stale Merged Branches"
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview deletions without executing"
+        type: boolean
+        default: false
+      days_stale:
+        description: "Delete merged branches with no activity for N days"
+        type: number
+        default: 30
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: "Prune merged branches"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Delete stale merged branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          DAYS_STALE: ${{ github.event.inputs.days_stale || '30' }}
+        run: |
+          set -euo pipefail
+
+          PROTECTED="main|develop|release|staging"
+          CUTOFF=$(date -d "-${DAYS_STALE} days" +%s 2>/dev/null || date -v-${DAYS_STALE}d +%s)
+
+          echo "Protected patterns: $PROTECTED"
+          echo "Cutoff: $(date -d @$CUTOFF 2>/dev/null || date -r $CUTOFF) ($DAYS_STALE days ago)"
+          echo "Dry run: $DRY_RUN"
+          echo "---"
+
+          DELETED=0
+          SKIPPED=0
+
+          for branch in $(git branch -r --merged origin/main | grep 'origin/' | grep -v HEAD); do
+            BRANCH_NAME="${branch#origin/}"
+
+            if echo "$BRANCH_NAME" | grep -qE "^($PROTECTED)$"; then
+              continue
+            fi
+
+            LAST_COMMIT_DATE=$(git log -1 --format=%ct "$branch" 2>/dev/null || echo "0")
+
+            if [ "$LAST_COMMIT_DATE" -lt "$CUTOFF" ]; then
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "[DRY RUN] Would delete: $BRANCH_NAME (last commit: $(date -d @$LAST_COMMIT_DATE 2>/dev/null || date -r $LAST_COMMIT_DATE))"
+              else
+                echo "Deleting: $BRANCH_NAME"
+                git push origin --delete "$BRANCH_NAME" 2>/dev/null || echo "  Failed to delete $BRANCH_NAME"
+                DELETED=$((DELETED + 1))
+              fi
+            else
+              SKIPPED=$((SKIPPED + 1))
+            fi
+          done
+
+          echo "---"
+          echo "Deleted: $DELETED branches"
+          echo "Skipped (too recent): $SKIPPED branches"
