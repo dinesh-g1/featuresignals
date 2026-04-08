@@ -81,6 +81,8 @@ jobs:
           script: |
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
+            git fetch origin main
+            git reset --hard origin/main
             bash deploy/deploy-region.sh
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
