@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/dinesh-g1/featuresignals/discussions
+    about: Ask questions or start a discussion instead of filing an issue.

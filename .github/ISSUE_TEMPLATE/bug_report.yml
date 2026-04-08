@@ -1,0 +1,91 @@
+name: Bug Report
+description: Report a defect or unexpected behavior
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of the bug.
+      placeholder: "Login fails with a 500 error when the email contains a '+' character."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue.
+      placeholder: |
+        1. Go to /login
+        2. Enter email: user+test@example.com
+        3. Enter any password
+        4. Click "Sign In"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      placeholder: "Login should succeed or show 'invalid credentials'."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      placeholder: "Server returns 500 Internal Server Error. No error details in the response."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: region
+    attributes:
+      label: Region
+      description: Which region does this affect?
+      options:
+        - "All regions"
+        - "India (IN)"
+        - "United States (US)"
+        - "Europe (EU)"
+        - "Unknown"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the system is affected?
+      multiple: true
+      options:
+        - "Server (Go backend)"
+        - "Dashboard (Next.js)"
+        - "SDKs"
+        - "Infrastructure"
+        - "Website"
+        - "Docs"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - "Critical (production broken, data loss)"
+        - "High (major feature broken, workaround exists)"
+        - "Medium (minor feature broken)"
+        - "Low (cosmetic, edge case)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Paste relevant logs, error messages, or screenshots.
+    validations:
+      required: false
