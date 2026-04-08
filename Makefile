@@ -1,34 +1,114 @@
 .PHONY: up down local-up local-up-caddy local-down local-reset local-logs seed local-seed \
 	db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down \
 	schema-snapshot status help setup dev test test-server test-dash lint \
-	migrate-new deploy-staging deploy-prod release
+	migrate-new deploy-staging deploy-prod release \
+	dev-server dev-dash dev-migrate dev-seed dev-db-create dev-stalescan
 
 # ─── One-Time Setup ──────────────────────────────────────────────────────────
 
-setup: ## One-time dev setup (hooks, deps)
+setup: ## One-time dev setup (hooks, deps, migrate CLI)
 	git config core.hooksPath .githooks
 	cd server && go mod download
 	cd dashboard && npm ci
+	@command -v migrate >/dev/null 2>&1 || { \
+		echo "Installing golang-migrate CLI..."; \
+		go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest; \
+	}
 	@echo ""
 	@echo "  Setup complete. Pre-commit hooks installed."
+	@echo "  Run 'make dev-help' to see how to run services individually."
 	@echo ""
 
-# ─── Native Dev (DB in Docker, server/dashboard run natively) ────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# Native Development — run each process individually for debugging
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Option A: Postgres in Docker (quickest)
+#   make up            — start Postgres container
+#   make dev-migrate   — apply migrations
+#   make dev-server    — run Go API server
+#   make dev-dash      — run Next.js dashboard
+#
+# Option B: Fully native Postgres (no Docker at all)
+#   make dev-db-create — create database in local Postgres
+#   make dev-migrate   — apply migrations
+#   make dev-server    — run Go API server
+#   make dev-dash      — run Next.js dashboard
+#
+# Each command runs in the foreground. Use separate terminals.
+# ══════════════════════════════════════════════════════════════════════════════
 
-up: ## Start Postgres via Docker for native dev
+dev-help: ## Show native development quickstart
+	@echo ""
+	@echo "  ╔══════════════════════════════════════════════════════════════╗"
+	@echo "  ║  FeatureSignals — Native Development                       ║"
+	@echo "  ╚══════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "  Prerequisites:"
+	@echo "    Go 1.25+, Node 22+, migrate CLI (run 'make setup' first)"
+	@echo ""
+	@echo "  Option A: Postgres in Docker"
+	@echo "    Terminal 1:  make up              # Postgres container"
+	@echo "    Terminal 2:  make dev-server       # Go API on :8080"
+	@echo "    Terminal 3:  make dev-dash         # Next.js on :3000"
+	@echo ""
+	@echo "  Option B: Fully native (no Docker)"
+	@echo "    Prereq:      brew install postgresql@16 && brew services start postgresql@16"
+	@echo "    Once:         make dev-db-create   # create DB + user"
+	@echo "    Terminal 1:   make dev-server      # Go API on :8080"
+	@echo "    Terminal 2:   make dev-dash        # Next.js on :3000"
+	@echo ""
+	@echo "  Useful targets:"
+	@echo "    make dev-migrate    — apply pending migrations"
+	@echo "    make dev-seed       — load sample data"
+	@echo "    make dev-stalescan  — run stale flag scanner"
+	@echo "    make test           — run all tests"
+	@echo ""
+
+dev-db-create: ## Create database and user in locally installed Postgres (no Docker)
+	@echo "==> Creating local Postgres database..."
+	@createuser -s fs 2>/dev/null || true
+	@psql -U fs -tc "SELECT 1 FROM pg_database WHERE datname = 'featuresignals'" | grep -q 1 || \
+		createdb -U fs featuresignals
+	@psql -U fs -d featuresignals -c "ALTER USER fs PASSWORD 'fsdev';" 2>/dev/null || true
+	@echo "  Database 'featuresignals' ready (user: fs, password: fsdev)"
+	@echo "  Run 'make dev-migrate' to apply migrations"
+
+dev-migrate: ## Apply all pending database migrations
+	@command -v migrate >/dev/null 2>&1 || { echo "ERROR: 'migrate' CLI not found. Run 'make setup' first."; exit 1; }
+	migrate -path server/migrations -database "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" up
+	@echo "  Migrations applied"
+
+dev-server: ## Run Go API server natively (reads server/.env)
+	@echo "==> Starting API server on :$${PORT:-8080}..."
+	cd server && go run ./cmd/server
+
+dev-dash: ## Run Next.js dashboard natively
+	@echo "==> Starting dashboard on :3000..."
+	cd dashboard && npm run dev
+
+dev-seed: ## Load sample data into the database
+	psql "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" -f server/scripts/seed.sql
+	@echo "  Seed data loaded"
+
+dev-stalescan: ## Run the stale flag scanner
+	cd server && go run ./cmd/stalescan
+
+# ─── Postgres in Docker (for devs who prefer it) ────────────────────────────
+
+up: ## Start only Postgres in Docker (for native dev)
 	docker compose up -d postgres
-	@echo "Postgres ready at localhost:5432"
-	@echo "Run: cd server && go run ./cmd/server"
-	@echo "Run: cd dashboard && npm run dev"
+	@echo "  Postgres ready at localhost:5432"
 
-down: ## Stop Postgres
+down: ## Stop Postgres container
 	docker compose down
 
-dev: up ## Start DB + native server + dashboard (requires tmux or multiple terminals)
+dev: up dev-migrate ## Start Postgres + apply migrations (then run server/dash in separate terminals)
 	@echo ""
-	@echo "  Postgres started. Now run in separate terminals:"
-	@echo "    Terminal 1: cd server && make dev"
-	@echo "    Terminal 2: cd dashboard && npm run dev"
+	@echo "  Postgres started and migrations applied."
+	@echo "  Now run in separate terminals:"
+	@echo "    make dev-server"
+	@echo "    make dev-dash"
 	@echo ""
 
 # ─── Full-Stack Local Docker ─────────────────────────────────────────────────
@@ -71,7 +151,7 @@ onprem-down: ## Stop on-prem deployment
 
 # ─── Seed ─────────────────────────────────────────────────────────────────────
 
-seed: ## Load seed data into running Postgres
+seed: ## Load seed data into Dockerized Postgres
 	@docker compose exec -T postgres psql -U fs -d featuresignals < server/scripts/seed.sql
 	@echo "Seed data loaded"
 
