@@ -53,6 +53,10 @@ function getApiUrl(): string {
   return API_URL;
 }
 
+export function getRegionalApiUrl(regionCode: string): string {
+  return REGION_API_ENDPOINTS[regionCode] || API_URL;
+}
+
 interface RequestOptions {
   method?: string;
   body?: unknown;
@@ -249,8 +253,19 @@ export const api = {
   // Verify-first signup (OTP-based)
   initiateSignup: (data: { email: string; password: string; name: string; org_name: string; data_region?: string }) =>
     request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", { method: "POST", body: data }),
-  completeSignup: (data: { email: string; otp: string }) =>
-    request<SignupResponse>("/v1/auth/complete-signup", { method: "POST", body: data }),
+  completeSignup: async (data: { email: string; otp: string }, regionCode?: string): Promise<SignupResponse> => {
+    const baseUrl = regionCode ? getRegionalApiUrl(regionCode) : API_URL;
+    const res = await fetch(`${baseUrl}/v1/auth/complete-signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Unknown error" }));
+      throw new APIError(res.status, err.error || "Signup completion failed");
+    }
+    return res.json();
+  },
   resendSignupOTP: (email: string) =>
     request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", { method: "POST", body: { email } }),
 

@@ -149,4 +149,70 @@ describe("RegisterPage", () => {
 
     expect(screen.getByText("Create your account")).toBeInTheDocument();
   });
+
+  it("calls completeSignup with default 'in' region when no region changed", async () => {
+    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.completeSignup).mockResolvedValue({
+      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
+      user: { id: "u1", name: "Test User", email: "test@example.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      organization: { id: "o1", name: "Test Org", slug: "test-org", plan: "trial", data_region: "in", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      onboarding_completed: false,
+    });
+
+    render(<RegisterPage />);
+    fillForm();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Verify your email")).toBeInTheDocument();
+    });
+
+    const otpInput = screen.getByLabelText("Enter 6-digit verification code");
+    fireEvent.change(otpInput, { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: /Verify/i }));
+
+    await waitFor(() => {
+      expect(api.completeSignup).toHaveBeenCalledWith(
+        { email: "test@example.com", otp: "123456" },
+        "in",
+      );
+    });
+  });
+
+  it("calls completeSignup with 'us' region when United States is selected", async () => {
+    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.completeSignup).mockResolvedValue({
+      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
+      user: { id: "u1", name: "Test User", email: "test@example.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      organization: { id: "o1", name: "Test Org", slug: "test-org", plan: "trial", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      onboarding_completed: false,
+    });
+
+    render(<RegisterPage />);
+    fillForm();
+
+    const usRadio = screen.getByRole("radio", { name: /United States/i });
+    fireEvent.click(usRadio);
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Verify your email")).toBeInTheDocument();
+    });
+
+    expect(api.initiateSignup).toHaveBeenCalledWith(
+      expect.objectContaining({ data_region: "us" }),
+    );
+
+    const otpInput = screen.getByLabelText("Enter 6-digit verification code");
+    fireEvent.change(otpInput, { target: { value: "654321" } });
+    fireEvent.click(screen.getByRole("button", { name: /Verify/i }));
+
+    await waitFor(() => {
+      expect(api.completeSignup).toHaveBeenCalledWith(
+        { email: "test@example.com", otp: "654321" },
+        "us",
+      );
+    });
+  });
 });

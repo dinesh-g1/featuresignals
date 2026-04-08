@@ -21,7 +21,7 @@ services:
       DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD:-}
       DB_READONLY_PASSWORD: ${DB_READONLY_PASSWORD:-}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - /mnt/data/pgdata:/var/lib/postgresql/data
       - ./deploy/pg-init:/docker-entrypoint-initdb.d:ro
     deploy:
       resources:
@@ -80,6 +80,15 @@ services:
       OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-false}
       OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-warn}
       OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-0.1}
+      # Payment gateways
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-stripe}
+      PAYU_MERCHANT_KEY: ${PAYU_MERCHANT_KEY:-}
+      PAYU_SALT: ${PAYU_SALT:-}
+      PAYU_MODE: ${PAYU_MODE:-test}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
+      STRIPE_MODE: ${STRIPE_MODE:-test}
     deploy:
       resources:
         limits:
@@ -148,7 +157,6 @@ services:
       DOMAIN_DOCS: ${DOMAIN_DOCS:-docs.featuresignals.com}
 
 volumes:
-  pgdata:
   caddy-data:
   caddy-config:
   website-dist:

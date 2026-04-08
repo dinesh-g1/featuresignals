@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useAppStore } from "@/stores/app-store";
-import { api, APIError } from "@/lib/api";
+import { api, APIError, getRegionalApiUrl } from "@/lib/api";
 
 const API_URL = "http://localhost:8080";
 
@@ -248,5 +248,91 @@ describe("api.ts request interceptor", () => {
     const state = useAppStore.getState();
     expect(state.user).toEqual(testUser);
     expect(state.organization).toEqual(testOrg);
+  });
+});
+
+describe("getRegionalApiUrl", () => {
+  it("returns US endpoint for 'us' region code", () => {
+    expect(getRegionalApiUrl("us")).toBe("https://api.us.featuresignals.com");
+  });
+
+  it("returns EU endpoint for 'eu' region code", () => {
+    expect(getRegionalApiUrl("eu")).toBe("https://api.eu.featuresignals.com");
+  });
+
+  it("returns default API_URL for 'in' region code", () => {
+    expect(getRegionalApiUrl("in")).toBe(API_URL);
+  });
+
+  it("falls back to default API_URL for unknown region code", () => {
+    expect(getRegionalApiUrl("unknown")).toBe(API_URL);
+  });
+});
+
+describe("api.completeSignup regional routing", () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fetchMock = vi.fn();
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("sends complete-signup to US regional API when regionCode is 'us'", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
+      user: { id: "u1" },
+      organization: { id: "o1", data_region: "us" },
+    }));
+
+    await api.completeSignup({ email: "test@example.com", otp: "123456" }, "us");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.us.featuresignals.com/v1/auth/complete-signup");
+  });
+
+  it("sends complete-signup to EU regional API when regionCode is 'eu'", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
+      user: { id: "u1" },
+      organization: { id: "o1", data_region: "eu" },
+    }));
+
+    await api.completeSignup({ email: "test@example.com", otp: "123456" }, "eu");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.eu.featuresignals.com/v1/auth/complete-signup");
+  });
+
+  it("sends complete-signup to default API when no regionCode provided", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
+      user: { id: "u1" },
+      organization: { id: "o1", data_region: "in" },
+    }));
+
+    await api.completeSignup({ email: "test@example.com", otp: "123456" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${API_URL}/v1/auth/complete-signup`);
+  });
+
+  it("throws APIError when regional complete-signup fails", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(500, { error: "internal error" }));
+
+    try {
+      await api.completeSignup({ email: "test@example.com", otp: "123456" }, "us");
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(APIError);
+      expect((err as APIError).status).toBe(500);
+      expect((err as APIError).message).toBe("internal error");
+    }
   });
 });
