@@ -12,7 +12,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/riandyrn/otelchi v0.12.2
 	github.com/stripe/stripe-go/v82 v82.5.1
-	go.opentelemetry.io/contrib/bridges/otelslog v0.17.0
+	go.opentelemetry.io/contrib/bridges/otelslog v0.18.0
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.19.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.43.0
