@@ -39,6 +39,9 @@ pnpm-debug.log*
 *.so
 *.dylib
 /server/bin/
+/server/server
+/server/relay
+/server/stalescan
 *.out
 
 # Python
