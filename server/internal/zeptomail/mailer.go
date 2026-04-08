@@ -280,6 +280,7 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 	m.logger.Error("zeptomail api error",
 		"status_code", resp.StatusCode,
 		"raw_body", string(respBody),
+		"request_body", string(body),
 		"parsed_code", er.Error.Code,
 		"parsed_message", er.Error.Message,
 		"template", env.template,
