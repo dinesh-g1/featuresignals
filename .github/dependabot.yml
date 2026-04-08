@@ -4,90 +4,137 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/server"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     open-pull-requests-limit: 5
     labels: ["type: task", "area: server"]
+    groups:
+      server-go-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      server-go-major:
+        patterns: ["*"]
+        update-types: ["major"]
 
   - package-ecosystem: "gomod"
     directory: "/sdks/go"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     open-pull-requests-limit: 3
     labels: ["type: task", "area: sdks"]
+    groups:
+      go-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/dashboard"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 3
     labels: ["type: task", "area: dashboard"]
+    groups:
+      dashboard-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      dashboard-major:
+        patterns: ["*"]
+        update-types: ["major"]
 
   - package-ecosystem: "npm"
     directory: "/website"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: website"]
+    groups:
+      website-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: docs"]
+    groups:
+      docs-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/sdks/node"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      node-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/sdks/react"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      react-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/sdks/vue"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      vue-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "pip"
     directory: "/sdks/python"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      python-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "maven"
     directory: "/sdks/java"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      java-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "nuget"
     directory: "/sdks/dotnet"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      dotnet-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "bundler"
     directory: "/sdks/ruby"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 2
     labels: ["type: task", "area: sdks"]
+    groups:
+      ruby-sdk-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 3
     labels: ["type: task", "area: infra"]
+    groups:
+      actions-deps:
+        patterns: ["*"]
