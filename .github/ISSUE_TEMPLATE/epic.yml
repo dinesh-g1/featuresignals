@@ -1,0 +1,72 @@
+name: Epic
+description: A large initiative spanning multiple stories and tasks
+labels: ["type: epic"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Epics are high-level initiatives that break down into multiple stories and tasks.
+        Use the task list below to link child issues.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What is the business goal or user outcome this epic delivers?
+      placeholder: "Enable customers to self-serve infrastructure provisioning across multiple cloud regions."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & Key Deliverables
+      description: What is included (and what is explicitly out of scope)?
+      placeholder: |
+        In scope:
+        - Provider abstraction layer
+        - AWS and GCP provisioning
+        - Dashboard UI for cluster management
+
+        Out of scope:
+        - Azure support (follow-up epic)
+    validations:
+      required: true
+
+  - type: textarea
+    id: stories
+    attributes:
+      label: Stories & Tasks
+      description: Break down the epic into individual stories and tasks. Use task lists to track progress.
+      placeholder: |
+        - [ ] #123 Story: Region selector in signup flow
+        - [ ] #124 Story: API endpoint for cluster provisioning
+        - [ ] #125 Task: Database migration for clusters table
+        - [ ] #126 Story: Dashboard cluster management page
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: false
+
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: Success Criteria
+      description: How do we know this epic is complete?
+      placeholder: "A customer can provision a dedicated cluster in US or EU from the dashboard."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "Critical"
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true

@@ -1,0 +1,61 @@
+name: Task
+description: Engineering work that is not directly user-facing (refactoring, infra, deps, CI/CD)
+labels: ["type: task"]
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Parent Epic
+      description: Link the parent epic if this task is part of one (e.g., #45)
+      placeholder: "#"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done and why?
+      placeholder: "Upgrade Go from 1.25 to 1.26 to pick up the new range-over-func feature and stdlib improvements."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this task is done?
+      placeholder: |
+        - [ ] go.mod updated to Go 1.26
+        - [ ] CI workflow updated to use Go 1.26
+        - [ ] All tests pass
+        - [ ] No deprecated API warnings
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - "Server (Go backend)"
+        - "Dashboard (Next.js)"
+        - "SDKs"
+        - "Infrastructure"
+        - "Website"
+        - "Docs"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "Critical"
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true
