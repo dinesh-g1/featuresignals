@@ -94,7 +94,7 @@ func TestValidateWebhookURL(t *testing.T) {
 
 func TestRegister_InvalidEmail(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "", nil)
+	h := NewAuthHandler(store, &stubTokenManager{}, "", "", nil)
 
 	body := `{"email":"notanemail","password":"StrongP@ss1","name":"Test","org_name":"TestOrg"}`
 	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
@@ -109,7 +109,7 @@ func TestRegister_InvalidEmail(t *testing.T) {
 
 func TestRegister_NameTooLong(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "", nil)
+	h := NewAuthHandler(store, &stubTokenManager{}, "", "", nil)
 
 	longName := strings.Repeat("a", 256)
 	body := `{"email":"test@example.com","password":"StrongP@ss1","name":"` + longName + `","org_name":"TestOrg"}`

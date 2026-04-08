@@ -99,7 +99,7 @@ func NewRouter(
 	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
 
 	// Init handlers
-	authH := handlers.NewAuthHandler(store, jwtMgr, nil, appBaseURL, dashboardURL, internalChecker)
+	authH := handlers.NewAuthHandler(store, jwtMgr, appBaseURL, dashboardURL, internalChecker)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store, emitter)

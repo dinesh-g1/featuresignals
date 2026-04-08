@@ -17,7 +17,6 @@ import (
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
@@ -42,17 +41,15 @@ type authStore interface {
 type AuthHandler struct {
 	store           authStore
 	jwtMgr          auth.TokenManager
-	emailSender     email.VerificationSender
 	internalChecker dto.InternalChecker
 	appBaseURL      string
 	dashboardURL    string
 }
 
-func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, emailSender email.VerificationSender, appBaseURL, dashboardURL string, internalChecker dto.InternalChecker) *AuthHandler {
+func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, appBaseURL, dashboardURL string, internalChecker dto.InternalChecker) *AuthHandler {
 	return &AuthHandler{
 		store:           store,
 		jwtMgr:          jwtMgr,
-		emailSender:     emailSender,
 		internalChecker: internalChecker,
 		appBaseURL:      appBaseURL,
 		dashboardURL:    dashboardURL,
@@ -399,13 +396,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, resp)
 }
 
-// SendVerificationEmail generates a verification token and sends a verification email.
+// SendVerificationEmail generates a verification token for link-based
+// verification. Legacy endpoint kept for backward compatibility -- the
+// primary signup flow now uses OTP via /v1/auth/signup.
 func (h *AuthHandler) SendVerificationEmail(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 	userID := middleware.GetUserID(r.Context())
 
-	user, err := h.store.GetUserByID(r.Context(), userID)
-	if err != nil {
+	if _, err := h.store.GetUserByID(r.Context(), userID); err != nil {
 		log.Error("failed to get user", "error", err, "user_id", userID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to get user")
 		return
@@ -425,15 +423,7 @@ func (h *AuthHandler) SendVerificationEmail(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if h.emailSender != nil {
-		if err := h.emailSender.SendVerificationEmail(user.Email, token, h.appBaseURL); err != nil {
-			log.Error("failed to send verification email", "error", err, "user_id", userID)
-			httputil.Error(w, http.StatusInternalServerError, "failed to send verification email")
-			return
-		}
-	}
-
-	log.Info("verification email sent", "user_id", userID)
+	log.Info("verification token generated", "user_id", userID)
 	httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: "Verification email sent"})
 }
 

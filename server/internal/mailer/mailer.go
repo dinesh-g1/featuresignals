@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -16,75 +17,27 @@ import (
 //go:embed templates/*.html
 var templateFS embed.FS
 
-// SMTPMailer renders lifecycle email templates and delivers them via SMTP.
-type SMTPMailer struct {
-	host     string
-	port     int
-	user     string
-	pass     string
-	from     string
-	fromName string
-	logger   *slog.Logger
-	tmpl     *template.Template
+// Renderer handles template parsing and rendering for email HTML bodies.
+// It is shared between SMTPMailer and external transport implementations
+// (e.g., ZeptoMail) so templates are defined once and rendered consistently.
+type Renderer struct {
+	tmpl *template.Template
 }
 
-// NewSMTPMailer creates a mailer that renders embedded HTML templates and
-// sends them through the configured SMTP relay.
-func NewSMTPMailer(host string, port int, user, pass, from, fromName string, logger *slog.Logger) (*SMTPMailer, error) {
+// NewRenderer parses the embedded HTML templates and returns a reusable
+// renderer. Returns an error if any template fails to parse.
+func NewRenderer() (*Renderer, error) {
 	tmpl, err := template.ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parse email templates: %w", err)
 	}
-	return &SMTPMailer{
-		host:     host,
-		port:     port,
-		user:     user,
-		pass:     pass,
-		from:     from,
-		fromName: fromName,
-		logger:   logger.With("component", "smtp_mailer"),
-		tmpl:     tmpl,
-	}, nil
+	return &Renderer{tmpl: tmpl}, nil
 }
 
-func (m *SMTPMailer) Send(ctx context.Context, msg domain.EmailMessage) error {
-	html, err := m.render(msg)
-	if err != nil {
-		return fmt.Errorf("render template %s: %w", msg.Template, err)
-	}
-
-	raw := m.buildMIME(msg.To, msg.Subject, html)
-
-	addr := fmt.Sprintf("%s:%d", m.host, m.port)
-	var auth smtp.Auth
-	if m.user != "" {
-		auth = smtp.PlainAuth("", m.user, m.pass, m.host)
-	}
-
-	if err := smtp.SendMail(addr, auth, m.from, []string{msg.To}, []byte(raw)); err != nil {
-		m.logger.Error("smtp send failed",
-			"template", msg.Template,
-			"to", msg.To,
-			"error", err,
-		)
-		return fmt.Errorf("smtp send: %w", err)
-	}
-
-	m.logger.Info("email sent", "template", string(msg.Template), "to", msg.To)
-	return nil
-}
-
-func (m *SMTPMailer) SendBatch(ctx context.Context, msgs []domain.EmailMessage) error {
-	var firstErr error
-	for _, msg := range msgs {
-		if err := m.Send(ctx, msg); err != nil && firstErr == nil {
-			firstErr = err
-		}
-	}
-	return firstErr
-}
-
-func (m *SMTPMailer) render(msg domain.EmailMessage) (string, error) {
+// Render executes the template identified by msg.Template and returns the
+// resulting HTML string. Subject and ToName are injected as additional
+// template variables alongside msg.Data.
+func (r *Renderer) Render(msg domain.EmailMessage) (string, error) {
 	templateName := string(msg.Template) + ".html"
 
 	data := make(map[string]string, len(msg.Data)+2)
@@ -95,20 +48,115 @@ func (m *SMTPMailer) render(msg domain.EmailMessage) (string, error) {
 	data["ToName"] = msg.ToName
 
 	var buf bytes.Buffer
-	if err := m.tmpl.ExecuteTemplate(&buf, templateName, data); err != nil {
+	if err := r.tmpl.ExecuteTemplate(&buf, templateName, data); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
 }
 
-func (m *SMTPMailer) buildMIME(to, subject, htmlBody string) string {
+// SMTPMailer renders lifecycle email templates and delivers them via SMTP.
+type SMTPMailer struct {
+	renderer *Renderer
+	host     string
+	port     int
+	user     string
+	pass     string
+	from     string
+	fromName string
+	logger   *slog.Logger
+}
+
+// NewSMTPMailer creates a mailer that renders embedded HTML templates and
+// sends them through the configured SMTP relay.
+func NewSMTPMailer(host string, port int, user, pass, from, fromName string, logger *slog.Logger) (*SMTPMailer, error) {
+	renderer, err := NewRenderer()
+	if err != nil {
+		return nil, err
+	}
+	return &SMTPMailer{
+		renderer: renderer,
+		host:     host,
+		port:     port,
+		user:     user,
+		pass:     pass,
+		from:     from,
+		fromName: fromName,
+		logger:   logger.With("component", "smtp_mailer"),
+	}, nil
+}
+
+func (m *SMTPMailer) Send(ctx context.Context, msg domain.EmailMessage) error {
+	html, err := m.renderer.Render(msg)
+	if err != nil {
+		return fmt.Errorf("render template %s: %w", msg.Template, err)
+	}
+
+	fromEmail := m.from
+	if msg.FromEmail != "" {
+		fromEmail = msg.FromEmail
+	}
+	fromName := m.fromName
+	if msg.FromName != "" {
+		fromName = msg.FromName
+	}
+
+	unsubscribeURL := msg.Data["UnsubscribeURL"]
+	raw := m.buildMIME(fromName, fromEmail, msg.To, msg.Subject, html, unsubscribeURL, msg.ReplyTo)
+
+	addr := fmt.Sprintf("%s:%d", m.host, m.port)
+	var auth smtp.Auth
+	if m.user != "" {
+		auth = smtp.PlainAuth("", m.user, m.pass, m.host)
+	}
+
+	if err := smtp.SendMail(addr, auth, fromEmail, []string{msg.To}, []byte(raw)); err != nil {
+		m.logger.Error("smtp send failed",
+			"template", msg.Template,
+			"to", msg.To,
+			"from", fromEmail,
+			"error", err,
+		)
+		return fmt.Errorf("smtp send: %w", err)
+	}
+
+	m.logger.Info("email sent", "template", string(msg.Template), "to", msg.To, "from", fromEmail)
+	return nil
+}
+
+func (m *SMTPMailer) SendBatch(ctx context.Context, msgs []domain.EmailMessage) error {
+	var errs []error
+	for _, msg := range msgs {
+		if err := m.Send(ctx, msg); err != nil {
+			m.logger.Error("batch send failed for recipient",
+				"template", string(msg.Template),
+				"to", msg.To,
+				"error", err,
+			)
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// Render exposes template rendering for callers that need the HTML without
+// SMTP delivery (e.g., ZeptoMail transport). Delegates to the shared Renderer.
+func (m *SMTPMailer) Render(msg domain.EmailMessage) (string, error) {
+	return m.renderer.Render(msg)
+}
+
+func (m *SMTPMailer) buildMIME(fromName, fromEmail, to, subject, htmlBody, unsubscribeURL, replyTo string) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("From: %s <%s>\r\n", m.fromName, m.from))
+	b.WriteString(fmt.Sprintf("From: %s <%s>\r\n", fromName, fromEmail))
 	b.WriteString(fmt.Sprintf("To: %s\r\n", to))
 	b.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
 	b.WriteString("MIME-Version: 1.0\r\n")
 	b.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
-	b.WriteString("List-Unsubscribe: <{{.UnsubscribeURL}}>\r\n")
+	if replyTo != "" {
+		b.WriteString(fmt.Sprintf("Reply-To: %s\r\n", replyTo))
+	}
+	if unsubscribeURL != "" {
+		b.WriteString(fmt.Sprintf("List-Unsubscribe: <%s>\r\n", unsubscribeURL))
+	}
 	b.WriteString("\r\n")
 	b.WriteString(htmlBody)
 	return b.String()

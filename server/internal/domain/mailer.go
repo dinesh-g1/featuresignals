@@ -86,12 +86,38 @@ var TemplateMeta = map[TemplateID]EmailPriority{
 }
 
 // EmailMessage represents a fully resolved email ready for delivery.
+// FromEmail and FromName override the mailer's default sender when set
+// (e.g. support@ for billing emails, sales@ for inquiry notifications).
+// ReplyTo sets the Reply-To header so recipients reply to the right team.
 type EmailMessage struct {
-	To         string            `json:"to"`
-	ToName     string            `json:"to_name,omitempty"`
-	Template   TemplateID        `json:"template"`
-	Subject    string            `json:"subject"`
-	Data       map[string]string `json:"data"`
+	To        string            `json:"to"`
+	ToName    string            `json:"to_name,omitempty"`
+	FromEmail string            `json:"from_email,omitempty"`
+	FromName  string            `json:"from_name,omitempty"`
+	ReplyTo   string            `json:"reply_to,omitempty"`
+	Template  TemplateID        `json:"template"`
+	Subject   string            `json:"subject"`
+	Data      map[string]string `json:"data"`
+}
+
+// SenderIdentity maps template categories to the appropriate from/reply-to
+// addresses. The lifecycle processor applies these defaults before passing
+// the message to the mailer, unless the handler already set them.
+var SenderIdentity = map[TemplateID]struct {
+	FromEmail string
+	ReplyTo   string
+}{
+	TemplatePaymentSuccess:     {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplatePaymentFailed:      {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplatePaymentFailedFinal: {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateCancellation:       {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateDowngrade:          {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateRenewalUpcoming:    {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateUpgradeLimitHit:    {FromEmail: "billing@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateEnterpriseAck:      {FromEmail: "sales@featuresignals.com", ReplyTo: "sales@featuresignals.com"},
+	TemplateSecurityAlert:      {FromEmail: "security@featuresignals.com", ReplyTo: "security@featuresignals.com"},
+	TemplateDeletionRequested:  {FromEmail: "noreply@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateDeletionCanceled:   {FromEmail: "noreply@featuresignals.com", ReplyTo: "support@featuresignals.com"},
 }
 
 // Mailer is the port for sending lifecycle and transactional emails.
