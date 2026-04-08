@@ -1,0 +1,104 @@
+name: Debug ZeptoMail
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    name: ZeptoMail Network Diagnostics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check .env token format
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "=== .env token check (first/last 10 chars) ==="
+            TOKEN=$(grep ZEPTOMAIL_TOKEN /opt/featuresignals/.env | cut -d= -f2-)
+            echo "Length: ${#TOKEN}"
+            echo "First 10: ${TOKEN:0:10}"
+            echo "Last 10: ${TOKEN: -10}"
+            echo "Has leading whitespace: $(echo "$TOKEN" | grep -c '^\s')"
+            echo "Has trailing whitespace: $(echo "$TOKEN" | grep -c '\s$')"
+            echo ""
+
+            echo "=== Full .env (keys only, no values) ==="
+            awk -F= '{print $1}' /opt/featuresignals/.env
+            echo ""
+
+      - name: Test curl from VPS host
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: ZEPTOMAIL_TOKEN
+          script: |
+            echo "=== DNS resolution ==="
+            nslookup api.zeptomail.in || echo "nslookup failed, trying dig..."
+            dig api.zeptomail.in +short 2>/dev/null || echo "dig not available"
+            echo ""
+
+            echo "=== TLS connectivity ==="
+            timeout 10 openssl s_client -connect api.zeptomail.in:443 -servername api.zeptomail.in </dev/null 2>&1 | head -15
+            echo ""
+
+            echo "=== Curl test from VPS host ==="
+            curl -v "https://api.zeptomail.in/v1.1/email" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              -H "Authorization: Zoho-enczapikey ${ZEPTOMAIL_TOKEN}" \
+              -d '{"from":{"address":"noreply@featuresignals.com"},"to":[{"email_address":{"address":"dineshreddyg0@gmail.com","name":"Test"}}],"subject":"VPS Host Test","htmlbody":"<b>Test from VPS host</b>"}' \
+              2>&1
+            echo ""
+        env:
+          ZEPTOMAIL_TOKEN: ${{ secrets.ZEPTOMAIL_TOKEN }}
+
+      - name: Test from inside Docker container
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: ZEPTOMAIL_TOKEN
+          script: |
+            COMPOSE_FILE="/opt/featuresignals/docker-compose.prod.yml"
+            SERVER=$(docker compose -f $COMPOSE_FILE ps -q server 2>/dev/null)
+
+            if [ -z "$SERVER" ]; then
+              echo "ERROR: server container not found"
+              exit 1
+            fi
+
+            echo "=== Container env: proxy vars ==="
+            docker exec $SERVER env | grep -iE 'proxy|PROXY' || echo "(none found)"
+            echo ""
+
+            echo "=== Container env: ZEPTOMAIL vars ==="
+            docker exec $SERVER env | grep ZEPTOMAIL | sed 's/TOKEN=.*/TOKEN=<first10>.../' || echo "(none found)"
+            echo ""
+
+            echo "=== Container DNS resolution ==="
+            docker exec $SERVER nslookup api.zeptomail.in 2>&1 || \
+              docker exec $SERVER wget -q -O /dev/null https://api.zeptomail.in 2>&1 || \
+              echo "DNS/connectivity test inconclusive"
+            echo ""
+
+            echo "=== Container curl/wget test ==="
+            docker exec $SERVER wget -O- --post-data='{"from":{"address":"noreply@featuresignals.com"},"to":[{"email_address":{"address":"dineshreddyg0@gmail.com","name":"Test"}}],"subject":"Container Test","htmlbody":"<b>Test from container</b>"}' \
+              --header='Content-Type: application/json' \
+              --header='Accept: application/json' \
+              --header="Authorization: Zoho-enczapikey ${ZEPTOMAIL_TOKEN}" \
+              "https://api.zeptomail.in/v1.1/email" 2>&1 || echo "wget failed"
+            echo ""
+
+            echo "=== Container: check CA certificates ==="
+            docker exec $SERVER ls /etc/ssl/certs/ 2>/dev/null | head -5 || echo "No /etc/ssl/certs/"
+            docker exec $SERVER cat /etc/ssl/certs/ca-certificates.crt 2>/dev/null | head -3 || echo "No CA bundle found"
+            echo ""
+        env:
+          ZEPTOMAIL_TOKEN: ${{ secrets.ZEPTOMAIL_TOKEN }}
