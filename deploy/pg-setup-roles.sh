@@ -33,7 +33,7 @@ if [ -z "${DB_READONLY_PASSWORD:-}" ]; then
   exit 1
 fi
 
-CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q postgres)
+CONTAINER=$(docker compose --project-directory "$PROJECT_DIR" -f "$COMPOSE_FILE" ps -q postgres)
 if [ -z "$CONTAINER" ]; then
   echo "ERROR: postgres container is not running."
   exit 1

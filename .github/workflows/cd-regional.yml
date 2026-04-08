@@ -127,8 +127,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            if docker compose -f /opt/featuresignals/deploy/docker-compose.region.yml ps -q postgres 2>/dev/null | grep -q .; then
-              bash /opt/featuresignals/deploy/pg-backup.sh || echo "Backup skipped"
+            cd /opt/featuresignals
+            if docker compose --project-directory . -f deploy/docker-compose.region.yml ps -q postgres 2>/dev/null | grep -q .; then
+              bash deploy/pg-backup.sh || echo "Backup skipped"
             else
               echo "Postgres not running, skipping backup"
             fi
@@ -161,7 +162,8 @@ jobs:
             sleep 15
 
             echo "==> Service status (${{ matrix.region }}):"
-            docker compose -f /opt/featuresignals/deploy/docker-compose.region.yml ps
+            cd /opt/featuresignals
+            docker compose --project-directory . -f deploy/docker-compose.region.yml ps
 
             echo ""
             echo "==> Health check: API"
