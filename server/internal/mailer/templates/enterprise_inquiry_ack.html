@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Subject}}</title>
+<style>
+body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+.card { background: #ffffff; border-radius: 8px; padding: 40px 32px; border: 1px solid #e2e8f0; }
+.logo { color: #4f46e5; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
+h1 { color: #0f172a; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
+p { color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
+.btn { display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin: 8px 0 24px; }
+.footer { text-align: center; padding: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
+.footer a { color: #64748b; text-decoration: underline; }
+.receipt { background: #f8fafc; border-radius: 6px; padding: 20px; margin: 16px 0; border: 1px solid #e2e8f0; }
+.receipt-row { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+.receipt-label { color: #64748b; }
+.receipt-value { color: #0f172a; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="card">
+    <div class="logo">FeatureSignals</div>
+    <h1>We received your inquiry</h1>
+    <p>A new enterprise inquiry has been submitted with the following details.</p>
+    <div class="receipt">
+      <div class="receipt-row"><span class="receipt-label">Contact name</span><br><span class="receipt-value">{{.ContactName}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Email</span><br><span class="receipt-value">{{.Email}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Company</span><br><span class="receipt-value">{{.Company}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Team size</span><br><span class="receipt-value">{{.TeamSize}}</span></div>
+      <div class="receipt-row"><span class="receipt-label">Message</span><br><span class="receipt-value">{{.Message}}</span></div>
+    </div>
+  </div>
+  <div class="footer">
+    <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
+    <p><a href="{{.UnsubscribeURL}}">Manage email preferences</a></p>
+  </div>
+</div>
+</body>
+</html>

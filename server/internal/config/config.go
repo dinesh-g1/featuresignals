@@ -49,17 +49,10 @@ type Config struct {
 	StripePriceID        string
 	StripeMode           string
 
-	// Email OTP (MSG91 Email API)
-	MSG91AuthKey         string
-	MSG91EmailTemplateID string
-	MSG91EmailDomain     string
-	MSG91EmailFrom       string
-	MSG91EmailFromName   string
-
 	// Deployment mode: "cloud" or "onprem"
 	DeploymentMode string
 
-	// Email provider: "msg91", "smtp", or "none"
+	// Email provider: "zeptomail", "smtp", or "none"
 	EmailProvider string
 
 	// SMTP settings (used when EmailProvider = "smtp")
@@ -69,6 +62,12 @@ type Config struct {
 	SMTPPass     string
 	SMTPFrom     string
 	SMTPFromName string
+
+	// ZeptoMail (used when EmailProvider = "zeptomail")
+	ZeptoMailToken     string
+	ZeptoMailFromEmail string
+	ZeptoMailFromName  string
+	ZeptoMailBaseURL   string
 
 	// App
 	AppBaseURL   string
@@ -124,14 +123,8 @@ func Load() *Config {
 		StripePriceID:       os.Getenv("STRIPE_PRICE_ID"),
 		StripeMode:          getEnv("STRIPE_MODE", "test"),
 
-		MSG91AuthKey:         os.Getenv("MSG91_AUTH_KEY"),
-		MSG91EmailTemplateID: os.Getenv("MSG91_EMAIL_TEMPLATE_ID"),
-		MSG91EmailDomain:     getEnv("MSG91_EMAIL_DOMAIN", "mail.featuresignals.com"),
-		MSG91EmailFrom:       getEnv("MSG91_EMAIL_FROM", "noreply@mail.featuresignals.com"),
-		MSG91EmailFromName:   getEnv("MSG91_EMAIL_FROM_NAME", "Feature Signals"),
-
 		DeploymentMode: getEnv("DEPLOYMENT_MODE", "cloud"),
-		EmailProvider:  getEnv("EMAIL_PROVIDER", "msg91"),
+		EmailProvider:  getEnv("EMAIL_PROVIDER", "zeptomail"),
 
 		SMTPHost:     getEnv("SMTP_HOST", ""),
 		SMTPPort:     getEnvInt("SMTP_PORT", 587),
@@ -139,6 +132,11 @@ func Load() *Config {
 		SMTPPass:     os.Getenv("SMTP_PASS"),
 		SMTPFrom:     getEnv("SMTP_FROM", "noreply@localhost"),
 		SMTPFromName: getEnv("SMTP_FROM_NAME", "FeatureSignals"),
+
+		ZeptoMailToken:     os.Getenv("ZEPTOMAIL_TOKEN"),
+		ZeptoMailFromEmail: getEnv("ZEPTOMAIL_FROM_EMAIL", "noreply@featuresignals.com"),
+		ZeptoMailFromName:  getEnv("ZEPTOMAIL_FROM_NAME", "FeatureSignals"),
+		ZeptoMailBaseURL:   getEnv("ZEPTOMAIL_BASE_URL", "https://api.zeptomail.in"),
 
 		AppBaseURL:   getEnv("APP_BASE_URL", "http://localhost:8080"),
 		DashboardURL: getEnv("DASHBOARD_URL", "http://localhost:3000"),

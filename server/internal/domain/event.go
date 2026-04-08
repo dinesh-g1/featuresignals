@@ -145,6 +145,7 @@ const (
 
 	// Lifecycle / Communication
 	EventEmailSent        = "email.sent"
+	EventEmailFailed      = "email.failed"
 	EventEmailOpened      = "email.opened"
 	EventEmailClicked     = "email.clicked"
 	EventEmailUnsubscribe = "email.unsubscribed"

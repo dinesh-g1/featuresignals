@@ -74,12 +74,30 @@ func (p *Processor) Send(ctx context.Context, userID string, msg domain.EmailMes
 		}
 	}
 
+	if msg.FromEmail == "" {
+		if identity, ok := domain.SenderIdentity[msg.Template]; ok {
+			msg.FromEmail = identity.FromEmail
+			if msg.ReplyTo == "" {
+				msg.ReplyTo = identity.ReplyTo
+			}
+		}
+	}
+
 	if err := p.mailer.Send(ctx, msg); err != nil {
 		p.logger.Error("email delivery failed",
 			"template", string(msg.Template),
 			"to", msg.To,
 			"error", err,
 		)
+		p.emitter.Emit(ctx, domain.ProductEvent{
+			Event:    domain.EventEmailFailed,
+			Category: domain.EventCategoryLifecycle,
+			UserID:   userID,
+			Properties: mustJSON(map[string]string{
+				"template": string(msg.Template),
+				"to":       msg.To,
+			}),
+		})
 		return err
 	}
 

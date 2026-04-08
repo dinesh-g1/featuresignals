@@ -13,18 +13,6 @@ import (
 	"github.com/featuresignals/server/internal/auth"
 )
 
-type mockEmailSender struct {
-	lastEmail string
-	lastToken string
-	err       error
-}
-
-func (m *mockEmailSender) SendVerificationEmail(toEmail, token, baseURL string) error {
-	m.lastEmail = toEmail
-	m.lastToken = token
-	return m.err
-}
-
 func newAuthenticatedRequest(method, path string, body string, userID, orgID string) *http.Request {
 	r := httptest.NewRequest(method, path, strings.NewReader(body))
 	ctx := context.WithValue(r.Context(), middleware.UserIDKey, userID)
@@ -35,7 +23,7 @@ func newAuthenticatedRequest(method, path string, body string, userID, orgID str
 func newTestAuthHandler() (*AuthHandler, *mockStore) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	return NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000", nil), store
+	return NewAuthHandler(store, jwtMgr, "http://localhost:8080", "http://localhost:3000", nil), store
 }
 
 func TestAuthHandler_Register(t *testing.T) {
@@ -354,9 +342,7 @@ func TestAuthHandler_Register_NoDemoData(t *testing.T) {
 }
 
 func TestAuthHandler_SendVerificationEmail(t *testing.T) {
-	emailMock := &mockEmailSender{}
-	h, _ := newTestAuthHandler()
-	h.emailSender = emailMock
+	h, store := newTestAuthHandler()
 
 	userID, orgID := registerAndExtract(t, h, "emailverify@test.com")
 
@@ -367,10 +353,14 @@ func TestAuthHandler_SendVerificationEmail(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
-	if emailMock.lastEmail != "emailverify@test.com" {
-		t.Errorf("email not sent to correct address: %s", emailMock.lastEmail)
+	u, err := store.GetUserByID(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("get user: %v", err)
 	}
-	if emailMock.lastToken == "" {
+	if u.Email != "emailverify@test.com" {
+		t.Errorf("unexpected user email: %s", u.Email)
+	}
+	if u.EmailVerifyToken == "" {
 		t.Error("no token was generated")
 	}
 }
@@ -379,9 +369,6 @@ func TestAuthHandler_VerifyEmail(t *testing.T) {
 	h, store := newTestAuthHandler()
 	userID, orgID := registerAndExtract(t, h, "verifyemail@test.com")
 
-	emailMock := &mockEmailSender{}
-	h.emailSender = emailMock
-
 	r := newAuthenticatedRequest("POST", "/v1/auth/send-verification-email", "", userID, orgID)
 	w := httptest.NewRecorder()
 	h.SendVerificationEmail(w, r)
@@ -389,7 +376,14 @@ func TestAuthHandler_VerifyEmail(t *testing.T) {
 		t.Fatalf("send verification email failed: %d", w.Code)
 	}
 
-	token := emailMock.lastToken
+	u0, err := store.GetUserByID(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("get user: %v", err)
+	}
+	token := u0.EmailVerifyToken
+	if token == "" {
+		t.Fatal("no verification token in store")
+	}
 
 	r2 := httptest.NewRequest("GET", "/v1/auth/verify-email?token="+token, nil)
 	w2 := httptest.NewRecorder()

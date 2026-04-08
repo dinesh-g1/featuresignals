@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Subject}}</title>
+<style>
+  body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+  .card { background: #ffffff; border-radius: 8px; padding: 40px 32px; border: 1px solid #e2e8f0; }
+  .logo { color: #4f46e5; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
+  h1 { color: #0f172a; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
+  p { color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
+  .btn { display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin: 8px 0 24px; }
+  .footer { text-align: center; padding: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
+  .footer a { color: #64748b; text-decoration: underline; }
+  .alert { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 16px; margin: 16px 0; }
+  .alert strong { color: #991b1b; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="card">
+    <div class="logo">FeatureSignals</div>
+    <h1>Account deletion requested</h1>
+    <p>Hi {{.ToName}},</p>
+    <p>We received a request to permanently delete your account. Scheduled completion: <strong>{{.DeletionDate}}</strong>.</p>
+    <div class="alert">
+      <p style="margin-bottom:0;"><strong>This action cannot be undone.</strong> All associated data will be removed according to our retention policy.</p>
+    </div>
+    <p>If you did not request this, or you wish to keep your account, cancel the deletion using the link below.</p>
+    <a href="{{.CancelURL}}" class="btn">Cancel account deletion</a>
+  </div>
+  <div class="footer">
+    <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
+    <p><a href="{{.UnsubscribeURL}}">Manage email preferences</a></p>
+  </div>
+</div>
+</body>
+</html>

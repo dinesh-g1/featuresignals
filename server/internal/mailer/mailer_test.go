@@ -54,7 +54,7 @@ func TestSMTPMailer_TemplateRendering(t *testing.T) {
 		},
 	}
 
-	html, err := m.render(msg)
+	html, err := m.Render(msg)
 	if err != nil {
 		t.Fatalf("template render failed: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestSMTPMailer_AllTemplatesRender(t *testing.T) {
 				Subject:  "Test Subject",
 				Data:     baseData,
 			}
-			html, err := m.render(msg)
+			html, err := m.Render(msg)
 			if err != nil {
 				t.Fatalf("template %s failed to render: %v", tmplID, err)
 			}

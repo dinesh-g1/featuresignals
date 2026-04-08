@@ -19,7 +19,7 @@ New user registration is a 2-step process that verifies email ownership *before*
 POST /v1/auth/initiate-signup
 ```
 
-Sends a 6-digit OTP to the user's email via MSG91.
+Sends a 6-digit OTP to the user's email via the configured email provider.
 
 #### Request
 

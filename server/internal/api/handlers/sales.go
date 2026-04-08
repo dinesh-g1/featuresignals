@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -85,7 +86,9 @@ func (h *SalesHandler) SubmitInquiry(w http.ResponseWriter, r *http.Request) {
 			msg = "(no message)"
 		}
 		go func() {
-			if err := h.notifier.Send(r.Context(), domain.EmailMessage{
+			sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer sendCancel()
+			if err := h.notifier.Send(sendCtx, domain.EmailMessage{
 				To:       h.notifyTo,
 				Subject:  fmt.Sprintf("New Sales Inquiry from %s (%s)", req.ContactName, req.Company),
 				Template: domain.TemplateEnterpriseAck,

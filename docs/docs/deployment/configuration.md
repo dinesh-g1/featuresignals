@@ -21,15 +21,15 @@ All configuration is done via environment variables.
 | `APP_BASE_URL` | `http://localhost:8080` | Public URL of the API server |
 | `DASHBOARD_URL` | `http://localhost:3000` | Public URL of the dashboard |
 
-### Email OTP (MSG91)
+### Email (ZeptoMail)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MSG91_AUTH_KEY` | (empty) | MSG91 API auth key — required for OTP email sending |
-| `MSG91_EMAIL_TEMPLATE_ID` | (empty) | MSG91 email template ID for OTP emails |
-| `MSG91_EMAIL_DOMAIN` | `mail.featuresignals.com` | MSG91 verified email domain |
-| `MSG91_EMAIL_FROM` | `noreply@featuresignals.com` | Sender email address |
-| `MSG91_EMAIL_FROM_NAME` | `Feature Signals` | Sender display name |
+| `EMAIL_PROVIDER` | `zeptomail` | Email provider: `zeptomail`, `smtp`, or `none` |
+| `ZEPTOMAIL_TOKEN` | (empty) | ZeptoMail Send Mail Token — required for email delivery |
+| `ZEPTOMAIL_FROM_EMAIL` | `noreply@featuresignals.com` | Default sender email address |
+| `ZEPTOMAIL_FROM_NAME` | `FeatureSignals` | Default sender display name |
+| `ZEPTOMAIL_BASE_URL` | `https://api.zeptomail.in` | ZeptoMail API endpoint (India region) |
 
 ### PayU Billing
 

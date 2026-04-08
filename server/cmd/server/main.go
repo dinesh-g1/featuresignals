@@ -28,6 +28,7 @@ import (
 	"github.com/featuresignals/server/internal/payment"
 	payupkg "github.com/featuresignals/server/internal/payment/payu"
 	stripepkg "github.com/featuresignals/server/internal/payment/stripe"
+	"github.com/featuresignals/server/internal/zeptomail"
 	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
@@ -169,35 +170,52 @@ func main() {
 	// Evaluation metrics collector
 	metricsCollector := metrics.NewCollector()
 
-	// OTP email sender — selected by EMAIL_PROVIDER env var
+	// Email provider — OTP sender + lifecycle mailer selected by EMAIL_PROVIDER
 	var otpSender email.OTPSender
+	var lifecycleMailer domain.Mailer
+
 	switch cfg.EmailProvider {
+	case "zeptomail":
+		zm, err := zeptomail.NewMailer(cfg.ZeptoMailToken, cfg.ZeptoMailFromEmail, cfg.ZeptoMailFromName, cfg.ZeptoMailBaseURL, logger)
+		if err != nil {
+			logger.Error("failed to create ZeptoMail mailer", "error", err)
+			lifecycleMailer = mailer.NewNoopMailer(logger)
+		} else {
+			lifecycleMailer = zm
+			logger.Info("ZeptoMail lifecycle mailer configured", "from", cfg.ZeptoMailFromEmail)
+		}
+
+		zOTP, err := zeptomail.NewOTPSender(cfg.ZeptoMailToken, cfg.ZeptoMailFromEmail, cfg.ZeptoMailFromName, cfg.ZeptoMailBaseURL, logger)
+		if err != nil {
+			logger.Error("failed to create ZeptoMail OTP sender", "error", err)
+		} else {
+			otpSender = zOTP
+			logger.Info("ZeptoMail OTP sender configured")
+		}
+
 	case "smtp":
 		if cfg.SMTPHost != "" {
 			otpSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName)
 			logger.Info("SMTP email OTP sender configured", "host", cfg.SMTPHost, "port", cfg.SMTPPort)
+			m, err := mailer.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
+			if err != nil {
+				logger.Warn("failed to initialize SMTP mailer, falling back to noop", "error", err)
+				lifecycleMailer = mailer.NewNoopMailer(logger)
+			} else {
+				lifecycleMailer = m
+				logger.Info("lifecycle SMTP mailer configured", "host", cfg.SMTPHost)
+			}
 		} else {
 			logger.Warn("EMAIL_PROVIDER=smtp but SMTP_HOST not set; email disabled")
+			lifecycleMailer = mailer.NewNoopMailer(logger)
 		}
-	case "msg91":
-		if cfg.MSG91AuthKey != "" && cfg.MSG91EmailTemplateID != "" {
-			msg91Sender, err := email.NewMSG91Sender(
-				cfg.MSG91AuthKey,
-				cfg.MSG91EmailTemplateID,
-				cfg.MSG91EmailDomain,
-				cfg.MSG91EmailFrom,
-				cfg.MSG91EmailFromName,
-			)
-			if err != nil {
-				logger.Error("failed to create MSG91 email sender", "error", err)
-			} else {
-				otpSender = msg91Sender
-				logger.Info("MSG91 email OTP sender configured", "domain", cfg.MSG91EmailDomain)
-			}
-		}
+
 	case "none":
+		lifecycleMailer = mailer.NewNoopMailer(logger)
 		logger.Info("email sending disabled (EMAIL_PROVIDER=none)")
+
 	default:
+		lifecycleMailer = mailer.NewNoopMailer(logger)
 		logger.Warn("unknown EMAIL_PROVIDER, email disabled", "provider", cfg.EmailProvider)
 	}
 
@@ -224,27 +242,6 @@ func main() {
 		eventEmitter.Close(drainCtx)
 	}()
 	logger.Info("product event emitter started")
-
-	// Lifecycle mailer (renders HTML templates and delivers via SMTP or logs)
-	var lifecycleMailer domain.Mailer
-	switch cfg.EmailProvider {
-	case "smtp":
-		if cfg.SMTPHost != "" {
-			m, err := mailer.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
-			if err != nil {
-				logger.Warn("failed to initialize SMTP mailer, falling back to noop", "error", err)
-				lifecycleMailer = mailer.NewNoopMailer(logger)
-			} else {
-				lifecycleMailer = m
-				logger.Info("lifecycle SMTP mailer configured", "host", cfg.SMTPHost)
-			}
-		} else {
-			lifecycleMailer = mailer.NewNoopMailer(logger)
-		}
-	default:
-		lifecycleMailer = mailer.NewNoopMailer(logger)
-		logger.Info("lifecycle mailer using noop (no SMTP configured)")
-	}
 
 	// Lifecycle processor gates email delivery via user preferences
 	lifecycleProcessor := lifecycle.NewProcessor(lifecycleMailer, store, eventEmitter, logger)
