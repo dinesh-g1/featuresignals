@@ -42,6 +42,7 @@ interface RequestOptions {
   method?: string;
   body?: unknown;
   token?: string;
+  extraHeaders?: Record<string, string>;
   _retry?: boolean;
 }
 
@@ -89,6 +90,7 @@ function handleSessionExpired() {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...options.extraHeaders,
   };
 
   if (options.token) {
@@ -199,27 +201,27 @@ export const api = {
   sendVerificationEmail: (token: string) =>
     request("/v1/auth/send-verification-email", { method: "POST", token }),
 
-  // Verify-first signup (OTP-based)
+  // Verify-first signup (OTP-based) — all three endpoints are proxied to the
+  // target region via X-Target-Region so pending registrations, OTP
+  // verification, and account creation all hit the same regional database.
   initiateSignup: (data: { email: string; password: string; name: string; org_name: string; data_region?: string }) =>
-    request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", { method: "POST", body: data }),
-  completeSignup: async (data: { email: string; otp: string }, regionCode?: string): Promise<SignupResponse> => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (regionCode) {
-      headers["X-Target-Region"] = regionCode;
-    }
-    const res = await fetch(`${API_URL}/v1/auth/complete-signup`, {
+    request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", {
       method: "POST",
-      headers,
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: "Unknown error" }));
-      throw new APIError(res.status, err.error || "Signup completion failed");
-    }
-    return res.json();
-  },
-  resendSignupOTP: (email: string) =>
-    request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", { method: "POST", body: { email } }),
+      body: data,
+      extraHeaders: data.data_region ? { "X-Target-Region": data.data_region } : undefined,
+    }),
+  completeSignup: (data: { email: string; otp: string }, regionCode?: string) =>
+    request<SignupResponse>("/v1/auth/complete-signup", {
+      method: "POST",
+      body: data,
+      extraHeaders: regionCode ? { "X-Target-Region": regionCode } : undefined,
+    }),
+  resendSignupOTP: (email: string, regionCode?: string) =>
+    request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", {
+      method: "POST",
+      body: { email },
+      extraHeaders: regionCode ? { "X-Target-Region": regionCode } : undefined,
+    }),
 
   // Regions
   listRegions: () =>

@@ -181,21 +181,25 @@ func NewRouter(
 				r.Post("/auth/login", proxy.MultiRegionLogin(
 					http.HandlerFunc(authH.Login), cfg.LocalRegion, cfg.RegionEndpoints, logger,
 				).ServeHTTP)
-				r.Post("/auth/complete-signup", proxy.CompleteSignupProxy(
+				r.Post("/auth/initiate-signup", proxy.TargetRegionProxy(
+					http.HandlerFunc(signupH.InitiateSignup), cfg.LocalRegion, cfg.RegionEndpoints, logger,
+				).ServeHTTP)
+				r.Post("/auth/complete-signup", proxy.TargetRegionProxy(
 					http.HandlerFunc(signupH.CompleteSignup), cfg.LocalRegion, cfg.RegionEndpoints, logger,
+				).ServeHTTP)
+				r.Post("/auth/resend-signup-otp", proxy.TargetRegionProxy(
+					http.HandlerFunc(signupH.ResendSignupOTP), cfg.LocalRegion, cfg.RegionEndpoints, logger,
 				).ServeHTTP)
 			} else {
 				r.Post("/auth/login", authH.Login)
+				r.Post("/auth/initiate-signup", signupH.InitiateSignup)
 				r.Post("/auth/complete-signup", signupH.CompleteSignup)
+				r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
 			}
 
 			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)
-
-			// Verify-first signup flow (OTP-based)
-			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
-			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
 
 			// Available data regions (public)
 			r.Get("/regions", func(w http.ResponseWriter, r *http.Request) {
