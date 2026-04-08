@@ -18,7 +18,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          username: ${{ secrets.VPS_USER_IN }}
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,APP_BASE_URL,DASHBOARD_URL,OTEL_INGESTION_KEY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE
           script: |
@@ -61,7 +61,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          username: ${{ secrets.VPS_USER_IN }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             if docker compose -f /opt/featuresignals/docker-compose.prod.yml ps -q postgres 2>/dev/null | grep -q .; then
@@ -74,7 +74,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          username: ${{ secrets.VPS_USER_IN }}
           key: ${{ secrets.VPS_SSH_KEY }}
           command_timeout: 15m
           envs: REPO_TOKEN
@@ -89,7 +89,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          username: ${{ secrets.VPS_USER_IN }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             echo "Waiting for services to stabilize..."
