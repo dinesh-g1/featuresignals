@@ -1,0 +1,11 @@
+bin/
+server
+relay
+stalescan
+*.out
+coverage.out
+.env
+.env.*
+**/*_test.go
+scripts/
+.git/

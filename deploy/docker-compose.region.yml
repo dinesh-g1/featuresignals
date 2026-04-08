@@ -27,6 +27,7 @@ services:
       resources:
         limits:
           memory: 2G
+          cpus: "2.0"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fs -d featuresignals"]
       interval: 10s
@@ -69,10 +70,8 @@ services:
       ZEPTOMAIL_BASE_URL: ${ZEPTOMAIL_BASE_URL:-https://api.zeptomail.in}
       APP_BASE_URL: https://${DOMAIN_API}
       DASHBOARD_URL: https://${DOMAIN_APP}
-      # Multi-region routing (global router — set on IN server only)
       LOCAL_REGION: ${LOCAL_REGION:-}
       REGION_ENDPOINTS: ${REGION_ENDPOINTS:-}
-      # OpenTelemetry
       OTEL_ENABLED: ${OTEL_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-ingest.us2.signoz.cloud:443}
       OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY:-}
@@ -83,7 +82,6 @@ services:
       OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-false}
       OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-warn}
       OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-0.1}
-      # Payment gateways
       PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-stripe}
       PAYU_MERCHANT_KEY: ${PAYU_MERCHANT_KEY:-}
       PAYU_SALT: ${PAYU_SALT:-}
@@ -92,10 +90,17 @@ services:
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
       STRIPE_MODE: ${STRIPE_MODE:-test}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
           memory: 1G
+          cpus: "2.0"
 
   dashboard:
     build:
@@ -106,14 +111,22 @@ services:
         NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
     restart: unless-stopped
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     environment:
       HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: "1.0"
 
   website-build:
     build:
@@ -156,6 +169,16 @@ services:
       DOMAIN_APP: ${DOMAIN_APP}
       DOMAIN_MAIN: ${DOMAIN_MAIN:-featuresignals.com}
       DOMAIN_DOCS: ${DOMAIN_DOCS:-docs.featuresignals.com}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
 volumes:
   caddy-data:

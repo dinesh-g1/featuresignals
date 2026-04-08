@@ -7,7 +7,10 @@ COPY server/ .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /relay ./cmd/relay
 
 FROM alpine:3.19
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /relay /usr/local/bin/relay
+
+USER appuser
 EXPOSE 8090
 ENTRYPOINT ["relay"]

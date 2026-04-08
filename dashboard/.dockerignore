@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+coverage/
+src/__tests__/
+*.test.ts
+*.test.tsx
+.env
+.env.*
+.git/
