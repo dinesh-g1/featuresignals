@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useRef, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Check, X, Mail } from "lucide-react";
 import { api } from "@/lib/api";
@@ -134,10 +134,18 @@ export default function RegisterPage() {
 
 function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setAuth = useAppStore((s) => s.setAuth);
 
   const [step, setStep] = useState<"form" | "otp">("form");
   const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "", data_region: "in" });
+  const planIntent = searchParams.get("plan");
+
+  useEffect(() => {
+    if (planIntent) {
+      localStorage.setItem("fs_plan_intent", planIntent);
+    }
+  }, [planIntent]);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -212,6 +220,14 @@ function RegisterForm() {
             {step === "form" ? "Create your account" : "Verify your email"}
           </p>
         </div>
+
+        {planIntent === "pro" && step === "form" && (
+          <div className="rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-center">
+            <p className="text-sm font-medium text-indigo-800">
+              Start your <span className="font-bold">14-day Pro trial</span> — subscribe anytime during or after
+            </p>
+          </div>
+        )}
 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-0">

@@ -1,8 +1,7 @@
 package email
 
-import "context"
+import "github.com/featuresignals/server/internal/domain"
 
-// OTPSender sends OTP verification emails during signup.
-type OTPSender interface {
-	SendOTP(ctx context.Context, toEmail, toName, otp string) error
-}
+// OTPSender is an alias for the canonical domain.OTPSender interface.
+// Kept for backward compatibility; new code should depend on domain.OTPSender.
+type OTPSender = domain.OTPSender

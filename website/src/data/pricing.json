@@ -73,7 +73,7 @@
         "Priority email support"
       ],
       "cta_label": "Get Started with Pro",
-      "cta_url": "https://app.featuresignals.com/register"
+      "cta_url": "https://app.featuresignals.com/register?plan=pro"
     },
     "enterprise": {
       "name": "Enterprise",

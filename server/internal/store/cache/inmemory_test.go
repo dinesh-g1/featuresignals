@@ -127,6 +127,9 @@ func (m *mockStore) GetSubscriptionByStripeID(_ context.Context, _ string) (*dom
 func (m *mockStore) CreatePaymentEvent(_ context.Context, _ *domain.PaymentEvent) error { return nil }
 func (m *mockStore) GetPaymentEventByExternalID(_ context.Context, _, _ string) (*domain.PaymentEvent, error) { return nil, nil }
 func (m *mockStore) UpdateOrgPaymentGateway(_ context.Context, _, _ string) error { return nil }
+func (m *mockStore) ListPastDueSubscriptions(_ context.Context, _ time.Time) ([]domain.Subscription, error) {
+	return nil, nil
+}
 func (m *mockStore) GetOnboardingState(_ context.Context, _ string) (*domain.OnboardingState, error) { return nil, nil }
 func (m *mockStore) UpsertOnboardingState(_ context.Context, _ *domain.OnboardingState) error { return nil }
 func (m *mockStore) GetUserByEmailVerifyToken(_ context.Context, _ string) (*domain.User, error) { return nil, nil }

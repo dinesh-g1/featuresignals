@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Check, CreditCard, ExternalLink, ShieldCheck, Lock, Sparkles, PartyPopper } from "lucide-react";
+import { Check, CreditCard, ExternalLink, ShieldCheck, Lock, Sparkles, PartyPopper, Clock, ArrowRight, Zap } from "lucide-react";
 import type { BillingInfo, CheckoutResponse, UsageInfo } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -21,8 +21,9 @@ const statusColors: Record<string, string> = {
   unpaid: "bg-red-50 text-red-700 ring-red-100",
 };
 
-const planBadgeVariant: Record<string, "default" | "primary" | "purple"> = {
+const planBadgeVariant: Record<string, "default" | "primary" | "purple" | "info"> = {
   free: "default",
+  trial: "info",
   pro: "primary",
   enterprise: "purple",
 };
@@ -94,7 +95,8 @@ function BillingContent() {
 
   const plan = subscription?.plan || "free";
   const status = subscription?.status;
-  const isPaid = plan !== "free";
+  const isUpgradeable = plan === "free" || plan === "trial";
+  const isPaid = !isUpgradeable;
   const gateway = subscription?.gateway || "payu";
   const canManage = subscription?.can_manage ?? false;
 
@@ -176,7 +178,12 @@ function BillingContent() {
     }
   }
 
-  const userRole = organization ? "owner" : null;
+  const trialDaysLeft = (() => {
+    const expiresAt = organization?.trial_expires_at;
+    if (!expiresAt || plan !== "trial") return null;
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  })();
 
   return (
     <div className="space-y-6">
@@ -193,12 +200,62 @@ function BillingContent() {
         </Card>
       ) : (
         <>
-          {/* Current Plan */}
-          <Card className="p-4 sm:p-6 hover:shadow-lg hover:border-slate-300">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+          {/* Hero CTA for upgradeable users */}
+          {isUpgradeable && (
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-6 sm:p-8 text-white shadow-lg">
+              <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
+              <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-white/5" />
+
+              <div className="relative">
+                {plan === "trial" && trialDaysLeft !== null && (
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
+                    <Clock className="h-4 w-4" />
+                    {trialDaysLeft === 0 ? "Trial expires today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial`}
+                  </div>
+                )}
+
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {plan === "trial" ? "Subscribe to keep Pro features" : "Unlock the full power of FeatureSignals"}
+                </h2>
+                <p className="mt-2 max-w-lg text-sm text-indigo-100">
+                  {plan === "trial"
+                    ? "Your trial gives you full access to Pro features. Subscribe now to ensure uninterrupted access when your trial ends."
+                    : "Unlimited projects, environments, team members, RBAC, webhooks, and priority support — all for one flat price."}
+                </p>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Button
+                    onClick={handleUpgrade}
+                    disabled={upgrading}
+                    className="bg-white text-indigo-700 hover:bg-indigo-50 shadow-md"
+                  >
+                    <Zap className="mr-2 h-4 w-4" />
+                    {upgrading ? "Redirecting..." : plan === "trial" ? "Subscribe to Pro" : "Upgrade to Pro"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-indigo-200">
+                    {pricing?.plans?.pro?.display_price ?? "₹999"}/{pricing?.plans?.pro?.billing_period ?? "month"} &middot; Cancel anytime
+                  </span>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+                  {["Unlimited projects", "Unlimited environments", "Unlimited seats", "RBAC & audit logs"].map((f) => (
+                    <span key={f} className="inline-flex items-center gap-1.5 text-xs text-indigo-200">
+                      <Check className="h-3 w-3" />
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Current Plan — compact for paid, informational for upgradeable */}
+          <Card className="p-4 sm:p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Current Plan</h2>
-                <p className="mt-1 text-sm text-slate-500">Manage your subscription and billing</p>
+                <p className="mt-0.5 text-sm text-slate-500">Manage your subscription and billing</p>
               </div>
               <div className="flex items-center gap-3">
                 <Badge
@@ -216,7 +273,7 @@ function BillingContent() {
             </div>
 
             {subscription?.current_period_end && (
-              <p className="mb-4 text-xs text-slate-500">
+              <p className="mb-3 text-xs text-slate-500">
                 {status === "canceled" || subscription?.cancel_at_period_end ? "Access expires" : "Next billing date"}:{" "}
                 <span className="font-medium text-slate-700">
                   {new Date(subscription.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
@@ -225,45 +282,59 @@ function BillingContent() {
             )}
 
             {subscription?.cancel_at_period_end && (
-              <div className="mb-4 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+              <div className="mb-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
                 <p className="text-sm text-amber-800">Your subscription is set to cancel at the end of the current billing period.</p>
               </div>
             )}
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {!isPaid && (
-                <Button onClick={handleUpgrade} disabled={upgrading}>
-                  {upgrading ? "Redirecting..." : "Upgrade to Pro"}
-                </Button>
-              )}
-              {isPaid && canManage && (
-                <>
-                  <Button variant="secondary" onClick={handleManageBilling}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Manage Payment Method
-                    <ExternalLink className="ml-2 h-3 w-3" />
-                  </Button>
-                  {!subscription?.cancel_at_period_end && (
-                    <Button variant="destructive-ghost" size="sm" onClick={handleCancel} disabled={canceling}>
-                      {canceling ? "Canceling..." : "Cancel Subscription"}
+            {isPaid && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                {canManage && (
+                  <>
+                    <Button variant="secondary" onClick={handleManageBilling}>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Manage Payment Method
+                      <ExternalLink className="ml-2 h-3 w-3" />
                     </Button>
-                  )}
-                </>
-              )}
-              {isPaid && !canManage && (
-                <p className="text-sm text-slate-500">
-                  To manage or cancel your subscription, please contact{" "}
-                  <a href="mailto:support@featuresignals.com" className="font-medium text-indigo-600 hover:text-indigo-700">
-                    support@featuresignals.com
-                  </a>
-                </p>
-              )}
-            </div>
+                    {!subscription?.cancel_at_period_end && (
+                      <Button variant="destructive-ghost" size="sm" onClick={handleCancel} disabled={canceling}>
+                        {canceling ? "Canceling..." : "Cancel Subscription"}
+                      </Button>
+                    )}
+                  </>
+                )}
+                {!canManage && (
+                  <p className="text-sm text-slate-500">
+                    To manage or cancel your subscription, please contact{" "}
+                    <a href="mailto:support@featuresignals.com" className="font-medium text-indigo-600 hover:text-indigo-700">
+                      support@featuresignals.com
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
           </Card>
 
-          {/* Payment Gateway */}
-          {!isPaid && (
-            <Card className="p-4 sm:p-6 hover:shadow-lg hover:border-slate-300">
+          {/* Usage */}
+          {usage && (
+            <Card className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Usage</h2>
+                {isUpgradeable && (
+                  <span className="text-xs text-slate-400">Limits apply to free/trial plans</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <UsageCard label="Team Seats" used={usage.seats_used ?? 0} limit={usage.seats_limit ?? 3} />
+                <UsageCard label="Projects" used={usage.projects_used ?? 0} limit={usage.projects_limit ?? 1} />
+                <UsageCard label="Environments" used={usage.environments_used ?? 0} limit={usage.environments_limit ?? 2} />
+              </div>
+            </Card>
+          )}
+
+          {/* Payment Gateway + Trust Signals */}
+          {isUpgradeable && (
+            <Card className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-slate-900">Payment Gateway</h2>
                 {!showGatewaySelect && (
@@ -276,7 +347,7 @@ function BillingContent() {
                 Your checkout will use <span className="font-medium text-slate-700">{gateway === "stripe" ? "Stripe" : "PayU"}</span>.
               </p>
               {showGatewaySelect && (
-                <div className="flex gap-3 mt-3">
+                <div className="flex gap-3 mb-4">
                   <Button
                     variant={gateway === "payu" ? "primary" : "secondary"}
                     size="sm"
@@ -296,58 +367,47 @@ function BillingContent() {
                   </Button>
                 </div>
               )}
-            </Card>
-          )}
-
-          {/* Trust Signals */}
-          {!isPaid && <PaymentTrustSignals gateway={gateway} />}
-
-          {/* Usage */}
-          {usage && (
-            <Card className="p-4 sm:p-6 hover:shadow-lg hover:border-slate-300">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Usage</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <UsageCard label="Team Seats" used={usage.seats_used ?? 0} limit={usage.seats_limit ?? 3} />
-                <UsageCard label="Projects" used={usage.projects_used ?? 0} limit={usage.projects_limit ?? 1} />
-                <UsageCard label="Environments" used={usage.environments_used ?? 0} limit={usage.environments_limit ?? 2} />
-              </div>
+              <PaymentTrustSignals gateway={gateway} />
             </Card>
           )}
 
           {/* Plan Comparison */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PlanCard
-              name={pricing?.plans?.free?.name ?? "Free"}
-              price={pricing?.plans?.free?.display_price ?? "₹0"}
-              period={pricing?.plans?.free?.billing_period ? `/${pricing.plans.free.billing_period}` : "/month"}
-              features={pricing?.plans?.free?.features ?? ["1 project", "2 environments", "3 team members", "Community support"]}
-              current={plan === "free"}
-            />
-            <PlanCard
-              name={pricing?.plans?.pro?.name ?? "Pro"}
-              price={pricing?.plans?.pro?.display_price ?? "₹999"}
-              period={pricing?.plans?.pro?.billing_period ? `/${pricing.plans.pro.billing_period}` : "/month"}
-              features={pricing?.plans?.pro?.features ?? ["Unlimited projects", "Unlimited environments", "Unlimited team members", "Priority support"]}
-              current={plan === "pro"}
-              highlighted
-              action={
-                plan === "free"
-                  ? { label: upgrading ? "Redirecting..." : "Upgrade to Pro", onClick: handleUpgrade, disabled: upgrading }
-                  : undefined
-              }
-            />
-            <PlanCard
-              name={pricing?.plans?.enterprise?.name ?? "Enterprise"}
-              price={pricing?.plans?.enterprise?.display_price ?? "Custom"}
-              period=""
-              features={pricing?.plans?.enterprise?.features ?? ["Everything in Pro", "Dedicated support", "Custom SLA", "Self-hosted option"]}
-              current={plan === "enterprise"}
-              action={
-                plan !== "enterprise"
-                  ? { label: "Contact Sales", href: "mailto:support@featuresignals.com" }
-                  : undefined
-              }
-            />
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Compare Plans</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <PlanCard
+                name={pricing?.plans?.free?.name ?? "Free"}
+                price={pricing?.plans?.free?.display_price ?? "₹0"}
+                period={pricing?.plans?.free?.billing_period ? `/${pricing.plans.free.billing_period}` : "/month"}
+                features={pricing?.plans?.free?.features ?? ["1 project", "2 environments", "3 team members", "Community support"]}
+                current={plan === "free"}
+              />
+              <PlanCard
+                name={pricing?.plans?.pro?.name ?? "Pro"}
+                price={pricing?.plans?.pro?.display_price ?? "₹999"}
+                period={pricing?.plans?.pro?.billing_period ? `/${pricing.plans.pro.billing_period}` : "/month"}
+                features={pricing?.plans?.pro?.features ?? ["Unlimited projects", "Unlimited environments", "Unlimited team members", "Priority support"]}
+                current={plan === "pro" || plan === "trial"}
+                highlighted
+                action={
+                  isUpgradeable
+                    ? { label: upgrading ? "Redirecting..." : (plan === "trial" ? "Subscribe to Pro" : "Upgrade to Pro"), onClick: handleUpgrade, disabled: upgrading }
+                    : undefined
+                }
+              />
+              <PlanCard
+                name={pricing?.plans?.enterprise?.name ?? "Enterprise"}
+                price={pricing?.plans?.enterprise?.display_price ?? "Custom"}
+                period=""
+                features={pricing?.plans?.enterprise?.features ?? ["Everything in Pro", "Dedicated support", "Custom SLA", "Self-hosted option"]}
+                current={plan === "enterprise"}
+                action={
+                  plan !== "enterprise"
+                    ? { label: "Contact Sales", href: "mailto:support@featuresignals.com" }
+                    : undefined
+                }
+              />
+            </div>
           </div>
         </>
       )}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	ometric "go.opentelemetry.io/otel/metric"
@@ -26,7 +27,7 @@ type Broadcaster interface {
 
 // WebhookNotifier pushes flag-change events to the webhook dispatch queue.
 type WebhookNotifier interface {
-	NotifyFlagChange(envID, flagID, action string)
+	NotifyFlagChange(ctx context.Context, envID, flagID, action string)
 }
 
 // Cache holds in-memory rulesets per environment for fast evaluation.
@@ -153,7 +154,9 @@ func (c *Cache) StartListening(ctx context.Context) error {
 		}
 
 		if c.webhookNotifier != nil {
-			c.webhookNotifier.NotifyFlagChange(change.EnvID, change.FlagID, change.Action)
+			notifyCtx, notifyCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			c.webhookNotifier.NotifyFlagChange(notifyCtx, change.EnvID, change.FlagID, change.Action)
+			notifyCancel()
 		}
 	})
 	if err == nil {

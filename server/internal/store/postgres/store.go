@@ -1219,6 +1219,38 @@ func (s *Store) UpdateOrgPaymentGateway(ctx context.Context, orgID, gateway stri
 	return err
 }
 
+func (s *Store) ListPastDueSubscriptions(ctx context.Context, pastDueBefore time.Time) ([]domain.Subscription, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, org_id, gateway_provider, plan, status,
+		        current_period_start, current_period_end, cancel_at_period_end,
+		        created_at, updated_at,
+		        COALESCE(payu_txnid, ''), COALESCE(payu_mihpayid, ''),
+		        COALESCE(stripe_customer_id, ''), COALESCE(stripe_subscription_id, ''),
+		        COALESCE(stripe_payment_intent_id, '')
+		 FROM subscriptions
+		 WHERE status = 'past_due' AND updated_at < $1`, pastDueBefore)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subs []domain.Subscription
+	for rows.Next() {
+		var sub domain.Subscription
+		if err := rows.Scan(
+			&sub.ID, &sub.OrgID, &sub.GatewayProvider, &sub.Plan, &sub.Status,
+			&sub.CurrentPeriodStart, &sub.CurrentPeriodEnd, &sub.CancelAtPeriodEnd,
+			&sub.CreatedAt, &sub.UpdatedAt,
+			&sub.PayUTxnID, &sub.PayUMihpayID,
+			&sub.StripeCustomerID, &sub.StripeSubscriptionID, &sub.StripePaymentIntentID,
+		); err != nil {
+			return nil, err
+		}
+		subs = append(subs, sub)
+	}
+	return subs, nil
+}
+
 // --- Onboarding ---
 
 func (s *Store) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {

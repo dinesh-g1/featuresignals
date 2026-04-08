@@ -24,10 +24,10 @@ func NewNotifier(d *Dispatcher, resolver OrgResolver) *Notifier {
 }
 
 // NotifyFlagChange enqueues a webhook event for the given flag change.
-func (n *Notifier) NotifyFlagChange(envID, flagID, action string) {
+func (n *Notifier) NotifyFlagChange(ctx context.Context, envID, flagID, action string) {
 	orgID := ""
 	if n.orgResolver != nil {
-		resolved, err := n.orgResolver.ResolveOrgIDByEnvID(context.Background(), envID)
+		resolved, err := n.orgResolver.ResolveOrgIDByEnvID(ctx, envID)
 		if err == nil {
 			orgID = resolved
 		}

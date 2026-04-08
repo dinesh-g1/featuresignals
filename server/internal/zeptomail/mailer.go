@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math/rand/v2"
 	"net/http"
 	"strings"
 	"time"
@@ -19,15 +18,12 @@ import (
 
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/mailer"
+	"github.com/featuresignals/server/internal/retry"
 )
 
 var tracer = otel.Tracer("featuresignals/zeptomail")
 
-const (
-	maxRetries    = 3
-	baseBackoff   = 200 * time.Millisecond
-	backoffFactor = 4
-)
+const maxRetries = 3
 
 // Mailer implements domain.Mailer by rendering templates locally and
 // delivering pre-rendered HTML via ZeptoMail's REST API.
@@ -178,7 +174,7 @@ func (m *Mailer) sendWithRetry(ctx context.Context, env sendEnvelope) error {
 		}
 
 		if attempt < maxRetries {
-			backoff := jitteredBackoff(attempt)
+			backoff := retry.JitteredBackoff(attempt, retry.DefaultBase, retry.DefaultFactor, retry.DefaultCap)
 			m.logger.Warn("email send retrying",
 				"template", env.template,
 				"to", env.to,
@@ -280,7 +276,6 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 	m.logger.Error("zeptomail api error",
 		"status_code", resp.StatusCode,
 		"raw_body", string(respBody),
-		"request_body", string(body),
 		"parsed_code", er.Error.Code,
 		"parsed_message", er.Error.Message,
 		"template", env.template,
@@ -314,11 +309,3 @@ func marshalJSON(v any) ([]byte, error) {
 	return b, nil
 }
 
-func jitteredBackoff(attempt int) time.Duration {
-	backoff := baseBackoff
-	for i := 1; i < attempt; i++ {
-		backoff *= backoffFactor
-	}
-	jitter := time.Duration(rand.Int64N(int64(backoff) / 2))
-	return backoff + jitter
-}

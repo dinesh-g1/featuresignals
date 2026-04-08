@@ -521,6 +521,30 @@ func (h *BillingHandler) handleStripePaymentFailed(ctx context.Context, event *p
 			"gateway": domain.GatewayStripe,
 		}),
 	})
+
+	org, err := h.store.GetOrganization(ctx, sub.OrgID)
+	if err == nil {
+		members, _ := h.store.ListOrgMembers(ctx, sub.OrgID)
+		for _, m := range members {
+			if m.Role == "owner" || m.Role == "admin" {
+				user, userErr := h.store.GetUserByID(ctx, m.UserID)
+				if userErr != nil {
+					continue
+				}
+				h.lifecycle.Send(ctx, m.UserID, domain.EmailMessage{
+					To:       user.Email,
+					ToName:   user.Name,
+					Template: domain.TemplatePaymentFailed,
+					Subject:  "Action required: Your payment failed",
+					Data: map[string]string{
+						"org_name":    org.Name,
+						"plan":        sub.Plan,
+						"billing_url": h.dashboardURL + "/settings/billing",
+					},
+				})
+			}
+		}
+	}
 }
 
 // CancelSubscription cancels the org's active subscription.
@@ -577,6 +601,28 @@ func (h *BillingHandler) CancelSubscription(w http.ResponseWriter, r *http.Reque
 	_ = h.store.UpsertSubscription(r.Context(), sub)
 
 	log.Info("subscription canceled", "org_id", orgID, "gateway", gatewayName, "at_period_end", reqBody.AtPeriodEnd)
+
+	userID := middleware.GetUserID(r.Context())
+	org, orgErr := h.store.GetOrganization(r.Context(), orgID)
+	user, userErr := h.store.GetUserByID(r.Context(), userID)
+	if orgErr == nil && userErr == nil {
+		endDate := ""
+		if !sub.CurrentPeriodEnd.IsZero() {
+			endDate = sub.CurrentPeriodEnd.Format("January 2, 2006")
+		}
+		h.lifecycle.Send(r.Context(), userID, domain.EmailMessage{
+			To:       user.Email,
+			ToName:   user.Name,
+			Template: domain.TemplateCancellation,
+			Subject:  "Your subscription has been canceled",
+			Data: map[string]string{
+				"org_name":   org.Name,
+				"end_date":   endDate,
+				"billing_url": h.dashboardURL + "/settings/billing",
+			},
+		})
+	}
+
 	httputil.JSON(w, http.StatusOK, dto.CancelResponse{Status: "canceled"})
 }
 

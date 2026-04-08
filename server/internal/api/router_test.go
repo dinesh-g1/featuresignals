@@ -204,6 +204,9 @@ func (noopStore) GetPaymentEventByExternalID(context.Context, string, string) (*
 	return nil, errNoop
 }
 func (noopStore) UpdateOrgPaymentGateway(context.Context, string, string) error { return errNoop }
+func (noopStore) ListPastDueSubscriptions(context.Context, time.Time) ([]domain.Subscription, error) {
+	return nil, errNoop
+}
 
 func (noopStore) GetOnboardingState(context.Context, string) (*domain.OnboardingState, error) {
 	return nil, errNoop

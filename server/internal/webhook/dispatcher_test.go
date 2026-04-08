@@ -188,6 +188,46 @@ func TestDispatcher_DisabledWebhook(t *testing.T) {
 	}
 }
 
+func TestDispatcher_NoRetryOn4xx(t *testing.T) {
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+	}))
+	defer srv.Close()
+
+	store := &mockWebhookStore{
+		webhooks: []domain.Webhook{
+			{ID: "wh-4xx", OrgID: "org-1", Name: "NotFound", URL: srv.URL, Events: []string{"*"}, Enabled: true},
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	d := NewDispatcher(store, logger)
+	d.maxRetries = 3
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	d.Start(ctx)
+
+	d.Enqueue(Event{Type: "flag.created", OrgID: "org-1", SentAt: time.Now()})
+
+	time.Sleep(1 * time.Second)
+
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if attempts != 1 {
+		t.Errorf("expected exactly 1 attempt for 4xx (no retries), got %d", attempts)
+	}
+	if len(store.deliveries) != 1 {
+		t.Fatalf("expected 1 delivery record, got %d", len(store.deliveries))
+	}
+	if store.deliveries[0].Success {
+		t.Error("expected delivery success=false for 4xx")
+	}
+}
+
 func TestSign(t *testing.T) {
 	payload := []byte(`{"type":"flag.updated"}`)
 	sig := sign(payload, "secret")

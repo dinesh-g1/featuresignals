@@ -2,11 +2,12 @@ package events
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
-
-	"log/slog"
 
 	"github.com/featuresignals/server/internal/domain"
 )
@@ -146,5 +147,54 @@ func TestAsyncEmitter_DropsWhenFull(t *testing.T) {
 	got := spy.collected()
 	if len(got) > 2 {
 		t.Errorf("expected at most 2 events (buffer size), got %d", len(got))
+	}
+}
+
+// failNEventStore fails the first N calls to InsertProductEvents, then succeeds.
+type failNEventStore struct {
+	spyEventStore
+	failCount atomic.Int32
+	failUntil int32
+}
+
+func (s *failNEventStore) InsertProductEvents(ctx context.Context, evts []domain.ProductEvent) error {
+	n := s.failCount.Add(1)
+	if n <= s.failUntil {
+		return fmt.Errorf("transient store error (attempt %d)", n)
+	}
+	return s.spyEventStore.InsertProductEvents(ctx, evts)
+}
+
+func TestAsyncEmitter_RetriesOnFlushFailure(t *testing.T) {
+	store := &failNEventStore{failUntil: 2}
+	logger := slog.Default()
+
+	emitter := NewAsyncEmitter(store, logger,
+		WithBufferSize(64),
+		WithBatchSize(5),
+		WithFlushInterval(50*time.Millisecond),
+	)
+
+	for i := 0; i < 3; i++ {
+		emitter.Emit(context.Background(), domain.ProductEvent{
+			Event:    domain.EventFlagCreated,
+			Category: domain.EventCategoryFlag,
+			OrgID:    "org_1",
+		})
+	}
+
+	time.Sleep(3 * time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	emitter.Close(ctx)
+
+	got := store.collected()
+	if len(got) != 3 {
+		t.Errorf("expected 3 events after retry, got %d", len(got))
+	}
+	totalCalls := store.failCount.Load()
+	if totalCalls < 3 {
+		t.Errorf("expected at least 3 store calls (2 failures + 1 success), got %d", totalCalls)
 	}
 }

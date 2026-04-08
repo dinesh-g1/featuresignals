@@ -168,6 +168,9 @@ type BillingStore interface {
 	CreatePaymentEvent(ctx context.Context, event *PaymentEvent) error
 	GetPaymentEventByExternalID(ctx context.Context, provider, eventID string) (*PaymentEvent, error)
 	UpdateOrgPaymentGateway(ctx context.Context, orgID, gateway string) error
+
+	// Dunning: find subscriptions stuck in past_due for longer than the grace period.
+	ListPastDueSubscriptions(ctx context.Context, pastDueBefore time.Time) ([]Subscription, error)
 }
 
 // OnboardingStore provides access to onboarding state.

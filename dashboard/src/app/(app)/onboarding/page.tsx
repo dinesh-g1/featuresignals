@@ -131,6 +131,11 @@ function OnboardingContent() {
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
+  const [hasPlanIntent, setHasPlanIntent] = useState(false);
+
+  useEffect(() => {
+    setHasPlanIntent(localStorage.getItem("fs_plan_intent") === "pro");
+  }, []);
 
   const [flagForm, setFlagForm] = useState({ key: "", name: "" });
   const [creatingFlag, setCreatingFlag] = useState(false);
@@ -250,7 +255,13 @@ function OnboardingContent() {
 
   async function handleFinish() {
     await markStepComplete("completed");
-    router.push("/dashboard");
+    const planIntent = localStorage.getItem("fs_plan_intent");
+    if (planIntent === "pro") {
+      localStorage.removeItem("fs_plan_intent");
+      router.push("/settings/billing");
+    } else {
+      router.push("/dashboard");
+    }
   }
 
   if (loading) {
@@ -273,6 +284,20 @@ function OnboardingContent() {
           Your workspace is ready. Let&apos;s get your first flag live in under 5 minutes.
         </p>
       </div>
+
+      {hasPlanIntent && (
+        <div className="rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 px-4 py-3 text-center">
+          <p className="text-sm text-indigo-800">
+            Your <span className="font-bold">Pro trial</span> is active. Complete onboarding, then subscribe to keep all Pro features.
+          </p>
+          <Link
+            href="/settings/billing"
+            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+          >
+            Subscribe now <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
 
       {/* Progress Steps */}
       <div className="flex items-center justify-center gap-0">
