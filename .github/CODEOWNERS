@@ -5,23 +5,23 @@
 # Owners are automatically requested for PR review.
 
 # Default owner for everything
-* @dinesh-g1 @shashi
+* @dinesh-g1 @ssJvirtually
 
 # Go backend
-/server/ @dinesh-g1 @shashi
+/server/ @dinesh-g1 @ssJvirtually
 
 # Next.js dashboard
-/dashboard/ @dinesh-g1 @shashi
+/dashboard/ @dinesh-g1 @ssJvirtually
 
 # Infrastructure, deploy, and CI/CD
 /deploy/ @dinesh-g1
 /.github/workflows/ @dinesh-g1
 
 # Client SDKs
-/sdks/ @dinesh-g1 @shashi
+/sdks/ @dinesh-g1 @ssJvirtually
 
 # Marketing website
 /website/ @dinesh-g1
 
 # Documentation
-/docs/ @dinesh-g1 @shashi
+/docs/ @dinesh-g1 @ssJvirtually
