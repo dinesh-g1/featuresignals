@@ -73,7 +73,8 @@ jobs:
       - name: Schema snapshot check
         run: |
           PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
-            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-current.sql
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' | \
+            grep -v '^\\restrict' | grep -v '^\\unrestrict' > /tmp/schema-current.sql
           if [ -f server/schema.snapshot.sql ]; then
             if ! diff -q server/schema.snapshot.sql /tmp/schema-current.sql > /dev/null 2>&1; then
               echo "::warning::Schema snapshot is out of date. Run 'make schema-snapshot' to update."
@@ -127,7 +128,8 @@ jobs:
       - name: Snapshot schema after UP
         run: |
           PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
-            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-up.sql
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' | \
+            grep -v '^\\restrict' | grep -v '^\\unrestrict' > /tmp/schema-up.sql
       - name: Migrate DOWN (all)
         run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" down -all
       - name: Migrate UP again
@@ -135,7 +137,8 @@ jobs:
       - name: Verify schema matches round-trip
         run: |
           PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
-            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' > /tmp/schema-roundtrip.sql
+            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' | \
+            grep -v '^\\restrict' | grep -v '^\\unrestrict' > /tmp/schema-roundtrip.sql
           if ! diff -q /tmp/schema-up.sql /tmp/schema-roundtrip.sql > /dev/null 2>&1; then
             echo "::error::Migration round-trip produced different schemas. DOWN migrations are not fully reversible."
             diff /tmp/schema-up.sql /tmp/schema-roundtrip.sql
