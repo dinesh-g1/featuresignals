@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -43,6 +44,7 @@ type Mailer struct {
 // NewMailer creates a ZeptoMail lifecycle mailer. It validates required
 // fields and initialises the shared template renderer.
 func NewMailer(token, fromEmail, fromName, baseURL string, logger *slog.Logger) (*Mailer, error) {
+	token = strings.TrimSpace(token)
 	if token == "" {
 		return nil, fmt.Errorf("zeptomail: send mail token is required")
 	}
@@ -274,6 +276,16 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 
 	var er errorResponse
 	_ = json.Unmarshal(respBody, &er)
+
+	m.logger.Error("zeptomail api error",
+		"status_code", resp.StatusCode,
+		"raw_body", string(respBody),
+		"parsed_code", er.Error.Code,
+		"parsed_message", er.Error.Message,
+		"template", env.template,
+		"to", env.to,
+	)
+
 	return er.RequestID, resp.StatusCode, fmt.Errorf("zeptomail %d: %s (code=%s)", resp.StatusCode, er.Error.Message, er.Error.Code)
 }
 
