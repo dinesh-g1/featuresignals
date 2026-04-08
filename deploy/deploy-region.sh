@@ -8,7 +8,7 @@ HEALTH_INTERVAL="${HEALTH_INTERVAL:-5}"
 
 cd "$PROJECT_DIR"
 
-DC="docker compose --project-directory . -f $COMPOSE_FILE"
+DC="docker compose --project-directory $PROJECT_DIR --env-file $PROJECT_DIR/.env -f $COMPOSE_FILE"
 
 if [ ! -f ".env" ]; then
   echo "ERROR: .env file not found. Create from deploy/.env.region.example"
