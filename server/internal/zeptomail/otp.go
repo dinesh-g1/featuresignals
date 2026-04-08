@@ -8,7 +8,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -28,7 +27,7 @@ type OTPSender struct {
 
 // NewOTPSender creates a ZeptoMail OTP email sender.
 func NewOTPSender(token, fromEmail, fromName, baseURL string, logger *slog.Logger) (*OTPSender, error) {
-	token = strings.TrimSpace(token)
+	token = sanitizeToken(token)
 	if token == "" {
 		return nil, fmt.Errorf("zeptomail: send mail token is required")
 	}
