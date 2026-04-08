@@ -131,11 +131,11 @@ describe("BillingPage", () => {
     });
   });
 
-  it("shows payment gateway section for free plan", async () => {
+  it("shows gateway selector in checkout area for free plan", async () => {
     render(<BillingPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Payment Gateway")).toBeInTheDocument();
+      expect(screen.getByText("Pay via PayU")).toBeInTheDocument();
     });
   });
 
