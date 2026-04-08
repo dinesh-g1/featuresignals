@@ -53,7 +53,8 @@ fi
 # ── Pull latest code ─────────────────────────────────────────────────────────
 if [ -z "${ROLLBACK_COMMIT:-}" ]; then
   echo "==> Pulling latest code..."
-  git pull origin main
+  git fetch origin main
+  git reset --hard origin/main
 fi
 
 NEW_COMMIT=$(git rev-parse HEAD)
