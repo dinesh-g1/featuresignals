@@ -28,8 +28,8 @@ variable "region" {
 
 variable "server_type" {
   type        = string
-  default     = "cpx32"
-  description = "Hetzner server type (cpx22=2 vCPU/4GB, cpx32=4 vCPU/8GB, cpx42=8 vCPU/16GB)"
+  default     = "cax21"
+  description = "Hetzner server type (cax21=4 vCPU/8GB ARM, cpx21=3 vCPU/4GB, cpx31=4 vCPU/8GB)"
 }
 
 variable "location" {
@@ -165,7 +165,7 @@ resource "hcloud_server" "app" {
     # --- SSH hardening ---
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
     sed -i 's/PermitRootLogin yes/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
-    systemctl restart sshd
+    systemctl restart ssh
 
     # --- Deploy user (non-root) ---
     useradd -m -s /bin/bash -G sudo deploy

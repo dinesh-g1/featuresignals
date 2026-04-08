@@ -69,7 +69,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,NEXT_PUBLIC_API_URL_US,NEXT_PUBLIC_API_URL_EU,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE
           script: |
-            cat > /opt/featuresignals/.env << 'ENVEOF'
+            cat > /opt/featuresignals/.env << ENVEOF
             REGION=${{ matrix.region }}
             DOMAIN_API=${{ matrix.domain_api }}
             DOMAIN_APP=${{ matrix.domain_app }}

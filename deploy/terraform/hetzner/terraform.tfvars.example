@@ -11,6 +11,6 @@
 # domain_app   = "app.us.featuresignals.com"
 
 # --- Optional (defaults shown) ---
-# server_type  = "cpx32"           # cpx22=2vCPU/4GB, cpx32=4vCPU/8GB, cpx42=8vCPU/16GB
+# server_type  = "cax21"           # cax21=4vCPU/8GB ARM, cpx21=3vCPU/4GB, cpx31=4vCPU/8GB
 # ssh_key_name = "featuresignals-deploy"
 # volume_size  = 20                # Persistent volume in GB for PostgreSQL data
