@@ -11,8 +11,8 @@
 set -euo pipefail
 
 PROJECT_DIR="${PROJECT_DIR:-/opt/featuresignals}"
-BACKUP_DIR="${BACKUP_DIR:-${PROJECT_DIR}/backups}"
-COMPOSE_FILE="${COMPOSE_FILE:-${PROJECT_DIR}/docker-compose.prod.yml}"
+BACKUP_DIR="${BACKUP_DIR:-/mnt/data/backups}"
+COMPOSE_FILE="${COMPOSE_FILE:-${PROJECT_DIR}/deploy/docker-compose.region.yml}"
 DB_NAME="${POSTGRES_DB:-featuresignals}"
 DB_USER="${POSTGRES_USER:-fs}"
 DAILY_KEEP="${DAILY_KEEP:-7}"
@@ -22,7 +22,7 @@ DAY_OF_WEEK=$(date +%u)
 
 mkdir -p "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly"
 
-CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q postgres)
+CONTAINER=$(docker compose --project-directory "$PROJECT_DIR" -f "$COMPOSE_FILE" ps -q postgres)
 if [ -z "$CONTAINER" ]; then
   echo "[$(date)] ERROR: postgres container not running"
   exit 1
