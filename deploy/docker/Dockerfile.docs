@@ -7,8 +7,5 @@ COPY . .
 RUN npm run build && npm cache clean --force
 
 FROM alpine:3.19
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-COPY --from=builder --chown=appuser:appgroup /app/build /dist
-
-USER appuser
+COPY --from=builder /app/build /dist
 CMD ["sh", "-c", "cp -r /dist/* /srv/docs/ && echo 'Docs ready'"]
