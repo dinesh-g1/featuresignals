@@ -14,6 +14,21 @@ import (
 	fshttp "github.com/featuresignals/server/internal/httputil"
 )
 
+// newRegionProxy creates a reverse proxy to the target URL that correctly
+// rewrites the Host header. httputil.NewSingleHostReverseProxy only sets
+// req.URL.Host, leaving req.Host (and therefore the outgoing Host header)
+// set to the original request's host. Remote Caddy instances reject
+// requests whose Host doesn't match their configured server block.
+func newRegionProxy(target *url.URL) *httputil.ReverseProxy {
+	rp := httputil.NewSingleHostReverseProxy(target)
+	base := rp.Director
+	rp.Director = func(req *http.Request) {
+		base(req)
+		req.Host = target.Host
+	}
+	return rp
+}
+
 // RegionRouter is middleware that proxies authenticated requests to the
 // correct regional API server when the JWT's data_region claim doesn't
 // match the local region. Unauthenticated routes pass through unchanged.
@@ -25,7 +40,7 @@ func RegionRouter(localRegion string, endpoints map[string]string, logger *slog.
 			logger.Error("invalid region endpoint URL", "region", region, "url", endpoint, "error", err)
 			continue
 		}
-		rp := httputil.NewSingleHostReverseProxy(target)
+		rp := newRegionProxy(target)
 		rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 			log := fshttp.LoggerFromContext(r.Context())
 			log.Error("region proxy failed", "error", err, "target_region", region)
@@ -74,7 +89,7 @@ func MultiRegionLogin(localHandler http.Handler, localRegion string, endpoints m
 		if err != nil {
 			continue
 		}
-		rp := httputil.NewSingleHostReverseProxy(target)
+		rp := newRegionProxy(target)
 		rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 			log := fshttp.LoggerFromContext(r.Context())
 			log.Error("region login proxy failed", "error", err, "target_region", region)
@@ -122,10 +137,12 @@ func copyRecorderToResponse(w http.ResponseWriter, rec *httptest.ResponseRecorde
 	w.Write(rec.Body.Bytes()) //nolint:errcheck
 }
 
-// CompleteSignupProxy routes complete-signup requests to the target region
-// specified in the request body's data_region field (extracted from the
-// pending registration stored during initiate-signup).
-func CompleteSignupProxy(localHandler http.Handler, localRegion string, endpoints map[string]string, logger *slog.Logger) http.Handler {
+// TargetRegionProxy routes requests to a specific region based on the
+// X-Target-Region request header. If the header is absent or matches the
+// local region, the request is handled locally. Used for all signup
+// endpoints so that pending registrations, OTP verification, and account
+// creation all happen in the same regional database.
+func TargetRegionProxy(localHandler http.Handler, localRegion string, endpoints map[string]string, logger *slog.Logger) http.Handler {
 	proxies := make(map[string]*httputil.ReverseProxy, len(endpoints))
 	for region, endpoint := range endpoints {
 		if region == localRegion {
@@ -135,23 +152,29 @@ func CompleteSignupProxy(localHandler http.Handler, localRegion string, endpoint
 		if err != nil {
 			continue
 		}
-		proxies[region] = httputil.NewSingleHostReverseProxy(target)
+		rp := newRegionProxy(target)
+		rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, proxyErr error) {
+			log := fshttp.LoggerFromContext(r.Context())
+			log.Error("region signup proxy failed", "error", proxyErr, "target_region", region)
+			fshttp.Error(w, http.StatusBadGateway, "regional service unavailable")
+		}
+		proxies[region] = rp
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pendingRegion := r.Header.Get("X-Target-Region")
-		if pendingRegion == "" || pendingRegion == localRegion {
+		targetRegion := r.Header.Get("X-Target-Region")
+		if targetRegion == "" || targetRegion == localRegion {
 			localHandler.ServeHTTP(w, r)
 			return
 		}
 
-		rp, ok := proxies[pendingRegion]
+		rp, ok := proxies[targetRegion]
 		if !ok {
 			localHandler.ServeHTTP(w, r)
 			return
 		}
 
-		logger.Info("proxying complete-signup to region", "region", pendingRegion)
+		logger.Info("proxying signup request to region", "region", targetRegion, "path", r.URL.Path)
 		rp.ServeHTTP(w, r)
 	})
 }

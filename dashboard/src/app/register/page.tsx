@@ -201,7 +201,7 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      await api.resendSignupOTP(form.email);
+      await api.resendSignupOTP(form.email, form.data_region);
       setCountdown(60);
       setOtp("");
     } catch (err: unknown) {

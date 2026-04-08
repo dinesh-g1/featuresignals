@@ -220,7 +220,7 @@ func TestMultiRegionLogin_LocalNonAuthError_ReturnsLocal(t *testing.T) {
 	}
 }
 
-func TestCompleteSignupProxy_NoHeader_Local(t *testing.T) {
+func TestTargetRegionProxy_NoHeader_Local(t *testing.T) {
 	t.Parallel()
 
 	localCalled := false
@@ -229,7 +229,7 @@ func TestCompleteSignupProxy_NoHeader_Local(t *testing.T) {
 		w.WriteHeader(http.StatusCreated)
 	})
 
-	handler := CompleteSignupProxy(local, "in", map[string]string{
+	handler := TargetRegionProxy(local, "in", map[string]string{
 		"us": "http://us.example.com",
 	}, discardLogger())
 
@@ -243,7 +243,7 @@ func TestCompleteSignupProxy_NoHeader_Local(t *testing.T) {
 	}
 }
 
-func TestCompleteSignupProxy_LocalRegion_Local(t *testing.T) {
+func TestTargetRegionProxy_LocalRegion_Local(t *testing.T) {
 	t.Parallel()
 
 	localCalled := false
@@ -252,7 +252,7 @@ func TestCompleteSignupProxy_LocalRegion_Local(t *testing.T) {
 		w.WriteHeader(http.StatusCreated)
 	})
 
-	handler := CompleteSignupProxy(local, "in", map[string]string{
+	handler := TargetRegionProxy(local, "in", map[string]string{
 		"us": "http://us.example.com",
 	}, discardLogger())
 
@@ -267,7 +267,7 @@ func TestCompleteSignupProxy_LocalRegion_Local(t *testing.T) {
 	}
 }
 
-func TestCompleteSignupProxy_RemoteRegion_Proxies(t *testing.T) {
+func TestTargetRegionProxy_RemoteRegion_Proxies(t *testing.T) {
 	t.Parallel()
 
 	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +282,7 @@ func TestCompleteSignupProxy_RemoteRegion_Proxies(t *testing.T) {
 		localCalled = true
 	})
 
-	handler := CompleteSignupProxy(local, "in", map[string]string{
+	handler := TargetRegionProxy(local, "in", map[string]string{
 		"us": remote.URL,
 	}, discardLogger())
 
