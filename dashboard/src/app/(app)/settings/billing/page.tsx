@@ -10,16 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Check, CreditCard, ExternalLink, ShieldCheck, Lock, Sparkles, PartyPopper, Clock, ArrowRight, Zap } from "lucide-react";
-import type { BillingInfo, CheckoutResponse, UsageInfo } from "@/lib/types";
-
-const statusColors: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-  past_due: "bg-amber-50 text-amber-700 ring-amber-100",
-  canceled: "bg-red-50 text-red-700 ring-red-100",
-  trialing: "bg-blue-50 text-blue-700 ring-blue-100",
-  unpaid: "bg-red-50 text-red-700 ring-red-100",
-};
+import { Check, CreditCard, ExternalLink, ShieldCheck, Lock, Sparkles, PartyPopper, Clock, ArrowRight, Zap, ChevronDown } from "lucide-react";
+import type { BillingInfo, UsageInfo } from "@/lib/types";
 
 const planBadgeVariant: Record<string, "default" | "primary" | "purple" | "info"> = {
   free: "default",
@@ -36,6 +28,11 @@ const statusBadgeVariant: Record<string, "success" | "warning" | "danger" | "inf
   unpaid: "danger",
 };
 
+const GATEWAYS = [
+  { id: "payu", label: "PayU", desc: "UPI, cards, net banking (India)" },
+  { id: "stripe", label: "Stripe", desc: "Cards, wallets (Global)" },
+] as const;
+
 function BillingContent() {
   const searchParams = useSearchParams();
   const token = useAppStore((s) => s.token);
@@ -47,8 +44,9 @@ function BillingContent() {
   const [upgrading, setUpgrading] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [pricing, setPricing] = useState<PricingConfig | null>(null);
-  const [showGatewaySelect, setShowGatewaySelect] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [selectedGateway, setSelectedGateway] = useState<string>("payu");
+  const [showGatewayPicker, setShowGatewayPicker] = useState(false);
 
   useEffect(() => {
     api.getPricing().then(setPricing).catch(() => {});
@@ -88,6 +86,9 @@ function BillingContent() {
       .then(([sub, usg]) => {
         setSubscription(sub);
         setUsage(usg);
+        if (sub?.gateway) {
+          setSelectedGateway(sub.gateway);
+        }
       })
       .catch(() => setError("Failed to load billing information"))
       .finally(() => setLoading(false));
@@ -97,13 +98,17 @@ function BillingContent() {
   const status = subscription?.status;
   const isUpgradeable = plan === "free" || plan === "trial";
   const isPaid = !isUpgradeable;
-  const gateway = subscription?.gateway || "payu";
   const canManage = subscription?.can_manage ?? false;
 
   async function handleUpgrade() {
     if (!token) return;
     setUpgrading(true);
+
     try {
+      if (selectedGateway !== (subscription?.gateway || "payu")) {
+        await api.updatePaymentGateway(token, selectedGateway);
+      }
+
       const data = await api.createCheckout(token);
 
       if (data.gateway === "stripe" && data.redirect_url) {
@@ -165,25 +170,16 @@ function BillingContent() {
     }
   }
 
-  async function handleGatewayChange(newGateway: string) {
-    if (!token) return;
-    try {
-      await api.updatePaymentGateway(token, newGateway);
-      toast(`Payment gateway updated to ${newGateway === "stripe" ? "Stripe" : "PayU"}.`, "success");
-      const sub = await api.getSubscription(token).catch(() => null);
-      setSubscription(sub);
-      setShowGatewaySelect(false);
-    } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to update payment gateway", "error");
-    }
-  }
-
   const trialDaysLeft = (() => {
     const expiresAt = organization?.trial_expires_at;
     if (!expiresAt || plan !== "trial") return null;
     const diff = new Date(expiresAt).getTime() - Date.now();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   })();
+
+  const proPrice = pricing?.plans?.pro?.display_price ?? "₹999";
+  const proPeriod = pricing?.plans?.pro?.billing_period ?? "month";
+  const currentGatewayLabel = GATEWAYS.find((g) => g.id === selectedGateway)?.label ?? "PayU";
 
   return (
     <div className="space-y-6">
@@ -200,57 +196,121 @@ function BillingContent() {
         </Card>
       ) : (
         <>
-          {/* Hero CTA for upgradeable users */}
+          {/* ── Upgrade / Checkout section ────────────────────────────── */}
           {isUpgradeable && (
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-6 sm:p-8 text-white shadow-lg">
-              <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-              <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-white/5" />
+            <Card className="overflow-hidden border-0 shadow-lg">
+              <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-6 sm:p-8 text-white">
+                <div className="relative">
+                  {plan === "trial" && trialDaysLeft !== null && (
+                    <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
+                      <Clock className="h-4 w-4" />
+                      {trialDaysLeft === 0 ? "Trial expires today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial`}
+                    </div>
+                  )}
 
-              <div className="relative">
-                {plan === "trial" && trialDaysLeft !== null && (
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
-                    <Clock className="h-4 w-4" />
-                    {trialDaysLeft === 0 ? "Trial expires today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial`}
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    {plan === "trial" ? "Subscribe to keep Pro features" : "Unlock the full power of FeatureSignals"}
+                  </h2>
+                  <p className="mt-2 max-w-lg text-sm text-indigo-100">
+                    {plan === "trial"
+                      ? "Your trial gives you full access to Pro features. Subscribe now to ensure uninterrupted access."
+                      : "Unlimited projects, environments, team members, RBAC, webhooks, and priority support."}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+                    {["Unlimited projects", "Unlimited environments", "Unlimited seats", "RBAC & audit logs"].map((f) => (
+                      <span key={f} className="inline-flex items-center gap-1.5 text-xs text-indigo-200">
+                        <Check className="h-3 w-3" /> {f}
+                      </span>
+                    ))}
                   </div>
-                )}
-
-                <h2 className="text-xl sm:text-2xl font-bold">
-                  {plan === "trial" ? "Subscribe to keep Pro features" : "Unlock the full power of FeatureSignals"}
-                </h2>
-                <p className="mt-2 max-w-lg text-sm text-indigo-100">
-                  {plan === "trial"
-                    ? "Your trial gives you full access to Pro features. Subscribe now to ensure uninterrupted access when your trial ends."
-                    : "Unlimited projects, environments, team members, RBAC, webhooks, and priority support — all for one flat price."}
-                </p>
-
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <Button
-                    onClick={handleUpgrade}
-                    disabled={upgrading}
-                    className="bg-white text-indigo-700 hover:bg-indigo-50 shadow-md"
-                  >
-                    <Zap className="mr-2 h-4 w-4" />
-                    {upgrading ? "Redirecting..." : plan === "trial" ? "Subscribe to Pro" : "Upgrade to Pro"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <span className="text-sm text-indigo-200">
-                    {pricing?.plans?.pro?.display_price ?? "₹999"}/{pricing?.plans?.pro?.billing_period ?? "month"} &middot; Cancel anytime
-                  </span>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
-                  {["Unlimited projects", "Unlimited environments", "Unlimited seats", "RBAC & audit logs"].map((f) => (
-                    <span key={f} className="inline-flex items-center gap-1.5 text-xs text-indigo-200">
-                      <Check className="h-3 w-3" />
-                      {f}
-                    </span>
-                  ))}
                 </div>
               </div>
-            </div>
+
+              {/* Checkout action area */}
+              <div className="bg-white p-6 sm:p-8 space-y-5">
+                {/* Price + Gateway row */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-3xl font-bold text-slate-900">
+                      {proPrice}<span className="text-base font-normal text-slate-500">/{proPeriod}</span>
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">Cancel anytime &middot; 14-day money-back guarantee</p>
+                  </div>
+
+                  {/* Gateway selector */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowGatewayPicker(!showGatewayPicker)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                    >
+                      <CreditCard className="h-4 w-4 text-slate-400" />
+                      Pay via {currentGatewayLabel}
+                      <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform", showGatewayPicker && "rotate-180")} />
+                    </button>
+
+                    {showGatewayPicker && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowGatewayPicker(false)} />
+                        <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                          {GATEWAYS.map((gw) => (
+                            <button
+                              key={gw.id}
+                              onClick={() => { setSelectedGateway(gw.id); setShowGatewayPicker(false); }}
+                              className={cn(
+                                "flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors",
+                                selectedGateway === gw.id ? "bg-indigo-50" : "hover:bg-slate-50",
+                              )}
+                            >
+                              <div className={cn("mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center",
+                                selectedGateway === gw.id ? "border-indigo-600" : "border-slate-300",
+                              )}>
+                                {selectedGateway === gw.id && <div className="h-2 w-2 rounded-full bg-indigo-600" />}
+                              </div>
+                              <div>
+                                <p className={cn("text-sm font-medium", selectedGateway === gw.id ? "text-indigo-900" : "text-slate-700")}>{gw.label}</p>
+                                <p className="text-xs text-slate-400">{gw.desc}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <Button
+                  onClick={handleUpgrade}
+                  disabled={upgrading}
+                  size="lg"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
+                >
+                  <Zap className="mr-2 h-4 w-4" />
+                  {upgrading ? "Redirecting to checkout..." : plan === "trial" ? `Subscribe to Pro — ${proPrice}/${proPeriod}` : `Upgrade to Pro — ${proPrice}/${proPeriod}`}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+
+                {/* Trust signals */}
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 pt-1">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                    <Lock className="h-3.5 w-3.5" /> 256-bit SSL
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> PCI DSS compliant
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                    <CreditCard className="h-3.5 w-3.5" /> Processed by {currentGatewayLabel}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Money-back guarantee
+                  </span>
+                </div>
+              </div>
+            </Card>
           )}
 
-          {/* Current Plan — compact for paid, informational for upgradeable */}
+          {/* ── Current Plan ─────────────────────────────────────────── */}
           <Card className="p-4 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <div>
@@ -315,7 +375,7 @@ function BillingContent() {
             )}
           </Card>
 
-          {/* Usage */}
+          {/* ── Usage ────────────────────────────────────────────────── */}
           {usage && (
             <Card className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
@@ -332,46 +392,7 @@ function BillingContent() {
             </Card>
           )}
 
-          {/* Payment Gateway + Trust Signals */}
-          {isUpgradeable && (
-            <Card className="p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-slate-900">Payment Gateway</h2>
-                {!showGatewaySelect && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowGatewaySelect(true)}>
-                    Change
-                  </Button>
-                )}
-              </div>
-              <p className="text-sm text-slate-500 mb-3">
-                Your checkout will use <span className="font-medium text-slate-700">{gateway === "stripe" ? "Stripe" : "PayU"}</span>.
-              </p>
-              {showGatewaySelect && (
-                <div className="flex gap-3 mb-4">
-                  <Button
-                    variant={gateway === "payu" ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={() => handleGatewayChange("payu")}
-                  >
-                    PayU (India)
-                  </Button>
-                  <Button
-                    variant={gateway === "stripe" ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={() => handleGatewayChange("stripe")}
-                  >
-                    Stripe (Global)
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setShowGatewaySelect(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              )}
-              <PaymentTrustSignals gateway={gateway} />
-            </Card>
-          )}
-
-          {/* Plan Comparison */}
+          {/* ── Plan Comparison ──────────────────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Compare Plans</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -537,29 +558,6 @@ function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
           Start Exploring
         </button>
       </div>
-    </div>
-  );
-}
-
-function PaymentTrustSignals({ gateway }: { gateway: string }) {
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3">
-      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-        <Lock className="h-3.5 w-3.5 text-slate-400" />
-        256-bit SSL encrypted
-      </span>
-      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-        <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-        PCI DSS compliant
-      </span>
-      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-        <CreditCard className="h-3.5 w-3.5 text-slate-400" />
-        Processed by {gateway === "stripe" ? "Stripe" : "PayU"}
-      </span>
-      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-        <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-        14-day money-back guarantee
-      </span>
     </div>
   );
 }
