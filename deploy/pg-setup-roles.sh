@@ -18,10 +18,8 @@ DB_USER="${POSTGRES_USER:-fs}"
 cd "$PROJECT_DIR"
 
 if [ -f ".env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
+  DB_ADMIN_PASSWORD="${DB_ADMIN_PASSWORD:-$(grep '^DB_ADMIN_PASSWORD=' .env | cut -d= -f2-)}"
+  DB_READONLY_PASSWORD="${DB_READONLY_PASSWORD:-$(grep '^DB_READONLY_PASSWORD=' .env | cut -d= -f2-)}"
 fi
 
 if [ -z "${DB_ADMIN_PASSWORD:-}" ]; then
