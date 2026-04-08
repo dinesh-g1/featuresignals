@@ -182,6 +182,97 @@ func (h *Handler) HandleStatusHistory(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// RegionSLA contains computed SLA metrics for a single region.
+type RegionSLA struct {
+	Region       string  `json:"region"`
+	Name         string  `json:"name"`
+	UptimePct    float64 `json:"uptime_pct"`
+	DaysTracked  int     `json:"days_tracked"`
+	CurrentStreak int    `json:"current_streak_days"`
+}
+
+// HandleSLA computes uptime SLA metrics per region over a given period.
+func (h *Handler) HandleSLA(w http.ResponseWriter, r *http.Request) {
+	logger := slog.Default().With("handler", "status_sla")
+
+	daysStr := r.URL.Query().Get("days")
+	days := 90
+	if daysStr != "" {
+		parsed, err := strconv.Atoi(daysStr)
+		if err != nil || parsed < 1 || parsed > 365 {
+			httputil.Error(w, http.StatusBadRequest, "days must be between 1 and 365")
+			return
+		}
+		days = parsed
+	}
+
+	history, err := h.store.GetComponentHistory(r.Context(), days)
+	if err != nil {
+		logger.Error("failed to get component history for SLA", "error", err, "days", days)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	type regionAgg struct {
+		totalChecks       int
+		operationalChecks int
+		dates             map[string]bool // all dates with data
+		streak            int
+	}
+
+	regions := make(map[string]*regionAgg)
+	for _, code := range domain.RegionCodes() {
+		regions[code] = &regionAgg{dates: make(map[string]bool)}
+	}
+
+	for _, entry := range history {
+		agg, ok := regions[entry.Region]
+		if !ok {
+			continue
+		}
+		agg.totalChecks += entry.TotalChecks
+		agg.operationalChecks += entry.OperationalChecks
+		agg.dates[entry.Date] = entry.UptimePct >= 100.0
+	}
+
+	// Compute current streak (consecutive days at 100% uptime, most recent first)
+	for _, agg := range regions {
+		streak := 0
+		for i := 0; i < days; i++ {
+			date := time.Now().UTC().AddDate(0, 0, -i).Format("2006-01-02")
+			if operational, exists := agg.dates[date]; exists && operational {
+				streak++
+			} else if _, exists := agg.dates[date]; exists {
+				break
+			}
+		}
+		agg.streak = streak
+	}
+
+	result := make([]RegionSLA, 0, len(regions))
+	for _, code := range domain.RegionCodes() {
+		agg := regions[code]
+		info := domain.Regions[code]
+		uptimePct := 100.0
+		if agg.totalChecks > 0 {
+			uptimePct = float64(agg.operationalChecks) / float64(agg.totalChecks) * 100.0
+		}
+		result = append(result, RegionSLA{
+			Region:        code,
+			Name:          info.Name,
+			UptimePct:     uptimePct,
+			DaysTracked:   len(agg.dates),
+			CurrentStreak: agg.streak,
+		})
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]any{
+		"sla":        result,
+		"period_days": days,
+		"checked_at": time.Now().UTC(),
+	})
+}
+
 func (h *Handler) checkLocal(ctx context.Context) RegionStatus {
 	services := make([]ServiceStatus, 0, 3)
 

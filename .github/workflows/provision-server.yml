@@ -1,20 +1,40 @@
-name: Setup VPS
+name: "Provision & Configure New VPS"
 
 on:
   workflow_dispatch:
+    inputs:
+      host_secret:
+        description: "GitHub secret name containing the VPS host IP (e.g., VPS_HOST, VPS_HOST_US)"
+        required: true
+        type: string
+        default: "VPS_HOST"
+      ssh_key_secret:
+        description: "GitHub secret name for the SSH private key"
+        required: true
+        type: string
+        default: "VPS_SSH_KEY"
+      initial_user:
+        description: "Initial SSH user for provisioning (root for fresh VPS)"
+        required: false
+        type: string
+        default: "root"
+      setup_crons:
+        description: "Install backup, monitoring, and maintenance cron jobs"
+        type: boolean
+        default: true
 
 jobs:
   provision:
-    name: Provision VPS
+    name: "Provision VPS"
     runs-on: ubuntu-latest
 
     steps:
       - name: System setup and deploy user creation
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: root
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets[github.event.inputs.host_secret] }}
+          username: ${{ github.event.inputs.initial_user }}
+          key: ${{ secrets[github.event.inputs.ssh_key_secret] }}
           command_timeout: 10m
           script: |
             set -euo pipefail
@@ -59,18 +79,19 @@ jobs:
             systemctl enable fail2ban
             systemctl start fail2ban
 
-            echo "==> Creating project directory..."
-            mkdir -p /opt/featuresignals
-            chown deploy:deploy /opt/featuresignals
+            echo "==> Creating directories..."
+            mkdir -p /opt/featuresignals /mnt/data/backups/daily /mnt/data/backups/weekly /mnt/data/backups/remote
+            chown -R deploy:deploy /opt/featuresignals
+            chown -R deploy:deploy /mnt/data
 
             echo "System provisioning complete."
 
       - name: Clone repository
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ secrets[github.event.inputs.host_secret] }}
           username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets[github.event.inputs.ssh_key_secret] }}
           command_timeout: 5m
           envs: REPO_TOKEN
           script: |
@@ -87,16 +108,15 @@ jobs:
               git remote set-url origin "${REPO_URL}"
               git pull origin main
             fi
-            mkdir -p /opt/featuresignals/backups
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
 
       - name: Write environment file
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ secrets[github.event.inputs.host_secret] }}
           username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets[github.event.inputs.ssh_key_secret] }}
           envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
@@ -112,68 +132,53 @@ jobs:
           DB_ADMIN_PASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
           DB_READONLY_PASSWORD: ${{ secrets.DB_READONLY_PASSWORD }}
 
-      - name: Setup backup cron
+      - name: Install cron jobs
+        if: ${{ github.event.inputs.setup_crons == 'true' }}
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ secrets[github.event.inputs.host_secret] }}
           username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets[github.event.inputs.ssh_key_secret] }}
           script: |
-            (crontab -l 2>/dev/null | grep -v "pg-backup"; echo "0 3 * * * /opt/featuresignals/deploy/pg-backup.sh >> /var/log/fs-backup.log 2>&1") | crontab -
-            echo "Backup cron installed."
+            CRONS="
+            0 3 * * * /opt/featuresignals/deploy/pg-backup.sh >> /var/log/fs-backup.log 2>&1
+            30 3 * * * /opt/featuresignals/deploy/pg-backup-replicate.sh >> /var/log/fs-backup-replicate.log 2>&1
+            0 4 * * 0 /opt/featuresignals/deploy/cleanup-cron.sh >> /var/log/fs-cleanup.log 2>&1
+            0 5 * * 0 /opt/featuresignals/deploy/pg-maintenance.sh >> /var/log/fs-pg-maintenance.log 2>&1
+            0 6 * * 0 /opt/featuresignals/deploy/pg-backup-verify.sh >> /var/log/fs-backup-verify.log 2>&1
+            * * * * * /opt/featuresignals/deploy/monitoring/node-health.sh 2>&1 | logger -t fs-health
+            "
+            echo "$CRONS" | crontab -
+            echo "Cron jobs installed:"
+            crontab -l
 
-      - name: Clean previous deployment (fresh start)
+      - name: Harden SSH
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ secrets[github.event.inputs.host_secret] }}
           username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /opt/featuresignals
-            docker compose -f docker-compose.prod.yml down -v 2>/dev/null || true
-            docker system prune -af 2>/dev/null || true
-            echo "Cleaned previous deployment."
-
-      - name: Initial deploy
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 15m
-          script: |
-            cd /opt/featuresignals
-            bash deploy/deploy.sh
-
-      - name: Harden SSH (disable root and password login)
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets[github.event.inputs.ssh_key_secret] }}
           script: |
             sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
             sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
             sudo sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-            sudo systemctl restart sshd
+            sudo systemctl restart ssh || sudo systemctl restart sshd
             echo "SSH hardened: root login disabled, password auth disabled."
 
       - name: Verify setup
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ secrets[github.event.inputs.host_secret] }}
           username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets[github.event.inputs.ssh_key_secret] }}
           script: |
             echo "==> Docker version:"
             docker --version
-
             echo "==> Firewall status:"
             sudo ufw status
-
-            echo "==> Service status:"
-            sleep 15
-            docker compose -f /opt/featuresignals/docker-compose.prod.yml ps
-
+            echo "==> Disk space:"
+            df -h /mnt/data / 2>/dev/null || df -h /
+            echo "==> Cron jobs:"
+            crontab -l 2>/dev/null || echo "No crons"
             echo ""
-            echo "VPS setup complete. All services running."
+            echo "VPS provisioning complete. Run a deploy workflow to start services."

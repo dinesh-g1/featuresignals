@@ -60,6 +60,14 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
 	slog.SetDefault(logger)
 
+	// Override default region endpoints with config-driven values so that
+	// status probes, the proxy layer, and any other consumer share the
+	// same resolved URLs.
+	if len(cfg.RegionEndpoints) > 0 {
+		domain.OverrideEndpoints(cfg.RegionEndpoints)
+		logger.Info("region endpoints overridden from config", "endpoints", cfg.RegionEndpoints)
+	}
+
 	// OpenTelemetry (async, non-blocking -- safe to init before anything else)
 	var otelShutdown func(context.Context) error
 	if cfg.OTELEnabled && cfg.OTELEndpoint != "" {
@@ -221,7 +229,7 @@ func main() {
 
 	// Status handler (public, multi-region health aggregation)
 	poolAdapter := status.NewPgxPoolAdapter(pool)
-	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.OTELServiceRegion, store, evalCache, sseServer)
+	statusH := status.NewHandler(poolAdapter, poolAdapter, cfg.LocalRegion, store, evalCache, sseServer)
 
 	// Payment gateway registry (Strategy pattern)
 	paymentRegistry := payment.NewRegistry()
