@@ -2073,7 +2073,7 @@ func (s *Store) ListUsersWithoutFeatureUsage(ctx context.Context, feature string
 		   AND u.deleted_at IS NULL
 		   AND NOT EXISTS (
 		       SELECT 1 FROM product_events pe
-		       WHERE pe.user_id = u.id AND pe.event LIKE $2
+		       WHERE pe.user_id = u.id::TEXT AND pe.event LIKE $2
 		   )
 		 LIMIT 200`, daysSinceSignup, eventPattern)
 	if err != nil {

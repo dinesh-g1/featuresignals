@@ -129,7 +129,7 @@ func (s *OTPSender) doSend(ctx context.Context, to, toName, subject, html string
 		HTMLBody: html,
 	}
 
-	body, err := json.Marshal(payload)
+	body, err := marshalJSON(payload)
 	if err != nil {
 		return "", 0, fmt.Errorf("zeptomail marshal: %w", err)
 	}
