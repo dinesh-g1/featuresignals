@@ -133,7 +133,7 @@ func Load() *Config {
 		SMTPFrom:     getEnv("SMTP_FROM", "noreply@localhost"),
 		SMTPFromName: getEnv("SMTP_FROM_NAME", "FeatureSignals"),
 
-		ZeptoMailToken:     os.Getenv("ZEPTOMAIL_TOKEN"),
+		ZeptoMailToken:     strings.TrimSpace(os.Getenv("ZEPTOMAIL_TOKEN")),
 		ZeptoMailFromEmail: getEnv("ZEPTOMAIL_FROM_EMAIL", "noreply@featuresignals.com"),
 		ZeptoMailFromName:  getEnv("ZEPTOMAIL_FROM_NAME", "FeatureSignals"),
 		ZeptoMailBaseURL:   getEnv("ZEPTOMAIL_BASE_URL", "https://api.zeptomail.in"),
