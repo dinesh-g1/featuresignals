@@ -35,6 +35,7 @@ type CreateApprovalRequest struct {
 
 // Create submits a new change request for review.
 func (h *ApprovalHandler) Create(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
 
@@ -59,6 +60,7 @@ func (h *ApprovalHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.CreateApprovalRequest(r.Context(), ar); err != nil {
+		logger.Error("failed to create approval request", "error", err, "flag_id", req.FlagID, "env_id", req.EnvID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to create approval request")
 		return
 	}
@@ -68,12 +70,14 @@ func (h *ApprovalHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 // List returns approval requests for the org, optionally filtered by status.
 func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 	status := r.URL.Query().Get("status")
 	p := dto.ParsePagination(r)
 
 	results, err := h.store.ListApprovalRequests(r.Context(), orgID, status, p.Limit, p.Offset)
 	if err != nil {
+		logger.Error("failed to list approval requests", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list approvals")
 		return
 	}
@@ -83,6 +87,7 @@ func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	total, err := h.store.CountApprovalRequests(r.Context(), orgID, status)
 	if err != nil {
+		logger.Error("failed to count approval requests", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to count approvals")
 		return
 	}
@@ -107,6 +112,7 @@ type ReviewRequest struct {
 
 // Review approves or rejects a pending request. If approved, the change is applied.
 func (h *ApprovalHandler) Review(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	ar, ok := verifyApprovalOwnership(h.store, r, w)
 	if !ok {
 		return
@@ -143,6 +149,7 @@ func (h *ApprovalHandler) Review(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.UpdateApprovalRequest(r.Context(), ar); err != nil {
+		logger.Error("failed to update approval request", "error", err, "approval_id", ar.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to update approval")
 		return
 	}
@@ -150,10 +157,13 @@ func (h *ApprovalHandler) Review(w http.ResponseWriter, r *http.Request) {
 	// If approved, apply the change
 	if ar.Status == domain.ApprovalApproved {
 		if err := h.applyChange(r, ar); err != nil {
+			logger.Error("failed to apply approved change", "error", err, "approval_id", ar.ID, "flag_id", ar.FlagID, "env_id", ar.EnvID)
 			ar.Status = domain.ApprovalApproved // keep approved but note the failure
 		} else {
 			ar.Status = domain.ApprovalApplied
-			h.store.UpdateApprovalRequest(r.Context(), ar)
+			if err := h.store.UpdateApprovalRequest(r.Context(), ar); err != nil {
+				logger.Error("failed to mark approval as applied", "error", err, "approval_id", ar.ID)
+			}
 		}
 	}
 

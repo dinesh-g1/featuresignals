@@ -38,6 +38,8 @@ func verifyProjectOwnership(store projectGetter, r *http.Request, w http.Respons
 	}
 	project, err := store.GetProject(r.Context(), projectID)
 	if err != nil {
+		logger := httputil.LoggerFromContext(r.Context())
+		logger.Warn("failed to get project for ownership check", "error", err, "project_id", projectID)
 		httputil.Error(w, http.StatusNotFound, "project not found")
 		return nil, false
 	}
@@ -57,11 +59,17 @@ func verifyEnvironmentOwnership(store envAndProjectGetter, r *http.Request, w ht
 	}
 	env, err := store.GetEnvironment(r.Context(), envID)
 	if err != nil {
+		logger := httputil.LoggerFromContext(r.Context())
+		logger.Warn("failed to get environment for ownership check", "error", err, "env_id", envID)
 		httputil.Error(w, http.StatusNotFound, "environment not found")
 		return nil, false
 	}
 	project, err := store.GetProject(r.Context(), env.ProjectID)
 	if err != nil || project.OrgID != middleware.GetOrgID(r.Context()) {
+		if err != nil {
+			logger := httputil.LoggerFromContext(r.Context())
+			logger.Warn("failed to get project for environment ownership check", "error", err, "project_id", env.ProjectID, "env_id", envID)
+		}
 		httputil.Error(w, http.StatusNotFound, "environment not found")
 		return nil, false
 	}
@@ -76,6 +84,8 @@ func verifyWebhookOwnership(store webhookGetter, r *http.Request, w http.Respons
 	}
 	wh, err := store.GetWebhook(r.Context(), webhookID)
 	if err != nil {
+		logger := httputil.LoggerFromContext(r.Context())
+		logger.Warn("failed to get webhook for ownership check", "error", err, "webhook_id", webhookID)
 		httputil.Error(w, http.StatusNotFound, "webhook not found")
 		return nil, false
 	}
@@ -95,6 +105,8 @@ func verifyApprovalOwnership(store approvalGetter, r *http.Request, w http.Respo
 	}
 	ar, err := store.GetApprovalRequest(r.Context(), approvalID)
 	if err != nil {
+		logger := httputil.LoggerFromContext(r.Context())
+		logger.Warn("failed to get approval request for ownership check", "error", err, "approval_id", approvalID)
 		httputil.Error(w, http.StatusNotFound, "approval request not found")
 		return nil, false
 	}

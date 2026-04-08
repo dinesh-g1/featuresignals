@@ -13,11 +13,13 @@ import (
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
+	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/pricing"
+	"github.com/featuresignals/server/internal/proxy"
 	"github.com/featuresignals/server/internal/status"
 )
 
@@ -53,6 +55,7 @@ func NewRouter(
 	internalChecker dto.InternalChecker,
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
+	cfg *config.Config,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -106,7 +109,7 @@ func NewRouter(
 	apiKeyH := handlers.NewAPIKeyHandler(store)
 	auditH := handlers.NewAuditHandler(store)
 	auditExportH := handlers.NewAuditExportHandler(store)
-	teamH := handlers.NewTeamHandler(store, jwtMgr, emitter, lifecycle)
+	teamH := handlers.NewTeamHandler(store, jwtMgr, emitter, lifecycle, dashboardURL)
 	webhookH := handlers.NewWebhookHandler(store)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
@@ -115,7 +118,7 @@ func NewRouter(
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger, emitter, lifecycle)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
-	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker)
+	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker, dashboardURL)
 	salesH := handlers.NewSalesHandler(store, salesNotifier, salesNotifyEmail)
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)
@@ -172,14 +175,25 @@ func NewRouter(
 		// Public auth routes (rate-limited to prevent brute force)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(20))
-			r.Post("/auth/login", authH.Login)
+
+			if cfg != nil && cfg.IsGlobalRouter() {
+				r.Post("/auth/login", proxy.MultiRegionLogin(
+					http.HandlerFunc(authH.Login), cfg.LocalRegion, cfg.RegionEndpoints, logger,
+				).ServeHTTP)
+				r.Post("/auth/complete-signup", proxy.CompleteSignupProxy(
+					http.HandlerFunc(signupH.CompleteSignup), cfg.LocalRegion, cfg.RegionEndpoints, logger,
+				).ServeHTTP)
+			} else {
+				r.Post("/auth/login", authH.Login)
+				r.Post("/auth/complete-signup", signupH.CompleteSignup)
+			}
+
 			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)
 
 			// Verify-first signup flow (OTP-based)
 			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
-			r.Post("/auth/complete-signup", signupH.CompleteSignup)
 			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
 
 			// Available data regions (public)
@@ -217,6 +231,9 @@ func NewRouter(
 		// Auth verification + logout + MFA (authenticated via JWT)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
+			if cfg != nil && cfg.IsGlobalRouter() {
+				r.Use(proxy.RegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
+			}
 			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
 			r.Post("/auth/logout", authH.Logout)
 
@@ -232,6 +249,9 @@ func NewRouter(
 		// Billing & onboarding (authenticated via JWT)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
+			if cfg != nil && cfg.IsGlobalRouter() {
+				r.Use(proxy.RegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
+			}
 			r.Post("/billing/checkout", billingH.CreateCheckout)
 			r.Get("/billing/subscription", billingH.GetSubscription)
 			r.Get("/billing/usage", billingH.GetUsage)
@@ -256,6 +276,9 @@ func NewRouter(
 		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
+			if cfg != nil && cfg.IsGlobalRouter() {
+				r.Use(proxy.RegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
+			}
 			r.Use(middleware.IPAllowlist(store))
 			r.Use(middleware.CacheControl("private, no-cache"))
 			r.Use(middleware.TrialExpiry(store, logger))

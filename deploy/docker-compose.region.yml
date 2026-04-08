@@ -69,6 +69,9 @@ services:
       ZEPTOMAIL_BASE_URL: ${ZEPTOMAIL_BASE_URL:-https://api.zeptomail.in}
       APP_BASE_URL: https://${DOMAIN_API}
       DASHBOARD_URL: https://${DOMAIN_APP}
+      # Multi-region routing (global router — set on IN server only)
+      LOCAL_REGION: ${LOCAL_REGION:-}
+      REGION_ENDPOINTS: ${REGION_ENDPOINTS:-}
       # OpenTelemetry
       OTEL_ENABLED: ${OTEL_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-ingest.us2.signoz.cloud:443}
@@ -101,8 +104,6 @@ services:
       args:
         NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
         NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
-        NEXT_PUBLIC_API_URL_US: ${NEXT_PUBLIC_API_URL_US:-https://api.us.featuresignals.com}
-        NEXT_PUBLIC_API_URL_EU: ${NEXT_PUBLIC_API_URL_EU:-https://api.eu.featuresignals.com}
     restart: unless-stopped
     depends_on:
       - server

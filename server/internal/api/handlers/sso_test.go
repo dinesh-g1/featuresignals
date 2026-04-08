@@ -169,7 +169,7 @@ func withChiSlug(r *http.Request, key, value string) *http.Request {
 
 type mockJWTForSSO struct{}
 
-func (m *mockJWTForSSO) GenerateTokenPair(userID, orgID, role string) (*auth.TokenPair, error) {
+func (m *mockJWTForSSO) GenerateTokenPair(userID, orgID, role, dataRegion string) (*auth.TokenPair, error) {
 	return &auth.TokenPair{
 		AccessToken:  "mock-access-token",
 		RefreshToken: "mock-refresh-token",

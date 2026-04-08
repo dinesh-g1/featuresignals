@@ -39,6 +39,7 @@ type CreateWebhookRequest struct {
 }
 
 func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 
 	var req CreateWebhookRequest
@@ -68,6 +69,7 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Enabled: true,
 	}
 	if err := h.store.CreateWebhook(r.Context(), wh); err != nil {
+		logger.Error("failed to create webhook", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to create webhook")
 		return
 	}
@@ -84,10 +86,12 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) List(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
 
 	webhooks, err := h.store.ListWebhooks(r.Context(), orgID)
 	if err != nil {
+		logger.Error("failed to list webhooks", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list webhooks")
 		return
 	}
@@ -110,6 +114,7 @@ func (h *WebhookHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	existing, ok := verifyWebhookOwnership(h.store, r, w)
 	if !ok {
 		return
@@ -139,6 +144,7 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	beforeState, _ := json.Marshal(existing)
 	if err := h.store.UpdateWebhook(r.Context(), existing); err != nil {
+		logger.Error("failed to update webhook", "error", err, "webhook_id", existing.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to update webhook")
 		return
 	}
@@ -157,12 +163,14 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	wh, ok := verifyWebhookOwnership(h.store, r, w)
 	if !ok {
 		return
 	}
 	beforeState, _ := json.Marshal(wh)
 	if err := h.store.DeleteWebhook(r.Context(), wh.ID); err != nil {
+		logger.Error("failed to delete webhook", "error", err, "webhook_id", wh.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete webhook")
 		return
 	}
@@ -179,12 +187,14 @@ func (h *WebhookHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WebhookHandler) ListDeliveries(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	wh, ok := verifyWebhookOwnership(h.store, r, w)
 	if !ok {
 		return
 	}
 	deliveries, err := h.store.ListWebhookDeliveries(r.Context(), wh.ID, 50)
 	if err != nil {
+		logger.Error("failed to list webhook deliveries", "error", err, "webhook_id", wh.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list deliveries")
 		return
 	}

@@ -18,7 +18,7 @@ import (
 
 type stubTokenManager struct{}
 
-func (s *stubTokenManager) GenerateTokenPair(userID, orgID, role string) (*auth.TokenPair, error) {
+func (s *stubTokenManager) GenerateTokenPair(userID, orgID, role, dataRegion string) (*auth.TokenPair, error) {
 	return &auth.TokenPair{AccessToken: "tok", RefreshToken: "ref"}, nil
 }
 func (s *stubTokenManager) ValidateToken(tokenStr string) (*auth.Claims, error) {
@@ -40,7 +40,7 @@ func teamCtx(ctx context.Context, userID, orgID, role string) context.Context {
 
 func setupTeamTest() (*mockStore, *TeamHandler) {
 	store := newMockStore()
-	handler := NewTeamHandler(store, &stubTokenManager{}, nil, nil)
+	handler := NewTeamHandler(store, &stubTokenManager{}, nil, nil, "https://app.test.com")
 
 	store.CreateOrganization(context.Background(), &domain.Organization{Name: "Org", Slug: "org"})
 	store.CreateUser(context.Background(), &domain.User{Email: "owner@test.com", Name: "Owner", PasswordHash: "x"})

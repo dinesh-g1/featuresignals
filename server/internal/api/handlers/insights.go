@@ -193,6 +193,8 @@ func (h *InsightsHandler) loadRuleset(w http.ResponseWriter, r *http.Request, pr
 		var err error
 		ruleset, err = h.cache.LoadRuleset(r.Context(), projectID, envID)
 		if err != nil {
+			logger := httputil.LoggerFromContext(r.Context())
+			logger.Error("failed to load ruleset", "error", err, "project_id", projectID, "env_id", envID)
 			httputil.Error(w, http.StatusInternalServerError, "failed to load ruleset")
 			return nil, err
 		}

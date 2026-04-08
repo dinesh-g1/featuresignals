@@ -114,12 +114,12 @@ const featureGroups: FeatureGroup[] = [
     tagline: "See exactly what every user experiences",
     features: [
       {
-        title: "Entity Inspector & Comparison",
+        title: "Target Inspector & Comparison",
         description:
           "See all flag evaluations for a specific user. Compare two users side-by-side to verify targeting rules, permission gating, and rollout percentages are working correctly.",
         icon: Users,
         code: [
-          { lang: "inspect", label: "Inspect", code: `curl -X POST .../inspect-entity \\\n  -H "Authorization: Bearer <token>" \\\n  -d '{\n    "entity_key": "user-42",\n    "attributes": { "plan": "enterprise", "country": "US" }\n  }'\n\n# Returns: flag_key, value, reason for every flag` },
+          { lang: "inspect", label: "Inspect", code: `curl -X POST .../inspect-entity \\\n  -H "Authorization: Bearer <token>" \\\n  -d '{\n    "key": "user-42",\n    "attributes": { "plan": "enterprise", "country": "US" }\n  }'\n\n# Returns: flag_key, value, reason for every flag` },
           { lang: "compare", label: "Compare", code: `curl -X POST .../compare-entities \\\n  -H "Authorization: Bearer <token>" \\\n  -d '{\n    "entity_a": { "key": "user-42", "attributes": { "plan": "free" } },\n    "entity_b": { "key": "user-99", "attributes": { "plan": "enterprise" } }\n  }'` },
         ],
       },
@@ -233,7 +233,7 @@ const comparisonData: ComparisonRow[] = [
   { feature: "Relay proxy", fs: "yes", ld: "yes", unleash: "yes" },
   { feature: "Approval workflows", fs: "yes", ld: "yes", unleash: "partial" },
   { feature: "Audit logs with diffs", fs: "yes", ld: "yes", unleash: "partial" },
-  { feature: "Entity inspector", fs: "yes", ld: "no", unleash: "no" },
+  { feature: "Target inspector", fs: "yes", ld: "no", unleash: "no" },
   { feature: "Stale flag scanner", fs: "yes", ld: "no", unleash: "no" },
   { feature: "Flag scheduling", fs: "yes", ld: "yes", unleash: "yes" },
   { feature: "Environment comparison", fs: "yes", ld: "no", unleash: "no" },

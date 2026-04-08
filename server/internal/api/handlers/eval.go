@@ -94,6 +94,7 @@ type BulkEvaluateRequest struct {
 var hashAPIKey = HashAPIKey
 
 func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*domain.Ruleset, string, error) {
+	logger := httputil.LoggerFromContext(r.Context())
 	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
 		return nil, "", fmt.Errorf("missing X-API-Key header")
@@ -102,9 +103,11 @@ func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*domain.Ruleset, st
 	keyHash := hashAPIKey(apiKey)
 	env, key, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash)
 	if err != nil {
-		h.logger.Warn("eval: invalid API key", "key_prefix", apiKey[:min(12, len(apiKey))])
+		logger.Warn("eval: invalid API key", "key_prefix", apiKey[:min(12, len(apiKey))])
 		return nil, "", fmt.Errorf("invalid API key")
 	}
+
+	logger = logger.With("env_id", env.ID, "project_id", env.ProjectID)
 
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -116,10 +119,10 @@ func (h *EvalHandler) getRulesetFromAPIKey(r *http.Request) (*domain.Ruleset, st
 
 	ruleset := h.cache.GetRuleset(env.ID)
 	if ruleset == nil {
-		h.logger.Debug("cache miss, loading ruleset from store", "env_id", env.ID, "project_id", env.ProjectID)
+		logger.Debug("cache miss, loading ruleset from store")
 		ruleset, err = h.cache.LoadRuleset(r.Context(), env.ProjectID, env.ID)
 		if err != nil {
-			h.logger.Error("failed to load ruleset", "error", err, "env_id", env.ID)
+			logger.Error("failed to load ruleset", "error", err)
 			return nil, "", fmt.Errorf("failed to load ruleset: %w", err)
 		}
 	}
@@ -205,11 +208,12 @@ func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger := httputil.LoggerFromContext(r.Context()).With("env_id", envID)
 	envKey := chi.URLParam(r, "envKey")
 	if envKey != "" {
 		env, envErr := h.store.GetEnvironment(r.Context(), envID)
 		if envErr == nil && env.Slug != envKey {
-			h.logger.Warn("envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug, "env_id", envID)
+			logger.Warn("envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug)
 			httputil.Error(w, http.StatusForbidden, "API key does not belong to environment "+envKey)
 			return
 		}
@@ -248,12 +252,12 @@ func (h *EvalHandler) Stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger := httputil.LoggerFromContext(r.Context()).With("env_key", envKey)
 	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
 		apiKey = r.URL.Query().Get("api_key")
 		if apiKey != "" {
-			h.logger.Warn("DEPRECATED: api_key query parameter will be removed in a future version, use X-API-Key header instead",
-				"env_key", envKey)
+			logger.Warn("DEPRECATED: api_key query parameter will be removed in a future version, use X-API-Key header instead")
 		}
 	}
 	if apiKey == "" {
@@ -269,7 +273,7 @@ func (h *EvalHandler) Stream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if env.Slug != envKey {
-		h.logger.Warn("stream envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug)
+		logger.Warn("stream envKey mismatch", "api_key_env_slug", env.Slug, "env_id", env.ID)
 		httputil.Error(w, http.StatusForbidden, "API key does not belong to environment "+envKey)
 		return
 	}

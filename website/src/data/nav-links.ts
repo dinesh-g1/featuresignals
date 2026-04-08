@@ -38,7 +38,7 @@ export const platformItems: NavItem[] = [
   },
   {
     title: "Debugging",
-    description: "Entity inspector, environment comparison",
+    description: "Target inspector, environment comparison",
     href: "/features#debug-troubleshoot",
     icon: Search,
   },

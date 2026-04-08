@@ -6,15 +6,15 @@ import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label, Badge, EmptyState } from "@/components/ui";
 import { UserSearch, X, Search } from "lucide-react";
-import type { InspectEntityResult } from "@/lib/types";
+import type { InspectTargetResult } from "@/lib/types";
 
-export default function EntityInspectorPage() {
+export default function TargetInspectorPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const [entityKey, setEntityKey] = useState("");
+  const [targetKey, setTargetKey] = useState("");
   const [attrs, setAttrs] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
-  const [results, setResults] = useState<InspectEntityResult[] | null>(null);
+  const [results, setResults] = useState<InspectTargetResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -32,14 +32,14 @@ export default function EntityInspectorPage() {
 
   async function handleInspect(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !projectId || !currentEnvId || !entityKey) return;
+    if (!token || !projectId || !currentEnvId || !targetKey) return;
     setLoading(true);
     try {
       const attributes: Record<string, unknown> = {};
       attrs.forEach((a) => {
         if (a.key.trim()) attributes[a.key.trim()] = a.value;
       });
-      const data = await api.inspectEntity(token, projectId, currentEnvId, { key: entityKey, attributes });
+      const data = await api.inspectTarget(token, projectId, currentEnvId, { key: targetKey, attributes });
       setResults(data);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : "Inspection failed", "error");
@@ -55,14 +55,14 @@ export default function EntityInspectorPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
-        title="Entity Inspector"
-        description="Evaluate all flags for a specific entity to see exactly what they would receive"
+        title="Target Inspector"
+        description="Evaluate all flags for a specific target to see exactly what they would receive"
       />
 
       <form onSubmit={handleInspect} className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 sm:p-6">
         <div>
-          <Label>Entity Key</Label>
-          <Input value={entityKey} onChange={(e) => setEntityKey(e.target.value)} placeholder="user-123" required className="mt-1" />
+          <Label>Target Key</Label>
+          <Input value={targetKey} onChange={(e) => setTargetKey(e.target.value)} placeholder="user-123" required className="mt-1" />
         </div>
 
         <div>
@@ -95,8 +95,8 @@ export default function EntityInspectorPage() {
           </div>
         </div>
 
-        <Button type="submit" disabled={loading || !entityKey || !currentEnvId}>
-          {loading ? "Inspecting..." : "Inspect Entity"}
+        <Button type="submit" disabled={loading || !targetKey || !currentEnvId}>
+          {loading ? "Inspecting..." : "Inspect Target"}
         </Button>
       </form>
 
