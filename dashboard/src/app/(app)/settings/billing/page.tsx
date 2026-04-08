@@ -48,10 +48,6 @@ function BillingContent() {
   const [selectedGateway, setSelectedGateway] = useState<string>("payu");
   const [showGatewayPicker, setShowGatewayPicker] = useState(false);
 
-  useEffect(() => {
-    api.getPricing().then(setPricing).catch(() => {});
-  }, []);
-
   const refreshToken = useAppStore((s) => s.refreshToken);
   const setAuth = useAppStore((s) => s.setAuth);
 
@@ -80,10 +76,12 @@ function BillingContent() {
     setLoading(true);
     setError("");
     Promise.all([
+      api.getPricing().catch(() => null),
       api.getSubscription(token).catch(() => null),
       api.getUsage(token).catch(() => null),
     ])
-      .then(([sub, usg]) => {
+      .then(([prc, sub, usg]) => {
+        setPricing(prc);
         setSubscription(sub);
         setUsage(usg);
         if (sub?.gateway) {
@@ -177,8 +175,11 @@ function BillingContent() {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   })();
 
-  const proPrice = pricing?.plans?.pro?.display_price ?? "₹999";
-  const proPeriod = pricing?.plans?.pro?.billing_period ?? "month";
+  const freePlan = pricing?.plans?.free;
+  const proPlan = pricing?.plans?.pro;
+  const enterprisePlan = pricing?.plans?.enterprise;
+  const proPrice = proPlan?.display_price ?? "";
+  const proPeriod = proPlan?.billing_period ?? "";
   const currentGatewayLabel = GATEWAYS.find((g) => g.id === selectedGateway)?.label ?? "PayU";
 
   return (
@@ -217,13 +218,15 @@ function BillingContent() {
                       : "Unlimited projects, environments, team members, RBAC, webhooks, and priority support."}
                   </p>
 
+                  {proPlan?.features && (
                   <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
-                    {["Unlimited projects", "Unlimited environments", "Unlimited seats", "RBAC & audit logs"].map((f) => (
+                    {proPlan.features.slice(0, 4).map((f) => (
                       <span key={f} className="inline-flex items-center gap-1.5 text-xs text-indigo-200">
                         <Check className="h-3 w-3" /> {f}
                       </span>
                     ))}
                   </div>
+                  )}
                 </div>
               </div>
 
@@ -287,7 +290,7 @@ function BillingContent() {
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
                 >
                   <Zap className="mr-2 h-4 w-4" />
-                  {upgrading ? "Redirecting to checkout..." : plan === "trial" ? `Subscribe to Pro — ${proPrice}/${proPeriod}` : `Upgrade to Pro — ${proPrice}/${proPeriod}`}
+                  {upgrading ? "Redirecting to checkout..." : plan === "trial" ? `Subscribe to ${proPlan?.name ?? "Pro"} — ${proPrice}/${proPeriod}` : `Upgrade to ${proPlan?.name ?? "Pro"} — ${proPrice}/${proPeriod}`}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
 
@@ -393,34 +396,40 @@ function BillingContent() {
           )}
 
           {/* ── Plan Comparison ──────────────────────────────────────── */}
+          {pricing && (
           <div>
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Compare Plans</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {freePlan && (
               <PlanCard
-                name={pricing?.plans?.free?.name ?? "Free"}
-                price={pricing?.plans?.free?.display_price ?? "₹0"}
-                period={pricing?.plans?.free?.billing_period ? `/${pricing.plans.free.billing_period}` : "/month"}
-                features={pricing?.plans?.free?.features ?? ["1 project", "2 environments", "3 team members", "Community support"]}
+                name={freePlan.name}
+                price={freePlan.display_price}
+                period={freePlan.billing_period ? `/${freePlan.billing_period}` : ""}
+                features={freePlan.features}
                 current={plan === "free"}
               />
+              )}
+              {proPlan && (
               <PlanCard
-                name={pricing?.plans?.pro?.name ?? "Pro"}
-                price={pricing?.plans?.pro?.display_price ?? "₹999"}
-                period={pricing?.plans?.pro?.billing_period ? `/${pricing.plans.pro.billing_period}` : "/month"}
-                features={pricing?.plans?.pro?.features ?? ["Unlimited projects", "Unlimited environments", "Unlimited team members", "Priority support"]}
+                name={proPlan.name}
+                price={proPlan.display_price}
+                period={proPlan.billing_period ? `/${proPlan.billing_period}` : ""}
+                features={proPlan.features}
                 current={plan === "pro" || plan === "trial"}
                 highlighted
                 action={
                   isUpgradeable
-                    ? { label: upgrading ? "Redirecting..." : (plan === "trial" ? "Subscribe to Pro" : "Upgrade to Pro"), onClick: handleUpgrade, disabled: upgrading }
+                    ? { label: upgrading ? "Redirecting..." : (plan === "trial" ? `Subscribe to ${proPlan.name}` : `Upgrade to ${proPlan.name}`), onClick: handleUpgrade, disabled: upgrading }
                     : undefined
                 }
               />
+              )}
+              {enterprisePlan && (
               <PlanCard
-                name={pricing?.plans?.enterprise?.name ?? "Enterprise"}
-                price={pricing?.plans?.enterprise?.display_price ?? "Custom"}
+                name={enterprisePlan.name}
+                price={enterprisePlan.display_price}
                 period=""
-                features={pricing?.plans?.enterprise?.features ?? ["Everything in Pro", "Dedicated support", "Custom SLA", "Self-hosted option"]}
+                features={enterprisePlan.features}
                 current={plan === "enterprise"}
                 action={
                   plan !== "enterprise"
@@ -428,8 +437,10 @@ function BillingContent() {
                     : undefined
                 }
               />
+              )}
             </div>
           </div>
+          )}
         </>
       )}
     </div>
