@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       regions:
-        description: "Comma-separated regions to deploy (us,eu,in)"
+        description: "Comma-separated regions to deploy (us,eu)"
         required: false
-        default: "us,eu,in"
+        default: "us,eu"
 
 jobs:
   deploy:
@@ -21,15 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        region: [us, eu, in]
+        region: [us, eu]
         include:
-          - region: in
-            host_secret: VPS_HOST_IN
-            domain_api: api.featuresignals.com
-            domain_app: app.featuresignals.com
-            domain_main: featuresignals.com
-            domain_docs: docs.featuresignals.com
-            payment_gateway: payu
           - region: us
             host_secret: VPS_HOST_US
             domain_api: api.us.featuresignals.com
