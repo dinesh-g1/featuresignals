@@ -5,13 +5,13 @@ import { useAppStore } from "@/stores/app-store";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/entity-comparison",
+  usePathname: () => "/target-comparison",
   useParams: () => ({}),
 }));
 
 vi.mock("@/lib/api", () => ({
   api: {
-    compareEntities: vi.fn(),
+    compareTargets: vi.fn(),
     listEnvironments: vi.fn(),
   },
 }));
@@ -21,7 +21,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 import { api } from "@/lib/api";
-import EntityComparisonPage from "@/app/(app)/entity-comparison/page";
+import TargetComparisonPage from "@/app/(app)/target-comparison/page";
 
 const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
@@ -36,7 +36,7 @@ const mockComparisonResults = [
   },
 ];
 
-describe("EntityComparisonPage", () => {
+describe("TargetComparisonPage", () => {
   beforeEach(() => {
     useAppStore
       .getState()
@@ -50,7 +50,7 @@ describe("EntityComparisonPage", () => {
     useAppStore.getState().setCurrentProject("proj-1");
     useAppStore.getState().setCurrentEnv("env-1");
 
-    mockApi.compareEntities.mockResolvedValue(mockComparisonResults);
+    mockApi.compareTargets.mockResolvedValue(mockComparisonResults);
     mockApi.listEnvironments.mockResolvedValue([]);
   });
 
@@ -59,95 +59,77 @@ describe("EntityComparisonPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders two entity forms", () => {
-    // Arrange & Act
-    render(<EntityComparisonPage />);
+  it("renders two target forms", () => {
+    render(<TargetComparisonPage />);
 
-    // Assert
-    expect(screen.getByText("Entity A")).toBeInTheDocument();
-    expect(screen.getByText("Entity B")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Entity key (e.g. user-123)")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Entity key (e.g. user-456)")).toBeInTheDocument();
+    expect(screen.getByText("Target A")).toBeInTheDocument();
+    expect(screen.getByText("Target B")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Target key (e.g. user-123)")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Target key (e.g. user-456)")).toBeInTheDocument();
   });
 
-  it("add/remove attributes for entity A", () => {
-    // Arrange
-    render(<EntityComparisonPage />);
+  it("add/remove attributes for target A", () => {
+    render(<TargetComparisonPage />);
     const addButtons = screen.getAllByText("+ Add attribute");
 
-    // Act – add attribute to entity A (first AttrEditor)
     fireEvent.click(addButtons[0]);
 
-    // Assert – 3 key inputs: 2 for entity A + 1 for entity B
     expect(screen.getAllByPlaceholderText("key")).toHaveLength(3);
 
-    // Act – remove an attribute via icon-only remove button
     const allButtons = screen.getAllByRole("button");
     const removeBtn = allButtons.find((btn) => !btn.textContent?.trim());
     fireEvent.click(removeBtn!);
 
-    // Assert
     expect(screen.getAllByPlaceholderText("key")).toHaveLength(2);
   });
 
-  it("add/remove attributes for entity B", () => {
-    // Arrange
-    render(<EntityComparisonPage />);
+  it("add/remove attributes for target B", () => {
+    render(<TargetComparisonPage />);
     const addButtons = screen.getAllByText("+ Add attribute");
 
-    // Act – add attribute to entity B (second AttrEditor)
     fireEvent.click(addButtons[1]);
 
-    // Assert – 3 key inputs: 1 for entity A + 2 for entity B
     expect(screen.getAllByPlaceholderText("key")).toHaveLength(3);
 
-    // Act – remove via icon-only button
     const allButtons = screen.getAllByRole("button");
     const removeBtn = allButtons.find((btn) => !btn.textContent?.trim());
     fireEvent.click(removeBtn!);
 
-    // Assert
     expect(screen.getAllByPlaceholderText("key")).toHaveLength(2);
   });
 
-  it("compare button calls api.compareEntities", async () => {
-    // Arrange
-    render(<EntityComparisonPage />);
-    fireEvent.change(screen.getByPlaceholderText("Entity key (e.g. user-123)"), {
+  it("compare button calls api.compareTargets", async () => {
+    render(<TargetComparisonPage />);
+    fireEvent.change(screen.getByPlaceholderText("Target key (e.g. user-123)"), {
       target: { value: "user-a" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Entity key (e.g. user-456)"), {
+    fireEvent.change(screen.getByPlaceholderText("Target key (e.g. user-456)"), {
       target: { value: "user-b" },
     });
 
-    // Act
     await act(async () => {
-      fireEvent.submit(screen.getByText("Compare Entities").closest("form")!);
+      fireEvent.submit(screen.getByText("Compare Targets").closest("form")!);
     });
 
-    // Assert
-    expect(mockApi.compareEntities).toHaveBeenCalledWith("test-token", "proj-1", "env-1", {
+    expect(mockApi.compareTargets).toHaveBeenCalledWith("test-token", "proj-1", "env-1", {
       entity_a: { key: "user-a", attributes: {} },
       entity_b: { key: "user-b", attributes: {} },
     });
   });
 
   it("diff display shows differences", async () => {
-    // Arrange
-    render(<EntityComparisonPage />);
-    fireEvent.change(screen.getByPlaceholderText("Entity key (e.g. user-123)"), {
+    render(<TargetComparisonPage />);
+    fireEvent.change(screen.getByPlaceholderText("Target key (e.g. user-123)"), {
       target: { value: "user-a" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Entity key (e.g. user-456)"), {
+    fireEvent.change(screen.getByPlaceholderText("Target key (e.g. user-456)"), {
       target: { value: "user-b" },
     });
 
-    // Act
     await act(async () => {
-      fireEvent.submit(screen.getByText("Compare Entities").closest("form")!);
+      fireEvent.submit(screen.getByText("Compare Targets").closest("form")!);
     });
 
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("enable-feature")).toBeInTheDocument();
       expect(screen.getByText("Different")).toBeInTheDocument();
@@ -155,31 +137,26 @@ describe("EntityComparisonPage", () => {
   });
 
   it("shows loading during comparison", async () => {
-    // Arrange
-    mockApi.compareEntities.mockReturnValue(new Promise(() => {}));
-    render(<EntityComparisonPage />);
-    fireEvent.change(screen.getByPlaceholderText("Entity key (e.g. user-123)"), {
+    mockApi.compareTargets.mockReturnValue(new Promise(() => {}));
+    render(<TargetComparisonPage />);
+    fireEvent.change(screen.getByPlaceholderText("Target key (e.g. user-123)"), {
       target: { value: "user-a" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Entity key (e.g. user-456)"), {
+    fireEvent.change(screen.getByPlaceholderText("Target key (e.g. user-456)"), {
       target: { value: "user-b" },
     });
 
-    // Act
-    fireEvent.click(screen.getByText("Compare Entities"));
+    fireEvent.click(screen.getByText("Compare Targets"));
 
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("Comparing...")).toBeInTheDocument();
     });
   });
 
   it("empty state before comparison", () => {
-    // Arrange & Act
-    render(<EntityComparisonPage />);
+    render(<TargetComparisonPage />);
 
-    // Assert
-    expect(screen.getByText("Entity Comparison")).toBeInTheDocument();
+    expect(screen.getByText("Target Comparison")).toBeInTheDocument();
     expect(screen.queryByText("enable-feature")).not.toBeInTheDocument();
     expect(screen.queryByText("Different")).not.toBeInTheDocument();
   });

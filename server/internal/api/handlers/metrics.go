@@ -57,6 +57,7 @@ type TrackImpressionRequest struct {
 // TrackImpression receives variant impressions from SDKs.
 // Requires X-API-Key header for authentication.
 func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
 	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
 		httputil.Error(w, http.StatusUnauthorized, "missing X-API-Key header")
@@ -64,6 +65,7 @@ func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request)
 	}
 	keyHash := fmt.Sprintf("%x", sha256.Sum256([]byte(apiKey)))
 	if _, _, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash); err != nil {
+		logger.Warn("failed to authenticate impression API key", "error", err)
 		httputil.Error(w, http.StatusUnauthorized, "invalid API key")
 		return
 	}

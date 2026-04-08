@@ -47,8 +47,8 @@ const navGroups: NavGroup[] = [
     label: "Debug",
     items: [
       { href: "/env-comparison", label: "Env Comparison", icon: ArrowLeftRight },
-      { href: "/entity-inspector", label: "Entity Inspector", icon: UserSearch },
-      { href: "/entity-comparison", label: "Entity Compare", icon: UsersRound },
+      { href: "/target-inspector", label: "Target Inspector", icon: UserSearch },
+      { href: "/target-comparison", label: "Target Compare", icon: UsersRound },
     ],
   },
   {

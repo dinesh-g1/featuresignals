@@ -234,7 +234,7 @@ export interface EvalResult {
   variant_key?: string;
 }
 
-export interface InspectEntityResult {
+export interface InspectTargetResult {
   flag_key: string;
   value: unknown;
   reason: string;
@@ -242,7 +242,7 @@ export interface InspectEntityResult {
   individually_targeted?: boolean;
 }
 
-export interface CompareEntitiesResult {
+export interface CompareTargetsResult {
   flag_key: string;
   value_a: unknown;
   value_b: unknown;
@@ -344,7 +344,7 @@ export interface CreateApprovalPayload {
   payload: Record<string, unknown>;
 }
 
-export interface EntityInput {
+export interface TargetInput {
   key: string;
   attributes: Record<string, unknown>;
 }

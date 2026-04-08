@@ -1,26 +1,26 @@
 ---
 sidebar_position: 7
-title: Entity Comparison
+title: Target Comparison
 ---
 
-# Entity Comparison
+# Target Comparison
 
-The Entity Comparison page extends the Entity Inspector by letting you compare flag evaluations for two different entities side-by-side. This reveals exactly how targeting rules, segments, and rollout percentages treat different users differently.
+The Target Comparison page extends the Target Inspector by letting you compare flag evaluations for two different targets side-by-side. This reveals exactly how targeting rules, segments, and rollout percentages treat different users differently.
 
-## Accessing Entity Comparison
+## Accessing Target Comparison
 
-Navigate to **Entity Comparison** in the sidebar.
+Navigate to **Target Comparison** in the sidebar.
 
 ## How It Works
 
 1. **Select an environment** — Choose the environment to evaluate against
-2. **Enter Entity A details:**
-   - **Entity Key** — e.g., `user-42`
+2. **Enter Target A details:**
+   - **Target Key** — e.g., `user-42`
    - **Attributes** — e.g., `{"plan": "free", "country": "US"}`
-3. **Enter Entity B details:**
-   - **Entity Key** — e.g., `user-99`
+3. **Enter Target B details:**
+   - **Target Key** — e.g., `user-99`
    - **Attributes** — e.g., `{"plan": "enterprise", "country": "DE"}`
-4. **Click Compare** — Both entities are evaluated against all flags, and differences are highlighted
+4. **Click Compare** — Both targets are evaluated against all flags, and differences are highlighted
 
 ## Comparison Table
 
@@ -29,13 +29,13 @@ The table shows one row per flag:
 | Column | Description |
 |--------|-------------|
 | **Flag Key** | The flag identifier |
-| **Entity A Value** | The value entity A would receive |
-| **Entity A Reason** | Why entity A received that value |
-| **Entity B Value** | The value entity B would receive |
-| **Entity B Reason** | Why entity B received that value |
-| **Match** | Whether both entities receive the same value |
+| **Target A Value** | The value target A would receive |
+| **Target A Reason** | Why target A received that value |
+| **Target B Value** | The value target B would receive |
+| **Target B Reason** | Why target B received that value |
+| **Match** | Whether both targets receive the same value |
 
-Rows where the two entities receive **different values** are highlighted, making it easy to focus on the interesting differences.
+Rows where the two targets receive **different values** are highlighted, making it easy to focus on the interesting differences.
 
 ## API Equivalent
 
@@ -65,4 +65,4 @@ curl -X POST "https://api.featuresignals.com/v1/projects/$PROJECT_ID/environment
 
 ## Permissions
 
-Requires owner, admin, or developer role to compare entities.
+Requires owner, admin, or developer role to compare targets.

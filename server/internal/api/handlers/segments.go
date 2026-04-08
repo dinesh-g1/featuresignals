@@ -45,6 +45,7 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
 	}
+	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
 
 	var req CreateSegmentRequest
@@ -86,6 +87,7 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.CreateSegment(r.Context(), seg); err != nil {
+		logger.Warn("failed to create segment", "error", err, "project_id", projectID, "segment_key", req.Key)
 		httputil.Error(w, http.StatusConflict, "segment key already exists in this project")
 		return
 	}
@@ -104,9 +106,11 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
 	}
+	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
 	segments, err := h.store.ListSegments(r.Context(), projectID)
 	if err != nil {
+		logger.Error("failed to list segments", "error", err, "project_id", projectID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list segments")
 		return
 	}
@@ -123,11 +127,13 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
 	}
+	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")
 
 	seg, err := h.store.GetSegment(r.Context(), projectID, segKey)
 	if err != nil {
+		logger.Warn("failed to get segment", "error", err, "project_id", projectID, "segment_key", segKey)
 		httputil.Error(w, http.StatusNotFound, "segment not found")
 		return
 	}
@@ -138,11 +144,13 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
 	}
+	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")
 
 	seg, err := h.store.GetSegment(r.Context(), projectID, segKey)
 	if err != nil {
+		logger.Warn("failed to get segment", "error", err, "project_id", projectID, "segment_key", segKey)
 		httputil.Error(w, http.StatusNotFound, "segment not found")
 		return
 	}
@@ -168,6 +176,7 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	beforeState, _ := json.Marshal(seg)
 	if err := h.store.UpdateSegment(r.Context(), seg); err != nil {
+		logger.Error("failed to update segment", "error", err, "project_id", projectID, "segment_key", segKey)
 		httputil.Error(w, http.StatusInternalServerError, "failed to update segment")
 		return
 	}
@@ -189,17 +198,20 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
 		return
 	}
+	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
 	segKey := chi.URLParam(r, "segmentKey")
 
 	seg, err := h.store.GetSegment(r.Context(), projectID, segKey)
 	if err != nil {
+		logger.Warn("failed to get segment", "error", err, "project_id", projectID, "segment_key", segKey)
 		httputil.Error(w, http.StatusNotFound, "segment not found")
 		return
 	}
 
 	beforeState, _ := json.Marshal(seg)
 	if err := h.store.DeleteSegment(r.Context(), seg.ID); err != nil {
+		logger.Error("failed to delete segment", "error", err, "project_id", projectID, "segment_key", segKey, "segment_id", seg.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to delete segment")
 		return
 	}

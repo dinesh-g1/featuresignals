@@ -17,7 +17,7 @@ func newTestJWTManager() *auth.JWTManager {
 
 func TestJWTAuth_ValidToken(t *testing.T) {
 	mgr := newTestJWTManager()
-	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
 
 	handler := JWTAuth(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := GetUserID(r.Context())
@@ -111,7 +111,7 @@ func TestJWTAuth_InvalidFormat(t *testing.T) {
 
 func TestJWTAuth_WrongSecretReturnsInvalidNotExpired(t *testing.T) {
 	mgr1 := auth.NewJWTManager("secret-one-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	pair, _ := mgr1.GenerateTokenPair("user-123", "org-456", "admin")
+	pair, _ := mgr1.GenerateTokenPair("user-123", "org-456", "admin", "")
 
 	mgr2 := auth.NewJWTManager("secret-two-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
@@ -141,7 +141,7 @@ func TestJWTAuth_WrongSecretReturnsInvalidNotExpired(t *testing.T) {
 
 func TestJWTAuth_ExpiredToken(t *testing.T) {
 	mgr := auth.NewJWTManager("test-secret-32-chars-long-enough", -1*time.Minute, -1*time.Minute)
-	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
 
 	validMgr := newTestJWTManager()
 	handler := JWTAuth(validMgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +220,7 @@ func TestGetClaims_NoContext(t *testing.T) {
 
 func TestGetClaims_WithContext(t *testing.T) {
 	mgr := newTestJWTManager()
-	pair, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin")
+	pair, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "")
 
 	handler := JWTAuth(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims := GetClaims(r.Context())
@@ -247,7 +247,7 @@ func TestGetClaims_WithContext(t *testing.T) {
 
 func TestJWTAuth_RejectsRefreshToken(t *testing.T) {
 	mgr := newTestJWTManager()
-	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin")
+	pair, _ := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
 
 	handler := JWTAuth(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("handler should not be called with refresh token")

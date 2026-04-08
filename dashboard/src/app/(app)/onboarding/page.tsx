@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, Sparkles, Copy, ClipboardCheck, Key, ArrowRight } from "lucide-react";
+import { Check, Sparkles, Copy, ClipboardCheck, Key, ArrowRight, FolderOpen, Layers, Flag } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -12,11 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import type { Project, Environment } from "@/lib/types";
 
 const STEPS = [
-  { key: "flag_created", label: "Create Flag" },
-  { key: "sdk_installed", label: "Connect SDK" },
-  { key: "completed", label: "All Set!" },
+  { key: "project_setup", label: "Project", icon: FolderOpen },
+  { key: "env_setup", label: "Environment", icon: Layers },
+  { key: "first_flag_created", label: "Create Flag", icon: Flag },
+  { key: "first_sdk_connected", label: "Connect SDK" },
+  { key: "first_evaluation", label: "All Set!" },
 ];
 
 const SDK_TABS = [
@@ -126,12 +129,21 @@ function OnboardingContent() {
   const setAuth = useAppStore((s) => s.setAuth);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
+  const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
   const userName = useAppStore((s) => s.user?.name);
 
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [hasPlanIntent, setHasPlanIntent] = useState(false);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectId);
+  const [selectedEnvId, setSelectedEnvId] = useState<string | null>(currentEnvId);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [creatingProject, setCreatingProject] = useState(false);
 
   useEffect(() => {
     setHasPlanIntent(localStorage.getItem("fs_plan_intent") === "pro");
@@ -163,43 +175,69 @@ function OnboardingContent() {
     }
   }, [searchParams, refreshToken, setAuth]);
 
+  const loadProjects = useCallback(async () => {
+    if (!token) return;
+    try {
+      const list = await api.listProjects(token);
+      setProjects(list);
+      if (list.length > 0 && !selectedProjectId) {
+        setSelectedProjectId(list[0].id);
+      }
+    } catch {
+      // continue with empty
+    }
+  }, [token, selectedProjectId]);
+
+  const loadEnvironments = useCallback(async () => {
+    if (!token || !selectedProjectId) return;
+    try {
+      const list = await api.listEnvironments(token, selectedProjectId);
+      setEnvironments(list);
+      if (list.length > 0 && !selectedEnvId) {
+        setSelectedEnvId(list[0].id);
+      }
+    } catch {
+      // continue with empty
+    }
+  }, [token, selectedProjectId, selectedEnvId]);
+
   useEffect(() => {
     if (!token) return;
 
     async function loadState() {
       try {
-        const data = await api.getOnboarding(token!);
+        const [data] = await Promise.all([
+          api.getOnboarding(token!),
+          loadProjects(),
+        ]);
         if (data) {
           const steps: Record<string, boolean> = {
-            flag_created: data.first_flag_created,
-            sdk_installed: data.first_sdk_connected,
-            completed: data.completed,
+            project_setup: !!projectId,
+            env_setup: !!currentEnvId,
+            first_flag_created: data.first_flag_created,
+            first_sdk_connected: data.first_sdk_connected,
+            first_evaluation: data.first_evaluation,
           };
           setCompleted(steps);
           const firstIncomplete = STEPS.findIndex((s) => !steps[s.key]);
           setCurrentStep(firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete);
+
+          if (!data.plan_selected) {
+            api.updateOnboarding(token!, { plan_selected: true }).catch(() => {});
+          }
         }
       } catch {
         // continue with defaults
       }
-
-      if (!data?.plan_selected && token) {
-        try {
-          await api.updateOnboarding(token, { plan_chosen: true });
-        } catch {
-          // non-critical
-        }
-      }
-
       setLoading(false);
     }
 
-    let data: { plan_selected?: boolean } | undefined;
-    api.getOnboarding(token)
-      .then((d) => { data = d ?? undefined; })
-      .catch(() => {})
-      .finally(() => loadState());
-  }, [token]);
+    loadState();
+  }, [token, projectId, currentEnvId, loadProjects]);
+
+  useEffect(() => {
+    loadEnvironments();
+  }, [loadEnvironments]);
 
   useEffect(() => {
     if (!token || !currentEnvId) return;
@@ -213,23 +251,67 @@ function OnboardingContent() {
     }).catch(() => {});
   }, [token, currentEnvId]);
 
+  function advanceToNext(updates: Record<string, boolean>) {
+    const merged: Record<string, boolean> = { ...completed, ...updates };
+    setCompleted(merged);
+    const nextIncomplete = STEPS.findIndex((s) => !merged[s.key]);
+    setCurrentStep(nextIncomplete === -1 ? STEPS.length - 1 : nextIncomplete);
+  }
+
+  function handleProjectConfirm() {
+    if (!selectedProjectId) {
+      toast("Please select a project to continue.", "error");
+      return;
+    }
+    setCurrentProject(selectedProjectId);
+    advanceToNext({ project_setup: true });
+  }
+
+  async function handleCreateProject() {
+    if (!token || !newProjectName.trim()) return;
+    setCreatingProject(true);
+    try {
+      const project = await api.createProject(token, { name: newProjectName.trim() });
+      setProjects((prev) => [...prev, project]);
+      setSelectedProjectId(project.id);
+      setNewProjectName("");
+      toast("Project created!", "success");
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to create project", "error");
+    } finally {
+      setCreatingProject(false);
+    }
+  }
+
+  function handleEnvConfirm() {
+    if (!selectedEnvId) {
+      toast("Please select an environment to continue.", "error");
+      return;
+    }
+    setCurrentEnv(selectedEnvId);
+    advanceToNext({ env_setup: true });
+  }
+
   async function markStepComplete(stepKey: string) {
     if (!token) return;
-    const updated = { ...completed, [stepKey]: true };
-    setCompleted(updated);
-    try {
-      await api.updateOnboarding(token, { [stepKey]: true });
-    } catch {
-      // continue even if save fails
+    const merged: Record<string, boolean> = { ...completed, [stepKey]: true };
+
+    const backendKeys = ["first_flag_created", "first_sdk_connected", "first_evaluation"];
+    if (backendKeys.includes(stepKey)) {
+      const allBackendDone = backendKeys.every((k) => merged[k]);
+      try {
+        await api.updateOnboarding(token, { [stepKey]: true, ...(allBackendDone && { completed: true }) });
+      } catch {
+        // continue even if save fails
+      }
     }
-    const nextIncomplete = STEPS.findIndex((s) => !updated[s.key]);
-    setCurrentStep(nextIncomplete === -1 ? STEPS.length - 1 : nextIncomplete);
+    advanceToNext({ [stepKey]: true });
   }
 
   async function handleCreateFlag(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !projectId) {
-      toast("No project selected. Please select a project from the sidebar.", "error");
+      toast("No project selected. Please go back and select a project.", "error");
       return;
     }
     setCreatingFlag(true);
@@ -241,7 +323,7 @@ function OnboardingContent() {
       });
       toast("Flag created successfully!", "success");
       setFlagForm({ key: "", name: "" });
-      await markStepComplete("flag_created");
+      await markStepComplete("first_flag_created");
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : "Failed to create flag", "error");
     } finally {
@@ -250,11 +332,11 @@ function OnboardingContent() {
   }
 
   async function handleSdkComplete() {
-    await markStepComplete("sdk_installed");
+    await markStepComplete("first_sdk_connected");
   }
 
   async function handleFinish() {
-    await markStepComplete("completed");
+    await markStepComplete("first_evaluation");
     const planIntent = localStorage.getItem("fs_plan_intent");
     if (planIntent === "pro") {
       localStorage.removeItem("fs_plan_intent");
@@ -321,14 +403,14 @@ function OnboardingContent() {
                   {done ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : idx + 1}
                 </button>
                 <span className={cn(
-                  "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium",
+                  "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium whitespace-nowrap",
                   active ? "text-indigo-700" : done ? "text-emerald-700" : "text-slate-400",
                 )}>
                   {step.label}
                 </span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div className={cn("mx-1 sm:mx-2 h-0.5 w-10 sm:w-16 md:w-24", done ? "bg-emerald-400" : "bg-slate-200")} />
+                <div className={cn("mx-1 sm:mx-2 h-0.5 w-6 sm:w-10 md:w-16", done ? "bg-emerald-400" : "bg-slate-200")} />
               )}
             </div>
           );
@@ -338,25 +420,47 @@ function OnboardingContent() {
       {/* Step Content */}
       <Card className="p-4 sm:p-6 md:p-8 shadow-sm">
         {currentStep === 0 && (
+          <StepProjectSetup
+            projects={projects}
+            selectedId={selectedProjectId}
+            onSelect={setSelectedProjectId}
+            onConfirm={handleProjectConfirm}
+            newName={newProjectName}
+            setNewName={setNewProjectName}
+            onCreate={handleCreateProject}
+            creating={creatingProject}
+            completed={!!completed.project_setup}
+          />
+        )}
+        {currentStep === 1 && (
+          <StepEnvSetup
+            environments={environments}
+            selectedId={selectedEnvId}
+            onSelect={setSelectedEnvId}
+            onConfirm={handleEnvConfirm}
+            completed={!!completed.env_setup}
+          />
+        )}
+        {currentStep === 2 && (
           <StepCreateFlag
             form={flagForm}
             setForm={setFlagForm}
             onSubmit={handleCreateFlag}
             creating={creatingFlag}
-            completed={!!completed.flag_created}
-            onSkip={() => markStepComplete("flag_created")}
+            completed={!!completed.first_flag_created}
+            onSkip={() => markStepComplete("first_flag_created")}
           />
         )}
-        {currentStep === 1 && (
+        {currentStep === 3 && (
           <StepInstallSdk
             selectedSdk={selectedSdk}
             setSelectedSdk={setSelectedSdk}
             onComplete={handleSdkComplete}
-            completed={!!completed.sdk_installed}
+            completed={!!completed.first_sdk_connected}
             apiKey={apiKey}
           />
         )}
-        {currentStep === 2 && <StepComplete onFinish={handleFinish} />}
+        {currentStep === 4 && <StepComplete onFinish={handleFinish} />}
       </Card>
 
       <div className="flex items-center justify-center gap-6">
@@ -388,6 +492,188 @@ export default function OnboardingPage() {
     </Suspense>
   );
 }
+
+/* ── Step 1: Project Setup ─────────────────────────────────────────── */
+
+function StepProjectSetup({
+  projects,
+  selectedId,
+  onSelect,
+  onConfirm,
+  newName,
+  setNewName,
+  onCreate,
+  creating,
+  completed,
+}: {
+  projects: Project[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onConfirm: () => void;
+  newName: string;
+  setNewName: (n: string) => void;
+  onCreate: () => void;
+  creating: boolean;
+  completed: boolean;
+}) {
+  if (completed) {
+    const chosen = projects.find((p) => p.id === selectedId);
+    return (
+      <div className="text-center py-8">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+          <Check className="h-8 w-8 text-emerald-600" />
+        </div>
+        <p className="mt-4 text-lg font-semibold text-slate-900">Project selected!</p>
+        <p className="mt-1 text-sm text-slate-500">
+          {chosen ? `Working with "${chosen.name}"` : "Your project is ready."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-slate-900">Set Up Your Project</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        A project groups your feature flags and environments together. We created a default project for you &mdash; select it or create a new one.
+      </p>
+
+      {projects.length > 0 && (
+        <div className="mt-6 space-y-2">
+          <Label>Select a project</Label>
+          <div className="grid gap-2">
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onSelect(p.id)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all",
+                  selectedId === p.id
+                    ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
+                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                )}
+              >
+                <FolderOpen className={cn("h-5 w-5", selectedId === p.id ? "text-indigo-600" : "text-slate-400")} />
+                <div>
+                  <p className={cn("text-sm font-medium", selectedId === p.id ? "text-indigo-900" : "text-slate-700")}>{p.name}</p>
+                  <p className="text-xs text-slate-400">{p.slug}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 border-t border-slate-100 pt-4">
+        <p className="text-xs font-medium text-slate-500 mb-2">Or create a new project</p>
+        <div className="flex gap-2">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="My App"
+            className="flex-1"
+          />
+          <Button variant="secondary" onClick={onCreate} disabled={creating || !newName.trim()}>
+            {creating ? "Creating..." : "Create"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <Button onClick={onConfirm} disabled={!selectedId}>
+          Continue with this project
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step 2: Environment Setup ─────────────────────────────────────── */
+
+const ENV_COLOR_MAP: Record<string, string> = {
+  "#22C55E": "bg-green-500",
+  "#EAB308": "bg-yellow-500",
+  "#EF4444": "bg-red-500",
+};
+
+function StepEnvSetup({
+  environments,
+  selectedId,
+  onSelect,
+  onConfirm,
+  completed,
+}: {
+  environments: Environment[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onConfirm: () => void;
+  completed: boolean;
+}) {
+  if (completed) {
+    const chosen = environments.find((e) => e.id === selectedId);
+    return (
+      <div className="text-center py-8">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+          <Check className="h-8 w-8 text-emerald-600" />
+        </div>
+        <p className="mt-4 text-lg font-semibold text-slate-900">Environment selected!</p>
+        <p className="mt-1 text-sm text-slate-500">
+          {chosen ? `Using "${chosen.name}" environment` : "Your environment is ready."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-slate-900">Choose Your Environment</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Environments let you manage separate flag configurations for development, staging, and production.
+        Select the environment you want to start with.
+      </p>
+
+      {environments.length > 0 ? (
+        <div className="mt-6 grid gap-2">
+          {environments.map((env) => {
+            const colorClass = ENV_COLOR_MAP[env.color || ""] || "bg-slate-400";
+            return (
+              <button
+                key={env.id}
+                onClick={() => onSelect(env.id)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all",
+                  selectedId === env.id
+                    ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
+                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                )}
+              >
+                <div className={cn("h-3 w-3 rounded-full", colorClass)} />
+                <div>
+                  <p className={cn("text-sm font-medium", selectedId === env.id ? "text-indigo-900" : "text-slate-700")}>{env.name}</p>
+                  <p className="text-xs text-slate-400">{env.slug || env.name.toLowerCase()}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+          <Layers className="mx-auto h-8 w-8 text-slate-400" />
+          <p className="mt-2 text-sm text-slate-500">No environments found. They should have been created automatically.</p>
+          <p className="mt-1 text-xs text-slate-400">Go back and verify your project, or contact support.</p>
+        </div>
+      )}
+
+      <div className="mt-6">
+        <Button onClick={onConfirm} disabled={!selectedId}>
+          Continue with this environment
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step 3: Create Flag ────────────────────────────────────────────── */
 
 function StepCreateFlag({
   form,
@@ -455,6 +741,8 @@ function StepCreateFlag({
     </div>
   );
 }
+
+/* ── Step 4: Install SDK ────────────────────────────────────────────── */
 
 function StepInstallSdk({
   selectedSdk,
@@ -561,6 +849,8 @@ function StepInstallSdk({
     </div>
   );
 }
+
+/* ── Step 5: Complete ───────────────────────────────────────────────── */
 
 function StepComplete({ onFinish }: { onFinish: () => void }) {
   return (

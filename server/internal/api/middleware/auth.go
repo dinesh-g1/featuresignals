@@ -16,10 +16,11 @@ import (
 type contextKey string
 
 const (
-	UserIDKey contextKey = "user_id"
-	OrgIDKey  contextKey = "org_id"
-	RoleKey   contextKey = "role"
-	ClaimsKey contextKey = "claims"
+	UserIDKey     contextKey = "user_id"
+	OrgIDKey      contextKey = "org_id"
+	RoleKey       contextKey = "role"
+	ClaimsKey     contextKey = "claims"
+	DataRegionKey contextKey = "data_region"
 )
 
 // RevocationChecker checks whether a JWT has been revoked. Implementations
@@ -64,6 +65,13 @@ func JWTAuth(jwtMgr auth.TokenManager, revoker ...RevocationChecker) func(http.H
 			ctx = context.WithValue(ctx, OrgIDKey, claims.OrgID)
 			ctx = context.WithValue(ctx, RoleKey, claims.Role)
 			ctx = context.WithValue(ctx, ClaimsKey, claims)
+			ctx = context.WithValue(ctx, DataRegionKey, claims.DataRegion)
+
+			reqLogger := httputil.LoggerFromContext(ctx)
+			ctx = httputil.ContextWithLogger(ctx, reqLogger.With(
+				"org_id", claims.OrgID,
+				"user_id", claims.UserID,
+			))
 
 			if span := trace.SpanFromContext(ctx); span.IsRecording() {
 				span.SetAttributes(
@@ -95,5 +103,10 @@ func GetRole(ctx context.Context) string {
 
 func GetClaims(ctx context.Context) *auth.Claims {
 	v, _ := ctx.Value(ClaimsKey).(*auth.Claims)
+	return v
+}
+
+func GetDataRegion(ctx context.Context) string {
+	v, _ := ctx.Value(DataRegionKey).(string)
 	return v
 }
