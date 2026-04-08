@@ -163,7 +163,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
           command_timeout: 15m
-          envs: REPO_TOKEN,ROLLBACK_COMMIT,IMAGE_TAG
+          envs: REPO_TOKEN,ROLLBACK_COMMIT,IMAGE_TAG,USE_REGISTRY
           script: |
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
@@ -171,11 +171,13 @@ jobs:
             git reset --hard origin/main
             export ROLLBACK_COMMIT="${ROLLBACK_COMMIT}"
             export IMAGE_TAG="${IMAGE_TAG}"
+            export USE_REGISTRY="${USE_REGISTRY}"
             bash deploy/deploy-region.sh
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
           ROLLBACK_COMMIT: ${{ github.event.inputs.rollback_commit }}
           IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+          USE_REGISTRY: ${{ github.event.inputs.build_locally == 'true' && 'false' || 'true' }}
 
       - name: Verify deployment health
         if: steps.check.outputs.deploy == 'true'
