@@ -187,7 +187,7 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      const data = await api.completeSignup({ email: form.email, otp });
+      const data = await api.completeSignup({ email: form.email, otp }, form.data_region);
       setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization, data.tokens.expires_at, data.onboarding_completed);
       router.push("/onboarding");
     } catch (err: unknown) {
