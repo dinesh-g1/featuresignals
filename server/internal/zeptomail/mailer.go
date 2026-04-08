@@ -247,7 +247,7 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 		payload.ReplyTo = &address{Address: env.replyTo}
 	}
 
-	body, err := json.Marshal(payload)
+	body, err := marshalJSON(payload)
 	if err != nil {
 		return "", 0, fmt.Errorf("zeptomail marshal: %w", err)
 	}
@@ -288,6 +288,22 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 	)
 
 	return er.RequestID, resp.StatusCode, fmt.Errorf("zeptomail %d: %s (code=%s)", resp.StatusCode, er.Error.Message, er.Error.Code)
+}
+
+// marshalJSON encodes v without escaping HTML characters (<, >, &) to
+// unicode sequences. ZeptoMail expects htmlbody to contain literal HTML.
+func marshalJSON(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	b := buf.Bytes()
+	if len(b) > 0 && b[len(b)-1] == '\n' {
+		b = b[:len(b)-1]
+	}
+	return b, nil
 }
 
 func jitteredBackoff(attempt int) time.Duration {
