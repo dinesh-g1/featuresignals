@@ -49,6 +49,7 @@ services:
       ]
 
   server:
+    image: ghcr.io/dinesh-g1/featuresignals-server:${IMAGE_TAG:-latest}
     build:
       context: ./server
       dockerfile: ../deploy/docker/Dockerfile.server
@@ -105,6 +106,7 @@ services:
           cpus: "2.0"
 
   dashboard:
+    image: ghcr.io/dinesh-g1/featuresignals-dashboard:${IMAGE_TAG:-latest}
     build:
       context: ./dashboard
       dockerfile: ../deploy/docker/Dockerfile.dashboard
