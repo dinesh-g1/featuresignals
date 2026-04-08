@@ -6,75 +6,88 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    labels: ["type: task", "area: server"]
 
   - package-ecosystem: "gomod"
     directory: "/sdks/go"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "npm"
     directory: "/dashboard"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    labels: ["type: task", "area: dashboard"]
 
   - package-ecosystem: "npm"
     directory: "/website"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: website"]
 
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: docs"]
 
   - package-ecosystem: "npm"
     directory: "/sdks/node"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "npm"
     directory: "/sdks/react"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "npm"
     directory: "/sdks/vue"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "pip"
     directory: "/sdks/python"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "maven"
     directory: "/sdks/java"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "nuget"
     directory: "/sdks/dotnet"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "bundler"
     directory: "/sdks/ruby"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    labels: ["type: task", "area: sdks"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    labels: ["type: task", "area: infra"]

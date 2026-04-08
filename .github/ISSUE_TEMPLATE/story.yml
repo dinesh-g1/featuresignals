@@ -1,0 +1,70 @@
+name: Story
+description: A user-facing feature or improvement (part of an epic)
+labels: ["type: story"]
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Parent Epic
+      description: Link the parent epic issue (e.g., #45)
+      placeholder: "#"
+    validations:
+      required: false
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      description: Describe the feature from the user's perspective.
+      placeholder: "As a [role], I want [capability] so that [benefit]."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Specific, testable conditions that must be true when the story is complete.
+      placeholder: |
+        - [ ] User can select a data region during registration
+        - [ ] Selected region is stored in the organization record
+        - [ ] Region is displayed in the dashboard settings
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: Technical Notes
+      description: Implementation hints, affected files, API changes, migration needs.
+      placeholder: "Requires new column on organizations table. Impacts signup handler and onboarding flow."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the system is primarily affected?
+      multiple: true
+      options:
+        - "Server (Go backend)"
+        - "Dashboard (Next.js)"
+        - "SDKs"
+        - "Infrastructure"
+        - "Website"
+        - "Docs"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "Critical"
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true
