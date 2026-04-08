@@ -8,10 +8,13 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
+	"net"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/retry"
 )
 
 //go:embed templates/*.html
@@ -85,6 +88,11 @@ func NewSMTPMailer(host string, port int, user, pass, from, fromName string, log
 	}, nil
 }
 
+const (
+	smtpMaxRetries = 3
+	smtpDialTimeout = 10 * time.Second
+)
+
 func (m *SMTPMailer) Send(ctx context.Context, msg domain.EmailMessage) error {
 	html, err := m.renderer.Render(msg)
 	if err != nil {
@@ -103,24 +111,91 @@ func (m *SMTPMailer) Send(ctx context.Context, msg domain.EmailMessage) error {
 	unsubscribeURL := msg.Data["UnsubscribeURL"]
 	raw := m.buildMIME(fromName, fromEmail, msg.To, msg.Subject, html, unsubscribeURL, msg.ReplyTo)
 
+	var lastErr error
+	for attempt := 1; attempt <= smtpMaxRetries; attempt++ {
+		start := time.Now()
+		err := m.dialAndSend(ctx, fromEmail, msg.To, []byte(raw))
+		elapsed := time.Since(start)
+
+		if err == nil {
+			m.logger.Info("email sent",
+				"template", string(msg.Template),
+				"to", msg.To,
+				"from", fromEmail,
+				"duration_ms", elapsed.Milliseconds(),
+			)
+			return nil
+		}
+
+		lastErr = err
+
+		if attempt < smtpMaxRetries {
+			backoff := retry.JitteredBackoff(attempt, retry.DefaultBase, retry.DefaultFactor, retry.DefaultCap)
+			m.logger.Warn("smtp send retrying",
+				"template", string(msg.Template),
+				"to", msg.To,
+				"attempt", attempt,
+				"error", err,
+				"backoff_ms", backoff.Milliseconds(),
+			)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(backoff):
+			}
+		}
+	}
+
+	m.logger.Error("smtp send failed after retries",
+		"template", string(msg.Template),
+		"to", msg.To,
+		"from", fromEmail,
+		"attempts", smtpMaxRetries,
+		"error", lastErr,
+	)
+	return fmt.Errorf("smtp send: %w", lastErr)
+}
+
+func (m *SMTPMailer) dialAndSend(ctx context.Context, from, to string, msg []byte) error {
 	addr := fmt.Sprintf("%s:%d", m.host, m.port)
-	var auth smtp.Auth
+
+	dialer := &net.Dialer{Timeout: smtpDialTimeout}
+	conn, err := dialer.DialContext(ctx, "tcp", addr)
+	if err != nil {
+		return fmt.Errorf("smtp dial: %w", err)
+	}
+
+	client, err := smtp.NewClient(conn, m.host)
+	if err != nil {
+		conn.Close()
+		return fmt.Errorf("smtp client: %w", err)
+	}
+	defer client.Close()
+
 	if m.user != "" {
-		auth = smtp.PlainAuth("", m.user, m.pass, m.host)
+		if err := client.Auth(smtp.PlainAuth("", m.user, m.pass, m.host)); err != nil {
+			return fmt.Errorf("smtp auth: %w", err)
+		}
+	}
+	if err := client.Mail(from); err != nil {
+		return fmt.Errorf("smtp mail: %w", err)
+	}
+	if err := client.Rcpt(to); err != nil {
+		return fmt.Errorf("smtp rcpt: %w", err)
 	}
 
-	if err := smtp.SendMail(addr, auth, fromEmail, []string{msg.To}, []byte(raw)); err != nil {
-		m.logger.Error("smtp send failed",
-			"template", msg.Template,
-			"to", msg.To,
-			"from", fromEmail,
-			"error", err,
-		)
-		return fmt.Errorf("smtp send: %w", err)
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("smtp data: %w", err)
+	}
+	if _, err := w.Write(msg); err != nil {
+		return fmt.Errorf("smtp write: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("smtp data close: %w", err)
 	}
 
-	m.logger.Info("email sent", "template", string(msg.Template), "to", msg.To, "from", fromEmail)
-	return nil
+	return client.Quit()
 }
 
 func (m *SMTPMailer) SendBatch(ctx context.Context, msgs []domain.EmailMessage) error {

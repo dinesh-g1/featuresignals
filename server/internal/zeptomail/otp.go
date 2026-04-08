@@ -12,9 +12,11 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/featuresignals/server/internal/retry"
 )
 
-// OTPSender implements email.OTPSender by sending a pre-rendered HTML OTP
+// OTPSender implements domain.OTPSender by sending a pre-rendered HTML OTP
 // email through ZeptoMail's REST API (no provider-side template needed).
 type OTPSender struct {
 	token     string
@@ -96,7 +98,7 @@ func (s *OTPSender) SendOTP(ctx context.Context, toEmail, toName, otp string) er
 		}
 
 		if attempt < maxRetries {
-			backoff := jitteredBackoff(attempt)
+			backoff := retry.JitteredBackoff(attempt, retry.DefaultBase, retry.DefaultFactor, retry.DefaultCap)
 			s.logger.Warn("otp email retrying",
 				"to", toEmail,
 				"attempt", attempt,
@@ -161,9 +163,9 @@ func (s *OTPSender) doSend(ctx context.Context, to, toName, subject, html string
 	s.logger.Error("zeptomail api error",
 		"status_code", resp.StatusCode,
 		"raw_body", string(respBody),
-		"request_body", string(body),
 		"parsed_code", er.Error.Code,
 		"parsed_message", er.Error.Message,
+		"to", to,
 	)
 
 	return er.RequestID, resp.StatusCode, fmt.Errorf("zeptomail %d: %s (code=%s)", resp.StatusCode, er.Error.Message, er.Error.Code)

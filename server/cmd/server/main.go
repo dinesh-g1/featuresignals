@@ -171,7 +171,7 @@ func main() {
 	metricsCollector := metrics.NewCollector()
 
 	// Email provider — OTP sender + lifecycle mailer selected by EMAIL_PROVIDER
-	var otpSender email.OTPSender
+	var otpSender domain.OTPSender
 	var lifecycleMailer domain.Mailer
 
 	switch cfg.EmailProvider {
@@ -195,7 +195,7 @@ func main() {
 
 	case "smtp":
 		if cfg.SMTPHost != "" {
-			otpSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName)
+			otpSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
 			logger.Info("SMTP email OTP sender configured", "host", cfg.SMTPHost, "port", cfg.SMTPPort)
 			m, err := mailer.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
 			if err != nil {

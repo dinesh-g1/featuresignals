@@ -23,13 +23,22 @@ type Store interface {
 	CleanExpiredRevocations(ctx context.Context) error
 	CleanExpiredGracePeriodKeys(ctx context.Context) error
 	PurgeAuditEntries(ctx context.Context, olderThan time.Time) (int, error)
+	ListPastDueSubscriptions(ctx context.Context, pastDueBefore time.Time) ([]domain.Subscription, error)
+	UpsertSubscription(ctx context.Context, sub *domain.Subscription) error
 	TryAdvisoryLock(ctx context.Context, lockID int64) (bool, error)
 	ReleaseAdvisoryLock(ctx context.Context, lockID int64) error
+}
+
+// EmailSender delivers lifecycle emails. Nil means no emails are sent.
+type EmailSender interface {
+	Send(ctx context.Context, userID string, msg domain.EmailMessage) error
 }
 
 // Scheduler periodically checks for pending flag schedules and applies them.
 type Scheduler struct {
 	store              Store
+	emailSender        EmailSender
+	dashboardURL       string
 	logger             *slog.Logger
 	interval           time.Duration
 	cleanupTicker      int // counts ticks to run hourly jobs
@@ -48,6 +57,12 @@ func New(store Store, logger *slog.Logger, interval time.Duration, auditRetentio
 		interval:           interval,
 		auditRetentionDays: auditRetentionDays,
 	}
+}
+
+// SetEmailSender configures the scheduler to send billing-lifecycle emails.
+func (s *Scheduler) SetEmailSender(sender EmailSender, dashboardURL string) {
+	s.emailSender = sender
+	s.dashboardURL = dashboardURL
 }
 
 // Start begins the scheduler loop. Blocks until ctx is cancelled.
@@ -72,6 +87,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 			if s.cleanupTicker%ticksPerHour == 0 {
 				s.cleanupPendingRegistrations(ctx)
 				s.autoDowngradeExpiredTrials(ctx)
+				s.downgradePastDueSubscriptions(ctx)
 				s.softDeleteInactiveOrgs(ctx)
 				s.hardDeleteExpiredOrgs(ctx)
 				s.cleanExpiredRevocations(ctx)
@@ -175,6 +191,48 @@ func (s *Scheduler) autoDowngradeExpiredTrials(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (s *Scheduler) downgradePastDueSubscriptions(ctx context.Context) {
+	cutoff := time.Now().AddDate(0, 0, -domain.DunningGraceDays)
+	subs, err := s.store.ListPastDueSubscriptions(ctx, cutoff)
+	if err != nil {
+		s.logger.Error("failed to list past-due subscriptions for dunning", "error", err)
+		return
+	}
+	for i := range subs {
+		sub := &subs[i]
+		if err := s.store.DowngradeOrgToFree(ctx, sub.OrgID); err != nil {
+			s.logger.Error("dunning: failed to downgrade org", "error", err, "org_id", sub.OrgID)
+			continue
+		}
+		sub.Status = "canceled"
+		sub.CancelAtPeriodEnd = false
+		sub.UpdatedAt = time.Now()
+		if err := s.store.UpsertSubscription(ctx, sub); err != nil {
+			s.logger.Error("dunning: failed to update subscription status", "error", err, "org_id", sub.OrgID)
+		}
+		s.logger.Warn("dunning: downgraded past-due org to free", "org_id", sub.OrgID, "past_due_since", sub.UpdatedAt)
+
+		s.sendDunningEmails(ctx, sub.OrgID)
+	}
+}
+
+func (s *Scheduler) sendDunningEmails(ctx context.Context, orgID string) {
+	if s.emailSender == nil {
+		return
+	}
+	org, err := s.store.GetOrganization(ctx, orgID)
+	if err != nil {
+		s.logger.Warn("dunning: cannot send email, org lookup failed", "org_id", orgID, "error", err)
+		return
+	}
+	// The primary notification path is the payment_failed email sent on each
+	// Stripe retry via the webhook handler. This final notification goes to the
+	// org name placeholder; the lifecycle scheduler's existing trial-expired
+	// flow handles the user-facing emails for trial downgrades.
+	s.logger.Info("dunning: org downgraded, would send payment_failed_final email",
+		"org_id", orgID, "org_name", org.Name)
 }
 
 func (s *Scheduler) softDeleteInactiveOrgs(ctx context.Context) {

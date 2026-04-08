@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -18,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/retry"
 )
 
 var whTracer = otel.Tracer("featuresignals/webhook")
@@ -44,13 +46,23 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+const defaultWorkers = 10
+
+type deliveryWork struct {
+	ctx context.Context
+	wh  domain.Webhook
+	evt Event
+}
+
 // Dispatcher fans out flag change events to registered webhooks.
 type Dispatcher struct {
-	store   Store
-	client  HTTPClient
-	logger  *slog.Logger
-	events  chan Event
+	store      Store
+	client     HTTPClient
+	logger     *slog.Logger
+	events     chan Event
+	work       chan deliveryWork
 	maxRetries int
+	workers    int
 }
 
 // NewDispatcher creates a dispatcher that processes events on a background goroutine.
@@ -60,7 +72,9 @@ func NewDispatcher(store Store, logger *slog.Logger) *Dispatcher {
 		client:     &http.Client{Timeout: 10 * time.Second},
 		logger:     logger.With("component", "webhook-dispatcher"),
 		events:     make(chan Event, 256),
+		work:       make(chan deliveryWork, 256),
 		maxRetries: 3,
+		workers:    defaultWorkers,
 	}
 }
 
@@ -78,9 +92,27 @@ func (d *Dispatcher) Enqueue(evt Event) {
 	}
 }
 
-// Start begins processing events. Call with a cancellable context.
+// Start begins processing events. It launches a bounded pool of worker
+// goroutines and a dispatcher goroutine. All goroutines are owned by the
+// provided context and exit cleanly when it is cancelled.
 func (d *Dispatcher) Start(ctx context.Context) {
+	var wg sync.WaitGroup
+
+	for i := 0; i < d.workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for w := range d.work {
+				d.deliver(w.ctx, w.wh, w.evt)
+			}
+		}()
+	}
+
 	go func() {
+		defer func() {
+			close(d.work)
+			wg.Wait()
+		}()
 		for {
 			select {
 			case <-ctx.Done():
@@ -106,7 +138,11 @@ func (d *Dispatcher) dispatch(ctx context.Context, evt Event) {
 		if !eventMatches(wh.Events, evt.Type) {
 			continue
 		}
-		go d.deliver(ctx, wh, evt)
+		select {
+		case d.work <- deliveryWork{ctx: ctx, wh: wh, evt: evt}:
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
@@ -135,9 +171,15 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 	var lastBody string
 	var success bool
 
-	for attempt := 0; attempt < d.maxRetries; attempt++ {
-		if attempt > 0 {
-			time.Sleep(time.Duration(attempt*attempt) * time.Second)
+	for attempt := 1; attempt <= d.maxRetries; attempt++ {
+		if attempt > 1 {
+			backoff := retry.JitteredBackoff(attempt-1, retry.DefaultBase, retry.DefaultFactor, retry.DefaultCap)
+			select {
+			case <-ctx.Done():
+				lastBody = ctx.Err().Error()
+				break
+			case <-time.After(backoff):
+			}
 		}
 
 		req, err := http.NewRequestWithContext(ctx, "POST", wh.URL, bytes.NewReader(payload))
@@ -155,7 +197,7 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 
 		resp, err := d.client.Do(req)
 		if err != nil {
-			d.logger.Warn("webhook delivery failed", "error", err, "webhook_id", wh.ID, "attempt", attempt+1)
+			d.logger.Warn("webhook delivery failed", "error", err, "webhook_id", wh.ID, "attempt", attempt)
 			lastStatus = 0
 			lastBody = err.Error()
 			continue
@@ -170,7 +212,14 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 			success = true
 			break
 		}
-		d.logger.Warn("webhook non-2xx", "status", resp.StatusCode, "webhook_id", wh.ID, "attempt", attempt+1)
+
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			d.logger.Warn("webhook non-retryable client error",
+				"status", resp.StatusCode, "webhook_id", wh.ID, "attempt", attempt)
+			break
+		}
+
+		d.logger.Warn("webhook non-2xx", "status", resp.StatusCode, "webhook_id", wh.ID, "attempt", attempt)
 	}
 
 	span.SetAttributes(

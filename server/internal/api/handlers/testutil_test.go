@@ -898,6 +898,10 @@ func (m *mockStore) UpdateOrgPaymentGateway(ctx context.Context, orgID, gateway 
 	return nil
 }
 
+func (m *mockStore) ListPastDueSubscriptions(_ context.Context, _ time.Time) ([]domain.Subscription, error) {
+	return nil, nil
+}
+
 func (m *mockStore) GetOnboardingState(ctx context.Context, orgID string) (*domain.OnboardingState, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

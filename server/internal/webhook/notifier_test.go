@@ -35,7 +35,7 @@ func TestNotifyFlagChange_EnqueuesEvent(t *testing.T) {
 	resolver := &mockOrgResolver{orgID: "org-123"}
 	n := NewNotifier(d, resolver)
 
-	n.NotifyFlagChange("env-1", "flag-1", "updated")
+	n.NotifyFlagChange(context.Background(), "env-1", "flag-1", "updated")
 
 	select {
 	case evt := <-d.events:
@@ -62,7 +62,7 @@ func TestNotifyFlagChange_ResolverFailure(t *testing.T) {
 	resolver := &mockOrgResolver{err: fmt.Errorf("not found")}
 	n := NewNotifier(d, resolver)
 
-	n.NotifyFlagChange("env-1", "flag-1", "created")
+	n.NotifyFlagChange(context.Background(), "env-1", "flag-1", "created")
 
 	select {
 	case evt := <-d.events:
@@ -82,7 +82,7 @@ func TestNotifyFlagChange_NilResolver(t *testing.T) {
 	d := NewDispatcher(&notifierMockStore{}, logger)
 	n := NewNotifier(d, nil)
 
-	n.NotifyFlagChange("env-1", "flag-1", "deleted")
+	n.NotifyFlagChange(context.Background(), "env-1", "flag-1", "deleted")
 
 	select {
 	case evt := <-d.events:

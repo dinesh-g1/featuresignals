@@ -102,3 +102,8 @@ func GetPlanDefaults() map[string]PlanLimits {
 }
 
 var PlanDefaults = GetPlanDefaults()
+
+// DunningGraceDays is how long a subscription can remain past_due before
+// the system automatically downgrades the org to the Free plan. Stripe
+// handles its own retry schedule; this is a safety net.
+const DunningGraceDays = 14

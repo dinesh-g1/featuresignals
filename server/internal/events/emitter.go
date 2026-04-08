@@ -7,12 +7,16 @@ import (
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/retry"
 )
 
 const (
-	defaultBufferSize = 256
-	defaultBatchSize  = 50
-	defaultFlushEvery = 5 * time.Second
+	defaultBufferSize  = 256
+	defaultBatchSize   = 50
+	defaultFlushEvery  = 5 * time.Second
+	flushMaxRetries    = 3
+	flushRetryBase     = 500 * time.Millisecond
+	flushRetryCap      = 5 * time.Second
 )
 
 // AsyncEmitter buffers product events in a channel and flushes them to the
@@ -109,15 +113,35 @@ func (e *AsyncEmitter) run() {
 		if len(batch) == 0 {
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
-		if err := e.store.InsertProductEvents(ctx, batch); err != nil {
-			e.logger.Error("failed to flush product events",
-				"error", err,
-				"count", len(batch),
-			)
+		var lastErr error
+		for attempt := 1; attempt <= flushMaxRetries; attempt++ {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			lastErr = e.store.InsertProductEvents(ctx, batch)
+			cancel()
+
+			if lastErr == nil {
+				batch = batch[:0]
+				return
+			}
+
+			if attempt < flushMaxRetries {
+				backoff := retry.JitteredBackoff(attempt, flushRetryBase, retry.DefaultFactor, flushRetryCap)
+				e.logger.Warn("flush retrying",
+					"attempt", attempt,
+					"count", len(batch),
+					"error", lastErr,
+					"backoff_ms", backoff.Milliseconds(),
+				)
+				time.Sleep(backoff)
+			}
 		}
+
+		e.logger.Error("failed to flush product events after retries",
+			"error", lastErr,
+			"count", len(batch),
+			"attempts", flushMaxRetries,
+		)
 		batch = batch[:0]
 	}
 

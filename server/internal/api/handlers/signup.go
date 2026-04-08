@@ -11,7 +11,6 @@ import (
 	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
@@ -32,7 +31,7 @@ type signupStore interface {
 type SignupHandler struct {
 	store           signupStore
 	jwtMgr          auth.TokenManager
-	otpSender       email.OTPSender
+	otpSender       domain.OTPSender
 	emitter         domain.EventEmitter
 	lifecycle       LifecycleSender
 	internalChecker dto.InternalChecker
@@ -41,7 +40,7 @@ type SignupHandler struct {
 func NewSignupHandler(
 	store signupStore,
 	jwtMgr auth.TokenManager,
-	otpSender email.OTPSender,
+	otpSender domain.OTPSender,
 	emitter domain.EventEmitter,
 	lifecycle LifecycleSender,
 	internalChecker dto.InternalChecker,

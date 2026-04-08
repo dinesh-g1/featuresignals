@@ -14,7 +14,6 @@ import (
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/payment"
@@ -42,7 +41,7 @@ func NewRouter(
 	corsOrigins []string,
 	metricsCollector *metrics.Collector,
 	billing BillingConfig,
-	otpSender email.OTPSender,
+	otpSender domain.OTPSender,
 	appBaseURL string,
 	dashboardURL string,
 	statusHandler *status.Handler,

@@ -131,3 +131,10 @@ type Mailer interface {
 	Send(ctx context.Context, msg EmailMessage) error
 	SendBatch(ctx context.Context, msgs []EmailMessage) error
 }
+
+// OTPSender is the port for sending OTP verification emails during signup.
+// Separated from Mailer because OTP delivery is a distinct concern with its
+// own template, retry, and rate-limiting requirements.
+type OTPSender interface {
+	SendOTP(ctx context.Context, toEmail, toName, otp string) error
+}

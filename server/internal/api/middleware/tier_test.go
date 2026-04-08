@@ -190,6 +190,9 @@ func (s *tierMockStore) GetPaymentEventByExternalID(context.Context, string, str
 	return nil, fmt.Errorf("not found")
 }
 func (s *tierMockStore) UpdateOrgPaymentGateway(context.Context, string, string) error { return nil }
+func (s *tierMockStore) ListPastDueSubscriptions(context.Context, time.Time) ([]domain.Subscription, error) {
+	return nil, nil
+}
 func (s *tierMockStore) GetOnboardingState(context.Context, string) (*domain.OnboardingState, error) {
 	return nil, fmt.Errorf("not found")
 }

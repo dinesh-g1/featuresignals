@@ -173,7 +173,7 @@ function SidebarContent() {
         </div>
       </nav>
 
-      {organization?.plan === "free" && (
+      {(organization?.plan === "free" || organization?.plan === "trial") && (
         <div className="border-t border-slate-100 px-2.5 py-2">
           <Link
             href="/settings/billing"
@@ -181,8 +181,12 @@ function SidebarContent() {
           >
             <Sparkles className="h-4 w-4 text-indigo-600" strokeWidth={1.5} />
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-indigo-700">Upgrade to Pro</p>
-              <p className="text-[10px] text-indigo-500/80">Unlock unlimited flags</p>
+              <p className="text-xs font-semibold text-indigo-700">
+                {organization.plan === "trial" ? "Subscribe to Pro" : "Upgrade to Pro"}
+              </p>
+              <p className="text-[10px] text-indigo-500/80">
+                {organization.plan === "trial" ? "Keep Pro features after trial" : "Unlock unlimited flags"}
+              </p>
             </div>
           </Link>
         </div>

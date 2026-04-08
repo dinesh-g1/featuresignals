@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/featuresignals/server/internal/email"
+	"github.com/featuresignals/server/internal/domain"
 )
 
 func TestNewOTPSender_Validation(t *testing.T) {
@@ -116,7 +116,7 @@ func TestOTPSender_SendOTP_RetriesOn5xx(t *testing.T) {
 }
 
 func TestOTPSender_InterfaceCompliance(t *testing.T) {
-	var _ email.OTPSender = (*OTPSender)(nil)
+	var _ domain.OTPSender = (*OTPSender)(nil)
 }
 
 func TestRenderOTPHTML(t *testing.T) {
