@@ -12,7 +12,7 @@ const Switch = React.forwardRef<
     ref={ref}
     className={cn(
       "peer inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-slate-300",
+      "data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-emerald-500 data-[state=checked]:to-emerald-600 data-[state=checked]:shadow-sm data-[state=checked]:shadow-emerald-500/20 data-[state=unchecked]:bg-slate-300",
       size === "sm" ? "h-5 w-9" : "h-7 w-12",
       className,
     )}

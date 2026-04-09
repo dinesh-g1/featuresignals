@@ -21,7 +21,7 @@ function UpgradeCard() {
   if (plan === "trial" && trialExpiresAt) {
     const daysLeft = Math.max(0, Math.ceil((new Date(trialExpiresAt).getTime() - Date.now()) / 86400000));
     return (
-      <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-5">
+      <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50 via-purple-50/80 to-violet-50 p-5 shadow-md shadow-indigo-100/50">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100">
@@ -56,7 +56,7 @@ function UpgradeCard() {
   }
 
   return (
-    <Card className="border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30 p-5">
+    <Card className="border-slate-200/60 bg-gradient-to-r from-slate-50 via-white to-indigo-50/40 p-5 shadow-md shadow-slate-100/50">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
@@ -135,7 +135,7 @@ export default function DashboardPage() {
 
       <UpgradeCard />
 
-      <Card className="hover:shadow-lg hover:border-slate-300">
+      <Card className="transition-all duration-300 hover:shadow-lg hover:border-slate-300/80">
         <CardHeader>
           <h2 className="font-semibold text-slate-900">Recent Activity</h2>
         </CardHeader>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
             />
           ) : (
             audit.map((entry) => (
-              <div key={entry.id} className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div key={entry.id} className="flex flex-col gap-1 px-4 py-3 transition-all duration-150 hover:bg-indigo-50/40 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="primary">{entry.action}</Badge>
                   <span className="text-sm text-slate-600">{entry.resource_type}</span>

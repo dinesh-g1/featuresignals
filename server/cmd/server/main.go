@@ -60,14 +60,6 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
 	slog.SetDefault(logger)
 
-	// Override default region endpoints with config-driven values so that
-	// status probes, the proxy layer, and any other consumer share the
-	// same resolved URLs.
-	if len(cfg.RegionEndpoints) > 0 {
-		domain.OverrideEndpoints(cfg.RegionEndpoints)
-		logger.Info("region endpoints overridden from config", "endpoints", cfg.RegionEndpoints)
-	}
-
 	// OpenTelemetry (async, non-blocking -- safe to init before anything else)
 	var otelShutdown func(context.Context) error
 	if cfg.OTELEnabled && cfg.OTELEndpoint != "" {
@@ -267,14 +259,13 @@ func main() {
 	go runStatusRecorder(statusRecorderCtx, store, statusH, logger)
 
 	// Router
-	logger.Info("CORS allowed origins", "origins", cfg.CORSOrigins)
 	regionsEnabled := !cfg.IsOnPrem()
 
-	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, cfg.CORSOrigins, metricsCollector, api.BillingConfig{
+	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, cfg)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail)
 
 	// Server
 	srv := &http.Server{

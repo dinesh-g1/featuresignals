@@ -244,7 +244,7 @@ export default function FlagsPage() {
       <UpgradeNudge context="projects" />
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6">
+        <form onSubmit={handleCreate} className="rounded-xl border border-indigo-200/60 bg-white p-4 space-y-4 shadow-md shadow-indigo-100/30 ring-1 ring-indigo-100/60 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Key</Label>
@@ -350,7 +350,7 @@ export default function FlagsPage() {
       )}
 
       {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/60 p-3 ring-1 ring-slate-100/80 backdrop-blur-sm sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:w-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <Input
@@ -385,7 +385,7 @@ export default function FlagsPage() {
           <button
             key={key}
             onClick={() => handleSort(key)}
-            className={`rounded-lg px-2.5 py-1 transition-all duration-150 ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium shadow-sm" : "hover:bg-slate-100"}`}
+            className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium shadow-sm ring-1 ring-indigo-100/60" : "hover:bg-slate-100"}`}
           >
             {key.replace(/_/g, " ")}
             {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
@@ -407,7 +407,7 @@ export default function FlagsPage() {
             filtered.map((flag) => {
               const st = stateMap.get(flag.key);
               return (
-                <div key={flag.id} className="px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6 sm:py-4">
+                <div key={flag.id} className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-indigo-50/40 sm:px-6 sm:py-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <Link href={`/flags/${flag.key}`} className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">

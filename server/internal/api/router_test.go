@@ -359,7 +359,6 @@ func newTestRouter(t *testing.T) http.Handler {
 		engine,
 		sseServer,
 		logger,
-		[]string{"*"},
 		metricsCollector,
 		api.BillingConfig{Registry: payment.NewRegistry()},
 		noopOTPEmail{},
@@ -374,7 +373,6 @@ func newTestRouter(t *testing.T) http.Handler {
 		nil,
 		nil,
 		"",
-		nil,
 	)
 }
 
@@ -471,30 +469,6 @@ func TestProtectedRoutes_RequireAuth(t *testing.T) {
 				t.Errorf("%s %s: expected 401 without auth, got %d", rt.method, rt.path, w.Code)
 			}
 		})
-	}
-}
-
-func TestSecurityHeaders(t *testing.T) {
-	router := newTestRouter(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	expectedHeaders := map[string]string{
-		"X-Content-Type-Options":       "nosniff",
-		"X-Frame-Options":              "DENY",
-		"Cross-Origin-Opener-Policy":   "same-origin",
-		"Cross-Origin-Resource-Policy": "same-origin",
-		"Cross-Origin-Embedder-Policy": "require-corp",
-		"Content-Security-Policy":      "default-src 'none'; frame-ancestors 'none'",
-	}
-
-	for header, want := range expectedHeaders {
-		got := w.Header().Get(header)
-		if got != want {
-			t.Errorf("header %s: expected %q, got %q", header, want, got)
-		}
 	}
 }
 

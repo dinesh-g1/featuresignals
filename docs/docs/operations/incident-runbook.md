@@ -95,7 +95,7 @@ $COMPOSE logs --tail=100 caddy server postgres
 
 1. **DNS / traffic steering:** At your DNS or CDN (e.g. geo records or health-checked failover), point the failing region’s hostnames to a healthy region’s edge **only if** that region can legally and technically serve those users (latency, data residency, org `data_region` — see product policy). Otherwise keep DNS as-is and restore the region.
 2. **Temporary redirect (example):** Lower TTL on affected names (e.g. `api.eu.…`) ahead of changes; swap A/AAAA to a standby IP or to US edge if approved.
-3. **Global router config:** The IN (primary) server's `REGION_ENDPOINTS` env var maps region codes to API endpoints. If a regional API DNS changes, update this variable and restart the API server on IN. The Flag Engine does not need redeployment since all requests go through the single `NEXT_PUBLIC_API_URL`.
+3. **GeoDNS failover:** With Cloudflare Load Balancing, unhealthy regions are automatically steered away from via health checks. No server-side configuration change is needed — Cloudflare handles failover at the DNS layer.
 
 **Bring region back**
 

@@ -7,6 +7,13 @@ vi.mock("@/lib/api", () => ({
     initiateSignup: vi.fn(),
     completeSignup: vi.fn(),
     resendSignupOTP: vi.fn(),
+    listRegions: vi.fn().mockResolvedValue({
+      regions: [
+        { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}", app_endpoint: "https://app.featuresignals.com" },
+        { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}", app_endpoint: "https://app.us.featuresignals.com" },
+        { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}", app_endpoint: "https://app.eu.featuresignals.com" },
+      ],
+    }),
   },
 }));
 
@@ -174,12 +181,11 @@ describe("RegisterPage", () => {
     await waitFor(() => {
       expect(api.completeSignup).toHaveBeenCalledWith(
         { email: "test@example.com", otp: "123456" },
-        "in",
       );
     });
   });
 
-  it("calls completeSignup with 'us' region when United States is selected", async () => {
+  it("calls completeSignup without region argument when United States is selected", async () => {
     vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
     vi.mocked(api.completeSignup).mockResolvedValue({
       tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
@@ -211,7 +217,6 @@ describe("RegisterPage", () => {
     await waitFor(() => {
       expect(api.completeSignup).toHaveBeenCalledWith(
         { email: "test@example.com", otp: "654321" },
-        "us",
       );
     });
   });
