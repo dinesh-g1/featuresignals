@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { appUrl } from "@/lib/urls";
 import {
   Cloud,
   Code,
@@ -49,7 +50,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="https://app.featuresignals.com/register"
+                href={appUrl.register}
                 className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
               >
                 Start Free — No Credit Card
@@ -211,7 +212,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="https://app.featuresignals.com/register"
+                href={appUrl.register}
                 className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
               >
                 Start Free — No Credit Card

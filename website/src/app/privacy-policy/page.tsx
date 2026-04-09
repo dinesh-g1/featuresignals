@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
           information when you visit{" "}
           <a href="https://featuresignals.com">featuresignals.com</a>, use our
           hosted service at{" "}
-          <a href="https://app.featuresignals.com">app.featuresignals.com</a>,
+          <a href="https://app.featuresignals.com">app.featuresignals.com</a>{" "}(or regional equivalent),
           or otherwise interact with our websites and software. We follow
           conventions typical of Indian and international B2B SaaS providers:
           we collect only what we need to run the service, we use processors

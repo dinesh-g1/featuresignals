@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import { ChevronDown, ExternalLink, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { appUrl } from "@/lib/urls";
 import {
   platformItems,
   learnMoreItems,
@@ -181,13 +182,13 @@ export function Header() {
 
         <div className="hidden items-center gap-3 lg:flex">
           <a
-            href="https://app.featuresignals.com/login"
+            href={appUrl.login}
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-150 hover:text-slate-900"
           >
             Log in
           </a>
           <a
-            href="https://app.featuresignals.com/register"
+            href={appUrl.register}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-600/20 transition-all duration-150 hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-600/25 active:scale-[0.98]"
           >
             Start Free

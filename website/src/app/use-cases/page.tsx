@@ -1,6 +1,7 @@
 "use client";
 
 import { CodeTabs } from "@/components/code-tabs";
+import { appUrl } from "@/lib/urls";
 import { SectionReveal } from "@/components/section-reveal";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -470,7 +471,7 @@ export default function UseCasesPage() {
                     )}
                     <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
                       <a
-                        href="https://app.featuresignals.com/register"
+                        href={appUrl.register}
                         className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
                       >
                         Try this workflow free &rarr;
@@ -504,13 +505,13 @@ export default function UseCasesPage() {
           </p>
           <div className="mt-6 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <a
-              href="https://app.featuresignals.com/register"
+              href={appUrl.register}
               className="w-full rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md sm:w-auto"
             >
               Start Free Trial
             </a>
             <a
-              href="https://app.featuresignals.com/register"
+              href={appUrl.register}
               className="w-full rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
             >
               Sign Up Free

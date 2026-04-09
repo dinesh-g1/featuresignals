@@ -6,6 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X, ChevronDown, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { appUrl } from "@/lib/urls";
 import {
   platformItems,
   learnMoreItems,
@@ -182,13 +183,13 @@ export function MobileNav({ pathname }: { pathname: string }) {
 
                 <div className="border-t border-slate-100 px-4 py-4 space-y-3">
                   <a
-                    href="https://app.featuresignals.com/login"
+                    href={appUrl.login}
                     className="block rounded-lg border border-slate-200 px-4 py-3 text-center text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
                   >
                     Log in
                   </a>
                   <a
-                    href="https://app.featuresignals.com/register"
+                    href={appUrl.register}
                     className="block rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-medium text-white shadow-sm shadow-indigo-600/20 transition-all hover:bg-indigo-700"
                   >
                     Start Free

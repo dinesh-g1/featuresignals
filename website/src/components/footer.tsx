@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { appUrl } from "@/lib/urls";
 import { ComplianceBadges } from "./compliance-badges";
 
 const footerSections = [
@@ -14,9 +15,9 @@ const footerSections = [
   {
     title: "Get Started",
     links: [
-      { label: "Start Free Trial", href: "https://app.featuresignals.com/register", highlight: true },
-      { label: "Log in", href: "https://app.featuresignals.com/login" },
-      { label: "Flag Engine", href: "https://app.featuresignals.com" },
+      { label: "Start Free Trial", href: appUrl.register, highlight: true },
+      { label: "Log in", href: appUrl.login },
+      { label: "Flag Engine", href: appUrl.home },
       { label: "Contact Sales", href: "/contact" },
     ],
   },

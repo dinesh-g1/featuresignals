@@ -1,7 +1,13 @@
 "use client";
 
 import { SectionReveal } from "@/components/section-reveal";
+import { appUrl } from "@/lib/urls";
 import pricingData from "@/data/pricing.json";
+
+function resolveCtaUrl(path: string): string {
+  if (path.startsWith("/register")) return appUrl.resolve(path);
+  return path;
+}
 import { Check, Minus, Play } from "lucide-react";
 import { useState } from "react";
 
@@ -48,7 +54,7 @@ export default function PricingPage() {
           <p className="mt-3 text-sm text-slate-400">
             Not sure yet?{" "}
             <a
-              href="https://app.featuresignals.com/register"
+              href={appUrl.register}
               className="font-medium text-indigo-600 underline decoration-indigo-300 hover:text-indigo-700"
             >
               Start a free trial
@@ -84,7 +90,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <a
-                href={free.cta_url}
+                href={resolveCtaUrl(free.cta_url)}
                 className="mt-8 block rounded-lg border border-slate-300 py-3 text-center text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50"
               >
                 {free.cta_label}
@@ -119,7 +125,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <a
-                href={pro.cta_url}
+                href={resolveCtaUrl(pro.cta_url)}
                 className="mt-8 block rounded-lg bg-indigo-600 py-3 text-center text-sm font-semibold text-white transition-all hover:bg-indigo-700 hover:shadow-md"
               >
                 {pro.cta_label}
@@ -149,7 +155,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <a
-                href={enterprise.cta_url}
+                href={resolveCtaUrl(enterprise.cta_url)}
                 className="mt-8 block rounded-lg border border-slate-300 py-3 text-center text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50"
               >
                 {enterprise.cta_label}
@@ -186,7 +192,7 @@ export default function PricingPage() {
         <div className="mt-12 text-center">
           <p className="text-sm text-slate-500">Want to explore first?</p>
           <a
-            href="https://app.featuresignals.com/register"
+            href={appUrl.register}
             className="mt-2 inline-flex items-center gap-2 rounded-lg bg-indigo-50 px-5 py-2.5 text-sm font-semibold text-indigo-700 ring-1 ring-indigo-100 transition-all hover:bg-indigo-100 hover:ring-indigo-200"
           >
             <Play className="h-4 w-4" strokeWidth={1.5} aria-hidden />
@@ -360,7 +366,7 @@ export default function PricingPage() {
                 <p className="mt-2 text-sm text-slate-600">
                   Absolutely.{" "}
                   <a
-                    href="https://app.featuresignals.com/register"
+                    href={appUrl.register}
                     className="text-indigo-600 underline hover:text-indigo-700"
                   >
                     Start a free trial
@@ -437,7 +443,7 @@ export default function PricingPage() {
           </p>
           <div className="mt-6 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <a
-              href="https://app.featuresignals.com/register"
+              href={appUrl.register}
               className="inline-block w-full rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md sm:w-auto"
             >
               Start Free — No Credit Card

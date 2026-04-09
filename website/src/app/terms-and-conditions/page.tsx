@@ -22,7 +22,7 @@ export default function TermsAndConditionsPage() {
           and use of the FeatureSignals website at{" "}
           <a href="https://featuresignals.com">featuresignals.com</a>, the
           hosted service at{" "}
-          <a href="https://app.featuresignals.com">app.featuresignals.com</a>,
+          <a href="https://app.featuresignals.com">app.featuresignals.com</a>{" "}(or regional equivalent),
           and any related APIs, SDKs, documentation, and support (collectively,
           the &quot;Service&quot;). By accessing or using the Service, you agree
           to be bound by these Terms. If you do not agree, please do not use the

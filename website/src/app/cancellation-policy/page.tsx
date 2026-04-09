@@ -29,7 +29,7 @@ export default function CancellationPolicyPage() {
           <li>
             Through the <strong>billing settings</strong> in your FeatureSignals
             dashboard at{" "}
-            <a href="https://app.featuresignals.com">app.featuresignals.com</a>.
+            <a href="https://app.featuresignals.com">app.featuresignals.com</a>{" "}(or regional equivalent).
           </li>
           <li>
             By emailing{" "}

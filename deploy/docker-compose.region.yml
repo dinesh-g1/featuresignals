@@ -134,6 +134,8 @@ services:
     build:
       context: ./website
       dockerfile: ../deploy/docker/Dockerfile.website
+      args:
+        NEXT_PUBLIC_DASHBOARD_URL: https://${DOMAIN_APP}
     volumes:
       - website-dist:/srv/website
 
