@@ -1,6 +1,14 @@
+---
+description: "FeatureSignals ISO 27701 Privacy Information Management System extending ISO 27001 with privacy controls."
+---
+
 # ISO 27701 — Privacy Information Management System
 
 _Last updated: April 2026_
+
+:::info
+FeatureSignals has **not** achieved ISO/IEC 27701 certification. This document maps our privacy practices to ISO 27701-style controls for transparency; it is not evidence of a certified PIMS.
+:::
 
 ISO 27701 extends ISO 27001 with privacy-specific controls to establish a Privacy Information Management System (PIMS). This document describes FeatureSignals' alignment with ISO 27701 requirements.
 
@@ -79,5 +87,5 @@ FeatureSignals incorporates privacy by design principles:
 | Data subject rights | Implemented (GDPR + CCPA) | Extend as needed |
 | Privacy impact assessment | Process defined | Per-feature assessment |
 | Sub-processor management | List published | Notification workflow |
-| International transfer | SCCs + DPF documented | Update per regulatory changes |
+| International transfer | SCCs documented; EU-U.S. DPF not claimed for FeatureSignals | Update per regulatory changes |
 | ISO 27701 certification | Controls mapped | Audit when ISO 27001 certified |

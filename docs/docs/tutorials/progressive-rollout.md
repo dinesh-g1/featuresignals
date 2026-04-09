@@ -1,6 +1,7 @@
 ---
 title: "Progressive Rollout: 10% → 50% → 100%"
 sidebar_label: "Progressive Rollout"
+description: "Tutorial: progressively roll out a feature to users using percentage-based targeting in FeatureSignals."
 ---
 
 # Progressive Rollout: 10% → 50% → 100%

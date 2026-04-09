@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Implementation Patterns
+description: "Best practices and code patterns for implementing feature flags in your application."
 ---
 
 # Implementation Patterns

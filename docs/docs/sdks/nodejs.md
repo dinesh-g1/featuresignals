@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Node.js SDK
+description: "FeatureSignals Node.js SDK — installation, TypeScript support, polling, SSE, and OpenFeature provider."
 ---
 
 # Node.js SDK
@@ -48,7 +49,7 @@ const client = FeatureSignals.init('fs_srv_your_api_key', {
 
 ```typescript
 const client = new FeatureSignalsClient('fs_srv_your_api_key', {
-  envKey: 'production',              // Required: environment slug
+  envKey: 'production',              // Required: environment key
   baseURL: 'https://api.featuresignals.com', // API server URL; for self-hosted, use your own API URL
   pollingIntervalMs: 30000,          // Polling interval in ms
   streaming: false,                  // Use SSE instead of polling
@@ -62,7 +63,7 @@ const client = new FeatureSignalsClient('fs_srv_your_api_key', {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `envKey` | `string` | (required) | Environment slug |
+| `envKey` | `string` | (required) | Environment key |
 | `baseURL` | `string` | `https://api.featuresignals.com` | API server URL |
 | `pollingIntervalMs` | `number` | `30000` | Refresh interval (ms) |
 | `streaming` | `boolean` | `false` | Enable SSE streaming |

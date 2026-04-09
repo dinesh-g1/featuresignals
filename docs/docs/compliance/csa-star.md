@@ -1,6 +1,14 @@
+---
+description: "FeatureSignals CSA STAR self-assessment mapping controls to Cloud Controls Matrix v4 domains."
+---
+
 # CSA STAR Self-Assessment
 
 _Last updated: April 2026_
+
+:::info
+We have **not** completed CSA STAR Level 2 (third-party attestation) or registry certification. This page is an internal mapping to the CCM v4 for transparency; STAR certification remains **planned** (see Next Steps).
+:::
 
 This document provides FeatureSignals' self-assessment against the Cloud Security Alliance (CSA) Cloud Controls Matrix (CCM) v4.
 

@@ -1,3 +1,7 @@
+---
+description: "Deploy FeatureSignals on-premises with automated setup scripts, backup, and monitoring."
+---
+
 # On-Premises Deployment Guide
 
 This guide covers deploying FeatureSignals on your own infrastructure with a commercial license.
@@ -71,7 +75,7 @@ CORS_ORIGIN=https://flags.yourcompany.com
 LICENSE_KEY=<your-license-key>
 LICENSE_PUBLIC_KEY_PATH=/etc/featuresignals/license-public.pem
 
-# Dashboard
+# Flag Engine
 NEXT_PUBLIC_API_URL=https://api.flags.yourcompany.com
 ```
 

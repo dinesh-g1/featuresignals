@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Self-Hosting
+description: "Self-host FeatureSignals on your own infrastructure with full control over data and configuration."
 ---
 
 # Self-Hosting Guide
@@ -18,7 +19,7 @@ Run FeatureSignals on your own infrastructure for full control over your data an
 ### Recommended (Production)
 
 - **API Server**: 2+ instances behind a load balancer
-- **Dashboard**: 1 instance (or static hosting)
+- **Flag Engine**: 1 instance (or static hosting)
 - **PostgreSQL**: Managed or self-hosted with backups
 - **Relay Proxy**: 1+ per region (optional)
 
@@ -64,7 +65,7 @@ flags.yourdomain.com {
 Deploy using standard Kubernetes manifests or Helm charts. Each component runs as a separate Deployment:
 
 - `featuresignals-server` — API server (2+ replicas)
-- `featuresignals-dashboard` — Dashboard (1 replica)
+- `featuresignals-dashboard` — Flag Engine (1 replica)
 - `featuresignals-relay` — Relay proxy (per region)
 - PostgreSQL via operator or managed service
 
@@ -132,7 +133,7 @@ Set up monitoring with:
 - [ ] Set a strong `JWT_SECRET` (not the default)
 - [ ] Use strong PostgreSQL passwords
 - [ ] Enable SSL/TLS (via Caddy or your reverse proxy)
-- [ ] Restrict `CORS_ORIGIN` to your dashboard domain
+- [ ] Restrict `CORS_ORIGIN` to your Flag Engine domain
 - [ ] Keep API keys secure — rotate regularly
 - [ ] Enable PostgreSQL SSL (`sslmode=require`)
 - [ ] Set up database backups

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 7
 title: Prerequisites
+description: "Define flag dependencies with prerequisites so flags only evaluate when required conditions are met."
 ---
 
 # Prerequisite Flags
@@ -12,7 +13,7 @@ Prerequisites let you create **flag dependencies** — a flag will only evaluate
 You're building a multi-step feature rollout:
 1. `new-api-v2` — The new API must be enabled first
 2. `new-dashboard` — Depends on the new API
-3. `new-dashboard-analytics` — Depends on the new dashboard
+3. `new-dashboard-analytics` — Depends on the `new-dashboard` flag
 
 If `new-api-v2` is disabled, both `new-dashboard` and `new-dashboard-analytics` automatically return their default values.
 

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: Flag State
+description: "FeatureSignals Flag State API — manage per-environment flag behavior including targeting rules and rollouts."
 ---
 
 # Flag State API

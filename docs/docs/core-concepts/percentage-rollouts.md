@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Percentage Rollouts
+description: "Gradually roll out features to a percentage of users with consistent hashing for deterministic assignment."
 ---
 
 # Percentage Rollouts

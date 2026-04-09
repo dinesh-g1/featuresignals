@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api-playground
+
+Sitemap: https://docs.featuresignals.com/sitemap.xml

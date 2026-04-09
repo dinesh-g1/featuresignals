@@ -1,6 +1,7 @@
 ---
 sidebar_position: 8
 title: Vue SDK
+description: "FeatureSignals Vue SDK — plugin setup, composables, polling, SSE, and OpenFeature provider."
 ---
 
 # Vue SDK
@@ -66,7 +67,7 @@ app.use(FeatureSignalsPlugin, {
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `sdkKey` | `string` | (required) | Client API key |
-| `envKey` | `string` | (required) | Environment slug |
+| `envKey` | `string` | (required) | Environment key |
 | `baseURL` | `string` | `https://api.featuresignals.com` | API server URL |
 | `userKey` | `string` | `"anonymous"` | User key for evaluation |
 | `pollingIntervalMs` | `number` | `30000` | Polling interval (0 to disable) |
@@ -141,7 +142,7 @@ app.use(FeatureSignalsPlugin, {
 });
 ```
 
-When a flag changes in the dashboard, all connected Vue apps receive the update within seconds via Server-Sent Events.
+When a flag changes in the Flag Engine, all connected Vue apps receive the update within seconds via Server-Sent Events.
 
 ## Feature Gate Component
 

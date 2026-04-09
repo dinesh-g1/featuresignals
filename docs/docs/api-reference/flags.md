@@ -1,6 +1,7 @@
 ---
 sidebar_position: 5
 title: Flags
+description: "FeatureSignals Flags API — create, read, update, and delete feature flags programmatically."
 ---
 
 # Flags API

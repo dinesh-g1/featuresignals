@@ -11,6 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://featuresignals.com"),
   title: {
     template: "%s | FeatureSignals",
     default: "FeatureSignals | Open-Source Feature Flag Management",
@@ -18,6 +19,30 @@ export const metadata: Metadata = {
   description:
     "Open-source feature flag management platform. Self-hosted, Apache-2.0 licensed, with A/B experimentation, real-time updates, and SDKs for every stack.",
   icons: { icon: "/favicon.svg" },
+  openGraph: {
+    type: "website",
+    siteName: "FeatureSignals",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "FeatureSignals — Open-Source Feature Flag Management",
+      },
+    ],
+  },
+  twitter: { card: "summary_large_image" },
+  alternates: { canonical: "./" },
+  keywords: [
+    "feature flags",
+    "feature flag management",
+    "feature toggles",
+    "A/B testing",
+    "open source",
+    "self-hosted",
+    "SDKs",
+  ],
 };
 
 export default function RootLayout({

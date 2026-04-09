@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Real-Time Updates
+description: "Real-time flag updates via Server-Sent Events and PostgreSQL LISTEN/NOTIFY for instant propagation."
 ---
 
 # Real-Time Updates

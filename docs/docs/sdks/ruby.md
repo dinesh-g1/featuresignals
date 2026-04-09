@@ -1,6 +1,7 @@
 ---
 sidebar_position: 7
 title: Ruby SDK
+description: "FeatureSignals Ruby SDK — gem installation, polling, SSE, and OpenFeature provider."
 ---
 
 # Ruby SDK
@@ -53,7 +54,7 @@ options = FeatureSignals::ClientOptions.new(
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `env_key` | `String` | (required) | Environment slug |
+| `env_key` | `String` | (required) | Environment key |
 | `base_url` | `String` | `https://api.featuresignals.com` | API server URL |
 | `polling_interval` | `Numeric` | `30` | Polling frequency in seconds |
 | `streaming` | `Boolean` | `false` | Enable SSE streaming |

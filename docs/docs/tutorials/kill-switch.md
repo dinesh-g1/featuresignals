@@ -1,6 +1,7 @@
 ---
 title: "Set Up an Instant Kill Switch"
 sidebar_label: "Kill Switch"
+description: "Tutorial: implement an emergency kill switch to instantly disable a feature in production."
 ---
 
 # Set Up an Instant Kill Switch

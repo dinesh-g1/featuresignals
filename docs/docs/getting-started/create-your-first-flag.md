@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Create Your First Flag
+description: "Step-by-step guide to creating your first feature flag in FeatureSignals, adding targeting rules, and evaluating flags with SDKs."
 ---
 
 # Create Your First Flag
@@ -52,7 +53,7 @@ Targeting rules let you return specific values based on user attributes:
    - **Percentage**: `100%` (10000 basis points)
 3. Save
 
-Now only users with `country: "US"` in their context get `true`. Others fall through to the default.
+Now only users with `country: "US"` in their evaluation context get `true`. Others fall through to the default.
 
 ## Step 5: Evaluate from Code
 

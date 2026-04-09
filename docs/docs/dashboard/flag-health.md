@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Flag Health
+description: "Monitor flag health scores, identify stale flags, and track expiring configurations."
 ---
 
 # Flag Health

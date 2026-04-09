@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: Audit Logging
+description: "Tamper-evident audit log tracking all flag changes with before/after state diffs and actor information."
 ---
 
 # Audit Logging

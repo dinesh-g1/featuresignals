@@ -1,6 +1,7 @@
 ---
 sidebar_position: 11
 title: Approvals
+description: "FeatureSignals Approvals API — create and manage approval workflows for flag changes."
 ---
 
 # Approvals API

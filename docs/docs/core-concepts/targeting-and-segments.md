@@ -1,11 +1,12 @@
 ---
 sidebar_position: 3
 title: Targeting & Segments
+description: "Target specific users with feature flags using segments, attributes, and targeting rules in FeatureSignals."
 ---
 
 # Targeting & Segments
 
-:::tip Open in Dashboard
+:::tip Open in Flag Engine
 Create and manage segments in the [Segments page →](https://app.featuresignals.com/segments)
 :::
 

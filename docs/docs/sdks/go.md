@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Go SDK
+description: "FeatureSignals Go SDK — installation, initialization, flag evaluation, and OpenFeature provider."
 ---
 
 # Go SDK
@@ -70,7 +71,7 @@ client := fs.NewClient(sdkKey, envKey,
 | `WithSSERetryInterval` | `5s` | Delay between SSE reconnection attempts |
 | `WithHTTPClient` | 10s timeout | Custom `*http.Client` |
 | `WithLogger` | `slog.Default()` | Structured logger |
-| `WithContext` | `NewContext("server")` | Default user context for flag fetching |
+| `WithContext` | `NewContext("server")` | Default evaluation context for flag fetching |
 | `WithOnReady` | nil | Called once when first flag load succeeds |
 | `WithOnError` | nil | Called on fetch/parse errors |
 | `WithOnUpdate` | nil | Called after each flag refresh with the full flag map |

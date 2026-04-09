@@ -1,3 +1,7 @@
+---
+description: "How FeatureSignals approaches HIPAA compliance with technical safeguards for healthcare organizations."
+---
+
 # HIPAA Compliance
 
 _Last updated: April 2026_
@@ -85,7 +89,7 @@ Contact [sales@featuresignals.com](mailto:sales@featuresignals.com) to request a
 | Security awareness and training | Annual security training program |
 | Security incident procedures | Documented incident response plan |
 | Contingency plan | Backups, disaster recovery procedures |
-| Evaluation | Annual HIPAA compliance review |
+| Evaluation | Periodic review of controls against HIPAA-aligned requirements |
 
 ## Physical Safeguards (§164.310)
 
@@ -97,7 +101,7 @@ For on-premises deployments, the customer is responsible for physical safeguards
 
 ### Recommended Architecture
 
-FeatureSignals evaluates feature flags based on targeting context. For HIPAA-compliant deployments:
+FeatureSignals evaluates feature flags based on evaluation context. For HIPAA-compliant deployments:
 
 1. **Do not include PHI in evaluation context** — Use opaque identifiers (user ID, session ID) for targeting, not names, SSNs, or medical record numbers.
 2. **Deploy on-premises** for maximum control — Eliminates BAA complexity with third-party cloud.
@@ -121,7 +125,7 @@ LICENSE_PUBLIC_KEY_PATH=/etc/featuresignals/license-public.pem
 CORS_ORIGIN=https://flags.hospital.example.com
 ```
 
-Dashboard settings:
+Flag Engine settings:
 - Enable MFA for all team members
 - Configure IP allowlist for management API
 - Set password policy to HIPAA-compliant minimums

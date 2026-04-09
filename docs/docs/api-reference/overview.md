@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: API Overview
+description: "Complete REST API reference for FeatureSignals — authentication, flag management, evaluation, webhooks, and team endpoints."
 ---
 
 # API Reference
@@ -42,7 +43,7 @@ Endpoints for SDKs and client applications. Rate-limited to 1000 requests/minute
 
 ### Management API (JWT Auth)
 
-Endpoints for the dashboard and administrative operations.
+Endpoints for the Flag Engine and administrative operations.
 
 #### Read (All Roles)
 

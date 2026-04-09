@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: Target Inspector
+description: "Inspect exactly what a specific user experiences across all feature flags in an environment."
 ---
 
 # Target Inspector

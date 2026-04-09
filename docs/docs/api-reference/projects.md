@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Projects
+description: "FeatureSignals Projects API — create and manage projects that organize flags and environments."
 ---
 
 # Projects API

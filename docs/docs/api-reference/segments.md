@@ -1,6 +1,7 @@
 ---
 sidebar_position: 8
 title: Segments
+description: "FeatureSignals Segments API — create reusable targeting groups referenced by multiple flags."
 ---
 
 # Segments API

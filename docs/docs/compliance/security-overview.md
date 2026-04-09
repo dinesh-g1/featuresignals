@@ -1,3 +1,7 @@
+---
+description: "FeatureSignals security controls overview including encryption, authentication, access control, and infrastructure hardening."
+---
+
 # Security Overview
 
 _Last updated: April 2026_
@@ -38,7 +42,7 @@ This architecture prevents common vulnerability classes:
 
 | Method | Use Case | Implementation |
 |--------|----------|---------------|
-| JWT (access token) | Dashboard / Management API | 1-hour TTL, refresh token rotation (7 days) |
+| JWT (access token) | Flag Engine / Management API | 1-hour TTL, refresh token rotation (7 days) |
 | API Key | Server SDKs / Evaluation API | SHA-256 hashed, shown once at creation |
 | SSO (SAML 2.0) | Enterprise identity provider | Okta, Azure AD, OneLogin, etc. |
 | SSO (OIDC) | Enterprise identity provider | Any OIDC-compliant IdP |

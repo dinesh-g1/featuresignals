@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Configuration
+description: "Environment variables and configuration options for the FeatureSignals API server and Flag Engine."
 ---
 
 # Configuration Reference
@@ -17,9 +18,9 @@ All configuration is done via environment variables.
 | `TOKEN_TTL_MINUTES` | `60` | Access token lifetime (minutes) |
 | `REFRESH_TTL_HOURS` | `168` | Refresh token lifetime (hours, default 7 days) |
 | `LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
-| `CORS_ORIGIN` | `http://localhost:3000` | Comma-separated list of allowed CORS origins. Include your dashboard **and** docs site (for the API Playground). |
+| `CORS_ORIGIN` | `http://localhost:3000` | Comma-separated list of allowed CORS origins. Include your Flag Engine **and** docs site (for the API Playground). |
 | `APP_BASE_URL` | `http://localhost:8080` | Public URL of the API server |
-| `DASHBOARD_URL` | `http://localhost:3000` | Public URL of the dashboard |
+| `DASHBOARD_URL` | `http://localhost:3000` | Public URL of the Flag Engine |
 
 ### Email (ZeptoMail)
 
@@ -51,7 +52,7 @@ export TOKEN_TTL_MINUTES=30
 export REFRESH_TTL_HOURS=168
 ```
 
-## Dashboard
+## Flag Engine
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -66,7 +67,7 @@ export REFRESH_TTL_HOURS=168
 | Flag | Environment Variable | Default | Description |
 |------|---------------------|---------|-------------|
 | `-api-key` | `FS_API_KEY` | (required) | Server API key |
-| `-env-key` | `FS_ENV_KEY` | (required) | Environment slug |
+| `-env-key` | `FS_ENV_KEY` | (required) | Environment key |
 | `-upstream` | `FS_UPSTREAM` | `https://api.featuresignals.com` | Upstream API URL |
 | `-port` | `FS_PORT` | `8090` | Local listening port |
 | `-poll` | `FS_POLL` | `30s` | Polling interval |

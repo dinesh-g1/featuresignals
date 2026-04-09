@@ -1,5 +1,6 @@
 ---
 sidebar_label: SCIM
+description: "FeatureSignals SCIM 2.0 API — automate user provisioning and deprovisioning from your identity provider."
 ---
 # SCIM Provisioning (SCIM 2.0)
 

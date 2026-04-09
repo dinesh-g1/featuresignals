@@ -1,6 +1,7 @@
 ---
 sidebar_position: 5
 title: A/B Experimentation
+description: "Run A/B experiments with weighted variants, consistent user assignment, and impression tracking in FeatureSignals."
 ---
 
 # A/B Experimentation

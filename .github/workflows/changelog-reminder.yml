@@ -1,0 +1,39 @@
+name: Changelog Reminder
+
+on:
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'dashboard/**'
+      - 'sdks/**'
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'changelog-skip')"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for changelog changes
+        id: changelog-check
+        run: |
+          CL_CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} -- 'CHANGELOG.md' 'website/src/app/changelog/' | wc -l)
+          echo "changelog_changed=$CL_CHANGED" >> "$GITHUB_OUTPUT"
+      - name: Remind about changelog
+        if: steps.changelog-check.outputs.changelog_changed == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const existing = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const hasReminder = existing.data.some(c => c.body.includes('changelog reminder'));
+            if (!hasReminder) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '📋 **Changelog reminder**: This PR modifies code but `CHANGELOG.md` was not updated. If this PR introduces user-facing changes, please update the changelog.\n\nAdd the `changelog-skip` label to suppress this reminder.'
+              });
+            }

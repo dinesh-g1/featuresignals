@@ -1,6 +1,7 @@
 ---
 sidebar_position: 14
 title: Metrics
+description: "FeatureSignals Metrics API — track flag evaluation counts and A/B experiment impressions."
 ---
 
 # Metrics API

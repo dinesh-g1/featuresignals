@@ -1,6 +1,7 @@
 ---
 sidebar_position: 7
 title: Target Comparison
+description: "Compare feature flag evaluations for two users side-by-side to debug targeting rules."
 ---
 
 # Target Comparison
