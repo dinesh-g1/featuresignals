@@ -1,0 +1,138 @@
+name: "Deploy to Dev Environment"
+
+on:
+  workflow_run:
+    workflows: ["Test, Lint, Build & Publish Images"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (sha-xxx, v1.2.3, or latest)"
+        required: false
+        default: "latest"
+      build_locally:
+        description: "Build images on the VPS instead of pulling from GHCR"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: "Deploy to Dev VPS"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check dev host configured
+        id: check
+        run: |
+          if [ -z "${{ secrets.VPS_HOST_DEV }}" ]; then
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::notice::Dev VPS not provisioned yet (VPS_HOST_DEV secret missing). Skipping deploy."
+          else
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Write environment file
+        if: steps.check.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST_DEV }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_DEV }}
+          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,IMAGE_TAG,USE_REGISTRY
+          script: |
+            cat > /opt/featuresignals/.env << ENVEOF
+            REGION=dev
+            DOMAIN_API=api.dev.featuresignals.com
+            DOMAIN_APP=app.dev.featuresignals.com
+            DOMAIN_MAIN=dev.featuresignals.com
+            DOMAIN_DOCS=docs.dev.featuresignals.com
+            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            JWT_SECRET=${JWT_SECRET}
+            DB_ADMIN_PASSWORD=${DB_ADMIN_PASSWORD}
+            DB_READONLY_PASSWORD=${DB_READONLY_PASSWORD}
+            LOG_LEVEL=debug
+            LOCAL_REGION=in
+            OTEL_ENABLED=false
+            EMAIL_PROVIDER=none
+            PAYMENT_GATEWAY=stripe
+            STRIPE_MODE=test
+            PAYU_MODE=test
+            IMAGE_TAG=${IMAGE_TAG}
+            USE_REGISTRY=${USE_REGISTRY}
+            ENVEOF
+            chmod 600 /opt/featuresignals/.env
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD_DEV || secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET_DEV || secrets.JWT_SECRET }}
+          DB_ADMIN_PASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
+          DB_READONLY_PASSWORD: ${{ secrets.DB_READONLY_PASSWORD }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
+          USE_REGISTRY: ${{ (github.event.inputs.build_locally == 'true') && 'false' || 'true' }}
+
+      - name: Deploy application
+        if: steps.check.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST_DEV }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_DEV }}
+          command_timeout: 15m
+          envs: REPO_TOKEN,IMAGE_TAG,USE_REGISTRY
+          script: |
+            cd /opt/featuresignals
+            git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
+            git fetch origin main
+            git reset --hard origin/main
+            export IMAGE_TAG="${IMAGE_TAG}"
+            export USE_REGISTRY="${USE_REGISTRY}"
+            bash deploy/deploy-region.sh
+        env:
+          REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
+          USE_REGISTRY: ${{ (github.event.inputs.build_locally == 'true') && 'false' || 'true' }}
+
+      - name: Run smoke tests
+        if: steps.check.outputs.configured == 'true'
+        run: |
+          echo "==> Smoke test: API health"
+          curl -sf --max-time 15 --retry 3 --retry-delay 5 \
+            "https://api.dev.featuresignals.com/health" || {
+            echo "::error::Dev API health check failed"
+            exit 1
+          }
+
+          echo "==> Smoke test: Status endpoint"
+          curl -sf --max-time 15 \
+            "https://api.dev.featuresignals.com/v1/status" || {
+            echo "::warning::Status endpoint not responding"
+          }
+
+          echo "==> Smoke test: Dashboard"
+          curl -sf --max-time 15 -o /dev/null -w "HTTP %{http_code}" \
+            "https://app.dev.featuresignals.com" || {
+            echo "::error::Dev dashboard health check failed"
+            exit 1
+          }
+
+          echo "All smoke tests passed"
+
+  notify:
+    name: "Post-Deploy Notification"
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+    steps:
+      - name: Post dev deploy summary
+        run: |
+          echo "## Dev Deploy: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image Tag** | ${{ github.event.inputs.image_tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Result** | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY

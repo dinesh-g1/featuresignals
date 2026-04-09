@@ -11,6 +11,7 @@ on:
           - in
           - us
           - eu
+          - dev
       branch:
         description: "Branch or commit SHA to deploy (e.g., hotfix/fix-auth, abc1234)"
         required: true
@@ -80,18 +81,27 @@ jobs:
           case "$REGION" in
             in)
               echo "host_secret=VPS_HOST_IN" >> $GITHUB_OUTPUT
+              echo "ssh_key_secret=VPS_SSH_KEY_REGIONAL" >> $GITHUB_OUTPUT
               echo "domain_api=api.featuresignals.com" >> $GITHUB_OUTPUT
               echo "domain_app=app.featuresignals.com" >> $GITHUB_OUTPUT
               ;;
             us)
               echo "host_secret=VPS_HOST_US" >> $GITHUB_OUTPUT
+              echo "ssh_key_secret=VPS_SSH_KEY_REGIONAL" >> $GITHUB_OUTPUT
               echo "domain_api=api.us.featuresignals.com" >> $GITHUB_OUTPUT
               echo "domain_app=app.us.featuresignals.com" >> $GITHUB_OUTPUT
               ;;
             eu)
               echo "host_secret=VPS_HOST_EU" >> $GITHUB_OUTPUT
+              echo "ssh_key_secret=VPS_SSH_KEY_REGIONAL" >> $GITHUB_OUTPUT
               echo "domain_api=api.eu.featuresignals.com" >> $GITHUB_OUTPUT
               echo "domain_app=app.eu.featuresignals.com" >> $GITHUB_OUTPUT
+              ;;
+            dev)
+              echo "host_secret=VPS_HOST_DEV" >> $GITHUB_OUTPUT
+              echo "ssh_key_secret=VPS_SSH_KEY_DEV" >> $GITHUB_OUTPUT
+              echo "domain_api=api.dev.featuresignals.com" >> $GITHUB_OUTPUT
+              echo "domain_app=app.dev.featuresignals.com" >> $GITHUB_OUTPUT
               ;;
           esac
 
@@ -100,7 +110,7 @@ jobs:
         with:
           host: ${{ secrets[steps.region.outputs.host_secret] }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
+          key: ${{ secrets[steps.region.outputs.ssh_key_secret] }}
           command_timeout: 15m
           envs: REPO_TOKEN,HOTFIX_REF
           script: |

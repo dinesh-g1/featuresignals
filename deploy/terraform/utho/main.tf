@@ -86,3 +86,32 @@ resource "null_resource" "utho_server" {
 output "note" {
   value = "Check /tmp/utho-deploy-response.json for server details and Utho dashboard for IP"
 }
+
+# -------------------------------------------------------------------
+# Dev environment provisioning (Bangalore)
+#
+# To provision a dev VPS, create a terraform.tfvars file:
+#
+#   utho_api_key     = "<your-utho-api-key>"
+#   ssh_key_id       = "<your-ssh-key-id>"
+#   region           = "dev"
+#   server_hostname  = "fs-dev-in"
+#   location_id      = "inblrzone2"
+#   plan_id          = "10045"
+#   domain_api       = "api.dev.featuresignals.com"
+#   domain_app       = "app.dev.featuresignals.com"
+#
+# Then run:
+#   terraform init
+#   terraform plan
+#   terraform apply
+#
+# After provisioning:
+#   1. Note the VPS IP from Utho dashboard
+#   2. Add GitHub secrets: VPS_HOST_DEV, VPS_SSH_KEY_DEV,
+#      POSTGRES_PASSWORD_DEV, JWT_SECRET_DEV
+#   3. Run provision-server.yml workflow with host_secret=VPS_HOST_DEV,
+#      ssh_key_secret=VPS_SSH_KEY_DEV
+#   4. Add Cloudflare A records for *.dev.featuresignals.com -> VPS IP
+#   5. Run deploy-dev.yml workflow or push to main
+# -------------------------------------------------------------------
