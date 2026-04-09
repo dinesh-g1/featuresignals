@@ -30,6 +30,7 @@ jobs:
   manage-keys:
     name: "${{ github.event.inputs.action }} SSH key on ${{ github.event.inputs.target_host_secret }}"
     runs-on: ubuntu-latest
+    environment: infrastructure
     steps:
       - name: Add SSH key
         if: github.event.inputs.action == 'add_key'
