@@ -8,6 +8,7 @@ import { ErrorDisplay } from "@/components/ui";
 import { Flag, FolderOpen, Clock, Sparkles, Zap } from "lucide-react";
 import { useProjects, useFlags, useAudit } from "@/hooks/use-data";
 import { useUpgradeNudge } from "@/hooks/use-upgrade-nudge";
+import { DOCS_LINKS } from "@/components/docs-link";
 import { WorkspaceHealth } from "@/components/workspace-health";
 
 function UpgradeCard() {
@@ -111,7 +112,7 @@ export default function DashboardPage() {
         icon={Flag}
         title="Welcome to FeatureSignals"
         description="Create your first project to start managing feature flags. Projects group related flags for a single application or service."
-        docsUrl="https://docs.featuresignals.com/getting-started/quickstart"
+        docsUrl={DOCS_LINKS.quickstart}
         docsLabel="Quickstart guide"
         className="py-24"
       />

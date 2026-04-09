@@ -111,6 +111,8 @@ services:
       args:
         NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
         NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
+        NEXT_PUBLIC_DOCS_URL: https://${DOMAIN_DOCS}
+        NEXT_PUBLIC_WEBSITE_URL: https://${DOMAIN_MAIN}
     restart: unless-stopped
     depends_on:
       server:
@@ -143,6 +145,10 @@ services:
     build:
       context: ./docs
       dockerfile: ../deploy/docker/Dockerfile.docs
+      args:
+        DOCS_SITE_URL: https://${DOMAIN_DOCS}
+        DOCS_DASHBOARD_URL: https://${DOMAIN_APP}
+        DOCS_WEBSITE_URL: https://${DOMAIN_MAIN}
     volumes:
       - docs-dist:/srv/docs
 

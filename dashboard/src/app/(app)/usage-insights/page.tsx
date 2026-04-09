@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader, Card, Input, EmptyState, SkeletonTable, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
 import { BarChart3, Search } from "lucide-react";
+import { DOCS_LINKS } from "@/components/docs-link";
 import type { FlagInsight } from "@/lib/types";
 
 type SortKey = "flag_key" | "true_percentage" | "total_count";
@@ -76,7 +77,7 @@ export default function UsageInsightsPage() {
             icon={BarChart3}
             title="No evaluation data yet"
             description="Connect an SDK to your application and start evaluating flags. Usage data will appear here in real-time."
-            docsUrl="https://docs.featuresignals.com/sdks/overview"
+            docsUrl={DOCS_LINKS.sdks}
             docsLabel="Install an SDK"
             className="py-16"
           />

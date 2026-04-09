@@ -2,9 +2,10 @@ package domain
 
 // Supported data regions for multi-region deployments.
 const (
-	RegionUS = "us"
-	RegionEU = "eu"
-	RegionIN = "in"
+	RegionUS  = "us"
+	RegionEU  = "eu"
+	RegionIN  = "in"
+	RegionDev = "dev"
 )
 
 // RegionInfo describes a deployable data region.
@@ -19,9 +20,10 @@ type RegionInfo struct {
 // Regions is the authoritative list of supported data regions.
 // Endpoint URLs are overridden at deploy time via config; these are defaults.
 var Regions = map[string]RegionInfo{
-	RegionIN: {Code: RegionIN, Name: "India", Flag: "🇮🇳", APIEndpoint: "https://api.featuresignals.com", AppEndpoint: "https://app.featuresignals.com"},
-	RegionUS: {Code: RegionUS, Name: "United States", Flag: "🇺🇸", APIEndpoint: "https://api.us.featuresignals.com", AppEndpoint: "https://app.us.featuresignals.com"},
-	RegionEU: {Code: RegionEU, Name: "Europe", Flag: "🇪🇺", APIEndpoint: "https://api.eu.featuresignals.com", AppEndpoint: "https://app.eu.featuresignals.com"},
+	RegionIN:  {Code: RegionIN, Name: "India", Flag: "🇮🇳", APIEndpoint: "https://api.featuresignals.com", AppEndpoint: "https://app.featuresignals.com"},
+	RegionUS:  {Code: RegionUS, Name: "United States", Flag: "🇺🇸", APIEndpoint: "https://api.us.featuresignals.com", AppEndpoint: "https://app.us.featuresignals.com"},
+	RegionEU:  {Code: RegionEU, Name: "Europe", Flag: "🇪🇺", APIEndpoint: "https://api.eu.featuresignals.com", AppEndpoint: "https://app.eu.featuresignals.com"},
+	RegionDev: {Code: RegionDev, Name: "Development", Flag: "\U0001f6e0\ufe0f", APIEndpoint: "https://api.dev.featuresignals.com", AppEndpoint: "https://app.dev.featuresignals.com"},
 }
 
 // ValidRegion returns true if the given region code is supported.
@@ -31,6 +33,7 @@ func ValidRegion(code string) bool {
 }
 
 // RegionCodes returns the list of supported region codes, primary region first.
+// Dev is intentionally excluded — it is not user-facing.
 func RegionCodes() []string {
 	return []string{RegionIN, RegionUS, RegionEU}
 }

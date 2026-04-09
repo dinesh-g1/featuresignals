@@ -6,6 +6,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useFeatures } from "@/hooks/use-features";
 import { PageHeader, Card, Button, Input, Badge, EmptyState } from "@/components/ui";
 import { ClipboardList, Download, Search } from "lucide-react";
+import { DOCS_LINKS } from "@/components/docs-link";
 import type { AuditEntry } from "@/lib/types";
 
 export default function AuditPage() {
@@ -34,7 +35,7 @@ export default function AuditPage() {
         <PageHeader
           title="Audit Log"
           description="Track every change made to your feature flags"
-          docsUrl="https://docs.featuresignals.com/advanced/audit-logging"
+          docsUrl={DOCS_LINKS.audit}
         />
         {canExport && (
           <Button
@@ -69,7 +70,7 @@ export default function AuditPage() {
               icon={ClipboardList}
               title="No audit entries yet"
               description="Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
-              docsUrl="https://docs.featuresignals.com/advanced/audit-logging"
+              docsUrl={DOCS_LINKS.audit}
               docsLabel="About the audit log"
             />
           ) : (

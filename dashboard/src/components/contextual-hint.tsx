@@ -5,6 +5,7 @@ import { X, Lightbulb } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { DOCS_LINKS } from "@/components/docs-link";
 
 interface HintDefinition {
   id: string;
@@ -94,13 +95,13 @@ export const HINTS = {
   flagsFirstVisit: {
     id: "flags_first_visit",
     message: "Flags control which features your users see. Toggle a flag and watch the SDK response change in real-time via SSE.",
-    docsUrl: "https://docs.featuresignals.com/core-concepts/feature-flags",
+    docsUrl: DOCS_LINKS.flags,
     docsLabel: "How flags work",
   },
   segmentsIntro: {
     id: "segments_intro",
     message: "Segments let you define reusable audiences — like beta testers or enterprise customers — and target them across multiple flags at once.",
-    docsUrl: "https://docs.featuresignals.com/core-concepts/targeting-and-segments",
+    docsUrl: DOCS_LINKS.segments,
     docsLabel: "Segment guide",
   },
   envComparison: {
@@ -114,7 +115,7 @@ export const HINTS = {
   auditIntro: {
     id: "audit_intro",
     message: "The audit log records every change for compliance and debugging. Each entry is integrity-verified with a hash chain.",
-    docsUrl: "https://docs.featuresignals.com/advanced/audit-logging",
+    docsUrl: DOCS_LINKS.audit,
     docsLabel: "Audit log details",
   },
 } satisfies Record<string, HintDefinition>;

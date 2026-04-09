@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Link2, Trash2, ChevronDown, Check, X } from "lucide-react";
+import { DOCS_LINKS } from "@/components/docs-link";
 import type { Webhook, WebhookDelivery } from "@/lib/types";
 
 const EVENT_TYPES = [
@@ -173,7 +174,7 @@ export default function WebhooksPage() {
               icon={Link2}
               title="No webhooks configured"
               description="Webhooks send real-time HTTP notifications when flags change. Connect your CI/CD pipeline, Slack, or monitoring tools."
-              docsUrl="https://docs.featuresignals.com/advanced/webhooks"
+              docsUrl={DOCS_LINKS.webhooks}
               docsLabel="Webhook setup guide"
               className="rounded-lg border border-dashed border-slate-300"
             />

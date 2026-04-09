@@ -1,9 +1,16 @@
 FROM node:22-alpine AS builder
 
+ARG DOCS_SITE_URL=https://docs.featuresignals.com
+ARG DOCS_DASHBOARD_URL=https://app.featuresignals.com
+ARG DOCS_WEBSITE_URL=https://featuresignals.com
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ENV DOCS_SITE_URL=${DOCS_SITE_URL}
+ENV DOCS_DASHBOARD_URL=${DOCS_DASHBOARD_URL}
+ENV DOCS_WEBSITE_URL=${DOCS_WEBSITE_URL}
 RUN npm run build && npm cache clean --force
 
 FROM alpine:3.19

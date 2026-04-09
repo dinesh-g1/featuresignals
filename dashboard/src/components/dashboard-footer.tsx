@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Activity, ExternalLink, Code2 } from "lucide-react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
+import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
 
 export function DashboardFooter() {
   const token = useAppStore((s) => s.token);
@@ -21,7 +22,7 @@ export function DashboardFooter() {
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
         <div className="flex items-center gap-4">
           <a
-            href="https://featuresignals.com/status"
+            href={`${WEBSITE_URL}/status`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"
@@ -47,7 +48,7 @@ export function DashboardFooter() {
             Source
           </a>
           <a
-            href="https://docs.featuresignals.com"
+            href={DOCS_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"

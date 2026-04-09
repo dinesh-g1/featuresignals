@@ -12,6 +12,7 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { KeyRound, Copy } from "lucide-react";
+import { DOCS_LINKS } from "@/components/docs-link";
 import type { APIKey, APIKeyCreateResponse, Environment } from "@/lib/types";
 
 const KEY_TYPE_OPTIONS = [
@@ -126,7 +127,7 @@ export default function APIKeysPage() {
               icon={KeyRound}
               title="No API keys for this environment"
               description="API keys authenticate your SDK against this environment. Create a server key to start evaluating flags."
-              docsUrl="https://docs.featuresignals.com/api-reference/api-keys"
+              docsUrl={DOCS_LINKS.apiKeys}
               docsLabel="API key types explained"
             />
           ) : (

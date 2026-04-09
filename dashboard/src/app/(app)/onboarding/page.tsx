@@ -7,6 +7,8 @@ import { Check, Sparkles, Copy, ClipboardCheck, Key, ArrowRight, FolderOpen, Lay
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
+import { DOCS_LINKS } from "@/components/docs-link";
+import { API_BASE_URL } from "@/lib/external-urls";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,12 +50,13 @@ const SDK_INSTALL: Record<string, string> = {
   vue: "npm install @featuresignals/vue",
 };
 
-function sdkSnippet(lang: string, apiKey: string): string {
+function sdkSnippet(lang: string, apiKey: string, apiUrl: string): string {
   const key = apiKey || "YOUR_API_KEY";
   const snippets: Record<string, string> = {
     go: `import fs "github.com/featuresignals/sdk-go"
 
-client := fs.NewClient("${key}")
+client := fs.NewClient("${key}",
+    fs.WithBaseURL("${apiUrl}"))
 defer client.Close()
 
 enabled := client.IsEnabled("my-flag", fs.User{Key: "user-123"})
@@ -62,33 +65,40 @@ if enabled {
 }`,
     node: `import { FeatureSignals } from "@featuresignals/sdk";
 
-const client = new FeatureSignals("${key}");
+const client = new FeatureSignals("${key}", {
+  baseURL: "${apiUrl}",
+});
 
 const enabled = await client.isEnabled("my-flag", {
   key: "user-123",
 });`,
     python: `from featuresignals import FeatureSignals
 
-client = FeatureSignals("${key}")
+client = FeatureSignals("${key}",
+    base_url="${apiUrl}")
 
 if client.is_enabled("my-flag", {"key": "user-123"}):
     # new feature code
     pass`,
     java: `import com.featuresignals.SDK;
 
-SDK client = new SDK("${key}");
+SDK client = SDK.builder("${key}")
+    .baseUrl("${apiUrl}")
+    .build();
 
 boolean enabled = client.isEnabled("my-flag",
     Map.of("key", "user-123"));`,
     csharp: `using FeatureSignals;
 
-var client = new FSClient("${key}");
+var client = new FSClient("${key}",
+    new FSOptions { BaseUrl = "${apiUrl}" });
 
 bool enabled = client.IsEnabled("my-flag",
     new User { Key = "user-123" });`,
     ruby: `require "featuresignals"
 
-client = FeatureSignals::Client.new("${key}")
+client = FeatureSignals::Client.new("${key}",
+    base_url: "${apiUrl}")
 
 if client.enabled?("my-flag", key: "user-123")
   # new feature code
@@ -97,7 +107,11 @@ end`,
 
 function App() {
   return (
-    <FSProvider apiKey="${key}" user={{ key: "user-123" }}>
+    <FSProvider
+      apiKey="${key}"
+      baseURL="${apiUrl}"
+      user={{ key: "user-123" }}
+    >
       <MyComponent />
     </FSProvider>
   );
@@ -108,8 +122,9 @@ function MyComponent() {
   return enabled ? <NewFeature /> : <OldFeature />;
 }`,
     vue: `<script setup>
-import { useFlag } from "@featuresignals/vue";
+import { useFlag, provideFS } from "@featuresignals/vue";
 
+provideFS({ apiKey: "${key}", baseURL: "${apiUrl}" });
 const showFeature = useFlag("my-flag");
 </script>
 
@@ -778,7 +793,7 @@ function StepInstallSdk({
     );
   }
 
-  const snippet = sdkSnippet(selectedSdk, apiKey);
+  const snippet = sdkSnippet(selectedSdk, apiKey, API_BASE_URL);
 
   return (
     <div>
@@ -842,7 +857,7 @@ function StepInstallSdk({
           I&apos;ve connected the SDK
         </Button>
         <Button variant="secondary" asChild>
-          <a href="https://docs.featuresignals.com/getting-started/quickstart" target="_blank" rel="noopener noreferrer">
+          <a href={DOCS_LINKS.quickstart} target="_blank" rel="noopener noreferrer">
             View full docs
           </a>
         </Button>

@@ -1,7 +1,8 @@
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DOCS_URL } from "@/lib/external-urls";
 
-const DOCS_BASE = "https://docs.featuresignals.com";
+const DOCS_BASE = DOCS_URL;
 
 export const DOCS_LINKS = {
   flags: `${DOCS_BASE}/core-concepts/feature-flags`,

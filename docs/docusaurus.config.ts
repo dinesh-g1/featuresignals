@@ -2,6 +2,10 @@ import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
+const DOCS_SITE_URL = process.env.DOCS_SITE_URL || 'https://docs.featuresignals.com';
+const DASHBOARD_URL = process.env.DOCS_DASHBOARD_URL || 'https://app.featuresignals.com';
+const WEBSITE_URL = process.env.DOCS_WEBSITE_URL || 'https://featuresignals.com';
+
 const config: Config = {
   title: 'FeatureSignals',
   tagline: 'Open-source feature flag management for modern teams',
@@ -11,7 +15,7 @@ const config: Config = {
     v4: true,
   },
 
-  url: 'https://docs.featuresignals.com',
+  url: DOCS_SITE_URL,
   baseUrl: '/',
 
   organizationName: 'featuresignals',
@@ -23,7 +27,7 @@ const config: Config = {
   headTags: [
     {
       tagName: 'meta',
-      attributes: { property: 'og:image', content: 'https://docs.featuresignals.com/img/logo.svg' },
+      attributes: { property: 'og:image', content: `${DOCS_SITE_URL}/img/logo.svg` },
     },
   ],
 
@@ -87,7 +91,7 @@ const config: Config = {
       },
       items: [
         {
-          href: 'https://featuresignals.com',
+          href: WEBSITE_URL,
           label: 'Website',
           position: 'left',
         },
@@ -122,12 +126,12 @@ const config: Config = {
           'aria-label': 'GitHub repository',
         },
         {
-          href: 'https://app.featuresignals.com/login',
+          href: `${DASHBOARD_URL}/login`,
           label: 'Log in',
           position: 'right',
         },
         {
-          href: 'https://app.featuresignals.com/register',
+          href: `${DASHBOARD_URL}/register`,
           label: 'Sign Up',
           position: 'right',
           className: 'navbar-signup-btn',
@@ -140,11 +144,11 @@ const config: Config = {
         {
           title: 'Product',
           items: [
-            {label: 'Website', href: 'https://featuresignals.com'},
-            {label: 'Features', href: 'https://featuresignals.com/features'},
-            {label: 'Pricing', href: 'https://featuresignals.com/pricing'},
-            {label: 'Blog', href: 'https://featuresignals.com/blog'},
-            {label: 'Contact', href: 'https://featuresignals.com/contact'},
+            {label: 'Website', href: WEBSITE_URL},
+            {label: 'Features', href: `${WEBSITE_URL}/features`},
+            {label: 'Pricing', href: `${WEBSITE_URL}/pricing`},
+            {label: 'Blog', href: `${WEBSITE_URL}/blog`},
+            {label: 'Contact', href: `${WEBSITE_URL}/contact`},
           ],
         },
         {
@@ -175,7 +179,7 @@ const config: Config = {
             {label: 'GDPR', to: '/compliance/privacy-policy'},
             {label: 'SOC 2', to: '/compliance/soc2/controls-matrix'},
             {label: 'HIPAA', to: '/compliance/hipaa'},
-            {label: 'System Status', href: 'https://featuresignals.com/status'},
+            {label: 'System Status', href: `${WEBSITE_URL}/status`},
           ],
         },
         {

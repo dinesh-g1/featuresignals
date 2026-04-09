@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import type { Flag, Segment } from "@/lib/types";
+import { DOCS_LINKS } from "@/components/docs-link";
 
 interface PaletteItem {
   id: string;
@@ -51,25 +52,25 @@ const HELP_ITEMS: PaletteItem[] = [
     useAppStore.getState().requestTour();
     window.dispatchEvent(new Event("fs:replay-tour"));
   }},
-  { id: "help-quickstart", label: "Quickstart Guide", description: "Get up and running in 5 minutes", category: "help", href: "https://docs.featuresignals.com/getting-started/quickstart", external: true },
-  { id: "help-sdks", label: "SDK Documentation", description: "Go, Node, Python, Java, React, Vue...", category: "help", href: "https://docs.featuresignals.com/sdks/overview", external: true },
-  { id: "help-api", label: "API Reference", description: "Full REST API documentation", category: "help", href: "https://docs.featuresignals.com/api-playground", external: true },
-  { id: "help-targeting", label: "Targeting Rules", description: "How to target users with flag rules", category: "help", href: "https://docs.featuresignals.com/core-concepts/targeting-and-segments", external: true },
-  { id: "help-segments", label: "Segments Guide", description: "Create reusable user segments", category: "help", href: "https://docs.featuresignals.com/core-concepts/targeting-and-segments", external: true },
-  { id: "help-experiments", label: "A/B Experiments", description: "Set up A/B tests with variants", category: "help", href: "https://docs.featuresignals.com/core-concepts/ab-experimentation", external: true },
-  { id: "help-approvals", label: "Approval Workflows", description: "Require reviews for production changes", category: "help", href: "https://docs.featuresignals.com/advanced/approval-workflows", external: true },
-  { id: "help-webhooks", label: "Webhooks Guide", description: "Set up event notifications", category: "help", href: "https://docs.featuresignals.com/advanced/webhooks", external: true },
-  { id: "help-rbac", label: "Roles & Permissions", description: "RBAC with environment-level control", category: "help", href: "https://docs.featuresignals.com/advanced/rbac", external: true },
-  { id: "help-deploy", label: "Deployment Guide", description: "Docker, Kubernetes, self-hosted setup", category: "help", href: "https://docs.featuresignals.com/deployment/self-hosting", external: true },
+  { id: "help-quickstart", label: "Quickstart Guide", description: "Get up and running in 5 minutes", category: "help", href: DOCS_LINKS.quickstart, external: true },
+  { id: "help-sdks", label: "SDK Documentation", description: "Go, Node, Python, Java, React, Vue...", category: "help", href: DOCS_LINKS.sdks, external: true },
+  { id: "help-api", label: "API Reference", description: "Full REST API documentation", category: "help", href: DOCS_LINKS.apiReference, external: true },
+  { id: "help-targeting", label: "Targeting Rules", description: "How to target users with flag rules", category: "help", href: DOCS_LINKS.targeting, external: true },
+  { id: "help-segments", label: "Segments Guide", description: "Create reusable user segments", category: "help", href: DOCS_LINKS.segments, external: true },
+  { id: "help-experiments", label: "A/B Experiments", description: "Set up A/B tests with variants", category: "help", href: DOCS_LINKS.abExperiments, external: true },
+  { id: "help-approvals", label: "Approval Workflows", description: "Require reviews for production changes", category: "help", href: DOCS_LINKS.approvals, external: true },
+  { id: "help-webhooks", label: "Webhooks Guide", description: "Set up event notifications", category: "help", href: DOCS_LINKS.webhooks, external: true },
+  { id: "help-rbac", label: "Roles & Permissions", description: "RBAC with environment-level control", category: "help", href: DOCS_LINKS.rbac, external: true },
+  { id: "help-deploy", label: "Deployment Guide", description: "Docker, Kubernetes, self-hosted setup", category: "help", href: DOCS_LINKS.deployment, external: true },
   { id: "help-support", label: "Contact Support", description: "Email support@featuresignals.com", category: "help", href: "mailto:support@featuresignals.com", external: true },
 ];
 
 const DOCS_ITEMS: PaletteItem[] = [
-  { id: "docs-flags", label: "Feature Flags", description: "Concepts: types, lifecycle, categories", category: "docs", href: "https://docs.featuresignals.com/core-concepts/feature-flags", external: true },
-  { id: "docs-environments", label: "Environments", description: "Dev, staging, production setup", category: "docs", href: "https://docs.featuresignals.com/core-concepts/projects-and-environments", external: true },
-  { id: "docs-eval-engine", label: "Evaluation Engine", description: "How flag evaluation works", category: "docs", href: "https://docs.featuresignals.com/architecture/evaluation-engine", external: true },
-  { id: "docs-openfeature", label: "OpenFeature", description: "Vendor-neutral flag evaluation", category: "docs", href: "https://docs.featuresignals.com/sdks/openfeature", external: true },
-  { id: "docs-relay-proxy", label: "Relay Proxy", description: "Edge caching for low latency", category: "docs", href: "https://docs.featuresignals.com/advanced/relay-proxy", external: true },
+  { id: "docs-flags", label: "Feature Flags", description: "Concepts: types, lifecycle, categories", category: "docs", href: DOCS_LINKS.flags, external: true },
+  { id: "docs-environments", label: "Environments", description: "Dev, staging, production setup", category: "docs", href: DOCS_LINKS.environments, external: true },
+  { id: "docs-eval-engine", label: "Evaluation Engine", description: "How flag evaluation works", category: "docs", href: DOCS_LINKS.evalEngine, external: true },
+  { id: "docs-openfeature", label: "OpenFeature", description: "Vendor-neutral flag evaluation", category: "docs", href: DOCS_LINKS.openFeature, external: true },
+  { id: "docs-relay-proxy", label: "Relay Proxy", description: "Edge caching for low latency", category: "docs", href: DOCS_LINKS.relayProxy, external: true },
 ];
 
 const categoryLabels: Record<string, string> = {
