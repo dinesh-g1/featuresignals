@@ -263,40 +263,11 @@ describe("api.completeSignup region header", () => {
     vi.restoreAllMocks();
   });
 
-  it("sends X-Target-Region header when regionCode is 'us'", async () => {
+  it("calls complete-signup without X-Target-Region header", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, {
       tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
       user: { id: "u1" },
       organization: { id: "o1", data_region: "us" },
-    }));
-
-    await api.completeSignup({ email: "test@example.com", otp: "123456" }, "us");
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(`${API_URL}/v1/auth/complete-signup`);
-    expect((init.headers as Record<string, string>)["X-Target-Region"]).toBe("us");
-  });
-
-  it("sends X-Target-Region header when regionCode is 'eu'", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
-      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
-      user: { id: "u1" },
-      organization: { id: "o1", data_region: "eu" },
-    }));
-
-    await api.completeSignup({ email: "test@example.com", otp: "123456" }, "eu");
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)["X-Target-Region"]).toBe("eu");
-  });
-
-  it("omits X-Target-Region header when no regionCode provided", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
-      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
-      user: { id: "u1" },
-      organization: { id: "o1", data_region: "in" },
     }));
 
     await api.completeSignup({ email: "test@example.com", otp: "123456" });
@@ -311,7 +282,7 @@ describe("api.completeSignup region header", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(500, { error: "internal error" }));
 
     try {
-      await api.completeSignup({ email: "test@example.com", otp: "123456" }, "us");
+      await api.completeSignup({ email: "test@example.com", otp: "123456" });
       expect.unreachable("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(APIError);

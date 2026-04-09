@@ -24,7 +24,7 @@ export function PageHeader({
     <div className={cn("flex flex-col gap-3 animate-in sm:flex-row sm:items-center sm:justify-between", className)}>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{title}</h1>
+          <h1 className="bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-xl font-bold tracking-tight text-transparent sm:text-2xl">{title}</h1>
           {docsUrl && (
             <a
               href={docsUrl}

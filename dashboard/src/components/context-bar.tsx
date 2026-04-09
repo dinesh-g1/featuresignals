@@ -62,7 +62,7 @@ export function ContextBar() {
 
   return (
     <>
-      <div data-tour="context-bar" className="shrink-0 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm px-4 py-2.5 sm:px-6 lg:px-8">
+      <div data-tour="context-bar" className="shrink-0 border-b border-slate-200/50 bg-white/70 shadow-sm shadow-slate-100/80 backdrop-blur-xl px-4 py-2.5 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           {/* Project selector */}
           <div className="flex items-center gap-2 min-w-0 sm:max-w-xs">

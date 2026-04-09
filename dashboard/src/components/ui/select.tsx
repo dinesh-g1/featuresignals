@@ -62,7 +62,7 @@ function Select({
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
           className={cn(
-            "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg",
+            "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-xl shadow-slate-200/50 backdrop-blur-lg ring-1 ring-slate-100/50",
             "animate-scale-in",
             "data-[state=open]:animate-scale-in",
           )}

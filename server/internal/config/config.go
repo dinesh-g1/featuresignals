@@ -37,7 +37,6 @@ type Config struct {
 	TokenTTL    time.Duration
 	RefreshTTL  time.Duration
 	LogLevel    string
-	CORSOrigins []string
 
 	PayUMerchantKey string
 	PayUSalt        string
@@ -89,9 +88,9 @@ type Config struct {
 	SuperModeDomain string
 	SuperModeEmails []string
 
-	// Multi-region routing
-	LocalRegion     string
-	RegionEndpoints map[string]string
+	// Multi-region: identifies which region this server instance serves.
+	// Used for JWT claims, telemetry, and audit logging — not for routing.
+	LocalRegion string
 
 	// OpenTelemetry / SigNoz observability
 	OTELEnabled        bool
@@ -116,7 +115,6 @@ func Load() *Config {
 		TokenTTL:    time.Duration(getEnvInt("TOKEN_TTL_MINUTES", 60)) * time.Minute,
 		RefreshTTL:  time.Duration(getEnvInt("REFRESH_TTL_HOURS", 168)) * time.Hour, // 7 days
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		CORSOrigins: parseCORSOrigins(getEnv("CORS_ORIGIN", "http://localhost:3000")),
 
 		PayUMerchantKey: os.Getenv("PAYU_MERCHANT_KEY"),
 		PayUSalt:        os.Getenv("PAYU_SALT"),
@@ -155,8 +153,7 @@ func Load() *Config {
 		SuperModeDomain: strings.ToLower(strings.TrimSpace(os.Getenv("SUPER_MODE_DOMAIN"))),
 		SuperModeEmails: parseSuperModeEmails(os.Getenv("SUPER_MODE_EMAILS")),
 
-		LocalRegion:     getEnv("LOCAL_REGION", "in"),
-		RegionEndpoints: parseRegionEndpoints(os.Getenv("REGION_ENDPOINTS")),
+		LocalRegion: getEnv("LOCAL_REGION", "in"),
 
 		OTELEnabled:        getEnvBool("OTEL_ENABLED", false),
 		OTELEndpoint:       getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
@@ -179,39 +176,7 @@ func (c *Config) BillingEnabled() bool {
 	return !c.IsOnPrem() && (c.StripeSecretKey != "" || c.PayUMerchantKey != "")
 }
 
-func (c *Config) IsGlobalRouter() bool {
-	return len(c.RegionEndpoints) > 0
-}
 
-// parseRegionEndpoints parses REGION_ENDPOINTS env var.
-// Format: "us=https://api.us.example.com,eu=https://api.eu.example.com"
-func parseRegionEndpoints(raw string) map[string]string {
-	m := make(map[string]string)
-	if raw == "" {
-		return m
-	}
-	for _, pair := range strings.Split(raw, ",") {
-		pair = strings.TrimSpace(pair)
-		parts := strings.SplitN(pair, "=", 2)
-		if len(parts) == 2 {
-			m[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
-		}
-	}
-	return m
-}
-
-func parseCORSOrigins(raw string) []string {
-	var origins []string
-	for _, o := range strings.Split(raw, ",") {
-		if trimmed := strings.TrimSpace(o); trimmed != "" {
-			origins = append(origins, trimmed)
-		}
-	}
-	if len(origins) == 0 {
-		return []string{"http://localhost:3000"}
-	}
-	return origins
-}
 
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {

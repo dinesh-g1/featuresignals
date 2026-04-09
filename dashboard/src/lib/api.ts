@@ -201,26 +201,23 @@ export const api = {
   sendVerificationEmail: (token: string) =>
     request("/v1/auth/send-verification-email", { method: "POST", token }),
 
-  // Verify-first signup (OTP-based) — all three endpoints are proxied to the
-  // target region via X-Target-Region so pending registrations, OTP
-  // verification, and account creation all hit the same regional database.
+  // Verify-first signup (OTP-based). With GeoDNS, each region's dashboard
+  // talks to its co-located API. If the user selects a different data region,
+  // the register page redirects to that region's dashboard before initiating.
   initiateSignup: (data: { email: string; password: string; name: string; org_name: string; data_region?: string }) =>
     request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", {
       method: "POST",
       body: data,
-      extraHeaders: data.data_region ? { "X-Target-Region": data.data_region } : undefined,
     }),
-  completeSignup: (data: { email: string; otp: string }, regionCode?: string) =>
+  completeSignup: (data: { email: string; otp: string }) =>
     request<SignupResponse>("/v1/auth/complete-signup", {
       method: "POST",
       body: data,
-      extraHeaders: regionCode ? { "X-Target-Region": regionCode } : undefined,
     }),
-  resendSignupOTP: (email: string, regionCode?: string) =>
+  resendSignupOTP: (email: string) =>
     request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", {
       method: "POST",
       body: { email },
-      extraHeaders: regionCode ? { "X-Target-Region": regionCode } : undefined,
     }),
 
   // Regions

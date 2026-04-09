@@ -7,7 +7,6 @@ require (
 	github.com/crewjam/saml v0.5.1
 	github.com/exaring/otelpgx v0.10.0
 	github.com/go-chi/chi/v5 v5.2.5
-	github.com/go-chi/cors v1.2.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/riandyrn/otelchi v0.12.2

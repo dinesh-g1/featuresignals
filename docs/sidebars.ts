@@ -48,6 +48,7 @@ const sidebars: SidebarsConfig = {
             'architecture/overview',
             'architecture/evaluation-engine',
             'architecture/real-time-updates',
+            'architecture/multi-region',
           ],
         },
         {
