@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { CheckCircle2, AlertTriangle, Info } from "lucide-react";
 
 interface Toast {
   id: number;
@@ -14,6 +15,24 @@ let addToast: (message: string, type: "error" | "success" | "info") => void = ()
 export function toast(message: string, type: "error" | "success" | "info" = "error") {
   addToast(message, type);
 }
+
+const iconMap = {
+  success: CheckCircle2,
+  error: AlertTriangle,
+  info: Info,
+} as const;
+
+const styleMap = {
+  error: "bg-red-50 text-red-700 ring-red-200/80 shadow-red-100/50",
+  info: "bg-blue-50 text-blue-700 ring-blue-200/80 shadow-blue-100/50",
+  success: "bg-emerald-50 text-emerald-700 ring-emerald-200/80 shadow-emerald-100/50",
+} as const;
+
+const iconStyleMap = {
+  error: "text-red-500",
+  info: "text-blue-500",
+  success: "text-emerald-500",
+} as const;
 
 export function ToastContainer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -42,22 +61,20 @@ export function ToastContainer() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 space-y-2">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`rounded-lg px-4 py-3 text-sm font-medium shadow-lg ring-1 transition-all duration-200 ${
-            t.exiting ? "opacity-0 translate-x-4" : "animate-slide-up"
-          } ${
-            t.type === "error"
-              ? "bg-red-50 text-red-700 ring-red-200"
-              : t.type === "info"
-                ? "bg-blue-50 text-blue-700 ring-blue-200"
-                : "bg-emerald-50 text-emerald-700 ring-emerald-200"
-          }`}
-        >
-          {t.message}
-        </div>
-      ))}
+      {toasts.map((t) => {
+        const Icon = iconMap[t.type];
+        return (
+          <div
+            key={t.id}
+            className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium shadow-xl ring-1 transition-all duration-200 ${
+              t.exiting ? "opacity-0 translate-x-4 scale-95" : "animate-bounce-in"
+            } ${styleMap[t.type]}`}
+          >
+            <Icon className={`h-4 w-4 shrink-0 ${iconStyleMap[t.type]}`} strokeWidth={2} />
+            {t.message}
+          </div>
+        );
+      })}
     </div>
   );
 }

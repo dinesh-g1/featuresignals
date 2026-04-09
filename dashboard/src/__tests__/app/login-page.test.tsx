@@ -14,6 +14,14 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api", () => ({
   api: {
     login: vi.fn(),
+    listRegions: vi.fn().mockResolvedValue({ regions: [] }),
+  },
+  APIError: class APIError extends Error {
+    status: number;
+    constructor(message: string, status: number) {
+      super(message);
+      this.status = status;
+    }
   },
 }));
 

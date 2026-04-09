@@ -55,7 +55,7 @@ describe("UsageInsightsPage", () => {
     const { container } = render(<UsageInsightsPage />);
 
     await waitFor(() => {
-      expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+      expect(container.querySelector(".shimmer-bg")).toBeInTheDocument();
     });
   });
 

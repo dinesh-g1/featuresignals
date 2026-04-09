@@ -359,7 +359,6 @@ func newTestRouter(t *testing.T) http.Handler {
 		engine,
 		sseServer,
 		logger,
-		[]string{"*"},
 		metricsCollector,
 		api.BillingConfig{Registry: payment.NewRegistry()},
 		noopOTPEmail{},
@@ -374,7 +373,6 @@ func newTestRouter(t *testing.T) http.Handler {
 		nil,
 		nil,
 		"",
-		nil,
 	)
 }
 

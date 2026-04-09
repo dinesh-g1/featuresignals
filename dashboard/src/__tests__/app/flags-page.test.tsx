@@ -119,7 +119,7 @@ describe("FlagsPage", () => {
 
     const { container } = render(<FlagsPage />);
 
-    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+    expect(container.querySelector(".shimmer-bg")).toBeInTheDocument();
   });
 
   it("loads and renders flag list with names", async () => {

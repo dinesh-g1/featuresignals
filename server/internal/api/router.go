@@ -6,20 +6,17 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/riandyrn/otelchi"
 
 	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
-	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/pricing"
-	"github.com/featuresignals/server/internal/proxy"
 	"github.com/featuresignals/server/internal/status"
 )
 
@@ -40,7 +37,6 @@ func NewRouter(
 	engine handlers.Evaluator,
 	sseServer handlers.StreamServer,
 	logger *slog.Logger,
-	corsOrigins []string,
 	metricsCollector *metrics.Collector,
 	billing BillingConfig,
 	otpSender domain.OTPSender,
@@ -55,24 +51,16 @@ func NewRouter(
 	internalChecker dto.InternalChecker,
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
-	cfg *config.Config,
 ) http.Handler {
 	r := chi.NewRouter()
 
-	// CORS must be first so every response (including panic recoveries) gets headers.
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   corsOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-API-Key", "X-Target-Region"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	// CORS and security headers are handled by Caddy at the edge layer.
+	// See deploy/Caddyfile.region for the full configuration.
 	r.Use(otelchi.Middleware("featuresignals-api", otelchi.WithChiRoutes(r)))
 	r.Use(chimw.Compress(5))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
-	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.Logging(logger))
 	r.Use(middleware.SafeRecoverer)
 
@@ -137,7 +125,6 @@ func NewRouter(
 	// because SAML ACS receives form-encoded POSTs (not JSON) and metadata
 	// returns XML. These bypass the RequireJSON middleware.
 	r.Route("/v1/sso", func(r chi.Router) {
-		r.Use(middleware.RateLimit(30))
 		r.Get("/discovery/{orgSlug}", ssoAuthH.Discovery)
 		r.Get("/saml/metadata/{orgSlug}", ssoAuthH.SAMLMetadata)
 		r.Get("/saml/login/{orgSlug}", ssoAuthH.SAMLLogin)
@@ -177,29 +164,11 @@ func NewRouter(
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RateLimit(20))
 
-			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Post("/auth/login", proxy.MultiRegionLogin(
-					http.HandlerFunc(authH.Login), cfg.LocalRegion, cfg.RegionEndpoints, logger,
-				).ServeHTTP)
-				r.Post("/auth/initiate-signup", proxy.TargetRegionProxy(
-					http.HandlerFunc(signupH.InitiateSignup), cfg.LocalRegion, cfg.RegionEndpoints, logger,
-				).ServeHTTP)
-				r.Post("/auth/complete-signup", proxy.TargetRegionProxy(
-					http.HandlerFunc(signupH.CompleteSignup), cfg.LocalRegion, cfg.RegionEndpoints, logger,
-				).ServeHTTP)
-				r.Post("/auth/resend-signup-otp", proxy.TargetRegionProxy(
-					http.HandlerFunc(signupH.ResendSignupOTP), cfg.LocalRegion, cfg.RegionEndpoints, logger,
-				).ServeHTTP)
-				r.Post("/auth/refresh", proxy.RefreshRegionProxy(
-					http.HandlerFunc(authH.Refresh), cfg.LocalRegion, cfg.RegionEndpoints, logger,
-				).ServeHTTP)
-			} else {
-				r.Post("/auth/login", authH.Login)
-				r.Post("/auth/initiate-signup", signupH.InitiateSignup)
-				r.Post("/auth/complete-signup", signupH.CompleteSignup)
-				r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
-				r.Post("/auth/refresh", authH.Refresh)
-			}
+			r.Post("/auth/login", authH.Login)
+			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
+			r.Post("/auth/complete-signup", signupH.CompleteSignup)
+			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
+			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)
 
@@ -221,15 +190,11 @@ func NewRouter(
 			})
 		})
 
-		// Sales inquiry (public, rate-limited)
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(10))
-			r.Post("/sales/inquiry", salesH.SubmitInquiry)
-		})
+		// Sales inquiry (public)
+		r.Post("/sales/inquiry", salesH.SubmitInquiry)
 
-		// Payment gateway callbacks (public, rate-limited)
+		// Payment gateway callbacks (public)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(30))
 			r.Post("/billing/payu/callback", billingH.PayUCallback)
 			r.Post("/billing/payu/failure", billingH.PayUFailure)
 			r.Post("/billing/stripe/webhook", billingH.HandleStripeWebhook)
@@ -237,9 +202,6 @@ func NewRouter(
 
 		// Auth verification + logout + MFA (authenticated via JWT)
 		r.Group(func(r chi.Router) {
-			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Use(proxy.AuthRegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
-			}
 			r.Use(jwtAuth)
 			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
 			r.Post("/auth/logout", authH.Logout)
@@ -255,9 +217,6 @@ func NewRouter(
 
 		// Billing & onboarding (authenticated via JWT)
 		r.Group(func(r chi.Router) {
-			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Use(proxy.AuthRegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
-			}
 			r.Use(jwtAuth)
 			r.Post("/billing/checkout", billingH.CreateCheckout)
 			r.Get("/billing/subscription", billingH.GetSubscription)
@@ -269,9 +228,8 @@ func NewRouter(
 			r.Patch("/onboarding", onboardingH.UpdateState)
 		})
 
-		// Evaluation API (authenticated via API key, rate limited)
+		// Evaluation API (authenticated via API key, tier rate limited)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(1000))
 			r.Use(middleware.CacheControl("no-store"))
 			r.Post("/evaluate", evalH.Evaluate)
 			r.Post("/evaluate/bulk", evalH.BulkEvaluate)
@@ -282,9 +240,6 @@ func NewRouter(
 
 		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
-			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Use(proxy.AuthRegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
-			}
 			r.Use(jwtAuth)
 			r.Use(middleware.IPAllowlist(store))
 			r.Use(middleware.CacheControl("private, no-cache"))

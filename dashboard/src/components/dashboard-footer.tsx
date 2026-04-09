@@ -17,7 +17,7 @@ export function DashboardFooter() {
   }, [token]);
 
   return (
-    <footer className="border-t border-slate-200/60 bg-white/80 px-4 py-2">
+    <footer className="border-t border-slate-200/40 bg-white/60 backdrop-blur-sm px-4 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
         <div className="flex items-center gap-4">
           <a
@@ -26,7 +26,7 @@ export function DashboardFooter() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"
           >
-            <Activity className="h-3 w-3 text-emerald-500" />
+            <Activity className="h-3 w-3 animate-pulse text-emerald-500" />
             System Status
           </a>
           {evalCount !== null && evalCount > 0 && (

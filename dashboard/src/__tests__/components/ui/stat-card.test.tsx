@@ -16,7 +16,7 @@ describe("StatCard", () => {
       <StatCard icon={Activity} label="Count" value={42} />,
     );
 
-    const iconWrapper = container.querySelector(".bg-indigo-50");
+    const iconWrapper = container.querySelector(".from-indigo-500");
 
     expect(iconWrapper).toBeInTheDocument();
   });

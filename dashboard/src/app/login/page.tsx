@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, APIError } from "@/lib/api";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Shield, ArrowLeft, Loader2 } from "lucide-react";
+import { Shield, ArrowLeft, Loader2, Globe } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -21,6 +21,8 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showRegionHint, setShowRegionHint] = useState(false);
+  const [regions, setRegions] = useState<Array<{ code: string; name: string; flag: string; app_endpoint: string }>>([]);
 
   const [ssoMode, setSsoMode] = useState(false);
   const [orgSlug, setOrgSlug] = useState("");
@@ -28,6 +30,17 @@ function LoginForm() {
 
   const sessionExpired = searchParams.get("session_expired") === "true";
   const ssoError = searchParams.get("sso_error");
+
+  useEffect(() => {
+    api.listRegions().then((res) => {
+      if (res.regions?.length) {
+        setRegions(res.regions.filter((r) => {
+          const endpoint = r.app_endpoint?.replace(/\/$/, "");
+          return endpoint && endpoint !== window.location.origin;
+        }));
+      }
+    }).catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +65,9 @@ function LoginForm() {
     } catch (err: unknown) {
       if (err instanceof APIError && err.status === 403) {
         setError(err.message);
+      } else if (err instanceof APIError && err.status === 401) {
+        setError(err.message);
+        setShowRegionHint(true);
       } else {
         setError(err instanceof Error ? err.message : "Login failed");
       }
@@ -90,10 +106,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <Card className="w-full max-w-md space-y-8 p-6 sm:p-8 shadow-sm">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 px-4">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-400/[0.07] blur-3xl" />
+        <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-purple-400/[0.05] blur-3xl" />
+      </div>
+      <Card className="relative w-full max-w-md space-y-8 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-indigo-600">
+          <h1 className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
             FeatureSignals
           </h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -116,6 +136,27 @@ function LoginForm() {
         {error && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-100">
             {error}
+          </div>
+        )}
+
+        {showRegionHint && regions.length > 0 && (
+          <div className="rounded-lg bg-blue-50 p-3 ring-1 ring-blue-200">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-800">
+              <Globe className="h-4 w-4" />
+              Wrong region? Try signing in at:
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {regions.map((r) => (
+                <a
+                  key={r.code}
+                  href={`${r.app_endpoint}/login`}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200 transition-colors hover:bg-blue-100"
+                >
+                  <span>{r.flag}</span>
+                  {r.name}
+                </a>
+              ))}
+            </div>
           </div>
         )}
 
@@ -233,7 +274,7 @@ function LoginForm() {
         )}
 
         {/* Trust signals */}
-        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-slate-400">
+        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100/80 pt-5 text-xs text-slate-400">
           <svg
             className="h-3 w-3 text-emerald-500"
             viewBox="0 0 24 24"
@@ -256,7 +297,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
         </div>
       }
