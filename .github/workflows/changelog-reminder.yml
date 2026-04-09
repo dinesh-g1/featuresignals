@@ -7,12 +7,19 @@ on:
       - 'dashboard/**'
       - 'sdks/**'
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   check-changelog:
     runs-on: ubuntu-latest
     if: "!contains(github.event.pull_request.labels.*.name, 'changelog-skip')"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check for changelog changes
         id: changelog-check
         run: |
@@ -28,7 +35,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const hasReminder = existing.data.some(c => c.body.includes('changelog reminder'));
+            const hasReminder = existing.data.some(c => c.body.includes('Changelog reminder'));
             if (!hasReminder) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
