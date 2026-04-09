@@ -50,8 +50,6 @@ jobs:
             REGION=dev
             DOMAIN_API=api.dev.featuresignals.com
             DOMAIN_APP=app.dev.featuresignals.com
-            DOMAIN_MAIN=dev.featuresignals.com
-            DOMAIN_DOCS=docs.dev.featuresignals.com
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
             DB_ADMIN_PASSWORD=${DB_ADMIN_PASSWORD}

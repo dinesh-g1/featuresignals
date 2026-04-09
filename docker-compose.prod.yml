@@ -92,8 +92,6 @@ services:
       dockerfile: ../deploy/docker/Dockerfile.dashboard
       args:
         NEXT_PUBLIC_API_URL: https://api.featuresignals.com
-        NEXT_PUBLIC_DOCS_URL: https://docs.featuresignals.com
-        NEXT_PUBLIC_WEBSITE_URL: https://featuresignals.com
     restart: unless-stopped
     depends_on:
       server:
@@ -116,8 +114,6 @@ services:
     build:
       context: ./website
       dockerfile: ../deploy/docker/Dockerfile.website
-      args:
-        NEXT_PUBLIC_DASHBOARD_URL: ${DASHBOARD_URL:-https://app.featuresignals.com}
     volumes:
       - website-dist:/srv/website
 
@@ -125,10 +121,6 @@ services:
     build:
       context: ./docs
       dockerfile: ../deploy/docker/Dockerfile.docs
-      args:
-        DOCS_SITE_URL: https://docs.featuresignals.com
-        DOCS_DASHBOARD_URL: https://app.featuresignals.com
-        DOCS_WEBSITE_URL: https://featuresignals.com
     volumes:
       - docs-dist:/srv/docs
 

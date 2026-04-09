@@ -56,15 +56,11 @@ jobs:
             host_secret: VPS_HOST_US
             domain_api: api.us.featuresignals.com
             domain_app: app.us.featuresignals.com
-            domain_main: us.featuresignals.com
-            domain_docs: docs.us.featuresignals.com
             payment_gateway: stripe
           - region: eu
             host_secret: VPS_HOST_EU
             domain_api: api.eu.featuresignals.com
             domain_app: app.eu.featuresignals.com
-            domain_main: eu.featuresignals.com
-            domain_docs: docs.eu.featuresignals.com
             payment_gateway: stripe
 
     steps:
@@ -91,8 +87,8 @@ jobs:
             REGION=${{ matrix.region }}
             DOMAIN_API=${{ matrix.domain_api }}
             DOMAIN_APP=${{ matrix.domain_app }}
-            DOMAIN_MAIN=${{ matrix.domain_main }}
-            DOMAIN_DOCS=${{ matrix.domain_docs }}
+            ${{ matrix.domain_main && format('DOMAIN_MAIN={0}', matrix.domain_main) || '' }}
+            ${{ matrix.domain_docs && format('DOMAIN_DOCS={0}', matrix.domain_docs) || '' }}
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
             DB_ADMIN_PASSWORD=${DB_ADMIN_PASSWORD}

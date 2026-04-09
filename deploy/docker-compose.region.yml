@@ -1,12 +1,17 @@
 # Parameterized regional deployment template.
-# Usage: REGION=us DOMAIN_API=api.featuresignals.com DOMAIN_APP=app.featuresignals.com docker compose -f docker-compose.region.yml up -d
 #
-# Required env vars (from .env):
-#   REGION, DOMAIN_API, DOMAIN_APP, DOMAIN_MAIN, DOMAIN_DOCS
-#   POSTGRES_PASSWORD, JWT_SECRET
-#   OTEL_INGESTION_KEY (optional)
+# Primary region (IN):
+#   Runs the full stack: Postgres, API, Dashboard, Website, Docs, Caddy.
+#   Requires: REGION, DOMAIN_API, DOMAIN_APP, DOMAIN_MAIN, DOMAIN_DOCS
+#   Deploy with: docker compose --profile full -f docker-compose.region.yml up -d
 #
-# Each region runs its own independent stack (Postgres, API, Dashboard, Caddy).
+# Satellite regions (US, EU, dev):
+#   Runs API + Dashboard only: Postgres, API, Dashboard, Caddy.
+#   Requires: REGION, DOMAIN_API, DOMAIN_APP
+#   Deploy with: docker compose -f docker-compose.region.yml up -d
+#
+# The deploy-region.sh script handles profile selection automatically
+# based on whether DOMAIN_MAIN is set in the .env file.
 
 services:
   postgres:
@@ -111,8 +116,6 @@ services:
       args:
         NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
         NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
-        NEXT_PUBLIC_DOCS_URL: https://${DOMAIN_DOCS}
-        NEXT_PUBLIC_WEBSITE_URL: https://${DOMAIN_MAIN}
     restart: unless-stopped
     depends_on:
       server:
@@ -132,23 +135,21 @@ services:
           memory: 512M
           cpus: "1.0"
 
+  # Primary region only — activated via --profile full
   website-build:
+    profiles: ["full"]
     build:
       context: ./website
       dockerfile: ../deploy/docker/Dockerfile.website
-      args:
-        NEXT_PUBLIC_DASHBOARD_URL: https://${DOMAIN_APP}
     volumes:
       - website-dist:/srv/website
 
+  # Primary region only — activated via --profile full
   docs-build:
+    profiles: ["full"]
     build:
       context: ./docs
       dockerfile: ../deploy/docker/Dockerfile.docs
-      args:
-        DOCS_SITE_URL: https://${DOMAIN_DOCS}
-        DOCS_DASHBOARD_URL: https://${DOMAIN_APP}
-        DOCS_WEBSITE_URL: https://${DOMAIN_MAIN}
     volumes:
       - docs-dist:/srv/docs
 
@@ -158,10 +159,6 @@ services:
       dockerfile: deploy/docker/Dockerfile.caddy
     restart: unless-stopped
     depends_on:
-      website-build:
-        condition: service_completed_successfully
-      docs-build:
-        condition: service_completed_successfully
       server:
         condition: service_started
       dashboard:
@@ -171,7 +168,7 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./deploy/Caddyfile.region:/etc/caddy/Caddyfile:ro
+      - ./deploy/Caddyfile.active:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
       - website-dist:/srv/website:ro
@@ -179,8 +176,8 @@ services:
     environment:
       DOMAIN_API: ${DOMAIN_API}
       DOMAIN_APP: ${DOMAIN_APP}
-      DOMAIN_MAIN: ${DOMAIN_MAIN:-featuresignals.com}
-      DOMAIN_DOCS: ${DOMAIN_DOCS:-docs.featuresignals.com}
+      DOMAIN_MAIN: ${DOMAIN_MAIN:-}
+      DOMAIN_DOCS: ${DOMAIN_DOCS:-}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s

@@ -1,0 +1,57 @@
+# Satellite region Caddyfile: API + Dashboard only (no website or docs).
+# Used by non-primary regions (US, EU, dev) where website and docs
+# are not deployed — they are served from the primary (IN) region.
+
+{$DOMAIN_APP} {
+	reverse_proxy dashboard:3000
+
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Cross-Origin-Opener-Policy "same-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+}
+
+{$DOMAIN_API} {
+	rate_limit {
+		zone api_global {
+			key    {remote_host}
+			events 100
+			window 1m
+		}
+	}
+
+	@cors_preflight method OPTIONS
+	handle @cors_preflight {
+		header Access-Control-Allow-Origin "{http.request.header.Origin}"
+		header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+		header Access-Control-Allow-Headers "Accept, Authorization, Content-Type, X-API-Key"
+		header Access-Control-Allow-Credentials "true"
+		header Access-Control-Max-Age "300"
+		respond "" 204
+	}
+
+	header {
+		Access-Control-Allow-Origin "{http.request.header.Origin}"
+		Access-Control-Allow-Credentials "true"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+
+	reverse_proxy server:8080 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

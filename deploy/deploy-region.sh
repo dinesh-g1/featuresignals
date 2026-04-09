@@ -40,9 +40,22 @@ if [ ! -f ".env" ]; then
 fi
 
 REGION=$(grep '^REGION=' .env | cut -d'=' -f2)
+DOMAIN_MAIN=$(grep '^DOMAIN_MAIN=' .env | cut -d'=' -f2 || true)
 PREV_COMMIT=$(git rev-parse HEAD)
 echo "==> Deploying region: ${REGION:-unknown}"
 echo "==> Current commit: $PREV_COMMIT"
+
+# Primary regions serve website + docs; satellite regions serve API + Dashboard only.
+IS_PRIMARY=false
+if [ -n "${DOMAIN_MAIN:-}" ]; then
+  IS_PRIMARY=true
+  cp deploy/Caddyfile.region deploy/Caddyfile.active
+  DC="$DC --profile full"
+  echo "==> Mode: PRIMARY (website + docs enabled)"
+else
+  cp deploy/Caddyfile.satellite deploy/Caddyfile.active
+  echo "==> Mode: SATELLITE (API + Dashboard only)"
+fi
 
 # ── Targeted rollback ────────────────────────────────────────────────────────
 if [ -n "${ROLLBACK_COMMIT:-}" ]; then
@@ -77,6 +90,12 @@ MIGRATION_CHANGED=false; has_changes '^server/migrations/' && MIGRATION_CHANGED=
 if [ "$CHANGED_FILES" = "FULL" ] || [ -n "${ROLLBACK_COMMIT:-}" ] || [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
   SERVER_CHANGED=true; DASH_CHANGED=true; WEBSITE_CHANGED=true
   DOCS_CHANGED=true; CADDY_CHANGED=true; MIGRATION_CHANGED=true
+fi
+
+# Satellite regions never build website or docs — those are served from primary only.
+if [ "$IS_PRIMARY" = false ]; then
+  WEBSITE_CHANGED=false
+  DOCS_CHANGED=false
 fi
 
 echo "==> Change detection:"
@@ -147,7 +166,7 @@ if ! $DC up -d 2>&1; then
   exit 1
 fi
 
-if [ "$WEBSITE_CHANGED" = true ] || [ "$DOCS_CHANGED" = true ]; then
+if [ "$IS_PRIMARY" = true ] && { [ "$WEBSITE_CHANGED" = true ] || [ "$DOCS_CHANGED" = true ]; }; then
   echo "==> Waiting for builders..."
   $DC wait website-build docs-build 2>/dev/null || sleep 30
 fi
