@@ -24,7 +24,7 @@ describe("CategoryBadge", () => {
 
     const el = screen.getByText("release");
 
-    expect(el.className).toContain("bg-blue-50");
+    expect(el.className).toContain("from-blue-50");
   });
 
   it("falls back to default variant for unknown category", () => {
@@ -32,7 +32,7 @@ describe("CategoryBadge", () => {
 
     const el = screen.getByText("unknown");
 
-    expect(el.className).toContain("bg-slate-50");
+    expect(el.className).toContain("from-slate-50");
   });
 });
 
@@ -48,6 +48,6 @@ describe("StatusBadge", () => {
 
     const el = screen.getByText("mystery");
 
-    expect(el.className).toContain("bg-slate-50");
+    expect(el.className).toContain("from-slate-50");
   });
 });

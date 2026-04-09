@@ -151,11 +151,19 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  const regionOptions = [
-    { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}" },
-    { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}" },
-    { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}" },
-  ];
+  const [regions, setRegions] = useState<Array<{ code: string; name: string; flag: string; app_endpoint: string }>>([
+    { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}", app_endpoint: "https://app.featuresignals.com" },
+    { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}", app_endpoint: "https://app.us.featuresignals.com" },
+    { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}", app_endpoint: "https://app.eu.featuresignals.com" },
+  ]);
+
+  useEffect(() => {
+    api.listRegions().then((res) => {
+      if (res.regions?.length) {
+        setRegions(res.regions);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -172,6 +180,20 @@ function RegisterForm() {
   async function handleInitiateSignup() {
     setError("");
     setLoading(true);
+
+    const targetRegion = regions.find((r) => r.code === form.data_region);
+    if (targetRegion?.app_endpoint) {
+      const currentOrigin = window.location.origin;
+      const targetOrigin = targetRegion.app_endpoint.replace(/\/$/, "");
+      if (currentOrigin !== targetOrigin && !currentOrigin.includes("localhost")) {
+        const params = new URLSearchParams();
+        if (planIntent) params.set("plan", planIntent);
+        const qs = params.toString();
+        window.location.href = `${targetOrigin}/register${qs ? `?${qs}` : ""}`;
+        return;
+      }
+    }
+
     try {
       await api.initiateSignup(form);
       setStep("otp");
@@ -187,7 +209,7 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      const data = await api.completeSignup({ email: form.email, otp }, form.data_region);
+      const data = await api.completeSignup({ email: form.email, otp });
       setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization, data.tokens.expires_at, data.onboarding_completed);
       router.push("/onboarding");
     } catch (err: unknown) {
@@ -201,7 +223,7 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      await api.resendSignupOTP(form.email, form.data_region);
+      await api.resendSignupOTP(form.email);
       setCountdown(60);
       setOtp("");
     } catch (err: unknown) {
@@ -297,7 +319,7 @@ function RegisterForm() {
               <legend className="text-sm font-medium text-slate-700">Data Region <span className="text-red-500">*</span></legend>
               <p className="text-xs text-slate-400">Choose where your data is stored for compliance</p>
               <div className="grid grid-cols-3 gap-2">
-                {regionOptions.map((region) => (
+                {regions.map((region) => (
                   <label
                     key={region.code}
                     className={cn(

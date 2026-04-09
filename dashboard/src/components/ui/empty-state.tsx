@@ -23,8 +23,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center px-4 py-16 text-center animate-fade-in sm:px-6", className)}>
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 ring-1 ring-slate-200/60 shadow-sm">
-        <Icon className="h-7 w-7 text-slate-400" strokeWidth={1.5} />
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-100 ring-1 ring-indigo-100/60 shadow-sm">
+        <Icon className="h-7 w-7 text-indigo-400" strokeWidth={1.5} />
       </div>
       <p className="mt-4 text-sm font-medium text-slate-600">{title}</p>
       {description && (

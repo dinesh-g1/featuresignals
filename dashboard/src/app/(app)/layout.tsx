@@ -35,7 +35,7 @@ function UpgradeRequiredListener() {
 function MobileHeader() {
   const open = useSidebarStore((s) => s.open);
   return (
-    <div className="flex h-14 items-center border-b border-slate-200 bg-white px-4 md:hidden">
+    <div className="flex h-14 items-center border-b border-slate-200/50 bg-white/80 backdrop-blur-md px-4 md:hidden">
       <button
         onClick={open}
         className="rounded-md p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
@@ -43,7 +43,7 @@ function MobileHeader() {
       >
         <Menu className="h-5 w-5" />
       </button>
-      <span className="ml-3 text-lg font-bold tracking-tight text-indigo-600">
+      <span className="ml-3 bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-lg font-bold tracking-tight text-transparent">
         FeatureSignals
       </span>
     </div>
@@ -72,7 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <TrialBanner />
       <UpgradeBanner />
       <VerificationBanner />
-      <div className="flex h-screen flex-col bg-slate-50 md:flex-row">
+      <div className="flex h-screen flex-col bg-gradient-to-br from-slate-50 via-white to-slate-50 md:flex-row">
         <Sidebar />
         <div className="flex min-h-0 flex-1 flex-col">
           <MobileHeader />

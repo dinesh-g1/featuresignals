@@ -3,7 +3,7 @@
 #
 # Required env vars (from .env):
 #   REGION, DOMAIN_API, DOMAIN_APP, DOMAIN_MAIN, DOMAIN_DOCS
-#   POSTGRES_PASSWORD, JWT_SECRET, CORS_ORIGIN
+#   POSTGRES_PASSWORD, JWT_SECRET
 #   OTEL_INGESTION_KEY (optional)
 #
 # Each region runs its own independent stack (Postgres, API, Dashboard, Caddy).
@@ -63,7 +63,6 @@ services:
       DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
       PORT: "8080"
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://${DOMAIN_APP},https://${DOMAIN_DOCS},https://${DOMAIN_MAIN},https://www.${DOMAIN_MAIN}}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DEPLOYMENT_MODE: cloud
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-zeptomail}
@@ -73,8 +72,7 @@ services:
       ZEPTOMAIL_BASE_URL: ${ZEPTOMAIL_BASE_URL:-https://api.zeptomail.in}
       APP_BASE_URL: https://${DOMAIN_API}
       DASHBOARD_URL: https://${DOMAIN_APP}
-      LOCAL_REGION: ${LOCAL_REGION:-}
-      REGION_ENDPOINTS: ${REGION_ENDPOINTS:-}
+      LOCAL_REGION: ${REGION:-in}
       OTEL_ENABLED: ${OTEL_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-ingest.us2.signoz.cloud:443}
       OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY:-}
@@ -147,7 +145,9 @@ services:
       - docs-dist:/srv/docs
 
   caddy:
-    image: caddy:2-alpine
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.caddy
     restart: unless-stopped
     depends_on:
       website-build:

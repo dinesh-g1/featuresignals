@@ -84,7 +84,7 @@ jobs:
           host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
-          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,LOCAL_REGION,REGION_ENDPOINTS,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE,IMAGE_TAG,USE_REGISTRY
+          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,LOCAL_REGION,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE,IMAGE_TAG,USE_REGISTRY
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=${{ matrix.region }}
@@ -108,7 +108,6 @@ jobs:
             OTEL_LOG_LEVEL=warn
             OTEL_TRACE_SAMPLE_RATE=0.1
             LOCAL_REGION=${LOCAL_REGION}
-            REGION_ENDPOINTS=${REGION_ENDPOINTS}
             PAYMENT_GATEWAY=${{ matrix.payment_gateway }}
             PAYU_MERCHANT_KEY=${PAYU_MERCHANT_KEY}
             PAYU_SALT=${PAYU_SALT}
@@ -123,13 +122,12 @@ jobs:
             chmod 600 /opt/featuresignals/.env
         env:
           POSTGRES_PASSWORD: ${{ secrets[format('POSTGRES_PASSWORD_{0}', matrix.region)] || secrets.POSTGRES_PASSWORD }}
-          JWT_SECRET: ${{ secrets[format('JWT_SECRET_{0}', matrix.region)] || secrets.JWT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DB_ADMIN_PASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
           DB_READONLY_PASSWORD: ${{ secrets.DB_READONLY_PASSWORD }}
           ZEPTOMAIL_TOKEN: ${{ secrets.ZEPTOMAIL_TOKEN }}
           OTEL_INGESTION_KEY: ${{ secrets.OTEL_INGESTION_KEY }}
           LOCAL_REGION: ${{ matrix.region }}
-          REGION_ENDPOINTS: ${{ matrix.region == 'in' && 'us=https://api.us.featuresignals.com,eu=https://api.eu.featuresignals.com' || '' }}
           PAYU_MERCHANT_KEY: ${{ secrets.PAYU_MERCHANT_KEY }}
           PAYU_SALT: ${{ secrets.PAYU_SALT }}
           PAYU_MODE: ${{ secrets.PAYU_MODE }}
