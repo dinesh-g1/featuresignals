@@ -375,36 +375,55 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
+        if: >-
+          github.event_name != 'pull_request'
+          || needs.detect-changes.outputs.server == 'true'
+          || needs.detect-changes.outputs.sdk-go == 'true'
         with:
           go-version: '1.25.9'
           cache-dependency-path: server/go.sum
       - uses: actions/setup-node@v5
+        if: >-
+          github.event_name != 'pull_request'
+          || needs.detect-changes.outputs.dashboard == 'true'
+          || needs.detect-changes.outputs.docs == 'true'
+          || needs.detect-changes.outputs.sdk-node == 'true'
         with:
           node-version: '22'
       - name: Go vulnerability check (server)
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.server == 'true'
         working-directory: server
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
       - name: Go vulnerability check (Go SDK)
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.sdk-go == 'true'
         working-directory: sdks/go
-        run: govulncheck ./...
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
       - name: npm audit (dashboard)
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.dashboard == 'true'
         working-directory: dashboard
         run: npm install && npm audit --audit-level=high
       - name: npm audit (docs)
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.docs == 'true'
         working-directory: docs
         run: npm install && npm audit --audit-level=high
       - name: npm audit (website)
+        if: github.event_name != 'pull_request'
         working-directory: website
         run: npm install && npm audit --audit-level=high
       - name: npm audit (Node SDK)
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.sdk-node == 'true'
         working-directory: sdks/node
         run: npm install && npm audit --audit-level=high
       - name: npm audit (React SDK)
+        if: github.event_name != 'pull_request'
         working-directory: sdks/react
         run: npm install && npm audit --audit-level=high
       - name: npm audit (Vue SDK)
+        if: github.event_name != 'pull_request'
         working-directory: sdks/vue
         run: npm install && npm audit --audit-level=high
 
@@ -528,6 +547,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push server image
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.server == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./server
@@ -539,6 +559,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=server
 
       - name: Build & push dashboard image
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.dashboard == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./dashboard

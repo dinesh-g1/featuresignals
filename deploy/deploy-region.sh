@@ -4,6 +4,8 @@
 #
 # Features:
 #   - Deployment locking (flock) to prevent concurrent deploys
+#   - Change-aware selective rebuild: only pull/build/restart services whose
+#     source files changed between the running commit and the target commit
 #   - Pre-built image pull from GHCR (falls back to local build)
 #   - Automatic rollback on health check failure
 #   - Deploy history logging
@@ -60,28 +62,81 @@ fi
 NEW_COMMIT=$(git rev-parse HEAD)
 echo "==> Target commit: $NEW_COMMIT"
 
+# ── Detect what changed ──────────────────────────────────────────────────────
+CHANGED_FILES=$(git diff --name-only "$PREV_COMMIT" "$NEW_COMMIT" 2>/dev/null || echo "FULL")
+
+has_changes() { echo "$CHANGED_FILES" | grep -qE "$1" && return 0 || return 1; }
+
+SERVER_CHANGED=false;    has_changes '^server/' && SERVER_CHANGED=true
+DASH_CHANGED=false;      has_changes '^dashboard/' && DASH_CHANGED=true
+WEBSITE_CHANGED=false;   has_changes '^website/' && WEBSITE_CHANGED=true
+DOCS_CHANGED=false;      has_changes '^docs/' && DOCS_CHANGED=true
+CADDY_CHANGED=false;     has_changes '^deploy/(Caddyfile|docker/Dockerfile\.caddy)' && CADDY_CHANGED=true
+MIGRATION_CHANGED=false; has_changes '^server/migrations/' && MIGRATION_CHANGED=true
+
+if [ "$CHANGED_FILES" = "FULL" ] || [ -n "${ROLLBACK_COMMIT:-}" ] || [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
+  SERVER_CHANGED=true; DASH_CHANGED=true; WEBSITE_CHANGED=true
+  DOCS_CHANGED=true; CADDY_CHANGED=true; MIGRATION_CHANGED=true
+fi
+
+echo "==> Change detection:"
+echo "    server=$SERVER_CHANGED dashboard=$DASH_CHANGED website=$WEBSITE_CHANGED"
+echo "    docs=$DOCS_CHANGED caddy=$CADDY_CHANGED migrations=$MIGRATION_CHANGED"
+
 # ── Build or pull images ─────────────────────────────────────────────────────
 if [ "$USE_REGISTRY" = "true" ]; then
-  echo "==> Pulling pre-built images from registry (tag: $IMAGE_TAG)..."
-  IMAGE_TAG="$IMAGE_TAG" $DC pull server dashboard || {
-    echo "ERROR: Failed to pull images from registry."
-    echo "  - Ensure the 'Test, Lint, Build & Publish Images' workflow has run successfully"
-    echo "  - Or set USE_REGISTRY=false to build locally"
-    exit 1
-  }
-  echo "==> Building auxiliary services (caddy, migrate, website, docs)..."
-  $DC build --parallel caddy migrate website-build docs-build 2>/dev/null || true
+  PULL_TARGETS=""
+  [ "$SERVER_CHANGED" = true ] && PULL_TARGETS="$PULL_TARGETS server"
+  [ "$DASH_CHANGED" = true ] && PULL_TARGETS="$PULL_TARGETS dashboard"
+
+  if [ -n "$PULL_TARGETS" ]; then
+    echo "==> Pulling pre-built images from registry (tag: $IMAGE_TAG):$PULL_TARGETS"
+    IMAGE_TAG="$IMAGE_TAG" $DC pull $PULL_TARGETS || {
+      echo "ERROR: Failed to pull images from registry."
+      echo "  - Ensure the 'Test, Lint, Build & Publish Images' workflow has run successfully"
+      echo "  - Or set USE_REGISTRY=false to build locally"
+      exit 1
+    }
+  else
+    echo "==> No application images changed, skipping registry pull"
+  fi
+
+  BUILD_AUX=""
+  [ "$CADDY_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX caddy"
+  [ "$MIGRATION_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX migrate"
+  [ "$WEBSITE_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX website-build"
+  [ "$DOCS_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX docs-build"
+
+  if [ -n "$BUILD_AUX" ]; then
+    echo "==> Building changed auxiliary services:$BUILD_AUX"
+    $DC build --parallel $BUILD_AUX 2>/dev/null || true
+  else
+    echo "==> No auxiliary services changed, skipping build"
+  fi
 else
   echo "==> Building all images locally (USE_REGISTRY=false)..."
   $DC build --parallel
 fi
 
 # ── Stop one-shot containers from previous deploy ────────────────────────────
-echo "==> Stopping one-shot containers from previous deploy..."
-$DC rm -fsv website-build docs-build migrate 2>/dev/null || true
+REMOVE_TARGETS=""
+[ "$WEBSITE_CHANGED" = true ] && REMOVE_TARGETS="$REMOVE_TARGETS website-build"
+[ "$DOCS_CHANGED" = true ] && REMOVE_TARGETS="$REMOVE_TARGETS docs-build"
+[ "$MIGRATION_CHANGED" = true ] || [ "$SERVER_CHANGED" = true ] && REMOVE_TARGETS="$REMOVE_TARGETS migrate"
 
-echo "==> Removing old static site volumes..."
-docker volume rm -f featuresignals_website-dist featuresignals_docs-dist 2>/dev/null || true
+if [ -n "$REMOVE_TARGETS" ]; then
+  echo "==> Stopping changed one-shot containers:$REMOVE_TARGETS"
+  $DC rm -fsv $REMOVE_TARGETS 2>/dev/null || true
+fi
+
+if [ "$WEBSITE_CHANGED" = true ]; then
+  echo "==> Removing old website volume..."
+  docker volume rm -f featuresignals_website-dist 2>/dev/null || true
+fi
+if [ "$DOCS_CHANGED" = true ]; then
+  echo "==> Removing old docs volume..."
+  docker volume rm -f featuresignals_docs-dist 2>/dev/null || true
+fi
 
 # ── Start services ───────────────────────────────────────────────────────────
 echo "==> Starting services..."
@@ -92,8 +147,10 @@ if ! $DC up -d 2>&1; then
   exit 1
 fi
 
-echo "==> Waiting for builders..."
-$DC wait website-build docs-build 2>/dev/null || sleep 30
+if [ "$WEBSITE_CHANGED" = true ] || [ "$DOCS_CHANGED" = true ]; then
+  echo "==> Waiting for builders..."
+  $DC wait website-build docs-build 2>/dev/null || sleep 30
+fi
 
 echo "==> Setting up database roles..."
 COMPOSE_FILE="$COMPOSE_FILE" bash "$PROJECT_DIR/deploy/pg-setup-roles.sh" || echo "WARNING: Role setup skipped"
@@ -141,7 +198,6 @@ echo "==> Post-deploy cleanup..."
 docker container prune -f 2>/dev/null || true
 docker image prune -a -f --filter "until=48h" 2>/dev/null || true
 docker builder prune -f --filter "until=48h" 2>/dev/null || true
-docker volume prune -f 2>/dev/null || true
 if [ -d "/root/go/pkg/mod/cache" ]; then
   rm -rf /root/go/pkg/mod/cache 2>/dev/null || true
 fi
