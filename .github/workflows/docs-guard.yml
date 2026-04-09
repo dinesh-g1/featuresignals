@@ -7,12 +7,19 @@ on:
       - 'server/internal/api/router.go'
       - 'server/internal/domain/**'
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   check-docs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.pull_request.labels.*.name, 'docs-skip')"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check for documentation changes
         id: docs-check
         run: |
@@ -29,9 +36,17 @@ jobs:
               issue_number: context.issue.number,
               labels: ['docs-needed']
             });
-            await github.rest.issues.createComment({
+            const existing = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '📝 This PR modifies API handlers or domain types but no documentation files were updated. Please review whether `docs/docs/api-reference/` or the OpenAPI spec (`docs/static/openapi/featuresignals.json`) need updating.\n\nAdd the `docs-skip` label to suppress this check.'
             });
+            const hasReminder = existing.data.some(c => c.body.includes('documentation files were updated'));
+            if (!hasReminder) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '📝 This PR modifies API handlers or domain types but no documentation files were updated. Please review whether `docs/docs/api-reference/` or the OpenAPI spec (`docs/static/openapi/featuresignals.json`) need updating.\n\nAdd the `docs-skip` label to suppress this check.'
+              });
+            }
