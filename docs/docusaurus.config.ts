@@ -18,6 +18,14 @@ const config: Config = {
   projectName: 'featuresignals',
 
   onBrokenLinks: 'warn',
+  onBrokenMarkdownLinks: 'warn',
+
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: { property: 'og:image', content: 'https://docs.featuresignals.com/img/logo.svg' },
+    },
+  ],
 
   i18n: {
     defaultLocale: 'en',
@@ -62,6 +70,9 @@ const config: Config = {
   ],
 
   themeConfig: {
+    metadata: [
+      { name: 'keywords', content: 'feature flags, feature flag management, feature toggles, A/B testing, open source, self-hosted, SDKs, API' },
+    ],
     colorMode: {
       defaultMode: 'light',
       respectPrefersColorScheme: true,

@@ -1,3 +1,7 @@
+---
+description: "FeatureSignals privacy policy — how we collect, use, and protect personal data under GDPR and CCPA."
+---
+
 # Privacy Policy
 
 _Last updated: April 2026_
@@ -14,12 +18,12 @@ FeatureSignals is the data controller for the personal data described in this po
 
 ### Account Data
 - **Email address** — used for authentication, notifications, and communication
-- **Name** — displayed in the dashboard and audit logs
+- **Name** — displayed in the Flag Engine and audit logs
 - **Password** — stored as a bcrypt hash; we never store plaintext passwords
 - **Organization name** — used to identify your tenant
 
 ### Usage Data
-- **Audit logs** — records of actions taken in the dashboard (who, what, when)
+- **Audit logs** — records of actions taken in the Flag Engine (who, what, when)
 - **API request metadata** — IP addresses, user agents (for security and rate limiting)
 - **Evaluation metrics** — aggregated flag evaluation counts (no PII)
 
@@ -69,7 +73,7 @@ When your application evaluates feature flags, you may pass an **evaluation cont
 
 - **API**: `GET /v1/users/me/data` (data export), `DELETE /v1/users/me` (account deletion)
 - **Email**: privacy@featuresignals.com
-- **Dashboard**: Account settings for profile and organization management
+- **Flag Engine**: Account settings for profile and organization management
 
 We will respond to all requests within 30 days (GDPR) or 45 days (CCPA).
 
@@ -92,12 +96,12 @@ We will respond to all requests within 30 days (GDPR) or 45 days (CCPA).
 
 For deployments where data crosses borders, we rely on:
 - EU Standard Contractual Clauses (SCCs)
-- Data Privacy Framework (DPF) self-certification (when applicable)
+- Additional safeguards as described in our compliance documentation (we are **not** currently certified under the EU-U.S. Data Privacy Framework)
 - Customer-controlled data residency (on-premises deployment option)
 
 ## Changes to This Policy
 
-We will notify you of material changes via email and dashboard notification at least 30 days before they take effect.
+We will notify you of material changes via email and Flag Engine notification at least 30 days before they take effect.
 
 ## Contact
 

@@ -1,6 +1,7 @@
 ---
 title: Self-Hosting Guide
 sidebar_position: 1
+description: "Complete self-hosting setup guide for FeatureSignals including Docker Compose, reverse proxy, backup, and monitoring."
 ---
 
 # Enterprise self-hosting onboarding
@@ -15,10 +16,10 @@ This guide is for teams deploying **FeatureSignals** on their own infrastructure
 | **Docker Compose** | v2 (`docker compose`, not legacy `docker-compose`). |
 | **Host memory** | At least **4 GB RAM** available to containers for the default Compose limits (see [Sizing guide](#sizing-guide)). |
 | **Database** | **PostgreSQL-compatible**: the stack ships **PostgreSQL 16** in Compose. You may use an external Postgres 14+ if you adapt `DATABASE_URL` and remove or replace the `postgres` service (not covered by the default compose file). |
-| **Network ports** | **8080** (API), **3000** (dashboard), and **5432** (database, bound to `127.0.0.1:5432` by default). Ensure these are free or override `API_PORT`, `DASHBOARD_PORT`, and `DB_PORT` in `.env`. |
+| **Network ports** | **8080** (API), **3000** (Flag Engine), and **5432** (database, bound to `127.0.0.1:5432` by default). Ensure these are free or override `API_PORT`, `DASHBOARD_PORT`, and `DB_PORT` in `.env`. |
 | **Shell utilities** | `bash`, `curl`, and `gzip` for bundled scripts. |
 
-Optional: a reverse proxy (Nginx, Caddy, or your platform ingress) terminating TLS in front of the API and dashboard.
+Optional: a reverse proxy (Nginx, Caddy, or your platform ingress) terminating TLS in front of the API and Flag Engine.
 
 ## Quick start (about five minutes)
 
@@ -58,7 +59,7 @@ Optional: a reverse proxy (Nginx, Caddy, or your platform ingress) terminating T
 6. **Verify**:
 
    - API: `http://<host>:8080/health` (or your `API_PORT`)
-   - Dashboard: `http://<host>:3000` (or your `DASHBOARD_PORT`)
+   - Flag Engine: `http://<host>:3000` (or your `DASHBOARD_PORT`)
 
 Alternatively, after step 3, run `./setup.sh` from the install directory; it checks Docker, pulls images, runs `docker compose up -d`, and probes `/health`.
 
@@ -78,16 +79,16 @@ Variables below are defined in `deploy/onprem/.env.onprem.example`. Values shown
 | Variable | Description |
 |----------|-------------|
 | `APP_BASE_URL` | Public base URL of the **API** as seen by clients (e.g. `https://api.flags.example.com`). Used by the server for links and callbacks. |
-| `DASHBOARD_URL` | Public URL of the **dashboard** (e.g. `https://flags.example.com`). |
-| `CORS_ORIGIN` | Allowed browser origin for the management API. Must match the scheme/host/port your users use to open the dashboard (comma-separated list if multiple). |
-| `NEXT_PUBLIC_API_URL` | Dashboard build-time/public API base URL; set to the same origin users use to reach the API (often your HTTPS API URL). |
+| `DASHBOARD_URL` | Public URL of the **Flag Engine** (e.g. `https://flags.example.com`). |
+| `CORS_ORIGIN` | Allowed browser origin for the management API. Must match the scheme/host/port your users use to open the Flag Engine (comma-separated list if multiple). |
+| `NEXT_PUBLIC_API_URL` | Flag Engine build-time/public API base URL; set to the same origin users use to reach the API (often your HTTPS API URL). |
 
 ### Ports
 
 | Variable | Description |
 |----------|-------------|
 | `API_PORT` | Host port mapped to the API container (`8080` inside the container). |
-| `DASHBOARD_PORT` | Host port mapped to the dashboard. |
+| `DASHBOARD_PORT` | Host port mapped to the Flag Engine. |
 | `DB_PORT` | Host bind for Postgres (default `127.0.0.1:5432` so the DB is not exposed on all interfaces). |
 
 ### Database
@@ -103,7 +104,7 @@ Variables below are defined in `deploy/onprem/.env.onprem.example`. Values shown
 |----------|-------------|
 | `LOG_LEVEL` | Server log verbosity (e.g. `info`, `debug`). |
 | `AUDIT_RETENTION_DAYS` | How long the server retains audit data before pruning (default `90`). |
-| `VERSION` | Image tag for server and dashboard (e.g. `latest` or a release tag). Used by Compose and `upgrade.sh`. |
+| `VERSION` | Image tag for server and Flag Engine (e.g. `latest` or a release tag). Used by Compose and `upgrade.sh`. |
 | `REGISTRY` | Container registry prefix for images (default `ghcr.io/dinesh-g1`). |
 
 ### Resource limits (Compose `deploy.resources.limits.memory`)
@@ -112,7 +113,7 @@ Variables below are defined in `deploy/onprem/.env.onprem.example`. Values shown
 |----------|---------|-------------|
 | `DB_MEMORY_LIMIT` | `2G` | Cap for the PostgreSQL container. |
 | `API_MEMORY_LIMIT` | `1G` | Cap for the API server container. |
-| `DASHBOARD_MEMORY_LIMIT` | `512M` | Cap for the dashboard container. |
+| `DASHBOARD_MEMORY_LIMIT` | `512M` | Cap for the Flag Engine container. |
 
 ### Enterprise license
 
@@ -160,7 +161,7 @@ Default Compose memory limits total roughly **3.5 GB** (`2G` + `1G` + `512M`) **
 - **RAM**: 8 GB recommended (`DB_MEMORY_LIMIT=3G`, `API_MEMORY_LIMIT=2G`, `DASHBOARD_MEMORY_LIMIT=512M` is a reasonable starting point).
 - **vCPU**: 4 cores.
 - **Disk**: 50 GB+ SSD; monitor PostgreSQL volume growth.
-- **Use case**: several teams, moderate dashboard and API load.
+- **Use case**: several teams, moderate Flag Engine and API load.
 
 ### Large (100+ users or heavy evaluation volume)
 
@@ -196,7 +197,7 @@ server {
     }
 }
 
-# Dashboard
+# Flag Engine
 server {
     listen 443 ssl http2;
     server_name flags.example.com;
@@ -227,7 +228,7 @@ flags.example.com {
 }
 ```
 
-After changing URLs, **restart** the dashboard and API containers so configuration and the dashboard’s `NEXT_PUBLIC_API_URL` match what browsers use.
+After changing URLs, **restart** the Flag Engine and API containers so configuration and the Flag Engine’s `NEXT_PUBLIC_API_URL` match what browsers use.
 
 ## Upgrade procedure
 
@@ -307,7 +308,7 @@ The bundled backups are **SQL text**, not the custom/binary format. Restore with
    docker compose -f docker-compose.onprem.yml up -d
    ```
 
-5. Verify `/health` and a dashboard login.
+5. Verify `/health` and a Flag Engine login.
 
 **`pg_restore`** is used for **custom-format** archives (`pg_dump -Fc`). If you take custom-format dumps separately, restore with:
 
@@ -362,14 +363,14 @@ Set `OTEL_ENABLED=true` and point `OTEL_EXPORTER_OTLP_ENDPOINT` at your collecto
 
 ### CORS errors in the browser
 
-- `CORS_ORIGIN` must **exactly** match the dashboard origin (scheme + host + port), e.g. `https://flags.example.com` with no trailing slash mismatch.
-- The API must trust the same URL you put in `NEXT_PUBLIC_API_URL` for the dashboard build/runtime.
+- `CORS_ORIGIN` must **exactly** match the Flag Engine origin (scheme + host + port), e.g. `https://flags.example.com` with no trailing slash mismatch.
+- The API must trust the same URL you put in `NEXT_PUBLIC_API_URL` for the Flag Engine build/runtime.
 
-### Dashboard blank page or endless loading
+### Flag Engine blank page or endless loading
 
-- Open dev tools → **Network**: failed calls to the wrong host indicate **`NEXT_PUBLIC_API_URL`** not updated for your public API URL; rebuild/restart the dashboard container after changing it.
+- Open dev tools → **Network**: failed calls to the wrong host indicate **`NEXT_PUBLIC_API_URL`** not updated for your public API URL; rebuild/restart the `dashboard` container after changing it.
 - Confirm the API is reachable from the browser (same network, firewall, and TLS certificates valid).
-- Check dashboard logs: `docker compose -f docker-compose.onprem.yml logs dashboard`.
+- Check Flag Engine logs: `docker compose -f docker-compose.onprem.yml logs dashboard`.
 
 ---
 

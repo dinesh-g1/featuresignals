@@ -1,3 +1,7 @@
+---
+description: "How FeatureSignals supports DORA compliance for financial entities using feature flag management."
+---
+
 # DORA Compliance — Digital Operational Resilience Act
 
 _Last updated: April 2026_
@@ -70,7 +74,7 @@ For major ICT-related incidents, FeatureSignals provides:
 | Test Type | Frequency | Scope |
 |-----------|-----------|-------|
 | Vulnerability scanning | Every CI run | Full codebase and dependencies |
-| Penetration testing | Annual | External-facing APIs and dashboard |
+| Penetration testing | Annual | External-facing APIs and Flag Engine |
 | Scenario-based testing | Semi-annual | Tabletop exercises for incident response |
 | Backup recovery testing | Quarterly | Database restore verification |
 
@@ -108,7 +112,7 @@ FeatureSignals maintains an information register for DORA Article 28(3) containi
 
 For customers classified as financial entities, our Enterprise agreement addresses:
 
-1. **Clear description of all ICT services** — Feature flag management, evaluation API, dashboard, SDKs
+1. **Clear description of all ICT services** — Feature flag management, evaluation API, Flag Engine, SDKs
 2. **Locations of data processing** — Documented in sub-processor list
 3. **Data security provisions** — Encryption, access control, audit logging
 4. **Service availability guarantees** — Uptime SLA with monitoring

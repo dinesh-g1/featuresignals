@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Toggle Categories
+description: "Classify feature flags as release, experiment, ops, or permission toggles with category-aware staleness thresholds."
 ---
 
 # Toggle Categories

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: .NET SDK
+description: "FeatureSignals .NET SDK — NuGet installation, polling, SSE, and OpenFeature provider."
 ---
 
 # .NET SDK
@@ -47,7 +48,7 @@ var options = new ClientOptions
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `EnvKey` | `string` | (required) | Environment slug |
+| `EnvKey` | `string` | (required) | Environment key |
 | `BaseUrl` | `string` | `https://api.featuresignals.com` | API server URL |
 | `PollingInterval` | `TimeSpan` | 30 seconds | Polling frequency |
 | `Streaming` | `bool` | `false` | Enable SSE streaming |

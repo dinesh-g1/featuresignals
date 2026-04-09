@@ -1,6 +1,7 @@
 ---
 sidebar_position: 13
 title: Audit Log
+description: "FeatureSignals Audit Log API — query tamper-evident records of all flag and configuration changes."
 ---
 
 # Audit Log API

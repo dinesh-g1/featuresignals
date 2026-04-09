@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Python SDK
+description: "FeatureSignals Python SDK — installation, polling, SSE streaming, and OpenFeature provider."
 ---
 
 # Python SDK
@@ -40,7 +41,7 @@ client.close()
 from featuresignals import ClientOptions, EvalContext
 
 options = ClientOptions(
-    env_key="production",                    # Required: environment slug
+    env_key="production",                    # Required: environment key
     base_url="https://api.featuresignals.com",  # API server URL; for self-hosted, use your own API URL
     polling_interval=30.0,                   # Polling interval (seconds)
     streaming=False,                         # Use SSE instead of polling
@@ -54,7 +55,7 @@ options = ClientOptions(
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `env_key` | `str` | (required) | Environment slug |
+| `env_key` | `str` | (required) | Environment key |
 | `base_url` | `str` | `https://api.featuresignals.com` | API server URL |
 | `polling_interval` | `float` | `30.0` | Refresh interval (seconds) |
 | `streaming` | `bool` | `False` | Enable SSE streaming |

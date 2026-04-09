@@ -1,6 +1,7 @@
 ---
 sidebar_position: 5
 title: Environment Comparison
+description: "Compare and sync feature flag states across environments to spot configuration drift."
 ---
 
 # Environment Comparison

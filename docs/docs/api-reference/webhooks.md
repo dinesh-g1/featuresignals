@@ -1,6 +1,7 @@
 ---
 sidebar_position: 12
 title: Webhooks
+description: "FeatureSignals Webhooks API — configure endpoints to receive real-time flag change notifications."
 ---
 
 # Webhooks API

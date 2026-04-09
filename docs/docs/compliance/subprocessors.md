@@ -1,3 +1,7 @@
+---
+description: "List of FeatureSignals sub-processors used to deliver the service with data processing details."
+---
+
 # Sub-processors
 
 _Last updated: April 2026_

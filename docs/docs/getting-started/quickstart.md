@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Quickstart
+description: "Get started with FeatureSignals in minutes. Install via Docker Compose, create your first feature flag, and evaluate it with any SDK."
 ---
 
 # Quickstart

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Managing Flags
+description: "Create, update, and manage feature flags with the Flag Engine UI including targeting rules and rollout configuration."
 ---
 
 # Managing Flags

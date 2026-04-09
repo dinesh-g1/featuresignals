@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Flag Engine Overview
+description: "Overview of the FeatureSignals Flag Engine — the management UI for feature flags, segments, and environments."
 ---
 
 # Flag Engine Overview

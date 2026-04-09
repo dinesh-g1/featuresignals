@@ -1,11 +1,12 @@
 ---
 sidebar_position: 1
 title: Architecture Overview
+description: "Technical architecture overview of FeatureSignals — hexagonal design, evaluation engine, caching, and real-time updates."
 ---
 
 # Architecture Overview
 
-FeatureSignals is built as a modular, self-hosted platform with a clear separation between the API server, Flag Engine (dashboard), SDKs, and relay proxy.
+FeatureSignals is built as a modular, self-hosted platform with a clear separation between the API server, Flag Engine, SDKs, and relay proxy.
 
 ## System Architecture
 
@@ -83,7 +84,7 @@ SDK → (X-API-Key) → API Server
 ### Flag Change Propagation
 
 ```
-Dashboard/API → Update flag in PostgreSQL
+Flag Engine / API → Update flag in PostgreSQL
   → PostgreSQL NOTIFY on channel
   → Cache listener receives notification
   → Cache evicts stale ruleset

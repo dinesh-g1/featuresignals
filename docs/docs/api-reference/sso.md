@@ -1,5 +1,6 @@
 ---
 sidebar_label: SSO
+description: "FeatureSignals SSO API — configure SAML 2.0 or OIDC single sign-on for your organization."
 ---
 # SSO Configuration
 

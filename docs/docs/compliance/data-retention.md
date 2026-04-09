@@ -1,3 +1,7 @@
+---
+description: "FeatureSignals data retention policy with schedules by plan tier and data type."
+---
+
 # Data Retention Policy
 
 _Last updated: April 2026_

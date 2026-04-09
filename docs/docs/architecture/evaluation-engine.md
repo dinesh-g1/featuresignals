@@ -1,11 +1,12 @@
 ---
 sidebar_position: 2
 title: Evaluation Engine
+description: "How the FeatureSignals evaluation engine processes targeting rules, segments, and percentage rollouts in sub-millisecond time."
 ---
 
 # Evaluation Engine
 
-The evaluation engine is the core of FeatureSignals. It determines what value a feature flag returns for a given user context.
+The evaluation engine is the core of FeatureSignals. It determines what value a feature flag returns for a given evaluation context.
 
 ## Evaluation Flow
 

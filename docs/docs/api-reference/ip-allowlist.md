@@ -1,5 +1,6 @@
 ---
 sidebar_label: IP Allowlist
+description: "FeatureSignals IP Allowlist API — restrict management API access to specific IP address ranges."
 ---
 # IP Allowlist
 

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Relay Proxy
+description: "Deploy the FeatureSignals Relay Proxy for edge caching, reduced latency, and high availability."
 ---
 
 # Relay Proxy
@@ -60,7 +61,7 @@ go build -o relay-proxy ./cmd/relay
 | Flag / Env Var | Default | Description |
 |----------------|---------|-------------|
 | `-api-key` / `FS_API_KEY` | (required) | Server API key |
-| `-env-key` / `FS_ENV_KEY` | (required) | Environment slug |
+| `-env-key` / `FS_ENV_KEY` | (required) | Environment key |
 | `-upstream` / `FS_UPSTREAM` | `https://api.featuresignals.com` | Upstream API URL |
 | `-port` / `FS_PORT` | `8090` | Local listening port |
 | `-poll` / `FS_POLL` | `30s` | Polling interval |

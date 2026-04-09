@@ -1,6 +1,7 @@
 ---
 sidebar_position: 7
 title: Evaluation
+description: "FeatureSignals Evaluation API — evaluate feature flags for users via SDK-authenticated endpoints."
 ---
 
 # Evaluation API
@@ -35,8 +36,8 @@ POST /v1/evaluate
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `flag_key` | string | Yes | The flag to evaluate |
-| `context.key` | string | Yes | User identifier |
-| `context.attributes` | object | No | User attributes for targeting |
+| `context.key` | string | Yes | Target key (unique identifier in the evaluation context) |
+| `context.attributes` | object | No | Attributes on the evaluation context used for targeting |
 
 ### Response `200 OK`
 
@@ -132,8 +133,8 @@ GET /v1/client/{envKey}/flags?key={userKey}
 
 | Parameter | In | Required | Default | Description |
 |-----------|-----|----------|---------|-------------|
-| `envKey` | path | Yes | — | Environment slug |
-| `key` | query | No | `anonymous` | User identifier |
+| `envKey` | path | Yes | — | Environment key |
+| `key` | query | No | `anonymous` | Target key (identifier in the evaluation context) |
 
 ### Response `200 OK`
 

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Introduction
+description: "FeatureSignals documentation — open-source feature flag management with targeted rollouts, A/B experiments, and real-time updates."
 ---
 
 # FeatureSignals Documentation

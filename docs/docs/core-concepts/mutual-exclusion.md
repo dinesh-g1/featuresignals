@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: Mutual Exclusion Groups
+description: "Prevent experiment interference with mutual exclusion groups that ensure users see only one experiment at a time."
 ---
 
 # Mutual Exclusion Groups

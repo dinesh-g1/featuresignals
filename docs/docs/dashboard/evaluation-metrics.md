@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Evaluation Metrics
+description: "View evaluation counts, reason distribution, and top evaluated flags per environment."
 ---
 
 # Evaluation Metrics

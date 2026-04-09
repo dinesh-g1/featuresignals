@@ -1,8 +1,16 @@
+---
+description: "FeatureSignals ISO 27001 Information Security Management System overview aligned with ISO/IEC 27001:2022."
+---
+
 # ISO 27001 — Information Security Management System
 
 _Last updated: April 2026_
 
-This document describes FeatureSignals' Information Security Management System (ISMS) aligned with ISO/IEC 27001:2022.
+:::info
+FeatureSignals has **not** achieved ISO/IEC 27001 certification. This document describes our security management practices and how they map to ISO 27001 themes, plus our certification roadmap.
+:::
+
+This document describes FeatureSignals' information security management practices aligned with ISO/IEC 27001:2022.
 
 ## ISMS Scope
 
@@ -149,4 +157,4 @@ Risks are identified through:
 1. **Current**: Controls implemented, documentation maintained
 2. **Stage 1 Audit**: Document review (planned)
 3. **Stage 2 Audit**: Implementation verification (planned)
-4. **Surveillance Audits**: Annual post-certification
+4. **Surveillance Audits**: Annual, following certification (if pursued)

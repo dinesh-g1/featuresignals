@@ -4,13 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/featuresignals/server/internal/api"
 	"github.com/featuresignals/server/internal/auth"
@@ -617,5 +623,107 @@ func TestStatusHistoryEndpoint_IsPublic(t *testing.T) {
 	cc := w.Header().Get("Cache-Control")
 	if cc != "public, max-age=300" {
 		t.Errorf("Cache-Control: expected %q, got %q", "public, max-age=300", cc)
+	}
+}
+
+// internalRoutes lists routes that are intentionally excluded from the public
+// OpenAPI spec (health checks, internal status, payment gateway callbacks that
+// are server-to-server only).
+var internalRoutes = map[string]bool{
+	"GET /health":                     true,
+	"GET /v1/status":                  true,
+	"GET /v1/status/global":           true,
+	"GET /v1/status/history":          true,
+	"GET /v1/status/sla":              true,
+	"POST /v1/billing/payu/callback":  true,
+	"POST /v1/billing/payu/failure":   true,
+	"POST /v1/billing/stripe/webhook": true,
+}
+
+// TestAllRoutesDocumented ensures every route registered in the chi router has
+// a corresponding entry in the OpenAPI spec, and vice versa. This prevents the
+// API documentation from drifting out of sync with the implementation.
+func TestAllRoutesDocumented(t *testing.T) {
+	router := newTestRouter(t)
+
+	chiRouter, ok := router.(chi.Routes)
+	if !ok {
+		t.Fatal("router does not implement chi.Routes")
+	}
+
+	codeRoutes := map[string]bool{}
+	err := chi.Walk(chiRouter, func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
+		route = strings.TrimRight(route, "/")
+		if route == "" {
+			route = "/"
+		}
+		key := method + " " + route
+		if !internalRoutes[key] {
+			codeRoutes[key] = true
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("chi.Walk failed: %v", err)
+	}
+
+	_, thisFile, _, _ := runtime.Caller(0)
+	// thisFile is .../server/internal/api/router_test.go
+	// Walk up: api -> internal -> server -> repo root
+	repoRoot := filepath.Join(filepath.Dir(thisFile), "..", "..", "..")
+	specPath := filepath.Join(repoRoot, "docs", "static", "openapi", "featuresignals.json")
+
+	specData, err := os.ReadFile(specPath)
+	if err != nil {
+		t.Fatalf("failed to read OpenAPI spec at %s: %v", specPath, err)
+	}
+
+	var spec struct {
+		Paths map[string]map[string]json.RawMessage `json:"paths"`
+	}
+	if err := json.Unmarshal(specData, &spec); err != nil {
+		t.Fatalf("failed to parse OpenAPI spec: %v", err)
+	}
+
+	specRoutes := map[string]bool{}
+	for path, methods := range spec.Paths {
+		for method := range methods {
+			upper := strings.ToUpper(method)
+			if upper == "PARAMETERS" || upper == "SERVERS" || upper == "SUMMARY" || upper == "DESCRIPTION" {
+				continue
+			}
+			key := upper + " " + path
+			specRoutes[key] = true
+		}
+	}
+
+	var missing []string
+	for route := range codeRoutes {
+		if !specRoutes[route] {
+			missing = append(missing, route)
+		}
+	}
+	sort.Strings(missing)
+
+	var phantom []string
+	for route := range specRoutes {
+		if !codeRoutes[route] {
+			phantom = append(phantom, route)
+		}
+	}
+	sort.Strings(phantom)
+
+	if len(missing) > 0 {
+		t.Errorf("routes in code but NOT in OpenAPI spec (add to docs/static/openapi/featuresignals.json):\n")
+		for _, r := range missing {
+			fmt.Fprintf(os.Stderr, "  - %s\n", r)
+		}
+	}
+
+	if len(phantom) > 0 {
+		t.Errorf("routes in OpenAPI spec but NOT in code (remove from docs/static/openapi/featuresignals.json):\n")
+		for _, r := range phantom {
+			fmt.Fprintf(os.Stderr, "  - %s\n", r)
+		}
 	}
 }

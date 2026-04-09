@@ -1,3 +1,7 @@
+---
+description: "Disaster recovery procedures for FeatureSignals including backup, restore, and failover strategies."
+---
+
 # Disaster Recovery Runbook
 
 ## Recovery Objectives

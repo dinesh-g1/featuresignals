@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Installation
+description: "Install FeatureSignals via Docker Compose, standalone Docker containers, or build from source. Self-hosted feature flag management."
 ---
 
 # Installation
@@ -23,7 +24,7 @@ This starts all services:
 |---------|------|-------------|
 | PostgreSQL | 5432 | Data store |
 | API Server | 8080 | REST API + SSE |
-| Dashboard | 3000 | Web UI (Next.js) |
+| Flag Engine | 3000 | Web UI (Next.js) |
 
 Migrations run automatically via the `migrate` service.
 
@@ -42,7 +43,7 @@ docker run -d \
   featuresignals-server
 ```
 
-### Dashboard
+### Flag Engine
 
 ```bash
 docker build -f deploy/docker/Dockerfile.dashboard -t featuresignals-dashboard ./dashboard
@@ -82,7 +83,7 @@ go build -o featuresignals-server ./cmd/server
 ./featuresignals-server
 ```
 
-### Dashboard
+### Flag Engine
 
 ```bash
 cd dashboard
@@ -118,7 +119,7 @@ Expected response:
 {"status": "ok", "service": "featuresignals"}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to access the dashboard.
+Open [http://localhost:3000](http://localhost:3000) to access the Flag Engine.
 
 ## Next Steps
 

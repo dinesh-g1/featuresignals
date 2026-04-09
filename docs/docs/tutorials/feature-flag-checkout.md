@@ -1,6 +1,7 @@
 ---
 title: "Feature Flag a Checkout Flow in 5 Minutes"
 sidebar_label: "Feature Flag a Checkout"
+description: "Tutorial: use feature flags to safely release a new checkout flow with gradual rollout."
 ---
 
 # Feature Flag a Checkout Flow in 5 Minutes

@@ -1,53 +1,94 @@
 ---
 sidebar_position: 2
 title: Authentication
+description: "Authenticate with FeatureSignals using JWT tokens for management and API keys for SDK evaluation."
 ---
 
 # Authentication
 
 FeatureSignals uses JWT tokens for management operations and API keys for SDK evaluation.
 
-## Register
+## Signup (OTP-Verified)
 
-Create a new account, organization, and default project.
+New user registration is a 2-step process that verifies email ownership *before* creating any permanent records. A 6-digit OTP is sent to the user's email.
+
+### Step 1 — Initiate Signup
 
 ```
-POST /v1/auth/register
+POST /v1/auth/initiate-signup
 ```
 
-### Request
+Sends a 6-digit OTP to the user's email via the configured email provider.
+
+#### Request
 
 ```json
 {
-  "email": "admin@example.com",
-  "password": "securepassword",
-  "name": "Admin User",
-  "org_name": "My Company"
+  "email": "jane@company.com",
+  "password": "SecurePass123!",
+  "name": "Jane Smith",
+  "org_name": "Acme Inc",
+  "data_region": "us"
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `email` | string | Yes | User email address (corporate or personal) |
-| `password` | string | Yes | Minimum 8 characters with at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character |
-| `name` | string | Yes | Display name |
-| `org_name` | string | Yes | Organization name |
+| `email` | string | Yes | Must be a valid, non-disposable email |
+| `password` | string | Yes | Min 8 chars, 1 upper, 1 lower, 1 digit, 1 special |
+| `name` | string | Yes | Display name (max 255 characters) |
+| `org_name` | string | Yes | Organization name (max 255 characters) |
+| `data_region` | string | No | Data residency region. Defaults to `us` |
 
-### Response `201 Created`
+#### Response `200 OK`
+
+```json
+{
+  "message": "Verification code sent to your email",
+  "expires_in": 600
+}
+```
+
+#### Error `409 Conflict`
+
+```json
+{"error": "email already registered"}
+```
+
+### Step 2 — Complete Signup
+
+```
+POST /v1/auth/complete-signup
+```
+
+Verifies the OTP and creates the user, organization, and default project atomically.
+
+#### Request
+
+```json
+{
+  "email": "jane@company.com",
+  "otp": "123456"
+}
+```
+
+#### Response `201 Created`
 
 ```json
 {
   "user": {
     "id": "uuid",
-    "email": "admin@example.com",
-    "name": "Admin User",
-    "email_verified": false,
+    "email": "jane@company.com",
+    "name": "Jane Smith",
+    "email_verified": true,
     "created_at": "2026-04-01T00:00:00Z"
   },
   "organization": {
     "id": "uuid",
-    "name": "My Company",
-    "slug": "my-company",
+    "name": "Acme Inc",
+    "slug": "acme-inc",
+    "plan": "trial",
+    "trial_expires_at": "2026-04-18T00:00:00Z",
     "created_at": "2026-04-01T00:00:00Z",
     "updated_at": "2026-04-01T00:00:00Z"
   },
@@ -55,19 +96,49 @@ POST /v1/auth/register
     "access_token": "eyJ...",
     "refresh_token": "eyJ...",
     "expires_at": 1711929600
-  }
+  },
+  "onboarding_completed": false
 }
 ```
 
-Registration automatically creates:
-- User with **owner** role
-- Organization with slug derived from name
+Signup automatically creates:
+- User with **owner** role and verified email
+- Organization with slug derived from name, on a **14-day free trial**
 - A default project with three environments: `dev`, `staging`, `production`
-- A verification email is sent immediately
+- A welcome email is sent asynchronously
 
-:::tip Recommended
-For new signups, use the verify-first OTP flow (`POST /v1/auth/initiate-signup` + `POST /v1/auth/complete-signup`) documented in [Signup & Trial](./demo). The legacy register endpoint above does not require email verification before account creation.
-:::
+#### Error `400 Bad Request`
+
+Returned when the OTP is invalid, expired, or no pending signup exists for the email.
+
+#### Error `429 Too Many Requests`
+
+Returned after too many failed OTP attempts.
+
+### Resend OTP
+
+```
+POST /v1/auth/resend-signup-otp
+```
+
+#### Request
+
+```json
+{
+  "email": "jane@company.com"
+}
+```
+
+#### Response `200 OK`
+
+```json
+{
+  "message": "New verification code sent to your email",
+  "expires_in": 600
+}
+```
+
+Rate-limited to one resend every 60 seconds. OTP expires after 10 minutes.
 
 ---
 
@@ -209,7 +280,7 @@ GET /v1/auth/verify-email?token=<token>&email=<email>
 
 ### Response
 
-Redirects to the dashboard login page with `?verified=true` on success.
+Redirects to the Flag Engine login page with `?verified=true` on success.
 
 ---
 

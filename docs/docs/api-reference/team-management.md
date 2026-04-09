@@ -1,6 +1,7 @@
 ---
 sidebar_position: 10
 title: Team Management
+description: "FeatureSignals Team Management API — manage organization members, roles, and environment permissions."
 ---
 
 # Team Management API
