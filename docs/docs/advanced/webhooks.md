@@ -1,11 +1,12 @@
 ---
 sidebar_position: 5
 title: Webhooks
+description: "Configure webhook endpoints to receive real-time notifications when feature flags change in FeatureSignals."
 ---
 
 # Webhooks
 
-:::tip Open in Dashboard
+:::tip Open in Flag Engine
 Configure webhooks in [Settings → Webhooks →](https://app.featuresignals.com/settings/webhooks)
 :::
 

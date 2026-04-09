@@ -1,3 +1,7 @@
+---
+description: "FeatureSignals incident response plan for identifying, responding to, and recovering from security incidents."
+---
+
 # Incident Response Plan
 
 _Last updated: April 2026_
@@ -93,7 +97,7 @@ This plan establishes procedures for identifying, responding to, and recovering 
 
 | Event | Timeline | Method |
 |-------|----------|--------|
-| Data breach confirmed | Within 72 hours (GDPR) | Email + dashboard banner |
+| Data breach confirmed | Within 72 hours (GDPR) | Email + Flag Engine banner |
 | Service disruption | Within 1 hour | Status page |
 | Vulnerability disclosure | After patch deployed | Security advisory email |
 
@@ -115,11 +119,11 @@ During any incident:
 
 ## 7. Testing
 
-This plan is tested annually via tabletop exercises and periodic red team engagements.
+This plan is exercised on a recurring cadence; maturity of the program (for example, third-party red team assessments) is **in progress** as we scale.
 
 | Exercise | Frequency | Participants |
 |----------|-----------|-------------|
-| Tabletop exercise | Semi-annual | Full incident team |
-| Red team assessment | Annual | External security firm |
-| Backup restore test | Quarterly | Engineering team |
-| Communication drill | Annual | Full incident team + exec |
+| Tabletop exercise | Semi-annual (target) | Full incident team |
+| Red team assessment | Annual (**planned**; external firm) | Security / engineering leadership |
+| Backup restore test | Quarterly (target) | Engineering team |
+| Communication drill | Annual (target) | Full incident team + exec |

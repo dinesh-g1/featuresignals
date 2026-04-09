@@ -1,6 +1,7 @@
 ---
 title: Incident Runbook
 sidebar_position: 1
+description: "Incident response runbook for FeatureSignals self-hosted deployments with diagnostic commands."
 ---
 
 Internal SRE/ops reference for multi-region SaaS: **US** (Hetzner Ashburn), **EU** (Hetzner Falkenstein), **India** (Utho Mumbai). Stack: Docker Compose, PostgreSQL 16, Caddy 2, OpenTelemetry → SigNoz.
@@ -94,7 +95,7 @@ $COMPOSE logs --tail=100 caddy server postgres
 
 1. **DNS / traffic steering:** At your DNS or CDN (e.g. geo records or health-checked failover), point the failing region’s hostnames to a healthy region’s edge **only if** that region can legally and technically serve those users (latency, data residency, org `data_region` — see product policy). Otherwise keep DNS as-is and restore the region.
 2. **Temporary redirect (example):** Lower TTL on affected names (e.g. `api.eu.…`) ahead of changes; swap A/AAAA to a standby IP or to US edge if approved.
-3. **Global router config:** The IN (primary) server's `REGION_ENDPOINTS` env var maps region codes to API endpoints. If a regional API DNS changes, update this variable and restart the API server on IN. The dashboard does not need redeployment since all requests go through the single `NEXT_PUBLIC_API_URL`.
+3. **Global router config:** The IN (primary) server's `REGION_ENDPOINTS` env var maps region codes to API endpoints. If a regional API DNS changes, update this variable and restart the API server on IN. The Flag Engine does not need redeployment since all requests go through the single `NEXT_PUBLIC_API_URL`.
 
 **Bring region back**
 
@@ -210,7 +211,7 @@ docker compose -f deploy/docker-compose.region.yml pull server dashboard
 docker compose -f deploy/docker-compose.region.yml up -d server dashboard
 ```
 
-Verify health, SigNoz error rate, and dashboard/API smoke tests before closing incident.
+Verify health, SigNoz error rate, and Flag Engine/API smoke tests before closing incident.
 
 ## 8. Security incident
 
@@ -259,7 +260,7 @@ Title: [Investigating | Identified | Monitoring | Resolved] – Short customer-v
 Status: [Major outage | Degraded performance | Partial service]
 
 What happened:
-We are investigating reports of <symptom> affecting <API / dashboard / evaluations / region>.
+We are investigating reports of <symptom> affecting <API / Flag Engine / evaluations / region>.
 
 Impact:
 Customers may experience <specific impact>. Data integrity is <not known / not impacted / under review>.

@@ -1,5 +1,6 @@
 ---
 sidebar_label: Data Export
+description: "FeatureSignals Data Export API — download your organization's data as a JSON archive."
 ---
 # Data Export
 

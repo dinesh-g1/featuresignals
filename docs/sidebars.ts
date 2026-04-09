@@ -3,6 +3,7 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   docs: [
     'intro',
+    'GLOSSARY',
     {
       type: 'category',
       label: 'Integration Guide',
@@ -59,6 +60,7 @@ const sidebars: SidebarsConfig = {
             'deployment/on-premises',
             'deployment/configuration',
             'operations/incident-runbook',
+            'operations/disaster-recovery',
           ],
         },
       ],

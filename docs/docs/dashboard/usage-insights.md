@@ -1,6 +1,7 @@
 ---
 sidebar_position: 8
 title: Usage Insights
+description: "Analyze flag value distribution percentages to understand feature adoption across environments."
 ---
 
 # Usage Insights

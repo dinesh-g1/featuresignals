@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Scheduling
+description: "Schedule feature flags to enable or disable automatically at specific dates and times."
 ---
 
 # Flag Scheduling

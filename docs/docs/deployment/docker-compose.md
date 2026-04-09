@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Docker Compose
+description: "Deploy FeatureSignals with Docker Compose for development and production environments."
 ---
 
 # Docker Compose Deployment
@@ -70,7 +71,7 @@ server:
     CORS_ORIGIN: http://localhost:3000
 ```
 
-### Dashboard
+### Flag Engine
 
 ```yaml
 dashboard:
@@ -87,7 +88,7 @@ dashboard:
 
 | Service | URL |
 |---------|-----|
-| Dashboard | [http://localhost:3000](http://localhost:3000) |
+| Flag Engine | [http://localhost:3000](http://localhost:3000) |
 | API Server | [http://localhost:8080](http://localhost:8080) |
 | Health Check | [http://localhost:8080/health](http://localhost:8080/health) |
 

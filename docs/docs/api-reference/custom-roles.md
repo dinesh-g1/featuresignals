@@ -1,5 +1,6 @@
 ---
 sidebar_label: Custom Roles
+description: "FeatureSignals Custom Roles API — create granular permission templates beyond built-in roles."
 ---
 # Custom Roles
 

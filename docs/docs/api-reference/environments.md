@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Environments
+description: "FeatureSignals Environments API — manage deployment stages with independent flag states and API keys."
 ---
 
 # Environments API
@@ -29,7 +30,7 @@ POST /v1/projects/{projectID}/environments
 |-------|------|----------|---------|-------------|
 | `name` | string | Yes | — | Environment name |
 | `slug` | string | No | Auto-generated | URL-friendly identifier |
-| `color` | string | No | `#6B7280` | Hex color for dashboard display |
+| `color` | string | No | `#6B7280` | Hex color for Flag Engine display |
 
 ### Response `201 Created`
 

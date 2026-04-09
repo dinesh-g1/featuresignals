@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: SDK Overview
+description: "FeatureSignals SDK overview — architecture, initialization, evaluation methods, and OpenFeature support."
 ---
 
 # SDK Overview
@@ -50,7 +51,7 @@ All SDKs accept:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `sdkKey` / `sdk_key` | (required) | API key for authentication |
-| `envKey` / `env_key` | (required) | Environment slug |
+| `envKey` / `env_key` | (required) | Environment key |
 | `baseURL` / `base_url` | `https://api.featuresignals.com` | API server URL |
 | `pollingInterval` | 30 seconds | How often to refresh flags |
 | `streaming` | `false` | Use SSE instead of polling |
@@ -68,7 +69,7 @@ All SDKs provide typed variation methods:
 
 Each takes three arguments:
 1. **Flag key** — the flag's unique identifier
-2. **Evaluation context** — user identity and attributes
+2. **Evaluation context** — target key and attributes passed for evaluation
 3. **Fallback value** — returned if the flag doesn't exist or there's an error
 
 ### Readiness

@@ -1,6 +1,10 @@
+---
+description: "Glossary of feature flag management terms used throughout the FeatureSignals documentation."
+---
+
 # FeatureSignals Product Glossary
 
-This glossary defines the canonical terminology used across **all** FeatureSignals surfaces — website, documentation, dashboard, SDKs, APIs, and lifecycle emails. Every contributor, writer, and engineer must use these terms consistently. When reviewing content, flag any deviation.
+This glossary defines the canonical terminology used across **all** FeatureSignals surfaces — website, documentation, Flag Engine, SDKs, APIs, and lifecycle emails. Every contributor, writer, and engineer must use these terms consistently. When reviewing content, flag any deviation.
 
 ---
 
@@ -26,7 +30,7 @@ This glossary defines the canonical terminology used across **all** FeatureSigna
 
 | Term | Definition | Usage Notes |
 |------|-----------|-------------|
-| **Flag Engine** | The FeatureSignals dashboard application where teams manage flags, segments, and settings. | Use "Flag Engine" as the product name for the dashboard. The URL is `app.featuresignals.com`. |
+| **Flag Engine** | The FeatureSignals web application where teams manage flags, segments, and settings. | Use "Flag Engine" as the product name for the management UI. The URL is `app.featuresignals.com`. |
 | **SDK** | A client library that applications integrate to evaluate flags locally. Available for Go, Node.js, Python, Java, .NET, Ruby, React, and Vue. | Always specify the language when referencing a specific SDK: "the Go SDK", "the React SDK". |
 | **Relay Proxy** | An edge caching layer that sits between SDKs and the FeatureSignals API, reducing latency and providing resilience. | Not a required component. Mention it in the context of performance optimization or enterprise deployments. |
 | **API Playground** | The interactive API documentation where developers can test API calls directly in the browser. | Located at `docs.featuresignals.com/api-playground`. |
@@ -63,7 +67,7 @@ This glossary defines the canonical terminology used across **all** FeatureSigna
 ## Style Rules
 
 1. **Product name**: Always "FeatureSignals" (one word, capital F and S). Never "Feature Signals", "feature signals", or "featuresignals".
-2. **Dashboard name**: "Flag Engine" when referring to the product/app. "Dashboard" is acceptable as a generic noun.
+2. **Management UI**: Use "Flag Engine" for the FeatureSignals product. Reserve "dashboard" for generic third-party or descriptive uses (e.g., an analytics dashboard).
 3. **Voice**: Technical, confident, direct. Never cute, corporate, or unnecessarily casual.
 4. **Numbers**: Use digits for all numbers in UI and data contexts. Use words for small numbers (one through nine) in prose.
 5. **Dates**: Always display in the user's locale format. Store and transmit as UTC ISO 8601.

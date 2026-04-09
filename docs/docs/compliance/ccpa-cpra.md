@@ -1,8 +1,12 @@
+---
+description: "How FeatureSignals complies with CCPA and CPRA requirements as a B2B service provider."
+---
+
 # CCPA / CPRA Compliance
 
 _Last updated: April 2026_
 
-This document describes how FeatureSignals complies with the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA).
+This document describes FeatureSignals' approach to the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA).
 
 ## Applicability
 
@@ -19,7 +23,7 @@ California consumers can request:
 - Business or commercial purpose for collection
 - Categories of third parties with whom information is shared
 
-**How to exercise**: Email privacy@featuresignals.com or use the dashboard data export.
+**How to exercise**: Email privacy@featuresignals.com or use the Flag Engine data export.
 
 ### Right to Delete (§1798.105)
 
@@ -34,7 +38,7 @@ Consumers can request deletion of personal information.
 
 Consumers can request correction of inaccurate personal information.
 
-**Implementation**: Profile editing in dashboard; email privacy@featuresignals.com for data not editable in the UI.
+**Implementation**: Profile editing in the Flag Engine; email privacy@featuresignals.com for data not editable in the UI.
 
 ### Right to Opt-Out of Sale/Sharing (§1798.120, §1798.121)
 

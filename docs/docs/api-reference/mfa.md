@@ -1,5 +1,6 @@
 ---
 sidebar_label: MFA
+description: "FeatureSignals MFA API — enable TOTP-based multi-factor authentication for user accounts."
 ---
 # Multi-Factor Authentication
 

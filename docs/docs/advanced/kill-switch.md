@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 title: Kill Switch
+description: "Instantly disable a feature flag across all environments with the emergency kill switch."
 ---
 
 # Kill Switch

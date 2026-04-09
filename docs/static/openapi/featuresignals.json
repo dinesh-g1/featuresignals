@@ -26,8 +26,12 @@
     { "name": "Metrics", "description": "Evaluation metrics and analytics" },
     { "name": "Billing", "description": "Subscription and usage billing" },
     { "name": "Onboarding", "description": "Onboarding progress tracking" },
-    { "name": "Demo", "description": "Demo session management and conversion" },
     { "name": "Pricing", "description": "Public pricing configuration" },
+    { "name": "Insights", "description": "Target inspection and flag usage insights" },
+    { "name": "Flag Management", "description": "Cross-environment flag operations" },
+    { "name": "User", "description": "User preferences, feedback, and data privacy" },
+    { "name": "Sales", "description": "Sales inquiry" },
+    { "name": "Analytics", "description": "Internal KPI analytics" },
     { "name": "SSO", "description": "SSO configuration (SAML 2.0 / OIDC) — Enterprise" },
     { "name": "SCIM", "description": "SCIM 2.0 user provisioning — Enterprise" },
     { "name": "MFA", "description": "Multi-factor authentication (TOTP) — Pro+" },
@@ -37,26 +41,65 @@
   ],
   "security": [{ "BearerAuth": [] }],
   "paths": {
-    "/v1/auth/register": {
+    "/v1/auth/initiate-signup": {
       "post": {
         "tags": ["Auth"],
-        "summary": "Register a new account",
-        "description": "Creates a new user account and returns authentication tokens.",
+        "summary": "Initiate account signup",
+        "description": "Starts the signup flow by sending an OTP verification code to the provided email address.",
         "security": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RegisterRequest" },
-              "example": { "email": "user@example.com", "password": "securePass123!", "name": "Jane Doe" }
+              "schema": { "type": "object", "required": ["email", "password", "name"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string", "minLength": 8 }, "name": { "type": "string" }, "org_name": { "type": "string" }, "region": { "type": "string" } } },
+              "example": { "email": "user@example.com", "password": "securePass123!", "name": "Jane Doe", "org_name": "Acme Inc" }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Account created",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
-          },
+          "200": { "description": "OTP sent to email", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/auth/complete-signup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Complete account signup",
+        "description": "Verifies the OTP code and completes registration, returning authentication tokens.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email", "otp"], "properties": { "email": { "type": "string", "format": "email" }, "otp": { "type": "string" } } },
+              "example": { "email": "user@example.com", "otp": "123456" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Account created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/auth/resend-signup-otp": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Resend signup OTP",
+        "description": "Resends the OTP verification code for a pending signup.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "format": "email" } } },
+              "example": { "email": "user@example.com" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP resent", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }
@@ -142,6 +185,17 @@
         "responses": {
           "200": { "description": "Email verified", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log out",
+        "description": "Revokes the current refresh token and ends the session.",
+        "responses": {
+          "200": { "description": "Logged out", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
@@ -519,6 +573,18 @@
         }
       }
     },
+    "/v1/projects/{projectID}/environments/{envID}/flag-states": {
+      "get": {
+        "tags": ["Flag State"],
+        "summary": "List all flag states in an environment",
+        "description": "Returns the state (enabled, rules, rollout) for every flag in the given environment.",
+        "parameters": [ { "$ref": "#/components/parameters/ProjectID" }, { "$ref": "#/components/parameters/EnvID" } ],
+        "responses": {
+          "200": { "description": "List of flag states", "content": { "application/json": { "schema": { "type": "object", "properties": { "flag_states": { "type": "array", "items": { "$ref": "#/components/schemas/FlagState" } } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
     "/v1/evaluate": {
       "post": {
         "tags": ["Evaluation"],
@@ -737,6 +803,19 @@
         ],
         "responses": {
           "200": { "description": "API key deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/api-keys/{keyID}/rotate": {
+      "post": {
+        "tags": ["API Keys"],
+        "summary": "Rotate an API key",
+        "description": "Generates a new key value while preserving the key ID and metadata. The old key is immediately invalidated.",
+        "parameters": [{ "name": "keyID", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "Key rotated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiKeyFull" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
@@ -1205,84 +1284,246 @@
         }
       }
     },
-    "/v1/demo/session": {
-      "post": {
-        "tags": ["Demo"],
-        "summary": "Create a demo session (Deprecated)",
-        "description": "DEPRECATED: Returns 410 Gone. Anonymous demo sessions are no longer supported. Use POST /v1/auth/register with source='demo' instead.",
-        "deprecated": true,
+    "/v1/pricing/regions": {
+      "get": {
+        "tags": ["Pricing"],
+        "summary": "Get region-specific pricing",
+        "description": "Returns pricing configuration adjusted for the specified region's currency and gateway.",
         "security": [],
         "responses": {
-          "410": {
-            "description": "Gone — endpoint deprecated",
-            "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" }, "message": { "type": "string" } } } } }
-          }
+          "200": { "description": "Region pricing", "content": { "application/json": { "schema": { "type": "object" } } } }
         }
       }
     },
-    "/v1/demo/convert": {
+    "/v1/regions": {
+      "get": {
+        "tags": ["Pricing"],
+        "summary": "List available data regions",
+        "description": "Returns all available data regions for account creation.",
+        "security": [],
+        "responses": {
+          "200": { "description": "Region list", "content": { "application/json": { "schema": { "type": "object", "properties": { "regions": { "type": "array", "items": { "type": "object", "properties": { "code": { "type": "string" }, "name": { "type": "string" }, "flag_emoji": { "type": "string" } } } } } } } } }
+        }
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "tags": ["Pricing"],
+        "summary": "Get server capabilities",
+        "description": "Returns the deployment mode, billing status, and regions enablement for this server instance.",
+        "security": [],
+        "responses": {
+          "200": { "description": "Capabilities", "content": { "application/json": { "schema": { "type": "object", "properties": { "deployment_mode": { "type": "string" }, "billing_enabled": { "type": "boolean" }, "regions_enabled": { "type": "boolean" } } } } } }
+        }
+      }
+    },
+    "/v1/sales/inquiry": {
       "post": {
-        "tags": ["Demo"],
-        "summary": "Convert demo to permanent account",
-        "description": "Converts an anonymous demo session into a registered account with email, password, and organization details.",
+        "tags": ["Sales"],
+        "summary": "Submit a sales inquiry",
+        "description": "Sends a sales inquiry for enterprise pricing or custom requirements.",
+        "security": [],
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "type": "object", "required": ["email", "password", "name", "org_name"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string", "minLength": 8 }, "name": { "type": "string" }, "org_name": { "type": "string" } } },
-              "example": { "email": "jane@company.com", "password": "SecurePass123!", "name": "Jane Smith", "org_name": "Acme Inc" }
-            }
-          }
+          "content": { "application/json": { "schema": { "type": "object", "required": ["email", "message"], "properties": { "email": { "type": "string", "format": "email" }, "name": { "type": "string" }, "company": { "type": "string" }, "message": { "type": "string" } } } } }
         },
         "responses": {
-          "200": { "description": "Account converted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "200": { "description": "Inquiry submitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }
         }
       }
     },
-    "/v1/demo/select-plan": {
+    "/v1/billing/cancel": {
       "post": {
-        "tags": ["Demo"],
-        "summary": "Select plan after demo conversion",
-        "description": "Choose a subscription plan after converting from demo. Returns PayU checkout data for Pro plan.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "type": "object", "required": ["plan", "retain_data"], "properties": { "plan": { "type": "string", "enum": ["free", "pro"] }, "retain_data": { "type": "boolean" } } },
-              "example": { "plan": "pro", "retain_data": true }
-            }
-          }
-        },
+        "tags": ["Billing"],
+        "summary": "Cancel subscription",
+        "description": "Cancels the current subscription at the end of the billing period.",
         "responses": {
-          "200": { "description": "Plan selected", "content": { "application/json": { "schema": { "type": "object" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" }
+          "200": { "description": "Subscription scheduled for cancellation", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
-    "/v1/demo/feedback": {
+    "/v1/billing/portal": {
       "post": {
-        "tags": ["Demo"],
-        "summary": "Submit demo feedback",
-        "description": "Submit feedback from a demo user when declining to register or requesting enhancements.",
+        "tags": ["Billing"],
+        "summary": "Get billing portal URL",
+        "description": "Generates a URL to the payment provider's billing management portal.",
+        "responses": {
+          "200": { "description": "Portal URL", "content": { "application/json": { "schema": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/billing/gateway": {
+      "put": {
+        "tags": ["Billing"],
+        "summary": "Update payment gateway",
+        "description": "Switches the organization's payment gateway (e.g., from PayU to Stripe).",
         "requestBody": {
           "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "type": "object", "required": ["message"], "properties": { "message": { "type": "string" }, "email": { "type": "string", "format": "email" }, "rating": { "type": "integer", "minimum": 1, "maximum": 5 } } },
-              "example": { "message": "Great product! Would love a Terraform provider.", "rating": 4 }
-            }
-          }
+          "content": { "application/json": { "schema": { "type": "object", "required": ["gateway"], "properties": { "gateway": { "type": "string", "enum": ["stripe", "payu"] } } } } }
         },
         "responses": {
-          "200": { "description": "Feedback submitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } }
+          "200": { "description": "Gateway updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
+      }
+    },
+    "/v1/metrics/impressions": {
+      "get": {
+        "tags": ["Metrics"],
+        "summary": "Get impression metrics",
+        "description": "Returns A/B experiment impression counts and distribution data.",
+        "responses": {
+          "200": { "description": "Impression metrics", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/metrics/impressions/flush": {
+      "post": {
+        "tags": ["Metrics"],
+        "summary": "Flush impression buffer",
+        "description": "Forces the in-memory impression buffer to be persisted to the database.",
+        "responses": {
+          "200": { "description": "Impressions flushed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/analytics/overview": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Get analytics overview",
+        "description": "Returns internal KPI analytics including user counts, evaluation trends, and plan distribution.",
+        "responses": {
+          "200": { "description": "Analytics overview", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/users/me/hints": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get dismissed UI hints",
+        "description": "Returns the list of UI hint IDs that the user has dismissed.",
+        "responses": {
+          "200": { "description": "Dismissed hints", "content": { "application/json": { "schema": { "type": "object", "properties": { "dismissed": { "type": "array", "items": { "type": "string" } } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["User"],
+        "summary": "Dismiss a UI hint",
+        "description": "Marks a UI hint as dismissed so it is no longer shown.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["hint_id"], "properties": { "hint_id": { "type": "string" } } } } }
+        },
+        "responses": {
+          "200": { "description": "Hint dismissed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/users/me/email-preferences": {
+      "put": {
+        "tags": ["User"],
+        "summary": "Update email preferences",
+        "description": "Updates the authenticated user's email notification preferences.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "marketing_emails": { "type": "boolean" }, "frequency": { "type": "string" } } } } }
+        },
+        "responses": {
+          "200": { "description": "Preferences updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/feedback": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Submit feedback",
+        "description": "Submits user feedback about the product.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["message"], "properties": { "message": { "type": "string" }, "type": { "type": "string" }, "rating": { "type": "integer", "minimum": 1, "maximum": 5 } } } } }
+        },
+        "responses": {
+          "200": { "description": "Feedback submitted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/sso/discovery/{orgSlug}": {
+      "get": {
+        "tags": ["SSO"],
+        "summary": "SSO discovery",
+        "description": "Returns the SSO configuration type and login URL for an organization.",
+        "security": [],
+        "parameters": [{ "name": "orgSlug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "SSO discovery info" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/v1/sso/saml/metadata/{orgSlug}": {
+      "get": {
+        "tags": ["SSO"],
+        "summary": "SAML metadata",
+        "description": "Returns the SAML SP metadata XML for the organization.",
+        "security": [],
+        "parameters": [{ "name": "orgSlug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "SAML metadata XML", "content": { "application/xml": { "schema": { "type": "string" } } } } }
+      }
+    },
+    "/v1/sso/saml/login/{orgSlug}": {
+      "get": {
+        "tags": ["SSO"],
+        "summary": "Initiate SAML login",
+        "description": "Redirects the user to the IdP for SAML authentication.",
+        "security": [],
+        "parameters": [{ "name": "orgSlug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "302": { "description": "Redirect to IdP" } }
+      }
+    },
+    "/v1/sso/saml/acs/{orgSlug}": {
+      "post": {
+        "tags": ["SSO"],
+        "summary": "SAML assertion consumer service",
+        "description": "Receives the SAML response from the IdP after authentication.",
+        "security": [],
+        "parameters": [{ "name": "orgSlug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "302": { "description": "Redirect to dashboard with auth token" } }
+      }
+    },
+    "/v1/sso/oidc/authorize/{orgSlug}": {
+      "get": {
+        "tags": ["SSO"],
+        "summary": "Initiate OIDC login",
+        "description": "Redirects the user to the OIDC provider for authentication.",
+        "security": [],
+        "parameters": [{ "name": "orgSlug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "302": { "description": "Redirect to OIDC provider" } }
+      }
+    },
+    "/v1/sso/oidc/callback/{orgSlug}": {
+      "get": {
+        "tags": ["SSO"],
+        "summary": "OIDC callback",
+        "description": "Handles the OIDC provider callback after authentication.",
+        "security": [],
+        "parameters": [{ "name": "orgSlug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "302": { "description": "Redirect to dashboard with auth token" } }
       }
     },
     "/v1/sso/config": {
-      "get": { "tags": ["SSO"], "summary": "Get SSO configuration", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "SSO configuration" } } },
-      "post": { "tags": ["SSO"], "summary": "Create or update SSO configuration", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "SSO config saved" } } },
-      "delete": { "tags": ["SSO"], "summary": "Delete SSO configuration", "security": [{ "bearerAuth": [] }], "responses": { "204": { "description": "SSO config deleted" } } }
+      "get": { "tags": ["SSO"], "summary": "Get SSO configuration", "responses": { "200": { "description": "SSO configuration" } } },
+      "post": { "tags": ["SSO"], "summary": "Create or update SSO configuration", "responses": { "200": { "description": "SSO config saved" } } },
+      "delete": { "tags": ["SSO"], "summary": "Delete SSO configuration", "responses": { "204": { "description": "SSO config deleted" } } }
+    },
+    "/v1/sso/config/test": {
+      "post": { "tags": ["SSO"], "summary": "Test SSO connection", "description": "Validates the SSO configuration by attempting a test connection to the IdP.", "responses": { "200": { "description": "Connection test result" }, "400": { "$ref": "#/components/responses/BadRequest" } } }
     },
     "/v1/scim/Users": {
       "get": { "tags": ["SCIM"], "summary": "List SCIM users", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "SCIM ListResponse" } } },

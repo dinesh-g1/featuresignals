@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Projects & Environments
+description: "Understand how FeatureSignals organizes flags into projects and environments for multi-stage deployment workflows."
 ---
 
 # Projects & Environments

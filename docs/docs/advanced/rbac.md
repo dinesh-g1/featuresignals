@@ -1,11 +1,12 @@
 ---
 sidebar_position: 7
 title: RBAC
+description: "Role-based access control with owner, admin, developer, and viewer roles plus per-environment permissions."
 ---
 
 # Role-Based Access Control
 
-:::tip Open in Dashboard
+:::tip Open in Flag Engine
 Manage team roles in [Settings → Team →](https://app.featuresignals.com/settings/team)
 :::
 

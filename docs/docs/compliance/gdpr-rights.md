@@ -1,3 +1,7 @@
+---
+description: "How to exercise GDPR data subject rights with FeatureSignals including access, deletion, and portability."
+---
+
 # GDPR Data Subject Rights Guide
 
 _Last updated: April 2026_
@@ -21,8 +25,8 @@ This document explains how data subjects can exercise their rights under the Gen
 **What**: Correct inaccurate personal data.
 
 **How**:
-- **Dashboard**: Settings > General (update name, email)
-- **Email**: privacy@featuresignals.com for data not editable in the dashboard
+- **Flag Engine**: Settings > General (update name, email)
+- **Email**: privacy@featuresignals.com for data not editable in the Flag Engine
 
 ### 3. Right to Erasure / Right to Be Forgotten (Article 17)
 

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 title: Enterprise Onboarding
+description: "Enterprise onboarding guide for setting up FeatureSignals across teams with phased rollout steps."
 ---
 
 # Enterprise Onboarding Guide
@@ -41,14 +42,14 @@ Choose the appropriate SDK for each service:
 
 ### 6. Create Your First Flag
 Start with a low-risk feature flag:
-1. Create a boolean flag in the dashboard
+1. Create a boolean flag in the Flag Engine
 2. Integrate the SDK check in your code
 3. Deploy with the flag off
 4. Enable in development, then staging, then production
 
 ### 7. Set Up Webhooks
 Configure webhooks to notify your team of flag changes:
-- Slack integration for real-time notifications
+- **Chat tools (e.g., Slack)** — FeatureSignals does not ship a native Slack app. Create a webhook in the Flag Engine that posts to your Slack **Incoming Webhook** URL (or any HTTPS endpoint); we deliver HTTP notifications to the URL you configure.
 - CI/CD pipeline triggers
 - Audit trail integration
 
@@ -56,7 +57,7 @@ Configure webhooks to notify your team of flag changes:
 
 ### 8. Enable Approval Workflows
 For production environments, require peer review before flag changes:
-- Navigate to **Approvals** in the dashboard
+- Navigate to **Approvals** in the Flag Engine
 - Create approval policies per environment
 
 ### 9. Review Audit Logs

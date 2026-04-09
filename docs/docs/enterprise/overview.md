@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 title: Enterprise Overview
+description: "Enterprise features in FeatureSignals including SSO, SCIM, IP allowlists, custom roles, and dedicated support."
 ---
 
 # FeatureSignals for Enterprise
@@ -40,13 +41,13 @@ Use FeatureSignals Cloud for management while running a [relay proxy](/advanced/
 
 ## Compliance
 
-FeatureSignals is designed to support compliance with:
+FeatureSignals is built with compliance-minded controls and documentation. **We do not currently hold SOC 2, ISO 27001, ISO 27701, CSA STAR, or similar third-party certifications**; where we reference those frameworks, we describe how our controls map to them or our **roadmap** toward formal assessments—not completed attestations.
 
-- **SOC 2 Type II** — Security, availability, and confidentiality controls
-- **GDPR** — Data processing agreements, right to erasure, data portability
-- **HIPAA** — BAA available for healthcare organizations
-- **ISO 27001** — Information security management system aligned
-- **DORA** — Digital operational resilience for financial services
+- **SOC 2 Type II** — Controls mapped to the Trust Services Criteria; a formal Type II examination is **on our roadmap**
+- **GDPR** — Data processing agreements, right to erasure, data portability, and related processes (see compliance docs)
+- **HIPAA** — Technical controls that map to HIPAA requirements; a BAA may be available for qualified Enterprise use cases—see [HIPAA compliance](/compliance/hipaa) (we have not undergone a formal HIPAA audit)
+- **ISO 27001** — Security practices aligned with ISO/IEC 27001 themes; **certification is planned**, not completed
+- **DORA** — Documentation for financial entities using ICT third-party services (see [DORA](/compliance/dora))
 
 See the [compliance documentation](/compliance/security-overview) for details, including our subprocessor list, DPA template, and evidence collection guides.
 

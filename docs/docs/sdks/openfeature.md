@@ -1,6 +1,7 @@
 ---
 sidebar_position: 9
 title: OpenFeature
+description: "Use FeatureSignals with the OpenFeature standard for vendor-neutral feature flag evaluation."
 ---
 
 # OpenFeature Integration

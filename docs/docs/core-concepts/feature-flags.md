@@ -1,11 +1,12 @@
 ---
 sidebar_position: 1
 title: Feature Flags
+description: "Learn what feature flags are, how they work, and why they are essential for modern software development and continuous delivery."
 ---
 
 # Feature Flags
 
-:::tip Open in Dashboard
+:::tip Open in Flag Engine
 Manage your feature flags directly in the [Flag Engine →](https://app.featuresignals.com/flags)
 :::
 

@@ -1,8 +1,16 @@
+---
+description: "FeatureSignals SOC 2 evidence collection guide for continuous audit readiness."
+---
+
 # SOC 2 Evidence Collection Guide
 
 _Last updated: April 2026_
 
-This document describes how FeatureSignals collects and organizes evidence for SOC 2 Type II audits.
+:::info
+FeatureSignals has **not** completed a SOC 2 Type II examination. This guide describes how we organize evidence to support **readiness** and a **future** audit; it is not an auditor's report or opinion.
+:::
+
+This document describes how FeatureSignals collects and organizes evidence in preparation for SOC 2 Type II audits.
 
 ## Continuous Evidence Sources
 
@@ -91,7 +99,7 @@ This document describes how FeatureSignals collects and organizes evidence for S
 go test ./... -race -coverprofile=coverage.out    # Unit + integration tests
 go vet ./...                                       # Static analysis
 govulncheck ./...                                  # Known vulnerability scan
-npm run test:coverage                              # Dashboard tests
+npm run test:coverage                              # Flag Engine (web app) tests
 npm run build                                      # Build verification
 ```
 
@@ -123,7 +131,7 @@ npm run build                                      # Build verification
 
 ### Audit Deliverable
 
-The SOC 2 Type II report will contain:
+**After** a completed SOC 2 Type II examination, a typical report contains:
 1. Management assertion
 2. Independent auditor's report
 3. System description

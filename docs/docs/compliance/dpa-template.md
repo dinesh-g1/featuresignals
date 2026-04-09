@@ -1,3 +1,7 @@
+---
+description: "FeatureSignals Data Processing Agreement template for GDPR-compliant data processing relationships."
+---
+
 # Data Processing Agreement (DPA)
 
 _Template — Last updated: April 2026_
@@ -70,12 +74,11 @@ Upon termination of the agreement, FeatureSignals will delete all Customer perso
 
 Where personal data is transferred outside the EEA, FeatureSignals relies on:
 - EU Standard Contractual Clauses (SCCs)
-- Data Privacy Framework (DPF) self-certification
+- Additional transfer mechanisms as described in our privacy and compliance documentation (we are **not** currently listed under the EU-U.S. Data Privacy Framework)
 - Customer-controlled data residency (on-premises option)
 
 ## 10. Audit Rights
 
 The Customer may audit FeatureSignals' compliance with this DPA by:
-- Requesting the most recent SOC 2 Type II report
-- Requesting responses to a security questionnaire
+- Requesting security documentation we make available (for example, responses to a security questionnaire, control summaries, and **a SOC 2 Type II report when we have completed an applicable examination**)
 - Conducting an on-site audit with 30 days' prior written notice (Enterprise plan)

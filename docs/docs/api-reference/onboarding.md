@@ -1,6 +1,7 @@
 ---
 sidebar_position: 16
 title: Onboarding
+description: "FeatureSignals Onboarding API — track user setup progress through the guided onboarding wizard."
 ---
 
 # Onboarding
@@ -66,7 +67,7 @@ Returns the full updated onboarding state (same structure as GET response).
 
 ## Onboarding Steps
 
-| Step | Dashboard Action | Backend Key |
+| Step | Flag Engine action | Backend Key |
 |------|-----------------|-------------|
 | Choose Plan | Select Free, Pro, or Enterprise | `plan_selected` |
 | Create Flag | Create the first feature flag | `first_flag_created` |

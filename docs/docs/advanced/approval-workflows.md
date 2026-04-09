@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 title: Approval Workflows
+description: "Require approval before flag changes take effect in production environments."
 ---
 
 # Approval Workflows

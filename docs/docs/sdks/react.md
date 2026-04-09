@@ -1,6 +1,7 @@
 ---
 sidebar_position: 6
 title: React SDK
+description: "FeatureSignals React SDK — provider component, useFlag hook, SSE streaming, and OpenFeature support."
 ---
 
 # React SDK
@@ -60,7 +61,7 @@ function MyComponent() {
 ```tsx
 <FeatureSignalsProvider
   sdkKey="fs_cli_..."         // Required: client API key
-  envKey="production"          // Required: environment slug
+  envKey="production"          // Required: environment key
   baseURL="https://api.featuresignals.com" // API server URL (optional); for self-hosted, use your own API URL
   userKey="user-123"          // User identifier (default: "anonymous")
   pollingIntervalMs={30000}   // Polling interval (default: 30000, 0 to disable)
@@ -71,7 +72,7 @@ function MyComponent() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `sdkKey` | `string` | (required) | Client API key (e.g., `fs_cli_...`) |
-| `envKey` | `string` | (required) | Environment slug |
+| `envKey` | `string` | (required) | Environment key |
 | `baseURL` | `string` | `https://api.featuresignals.com` | API server URL |
 | `userKey` | `string` | `"anonymous"` | User identifier |
 | `pollingIntervalMs` | `number` | `30000` | Polling interval (0 = disabled when not streaming) |

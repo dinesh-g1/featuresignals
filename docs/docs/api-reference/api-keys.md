@@ -1,6 +1,7 @@
 ---
 sidebar_position: 9
 title: API Keys
+description: "FeatureSignals API Keys — create and manage environment-scoped keys for SDK authentication."
 ---
 
 # API Keys

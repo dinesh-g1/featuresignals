@@ -1,6 +1,7 @@
 ---
 sidebar_position: 5
 title: Java SDK
+description: "FeatureSignals Java SDK — Maven setup, polling, SSE, and OpenFeature provider."
 ---
 
 # Java SDK

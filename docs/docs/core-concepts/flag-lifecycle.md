@@ -1,6 +1,7 @@
 ---
 sidebar_position: 8
 title: Flag Lifecycle
+description: "Track feature flags through active, rolled out, deprecated, and archived lifecycle stages."
 ---
 
 # Flag Lifecycle

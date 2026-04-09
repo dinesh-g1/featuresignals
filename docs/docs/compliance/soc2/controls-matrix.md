@@ -1,3 +1,7 @@
+---
+description: "FeatureSignals SOC 2 Trust Service Criteria controls matrix mapping technical controls to audit requirements."
+---
+
 # SOC 2 Trust Service Criteria — Controls Matrix
 
 _Last updated: April 2026_

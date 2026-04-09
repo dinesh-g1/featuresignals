@@ -1,6 +1,7 @@
 ---
 title: "A/B Testing with the React SDK"
 sidebar_label: "A/B Testing in React"
+description: "Tutorial: run an A/B test in a React app using the FeatureSignals React SDK."
 ---
 
 # A/B Testing with the React SDK
@@ -164,5 +165,5 @@ function PricingPage() {
 
 - **Sample size**: Run tests long enough to reach statistical significance (typically 1,000+ conversions per variant)
 - **One change at a time**: Avoid running overlapping tests on the same page — use [mutual exclusion](/docs/core-concepts/mutual-exclusion) if needed
-- **Consistent assignment**: Always pass a stable `userID` in context so users see the same variant across sessions
+- **Consistent assignment**: Always pass a stable `userID` in the evaluation context so users see the same variant across sessions
 - **Monitor guardrail metrics**: Watch error rates and page load times alongside conversion metrics
