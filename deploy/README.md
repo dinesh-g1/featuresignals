@@ -130,7 +130,13 @@ Requirements: PostgreSQL 16+ accessible at the `DATABASE_URL`. Run migrations fi
 
 ## Database Access (Admin & Readonly)
 
-Production Postgres is bound to `127.0.0.1:5432` on the VPS -- unreachable from the internet. Access is via SSH tunnel only.
+Each region's Postgres is bound to `127.0.0.1:5432` on its VPS — unreachable from the internet. Access is via SSH tunnel only. Each region tunnels to a dedicated local port so you can connect to multiple regions simultaneously.
+
+| Region | VPS env var | Local port |
+|--------|-------------|------------|
+| India  | `FS_VPS_HOST_IN` | `15432` |
+| US     | `FS_VPS_HOST_US` | `15433` |
+| EU     | `FS_VPS_HOST_EU` | `15434` |
 
 ### Roles
 
@@ -142,35 +148,47 @@ Production Postgres is bound to `127.0.0.1:5432` on the VPS -- unreachable from 
 
 ### Prerequisites
 
-1. SSH key-based access to the VPS as `deploy`.
-2. `FS_VPS_HOST` set in your environment, or `~/.featuresignals/config`:
+1. SSH key-based access to each region's VPS as `deploy`.
+2. Per-region VPS hosts configured via env vars or `~/.featuresignals/config`:
    ```bash
    mkdir -p ~/.featuresignals
-   echo "VPS_HOST=<your-server-ip>" > ~/.featuresignals/config
+   cat > ~/.featuresignals/config <<'EOF'
+   VPS_HOST_IN=<india-server-ip>
+   VPS_HOST_US=<us-server-ip>
+   VPS_HOST_EU=<eu-server-ip>
+   EOF
    ```
-3. `DB_ADMIN_PASSWORD` and `DB_READONLY_PASSWORD` stored in GitHub Secrets (added to VPS `.env` by CD pipeline).
+3. `DB_ADMIN_PASSWORD` and `DB_READONLY_PASSWORD` stored in GitHub Secrets (added to each VPS `.env` by CD pipeline).
 
 ### Quick Start (from your laptop)
 
+All `db-*` targets require `REGION=in|us|eu`:
+
 ```bash
-# Open psql as admin (full privileges)
-make db-admin
+# Open psql as admin on US region
+make db-admin REGION=us
 
-# Open psql as readonly
-make db-readonly
+# Open psql as readonly on EU region
+make db-readonly REGION=eu
 
-# Open tunnel only (for pgAdmin, DBeaver, etc.)
-make db-tunnel
+# Open tunnel only for India (for pgAdmin, DBeaver, etc.)
+make db-tunnel REGION=in
 # Then connect your GUI client to: localhost:15432, database: featuresignals
+
+# Open tunnels to all three regions simultaneously
+make db-tunnel REGION=in &
+make db-tunnel REGION=us &
+make db-tunnel REGION=eu &
+# India → localhost:15432, US → localhost:15433, EU → localhost:15434
 ```
 
 Or use the script directly:
 
 ```bash
-./scripts/db-connect.sh                      # admin psql
-./scripts/db-connect.sh --role readonly      # readonly psql
-./scripts/db-connect.sh --tunnel-only        # tunnel for GUI clients
-./scripts/db-connect.sh --host 1.2.3.4       # override VPS host
+./deploy/db-connect.sh --region us                     # admin psql (US)
+./deploy/db-connect.sh --region eu --role readonly     # readonly psql (EU)
+./deploy/db-connect.sh --region in --tunnel-only       # tunnel for GUI clients (India)
+./deploy/db-connect.sh --region us --host 1.2.3.4      # override VPS host
 ```
 
 ### Running Role Setup Manually
@@ -178,8 +196,8 @@ Or use the script directly:
 If roles need to be (re)created or passwords rotated:
 
 ```bash
-# Via Makefile
-make db-setup-roles
+# Via Makefile (per region)
+make db-setup-roles REGION=us
 
 # Or SSH into VPS directly
 ssh deploy@<vps-ip> "cd /opt/featuresignals && bash deploy/pg-setup-roles.sh"
@@ -189,9 +207,9 @@ The script is idempotent and runs automatically on every deploy.
 
 ### Onboarding a Readonly Team Member
 
-1. Share the `DB_READONLY_PASSWORD` with the team member (via a secure channel).
-2. Have them set up `FS_VPS_HOST` and SSH access (if using tunnel), or connect via a bastion.
-3. They connect with: `make db-readonly` or `./scripts/db-connect.sh --role readonly`.
+1. Share the `DB_READONLY_PASSWORD` for the relevant region(s) with the team member (via a secure channel).
+2. Have them configure the region's VPS host in `~/.featuresignals/config` and set up SSH access.
+3. They connect with: `make db-readonly REGION=us` or `./deploy/db-connect.sh --region us --role readonly`.
 4. **Do NOT** share the admin password or VPS SSH credentials.
 
 ### Required GitHub Secrets for Database Roles
@@ -328,7 +346,7 @@ It performs:
 - [ ] Dedicated deploy user (root login disabled)
 - [ ] UFW firewall: ports 22, 80, 443 only
 - [ ] fail2ban for SSH brute-force protection
-- [ ] PostgreSQL bound to `127.0.0.1` only (SSH tunnel required for access)
+- [ ] PostgreSQL bound to `127.0.0.1` only on each region's VPS (SSH tunnel required for access)
 - [ ] Database roles: `fs_admin` (owner only), `fs_readonly` (team members)
 - [ ] Team members never given VPS SSH credentials or admin DB password
 - [ ] CORS locked to exact production domain
