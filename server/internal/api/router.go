@@ -190,14 +190,16 @@ func NewRouter(
 				r.Post("/auth/resend-signup-otp", proxy.TargetRegionProxy(
 					http.HandlerFunc(signupH.ResendSignupOTP), cfg.LocalRegion, cfg.RegionEndpoints, logger,
 				).ServeHTTP)
+				r.Post("/auth/refresh", proxy.RefreshRegionProxy(
+					http.HandlerFunc(authH.Refresh), cfg.LocalRegion, cfg.RegionEndpoints, logger,
+				).ServeHTTP)
 			} else {
 				r.Post("/auth/login", authH.Login)
 				r.Post("/auth/initiate-signup", signupH.InitiateSignup)
 				r.Post("/auth/complete-signup", signupH.CompleteSignup)
 				r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
+				r.Post("/auth/refresh", authH.Refresh)
 			}
-
-			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)
 
@@ -235,10 +237,10 @@ func NewRouter(
 
 		// Auth verification + logout + MFA (authenticated via JWT)
 		r.Group(func(r chi.Router) {
-			r.Use(jwtAuth)
 			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Use(proxy.RegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
+				r.Use(proxy.AuthRegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
 			}
+			r.Use(jwtAuth)
 			r.Post("/auth/send-verification-email", authH.SendVerificationEmail)
 			r.Post("/auth/logout", authH.Logout)
 
@@ -253,10 +255,10 @@ func NewRouter(
 
 		// Billing & onboarding (authenticated via JWT)
 		r.Group(func(r chi.Router) {
-			r.Use(jwtAuth)
 			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Use(proxy.RegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
+				r.Use(proxy.AuthRegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
 			}
+			r.Use(jwtAuth)
 			r.Post("/billing/checkout", billingH.CreateCheckout)
 			r.Get("/billing/subscription", billingH.GetSubscription)
 			r.Get("/billing/usage", billingH.GetUsage)
@@ -280,10 +282,10 @@ func NewRouter(
 
 		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
-			r.Use(jwtAuth)
 			if cfg != nil && cfg.IsGlobalRouter() {
-				r.Use(proxy.RegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
+				r.Use(proxy.AuthRegionRouter(cfg.LocalRegion, cfg.RegionEndpoints, logger))
 			}
+			r.Use(jwtAuth)
 			r.Use(middleware.IPAllowlist(store))
 			r.Use(middleware.CacheControl("private, no-cache"))
 			r.Use(middleware.TrialExpiry(store, logger))
