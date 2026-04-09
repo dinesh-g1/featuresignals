@@ -27,6 +27,7 @@ jobs:
   provision:
     name: "Provision VPS"
     runs-on: ubuntu-latest
+    environment: infrastructure
 
     steps:
       - name: System setup and deploy user creation

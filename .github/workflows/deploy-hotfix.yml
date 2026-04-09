@@ -69,6 +69,7 @@ jobs:
   deploy-hotfix:
     name: "Deploy hotfix to ${{ github.event.inputs.region }}"
     runs-on: ubuntu-latest
+    environment: production
     needs: [quick-validation]
     if: ${{ always() && (needs.quick-validation.result == 'success' || inputs.skip_tests) }}
     steps:
