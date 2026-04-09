@@ -15,6 +15,7 @@ interface AppState {
   setAuth: (token: string, refreshToken: string, user: User | null, organization?: Organization | null, expiresAt?: number, onboardingCompleted?: boolean) => void;
   setOrganization: (organization: Organization) => void;
   setTourCompleted: () => void;
+  requestTour: () => void;
   logout: () => void;
   setCurrentProject: (id: string) => void;
   setCurrentEnv: (id: string) => void;
@@ -33,16 +34,18 @@ export const useAppStore = create<AppState>()(
       currentProjectId: null,
       currentEnvId: null,
       setAuth: (token, refreshToken, user, organization, expiresAt, onboardingCompleted) =>
-        set({
+        set((state) => ({
           token,
           refreshToken,
           user,
           organization: organization ?? null,
           expiresAt: expiresAt ?? null,
           onboardingCompleted: onboardingCompleted ?? false,
-        }),
+          tourCompleted: user?.tour_completed === true || state.tourCompleted,
+        })),
       setOrganization: (organization) => set({ organization }),
       setTourCompleted: () => set({ tourCompleted: true }),
+      requestTour: () => set({ tourCompleted: false }),
       logout: () =>
         set({
           token: null,

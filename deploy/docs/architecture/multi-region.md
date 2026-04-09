@@ -1,9 +1,3 @@
----
-sidebar_position: 4
-title: Multi-Region Architecture
-description: "How FeatureSignals routes traffic across geographic regions with GeoDNS, per-region stacks, and Caddy edge proxies."
----
-
 # Multi-Region Architecture
 
 FeatureSignals runs independent stacks in each data region (India, US, EU). Each region has its own PostgreSQL database, Go API server, Next.js dashboard, and Caddy edge proxy. Traffic is steered to the nearest region using Cloudflare GeoDNS (proximity-based load balancing), eliminating cross-region proxy hops and providing sub-10ms DNS resolution worldwide.

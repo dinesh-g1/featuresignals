@@ -13,6 +13,7 @@ interface PaletteItem {
   category: "flag" | "segment" | "navigation" | "create" | "help" | "docs";
   href: string;
   external?: boolean;
+  action?: () => void;
 }
 
 const NAV_ITEMS: PaletteItem[] = [
@@ -46,6 +47,10 @@ const CREATE_ITEMS: PaletteItem[] = [
 ];
 
 const HELP_ITEMS: PaletteItem[] = [
+  { id: "help-tour", label: "Replay Product Tour", description: "Walk through the dashboard features again", category: "help", href: "", action: () => {
+    useAppStore.getState().requestTour();
+    window.dispatchEvent(new Event("fs:replay-tour"));
+  }},
   { id: "help-quickstart", label: "Quickstart Guide", description: "Get up and running in 5 minutes", category: "help", href: "https://docs.featuresignals.com/getting-started/quickstart", external: true },
   { id: "help-sdks", label: "SDK Documentation", description: "Go, Node, Python, Java, React, Vue...", category: "help", href: "https://docs.featuresignals.com/sdks/overview", external: true },
   { id: "help-api", label: "API Reference", description: "Full REST API documentation", category: "help", href: "https://docs.featuresignals.com/api-playground", external: true },
@@ -192,7 +197,9 @@ export function CommandPalette() {
 
   function handleSelect(item: PaletteItem) {
     setOpen(false);
-    if (item.external) {
+    if (item.action) {
+      item.action();
+    } else if (item.external) {
       window.open(item.href, "_blank", "noopener,noreferrer");
     } else {
       router.push(item.href);

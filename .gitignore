@@ -59,9 +59,10 @@ __pycache__/
 # Local developer config (VPS host, etc.)
 .featuresignals/
 
-# Internal documentation (not for public repo)
+# Internal documentation and operational scripts (not for public repo)
 PLAN.md
 SERVER_SETUP.md
+deploy/db-connect.sh
 
 # Misc
 *.pem
