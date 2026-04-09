@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import {
   Home, Flag, Users, ArrowLeftRight, UserSearch, UsersRound,
   BarChart3, Heart, PieChart, CheckCircle, ClipboardList,
-  Settings, Sparkles, LogOut, Lock, X,
+  Settings, Sparkles, LogOut, Lock, X, HelpCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -198,13 +198,26 @@ function SidebarContent() {
             <p className="truncate font-medium text-slate-300">{user?.name || "User"}</p>
             <p className="truncate text-xs text-slate-500">{user?.email || ""}</p>
           </div>
-          <button
-            onClick={logout}
-            className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-all duration-200 hover:bg-white/10 hover:text-slate-300"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => {
+                useAppStore.getState().requestTour();
+                window.dispatchEvent(new Event("fs:replay-tour"));
+              }}
+              className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-all duration-200 hover:bg-white/10 hover:text-indigo-400"
+              aria-label="Replay product tour"
+              title="Take a tour"
+            >
+              <HelpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            </button>
+            <button
+              onClick={logout}
+              className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-all duration-200 hover:bg-white/10 hover:text-slate-300"
+              aria-label="Sign out"
+            >
+              <LogOut className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -337,6 +337,7 @@ function OnboardingContent() {
 
   async function handleFinish() {
     await markStepComplete("first_evaluation");
+    sessionStorage.setItem("fs-tour-eligible", "true");
     const planIntent = localStorage.getItem("fs_plan_intent");
     if (planIntent === "pro") {
       localStorage.removeItem("fs_plan_intent");
