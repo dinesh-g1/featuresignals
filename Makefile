@@ -188,21 +188,38 @@ migrate-new: ## Create a new migration pair (usage: make migrate-new NAME=add_fo
 	echo "  server/migrations/$${NEXT}_$(NAME).down.sql"
 
 # ─── Database Access ──────────────────────────────────────────────────────────
+# All db-* targets require REGION=in|us|eu (e.g. make db-tunnel REGION=us)
 
-db-tunnel: ## Open SSH tunnel to production Postgres
-	@bash scripts/db-connect.sh --tunnel-only
-
-db-admin: ## Open psql as fs_admin
-	@bash scripts/db-connect.sh --role admin
-
-db-readonly: ## Open psql as fs_readonly
-	@bash scripts/db-connect.sh --role readonly
-
-db-setup-roles: ## Run role provisioning on VPS
-	@if [ -z "$${FS_VPS_HOST:-}" ]; then \
-		echo "ERROR: Set FS_VPS_HOST first"; exit 1; \
+db-tunnel: ## Open SSH tunnel to production Postgres (REGION=in|us|eu)
+	@if [ -z "$${REGION:-}" ]; then \
+		echo "Usage: make db-tunnel REGION=in|us|eu"; \
+		echo ""; \
+		echo "  Tunnels each region to a dedicated local port:"; \
+		echo "    in → localhost:15432    us → localhost:15433    eu → localhost:15434"; \
+		echo ""; \
+		echo "  You can run multiple tunnels simultaneously."; \
+		exit 1; \
 	fi
-	ssh $${FS_VPS_USER:-deploy}@$${FS_VPS_HOST} "cd /opt/featuresignals && bash deploy/pg-setup-roles.sh"
+	@bash deploy/db-connect.sh --region $${REGION} --tunnel-only
+
+db-admin: ## Open psql as fs_admin (REGION=in|us|eu)
+	@if [ -z "$${REGION:-}" ]; then echo "Usage: make db-admin REGION=in|us|eu"; exit 1; fi
+	@bash deploy/db-connect.sh --region $${REGION} --role admin
+
+db-readonly: ## Open psql as fs_readonly (REGION=in|us|eu)
+	@if [ -z "$${REGION:-}" ]; then echo "Usage: make db-readonly REGION=in|us|eu"; exit 1; fi
+	@bash deploy/db-connect.sh --region $${REGION} --role readonly
+
+db-setup-roles: ## Run role provisioning on VPS (REGION=in|us|eu)
+	@if [ -z "$${REGION:-}" ]; then echo "Usage: make db-setup-roles REGION=in|us|eu"; exit 1; fi
+	@HOST=$$(bash -c '\
+		REGION_UPPER=$$(echo "$${REGION}" | tr "[:lower:]" "[:upper:]"); \
+		HOST_VAR="FS_VPS_HOST_$${REGION_UPPER}"; \
+		echo "$${!HOST_VAR:-}"'); \
+	if [ -z "$$HOST" ]; then \
+		echo "ERROR: Set FS_VPS_HOST_$$(echo $${REGION} | tr '[:lower:]' '[:upper:]') first"; exit 1; \
+	fi; \
+	ssh $${FS_VPS_USER:-deploy}@$$HOST "cd /opt/featuresignals && bash deploy/pg-setup-roles.sh"
 
 # ─── Schema ───────────────────────────────────────────────────────────────────
 

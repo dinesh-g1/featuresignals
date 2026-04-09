@@ -56,11 +56,23 @@ function TourGate() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!tourCompleted && user && !user.tour_completed) {
-      const timer = setTimeout(() => setShow(true), 1500);
-      return () => clearTimeout(timer);
-    }
+    if (!user || tourCompleted || user.tour_completed) return;
+
+    const eligible = sessionStorage.getItem("fs-tour-eligible") === "true";
+    if (!eligible) return;
+
+    sessionStorage.removeItem("fs-tour-eligible");
+    const timer = setTimeout(() => setShow(true), 1500);
+    return () => clearTimeout(timer);
   }, [tourCompleted, user]);
+
+  useEffect(() => {
+    function handleReplay() {
+      setShow(true);
+    }
+    window.addEventListener("fs:replay-tour", handleReplay);
+    return () => window.removeEventListener("fs:replay-tour", handleReplay);
+  }, []);
 
   if (!show) return null;
   return <ProductTour onComplete={() => setShow(false)} />;
