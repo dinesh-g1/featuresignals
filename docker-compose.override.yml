@@ -32,7 +32,7 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
       DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
       OTEL_ENABLED: ${OTEL_ENABLED:-true}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-https://ingest.in2.signoz.cloud:443}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-ingest.in2.signoz.cloud:443}
       OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-featuresignals-api-local}
       OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-true}

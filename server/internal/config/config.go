@@ -43,10 +43,10 @@ type Config struct {
 	PayUMode        string
 
 	// Stripe
-	StripeSecretKey      string
-	StripeWebhookSecret  string
-	StripePriceID        string
-	StripeMode           string
+	StripeSecretKey     string
+	StripeWebhookSecret string
+	StripePriceID       string
+	StripeMode          string
 
 	// Deployment mode: "cloud" or "onprem"
 	DeploymentMode string
@@ -175,8 +175,6 @@ func (c *Config) IsOnPrem() bool {
 func (c *Config) BillingEnabled() bool {
 	return !c.IsOnPrem() && (c.StripeSecretKey != "" || c.PayUMerchantKey != "")
 }
-
-
 
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {

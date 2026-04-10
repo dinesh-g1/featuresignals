@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git commit *)",
-      "Bash(git show *)"
+      "Bash(git show *)",
+      "Bash(grep *)"
     ]
   },
   "$version": 3

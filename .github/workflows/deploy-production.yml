@@ -95,7 +95,7 @@ jobs:
             DB_READONLY_PASSWORD=${DB_READONLY_PASSWORD}
             ZEPTOMAIL_TOKEN=${ZEPTOMAIL_TOKEN}
             OTEL_ENABLED=true
-            OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.in2.signoz.cloud:443
+            OTEL_EXPORTER_OTLP_ENDPOINT=ingest.in2.signoz.cloud:443
             OTEL_INGESTION_KEY=${OTEL_INGESTION_KEY}
             OTEL_SERVICE_NAME=featuresignals-api
             OTEL_SERVICE_REGION=${{ matrix.region }}
