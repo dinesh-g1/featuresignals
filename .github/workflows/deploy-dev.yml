@@ -50,6 +50,8 @@ jobs:
             REGION=dev
             DOMAIN_API=api.dev.featuresignals.com
             DOMAIN_APP=app.dev.featuresignals.com
+            DOMAIN_MAIN=dev.featuresignals.com
+            DOMAIN_DOCS=docs.dev.featuresignals.com
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
             DB_ADMIN_PASSWORD=${DB_ADMIN_PASSWORD}
@@ -90,6 +92,9 @@ jobs:
             export IMAGE_TAG="${IMAGE_TAG}"
             export USE_REGISTRY="${USE_REGISTRY}"
             bash deploy/deploy-region.sh
+
+            # Start Dozzle for log monitoring
+            docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.dev.yml up -d dozzle
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
           IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
@@ -116,6 +121,18 @@ jobs:
             "https://app.dev.featuresignals.com" || {
             echo "::error::Dev dashboard health check failed"
             exit 1
+          }
+
+          echo "==> Smoke test: Website"
+          curl -sf --max-time 15 -o /dev/null -w "HTTP %{http_code}" \
+            "https://dev.featuresignals.com" || {
+            echo "::warning::Dev website not responding"
+          }
+
+          echo "==> Smoke test: Docs"
+          curl -sf --max-time 15 -o /dev/null -w "HTTP %{http_code}" \
+            "https://docs.dev.featuresignals.com" || {
+            echo "::warning::Dev docs not responding"
           }
 
           echo "All smoke tests passed"
