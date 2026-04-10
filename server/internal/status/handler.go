@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -99,14 +100,12 @@ func (h *Handler) HandleGlobalStatus(w http.ResponseWriter, r *http.Request) {
 // CheckAllRegions probes all regions and returns the aggregated status.
 // Exported for reuse by the background status recorder.
 func (h *Handler) CheckAllRegions(ctx context.Context) GlobalStatus {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
+	codes := domain.RegionCodes()
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	regions := make([]RegionStatus, 0, len(domain.Regions))
+	regions := make([]RegionStatus, 0, len(codes))
 
-	for _, code := range domain.RegionCodes() {
+	for _, code := range codes {
 		info := domain.Regions[code]
 		if code == h.region {
 			local := h.checkLocal(ctx)
@@ -119,7 +118,11 @@ func (h *Handler) CheckAllRegions(ctx context.Context) GlobalStatus {
 		wg.Add(1)
 		go func(regionCode string, regionInfo domain.RegionInfo) {
 			defer wg.Done()
-			rs := probeRemoteRegion(ctx, regionCode, regionInfo)
+			// Each probe gets an independent timeout so a slow region cannot
+			// cancel the context shared by sibling goroutines.
+			probeCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
+			defer cancel()
+			rs := probeRemoteRegion(probeCtx, regionCode, regionInfo)
 			mu.Lock()
 			regions = append(regions, rs)
 			mu.Unlock()
@@ -130,15 +133,13 @@ func (h *Handler) CheckAllRegions(ctx context.Context) GlobalStatus {
 
 	overall := "operational"
 	for _, rs := range regions {
-		if rs.Status == "unreachable" {
-			continue
-		}
-		if rs.Status == "down" {
+		switch rs.Status {
+		case "down", "unreachable":
 			overall = "partial_outage"
-			break
-		}
-		if rs.Status == "degraded" && overall == "operational" {
-			overall = "degraded"
+		case "degraded":
+			if overall == "operational" {
+				overall = "degraded"
+			}
 		}
 	}
 
@@ -420,7 +421,10 @@ func probeRemoteRegion(ctx context.Context, regionCode string, info domain.Regio
 			CheckedAt: time.Now().UTC(),
 		}
 	}
-	defer resp.Body.Close()
+	// Drain and close the health response body immediately so the connection
+	// is returned to the pool before the second request.
+	_, _ = io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
 
 	apiStatus := "operational"
 	if resp.StatusCode != http.StatusOK {
@@ -440,15 +444,28 @@ func probeRemoteRegion(ctx context.Context, regionCode string, info domain.Regio
 	}
 
 	statusResp, err := client.Do(statusReq)
-	if err == nil && statusResp.StatusCode == http.StatusOK {
-		defer statusResp.Body.Close()
-		var remote RegionStatus
-		if json.NewDecoder(statusResp.Body).Decode(&remote) == nil {
-			return remote
+	if err != nil {
+		return RegionStatus{
+			Region:    regionCode,
+			Name:      info.Name,
+			Status:    apiStatus,
+			Services:  []ServiceStatus{{Name: "API Server", Status: apiStatus, Latency: latency}},
+			CheckedAt: time.Now().UTC(),
 		}
 	}
-	if statusResp != nil {
-		statusResp.Body.Close()
+	defer statusResp.Body.Close()
+
+	if statusResp.StatusCode == http.StatusOK {
+		var remote RegionStatus
+		if json.NewDecoder(statusResp.Body).Decode(&remote) == nil && remote.Region != "" {
+			// Guard against misconfigured satellites reporting the wrong region
+			// code (e.g. LOCAL_REGION defaulting to "in" on a US/EU server).
+			if remote.Region != regionCode {
+				remote.Region = regionCode
+				remote.Name = info.Name
+			}
+			return remote
+		}
 	}
 
 	return RegionStatus{

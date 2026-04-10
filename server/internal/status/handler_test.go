@@ -308,6 +308,62 @@ func TestHandler_HandleGlobalStatus(t *testing.T) {
 	if !hasLocal {
 		t.Error("local region not found in global status")
 	}
+
+	// Remote regions are unreachable in tests; overall must reflect that.
+	if gs.OverallStatus != "partial_outage" && gs.OverallStatus != "operational" {
+		t.Errorf("unexpected overall_status: %s", gs.OverallStatus)
+	}
+}
+
+func TestHandler_CheckAllRegions_UnreachableIsPartialOutage(t *testing.T) {
+	// When any region is unreachable the overall status must not be "operational".
+	h := newTestHandler(&mockHealthChecker{}, &mockPoolStats{acquired: 2, max: 20}, nil)
+	gs := h.CheckAllRegions(context.Background())
+
+	unreachableCount := 0
+	for _, r := range gs.Regions {
+		if r.Status == "unreachable" {
+			unreachableCount++
+		}
+	}
+	if unreachableCount > 0 && gs.OverallStatus == "operational" {
+		t.Errorf("got overall_status=operational with %d unreachable region(s)", unreachableCount)
+	}
+}
+
+func TestHandler_CheckAllRegions_RegionCodeOverride(t *testing.T) {
+	// Simulate a misconfigured satellite that returns the wrong region code in
+	// its /v1/status response (LOCAL_REGION defaulted to "in" on a US server).
+	// probeRemoteRegion must correct the code before returning.
+	fakeSatellite := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		// Return wrong region code — as if LOCAL_REGION="in" on the US server.
+		_ = json.NewEncoder(w).Encode(RegionStatus{
+			Region: "in", // wrong — should be "us"
+			Name:   "India",
+			Status: "operational",
+		})
+	}))
+	defer fakeSatellite.Close()
+
+	// Temporarily override the US region endpoint to point at our fake server.
+	original := domain.Regions[domain.RegionUS]
+	domain.Regions[domain.RegionUS] = domain.RegionInfo{
+		Code:        domain.RegionUS,
+		Name:        "United States",
+		Flag:        "🇺🇸",
+		APIEndpoint: fakeSatellite.URL,
+		AppEndpoint: fakeSatellite.URL,
+	}
+	defer func() { domain.Regions[domain.RegionUS] = original }()
+
+	rs := probeRemoteRegion(context.Background(), domain.RegionUS, domain.Regions[domain.RegionUS])
+	if rs.Region != domain.RegionUS {
+		t.Errorf("expected region %q, got %q", domain.RegionUS, rs.Region)
+	}
 }
 
 // --- HandleStatusHistory Tests ---
@@ -424,6 +480,13 @@ func TestHandler_CheckAllRegions(t *testing.T) {
 
 	if gs.CheckedAt.IsZero() {
 		t.Error("checked_at should not be zero")
+	}
+
+	// overall_status must be one of the known values — never an empty string.
+	switch gs.OverallStatus {
+	case "operational", "degraded", "partial_outage":
+	default:
+		t.Errorf("unexpected overall_status: %q", gs.OverallStatus)
 	}
 }
 
