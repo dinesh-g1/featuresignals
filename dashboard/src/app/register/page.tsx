@@ -31,7 +31,10 @@ function PasswordStrength({ password }: { password: string }) {
   return (
     <div className="mt-2 space-y-1">
       {checks.map((c) => (
-        <div key={c.label} className="flex items-center gap-2 text-xs text-slate-500">
+        <div
+          key={c.label}
+          className="flex items-center gap-2 text-xs text-slate-500"
+        >
           <CheckIcon met={c.met} />
           <span className={c.met ? "text-emerald-600" : ""}>{c.label}</span>
         </div>
@@ -50,7 +53,13 @@ function isPasswordStrong(password: string) {
   );
 }
 
-function OTPInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function OTPInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
   const digits = value.padEnd(6, " ").slice(0, 6).split("");
@@ -108,7 +117,9 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
                 isFilled ? "bg-indigo-50" : "bg-white",
               )}
             >
-              {isFilled ? d : isActive ? (
+              {isFilled ? (
+                d
+              ) : isActive ? (
                 <div className="w-0.5 h-6 bg-indigo-500 rounded-sm animate-blink" />
               ) : null}
             </div>
@@ -122,11 +133,13 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+        </div>
+      }
+    >
       <RegisterForm />
     </Suspense>
   );
@@ -138,7 +151,13 @@ function RegisterForm() {
   const setAuth = useAppStore((s) => s.setAuth);
 
   const [step, setStep] = useState<"form" | "otp">("form");
-  const [form, setForm] = useState({ name: "", email: "", password: "", org_name: "", data_region: "in" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    org_name: "",
+    data_region: "in",
+  });
   const planIntent = searchParams.get("plan");
 
   useEffect(() => {
@@ -150,19 +169,45 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    org_name?: string;
+  }>({});
 
-  const [regions, setRegions] = useState<Array<{ code: string; name: string; flag: string; app_endpoint: string }>>([
-    { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}", app_endpoint: "https://app.featuresignals.com" },
-    { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}", app_endpoint: "https://app.us.featuresignals.com" },
-    { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}", app_endpoint: "https://app.eu.featuresignals.com" },
+  const [regions, setRegions] = useState<
+    Array<{ code: string; name: string; flag: string; app_endpoint: string }>
+  >([
+    {
+      code: "in",
+      name: "India",
+      flag: "\u{1F1EE}\u{1F1F3}",
+      app_endpoint: "https://app.featuresignals.com",
+    },
+    {
+      code: "us",
+      name: "United States",
+      flag: "\u{1F1FA}\u{1F1F8}",
+      app_endpoint: "https://app.us.featuresignals.com",
+    },
+    {
+      code: "eu",
+      name: "Europe",
+      flag: "\u{1F1EA}\u{1F1FA}",
+      app_endpoint: "https://app.eu.featuresignals.com",
+    },
   ]);
 
   useEffect(() => {
-    api.listRegions().then((res) => {
-      if (res.regions?.length) {
-        setRegions(res.regions);
-      }
-    }).catch(() => {});
+    api
+      .listRegions()
+      .then((res) => {
+        if (res.regions?.length) {
+          setRegions(res.regions);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -170,6 +215,22 @@ function RegisterForm() {
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
   }, [countdown]);
+
+  function validateForm() {
+    const errors: {
+      name?: string;
+      email?: string;
+      password?: string;
+      org_name?: string;
+    } = {};
+    if (form.name.trim() === "") errors.name = "Name is required";
+    if (form.email.trim() === "") errors.email = "Email is required";
+    if (form.password === "") errors.password = "Password is required";
+    if (form.org_name.trim() === "")
+      errors.org_name = "Organization name is required";
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
 
   const canSubmitForm =
     form.name.trim() !== "" &&
@@ -179,13 +240,19 @@ function RegisterForm() {
 
   async function handleInitiateSignup() {
     setError("");
+
+    if (!validateForm()) return;
+
     setLoading(true);
 
     const targetRegion = regions.find((r) => r.code === form.data_region);
     if (targetRegion?.app_endpoint) {
       const currentOrigin = window.location.origin;
       const targetOrigin = targetRegion.app_endpoint.replace(/\/$/, "");
-      if (currentOrigin !== targetOrigin && !currentOrigin.includes("localhost")) {
+      if (
+        currentOrigin !== targetOrigin &&
+        !currentOrigin.includes("localhost")
+      ) {
         const params = new URLSearchParams();
         if (planIntent) params.set("plan", planIntent);
         const qs = params.toString();
@@ -210,7 +277,14 @@ function RegisterForm() {
     setLoading(true);
     try {
       const data = await api.completeSignup({ email: form.email, otp });
-      setAuth(data.tokens.access_token, data.tokens.refresh_token, data.user, data.organization, data.tokens.expires_at, data.onboarding_completed);
+      setAuth(
+        data.tokens.access_token,
+        data.tokens.refresh_token,
+        data.user,
+        data.organization,
+        data.tokens.expires_at,
+        data.onboarding_completed,
+      );
       router.push("/onboarding");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -237,7 +311,9 @@ function RegisterForm() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <Card className="w-full max-w-lg space-y-8 p-6 sm:p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-indigo-600">FeatureSignals</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-indigo-600">
+            FeatureSignals
+          </h1>
           <p className="mt-2 text-sm text-slate-500">
             {step === "form" ? "Create your account" : "Verify your email"}
           </p>
@@ -246,7 +322,8 @@ function RegisterForm() {
         {planIntent === "pro" && step === "form" && (
           <div className="rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-center">
             <p className="text-sm font-medium text-indigo-800">
-              Start your <span className="font-bold">14-day Pro trial</span> — subscribe anytime during or after
+              Start your <span className="font-bold">14-day Pro trial</span> —
+              subscribe anytime during or after
             </p>
           </div>
         )}
@@ -255,11 +332,19 @@ function RegisterForm() {
         <div className="flex items-center justify-center gap-0">
           {["Account", "Verify Email"].map((label, i) => {
             const isCompleted = step === "otp" && i === 0;
-            const isCurrent = (step === "form" && i === 0) || (step === "otp" && i === 1);
+            const isCurrent =
+              (step === "form" && i === 0) || (step === "otp" && i === 1);
             return (
               <div key={label} className="flex items-center">
                 {i > 0 && (
-                  <div className={cn("h-0.5 w-12 sm:w-16", isCompleted || isCurrent ? "bg-indigo-400" : "bg-slate-200")} />
+                  <div
+                    className={cn(
+                      "h-0.5 w-12 sm:w-16",
+                      isCompleted || isCurrent
+                        ? "bg-indigo-400"
+                        : "bg-slate-200",
+                    )}
+                  />
                 )}
                 <div className="flex flex-col items-center gap-1">
                   <div
@@ -274,7 +359,16 @@ function RegisterForm() {
                   >
                     {isCompleted ? <Check className="h-4 w-4" /> : i + 1}
                   </div>
-                  <span className={cn("text-xs font-medium", isCurrent ? "text-indigo-600" : isCompleted ? "text-emerald-600" : "text-slate-400")}>
+                  <span
+                    className={cn(
+                      "text-xs font-medium",
+                      isCurrent
+                        ? "text-indigo-600"
+                        : isCompleted
+                          ? "text-emerald-600"
+                          : "text-slate-400",
+                    )}
+                  >
                     {label}
                   </span>
                 </div>
@@ -292,6 +386,7 @@ function RegisterForm() {
         {/* Step 1: Account details */}
         {step === "form" && (
           <form
+            noValidate
             onSubmit={(e) => {
               e.preventDefault();
               handleInitiateSignup();
@@ -299,25 +394,133 @@ function RegisterForm() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-              <Input id="name" name="name" type="text" autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Label htmlFor="name">
+                Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={form.name}
+                onChange={(e) => {
+                  setForm({ ...form, name: e.target.value });
+                  if (fieldErrors.name)
+                    setFieldErrors({ ...fieldErrors, name: undefined });
+                }}
+                aria-invalid={!!fieldErrors.name}
+                aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                required
+              />
+              {fieldErrors.name && (
+                <p
+                  className="text-xs text-red-500"
+                  role="alert"
+                  id="name-error"
+                >
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
-              <Input id="email" name="email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <Label htmlFor="email">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={form.email}
+                onChange={(e) => {
+                  setForm({ ...form, email: e.target.value });
+                  if (fieldErrors.email)
+                    setFieldErrors({ ...fieldErrors, email: undefined });
+                }}
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                required
+              />
+              {fieldErrors.email && (
+                <p
+                  className="text-xs text-red-500"
+                  role="alert"
+                  id="email-error"
+                >
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
-              <Input id="password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+              <Label htmlFor="password">
+                Password <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                value={form.password}
+                onChange={(e) => {
+                  setForm({ ...form, password: e.target.value });
+                  if (fieldErrors.password)
+                    setFieldErrors({ ...fieldErrors, password: undefined });
+                }}
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={
+                  fieldErrors.password ? "password-error" : undefined
+                }
+                required
+              />
+              {fieldErrors.password && (
+                <p
+                  className="text-xs text-red-500"
+                  role="alert"
+                  id="password-error"
+                >
+                  {fieldErrors.password}
+                </p>
+              )}
               <PasswordStrength password={form.password} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="org_name">Organization Name <span className="text-red-500">*</span></Label>
-              <Input id="org_name" name="organization" type="text" autoComplete="organization" value={form.org_name} onChange={(e) => setForm({ ...form, org_name: e.target.value })} required />
+              <Label htmlFor="org_name">
+                Organization Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="org_name"
+                name="organization"
+                type="text"
+                autoComplete="organization"
+                value={form.org_name}
+                onChange={(e) => {
+                  setForm({ ...form, org_name: e.target.value });
+                  if (fieldErrors.org_name)
+                    setFieldErrors({ ...fieldErrors, org_name: undefined });
+                }}
+                aria-invalid={!!fieldErrors.org_name}
+                aria-describedby={
+                  fieldErrors.org_name ? "org_name-error" : undefined
+                }
+                required
+              />
+              {fieldErrors.org_name && (
+                <p
+                  className="text-xs text-red-500"
+                  role="alert"
+                  id="org_name-error"
+                >
+                  {fieldErrors.org_name}
+                </p>
+              )}
             </div>
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-slate-700">Data Region <span className="text-red-500">*</span></legend>
-              <p className="text-xs text-slate-400">Choose where your data is stored for compliance</p>
+              <legend className="text-sm font-medium text-slate-700">
+                Data Region <span className="text-red-500">*</span>
+              </legend>
+              <p className="text-xs text-slate-400">
+                Choose where your data is stored for compliance
+              </p>
               <div className="grid grid-cols-3 gap-2">
                 {regions.map((region) => (
                   <label
@@ -326,7 +529,7 @@ function RegisterForm() {
                       "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all",
                       form.data_region === region.code
                         ? "border-indigo-500 bg-indigo-50 shadow-sm"
-                        : "border-slate-200 hover:border-slate-300"
+                        : "border-slate-200 hover:border-slate-300",
                     )}
                   >
                     <input
@@ -334,28 +537,45 @@ function RegisterForm() {
                       name="data_region"
                       value={region.code}
                       checked={form.data_region === region.code}
-                      onChange={(e) => setForm({ ...form, data_region: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, data_region: e.target.value })
+                      }
                       className="sr-only"
                     />
                     <span className="text-xl">{region.flag}</span>
-                    <span className={cn(
-                      "text-xs font-medium",
-                      form.data_region === region.code ? "text-indigo-700" : "text-slate-600"
-                    )}>{region.name}</span>
+                    <span
+                      className={cn(
+                        "text-xs font-medium",
+                        form.data_region === region.code
+                          ? "text-indigo-700"
+                          : "text-slate-600",
+                      )}
+                    >
+                      {region.name}
+                    </span>
                   </label>
                 ))}
               </div>
             </fieldset>
-            <Button type="submit" disabled={!canSubmitForm || loading} className="w-full">
+            <Button
+              type="submit"
+              disabled={!canSubmitForm || loading}
+              className="w-full"
+            >
               {loading ? "Sending verification code..." : "Continue"}
             </Button>
 
             <div className="text-center">
               <p className="text-xs text-slate-400">
-                By signing up you agree to our Terms of Service and Privacy Policy.
+                By signing up you agree to our Terms of Service and Privacy
+                Policy.
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                You will start with a <span className="font-semibold text-indigo-600">14-day free trial</span> with full Pro features.
+                You will start with a{" "}
+                <span className="font-semibold text-indigo-600">
+                  14-day free trial
+                </span>{" "}
+                with full Pro features.
               </p>
             </div>
           </form>
@@ -369,7 +589,8 @@ function RegisterForm() {
                 <Mail className="h-7 w-7 text-indigo-600" />
               </div>
               <p className="mt-4 text-sm text-slate-500">
-                We sent a 6-digit verification code to<br />
+                We sent a 6-digit verification code to
+                <br />
                 <span className="font-medium text-slate-700">{form.email}</span>
               </p>
             </div>
@@ -386,7 +607,9 @@ function RegisterForm() {
 
             <div className="text-center">
               {countdown > 0 ? (
-                <p className="text-sm text-slate-400">Resend code in {countdown}s</p>
+                <p className="text-sm text-slate-400">
+                  Resend code in {countdown}s
+                </p>
               ) : (
                 <button
                   onClick={handleResendOTP}
@@ -399,7 +622,11 @@ function RegisterForm() {
             </div>
 
             <button
-              onClick={() => { setStep("form"); setOtp(""); setError(""); }}
+              onClick={() => {
+                setStep("form");
+                setOtp("");
+                setError("");
+              }}
               className="w-full text-center text-sm text-slate-400 transition-colors hover:text-slate-600"
             >
               Back to account details
@@ -409,16 +636,31 @@ function RegisterForm() {
 
         {step === "form" && (
           <p className="text-center text-sm text-slate-500">
-            Already have an account? <Link href="/login" className="font-medium text-indigo-600 transition-colors hover:text-indigo-700">Sign in</Link>
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+            >
+              Sign in
+            </Link>
           </p>
         )}
 
         {/* Trust signals */}
         <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-slate-400">
-          <svg className="h-3 w-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="h-3 w-3 text-emerald-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          TLS encrypted &middot; RBAC &middot; SSO &middot; Audit trails &middot; Open source
+          TLS encrypted &middot; RBAC &middot; SSO &middot; Audit trails
+          &middot; Open source
         </div>
       </Card>
     </div>

@@ -20,32 +20,60 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const [loading, setLoading] = useState(false);
   const [showRegionHint, setShowRegionHint] = useState(false);
-  const [regions, setRegions] = useState<Array<{ code: string; name: string; flag: string; app_endpoint: string }>>([]);
+  const [regions, setRegions] = useState<
+    Array<{ code: string; name: string; flag: string; app_endpoint: string }>
+  >([]);
 
   const [ssoMode, setSsoMode] = useState(false);
   const [orgSlug, setOrgSlug] = useState("");
+  const [ssoFieldError, setSsoFieldError] = useState<string>("");
   const [ssoLoading, setSsoLoading] = useState(false);
 
   const sessionExpired = searchParams.get("session_expired") === "true";
   const ssoError = searchParams.get("sso_error");
 
   useEffect(() => {
-    api.listRegions().then((res) => {
-      if (res.regions?.length) {
-        setRegions(res.regions.filter((r) => {
-          const endpoint = r.app_endpoint?.replace(/\/$/, "");
-          return endpoint && endpoint !== window.location.origin;
-        }));
-      }
-    }).catch(() => {});
+    api
+      .listRegions()
+      .then((res) => {
+        if (res.regions?.length) {
+          setRegions(
+            res.regions.filter((r) => {
+              const endpoint = r.app_endpoint?.replace(/\/$/, "");
+              return endpoint && endpoint !== window.location.origin;
+            }),
+          );
+        }
+      })
+      .catch(() => {});
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
     setLoading(true);
+
+    // Custom validation
+    const errors: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      errors.email = "Email is required";
+    }
+    if (!password) {
+      errors.password = "Password is required";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
 
     try {
       const data = await api.login({ email, password });
@@ -78,7 +106,13 @@ function LoginForm() {
 
   async function handleSSOLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!orgSlug.trim()) return;
+    setSsoFieldError("");
+
+    if (!orgSlug.trim()) {
+      setSsoFieldError("Organization slug is required");
+      return;
+    }
+
     setSsoLoading(true);
     setError("");
 
@@ -86,7 +120,9 @@ function LoginForm() {
       const discovery = await api.discoverSSO(orgSlug.trim());
 
       if (!discovery.sso_enabled) {
-        setError("SSO is not configured for this organization. Please use email/password login.");
+        setError(
+          "SSO is not configured for this organization. Please use email/password login.",
+        );
         setSsoLoading(false);
         return;
       }
@@ -100,7 +136,9 @@ function LoginForm() {
         setSsoLoading(false);
       }
     } catch (err) {
-      setError("Failed to discover SSO configuration. Check your organization slug.");
+      setError(
+        "Failed to discover SSO configuration. Check your organization slug.",
+      );
       setSsoLoading(false);
     }
   }
@@ -117,7 +155,9 @@ function LoginForm() {
             FeatureSignals
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            {ssoMode ? "Sign in with your identity provider" : "Sign in to your account"}
+            {ssoMode
+              ? "Sign in with your identity provider"
+              : "Sign in to your account"}
           </p>
         </div>
 
@@ -162,7 +202,7 @@ function LoginForm() {
 
         {ssoMode ? (
           <>
-            <form onSubmit={handleSSOLogin} className="space-y-4">
+            <form onSubmit={handleSSOLogin} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="orgSlug">Organization Slug</Label>
                 <Input
@@ -170,12 +210,25 @@ function LoginForm() {
                   type="text"
                   placeholder="your-company"
                   value={orgSlug}
-                  onChange={(e) => setOrgSlug(e.target.value)}
-                  required
-                  autoFocus
+                  onChange={(e) => {
+                    setOrgSlug(e.target.value);
+                    if (ssoFieldError) setSsoFieldError("");
+                  }}
+                  aria-invalid={!!ssoFieldError}
+                  aria-describedby={ssoFieldError ? "orgSlug-error" : undefined}
                 />
+                {ssoFieldError && (
+                  <p
+                    id="orgSlug-error"
+                    className="text-xs text-red-500"
+                    role="alert"
+                  >
+                    {ssoFieldError}
+                  </p>
+                )}
                 <p className="text-xs text-slate-400">
-                  Enter your organization&apos;s slug to discover your identity provider.
+                  Enter your organization&apos;s slug to discover your identity
+                  provider.
                 </p>
               </div>
 
@@ -208,7 +261,7 @@ function LoginForm() {
           </>
         ) : (
           <>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -217,9 +270,25 @@ function LoginForm() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email)
+                      setFieldErrors({ ...fieldErrors, email: undefined });
+                  }}
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={
+                    fieldErrors.email ? "email-error" : undefined
+                  }
                 />
+                {fieldErrors.email && (
+                  <p
+                    id="email-error"
+                    className="text-xs text-red-500"
+                    role="alert"
+                  >
+                    {fieldErrors.email}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -230,9 +299,25 @@ function LoginForm() {
                   type="password"
                   autoComplete="current-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password)
+                      setFieldErrors({ ...fieldErrors, password: undefined });
+                  }}
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={
+                    fieldErrors.password ? "password-error" : undefined
+                  }
                 />
+                {fieldErrors.password && (
+                  <p
+                    id="password-error"
+                    className="text-xs text-red-500"
+                    role="alert"
+                  >
+                    {fieldErrors.password}
+                  </p>
+                )}
               </div>
 
               <Button type="submit" disabled={loading} className="w-full">
@@ -286,7 +371,8 @@ function LoginForm() {
           >
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          TLS encrypted &middot; RBAC &middot; SSO &middot; Audit trails &middot; Open source
+          TLS encrypted &middot; RBAC &middot; SSO &middot; Audit trails
+          &middot; Open source
         </div>
       </Card>
     </div>

@@ -5,7 +5,20 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, Button, Input, Badge, CategoryBadge, StatusBadge, EmptyState, Label, Switch, FormField, FlagsPageSkeleton } from "@/components/ui";
+import {
+  PageHeader,
+  Card,
+  Button,
+  Input,
+  Badge,
+  CategoryBadge,
+  StatusBadge,
+  EmptyState,
+  Label,
+  Switch,
+  FormField,
+  FlagsPageSkeleton,
+} from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
@@ -13,7 +26,14 @@ import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { DOCS_LINKS } from "@/components/docs-link";
-import { useFlags, useEnvironments, useFlagStates, useFlagStateMap, useCreateFlag, useDeleteFlag } from "@/hooks/use-data";
+import {
+  useFlags,
+  useEnvironments,
+  useFlagStates,
+  useFlagStateMap,
+  useCreateFlag,
+  useDeleteFlag,
+} from "@/hooks/use-data";
 import { useMutation } from "@/hooks/use-query";
 import type { FlagState } from "@/lib/types";
 
@@ -64,7 +84,12 @@ export default function FlagsPage() {
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
 
-  const { data: flags, loading: flagsLoading, error: flagsError, refetch: refetchFlags } = useFlags(projectId);
+  const {
+    data: flags,
+    loading: flagsLoading,
+    error: flagsError,
+    refetch: refetchFlags,
+  } = useFlags(projectId);
   const { data: envs } = useEnvironments(projectId);
   const { data: batchStates } = useFlagStates(projectId, currentEnvId);
   const stateMap = useFlagStateMap(batchStates, flags);
@@ -77,7 +102,19 @@ export default function FlagsPage() {
   const [sortBy, setSortBy] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showCreate, setShowCreate] = useState(false);
-  const [newFlag, setNewFlag] = useState({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
+  const [newFlag, setNewFlag] = useState({
+    key: "",
+    name: "",
+    flag_type: "boolean",
+    category: "release",
+    description: "",
+    default_value: "false",
+  });
+  const [fieldErrors, setFieldErrors] = useState<{
+    key?: string;
+    name?: string;
+    default_value?: string;
+  }>({});
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
 
@@ -86,24 +123,37 @@ export default function FlagsPage() {
 
   const toggleMutation = useMutation(
     async ({ flagKey, enabled }: { flagKey: string; enabled: boolean }) => {
-      return api.updateFlagState(token!, projectId!, flagKey, currentEnvId!, { enabled });
+      return api.updateFlagState(token!, projectId!, flagKey, currentEnvId!, {
+        enabled,
+      });
     },
     {
-      invalidateKeys: projectId && currentEnvId ? [`flag-states:${projectId}:${currentEnvId}`] : [],
+      invalidateKeys:
+        projectId && currentEnvId
+          ? [`flag-states:${projectId}:${currentEnvId}`]
+          : [],
     },
   );
 
   function defaultValueForType(type: string): string {
     switch (type) {
-      case "string": return '""';
-      case "number": return "0";
-      case "json": return "{}";
-      default: return "false";
+      case "string":
+        return '""';
+      case "number":
+        return "0";
+      case "json":
+        return "{}";
+      default:
+        return "false";
     }
   }
 
   function handleTypeChange(type: string) {
-    setNewFlag({ ...newFlag, flag_type: type, default_value: defaultValueForType(type) });
+    setNewFlag({
+      ...newFlag,
+      flag_type: type,
+      default_value: defaultValueForType(type),
+    });
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -112,6 +162,25 @@ export default function FlagsPage() {
       toast("Select a project first", "error");
       return;
     }
+    const errors: { key?: string; name?: string; default_value?: string } = {};
+    if (!newFlag.key.trim()) {
+      errors.key = "Key is required";
+    }
+    if (!newFlag.name.trim()) {
+      errors.name = "Name is required";
+    }
+    if (newFlag.flag_type === "json") {
+      try {
+        JSON.parse(newFlag.default_value);
+      } catch {
+        errors.default_value = "Invalid JSON format";
+      }
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     let parsedDefault: unknown;
     try {
       parsedDefault = JSON.parse(newFlag.default_value);
@@ -129,7 +198,14 @@ export default function FlagsPage() {
     });
     if (result) {
       setShowCreate(false);
-      setNewFlag({ key: "", name: "", flag_type: "boolean", category: "release", description: "", default_value: "false" });
+      setNewFlag({
+        key: "",
+        name: "",
+        flag_type: "boolean",
+        category: "release",
+        description: "",
+        default_value: "false",
+      });
       toast("Flag created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
@@ -153,7 +229,10 @@ export default function FlagsPage() {
     }
     setToggling(flagKey);
     const current = stateMap.get(flagKey);
-    const result = await toggleMutation.mutate({ flagKey, enabled: !current?.enabled });
+    const result = await toggleMutation.mutate({
+      flagKey,
+      enabled: !current?.enabled,
+    });
     setToggling(null);
     if (!result && toggleMutation.error) {
       toast(toggleMutation.error, "error");
@@ -166,10 +245,13 @@ export default function FlagsPage() {
     return Array.from(tags).sort();
   }, [flags]);
 
-  const tagOptions = useMemo(() => [
-    { value: "", label: "All Tags" },
-    ...allTags.map((t) => ({ value: t, label: t })),
-  ], [allTags]);
+  const tagOptions = useMemo(
+    () => [
+      { value: "", label: "All Tags" },
+      ...allTags.map((t) => ({ value: t, label: t })),
+    ],
+    [allTags],
+  );
 
   function handleSort(key: SortKey) {
     if (sortBy === key) {
@@ -182,7 +264,9 @@ export default function FlagsPage() {
 
   const filtered = useMemo(() => {
     let result = (flags ?? []).filter(
-      (f) => (f.key ?? "").includes(search) || (f.name ?? "").toLowerCase().includes(search.toLowerCase()),
+      (f) =>
+        (f.key ?? "").includes(search) ||
+        (f.name ?? "").toLowerCase().includes(search.toLowerCase()),
     );
     if (typeFilter !== "all") {
       result = result.filter((f) => f.flag_type === typeFilter);
@@ -203,7 +287,16 @@ export default function FlagsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [flags, search, typeFilter, categoryFilter, statusFilter, tagFilter, sortBy, sortDir]);
+  }, [
+    flags,
+    search,
+    typeFilter,
+    categoryFilter,
+    statusFilter,
+    tagFilter,
+    sortBy,
+    sortDir,
+  ]);
 
   const currentEnvName = (envs ?? []).find((e) => e.id === currentEnvId)?.name;
 
@@ -221,7 +314,13 @@ export default function FlagsPage() {
   }
 
   if (flagsError) {
-    return <ErrorDisplay title="Failed to load flags" message={flagsError} onRetry={refetchFlags} />;
+    return (
+      <ErrorDisplay
+        title="Failed to load flags"
+        message={flagsError}
+        onRetry={refetchFlags}
+      />
+    );
   }
 
   if (flagsLoading) {
@@ -245,27 +344,53 @@ export default function FlagsPage() {
       <UpgradeNudge context="projects" />
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-indigo-200/60 bg-white p-4 space-y-4 shadow-md shadow-indigo-100/30 ring-1 ring-indigo-100/60 sm:p-6">
+        <form
+          onSubmit={handleCreate}
+          noValidate
+          className="rounded-xl border border-indigo-200/60 bg-white p-4 space-y-4 shadow-md shadow-indigo-100/30 ring-1 ring-indigo-100/60 sm:p-6"
+        >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Key</Label>
               <Input
                 value={newFlag.key}
-                onChange={(e) => setNewFlag({ ...newFlag, key: e.target.value })}
+                onChange={(e) => {
+                  setNewFlag({ ...newFlag, key: e.target.value });
+                  if (fieldErrors.key)
+                    setFieldErrors({ ...fieldErrors, key: undefined });
+                }}
                 placeholder="new-checkout-flow"
                 required
+                aria-invalid={!!fieldErrors.key}
+                aria-describedby={fieldErrors.key ? "key-error" : undefined}
                 className="mt-1"
               />
+              {fieldErrors.key && (
+                <p id="key-error" className="mt-1 text-sm text-red-600">
+                  {fieldErrors.key}
+                </p>
+              )}
             </div>
             <div>
               <Label>Name</Label>
               <Input
                 value={newFlag.name}
-                onChange={(e) => setNewFlag({ ...newFlag, name: e.target.value })}
+                onChange={(e) => {
+                  setNewFlag({ ...newFlag, name: e.target.value });
+                  if (fieldErrors.name)
+                    setFieldErrors({ ...fieldErrors, name: undefined });
+                }}
                 placeholder="New Checkout Flow"
                 required
+                aria-invalid={!!fieldErrors.name}
+                aria-describedby={fieldErrors.name ? "name-error" : undefined}
                 className="mt-1"
               />
+              {fieldErrors.name && (
+                <p id="name-error" className="mt-1 text-sm text-red-600">
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -284,7 +409,9 @@ export default function FlagsPage() {
               <div className="mt-1">
                 <Select
                   value={newFlag.category}
-                  onValueChange={(val) => setNewFlag({ ...newFlag, category: val })}
+                  onValueChange={(val) =>
+                    setNewFlag({ ...newFlag, category: val })
+                  }
                   options={CREATE_CATEGORY_OPTIONS}
                 />
               </div>
@@ -294,7 +421,9 @@ export default function FlagsPage() {
             <Label>Description</Label>
             <Input
               value={newFlag.description}
-              onChange={(e) => setNewFlag({ ...newFlag, description: e.target.value })}
+              onChange={(e) =>
+                setNewFlag({ ...newFlag, description: e.target.value })
+              }
               placeholder="Optional description"
               className="mt-1"
             />
@@ -302,24 +431,45 @@ export default function FlagsPage() {
           <div>
             <Label>Default Value</Label>
             <p className="text-xs text-slate-500 mt-0.5 mb-1">
-              {newFlag.flag_type === "boolean" && "The value returned when the flag is disabled."}
-              {newFlag.flag_type === "string" && "A string value returned when the flag is disabled."}
-              {newFlag.flag_type === "number" && "A numeric value returned when the flag is disabled."}
-              {newFlag.flag_type === "json" && "A JSON object or array returned when the flag is disabled."}
-              {newFlag.flag_type === "ab" && "Fallback value when no variant is matched."}
+              {newFlag.flag_type === "boolean" &&
+                "The value returned when the flag is disabled."}
+              {newFlag.flag_type === "string" &&
+                "A string value returned when the flag is disabled."}
+              {newFlag.flag_type === "number" &&
+                "A numeric value returned when the flag is disabled."}
+              {newFlag.flag_type === "json" &&
+                "A JSON object or array returned when the flag is disabled."}
+              {newFlag.flag_type === "ab" &&
+                "Fallback value when no variant is matched."}
             </p>
             {newFlag.flag_type === "boolean" ? (
               <div className="flex items-center gap-3">
                 <Switch
                   checked={newFlag.default_value === "true"}
-                  onCheckedChange={(checked) => setNewFlag({ ...newFlag, default_value: checked ? "true" : "false" })}
+                  onCheckedChange={(checked) =>
+                    setNewFlag({
+                      ...newFlag,
+                      default_value: checked ? "true" : "false",
+                    })
+                  }
                 />
-                <span className="text-sm font-mono text-slate-700">{newFlag.default_value}</span>
+                <span className="text-sm font-mono text-slate-700">
+                  {newFlag.default_value}
+                </span>
               </div>
             ) : newFlag.flag_type === "string" ? (
               <Input
-                value={newFlag.default_value.startsWith('"') ? JSON.parse(newFlag.default_value) : newFlag.default_value}
-                onChange={(e) => setNewFlag({ ...newFlag, default_value: JSON.stringify(e.target.value) })}
+                value={
+                  newFlag.default_value.startsWith('"')
+                    ? JSON.parse(newFlag.default_value)
+                    : newFlag.default_value
+                }
+                onChange={(e) =>
+                  setNewFlag({
+                    ...newFlag,
+                    default_value: JSON.stringify(e.target.value),
+                  })
+                }
                 placeholder='e.g. "Welcome back!"'
                 className="mt-1 font-mono"
               />
@@ -327,25 +477,52 @@ export default function FlagsPage() {
               <Input
                 type="number"
                 value={newFlag.default_value}
-                onChange={(e) => setNewFlag({ ...newFlag, default_value: e.target.value || "0" })}
+                onChange={(e) =>
+                  setNewFlag({
+                    ...newFlag,
+                    default_value: e.target.value || "0",
+                  })
+                }
                 placeholder="0"
                 className="mt-1 font-mono"
               />
             ) : (
               <Textarea
                 value={newFlag.default_value}
-                onChange={(e) => setNewFlag({ ...newFlag, default_value: e.target.value })}
+                onChange={(e) => {
+                  setNewFlag({ ...newFlag, default_value: e.target.value });
+                  if (fieldErrors.default_value)
+                    setFieldErrors({
+                      ...fieldErrors,
+                      default_value: undefined,
+                    });
+                }}
                 placeholder='e.g. {"theme": "dark"}'
                 rows={3}
+                aria-invalid={!!fieldErrors.default_value}
+                aria-describedby={
+                  fieldErrors.default_value ? "default_value-error" : undefined
+                }
                 className="mt-1 font-mono text-sm"
               />
+            )}
+            {fieldErrors.default_value && (
+              <p id="default_value-error" className="mt-1 text-sm text-red-600">
+                {fieldErrors.default_value}
+              </p>
             )}
           </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={createFlag.loading}>
               {createFlag.loading ? "Creating..." : "Create"}
             </Button>
-            <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowCreate(false)}
+            >
+              Cancel
+            </Button>
           </div>
         </form>
       )}
@@ -353,7 +530,10 @@ export default function FlagsPage() {
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/60 p-3 ring-1 ring-slate-100/80 backdrop-blur-sm sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:w-auto">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden="true"
+          />
           <Input
             type="text"
             placeholder="Search flags..."
@@ -364,17 +544,37 @@ export default function FlagsPage() {
           />
         </div>
         <div className="w-full sm:w-auto">
-          <Select value={typeFilter} onValueChange={setTypeFilter} options={FLAG_TYPE_OPTIONS} size="sm" />
+          <Select
+            value={typeFilter}
+            onValueChange={setTypeFilter}
+            options={FLAG_TYPE_OPTIONS}
+            size="sm"
+          />
         </div>
         <div className="w-full sm:w-auto">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter} options={CATEGORY_OPTIONS} size="sm" />
+          <Select
+            value={categoryFilter}
+            onValueChange={setCategoryFilter}
+            options={CATEGORY_OPTIONS}
+            size="sm"
+          />
         </div>
         <div className="w-full sm:w-auto">
-          <Select value={statusFilter} onValueChange={setStatusFilter} options={STATUS_OPTIONS} size="sm" />
+          <Select
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+            size="sm"
+          />
         </div>
         {allTags.length > 0 && (
           <div className="w-full sm:w-auto">
-            <Select value={tagFilter} onValueChange={setTagFilter} options={tagOptions} size="sm" />
+            <Select
+              value={tagFilter}
+              onValueChange={setTagFilter}
+              options={tagOptions}
+              size="sm"
+            />
           </div>
         )}
       </div>
@@ -382,16 +582,18 @@ export default function FlagsPage() {
       {/* Sort controls */}
       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
         <span>Sort by:</span>
-        {(["key", "name", "created_at", "updated_at"] as SortKey[]).map((key) => (
-          <button
-            key={key}
-            onClick={() => handleSort(key)}
-            className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium shadow-sm ring-1 ring-indigo-100/60" : "hover:bg-slate-100"}`}
-          >
-            {key.replace(/_/g, " ")}
-            {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
-          </button>
-        ))}
+        {(["key", "name", "created_at", "updated_at"] as SortKey[]).map(
+          (key) => (
+            <button
+              key={key}
+              onClick={() => handleSort(key)}
+              className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium shadow-sm ring-1 ring-indigo-100/60" : "hover:bg-slate-100"}`}
+            >
+              {key.replace(/_/g, " ")}
+              {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
+            </button>
+          ),
+        )}
       </div>
 
       <Card>
@@ -408,16 +610,32 @@ export default function FlagsPage() {
             filtered.map((flag) => {
               const st = stateMap.get(flag.key);
               return (
-                <div key={flag.id} className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-indigo-50/40 sm:px-6 sm:py-4">
+                <div
+                  key={flag.id}
+                  className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-indigo-50/40 sm:px-6 sm:py-4"
+                >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <Link href={`/flags/${flag.key}`} className="min-w-0 flex-1">
+                    <Link
+                      href={`/flags/${flag.key}`}
+                      className="min-w-0 flex-1"
+                    >
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-mono text-sm font-medium text-slate-900">{flag.key}</p>
-                        <Badge>{flag.flag_type === "ab" ? "A/B" : flag.flag_type}</Badge>
-                        {flag.category && <CategoryBadge category={flag.category} />}
-                        {flag.status && flag.status !== "active" && <StatusBadge status={flag.status} />}
+                        <p className="font-mono text-sm font-medium text-slate-900">
+                          {flag.key}
+                        </p>
+                        <Badge>
+                          {flag.flag_type === "ab" ? "A/B" : flag.flag_type}
+                        </Badge>
+                        {flag.category && (
+                          <CategoryBadge category={flag.category} />
+                        )}
+                        {flag.status && flag.status !== "active" && (
+                          <StatusBadge status={flag.status} />
+                        )}
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500">{flag.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {flag.name}
+                      </p>
                     </Link>
                     <div className="flex items-center gap-2 sm:gap-3">
                       {flag.tags?.map((tag: string) => (
@@ -434,25 +652,48 @@ export default function FlagsPage() {
                         />
                       )}
 
-                      <span className="hidden text-xs text-slate-400 sm:inline">{new Date(flag.created_at).toLocaleDateString()}</span>
+                      <span className="hidden text-xs text-slate-400 sm:inline">
+                        {new Date(flag.created_at).toLocaleDateString()}
+                      </span>
                       {deleting === flag.key ? (
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="destructive-ghost" onClick={() => handleDelete(flag.key)}>Confirm</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+                          <Button
+                            size="sm"
+                            variant="destructive-ghost"
+                            onClick={() => handleDelete(flag.key)}
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setDeleting(null)}
+                          >
+                            Cancel
+                          </Button>
                         </div>
                       ) : (
                         <Button
                           size="icon-sm"
                           variant="ghost"
-                          onClick={(e) => { e.preventDefault(); setDeleting(flag.key); }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setDeleting(flag.key);
+                          }}
                           title="Delete flag"
                           className="text-slate-400 hover:text-red-500 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
-                      <Link href={`/flags/${flag.key}`} aria-label={`Open flag ${flag.key}`}>
-                        <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                      <Link
+                        href={`/flags/${flag.key}`}
+                        aria-label={`Open flag ${flag.key}`}
+                      >
+                        <ChevronRight
+                          className="h-4 w-4 text-slate-400"
+                          aria-hidden="true"
+                        />
                       </Link>
                     </div>
                   </div>

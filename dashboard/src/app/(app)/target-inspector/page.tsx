@@ -4,7 +4,15 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, Button, Input, Label, Badge, EmptyState } from "@/components/ui";
+import {
+  PageHeader,
+  Card,
+  Button,
+  Input,
+  Label,
+  Badge,
+  EmptyState,
+} from "@/components/ui";
 import { UserSearch, X, Search } from "lucide-react";
 import type { InspectTargetResult } from "@/lib/types";
 
@@ -13,7 +21,10 @@ export default function TargetInspectorPage() {
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const [targetKey, setTargetKey] = useState("");
-  const [attrs, setAttrs] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
+  const [fieldError, setFieldError] = useState<string>("");
+  const [attrs, setAttrs] = useState<{ key: string; value: string }[]>([
+    { key: "", value: "" },
+  ]);
   const [results, setResults] = useState<InspectTargetResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -32,14 +43,22 @@ export default function TargetInspectorPage() {
 
   async function handleInspect(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !projectId || !currentEnvId || !targetKey) return;
+    if (!targetKey.trim()) {
+      setFieldError("Target key is required");
+      return;
+    }
+    setFieldError("");
+    if (!token || !projectId || !currentEnvId) return;
     setLoading(true);
     try {
       const attributes: Record<string, unknown> = {};
       attrs.forEach((a) => {
         if (a.key.trim()) attributes[a.key.trim()] = a.value;
       });
-      const data = await api.inspectTarget(token, projectId, currentEnvId, { key: targetKey, attributes });
+      const data = await api.inspectTarget(token, projectId, currentEnvId, {
+        key: targetKey,
+        attributes,
+      });
       setResults(data);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : "Inspection failed", "error");
@@ -59,20 +78,52 @@ export default function TargetInspectorPage() {
         description="Evaluate all flags for a specific target to see exactly what they would receive"
       />
 
-      <form onSubmit={handleInspect} className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 sm:p-6">
+      <form
+        onSubmit={handleInspect}
+        noValidate
+        className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 sm:p-6"
+      >
         <div>
           <Label>Target Key</Label>
-          <Input value={targetKey} onChange={(e) => setTargetKey(e.target.value)} placeholder="user-123" required className="mt-1" />
+          <Input
+            value={targetKey}
+            onChange={(e) => {
+              setTargetKey(e.target.value);
+              if (fieldError) setFieldError("");
+            }}
+            placeholder="user-123"
+            aria-invalid={!!fieldError}
+            aria-describedby={fieldError ? "target-key-error" : undefined}
+            className="mt-1"
+          />
+          {fieldError && (
+            <p
+              id="target-key-error"
+              className="text-xs text-red-500"
+              role="alert"
+            >
+              {fieldError}
+            </p>
+          )}
         </div>
 
         <div>
           <div className="flex items-center justify-between">
             <Label>Attributes</Label>
-            <button type="button" onClick={addAttr} className="text-xs text-indigo-600 hover:text-indigo-700">+ Add attribute</button>
+            <button
+              type="button"
+              onClick={addAttr}
+              className="text-xs text-indigo-600 hover:text-indigo-700"
+            >
+              + Add attribute
+            </button>
           </div>
           <div className="mt-2 space-y-2">
             {attrs.map((attr, i) => (
-              <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div
+                key={i}
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              >
                 <Input
                   value={attr.key}
                   onChange={(e) => updateAttr(i, "key", e.target.value)}
@@ -86,7 +137,13 @@ export default function TargetInspectorPage() {
                   className="sm:flex-1"
                 />
                 {attrs.length > 1 && (
-                  <Button type="button" size="icon-sm" variant="ghost" onClick={() => removeAttr(i)} className="text-slate-400 hover:text-red-500 self-end sm:self-auto">
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => removeAttr(i)}
+                    className="text-slate-400 hover:text-red-500 self-end sm:self-auto"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 )}
@@ -105,9 +162,16 @@ export default function TargetInspectorPage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input placeholder="Filter results..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+              <Input
+                placeholder="Filter results..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <span className="text-sm text-slate-500">{filtered?.length} flag{filtered?.length !== 1 ? "s" : ""}</span>
+            <span className="text-sm text-slate-500">
+              {filtered?.length} flag{filtered?.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
           <Card>
@@ -124,17 +188,36 @@ export default function TargetInspectorPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filtered?.map((r) => (
-                    <tr key={r.flag_key} className="transition-colors hover:bg-indigo-50/30">
-                      <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">{r.flag_key}</td>
+                    <tr
+                      key={r.flag_key}
+                      className="transition-colors hover:bg-indigo-50/30"
+                    >
+                      <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
+                        {r.flag_key}
+                      </td>
                       <td className="px-4 py-3">
-                        <Badge variant={r.value === true ? "success" : r.value === false ? "default" : "primary"}>
+                        <Badge
+                          variant={
+                            r.value === true
+                              ? "success"
+                              : r.value === false
+                                ? "default"
+                                : "primary"
+                          }
+                        >
                           {String(r.value)}
                         </Badge>
                       </td>
-                      <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">{r.reason}</td>
-                      <td className="hidden px-4 py-3 text-slate-500 md:table-cell">{r.variant_key || "—"}</td>
+                      <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
+                        {r.reason}
+                      </td>
+                      <td className="hidden px-4 py-3 text-slate-500 md:table-cell">
+                        {r.variant_key || "—"}
+                      </td>
                       <td className="hidden px-4 py-3 md:table-cell">
-                        {r.individually_targeted && <Badge variant="purple">Targeted</Badge>}
+                        {r.individually_targeted && (
+                          <Badge variant="purple">Targeted</Badge>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -142,7 +225,11 @@ export default function TargetInspectorPage() {
               </table>
             </div>
             {filtered?.length === 0 && (
-              <EmptyState icon={UserSearch} title="No results match the filter." className="py-8" />
+              <EmptyState
+                icon={UserSearch}
+                title="No results match the filter."
+                className="py-8"
+              />
             )}
           </Card>
         </>

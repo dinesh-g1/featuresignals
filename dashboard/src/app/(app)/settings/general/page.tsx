@@ -22,22 +22,35 @@ export default function SettingsGeneralPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", color: "#6B7280" });
+  const [fieldError, setFieldError] = useState<string>("");
   const [deleting, setDeleting] = useState<string | null>(null);
 
   function reloadEnvs() {
     if (!token || !projectId) return;
-    api.listEnvironments(token, projectId).then((e) => setEnvs(e ?? [])).catch(() => {});
+    api
+      .listEnvironments(token, projectId)
+      .then((e) => setEnvs(e ?? []))
+      .catch(() => {});
   }
 
-  useEffect(() => { reloadEnvs(); }, [token, projectId]);
+  useEffect(() => {
+    reloadEnvs();
+  }, [token, projectId]);
 
   useEffect(() => {
     if (!token) return;
-    api.listProjects(token).then((p) => setProjects(p ?? [])).catch(() => {});
+    api
+      .listProjects(token)
+      .then((p) => setProjects(p ?? []))
+      .catch(() => {});
   }, [token]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.name.trim()) {
+      setFieldError("Environment name is required");
+      return;
+    }
     if (!token || !projectId) {
       toast("Select a project first", "error");
       return;
@@ -46,10 +59,14 @@ export default function SettingsGeneralPage() {
       await api.createEnvironment(token, projectId, form);
       setShowCreate(false);
       setForm({ name: "", slug: "", color: "#6B7280" });
+      setFieldError("");
       toast("Environment created", "success");
       reloadEnvs();
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to create environment", "error");
+      toast(
+        err instanceof Error ? err.message : "Failed to create environment",
+        "error",
+      );
     }
   }
 
@@ -61,15 +78,27 @@ export default function SettingsGeneralPage() {
       toast("Environment deleted", "success");
       reloadEnvs();
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to delete environment", "error");
+      toast(
+        err instanceof Error ? err.message : "Failed to delete environment",
+        "error",
+      );
       setDeleting(null);
     }
   }
 
   const currentProject = projects.find((p) => p.id === projectId);
-  const planLabel = organization?.plan === "trial" ? "Pro Trial" : (organization?.plan || "free").charAt(0).toUpperCase() + (organization?.plan || "free").slice(1);
+  const planLabel =
+    organization?.plan === "trial"
+      ? "Pro Trial"
+      : (organization?.plan || "free").charAt(0).toUpperCase() +
+        (organization?.plan || "free").slice(1);
 
-  const planVariant = organization?.plan === "trial" ? "primary" : organization?.plan === "pro" ? "success" : "default";
+  const planVariant =
+    organization?.plan === "trial"
+      ? "primary"
+      : organization?.plan === "pro"
+        ? "success"
+        : "default";
 
   return (
     <div className="space-y-6">
@@ -81,26 +110,35 @@ export default function SettingsGeneralPage() {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Organization</h2>
+              <h2 className="text-sm font-semibold text-slate-900">
+                Organization
+              </h2>
               <p className="text-xs text-slate-500">Your workspace details</p>
             </div>
           </div>
           <dl className="space-y-3">
             <div className="flex items-center justify-between">
               <dt className="text-sm text-slate-500">Name</dt>
-              <dd className="text-sm font-medium text-slate-900">{organization?.name || "—"}</dd>
+              <dd className="text-sm font-medium text-slate-900">
+                {organization?.name || "—"}
+              </dd>
             </div>
             <div className="flex items-center justify-between">
               <dt className="text-sm text-slate-500">Plan</dt>
               <dd>
-                <Badge variant={planVariant} className="px-2.5 py-0.5 text-xs font-semibold">
+                <Badge
+                  variant={planVariant}
+                  className="px-2.5 py-0.5 text-xs font-semibold"
+                >
                   {planLabel}
                 </Badge>
               </dd>
             </div>
             <div className="flex items-center justify-between">
               <dt className="text-sm text-slate-500">Projects</dt>
-              <dd className="text-sm font-medium text-slate-900">{projects.length}</dd>
+              <dd className="text-sm font-medium text-slate-900">
+                {projects.length}
+              </dd>
             </div>
           </dl>
         </Card>
@@ -112,7 +150,9 @@ export default function SettingsGeneralPage() {
               <FolderOpen className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Current Project</h2>
+              <h2 className="text-sm font-semibold text-slate-900">
+                Current Project
+              </h2>
               <p className="text-xs text-slate-500">Selected in sidebar</p>
             </div>
           </div>
@@ -120,19 +160,27 @@ export default function SettingsGeneralPage() {
             <dl className="space-y-3">
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-slate-500">Name</dt>
-                <dd className="text-sm font-medium text-slate-900">{currentProject.name}</dd>
+                <dd className="text-sm font-medium text-slate-900">
+                  {currentProject.name}
+                </dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-slate-500">Slug</dt>
-                <dd className="font-mono text-sm text-slate-600">{currentProject.slug}</dd>
+                <dd className="font-mono text-sm text-slate-600">
+                  {currentProject.slug}
+                </dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-slate-500">Environments</dt>
-                <dd className="text-sm font-medium text-slate-900">{envs.length}</dd>
+                <dd className="text-sm font-medium text-slate-900">
+                  {envs.length}
+                </dd>
               </div>
             </dl>
           ) : (
-            <p className="text-sm text-slate-400">No project selected. Use the sidebar to pick one.</p>
+            <p className="text-sm text-slate-400">
+              No project selected. Use the sidebar to pick one.
+            </p>
           )}
         </Card>
       </div>
@@ -143,9 +191,14 @@ export default function SettingsGeneralPage() {
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Environments</h2>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Environments
+                </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Manage environments for <span className="font-medium text-slate-700">{currentProject?.name || "this project"}</span>
+                  Manage environments for{" "}
+                  <span className="font-medium text-slate-700">
+                    {currentProject?.name || "this project"}
+                  </span>
                 </p>
               </div>
               <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
@@ -157,23 +210,44 @@ export default function SettingsGeneralPage() {
 
           <CardContent>
             {showCreate && (
-              <form onSubmit={handleCreate} className="mb-5 rounded-lg border border-indigo-100 bg-indigo-50/30 p-4 space-y-3">
+              <form
+                onSubmit={handleCreate}
+                noValidate
+                className="mb-5 rounded-lg border border-indigo-100 bg-indigo-50/30 p-4 space-y-3"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <Label className="text-xs">Name</Label>
                     <Input
                       value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      onChange={(e) => {
+                        setForm({ ...form, name: e.target.value });
+                        setFieldError("");
+                      }}
                       placeholder="e.g. QA"
-                      required
+                      aria-invalid={!!fieldError}
+                      aria-describedby={
+                        fieldError ? "env-name-error" : undefined
+                      }
                       className="mt-1 py-1.5"
                     />
+                    {fieldError && (
+                      <p
+                        id="env-name-error"
+                        className="text-xs text-red-500 mt-1"
+                        role="alert"
+                      >
+                        {fieldError}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-xs">Slug</Label>
                     <Input
                       value={form.slug}
-                      onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, slug: e.target.value })
+                      }
                       placeholder="auto-generated"
                       className="mt-1 py-1.5"
                     />
@@ -183,14 +257,25 @@ export default function SettingsGeneralPage() {
                     <input
                       type="color"
                       value={form.color}
-                      onChange={(e) => setForm({ ...form, color: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, color: e.target.value })
+                      }
                       className="mt-1 h-9 w-full rounded-lg border border-slate-300 cursor-pointer"
                     />
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit" size="sm">Create</Button>
-                  <Button type="button" variant="secondary" size="sm" onClick={() => setShowCreate(false)}>Cancel</Button>
+                  <Button type="submit" size="sm">
+                    Create
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowCreate(false)}
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </form>
             )}
@@ -209,17 +294,40 @@ export default function SettingsGeneralPage() {
                     className="group relative rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-indigo-200 hover:shadow-md"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white shadow-sm" style={{ backgroundColor: env.color }} />
+                      <div
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white shadow-sm"
+                        style={{ backgroundColor: env.color }}
+                      />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-800">{env.name}</p>
-                        <p className="mt-0.5 font-mono text-xs text-slate-400">{env.slug}</p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {env.name}
+                        </p>
+                        <p className="mt-0.5 font-mono text-xs text-slate-400">
+                          {env.slug}
+                        </p>
                       </div>
                     </div>
                     {deleting === env.id ? (
                       <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-                        <span className="text-xs text-red-600">Delete this?</span>
-                        <Button variant="destructive-ghost" size="sm" onClick={() => handleDelete(env.id)} className="h-auto px-2 py-0.5 text-xs">Yes</Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleting(null)} className="h-auto px-2 py-0.5 text-xs">No</Button>
+                        <span className="text-xs text-red-600">
+                          Delete this?
+                        </span>
+                        <Button
+                          variant="destructive-ghost"
+                          size="sm"
+                          onClick={() => handleDelete(env.id)}
+                          className="h-auto px-2 py-0.5 text-xs"
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleting(null)}
+                          className="h-auto px-2 py-0.5 text-xs"
+                        >
+                          No
+                        </Button>
                       </div>
                     ) : (
                       <Button

@@ -18,9 +18,15 @@ import type { OrgMember, EnvPermission, Environment } from "@/lib/types";
 
 const ROLES = ["owner", "admin", "developer", "viewer"] as const;
 
-const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }));
+const ROLE_OPTIONS = ROLES.map((r) => ({
+  value: r,
+  label: r.charAt(0).toUpperCase() + r.slice(1),
+}));
 
-const roleBadgeVariant: Record<string, "purple" | "info" | "success" | "default"> = {
+const roleBadgeVariant: Record<
+  string,
+  "purple" | "info" | "success" | "default"
+> = {
   owner: "purple",
   admin: "info",
   developer: "success",
@@ -34,7 +40,11 @@ export default function TeamPage() {
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "developer" });
+  const [inviteForm, setInviteForm] = useState({
+    email: "",
+    role: "developer",
+  });
+  const [fieldError, setFieldError] = useState<string>("");
   const [editingRole, setEditingRole] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [expandedPerms, setExpandedPerms] = useState<string | null>(null);
@@ -42,20 +52,34 @@ export default function TeamPage() {
 
   function reload() {
     if (!token) return;
-    api.listMembers(token).then((m) => setMembers(m ?? [])).catch(() => {});
+    api
+      .listMembers(token)
+      .then((m) => setMembers(m ?? []))
+      .catch(() => {});
     if (projectId) {
-      api.listEnvironments(token, projectId).then((e) => setEnvs(e ?? [])).catch(() => {});
+      api
+        .listEnvironments(token, projectId)
+        .then((e) => setEnvs(e ?? []))
+        .catch(() => {});
     }
   }
 
-  useEffect(() => { reload(); }, [token, projectId]);
+  useEffect(() => {
+    reload();
+  }, [token, projectId]);
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
+    if (!inviteForm.email.trim()) {
+      setFieldError("Email is required");
+      return;
+    }
+    setFieldError("");
     if (!token) return;
     await api.inviteMember(token, inviteForm);
     setShowInvite(false);
     setInviteForm({ email: "", role: "developer" });
+    setFieldError("");
     reload();
   }
 
@@ -98,12 +122,22 @@ export default function TeamPage() {
     }
   }
 
-  async function handlePermToggle(memberId: string, envId: string, field: "can_toggle" | "can_edit_rules") {
+  async function handlePermToggle(
+    memberId: string,
+    envId: string,
+    field: "can_toggle" | "can_edit_rules",
+  ) {
     if (!token) return;
     const existing = (permMap[memberId] || []).find((p) => p.env_id === envId);
     const perm: EnvPermission = existing
       ? { ...existing, [field]: !existing[field] }
-      : { id: "", member_id: memberId, env_id: envId, can_toggle: field === "can_toggle", can_edit_rules: field === "can_edit_rules" };
+      : {
+          id: "",
+          member_id: memberId,
+          env_id: envId,
+          can_toggle: field === "can_toggle",
+          can_edit_rules: field === "can_edit_rules",
+        };
 
     try {
       await api.updateMemberPermissions(token, memberId, [perm]);
@@ -113,7 +147,11 @@ export default function TeamPage() {
     }
   }
 
-  function getPermValue(memberId: string, envId: string, field: "can_toggle" | "can_edit_rules"): boolean {
+  function getPermValue(
+    memberId: string,
+    envId: string,
+    field: "can_toggle" | "can_edit_rules",
+  ): boolean {
     const perm = (permMap[memberId] || []).find((p) => p.env_id === envId);
     return perm ? perm[field] : false;
   }
@@ -130,33 +168,62 @@ export default function TeamPage() {
         </div>
 
         {showInvite && (
-          <form onSubmit={handleInvite} className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <form
+            onSubmit={handleInvite}
+            noValidate
+            className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3"
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Email</Label>
                 <Input
                   value={inviteForm.email}
-                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  onChange={(e) => {
+                    setInviteForm({ ...inviteForm, email: e.target.value });
+                    setFieldError("");
+                  }}
                   placeholder="developer@company.com"
                   required
                   type="email"
                   className="mt-1 py-1.5"
+                  aria-invalid={!!fieldError}
+                  aria-describedby={fieldError ? "email-error" : undefined}
                 />
+                {fieldError && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="email-error"
+                  >
+                    {fieldError}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-xs">Role</Label>
                 <div className="mt-1">
                   <Select
                     value={inviteForm.role}
-                    onValueChange={(val) => setInviteForm({ ...inviteForm, role: val })}
+                    onValueChange={(val) =>
+                      setInviteForm({ ...inviteForm, role: val })
+                    }
                     options={ROLE_OPTIONS}
                   />
                 </div>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="sm">Send Invite</Button>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowInvite(false)}>Cancel</Button>
+              <Button type="submit" size="sm">
+                Send Invite
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowInvite(false)}
+              >
+                Cancel
+              </Button>
             </div>
           </form>
         )}
@@ -180,8 +247,12 @@ export default function TeamPage() {
                       {member.name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-700">{member.name}</p>
-                      <p className="text-xs text-slate-500 truncate">{member.email}</p>
+                      <p className="text-sm font-medium text-slate-700">
+                        {member.name}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {member.email}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0">
@@ -189,60 +260,112 @@ export default function TeamPage() {
                       <div onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={member.role}
-                          onValueChange={(val) => handleRoleChange(member.id, val)}
+                          onValueChange={(val) =>
+                            handleRoleChange(member.id, val)
+                          }
                           options={ROLE_OPTIONS}
                           size="sm"
                         />
                       </div>
                     ) : (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setEditingRole(member.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingRole(member.id);
+                        }}
                       >
-                        <Badge variant={roleBadgeVariant[member.role] || "default"} className="px-2.5 py-0.5 text-xs cursor-pointer">
+                        <Badge
+                          variant={roleBadgeVariant[member.role] || "default"}
+                          className="px-2.5 py-0.5 text-xs cursor-pointer"
+                        >
                           {member.role}
                         </Badge>
                       </button>
                     )}
 
-                    {member.email !== user?.email && (
-                      removing === member.id ? (
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="destructive-ghost" size="sm" onClick={() => handleRemove(member.id)} className="h-auto px-2 py-1 text-xs">Confirm</Button>
-                          <Button variant="ghost" size="sm" onClick={() => setRemoving(null)} className="h-auto px-2 py-1 text-xs">Cancel</Button>
+                    {member.email !== user?.email &&
+                      (removing === member.id ? (
+                        <div
+                          className="flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            variant="destructive-ghost"
+                            size="sm"
+                            onClick={() => handleRemove(member.id)}
+                            className="h-auto px-2 py-1 text-xs"
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRemoving(null)}
+                            className="h-auto px-2 py-1 text-xs"
+                          >
+                            Cancel
+                          </Button>
                         </div>
                       ) : (
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={(e) => { e.stopPropagation(); setRemoving(member.id); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRemoving(member.id);
+                          }}
                           className="text-slate-400 hover:text-red-500 hover:bg-red-50"
                           title="Remove member"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      )
-                    )}
+                      ))}
 
-                    <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", expandedPerms === member.id && "rotate-180")} />
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-slate-400 transition-transform duration-200",
+                        expandedPerms === member.id && "rotate-180",
+                      )}
+                    />
                   </div>
                 </div>
 
                 {expandedPerms === member.id && envs.length > 0 && (
                   <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-slate-200 bg-white p-3 animate-fade-in">
-                    <p className="text-xs font-semibold text-slate-600 mb-2">Environment Permissions</p>
+                    <p className="text-xs font-semibold text-slate-600 mb-2">
+                      Environment Permissions
+                    </p>
                     <div className="space-y-1">
                       {envs.map((env) => (
-                        <div key={env.id} className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between">
+                        <div
+                          key={env.id}
+                          className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
+                        >
                           <div className="flex items-center gap-2">
-                            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: env.color }} />
-                            <span className="text-xs font-medium text-slate-700">{env.name}</span>
+                            <div
+                              className="h-2.5 w-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: env.color }}
+                            />
+                            <span className="text-xs font-medium text-slate-700">
+                              {env.name}
+                            </span>
                           </div>
                           <div className="flex items-center gap-4 ml-4 sm:ml-0">
                             <label className="flex items-center gap-1.5 text-xs text-slate-600">
                               <input
                                 type="checkbox"
-                                checked={getPermValue(member.id, env.id, "can_toggle")}
-                                onChange={() => handlePermToggle(member.id, env.id, "can_toggle")}
+                                checked={getPermValue(
+                                  member.id,
+                                  env.id,
+                                  "can_toggle",
+                                )}
+                                onChange={() =>
+                                  handlePermToggle(
+                                    member.id,
+                                    env.id,
+                                    "can_toggle",
+                                  )
+                                }
                                 className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                               />
                               Toggle
@@ -250,8 +373,18 @@ export default function TeamPage() {
                             <label className="flex items-center gap-1.5 text-xs text-slate-600">
                               <input
                                 type="checkbox"
-                                checked={getPermValue(member.id, env.id, "can_edit_rules")}
-                                onChange={() => handlePermToggle(member.id, env.id, "can_edit_rules")}
+                                checked={getPermValue(
+                                  member.id,
+                                  env.id,
+                                  "can_edit_rules",
+                                )}
+                                onChange={() =>
+                                  handlePermToggle(
+                                    member.id,
+                                    env.id,
+                                    "can_edit_rules",
+                                  )
+                                }
                                 className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                               />
                               Edit Rules

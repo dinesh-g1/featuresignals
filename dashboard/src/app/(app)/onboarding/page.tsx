@@ -3,7 +3,17 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, Sparkles, Copy, ClipboardCheck, Key, ArrowRight, FolderOpen, Layers, Flag } from "lucide-react";
+import {
+  Check,
+  Sparkles,
+  Copy,
+  ClipboardCheck,
+  Key,
+  ArrowRight,
+  FolderOpen,
+  Layers,
+  Flag,
+} from "lucide-react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -155,9 +165,14 @@ function OnboardingContent() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectId);
-  const [selectedEnvId, setSelectedEnvId] = useState<string | null>(currentEnvId);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    projectId,
+  );
+  const [selectedEnvId, setSelectedEnvId] = useState<string | null>(
+    currentEnvId,
+  );
   const [newProjectName, setNewProjectName] = useState("");
+  const [projectFieldError, setProjectFieldError] = useState<string>("");
   const [creatingProject, setCreatingProject] = useState(false);
 
   useEffect(() => {
@@ -165,6 +180,10 @@ function OnboardingContent() {
   }, []);
 
   const [flagForm, setFlagForm] = useState({ key: "", name: "" });
+  const [flagFieldErrors, setFlagFieldErrors] = useState<{
+    key?: string;
+    name?: string;
+  }>({});
   const [creatingFlag, setCreatingFlag] = useState(false);
 
   const [selectedSdk, setSelectedSdk] = useState<string>("node");
@@ -173,15 +192,29 @@ function OnboardingContent() {
   useEffect(() => {
     const status = searchParams.get("status");
     if (status === "success") {
-      toast("Payment successful! Your plan has been upgraded to Pro.", "success");
+      toast(
+        "Payment successful! Your plan has been upgraded to Pro.",
+        "success",
+      );
       if (refreshToken) {
-        api.refresh(refreshToken).then((data) => {
-          if (data?.access_token) {
-            const user = data.user ?? useAppStore.getState().user;
-            const org = data.organization ?? useAppStore.getState().organization;
-            setAuth(data.access_token, data.refresh_token, user, org, data.expires_at, data.onboarding_completed);
-          }
-        }).catch(() => {});
+        api
+          .refresh(refreshToken)
+          .then((data) => {
+            if (data?.access_token) {
+              const user = data.user ?? useAppStore.getState().user;
+              const org =
+                data.organization ?? useAppStore.getState().organization;
+              setAuth(
+                data.access_token,
+                data.refresh_token,
+                user,
+                org,
+                data.expires_at,
+                data.onboarding_completed,
+              );
+            }
+          })
+          .catch(() => {});
       }
     } else if (status === "failed") {
       toast("Payment failed. Please try again or contact support.", "error");
@@ -235,10 +268,14 @@ function OnboardingContent() {
           };
           setCompleted(steps);
           const firstIncomplete = STEPS.findIndex((s) => !steps[s.key]);
-          setCurrentStep(firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete);
+          setCurrentStep(
+            firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete,
+          );
 
           if (!data.plan_selected) {
-            api.updateOnboarding(token!, { plan_selected: true }).catch(() => {});
+            api
+              .updateOnboarding(token!, { plan_selected: true })
+              .catch(() => {});
           }
         }
       } catch {
@@ -256,14 +293,17 @@ function OnboardingContent() {
 
   useEffect(() => {
     if (!token || !currentEnvId) return;
-    api.listAPIKeys(token, currentEnvId).then((keys) => {
-      if (keys && keys.length > 0) {
-        const serverKey = keys.find((k) => k.type === "server") ?? keys[0];
-        if (serverKey?.key_prefix) {
-          setApiKey(serverKey.key_prefix + "...");
+    api
+      .listAPIKeys(token, currentEnvId)
+      .then((keys) => {
+        if (keys && keys.length > 0) {
+          const serverKey = keys.find((k) => k.type === "server") ?? keys[0];
+          if (serverKey?.key_prefix) {
+            setApiKey(serverKey.key_prefix + "...");
+          }
         }
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
   }, [token, currentEnvId]);
 
   function advanceToNext(updates: Record<string, boolean>) {
@@ -283,16 +323,26 @@ function OnboardingContent() {
   }
 
   async function handleCreateProject() {
-    if (!token || !newProjectName.trim()) return;
+    if (!token) return;
+    if (!newProjectName.trim()) {
+      setProjectFieldError("Project name is required");
+      return;
+    }
+    setProjectFieldError("");
     setCreatingProject(true);
     try {
-      const project = await api.createProject(token, { name: newProjectName.trim() });
+      const project = await api.createProject(token, {
+        name: newProjectName.trim(),
+      });
       setProjects((prev) => [...prev, project]);
       setSelectedProjectId(project.id);
       setNewProjectName("");
       toast("Project created!", "success");
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to create project", "error");
+      toast(
+        err instanceof Error ? err.message : "Failed to create project",
+        "error",
+      );
     } finally {
       setCreatingProject(false);
     }
@@ -311,11 +361,18 @@ function OnboardingContent() {
     if (!token) return;
     const merged: Record<string, boolean> = { ...completed, [stepKey]: true };
 
-    const backendKeys = ["first_flag_created", "first_sdk_connected", "first_evaluation"];
+    const backendKeys = [
+      "first_flag_created",
+      "first_sdk_connected",
+      "first_evaluation",
+    ];
     if (backendKeys.includes(stepKey)) {
       const allBackendDone = backendKeys.every((k) => merged[k]);
       try {
-        await api.updateOnboarding(token, { [stepKey]: true, ...(allBackendDone && { completed: true }) });
+        await api.updateOnboarding(token, {
+          [stepKey]: true,
+          ...(allBackendDone && { completed: true }),
+        });
       } catch {
         // continue even if save fails
       }
@@ -326,9 +383,20 @@ function OnboardingContent() {
   async function handleCreateFlag(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !projectId) {
-      toast("No project selected. Please go back and select a project.", "error");
+      toast(
+        "No project selected. Please go back and select a project.",
+        "error",
+      );
       return;
     }
+    const errors: { key?: string; name?: string } = {};
+    if (!flagForm.key.trim()) errors.key = "Flag key is required";
+    if (!flagForm.name.trim()) errors.name = "Flag name is required";
+    if (Object.keys(errors).length > 0) {
+      setFlagFieldErrors(errors);
+      return;
+    }
+    setFlagFieldErrors({});
     setCreatingFlag(true);
     try {
       await api.createFlag(token, projectId, {
@@ -340,7 +408,10 @@ function OnboardingContent() {
       setFlagForm({ key: "", name: "" });
       await markStepComplete("first_flag_created");
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to create flag", "error");
+      toast(
+        err instanceof Error ? err.message : "Failed to create flag",
+        "error",
+      );
     } finally {
       setCreatingFlag(false);
     }
@@ -376,17 +447,20 @@ function OnboardingContent() {
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-          Welcome{greeting} to <span className="text-indigo-600">FeatureSignals</span>
+          Welcome{greeting} to{" "}
+          <span className="text-indigo-600">FeatureSignals</span>
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Your workspace is ready. Let&apos;s get your first flag live in under 5 minutes.
+          Your workspace is ready. Let&apos;s get your first flag live in under
+          5 minutes.
         </p>
       </div>
 
       {hasPlanIntent && (
         <div className="rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 px-4 py-3 text-center">
           <p className="text-sm text-indigo-800">
-            Your <span className="font-bold">Pro trial</span> is active. Complete onboarding, then subscribe to keep all Pro features.
+            Your <span className="font-bold">Pro trial</span> is active.
+            Complete onboarding, then subscribe to keep all Pro features.
           </p>
           <Link
             href="/settings/billing"
@@ -418,15 +492,26 @@ function OnboardingContent() {
                 >
                   {done ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : idx + 1}
                 </button>
-                <span className={cn(
-                  "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium whitespace-nowrap",
-                  active ? "text-indigo-700" : done ? "text-emerald-700" : "text-slate-400",
-                )}>
+                <span
+                  className={cn(
+                    "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium whitespace-nowrap",
+                    active
+                      ? "text-indigo-700"
+                      : done
+                        ? "text-emerald-700"
+                        : "text-slate-400",
+                  )}
+                >
                   {step.label}
                 </span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div className={cn("mx-1 sm:mx-2 h-0.5 w-6 sm:w-10 md:w-16", done ? "bg-emerald-400" : "bg-slate-200")} />
+                <div
+                  className={cn(
+                    "mx-1 sm:mx-2 h-0.5 w-6 sm:w-10 md:w-16",
+                    done ? "bg-emerald-400" : "bg-slate-200",
+                  )}
+                />
               )}
             </div>
           );
@@ -446,6 +531,8 @@ function OnboardingContent() {
             onCreate={handleCreateProject}
             creating={creatingProject}
             completed={!!completed.project_setup}
+            fieldError={projectFieldError}
+            setFieldError={setProjectFieldError}
           />
         )}
         {currentStep === 1 && (
@@ -465,6 +552,8 @@ function OnboardingContent() {
             creating={creatingFlag}
             completed={!!completed.first_flag_created}
             onSkip={() => markStepComplete("first_flag_created")}
+            fieldErrors={flagFieldErrors}
+            setFieldErrors={setFlagFieldErrors}
           />
         )}
         {currentStep === 3 && (
@@ -499,11 +588,13 @@ function OnboardingContent() {
 
 export default function OnboardingPage() {
   return (
-    <Suspense fallback={
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+        </div>
+      }
+    >
       <OnboardingContent />
     </Suspense>
   );
@@ -521,6 +612,8 @@ function StepProjectSetup({
   onCreate,
   creating,
   completed,
+  fieldError,
+  setFieldError,
 }: {
   projects: Project[];
   selectedId: string | null;
@@ -531,6 +624,8 @@ function StepProjectSetup({
   onCreate: () => void;
   creating: boolean;
   completed: boolean;
+  fieldError: string;
+  setFieldError: (e: string) => void;
 }) {
   if (completed) {
     const chosen = projects.find((p) => p.id === selectedId);
@@ -539,7 +634,9 @@ function StepProjectSetup({
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">Project selected!</p>
+        <p className="mt-4 text-lg font-semibold text-slate-900">
+          Project selected!
+        </p>
         <p className="mt-1 text-sm text-slate-500">
           {chosen ? `Working with "${chosen.name}"` : "Your project is ready."}
         </p>
@@ -549,9 +646,12 @@ function StepProjectSetup({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">Set Up Your Project</h2>
+      <h2 className="text-xl font-semibold text-slate-900">
+        Set Up Your Project
+      </h2>
       <p className="mt-1 text-sm text-slate-500">
-        A project groups your feature flags and environments together. We created a default project for you &mdash; select it or create a new one.
+        A project groups your feature flags and environments together. We
+        created a default project for you &mdash; select it or create a new one.
       </p>
 
       {projects.length > 0 && (
@@ -569,9 +669,23 @@ function StepProjectSetup({
                     : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
                 )}
               >
-                <FolderOpen className={cn("h-5 w-5", selectedId === p.id ? "text-indigo-600" : "text-slate-400")} />
+                <FolderOpen
+                  className={cn(
+                    "h-5 w-5",
+                    selectedId === p.id ? "text-indigo-600" : "text-slate-400",
+                  )}
+                />
                 <div>
-                  <p className={cn("text-sm font-medium", selectedId === p.id ? "text-indigo-900" : "text-slate-700")}>{p.name}</p>
+                  <p
+                    className={cn(
+                      "text-sm font-medium",
+                      selectedId === p.id
+                        ? "text-indigo-900"
+                        : "text-slate-700",
+                    )}
+                  >
+                    {p.name}
+                  </p>
                   <p className="text-xs text-slate-400">{p.slug}</p>
                 </div>
               </button>
@@ -581,18 +695,46 @@ function StepProjectSetup({
       )}
 
       <div className="mt-6 border-t border-slate-100 pt-4">
-        <p className="text-xs font-medium text-slate-500 mb-2">Or create a new project</p>
-        <div className="flex gap-2">
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="My App"
-            className="flex-1"
-          />
-          <Button variant="secondary" onClick={onCreate} disabled={creating || !newName.trim()}>
-            {creating ? "Creating..." : "Create"}
-          </Button>
-        </div>
+        <p className="text-xs font-medium text-slate-500 mb-2">
+          Or create a new project
+        </p>
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            onCreate();
+          }}
+        >
+          <div className="flex gap-2">
+            <Input
+              value={newName}
+              onChange={(e) => {
+                setNewName(e.target.value);
+                setFieldError("");
+              }}
+              placeholder="My App"
+              className="flex-1"
+              aria-invalid={!!fieldError}
+              aria-describedby={fieldError ? "project-name-error" : undefined}
+            />
+            <Button
+              variant="secondary"
+              type="submit"
+              disabled={creating || !newName.trim()}
+            >
+              {creating ? "Creating..." : "Create"}
+            </Button>
+          </div>
+          {fieldError && (
+            <p
+              id="project-name-error"
+              className="mt-1 text-xs text-red-600"
+              role="alert"
+            >
+              {fieldError}
+            </p>
+          )}
+        </form>
       </div>
 
       <div className="mt-6">
@@ -632,9 +774,13 @@ function StepEnvSetup({
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">Environment selected!</p>
+        <p className="mt-4 text-lg font-semibold text-slate-900">
+          Environment selected!
+        </p>
         <p className="mt-1 text-sm text-slate-500">
-          {chosen ? `Using "${chosen.name}" environment` : "Your environment is ready."}
+          {chosen
+            ? `Using "${chosen.name}" environment`
+            : "Your environment is ready."}
         </p>
       </div>
     );
@@ -642,10 +788,13 @@ function StepEnvSetup({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">Choose Your Environment</h2>
+      <h2 className="text-xl font-semibold text-slate-900">
+        Choose Your Environment
+      </h2>
       <p className="mt-1 text-sm text-slate-500">
-        Environments let you manage separate flag configurations for development, staging, and production.
-        Select the environment you want to start with.
+        Environments let you manage separate flag configurations for
+        development, staging, and production. Select the environment you want to
+        start with.
       </p>
 
       {environments.length > 0 ? (
@@ -665,8 +814,19 @@ function StepEnvSetup({
               >
                 <div className={cn("h-3 w-3 rounded-full", colorClass)} />
                 <div>
-                  <p className={cn("text-sm font-medium", selectedId === env.id ? "text-indigo-900" : "text-slate-700")}>{env.name}</p>
-                  <p className="text-xs text-slate-400">{env.slug || env.name.toLowerCase()}</p>
+                  <p
+                    className={cn(
+                      "text-sm font-medium",
+                      selectedId === env.id
+                        ? "text-indigo-900"
+                        : "text-slate-700",
+                    )}
+                  >
+                    {env.name}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {env.slug || env.name.toLowerCase()}
+                  </p>
                 </div>
               </button>
             );
@@ -675,8 +835,12 @@ function StepEnvSetup({
       ) : (
         <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
           <Layers className="mx-auto h-8 w-8 text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">No environments found. They should have been created automatically.</p>
-          <p className="mt-1 text-xs text-slate-400">Go back and verify your project, or contact support.</p>
+          <p className="mt-2 text-sm text-slate-500">
+            No environments found. They should have been created automatically.
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Go back and verify your project, or contact support.
+          </p>
         </div>
       )}
 
@@ -698,6 +862,8 @@ function StepCreateFlag({
   creating,
   completed,
   onSkip,
+  fieldErrors,
+  setFieldErrors,
 }: {
   form: { key: string; name: string };
   setForm: (f: { key: string; name: string }) => void;
@@ -705,6 +871,8 @@ function StepCreateFlag({
   creating: boolean;
   completed: boolean;
   onSkip: () => void;
+  fieldErrors: { key?: string; name?: string };
+  setFieldErrors: (e: { key?: string; name?: string }) => void;
 }) {
   if (completed) {
     return (
@@ -712,38 +880,76 @@ function StepCreateFlag({
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">Flag created!</p>
-        <p className="mt-1 text-sm text-slate-500">You can manage flags from the Flags page.</p>
+        <p className="mt-4 text-lg font-semibold text-slate-900">
+          Flag created!
+        </p>
+        <p className="mt-1 text-sm text-slate-500">
+          You can manage flags from the Flags page.
+        </p>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">Create Your First Flag</h2>
+      <h2 className="text-xl font-semibold text-slate-900">
+        Create Your First Flag
+      </h2>
       <p className="mt-1 text-sm text-slate-500">
-        Feature flags let you toggle functionality without redeploying. Try creating one now.
+        Feature flags let you toggle functionality without redeploying. Try
+        creating one now.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <form noValidate onSubmit={onSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">
           <Label>Flag Key</Label>
           <Input
             value={form.key}
-            onChange={(e) => setForm({ ...form, key: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "-") })}
+            onChange={(e) => {
+              setForm({
+                ...form,
+                key: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "-"),
+              });
+              setFieldErrors({ ...fieldErrors, key: undefined });
+            }}
             placeholder="new-checkout-flow"
-            required
+            aria-invalid={!!fieldErrors.key}
+            aria-describedby={fieldErrors.key ? "flag-key-error" : undefined}
           />
-          <p className="text-xs text-slate-400">Lowercase letters, numbers, dashes, and underscores only.</p>
+          {fieldErrors.key && (
+            <p
+              id="flag-key-error"
+              className="text-xs text-red-600"
+              role="alert"
+            >
+              {fieldErrors.key}
+            </p>
+          )}
+          <p className="text-xs text-slate-400">
+            Lowercase letters, numbers, dashes, and underscores only.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label>Display Name</Label>
           <Input
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value });
+              setFieldErrors({ ...fieldErrors, name: undefined });
+            }}
             placeholder="New Checkout Flow"
-            required
+            aria-invalid={!!fieldErrors.name}
+            aria-describedby={fieldErrors.name ? "flag-name-error" : undefined}
           />
+          {fieldErrors.name && (
+            <p
+              id="flag-name-error"
+              className="text-xs text-red-600"
+              role="alert"
+            >
+              {fieldErrors.name}
+            </p>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button type="submit" disabled={creating}>
@@ -788,7 +994,9 @@ function StepInstallSdk({
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
         <p className="mt-4 text-lg font-semibold text-slate-900">SDK ready!</p>
-        <p className="mt-1 text-sm text-slate-500">You&apos;re all set to start using feature flags in your app.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          You&apos;re all set to start using feature flags in your app.
+        </p>
       </div>
     );
   }
@@ -798,7 +1006,9 @@ function StepInstallSdk({
   return (
     <div>
       <h2 className="text-xl font-semibold text-slate-900">Connect Your App</h2>
-      <p className="mt-1 text-sm text-slate-500">Install the SDK in your language and start evaluating flags.</p>
+      <p className="mt-1 text-sm text-slate-500">
+        Install the SDK in your language and start evaluating flags.
+      </p>
 
       {apiKey && (
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2">
@@ -829,9 +1039,22 @@ function StepInstallSdk({
       <div className="mt-4 space-y-3">
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-slate-500">Installation</span>
-            <button onClick={() => copyText(SDK_INSTALL[selectedSdk], "install")} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
-              {copied === "install" ? <><ClipboardCheck className="h-3 w-3" /> Copied!</> : <><Copy className="h-3 w-3" /> Copy</>}
+            <span className="text-xs font-medium text-slate-500">
+              Installation
+            </span>
+            <button
+              onClick={() => copyText(SDK_INSTALL[selectedSdk], "install")}
+              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              {copied === "install" ? (
+                <>
+                  <ClipboardCheck className="h-3 w-3" /> Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" /> Copy
+                </>
+              )}
             </button>
           </div>
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 sm:p-4 text-xs sm:text-sm text-slate-100">
@@ -841,9 +1064,22 @@ function StepInstallSdk({
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-slate-500">Quick Start</span>
-            <button onClick={() => copyText(snippet, "snippet")} className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
-              {copied === "snippet" ? <><ClipboardCheck className="h-3 w-3" /> Copied!</> : <><Copy className="h-3 w-3" /> Copy</>}
+            <span className="text-xs font-medium text-slate-500">
+              Quick Start
+            </span>
+            <button
+              onClick={() => copyText(snippet, "snippet")}
+              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              {copied === "snippet" ? (
+                <>
+                  <ClipboardCheck className="h-3 w-3" /> Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" /> Copy
+                </>
+              )}
             </button>
           </div>
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 sm:p-4 text-xs sm:text-sm text-slate-100">
@@ -853,11 +1089,13 @@ function StepInstallSdk({
       </div>
 
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
-        <Button onClick={onComplete}>
-          I&apos;ve connected the SDK
-        </Button>
+        <Button onClick={onComplete}>I&apos;ve connected the SDK</Button>
         <Button variant="secondary" asChild>
-          <a href={DOCS_LINKS.quickstart} target="_blank" rel="noopener noreferrer">
+          <a
+            href={DOCS_LINKS.quickstart}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             View full docs
           </a>
         </Button>
@@ -875,9 +1113,12 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
         <Sparkles className="h-10 w-10 text-indigo-600" />
       </div>
 
-      <h2 className="mt-6 text-2xl font-bold text-slate-900">You&apos;re All Set!</h2>
+      <h2 className="mt-6 text-2xl font-bold text-slate-900">
+        You&apos;re All Set!
+      </h2>
       <p className="mt-2 text-sm text-slate-500">
-        Your workspace is ready. Start managing feature flags and ship confidently.
+        Your workspace is ready. Start managing feature flags and ship
+        confidently.
       </p>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
