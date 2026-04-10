@@ -108,12 +108,23 @@ Once DNS propagates and deploy completes:
 Dozzle is bound to `127.0.0.1:8888` on the VPS for security. Access it via SSH tunnel:
 
 ```bash
-# From your local machine
-ssh -i ~/.ssh/your-dev-vps-key.pem -L 8888:localhost:8888 your-user@your-dev-vps-ip
+# Foreground (keeps SSH session open)
+ssh -i ~/.ssh/featuresignals-dev.pem -L 8888:localhost:8888 root@150.241.244.151
+
+# Background (no interactive session)
+ssh -i ~/.ssh/featuresignals-dev.pem -f -N -L 8888:localhost:8888 root@150.241.244.151
 
 # Then open in browser:
 open http://localhost:8888
 ```
+
+**SSH flags explained:**
+- `-i <key>` — use this private key for authentication
+- `-L 8888:localhost:8888` — forward local port 8888 to remote port 8888
+- `-f` — background after authentication
+- `-N` — no remote command (port forward only)
+
+To stop background tunnel: `pkill -f "8888:localhost:8888"`
 
 **What you'll see in Dozzle:**
 - Real-time logs from all containers (postgres, server, dashboard, caddy, etc.)
@@ -203,7 +214,7 @@ cd /opt/featuresignals
 bash deploy/deploy-region.sh
 
 # Access Dozzle (from local machine)
-ssh -i ~/.ssh/your-dev-vps-key.pem -L 8888:localhost:8888 your-user@your-dev-vps-ip
+ssh -i ~/.ssh/featuresignals-dev.pem -L 8888:localhost:8888 root@150.241.244.151
 # Open: http://localhost:8888
 ```
 
@@ -246,7 +257,7 @@ docker ps | grep dozzle
 docker port <dozzle-container-id>
 
 # Restart Dozzle
-docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.dev.yml up -d dozzle
+docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
 ```
 
 ---
@@ -260,4 +271,27 @@ Once verified on dev:
 3. **Production uses** `deploy/.env.production` with live credentials
 4. **No manual promotion needed** — dev validates, prod deploys independently
 
-The dev environment uses test mode for payments, no email provider, and debug logging — making it safe for testing without affecting real users or incurring costs.
+The dev environment uses test mode for payments, ZeptoMail for email, and debug-level OpenTelemetry — making it safe for testing without affecting real users or incurring costs.
+
+---
+
+## Accessing Production Logs via Dozzle
+
+Dozzle is auto-deployed to all production regions (IN, US, EU) alongside the application.
+
+### SSH into each region's VPS:
+
+```bash
+# India (primary)
+ssh -i ~/.ssh/your-regional-key.pem root@<india-vps-ip> -L 8888:localhost:8888
+
+# US region
+ssh -i ~/.ssh/your-regional-key.pem root@<us-vps-ip> -L 8888:localhost:8888
+
+# EU region
+ssh -i ~/.ssh/your-regional-key.pem root@<eu-vps-ip> -L 8888:localhost:8888
+```
+
+Then open **http://localhost:8888** to view real-time logs for that region.
+
+> **Tip:** Each region's Dozzle is independent. Open separate SSH tunnels for each region you want to monitor.

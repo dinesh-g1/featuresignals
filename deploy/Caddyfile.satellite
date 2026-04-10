@@ -51,7 +51,5 @@
 		-Server
 	}
 
-	reverse_proxy server:8080 {
-		header_up X-Forwarded-Proto {scheme}
-	}
+	reverse_proxy server:8080
 }

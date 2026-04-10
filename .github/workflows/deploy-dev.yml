@@ -94,7 +94,7 @@ jobs:
             bash deploy/deploy-region.sh
 
             # Start Dozzle for log monitoring
-            docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.dev.yml up -d dozzle
+            docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
           IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}

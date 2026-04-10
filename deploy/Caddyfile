@@ -1,4 +1,4 @@
-featuresignals.com, www.featuresignals.com {
+featuresignals.com {
 	root * /srv/website
 	file_server
 	encode gzip
@@ -16,6 +16,10 @@ featuresignals.com, www.featuresignals.com {
 	@static path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf
 	header @static Cache-Control "public, max-age=31536000, immutable"
 }
+
+# Note: www.featuresignals.com is intentionally NOT served by Caddy.
+# Configure Cloudflare Page Rules to redirect www → apex domain:
+#   www.featuresignals.com → https://featuresignals.com (301)
 
 docs.featuresignals.com {
 	root * /srv/docs
@@ -58,9 +62,7 @@ demo.featuresignals.com {
 }
 
 api.featuresignals.com {
-	reverse_proxy server:8080 {
-		header_up X-Forwarded-Proto {scheme}
-	}
+	reverse_proxy server:8080
 
 	header {
 		X-Content-Type-Options "nosniff"

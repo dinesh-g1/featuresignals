@@ -95,7 +95,7 @@ jobs:
             DB_READONLY_PASSWORD=${DB_READONLY_PASSWORD}
             ZEPTOMAIL_TOKEN=${ZEPTOMAIL_TOKEN}
             OTEL_ENABLED=true
-            OTEL_EXPORTER_OTLP_ENDPOINT=ingest.us2.signoz.cloud:443
+            OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.in2.signoz.cloud:443
             OTEL_INGESTION_KEY=${OTEL_INGESTION_KEY}
             OTEL_SERVICE_NAME=featuresignals-api
             OTEL_SERVICE_REGION=${{ matrix.region }}
@@ -168,6 +168,9 @@ jobs:
             export IMAGE_TAG="${IMAGE_TAG}"
             export USE_REGISTRY="${USE_REGISTRY}"
             bash deploy/deploy-region.sh
+
+            # Start Dozzle for log monitoring (bound to localhost only, access via SSH tunnel)
+            docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
           ROLLBACK_COMMIT: ${{ github.event.inputs.rollback_commit }}

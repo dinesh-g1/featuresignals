@@ -2,31 +2,8 @@
 #
 # This extends the regional compose to add:
 #   - Website + docs (primary region mode)
-#   - Dozzle for real-time log monitoring
+#   - Dozzle for real-time log monitoring (via shared monitoring compose)
 #
-# Usage: docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.dev.yml up -d
-
-services:
-  # Dozzle - Real-time Docker log viewer (accessible on port 8888)
-  dozzle:
-    image: amir20/dozzle:latest
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8888:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      DOZZLE_LEVEL: info
-      DOZZLE_NO_ANALYTICS: "true"
-      # Optional: Enable basic authentication
-      # DOZZLE_AUTH_PROVIDER: simple
-      # DOZZLE_AUTH_HEADER_NAME: X-Forwarded-User
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: "0.25"
-    networks:
-      - default
-    labels:
-      - "dev.monitoring=true"
+# Usage: docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
+#
+# Note: Dozzle is defined in deploy/docker-compose.monitoring.yml for reuse across dev/prod.
