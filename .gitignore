@@ -85,3 +85,4 @@ sdks/java/target/
 *.tfvars
 !*.tfvars.example
 .terraform.lock.hcl
+.qwen/
