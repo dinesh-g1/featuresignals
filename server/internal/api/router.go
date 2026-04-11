@@ -9,6 +9,7 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/riandyrn/otelchi"
 
+	"github.com/featuresignals/server/internal/api/docs"
 	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
@@ -80,6 +81,11 @@ func NewRouter(
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		httputil.JSON(w, http.StatusOK, map[string]string{"status": "ok", "service": "featuresignals"})
 	})
+
+	// API documentation (public, cacheable)
+	docsH := docs.NewDocsHandler()
+	r.With(middleware.CacheControl("public, max-age=3600")).Get("/docs", docsH.Index)
+	r.With(middleware.CacheControl("public, max-age=3600")).Get("/docs/openapi.json", docsH.OpenAPISpec)
 
 	// Status page endpoints (public, cacheable)
 	if statusHandler != nil {

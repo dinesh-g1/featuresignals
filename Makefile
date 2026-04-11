@@ -250,6 +250,13 @@ lint: ## Run all linters (server + dashboard)
 	cd dashboard && npx tsc --noEmit
 	@echo "All lints passed"
 
+# ─── Documentation ───────────────────────────────────────────────────────────
+
+docs: ## Regenerate OpenAPI spec from chi router + route metadata
+	cd server && go run ./cmd/genspec -o ../docs/static/openapi/featuresignals.json
+	cd server && go run ./cmd/genspec -o internal/api/docs/spec.json
+	@echo "OpenAPI spec regenerated. Run 'npm run build' in docs/ to rebuild Scalar playground."
+
 # ─── Migrations ──────────────────────────────────────────────────────────────
 
 migrate-new: ## Create a new migration pair (usage: make migrate-new NAME=add_foo)
