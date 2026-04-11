@@ -28,13 +28,13 @@ import (
 	"github.com/featuresignals/server/internal/payment"
 	payupkg "github.com/featuresignals/server/internal/payment/payu"
 	stripepkg "github.com/featuresignals/server/internal/payment/stripe"
-	"github.com/featuresignals/server/internal/zeptomail"
 	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/store/postgres"
 	"github.com/featuresignals/server/internal/webhook"
+	"github.com/featuresignals/server/internal/zeptomail"
 )
 
 func main() {

@@ -70,7 +70,7 @@ services:
       PORT: "8080"
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DEPLOYMENT_MODE: cloud
-      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-zeptomail}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-none}
       ZEPTOMAIL_TOKEN: ${ZEPTOMAIL_TOKEN:-}
       ZEPTOMAIL_FROM_EMAIL: ${ZEPTOMAIL_FROM_EMAIL:-noreply@featuresignals.com}
       ZEPTOMAIL_FROM_NAME: ${ZEPTOMAIL_FROM_NAME:-FeatureSignals}

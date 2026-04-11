@@ -3,7 +3,11 @@
     "allow": [
       "Bash(git commit *)",
       "Bash(git show *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "WebSearch",
+      "WebFetch(dev.to)",
+      "WebFetch(workflowautomation.net)",
+      "Bash(cat *)"
     ]
   },
   "$version": 3

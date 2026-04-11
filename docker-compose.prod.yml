@@ -52,7 +52,7 @@ services:
       CORS_ORIGIN: https://app.featuresignals.com,https://docs.featuresignals.com,https://featuresignals.com,https://www.featuresignals.com
       LOG_LEVEL: debug
       DEPLOYMENT_MODE: cloud
-      EMAIL_PROVIDER: zeptomail
+      EMAIL_PROVIDER: none
       ZEPTOMAIL_TOKEN: ${ZEPTOMAIL_TOKEN}
       ZEPTOMAIL_FROM_EMAIL: ${ZEPTOMAIL_FROM_EMAIL:-noreply@featuresignals.com}
       ZEPTOMAIL_FROM_NAME: ${ZEPTOMAIL_FROM_NAME:-FeatureSignals}

@@ -24,7 +24,7 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-cloud}
-      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-zeptomail}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-none}
       ZEPTOMAIL_TOKEN: ${ZEPTOMAIL_TOKEN:-}
       ZEPTOMAIL_FROM_EMAIL: ${ZEPTOMAIL_FROM_EMAIL:-noreply@featuresignals.com}
       ZEPTOMAIL_FROM_NAME: ${ZEPTOMAIL_FROM_NAME:-FeatureSignals (Local)}
