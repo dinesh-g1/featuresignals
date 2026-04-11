@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.9.1
+	github.com/joho/godotenv v1.5.1
 	github.com/riandyrn/otelchi v0.12.2
 	github.com/stripe/stripe-go/v82 v82.5.1
 	go.opentelemetry.io/contrib/bridges/otelslog v0.17.0

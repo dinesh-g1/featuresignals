@@ -7,7 +7,9 @@
       "WebSearch",
       "WebFetch(dev.to)",
       "WebFetch(workflowautomation.net)",
-      "Bash(cat *)"
+      "Bash(cat *)",
+      "Bash(npm test *)",
+      "Bash(git reset *)"
     ]
   },
   "$version": 3

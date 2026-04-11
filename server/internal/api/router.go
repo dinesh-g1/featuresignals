@@ -3,6 +3,7 @@ package api
 import (
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -54,8 +55,12 @@ func NewRouter(
 ) http.Handler {
 	r := chi.NewRouter()
 
-	// CORS and security headers are handled by Caddy at the edge layer.
+	// CORS is handled by Caddy at the edge layer in staging/production.
 	// See deploy/Caddyfile.region for the full configuration.
+	// For local dev only, we inject CORS when CORS_ENABLED=true.
+	if os.Getenv("CORS_ENABLED") == "true" {
+		r.Use(middleware.CORS())
+	}
 	r.Use(otelchi.Middleware("featuresignals-api", otelchi.WithChiRoutes(r)))
 	r.Use(chimw.Compress(5))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
@@ -247,22 +252,22 @@ func NewRouter(
 			r.Use(middleware.TierEnforce(store, logger))
 			r.Use(middleware.TierRateLimit(store))
 
-		// ── Features endpoint (returns plan capabilities) ──────
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireRole(allRoles...))
-			r.Get("/features", featuresH.List)
-		})
+			// ── Features endpoint (returns plan capabilities) ──────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(allRoles...))
+				r.Get("/features", featuresH.List)
+			})
 
-		// ── User privacy / GDPR data subject rights ─────────
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireRole(allRoles...))
-			r.Get("/users/me/data", userPrivacyH.ExportMyData)
-			r.Delete("/users/me", userPrivacyH.DeleteMyAccount)
-			r.Get("/users/me/hints", preferencesH.GetHints)
-			r.Post("/users/me/hints", preferencesH.DismissHint)
-			r.Put("/users/me/email-preferences", preferencesH.UpdateEmailPreferences)
-			r.Post("/feedback", feedbackH.Submit)
-		})
+			// ── User privacy / GDPR data subject rights ─────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(allRoles...))
+				r.Get("/users/me/data", userPrivacyH.ExportMyData)
+				r.Delete("/users/me", userPrivacyH.DeleteMyAccount)
+				r.Get("/users/me/hints", preferencesH.GetHints)
+				r.Post("/users/me/hints", preferencesH.DismissHint)
+				r.Put("/users/me/email-preferences", preferencesH.UpdateEmailPreferences)
+				r.Post("/feedback", feedbackH.Submit)
+			})
 
 			// ── Read-only routes (all authenticated roles) ───────────
 			r.Group(func(r chi.Router) {
@@ -293,19 +298,19 @@ func NewRouter(
 				r.Get("/approvals/{approvalID}", approvalH.Get)
 			})
 
-		// ── Audit export (Pro+, admin-only) ─────────────────────
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireRole(ownerAdmin...))
-			r.Use(auditExportGate)
-			r.Get("/audit/export", auditExportH.Export)
-		})
+			// ── Audit export (Pro+, admin-only) ─────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(auditExportGate)
+				r.Get("/audit/export", auditExportH.Export)
+			})
 
-		// ── Data export (Pro+, admin-only) ──────────────────────
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireRole(ownerAdmin...))
-			r.Use(dataExportGate)
-			r.Get("/data/export", dataExportH.Export)
-		})
+			// ── Data export (Pro+, admin-only) ──────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(dataExportGate)
+				r.Get("/data/export", dataExportH.Export)
+			})
 
 			// ── Write routes (owner, admin, developer) ───────────────
 			r.Group(func(r chi.Router) {
@@ -348,14 +353,14 @@ func NewRouter(
 				r.Delete("/members/{memberID}", teamH.Remove)
 				r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
 
-			// Metrics
-			r.Get("/metrics/evaluations", metricsH.Summary)
-			r.Post("/metrics/evaluations/reset", metricsH.Reset)
-			r.Get("/metrics/impressions", metricsH.ImpressionSummary)
-			r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
+				// Metrics
+				r.Get("/metrics/evaluations", metricsH.Summary)
+				r.Post("/metrics/evaluations/reset", metricsH.Reset)
+				r.Get("/metrics/impressions", metricsH.ImpressionSummary)
+				r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
 
-			// Internal KPI analytics
-			r.Get("/analytics/overview", analyticsH.Overview)
+				// Internal KPI analytics
+				r.Get("/analytics/overview", analyticsH.Overview)
 			})
 
 			// ── Approval review (Pro+, admin-only) ──────────────────
@@ -398,24 +403,24 @@ func NewRouter(
 				r.Delete("/scim/Users/{userID}", scimH.DeleteUser)
 			})
 
-		// ── IP Allowlist (Enterprise, admin-only) ─────────────
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireRole(ownerAdmin...))
-			r.Use(ipAllowlistGate)
-			r.Get("/ip-allowlist", ipAllowlistH.Get)
-			r.Put("/ip-allowlist", ipAllowlistH.Upsert)
-		})
+			// ── IP Allowlist (Enterprise, admin-only) ─────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(ipAllowlistGate)
+				r.Get("/ip-allowlist", ipAllowlistH.Get)
+				r.Put("/ip-allowlist", ipAllowlistH.Upsert)
+			})
 
-		// ── Custom Roles (Enterprise, admin-only) ─────────────
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireRole(ownerAdmin...))
-			r.Use(customRolesGate)
-			r.Get("/roles", customRoleH.List)
-			r.Post("/roles", customRoleH.Create)
-			r.Get("/roles/{roleID}", customRoleH.Get)
-			r.Put("/roles/{roleID}", customRoleH.Update)
-			r.Delete("/roles/{roleID}", customRoleH.Delete)
-		})
+			// ── Custom Roles (Enterprise, admin-only) ─────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(customRolesGate)
+				r.Get("/roles", customRoleH.List)
+				r.Post("/roles", customRoleH.Create)
+				r.Get("/roles/{roleID}", customRoleH.Get)
+				r.Put("/roles/{roleID}", customRoleH.Update)
+				r.Delete("/roles/{roleID}", customRoleH.Delete)
+			})
 		})
 	})
 

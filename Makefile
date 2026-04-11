@@ -1,15 +1,48 @@
 .PHONY: up down local-up local-up-caddy local-down local-reset local-logs seed local-seed \
 	db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down \
-	schema-snapshot status help setup dev test test-server test-dash lint \
+	schema-snapshot status help setup dev dev-stop test test-server test-dash lint \
 	migrate-new deploy-staging deploy-prod release \
-	dev-server dev-dash dev-migrate dev-seed dev-db-create dev-stalescan
+	dev-server dev-dash dev-website dev-docs dev-migrate dev-seed dev-db-create dev-stalescan
 
 # ─── One-Time Setup ──────────────────────────────────────────────────────────
 
 setup: ## One-time dev setup (hooks, deps, migrate CLI)
-	git config core.hooksPath .githooks
+	@if command -v uname >/dev/null 2>&1 && [ "$$(uname -o)" = "Msys" -o "$$(uname -o)" = "Cygwin" ]; then \
+		echo "==> Windows detected. Setting up git hooks and dependencies..."; \
+		if ! command -v git >/dev/null 2>&1; then \
+			echo "ERROR: git not found. Please install Git for Windows first."; \
+			exit 1; \
+		fi; \
+		git config core.hooksPath .githooks; \
+	else \
+		git config core.hooksPath .githooks; \
+	fi
 	cd server && go mod download
+	@if ! command -v npm >/dev/null 2>&1; then \
+		echo "npm not found. Installing Node 22.x (includes npm)..."; \
+		if command -v uname >/dev/null 2>&1 && [ "$$(uname -o)" = "Msys" -o "$$(uname -o)" = "Cygwin" ]; then \
+			echo "Installing Node.js via winget..."; \
+			winget install OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements; \
+		elif [ "$$(uname)" = "Darwin" ]; then \
+			brew install node@22; \
+		elif [ -f /etc/debian_version ]; then \
+			curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -; \
+			sudo apt-get install -y nodejs; \
+		elif [ -f /etc/redhat-release ]; then \
+			curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash -; \
+			sudo yum install -y nodejs; \
+		else \
+			echo "ERROR: Unsupported OS. Please install Node 22+ manually from https://nodejs.org"; \
+			exit 1; \
+		fi; \
+	fi
 	cd dashboard && npm ci
+	@for dir in website docs; do \
+		if [ -d "$$dir" ]; then \
+			echo "==> Installing $$dir deps..."; \
+			cd $$dir && npm ci && cd ..; \
+		fi; \
+	done
 	@command -v migrate >/dev/null 2>&1 || { \
 		echo "Installing golang-migrate CLI..."; \
 		go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest; \
@@ -41,31 +74,49 @@ setup: ## One-time dev setup (hooks, deps, migrate CLI)
 dev-help: ## Show native development quickstart
 	@echo ""
 	@echo "  ╔══════════════════════════════════════════════════════════════╗"
-	@echo "  ║  FeatureSignals — Native Development                       ║"
+	@echo "  ║  FeatureSignals — Native Development                         ║"
 	@echo "  ╚══════════════════════════════════════════════════════════════╝"
 	@echo ""
 	@echo "  Prerequisites:"
 	@echo "    Go 1.25+, Node 22+, migrate CLI (run 'make setup' first)"
 	@echo ""
-	@echo "  Option A: Postgres in Docker"
-	@echo "    Terminal 1:  make up              # Postgres container"
-	@echo "    Terminal 2:  make dev-server       # Go API on :8080"
-	@echo "    Terminal 3:  make dev-dash         # Next.js on :3000"
+	@echo "  Start services:"
+	@echo "    make dev server     # Go API on :8080"
+	@echo "    make dev dashboard  # Next.js dashboard on :3000"
+	@echo "    make dev website    # Marketing site on :3001"
+	@echo "    make dev docs       # Docs (Docusaurus) on :3002"
 	@echo ""
-	@echo "  Option B: Fully native (no Docker)"
-	@echo "    Prereq:      brew install postgresql@16 && brew services start postgresql@16"
-	@echo "    Once:         make dev-db-create   # create DB + user"
-	@echo "    Terminal 1:   make dev-server      # Go API on :8080"
-	@echo "    Terminal 2:   make dev-dash        # Next.js on :3000"
+	@echo "  Database:"
+	@echo "    make up             # Start Postgres container"
+	@echo "    make dev-migrate    # Apply pending migrations"
 	@echo ""
 	@echo "  Useful targets:"
-	@echo "    make dev-migrate    — apply pending migrations"
-	@echo "    make dev-seed       — load sample data"
-	@echo "    make dev-stalescan  — run stale flag scanner"
-	@echo "    make test           — run all tests"
+	@echo "    make dev-stop       # Stop all services & free ports"
+	@echo "    make dev-seed       # Load sample data"
+	@echo "    make dev-stalescan  # Run stale flag scanner"
+	@echo "    make test           # Run all tests"
 	@echo ""
 
 dev-db-create: ## Create database and user in locally installed Postgres (no Docker)
+	@echo "==> Checking for local Postgres installation..."
+	@if ! command -v psql >/dev/null 2>&1; then \
+		echo "psql not found. Installing PostgreSQL..."; \
+		if command -v uname >/dev/null 2>&1 && [ "$$(uname -o)" = "Msys" -o "$$(uname -o)" = "Cygwin" ]; then \
+			echo "Installing PostgreSQL via winget..."; \
+			winget install OSGeo.PostgreSQL --accept-source-agreements --accept-package-agreements; \
+			echo "PostgreSQL installed. Please restart your terminal and run 'make dev-db-create' again."; \
+			exit 0; \
+		elif [ "$$(uname)" = "Darwin" ]; then \
+			brew install postgresql@16 && brew services start postgresql@16; \
+		elif [ -f /etc/debian_version ]; then \
+			sudo apt-get install -y postgresql postgresql-contrib && sudo service postgresql start; \
+		elif [ -f /etc/redhat-release ]; then \
+			sudo yum install -y postgresql-server postgresql-contrib && sudo postgresql-setup --initdb && sudo systemctl start postgresql; \
+		else \
+			echo "ERROR: Unsupported OS. Please install PostgreSQL 16+ manually."; \
+			exit 1; \
+		fi; \
+	fi
 	@echo "==> Creating local Postgres database..."
 	@createuser -s fs 2>/dev/null || true
 	@psql -U fs -tc "SELECT 1 FROM pg_database WHERE datname = 'featuresignals'" | grep -q 1 || \
@@ -87,6 +138,14 @@ dev-dash: ## Run Next.js dashboard natively
 	@echo "==> Starting dashboard on :3000..."
 	cd dashboard && npm run dev
 
+dev-website: ## Run Next.js marketing website natively (port 3001)
+	@echo "==> Starting website on :3001..."
+	cd website && PORT=3001 npm run dev
+
+dev-docs: ## Run Docusaurus docs natively (port 3002)
+	@echo "==> Starting docs on :3002..."
+	cd docs && npm start -- --port 3002
+
 dev-seed: ## Load sample data into the database
 	psql "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" -f server/scripts/seed.sql
 	@echo "  Seed data loaded"
@@ -103,13 +162,28 @@ up: ## Start only Postgres in Docker (for native dev)
 down: ## Stop Postgres container
 	docker compose down
 
-dev: up dev-migrate ## Start Postgres + apply migrations (then run server/dash in separate terminals)
-	@echo ""
-	@echo "  Postgres started and migrations applied."
-	@echo "  Now run in separate terminals:"
-	@echo "    make dev-server"
-	@echo "    make dev-dash"
-	@echo ""
+dev: ## Start a specific service (usage: make dev server|dashboard|docs|website)
+	@SERVICE=$$(echo "$(filter-out $@,$(MAKECMDGOALS))" | tr -d ' '); \
+	if [ -z "$$SERVICE" ]; then \
+		echo "Usage: make dev server|dashboard|docs|website"; \
+		exit 1; \
+	fi; \
+	case "$$SERVICE" in \
+		dashboard) TARGET="dev-dash" ;; \
+		*) TARGET="dev-$$SERVICE" ;; \
+	esac; \
+	$(MAKE) $$TARGET
+
+dev-stop: ## Stop all dev services and free ports (8080, 3000, 3001, 3002)
+	@echo "==> Stopping all dev services..."
+	@for port in 8080 3000 3001 3002; do \
+		PID=$$(lsof -ti:$$port 2>/dev/null); \
+		if [ -n "$$PID" ]; then \
+			echo "  Killing PID $$PID on port $$port..."; \
+			kill -9 $$PID 2>/dev/null || true; \
+		fi; \
+	done
+	@echo "  All dev services stopped. Ports cleaned."
 
 # ─── Full-Stack Local Docker ─────────────────────────────────────────────────
 

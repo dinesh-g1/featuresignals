@@ -12,6 +12,7 @@ import (
 
 	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 
 	"github.com/featuresignals/server/internal/api"
@@ -38,6 +39,9 @@ import (
 )
 
 func main() {
+	// Load .env file for local development (no-op in production)
+	_ = godotenv.Load()
+
 	cfg := config.Load()
 
 	if cfg.JWTSecret == "dev-secret-change-in-production" && cfg.LogLevel != "debug" {
