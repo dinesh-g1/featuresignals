@@ -156,7 +156,7 @@ function RegisterForm() {
     email: "",
     password: "",
     org_name: "",
-    data_region: "in", // Default to India region
+    data_region: "", // No default — user must explicitly choose
   });
   const planIntent = searchParams.get("plan");
 
