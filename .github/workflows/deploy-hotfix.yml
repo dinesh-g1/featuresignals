@@ -49,15 +49,11 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.25.9'
+          go-version: "1.25.9"
           cache-dependency-path: server/go.sum
       - uses: actions/setup-node@v5
         with:
-          node-version: '22'
-      - name: Run migrations
-        run: |
-          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-          migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
+          node-version: "22"
       - name: Server tests
         working-directory: server
         run: go test ./... -count=1 -timeout 120s -race

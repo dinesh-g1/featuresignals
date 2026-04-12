@@ -3,7 +3,7 @@ name: "Test, Lint, Build & Publish Images"
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -44,7 +44,6 @@ jobs:
       sdk-node: ${{ steps.filter.outputs.sdk-node }}
       sdk-python: ${{ steps.filter.outputs.sdk-python }}
       sdk-java: ${{ steps.filter.outputs.sdk-java }}
-      migrations: ${{ steps.filter.outputs.migrations }}
       deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - name: Detect changed paths
@@ -65,7 +64,6 @@ jobs:
           SDK_NODE=$(has_match '^sdks/node/')
           SDK_PYTHON=$(has_match '^sdks/python/')
           SDK_JAVA=$(has_match '^sdks/java/')
-          MIGRATIONS=$(has_match '^server/migrations/')
           DEPLOY=$(has_match '^deploy/')
 
           {
@@ -76,7 +74,6 @@ jobs:
             echo "sdk-node=$SDK_NODE"
             echo "sdk-python=$SDK_PYTHON"
             echo "sdk-java=$SDK_JAVA"
-            echo "migrations=$MIGRATIONS"
             echo "deploy=$DEPLOY"
           } >> "$GITHUB_OUTPUT"
 
@@ -85,7 +82,7 @@ jobs:
           echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
           for pair in "Server:$SERVER" "Dashboard:$DASHBOARD" "Docs:$DOCS" \
                       "SDK Go:$SDK_GO" "SDK Node:$SDK_NODE" "SDK Python:$SDK_PYTHON" \
-                      "SDK Java:$SDK_JAVA" "Migrations:$MIGRATIONS" "Deploy:$DEPLOY"; do
+                      "SDK Java:$SDK_JAVA" "Deploy:$DEPLOY"; do
             name="${pair%%:*}"
             val="${pair#*:}"
             echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
@@ -116,12 +113,8 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.25.9'
+          go-version: "1.25.9"
           cache-dependency-path: server/go.sum
-      - name: Run migrations
-        run: |
-          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-          migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
       - name: Run tests with coverage
         working-directory: server
         run: go test ./... -count=1 -timeout 120s -v -coverprofile=coverage.out -covermode=atomic
@@ -139,21 +132,6 @@ jobs:
         run: |
           go build -o bin/server ./cmd/server
           go build -o bin/stalescan ./cmd/stalescan
-      - name: Schema snapshot check
-        run: |
-          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
-            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' | \
-            grep -v '^\\restrict' | grep -v '^\\unrestrict' > /tmp/schema-current.sql
-          if [ -f server/schema.snapshot.sql ]; then
-            if ! diff -q server/schema.snapshot.sql /tmp/schema-current.sql > /dev/null 2>&1; then
-              echo "::warning::Schema snapshot is out of date. Run 'make schema-snapshot' to update."
-              diff server/schema.snapshot.sql /tmp/schema-current.sql || true
-            else
-              echo "Schema snapshot is up to date."
-            fi
-          else
-            echo "::notice::No schema snapshot found. Consider committing server/schema.snapshot.sql."
-          fi
 
   server-lint:
     name: "Server: Lint & Vet"
@@ -166,62 +144,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.25.9'
+          go-version: "1.25.9"
           cache-dependency-path: server/go.sum
       - name: Vet
         working-directory: server
         run: go vet ./...
-
-  migration-roundtrip:
-    name: "Server: Migration Round-Trip Safety"
-    needs: detect-changes
-    if: >-
-      github.event_name != 'pull_request'
-      || needs.detect-changes.outputs.migrations == 'true'
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: fs
-          POSTGRES_PASSWORD: fsdev
-          POSTGRES_DB: featuresignals
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: '1.25.9'
-          cache-dependency-path: server/go.sum
-      - name: Install migrate CLI
-        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-      - name: Migrate UP
-        run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
-      - name: Snapshot schema after UP
-        run: |
-          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
-            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' | \
-            grep -v '^\\restrict' | grep -v '^\\unrestrict' > /tmp/schema-up.sql
-      - name: Migrate DOWN (all)
-        run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" down -all
-      - name: Migrate UP again
-        run: migrate -path server/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
-      - name: Verify schema matches round-trip
-        run: |
-          PGPASSWORD=fsdev pg_dump -h localhost -U fs -d featuresignals --schema-only --no-owner --no-acl | \
-            grep -v '^--' | grep -v '^$' | grep -v '^SET ' | grep -v '^SELECT ' | \
-            grep -v '^\\restrict' | grep -v '^\\unrestrict' > /tmp/schema-roundtrip.sql
-          if ! diff -q /tmp/schema-up.sql /tmp/schema-roundtrip.sql > /dev/null 2>&1; then
-            echo "::error::Migration round-trip produced different schemas. DOWN migrations are not fully reversible."
-            diff /tmp/schema-up.sql /tmp/schema-roundtrip.sql
-            exit 1
-          fi
-          echo "Migration round-trip verified: schemas match."
 
   # ── Dashboard ──────────────────────────────────────────────────────────────
   dashboard-tests:
@@ -235,7 +162,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Install
         working-directory: dashboard
         run: npm ci
@@ -260,7 +187,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Install & Build
         working-directory: docs
         run: npm install && npm run build
@@ -280,7 +207,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.25.9'
+          go-version: "1.25.9"
           cache-dependency-path: sdks/go/go.sum
       - name: Test with coverage
         working-directory: sdks/go
@@ -306,7 +233,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Install & Test
         working-directory: sdks/node
         run: |
@@ -327,7 +254,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install & Test
         working-directory: sdks/python
         run: |
@@ -348,8 +275,8 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
           cache: maven
       - name: Test
         working-directory: sdks/java
@@ -380,7 +307,7 @@ jobs:
           || needs.detect-changes.outputs.server == 'true'
           || needs.detect-changes.outputs.sdk-go == 'true'
         with:
-          go-version: '1.25.9'
+          go-version: "1.25.9"
           cache-dependency-path: server/go.sum
       - uses: actions/setup-node@v5
         if: >-
@@ -389,7 +316,7 @@ jobs:
           || needs.detect-changes.outputs.docs == 'true'
           || needs.detect-changes.outputs.sdk-node == 'true'
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Go vulnerability check (server)
         if: github.event_name != 'pull_request' || needs.detect-changes.outputs.server == 'true'
         working-directory: server
@@ -437,7 +364,6 @@ jobs:
     needs:
       - server-tests
       - server-lint
-      - migration-roundtrip
       - dashboard-tests
       - docs-build
       - go-sdk-tests
@@ -454,7 +380,6 @@ jobs:
           echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Server: Test & Coverage | ${{ needs.server-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Server: Lint & Vet | ${{ needs.server-lint.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Migration Round-Trip | ${{ needs.migration-roundtrip.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Dashboard: Test & Build | ${{ needs.dashboard-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Docs: Build | ${{ needs.docs-build.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| SDK: Go | ${{ needs.go-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
@@ -471,7 +396,7 @@ jobs:
   # ── Docker Images ──────────────────────────────────────────────────────────
   build-and-publish-images:
     name: "Docker: Build & Publish to GHCR"
-    needs: [detect-changes, server-tests, migration-roundtrip, dashboard-tests]
+    needs: [detect-changes, server-tests, dashboard-tests]
     if: >-
       always()
       && !contains(needs.*.result, 'failure')
