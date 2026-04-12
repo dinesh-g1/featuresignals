@@ -64,6 +64,7 @@ func (h *SSOAuthHandler) Discovery(w http.ResponseWriter, r *http.Request) {
 
 	cfg, err := h.store.GetSSOConfigByOrgSlug(r.Context(), slug)
 	if err != nil {
+		// Expected path for orgs without SSO — no logging needed.
 		httputil.JSON(w, http.StatusOK, map[string]interface{}{
 			"sso_enabled": false,
 		})
@@ -107,6 +108,8 @@ func (h *SSOAuthHandler) SAMLMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Serve raw XML metadata — this is the one endpoint that returns non-JSON.
+	// The XML is consumed by IdP configuration UIs, not by our dashboard.
 	w.Header().Set("Content-Type", "application/xml")
 	w.WriteHeader(http.StatusOK)
 	w.Write(sp.Metadata())
@@ -336,7 +339,11 @@ func (h *SSOAuthHandler) provisionAndLogin(ctx context.Context, cfg *domain.SSOC
 		}
 	}
 
-	_ = h.store.UpdateLastLoginAt(ctx, user.ID)
+	if err := h.store.UpdateLastLoginAt(ctx, user.ID); err != nil {
+		// Non-critical: proceed with login even if last-login update fails.
+		logger := httputil.LoggerFromContext(ctx).With("handler", "sso_auth")
+		logger.Warn("failed to update last login at", "error", err, "user_id", user.ID)
+	}
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, cfg.OrgID, string(member.Role), "")
 	if err != nil {
