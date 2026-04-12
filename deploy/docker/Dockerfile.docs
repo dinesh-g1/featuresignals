@@ -11,9 +11,8 @@ RUN --mount=type=cache,target=/root/.npm \
 # Layer 2: Build (uses cached node_modules)
 COPY src/ src/
 COPY static/ static/
-COPY docusaurus.config.* ./
-COPY babel.config.* ./
-COPY sidebars.* ./
+COPY docusaurus.config.ts ./
+COPY sidebars.ts ./
 COPY .dockerignore ./
 RUN --mount=type=cache,target=/root/.npm \
     npm run build && npm cache clean --force

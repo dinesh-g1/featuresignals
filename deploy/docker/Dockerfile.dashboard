@@ -18,11 +18,9 @@ ENV NEXT_PUBLIC_DEMO_MODE=${NEXT_PUBLIC_DEMO_MODE}
 
 COPY src/ src/
 COPY public/ public/
-COPY next.config.* ./
+COPY next.config.ts ./
+COPY postcss.config.mjs ./
 COPY tsconfig.json ./
-COPY postcss.config.* ./
-COPY tailwind.config.* ./
-COPY components.json ./
 COPY .dockerignore ./
 RUN --mount=type=cache,target=/root/.npm \
     npm run build && npm cache clean --force
