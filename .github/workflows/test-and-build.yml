@@ -115,6 +115,10 @@ jobs:
         with:
           go-version: "1.25.9"
           cache-dependency-path: server/go.sum
+      - name: Run migrations (test setup)
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path server/internal/migrate/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
       - name: Run tests with coverage
         working-directory: server
         run: go test ./... -count=1 -timeout 120s -v -coverprofile=coverage.out -covermode=atomic
