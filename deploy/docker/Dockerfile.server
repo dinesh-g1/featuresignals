@@ -13,7 +13,6 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /server /usr/local/bin/server
-COPY --from=builder /app/migrations /migrations
 
 USER appuser
 EXPOSE 8080
