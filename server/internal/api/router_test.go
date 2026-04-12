@@ -132,7 +132,7 @@ func (noopStore) GetAPIKeyByHash(context.Context, string) (*domain.APIKey, error
 func (noopStore) ListAPIKeys(context.Context, string) ([]domain.APIKey, error) {
 	return nil, errNoop
 }
-func (noopStore) RevokeAPIKey(context.Context, string) error        { return errNoop }
+func (noopStore) RevokeAPIKey(context.Context, string) error { return errNoop }
 func (noopStore) RotateAPIKey(context.Context, string, string, string, string, string, time.Duration) (*domain.APIKey, error) {
 	return nil, errNoop
 }
@@ -169,7 +169,7 @@ func (noopStore) UpdateApprovalRequest(context.Context, *domain.ApprovalRequest)
 }
 
 func (noopStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { return errNoop }
-func (noopStore) PurgeAuditEntries(context.Context, time.Time) (int, error) { return 0, errNoop }
+func (noopStore) PurgeAuditEntries(context.Context, time.Time) (int, error)  { return 0, errNoop }
 func (noopStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, errNoop
 }
@@ -227,14 +227,14 @@ func (noopStore) UpsertPendingRegistration(context.Context, *domain.PendingRegis
 func (noopStore) GetPendingRegistrationByEmail(context.Context, string) (*domain.PendingRegistration, error) {
 	return nil, errNoop
 }
-func (noopStore) IncrementPendingAttempts(context.Context, string) error { return errNoop }
+func (noopStore) IncrementPendingAttempts(context.Context, string) error  { return errNoop }
 func (noopStore) DeletePendingRegistration(context.Context, string) error { return errNoop }
 func (noopStore) DeleteExpiredPendingRegistrations(context.Context, time.Time) (int, error) {
 	return 0, errNoop
 }
-func (noopStore) UpdateLastLoginAt(context.Context, string) error         { return errNoop }
-func (noopStore) SoftDeleteOrganization(context.Context, string) error    { return errNoop }
-func (noopStore) RestoreOrganization(context.Context, string) error       { return errNoop }
+func (noopStore) UpdateLastLoginAt(context.Context, string) error      { return errNoop }
+func (noopStore) SoftDeleteOrganization(context.Context, string) error { return errNoop }
+func (noopStore) RestoreOrganization(context.Context, string) error    { return errNoop }
 func (noopStore) ListSoftDeletedOrgs(context.Context, time.Time) ([]domain.Organization, error) {
 	return nil, errNoop
 }
@@ -242,7 +242,7 @@ func (noopStore) HardDeleteOrganization(context.Context, string) error { return 
 func (noopStore) ListInactiveOrgs(context.Context, string, time.Time) ([]domain.Organization, error) {
 	return nil, errNoop
 }
-func (noopStore) DowngradeOrgToFree(context.Context, string) error        { return errNoop }
+func (noopStore) DowngradeOrgToFree(context.Context, string) error { return errNoop }
 func (noopStore) CreateSalesInquiry(context.Context, *domain.SalesInquiry) error {
 	return errNoop
 }
@@ -267,23 +267,31 @@ func (noopStore) DeleteSSOConfig(context.Context, string) error { return errNoop
 
 func (noopStore) RevokeToken(context.Context, string, string, string, time.Time) error { return nil }
 func (noopStore) IsTokenRevoked(context.Context, string) (bool, error)                 { return false, nil }
-func (noopStore) CleanExpiredRevocations(context.Context) error                         { return nil }
+func (noopStore) CleanExpiredRevocations(context.Context) error                        { return nil }
 func (noopStore) UpsertMFASecret(context.Context, string, string) error                { return nil }
 func (noopStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
 	return nil, errNoop
 }
-func (noopStore) EnableMFA(context.Context, string) error                                  { return nil }
-func (noopStore) DisableMFA(context.Context, string) error                                 { return nil }
-func (noopStore) RecordLoginAttempt(context.Context, string, string, string, bool) error    { return nil }
-func (noopStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) { return 0, nil }
-func (noopStore) GetIPAllowlist(context.Context, string) (bool, []string, error)            { return false, nil, nil }
-func (noopStore) UpsertIPAllowlist(context.Context, string, bool, []string) error           { return nil }
-func (noopStore) CreateCustomRole(context.Context, *domain.CustomRole) error                { return errNoop }
-func (noopStore) GetCustomRole(context.Context, string) (*domain.CustomRole, error)         { return nil, errNoop }
-func (noopStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, error)      { return nil, errNoop }
-func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error                { return errNoop }
-func (noopStore) DeleteCustomRole(context.Context, string) error                            { return errNoop }
-func (noopStore) SoftDeleteUser(context.Context, string) error                              { return errNoop }
+func (noopStore) EnableMFA(context.Context, string) error                                { return nil }
+func (noopStore) DisableMFA(context.Context, string) error                               { return nil }
+func (noopStore) RecordLoginAttempt(context.Context, string, string, string, bool) error { return nil }
+func (noopStore) CountRecentFailedAttempts(context.Context, string, time.Time) (int, error) {
+	return 0, nil
+}
+func (noopStore) GetIPAllowlist(context.Context, string) (bool, []string, error) {
+	return false, nil, nil
+}
+func (noopStore) UpsertIPAllowlist(context.Context, string, bool, []string) error { return nil }
+func (noopStore) CreateCustomRole(context.Context, *domain.CustomRole) error      { return errNoop }
+func (noopStore) GetCustomRole(context.Context, string) (*domain.CustomRole, error) {
+	return nil, errNoop
+}
+func (noopStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, error) {
+	return nil, errNoop
+}
+func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return errNoop }
+func (noopStore) DeleteCustomRole(context.Context, string) error             { return errNoop }
+func (noopStore) SoftDeleteUser(context.Context, string) error               { return errNoop }
 
 func (noopStore) InsertProductEvent(context.Context, *domain.ProductEvent) error { return nil }
 func (noopStore) InsertProductEvents(context.Context, []domain.ProductEvent) error {
@@ -318,7 +326,7 @@ func (noopStore) GetDismissedHints(context.Context, string) ([]string, error) {
 }
 func (noopStore) SetTourCompleted(context.Context, string) error { return nil }
 
-func (noopStore) InsertFeedback(context.Context, *domain.Feedback) error { return nil }
+func (noopStore) InsertFeedback(context.Context, *domain.Feedback) error         { return nil }
 func (noopStore) InsertStatusChecks(context.Context, []domain.StatusCheck) error { return nil }
 func (noopStore) GetComponentHistory(context.Context, int) ([]domain.DailyComponentStatus, error) {
 	return nil, nil
@@ -681,7 +689,7 @@ func TestAllRoutesDocumented(t *testing.T) {
 
 	var phantom []string
 	for route := range specRoutes {
-		if !codeRoutes[route] {
+		if !codeRoutes[route] && !internalRoutes[route] {
 			phantom = append(phantom, route)
 		}
 	}

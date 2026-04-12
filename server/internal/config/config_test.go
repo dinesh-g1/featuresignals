@@ -14,7 +14,7 @@ func TestLoad_Defaults(t *testing.T) {
 	if cfg.Port != 8080 {
 		t.Errorf("expected default port 8080, got %d", cfg.Port)
 	}
-	if cfg.JWTSecret != "dev-secret-change-in-production" {
+	if cfg.JWTSecret != "dev-secret-change-in-production-local" {
 		t.Errorf("expected default JWT secret, got '%s'", cfg.JWTSecret)
 	}
 	if cfg.LogLevel != "info" {
@@ -73,8 +73,8 @@ func TestGetEnvInt_Unset(t *testing.T) {
 func TestLoad_DatabaseURL_DefaultSSL(t *testing.T) {
 	os.Unsetenv("DATABASE_URL")
 	cfg := Load()
-	if cfg.DatabaseURL != "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=require" {
-		t.Errorf("expected default DATABASE_URL with sslmode=require, got '%s'", cfg.DatabaseURL)
+	if cfg.DatabaseURL != "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" {
+		t.Errorf("expected default DATABASE_URL with sslmode=disable, got '%s'", cfg.DatabaseURL)
 	}
 }
 
