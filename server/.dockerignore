@@ -1,11 +1,23 @@
+# Build artifacts
 bin/
 server
 relay
 stalescan
 *.out
 coverage.out
+
+# Environment and secrets
 .env
 .env.*
+
+# Test files (not needed for build)
 **/*_test.go
+
+# Scripts and documentation
 scripts/
+README.md
+Makefile
+
+# Git
 .git/
+.gitignore

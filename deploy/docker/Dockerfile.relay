@@ -1,10 +1,20 @@
+# syntax=docker/dockerfile:1
 FROM golang:1.25-alpine AS builder
 RUN apk add --no-cache git
 WORKDIR /src
+
+# Layer 1: Download dependencies (cached unless go.mod/go.sum change)
 COPY server/go.mod server/go.sum ./
-RUN go mod download
-COPY server/ .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /relay ./cmd/relay
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download -x
+
+# Layer 2: Build relay only (uses cached dependencies and build cache)
+COPY server/cmd/ cmd/
+COPY server/internal/ internal/
+COPY server/go.mod server/go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 go build -ldflags="-s -w" -o /relay ./cmd/relay
 
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata && \
