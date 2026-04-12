@@ -4,9 +4,10 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Layer 1: Install dependencies (cached unless package*.json change)
+# Note: No npm cache mount — Tailwind 4 has platform-specific native binaries
+# that must be installed fresh per build target (amd64/arm64)
 COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --cache=/root/.npm
+RUN npm ci
 
 # Layer 2: Build (uses cached node_modules)
 ARG NEXT_PUBLIC_API_URL=https://api.featuresignals.com
@@ -22,8 +23,7 @@ COPY next.config.ts ./
 COPY postcss.config.mjs ./
 COPY tsconfig.json ./
 COPY .dockerignore ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm run build && npm cache clean --force
+RUN npm run build && npm cache clean --force
 
 FROM node:22-alpine
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
