@@ -9,9 +9,24 @@ vi.mock("@/lib/api", () => ({
     resendSignupOTP: vi.fn(),
     listRegions: vi.fn().mockResolvedValue({
       regions: [
-        { code: "in", name: "India", flag: "\u{1F1EE}\u{1F1F3}", app_endpoint: "https://app.featuresignals.com" },
-        { code: "us", name: "United States", flag: "\u{1F1FA}\u{1F1F8}", app_endpoint: "https://app.us.featuresignals.com" },
-        { code: "eu", name: "Europe", flag: "\u{1F1EA}\u{1F1FA}", app_endpoint: "https://app.eu.featuresignals.com" },
+        {
+          code: "in",
+          name: "India",
+          flag: "\u{1F1EE}\u{1F1F3}",
+          app_endpoint: "https://app.featuresignals.com",
+        },
+        {
+          code: "us",
+          name: "United States",
+          flag: "\u{1F1FA}\u{1F1F8}",
+          app_endpoint: "https://app.us.featuresignals.com",
+        },
+        {
+          code: "eu",
+          name: "Europe",
+          flag: "\u{1F1EA}\u{1F1FA}",
+          app_endpoint: "https://app.eu.featuresignals.com",
+        },
       ],
     }),
   },
@@ -32,7 +47,9 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
 }));
 
 vi.mock("@/components/ui/input", () => ({
@@ -49,7 +66,7 @@ vi.mock("@/components/ui/card", () => ({
 
 import RegisterPage from "@/app/register/page";
 
-function fillForm() {
+function fillForm(opts?: { dataRegion?: string }) {
   fireEvent.change(screen.getByLabelText(/^Name/), {
     target: { value: "Test User" },
   });
@@ -62,6 +79,16 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText(/Organization Name/), {
     target: { value: "Test Org" },
   });
+  if (opts?.dataRegion) {
+    const radio = screen.getByRole("radio", {
+      name: new RegExp(opts.dataRegion, "i"),
+    });
+    fireEvent.click(radio);
+  } else {
+    // Default to India if not specified
+    const radio = screen.getByRole("radio", { name: /India/i });
+    fireEvent.click(radio);
+  }
 }
 
 describe("RegisterPage", () => {
@@ -93,7 +120,10 @@ describe("RegisterPage", () => {
   });
 
   it("calls api.initiateSignup on form submit", async () => {
-    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
     render(<RegisterPage />);
 
     fillForm();
@@ -111,7 +141,10 @@ describe("RegisterPage", () => {
   });
 
   it("transitions to OTP step after successful initiate", async () => {
-    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
     render(<RegisterPage />);
 
     fillForm();
@@ -123,7 +156,9 @@ describe("RegisterPage", () => {
   });
 
   it("shows error when initiateSignup fails", async () => {
-    vi.mocked(api.initiateSignup).mockRejectedValue(new Error("Email already exists"));
+    vi.mocked(api.initiateSignup).mockRejectedValue(
+      new Error("Email already exists"),
+    );
     render(<RegisterPage />);
 
     fillForm();
@@ -143,7 +178,10 @@ describe("RegisterPage", () => {
   });
 
   it("back button on OTP step returns to form", async () => {
-    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
     render(<RegisterPage />);
 
     fillForm();
@@ -158,11 +196,29 @@ describe("RegisterPage", () => {
   });
 
   it("calls completeSignup with default 'in' region when no region changed", async () => {
-    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
     vi.mocked(api.completeSignup).mockResolvedValue({
       tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
-      user: { id: "u1", name: "Test User", email: "test@example.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
-      organization: { id: "o1", name: "Test Org", slug: "test-org", plan: "trial", data_region: "in", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      user: {
+        id: "u1",
+        name: "Test User",
+        email: "test@example.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      organization: {
+        id: "o1",
+        name: "Test Org",
+        slug: "test-org",
+        plan: "trial",
+        data_region: "in",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
       onboarding_completed: false,
     });
 
@@ -179,26 +235,42 @@ describe("RegisterPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Verify/i }));
 
     await waitFor(() => {
-      expect(api.completeSignup).toHaveBeenCalledWith(
-        { email: "test@example.com", otp: "123456" },
-      );
+      expect(api.completeSignup).toHaveBeenCalledWith({
+        email: "test@example.com",
+        otp: "123456",
+      });
     });
   });
 
   it("calls completeSignup without region argument when United States is selected", async () => {
-    vi.mocked(api.initiateSignup).mockResolvedValue({ message: "OK", expires_in: 300 });
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
     vi.mocked(api.completeSignup).mockResolvedValue({
       tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
-      user: { id: "u1", name: "Test User", email: "test@example.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
-      organization: { id: "o1", name: "Test Org", slug: "test-org", plan: "trial", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+      user: {
+        id: "u1",
+        name: "Test User",
+        email: "test@example.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      organization: {
+        id: "o1",
+        name: "Test Org",
+        slug: "test-org",
+        plan: "trial",
+        data_region: "us",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
       onboarding_completed: false,
     });
 
     render(<RegisterPage />);
-    fillForm();
-
-    const usRadio = screen.getByRole("radio", { name: /United States/i });
-    fireEvent.click(usRadio);
+    fillForm({ dataRegion: "United States" });
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
@@ -215,9 +287,10 @@ describe("RegisterPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Verify/i }));
 
     await waitFor(() => {
-      expect(api.completeSignup).toHaveBeenCalledWith(
-        { email: "test@example.com", otp: "654321" },
-      );
+      expect(api.completeSignup).toHaveBeenCalledWith({
+        email: "test@example.com",
+        otp: "654321",
+      });
     });
   });
 });
