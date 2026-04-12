@@ -134,7 +134,7 @@ func main() {
 	logger.Info("connected to database")
 
 	// Run embedded migrations to ensure schema is up to date
-	if err := migrate.RunUp(cfg.DatabaseURL, logger, migrate.ShouldSkip()); err != nil {
+	if err := migrate.RunUp(ctx, cfg.DatabaseURL, logger, migrate.ShouldSkip()); err != nil {
 		logger.Error("database migration failed", "error", err)
 		os.Exit(1)
 	}

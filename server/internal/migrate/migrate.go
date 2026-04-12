@@ -5,13 +5,14 @@
 //
 // Usage in main.go:
 //
-//	if err := migrate.RunUp(cfg.DatabaseURL, logger, migrate.ShouldSkip()); err != nil {
+//	if err := migrate.RunUp(ctx, cfg.DatabaseURL, logger, migrate.ShouldSkip()); err != nil {
 //	    logger.Error("migration failed", "error", err)
 //	    os.Exit(1)
 //	}
 package migrate
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -21,6 +22,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
@@ -33,7 +35,7 @@ var migrationFS embed.FS
 // RunUp applies all pending migrations against the database.
 // If skip is true, it returns immediately without running any migrations.
 // Use skip=true when migrations are run externally (e.g., CI/CD pipeline).
-func RunUp(databaseURL string, logger *slog.Logger, skip bool) error {
+func RunUp(ctx context.Context, databaseURL string, logger *slog.Logger, skip bool) error {
 	if skip {
 		logger.Info("migrations skipped via SKIP_MIGRATIONS flag")
 		return nil
@@ -53,6 +55,11 @@ func RunUp(databaseURL string, logger *slog.Logger, skip bool) error {
 	if err != nil {
 		return fmt.Errorf("create migrate instance: %w", err)
 	}
+
+	// Set a reasonable timeout for migrations to prevent hanging startup
+	const migrationTimeout = 5 * time.Minute
+	ctx, cancel := context.WithTimeout(ctx, migrationTimeout)
+	defer cancel()
 
 	// Log current version before running
 	curVer, dirty, err := m.Version()
