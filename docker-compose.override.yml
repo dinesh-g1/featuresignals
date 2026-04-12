@@ -55,8 +55,8 @@ services:
   seed:
     image: postgres:16-alpine
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      server:
+        condition: service_healthy
     volumes:
       - ./server/scripts/seed.sql:/seed.sql:ro
     entrypoint:

@@ -25,6 +25,7 @@ import (
 	"github.com/featuresignals/server/internal/lifecycle"
 	"github.com/featuresignals/server/internal/mailer"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/migrate"
 	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
 	payupkg "github.com/featuresignals/server/internal/payment/payu"
@@ -131,6 +132,12 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("connected to database")
+
+	// Run embedded migrations to ensure schema is up to date
+	if err := migrate.RunUp(cfg.DatabaseURL, logger, migrate.ShouldSkip()); err != nil {
+		logger.Error("database migration failed", "error", err)
+		os.Exit(1)
+	}
 
 	// DB connection pool metrics (reported every 60s via OTEL async reader)
 	if cfg.OTELEnabled && cfg.OTELMetricsEnabled {

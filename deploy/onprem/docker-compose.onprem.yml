@@ -23,28 +23,21 @@ services:
         limits:
           memory: ${DB_MEMORY_LIMIT:-2G}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fs} -d ${POSTGRES_DB:-featuresignals}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-fs} -d ${POSTGRES_DB:-featuresignals}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  migrate:
-    image: migrate/migrate:v4.17.0
-    depends_on:
-      postgres:
-        condition: service_healthy
-    # Migrations must be available at ./migrations relative to this compose file.
-    # Copy from server/migrations/ or symlink before running.
-    volumes:
-      - ./migrations:/migrations:ro
-    command: ["-path", "/migrations", "-database", "postgres://${POSTGRES_USER:-fs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-featuresignals}?sslmode=disable", "up"]
 
   server:
     image: ${REGISTRY:-ghcr.io/dinesh-g1}/featuresignals-server:${VERSION:-latest}
     restart: unless-stopped
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     ports:
       - "${API_PORT:-8080}:8080"
     environment:
@@ -75,7 +68,15 @@ services:
       OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-false}
       OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-false}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -96,7 +97,15 @@ services:
       HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3

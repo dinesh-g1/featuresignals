@@ -15,16 +15,6 @@ services:
       timeout: 3s
       retries: 5
 
-  migrate:
-    image: migrate/migrate:v4.17.0
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./server/migrations:/migrations
-    command:
-      ["-path", "/migrations", "-database", "postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable", "up"]
-
   server:
     build:
       context: ./server
@@ -32,8 +22,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: dev-secret-change-in-production
@@ -48,7 +38,15 @@ services:
       SALES_NOTIFY_EMAIL: dineshreddy@featuresignals.com
       SUPER_MODE_DOMAIN: featuresignals.com
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -66,7 +64,15 @@ services:
       HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: http://localhost:8080
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3

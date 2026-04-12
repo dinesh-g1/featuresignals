@@ -1,7 +1,8 @@
 .PHONY: up down local-up local-up-caddy local-down local-reset local-logs seed local-seed \
 	db-tunnel db-admin db-readonly db-setup-roles onprem-up onprem-down \
 	schema-snapshot status help setup dev dev-stop test test-server test-dash lint \
-	migrate-new deploy-staging deploy-prod release \
+	migrate-new migrate-up migrate-down migrate-status migrate-down-all \
+	deploy-staging deploy-prod release \
 	dev-server dev-dash dev-website dev-docs dev-migrate dev-seed dev-db-create dev-stalescan
 
 # ─── One-Time Setup ──────────────────────────────────────────────────────────
@@ -78,17 +79,17 @@ dev-help: ## Show native development quickstart
 	@echo "  ╚══════════════════════════════════════════════════════════════╝"
 	@echo ""
 	@echo "  Prerequisites:"
-	@echo "    Go 1.25+, Node 22+, migrate CLI (run 'make setup' first)"
+	@echo "    Go 1.25+, Node 22+ (run 'make setup' first)"
 	@echo ""
 	@echo "  Start services:"
-	@echo "    make dev server     # Go API on :8080"
+	@echo "    make dev server     # Go API on :8080 (migrations run automatically)"
 	@echo "    make dev dashboard  # Next.js dashboard on :3000"
 	@echo "    make dev website    # Marketing site on :3001"
 	@echo "    make dev docs       # Docs (Docusaurus) on :3002"
 	@echo ""
 	@echo "  Database:"
 	@echo "    make up             # Start Postgres container"
-	@echo "    make dev-migrate    # Apply pending migrations"
+	@echo "    make dev-migrate    # Apply pending migrations (optional, runs on startup)"
 	@echo ""
 	@echo "  Useful targets:"
 	@echo "    make dev-stop       # Stop all services & free ports"
@@ -125,7 +126,7 @@ dev-db-create: ## Create database and user in locally installed Postgres (no Doc
 	@echo "  Database 'featuresignals' ready (user: fs, password: fsdev)"
 	@echo "  Run 'make dev-migrate' to apply migrations"
 
-dev-migrate: ## Apply all pending database migrations
+dev-migrate: ## Apply pending migrations manually (optional, runs on startup by default)
 	@command -v migrate >/dev/null 2>&1 || { echo "ERROR: 'migrate' CLI not found. Run 'make setup' first."; exit 1; }
 	migrate -path server/migrations -database "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" up
 	@echo "  Migrations applied"
@@ -267,6 +268,23 @@ migrate-new: ## Create a new migration pair (usage: make migrate-new NAME=add_fo
 	echo "Created:"; \
 	echo "  server/migrations/$${NEXT}_$(NAME).up.sql"; \
 	echo "  server/migrations/$${NEXT}_$(NAME).down.sql"
+
+migrate-up: ## Apply all pending migrations using CLI (for manual control)
+	@command -v migrate >/dev/null 2>&1 || { echo "ERROR: 'migrate' CLI not found. Run 'make setup' first."; exit 1; }
+	migrate -path server/migrations -database "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" up
+
+migrate-down: ## Rollback last migration
+	@command -v migrate >/dev/null 2>&1 || { echo "ERROR: 'migrate' CLI not found. Run 'make setup' first."; exit 1; }
+	migrate -path server/migrations -database "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" down 1
+
+migrate-down-all: ## Rollback all migrations
+	@command -v migrate >/dev/null 2>&1 || { echo "ERROR: 'migrate' CLI not found. Run 'make setup' first."; exit 1; }
+	@read -p "WARNING: This will rollback ALL migrations. Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	migrate -path server/migrations -database "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" down -all
+
+migrate-status: ## Show current migration status
+	@command -v migrate >/dev/null 2>&1 || { echo "ERROR: 'migrate' CLI not found. Run 'make setup' first."; exit 1; }
+	migrate -path server/migrations -database "$${DATABASE_URL:-postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable}" version
 
 # ─── Database Access ──────────────────────────────────────────────────────────
 # All db-* targets require REGION=in|us|eu (e.g. make db-tunnel REGION=us)
