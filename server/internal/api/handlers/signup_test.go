@@ -27,6 +27,13 @@ func (m *mockOTPSender) SendOTP(_ context.Context, toEmail, toName, otp string) 
 	return m.err
 }
 
+func (m *mockOTPSender) SendPasswordResetOTP(_ context.Context, toEmail, toName, otp string) error {
+	m.lastEmail = toEmail
+	m.lastName = toName
+	m.lastOTP = otp
+	return m.err
+}
+
 func newTestSignupHandler() (*SignupHandler, *mockStore, *mockOTPSender) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)

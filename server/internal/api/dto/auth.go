@@ -58,10 +58,10 @@ func AuthTokensFromPair(tp *auth.TokenPair) *AuthTokensResponse {
 }
 
 type LoginResponse struct {
-	User                 *SafeUserResponse       `json:"user"`
-	Organization         *OrganizationResponse    `json:"organization"`
-	Tokens               *AuthTokensResponse      `json:"tokens"`
-	OnboardingCompleted  bool                     `json:"onboarding_completed"`
+	User                *SafeUserResponse     `json:"user"`
+	Organization        *OrganizationResponse `json:"organization"`
+	Tokens              *AuthTokensResponse   `json:"tokens"`
+	OnboardingCompleted bool                  `json:"onboarding_completed"`
 }
 
 type RefreshResponse struct {
@@ -88,3 +88,20 @@ type MessageResponse struct {
 }
 
 type LogoutResponse = MessageResponse
+
+// RateLimitError provides structured rate limit information to the client.
+type RateLimitError struct {
+	Error           string `json:"error"`
+	AttemptsUsed    int    `json:"attempts_used"`
+	AttemptsAllowed int    `json:"attempts_allowed"`
+	RetryAfter      string `json:"retry_after"`
+	RetryAfterUnix  int64  `json:"retry_after_unix"`
+}
+
+// LoginErrorResponse provides credential error info with rate limit tracking.
+type LoginErrorResponse struct {
+	Error           string `json:"error"`
+	AttemptsUsed    int    `json:"attempts_used"`
+	AttemptsAllowed int    `json:"attempts_allowed"`
+	Remaining       int    `json:"remaining"`
+}

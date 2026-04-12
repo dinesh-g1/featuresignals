@@ -16,11 +16,11 @@ import (
 // --- minimal mock store ---
 
 type mockStore struct {
-	mu      sync.Mutex
-	flags   []domain.Flag
-	states  []domain.FlagState
-	segs    []domain.Segment
-	loadErr error
+	mu       sync.Mutex
+	flags    []domain.Flag
+	states   []domain.FlagState
+	segs     []domain.Segment
+	loadErr  error
 	listenCB func(payload string)
 }
 
@@ -51,102 +51,186 @@ func (m *mockStore) simulateNotify(payload string) {
 
 // Satisfy domain.Store — unused methods return nil/zero.
 func (m *mockStore) CreateOrganization(_ context.Context, _ *domain.Organization) error { return nil }
-func (m *mockStore) GetOrganization(_ context.Context, _ string) (*domain.Organization, error) { return nil, nil }
-func (m *mockStore) GetOrganizationByIDPrefix(_ context.Context, _ string) (*domain.Organization, error) { return nil, nil }
+func (m *mockStore) GetOrganization(_ context.Context, _ string) (*domain.Organization, error) {
+	return nil, nil
+}
+func (m *mockStore) GetOrganizationByIDPrefix(_ context.Context, _ string) (*domain.Organization, error) {
+	return nil, nil
+}
 func (m *mockStore) CreateUser(_ context.Context, _ *domain.User) error { return nil }
-func (m *mockStore) GetUserByEmail(_ context.Context, _ string) (*domain.User, error) { return nil, nil }
+func (m *mockStore) GetUserByEmail(_ context.Context, _ string) (*domain.User, error) {
+	return nil, nil
+}
 func (m *mockStore) GetUserByID(_ context.Context, _ string) (*domain.User, error) { return nil, nil }
-func (m *mockStore) AddOrgMember(_ context.Context, _ *domain.OrgMember) error { return nil }
-func (m *mockStore) GetOrgMember(_ context.Context, _, _ string) (*domain.OrgMember, error) { return nil, nil }
-func (m *mockStore) ListOrgMembers(_ context.Context, _ string) ([]domain.OrgMember, error) { return nil, nil }
-func (m *mockStore) CreateProject(_ context.Context, _ *domain.Project) error { return nil }
+func (m *mockStore) AddOrgMember(_ context.Context, _ *domain.OrgMember) error     { return nil }
+func (m *mockStore) GetOrgMember(_ context.Context, _, _ string) (*domain.OrgMember, error) {
+	return nil, nil
+}
+func (m *mockStore) ListOrgMembers(_ context.Context, _ string) ([]domain.OrgMember, error) {
+	return nil, nil
+}
+func (m *mockStore) CreateProject(_ context.Context, _ *domain.Project) error        { return nil }
 func (m *mockStore) GetProject(_ context.Context, _ string) (*domain.Project, error) { return nil, nil }
-func (m *mockStore) ListProjects(_ context.Context, _ string) ([]domain.Project, error) { return nil, nil }
-func (m *mockStore) DeleteProject(_ context.Context, _ string) error { return nil }
+func (m *mockStore) ListProjects(_ context.Context, _ string) ([]domain.Project, error) {
+	return nil, nil
+}
+func (m *mockStore) DeleteProject(_ context.Context, _ string) error                  { return nil }
 func (m *mockStore) CreateEnvironment(_ context.Context, _ *domain.Environment) error { return nil }
-func (m *mockStore) ListEnvironments(_ context.Context, _ string) ([]domain.Environment, error) { return nil, nil }
-func (m *mockStore) GetEnvironment(_ context.Context, _ string) (*domain.Environment, error) { return nil, nil }
-func (m *mockStore) DeleteEnvironment(_ context.Context, _ string) error { return nil }
-func (m *mockStore) CreateFlag(_ context.Context, _ *domain.Flag) error { return nil }
+func (m *mockStore) ListEnvironments(_ context.Context, _ string) ([]domain.Environment, error) {
+	return nil, nil
+}
+func (m *mockStore) GetEnvironment(_ context.Context, _ string) (*domain.Environment, error) {
+	return nil, nil
+}
+func (m *mockStore) DeleteEnvironment(_ context.Context, _ string) error          { return nil }
+func (m *mockStore) CreateFlag(_ context.Context, _ *domain.Flag) error           { return nil }
 func (m *mockStore) GetFlag(_ context.Context, _, _ string) (*domain.Flag, error) { return nil, nil }
 func (m *mockStore) ListFlags(_ context.Context, _ string) ([]domain.Flag, error) { return nil, nil }
-func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error { return nil }
-func (m *mockStore) DeleteFlag(_ context.Context, _ string) error { return nil }
+func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error           { return nil }
+func (m *mockStore) DeleteFlag(_ context.Context, _ string) error                 { return nil }
 func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error { return nil }
-func (m *mockStore) GetFlagState(_ context.Context, _, _ string) (*domain.FlagState, error) { return nil, nil }
-func (m *mockStore) ListFlagStatesByEnv(_ context.Context, _ string) ([]domain.FlagState, error) { return nil, nil }
+func (m *mockStore) GetFlagState(_ context.Context, _, _ string) (*domain.FlagState, error) {
+	return nil, nil
+}
+func (m *mockStore) ListFlagStatesByEnv(_ context.Context, _ string) ([]domain.FlagState, error) {
+	return nil, nil
+}
 func (m *mockStore) CreateSegment(_ context.Context, _ *domain.Segment) error { return nil }
-func (m *mockStore) ListSegments(_ context.Context, _ string) ([]domain.Segment, error) { return nil, nil }
-func (m *mockStore) GetSegment(_ context.Context, _, _ string) (*domain.Segment, error) { return nil, nil }
+func (m *mockStore) ListSegments(_ context.Context, _ string) ([]domain.Segment, error) {
+	return nil, nil
+}
+func (m *mockStore) GetSegment(_ context.Context, _, _ string) (*domain.Segment, error) {
+	return nil, nil
+}
 func (m *mockStore) UpdateSegment(_ context.Context, _ *domain.Segment) error { return nil }
-func (m *mockStore) DeleteSegment(_ context.Context, _ string) error { return nil }
-func (m *mockStore) CreateAPIKey(_ context.Context, _ *domain.APIKey) error { return nil }
-func (m *mockStore) GetAPIKeyByID(_ context.Context, _ string) (*domain.APIKey, error) { return nil, nil }
-func (m *mockStore) GetAPIKeyByHash(_ context.Context, _ string) (*domain.APIKey, error) { return nil, nil }
-func (m *mockStore) ListAPIKeys(_ context.Context, _ string) ([]domain.APIKey, error) { return nil, nil }
+func (m *mockStore) DeleteSegment(_ context.Context, _ string) error          { return nil }
+func (m *mockStore) CreateAPIKey(_ context.Context, _ *domain.APIKey) error   { return nil }
+func (m *mockStore) GetAPIKeyByID(_ context.Context, _ string) (*domain.APIKey, error) {
+	return nil, nil
+}
+func (m *mockStore) GetAPIKeyByHash(_ context.Context, _ string) (*domain.APIKey, error) {
+	return nil, nil
+}
+func (m *mockStore) ListAPIKeys(_ context.Context, _ string) ([]domain.APIKey, error) {
+	return nil, nil
+}
 func (m *mockStore) RevokeAPIKey(_ context.Context, _ string) error { return nil }
 func (m *mockStore) RotateAPIKey(_ context.Context, _, _, _, _, _ string, _ time.Duration) (*domain.APIKey, error) {
 	return nil, nil
 }
-func (m *mockStore) CleanExpiredGracePeriodKeys(_ context.Context) error { return nil }
-func (m *mockStore) UpdateAPIKeyLastUsed(_ context.Context, _ string) error { return nil }
+func (m *mockStore) CleanExpiredGracePeriodKeys(_ context.Context) error            { return nil }
+func (m *mockStore) UpdateAPIKeyLastUsed(_ context.Context, _ string) error         { return nil }
 func (m *mockStore) CreateAuditEntry(_ context.Context, _ *domain.AuditEntry) error { return nil }
-func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error) { return 0, nil }
-func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) { return nil, nil }
-func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ string) ([]domain.AuditEntry, error) { return nil, nil }
+func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error)  { return 0, nil }
+func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) {
+	return nil, nil
+}
+func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ string) ([]domain.AuditEntry, error) {
+	return nil, nil
+}
 func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error) { return "", nil }
 func (m *mockStore) CountAuditEntries(_ context.Context, _ string) (int, error)   { return 0, nil }
 func (m *mockStore) CountApprovalRequests(_ context.Context, _ string, _ string) (int, error) {
 	return 0, nil
 }
-func (m *mockStore) GetEnvironmentByAPIKeyHash(_ context.Context, _ string) (*domain.Environment, *domain.APIKey, error) { return nil, nil, nil }
-func (m *mockStore) GetOrgMemberByID(_ context.Context, _ string) (*domain.OrgMember, error) { return nil, nil }
+func (m *mockStore) GetEnvironmentByAPIKeyHash(_ context.Context, _ string) (*domain.Environment, *domain.APIKey, error) {
+	return nil, nil, nil
+}
+func (m *mockStore) GetOrgMemberByID(_ context.Context, _ string) (*domain.OrgMember, error) {
+	return nil, nil
+}
 func (m *mockStore) UpdateOrgMemberRole(_ context.Context, _ string, _ domain.Role) error { return nil }
-func (m *mockStore) RemoveOrgMember(_ context.Context, _ string) error { return nil }
-func (m *mockStore) ListEnvPermissions(_ context.Context, _ string) ([]domain.EnvPermission, error) { return nil, nil }
+func (m *mockStore) RemoveOrgMember(_ context.Context, _ string) error                    { return nil }
+func (m *mockStore) ListEnvPermissions(_ context.Context, _ string) ([]domain.EnvPermission, error) {
+	return nil, nil
+}
 func (m *mockStore) UpsertEnvPermission(_ context.Context, _ *domain.EnvPermission) error { return nil }
-func (m *mockStore) DeleteEnvPermission(_ context.Context, _ string) error { return nil }
-func (m *mockStore) CreateWebhook(_ context.Context, _ *domain.Webhook) error { return nil }
-func (m *mockStore) GetWebhook(_ context.Context, _ string) (*domain.Webhook, error) { return nil, nil }
-func (m *mockStore) ListWebhooks(_ context.Context, _ string) ([]domain.Webhook, error) { return nil, nil }
+func (m *mockStore) DeleteEnvPermission(_ context.Context, _ string) error                { return nil }
+func (m *mockStore) CreateWebhook(_ context.Context, _ *domain.Webhook) error             { return nil }
+func (m *mockStore) GetWebhook(_ context.Context, _ string) (*domain.Webhook, error)      { return nil, nil }
+func (m *mockStore) ListWebhooks(_ context.Context, _ string) ([]domain.Webhook, error) {
+	return nil, nil
+}
 func (m *mockStore) UpdateWebhook(_ context.Context, _ *domain.Webhook) error { return nil }
-func (m *mockStore) DeleteWebhook(_ context.Context, _ string) error { return nil }
-func (m *mockStore) CreateWebhookDelivery(_ context.Context, _ *domain.WebhookDelivery) error { return nil }
-func (m *mockStore) ListWebhookDeliveries(_ context.Context, _ string, _ int) ([]domain.WebhookDelivery, error) { return nil, nil }
-func (m *mockStore) ListPendingSchedules(_ context.Context, _ time.Time) ([]domain.FlagState, error) { return nil, nil }
-func (m *mockStore) CreateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error { return nil }
-func (m *mockStore) GetApprovalRequest(_ context.Context, _ string) (*domain.ApprovalRequest, error) { return nil, nil }
-func (m *mockStore) ListApprovalRequests(_ context.Context, _ string, _ string, _, _ int) ([]domain.ApprovalRequest, error) { return nil, nil }
-func (m *mockStore) UpdateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error { return nil }
-func (m *mockStore) GetSubscription(_ context.Context, _ string) (*domain.Subscription, error) { return nil, nil }
+func (m *mockStore) DeleteWebhook(_ context.Context, _ string) error          { return nil }
+func (m *mockStore) CreateWebhookDelivery(_ context.Context, _ *domain.WebhookDelivery) error {
+	return nil
+}
+func (m *mockStore) ListWebhookDeliveries(_ context.Context, _ string, _ int) ([]domain.WebhookDelivery, error) {
+	return nil, nil
+}
+func (m *mockStore) ListPendingSchedules(_ context.Context, _ time.Time) ([]domain.FlagState, error) {
+	return nil, nil
+}
+func (m *mockStore) CreateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error {
+	return nil
+}
+func (m *mockStore) GetApprovalRequest(_ context.Context, _ string) (*domain.ApprovalRequest, error) {
+	return nil, nil
+}
+func (m *mockStore) ListApprovalRequests(_ context.Context, _ string, _ string, _, _ int) ([]domain.ApprovalRequest, error) {
+	return nil, nil
+}
+func (m *mockStore) UpdateApprovalRequest(_ context.Context, _ *domain.ApprovalRequest) error {
+	return nil
+}
+func (m *mockStore) GetSubscription(_ context.Context, _ string) (*domain.Subscription, error) {
+	return nil, nil
+}
 func (m *mockStore) UpsertSubscription(_ context.Context, _ *domain.Subscription) error { return nil }
-func (m *mockStore) UpdateOrgPlan(_ context.Context, _ string, _ string, _ domain.PlanLimits) error { return nil }
+func (m *mockStore) UpdateOrgPlan(_ context.Context, _ string, _ string, _ domain.PlanLimits) error {
+	return nil
+}
 func (m *mockStore) IncrementUsage(_ context.Context, _, _ string, _ int64) error { return nil }
-func (m *mockStore) GetUsage(_ context.Context, _, _ string) (*domain.UsageMetric, error) { return nil, nil }
-func (m *mockStore) GetSubscriptionByStripeID(_ context.Context, _ string) (*domain.Subscription, error) { return nil, nil }
+func (m *mockStore) GetUsage(_ context.Context, _, _ string) (*domain.UsageMetric, error) {
+	return nil, nil
+}
+func (m *mockStore) GetSubscriptionByStripeID(_ context.Context, _ string) (*domain.Subscription, error) {
+	return nil, nil
+}
 func (m *mockStore) CreatePaymentEvent(_ context.Context, _ *domain.PaymentEvent) error { return nil }
-func (m *mockStore) GetPaymentEventByExternalID(_ context.Context, _, _ string) (*domain.PaymentEvent, error) { return nil, nil }
+func (m *mockStore) GetPaymentEventByExternalID(_ context.Context, _, _ string) (*domain.PaymentEvent, error) {
+	return nil, nil
+}
 func (m *mockStore) UpdateOrgPaymentGateway(_ context.Context, _, _ string) error { return nil }
 func (m *mockStore) ListPastDueSubscriptions(_ context.Context, _ time.Time) ([]domain.Subscription, error) {
 	return nil, nil
 }
-func (m *mockStore) GetOnboardingState(_ context.Context, _ string) (*domain.OnboardingState, error) { return nil, nil }
-func (m *mockStore) UpsertOnboardingState(_ context.Context, _ *domain.OnboardingState) error { return nil }
-func (m *mockStore) GetUserByEmailVerifyToken(_ context.Context, _ string) (*domain.User, error) { return nil, nil }
-func (m *mockStore) UpdateUserEmailVerifyToken(_ context.Context, _, _ string, _ time.Time) error { return nil }
+func (m *mockStore) GetOnboardingState(_ context.Context, _ string) (*domain.OnboardingState, error) {
+	return nil, nil
+}
+func (m *mockStore) UpsertOnboardingState(_ context.Context, _ *domain.OnboardingState) error {
+	return nil
+}
+func (m *mockStore) GetUserByEmailVerifyToken(_ context.Context, _ string) (*domain.User, error) {
+	return nil, nil
+}
+func (m *mockStore) UpdateUserEmailVerifyToken(_ context.Context, _, _ string, _ time.Time) error {
+	return nil
+}
 func (m *mockStore) SetEmailVerified(_ context.Context, _ string) error { return nil }
-func (m *mockStore) UpsertPendingRegistration(_ context.Context, _ *domain.PendingRegistration) error { return nil }
-func (m *mockStore) GetPendingRegistrationByEmail(_ context.Context, _ string) (*domain.PendingRegistration, error) { return nil, nil }
-func (m *mockStore) IncrementPendingAttempts(_ context.Context, _ string) error { return nil }
+func (m *mockStore) UpsertPendingRegistration(_ context.Context, _ *domain.PendingRegistration) error {
+	return nil
+}
+func (m *mockStore) GetPendingRegistrationByEmail(_ context.Context, _ string) (*domain.PendingRegistration, error) {
+	return nil, nil
+}
+func (m *mockStore) IncrementPendingAttempts(_ context.Context, _ string) error  { return nil }
 func (m *mockStore) DeletePendingRegistration(_ context.Context, _ string) error { return nil }
-func (m *mockStore) DeleteExpiredPendingRegistrations(_ context.Context, _ time.Time) (int, error) { return 0, nil }
-func (m *mockStore) UpdateLastLoginAt(_ context.Context, _ string) error { return nil }
+func (m *mockStore) DeleteExpiredPendingRegistrations(_ context.Context, _ time.Time) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) UpdateLastLoginAt(_ context.Context, _ string) error      { return nil }
 func (m *mockStore) SoftDeleteOrganization(_ context.Context, _ string) error { return nil }
-func (m *mockStore) RestoreOrganization(_ context.Context, _ string) error { return nil }
-func (m *mockStore) ListSoftDeletedOrgs(_ context.Context, _ time.Time) ([]domain.Organization, error) { return nil, nil }
+func (m *mockStore) RestoreOrganization(_ context.Context, _ string) error    { return nil }
+func (m *mockStore) ListSoftDeletedOrgs(_ context.Context, _ time.Time) ([]domain.Organization, error) {
+	return nil, nil
+}
 func (m *mockStore) HardDeleteOrganization(_ context.Context, _ string) error { return nil }
-func (m *mockStore) ListInactiveOrgs(_ context.Context, _ string, _ time.Time) ([]domain.Organization, error) { return nil, nil }
-func (m *mockStore) DowngradeOrgToFree(_ context.Context, _ string) error { return nil }
+func (m *mockStore) ListInactiveOrgs(_ context.Context, _ string, _ time.Time) ([]domain.Organization, error) {
+	return nil, nil
+}
+func (m *mockStore) DowngradeOrgToFree(_ context.Context, _ string) error               { return nil }
 func (m *mockStore) CreateSalesInquiry(_ context.Context, _ *domain.SalesInquiry) error { return nil }
 func (m *mockStore) CreateOneTimeToken(_ context.Context, _, _ string, _ time.Duration) (string, error) {
 	return "test-token", nil
@@ -167,26 +251,41 @@ func (m *mockStore) GetSSOConfigByOrgSlug(_ context.Context, _ string) (*domain.
 func (m *mockStore) DeleteSSOConfig(_ context.Context, _ string) error { return nil }
 
 func (m *mockStore) RevokeToken(_ context.Context, _, _, _ string, _ time.Time) error { return nil }
-func (m *mockStore) IsTokenRevoked(_ context.Context, _ string) (bool, error)        { return false, nil }
+func (m *mockStore) IsTokenRevoked(_ context.Context, _ string) (bool, error)         { return false, nil }
 func (m *mockStore) CleanExpiredRevocations(_ context.Context) error                  { return nil }
 func (m *mockStore) UpsertMFASecret(_ context.Context, _, _ string) error             { return nil }
 func (m *mockStore) GetMFASecret(_ context.Context, _ string) (*domain.MFASecret, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (m *mockStore) EnableMFA(_ context.Context, _ string) error                           { return nil }
-func (m *mockStore) DisableMFA(_ context.Context, _ string) error                          { return nil }
-func (m *mockStore) RecordLoginAttempt(_ context.Context, _, _, _ string, _ bool) error     { return nil }
+func (m *mockStore) EnableMFA(_ context.Context, _ string) error                        { return nil }
+func (m *mockStore) DisableMFA(_ context.Context, _ string) error                       { return nil }
+func (m *mockStore) RecordLoginAttempt(_ context.Context, _, _, _ string, _ bool) error { return nil }
 func (m *mockStore) CountRecentFailedAttempts(_ context.Context, _ string, _ time.Time) (int, error) {
 	return 0, nil
 }
-func (m *mockStore) GetIPAllowlist(_ context.Context, _ string) (bool, []string, error) { return false, nil, nil }
-func (m *mockStore) UpsertIPAllowlist(_ context.Context, _ string, _ bool, _ []string) error { return nil }
+func (m *mockStore) GetIPAllowlist(_ context.Context, _ string) (bool, []string, error) {
+	return false, nil, nil
+}
+func (m *mockStore) UpsertIPAllowlist(_ context.Context, _ string, _ bool, _ []string) error {
+	return nil
+}
 func (m *mockStore) CreateCustomRole(_ context.Context, _ *domain.CustomRole) error { return nil }
-func (m *mockStore) GetCustomRole(_ context.Context, _ string) (*domain.CustomRole, error) { return nil, domain.ErrNotFound }
-func (m *mockStore) ListCustomRoles(_ context.Context, _ string) ([]domain.CustomRole, error) { return nil, nil }
+func (m *mockStore) GetCustomRole(_ context.Context, _ string) (*domain.CustomRole, error) {
+	return nil, domain.ErrNotFound
+}
+func (m *mockStore) ListCustomRoles(_ context.Context, _ string) ([]domain.CustomRole, error) {
+	return nil, nil
+}
 func (m *mockStore) UpdateCustomRole(_ context.Context, _ *domain.CustomRole) error { return nil }
-func (m *mockStore) DeleteCustomRole(_ context.Context, _ string) error { return nil }
-func (m *mockStore) SoftDeleteUser(_ context.Context, _ string) error  { return nil }
+func (m *mockStore) DeleteCustomRole(_ context.Context, _ string) error             { return nil }
+func (m *mockStore) SoftDeleteUser(_ context.Context, _ string) error               { return nil }
+func (m *mockStore) SetPasswordResetToken(_ context.Context, _, _ string, _ time.Time, _, _ string) error {
+	return nil
+}
+func (m *mockStore) ConsumePasswordResetToken(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (m *mockStore) UpdatePassword(_ context.Context, _, _ string) error { return nil }
 
 func (m *mockStore) InsertProductEvent(_ context.Context, _ *domain.ProductEvent) error { return nil }
 func (m *mockStore) InsertProductEvents(_ context.Context, _ []domain.ProductEvent) error {

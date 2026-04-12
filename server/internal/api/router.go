@@ -101,7 +101,7 @@ func NewRouter(
 	allRoles := []domain.Role{domain.RoleOwner, domain.RoleAdmin, domain.RoleDeveloper, domain.RoleViewer}
 
 	// Init handlers
-	authH := handlers.NewAuthHandler(store, jwtMgr, appBaseURL, dashboardURL, internalChecker)
+	authH := handlers.NewAuthHandler(store, jwtMgr, otpSender, appBaseURL, dashboardURL, internalChecker)
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store, emitter)
@@ -179,6 +179,8 @@ func NewRouter(
 			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
 			r.Post("/auth/complete-signup", signupH.CompleteSignup)
 			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
+			r.Post("/auth/forgot-password", authH.ForgotPassword)
+			r.Post("/auth/reset-password", authH.ResetPassword)
 			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)

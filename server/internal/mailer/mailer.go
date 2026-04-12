@@ -24,17 +24,18 @@ var templateFS embed.FS
 // It is shared between SMTPMailer and external transport implementations
 // (e.g., ZeptoMail) so templates are defined once and rendered consistently.
 type Renderer struct {
-	tmpl *template.Template
+	tmpl   *template.Template
+	appURL string
 }
 
 // NewRenderer parses the embedded HTML templates and returns a reusable
 // renderer. Returns an error if any template fails to parse.
-func NewRenderer() (*Renderer, error) {
+func NewRenderer(appURL string) (*Renderer, error) {
 	tmpl, err := template.ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parse email templates: %w", err)
 	}
-	return &Renderer{tmpl: tmpl}, nil
+	return &Renderer{tmpl: tmpl, appURL: appURL}, nil
 }
 
 // Render executes the template identified by msg.Template and returns the
@@ -57,6 +58,34 @@ func (r *Renderer) Render(msg domain.EmailMessage) (string, error) {
 	return buf.String(), nil
 }
 
+// RenderOTPSignup renders the OTP signup verification template with the
+// given recipient name and OTP code.
+func (r *Renderer) RenderOTPSignup(toName, otp string) (string, error) {
+	return r.renderOTP("otp_signup.html", toName, otp)
+}
+
+// RenderOTPPasswordReset renders the password reset OTP template with the
+// given recipient name and OTP code.
+func (r *Renderer) RenderOTPPasswordReset(toName, otp string) (string, error) {
+	return r.renderOTP("otp_password_reset.html", toName, otp)
+}
+
+func (r *Renderer) renderOTP(templateFile, toName, otp string) (string, error) {
+	if toName == "" {
+		toName = "there"
+	}
+	data := map[string]string{
+		"ToName": toName,
+		"OTP":    otp,
+		"AppURL": r.appURL,
+	}
+	var buf bytes.Buffer
+	if err := r.tmpl.ExecuteTemplate(&buf, templateFile, data); err != nil {
+		return "", fmt.Errorf("render OTP template %s: %w", templateFile, err)
+	}
+	return buf.String(), nil
+}
+
 // SMTPMailer renders lifecycle email templates and delivers them via SMTP.
 type SMTPMailer struct {
 	renderer *Renderer
@@ -71,8 +100,8 @@ type SMTPMailer struct {
 
 // NewSMTPMailer creates a mailer that renders embedded HTML templates and
 // sends them through the configured SMTP relay.
-func NewSMTPMailer(host string, port int, user, pass, from, fromName string, logger *slog.Logger) (*SMTPMailer, error) {
-	renderer, err := NewRenderer()
+func NewSMTPMailer(host string, port int, user, pass, from, fromName, appURL string, logger *slog.Logger) (*SMTPMailer, error) {
+	renderer, err := NewRenderer(appURL)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +118,7 @@ func NewSMTPMailer(host string, port int, user, pass, from, fromName string, log
 }
 
 const (
-	smtpMaxRetries = 3
+	smtpMaxRetries  = 3
 	smtpDialTimeout = 10 * time.Second
 )
 
@@ -264,5 +293,25 @@ func (m *NoopMailer) SendBatch(_ context.Context, msgs []domain.EmailMessage) er
 			"subject", msg.Subject,
 		)
 	}
+	return nil
+}
+
+// SendOTP logs OTP emails without sending — implements domain.OTPSender.
+func (m *NoopMailer) SendOTP(_ context.Context, toEmail, toName, otp string) error {
+	m.logger.Info("OTP email suppressed (noop)",
+		"to", toEmail,
+		"name", toName,
+		"otp_length", len(otp),
+	)
+	return nil
+}
+
+// SendPasswordResetOTP logs password reset OTPs without sending.
+func (m *NoopMailer) SendPasswordResetOTP(_ context.Context, toEmail, toName, otp string) error {
+	m.logger.Info("password reset email suppressed (noop)",
+		"to", toEmail,
+		"name", toName,
+		"otp_length", len(otp),
+	)
 	return nil
 }

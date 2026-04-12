@@ -55,8 +55,8 @@ func (s *tierMockStore) GetUserByEmailVerifyToken(context.Context, string) (*dom
 func (s *tierMockStore) UpdateUserEmailVerifyToken(context.Context, string, string, time.Time) error {
 	return nil
 }
-func (s *tierMockStore) SetEmailVerified(context.Context, string) error                { return nil }
-func (s *tierMockStore) AddOrgMember(context.Context, *domain.OrgMember) error         { return nil }
+func (s *tierMockStore) SetEmailVerified(context.Context, string) error        { return nil }
+func (s *tierMockStore) AddOrgMember(context.Context, *domain.OrgMember) error { return nil }
 func (s *tierMockStore) GetOrgMember(context.Context, string, string) (*domain.OrgMember, error) {
 	return nil, fmt.Errorf("not found")
 }
@@ -69,25 +69,25 @@ func (s *tierMockStore) ListEnvPermissions(context.Context, string) ([]domain.En
 	return nil, nil
 }
 func (s *tierMockStore) UpsertEnvPermission(context.Context, *domain.EnvPermission) error { return nil }
-func (s *tierMockStore) DeleteEnvPermission(context.Context, string) error                 { return nil }
-func (s *tierMockStore) CreateProject(context.Context, *domain.Project) error              { return nil }
+func (s *tierMockStore) DeleteEnvPermission(context.Context, string) error                { return nil }
+func (s *tierMockStore) CreateProject(context.Context, *domain.Project) error             { return nil }
 func (s *tierMockStore) GetProject(context.Context, string) (*domain.Project, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) DeleteProject(context.Context, string) error                   { return nil }
-func (s *tierMockStore) CreateEnvironment(context.Context, *domain.Environment) error  { return nil }
+func (s *tierMockStore) DeleteProject(context.Context, string) error                  { return nil }
+func (s *tierMockStore) CreateEnvironment(context.Context, *domain.Environment) error { return nil }
 func (s *tierMockStore) GetEnvironment(context.Context, string) (*domain.Environment, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) DeleteEnvironment(context.Context, string) error           { return nil }
-func (s *tierMockStore) CreateFlag(context.Context, *domain.Flag) error            { return nil }
+func (s *tierMockStore) DeleteEnvironment(context.Context, string) error { return nil }
+func (s *tierMockStore) CreateFlag(context.Context, *domain.Flag) error  { return nil }
 func (s *tierMockStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, fmt.Errorf("not found")
 }
 func (s *tierMockStore) ListFlags(context.Context, string) ([]domain.Flag, error) { return nil, nil }
-func (s *tierMockStore) UpdateFlag(context.Context, *domain.Flag) error            { return nil }
-func (s *tierMockStore) DeleteFlag(context.Context, string) error                  { return nil }
-func (s *tierMockStore) UpsertFlagState(context.Context, *domain.FlagState) error  { return nil }
+func (s *tierMockStore) UpdateFlag(context.Context, *domain.Flag) error           { return nil }
+func (s *tierMockStore) DeleteFlag(context.Context, string) error                 { return nil }
+func (s *tierMockStore) UpsertFlagState(context.Context, *domain.FlagState) error { return nil }
 func (s *tierMockStore) GetFlagState(context.Context, string, string) (*domain.FlagState, error) {
 	return nil, fmt.Errorf("not found")
 }
@@ -104,9 +104,9 @@ func (s *tierMockStore) ListSegments(context.Context, string) ([]domain.Segment,
 func (s *tierMockStore) GetSegment(context.Context, string, string) (*domain.Segment, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) UpdateSegment(context.Context, *domain.Segment) error  { return nil }
-func (s *tierMockStore) DeleteSegment(context.Context, string) error           { return nil }
-func (s *tierMockStore) CreateAPIKey(context.Context, *domain.APIKey) error    { return nil }
+func (s *tierMockStore) UpdateSegment(context.Context, *domain.Segment) error { return nil }
+func (s *tierMockStore) DeleteSegment(context.Context, string) error          { return nil }
+func (s *tierMockStore) CreateAPIKey(context.Context, *domain.APIKey) error   { return nil }
 func (s *tierMockStore) GetAPIKeyByID(context.Context, string) (*domain.APIKey, error) {
 	return nil, fmt.Errorf("not found")
 }
@@ -116,7 +116,7 @@ func (s *tierMockStore) GetAPIKeyByHash(context.Context, string) (*domain.APIKey
 func (s *tierMockStore) ListAPIKeys(context.Context, string) ([]domain.APIKey, error) {
 	return nil, nil
 }
-func (s *tierMockStore) RevokeAPIKey(context.Context, string) error       { return nil }
+func (s *tierMockStore) RevokeAPIKey(context.Context, string) error         { return nil }
 func (s *tierMockStore) UpdateAPIKeyLastUsed(context.Context, string) error { return nil }
 func (s *tierMockStore) RotateAPIKey(context.Context, string, string, string, string, string, time.Duration) (*domain.APIKey, error) {
 	return nil, fmt.Errorf("not found")
@@ -152,7 +152,7 @@ func (s *tierMockStore) UpdateApprovalRequest(context.Context, *domain.ApprovalR
 	return nil
 }
 func (s *tierMockStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { return nil }
-func (s *tierMockStore) PurgeAuditEntries(context.Context, time.Time) (int, error) { return 0, nil }
+func (s *tierMockStore) PurgeAuditEntries(context.Context, time.Time) (int, error)  { return 0, nil }
 func (s *tierMockStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, nil
 }
@@ -205,22 +205,29 @@ func (s *tierMockStore) UpsertPendingRegistration(context.Context, *domain.Pendi
 func (s *tierMockStore) GetPendingRegistrationByEmail(context.Context, string) (*domain.PendingRegistration, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) IncrementPendingAttempts(context.Context, string) error    { return nil }
-func (s *tierMockStore) DeletePendingRegistration(context.Context, string) error   { return nil }
+func (s *tierMockStore) IncrementPendingAttempts(context.Context, string) error  { return nil }
+func (s *tierMockStore) DeletePendingRegistration(context.Context, string) error { return nil }
 func (s *tierMockStore) DeleteExpiredPendingRegistrations(context.Context, time.Time) (int, error) {
 	return 0, nil
 }
-func (s *tierMockStore) UpdateLastLoginAt(context.Context, string) error           { return nil }
-func (s *tierMockStore) SoftDeleteOrganization(context.Context, string) error      { return nil }
-func (s *tierMockStore) RestoreOrganization(context.Context, string) error         { return nil }
+func (s *tierMockStore) UpdateLastLoginAt(context.Context, string) error      { return nil }
+func (s *tierMockStore) SoftDeleteOrganization(context.Context, string) error { return nil }
+func (s *tierMockStore) RestoreOrganization(context.Context, string) error    { return nil }
+func (s *tierMockStore) SetPasswordResetToken(context.Context, string, string, time.Time, string, string) error {
+	return nil
+}
+func (s *tierMockStore) ConsumePasswordResetToken(context.Context, string) (string, error) {
+	return "", fmt.Errorf("not found")
+}
+func (s *tierMockStore) UpdatePassword(context.Context, string, string) error { return nil }
 func (s *tierMockStore) ListSoftDeletedOrgs(context.Context, time.Time) ([]domain.Organization, error) {
 	return nil, nil
 }
-func (s *tierMockStore) HardDeleteOrganization(context.Context, string) error      { return nil }
+func (s *tierMockStore) HardDeleteOrganization(context.Context, string) error { return nil }
 func (s *tierMockStore) ListInactiveOrgs(context.Context, string, time.Time) ([]domain.Organization, error) {
 	return nil, nil
 }
-func (s *tierMockStore) DowngradeOrgToFree(context.Context, string) error          { return nil }
+func (s *tierMockStore) DowngradeOrgToFree(context.Context, string) error               { return nil }
 func (s *tierMockStore) CreateSalesInquiry(context.Context, *domain.SalesInquiry) error { return nil }
 func (s *tierMockStore) CreateOneTimeToken(context.Context, string, string, time.Duration) (string, error) {
 	return "test-token", nil
@@ -251,8 +258,8 @@ func (s *tierMockStore) UpsertMFASecret(context.Context, string, string) error {
 func (s *tierMockStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) EnableMFA(context.Context, string) error                           { return nil }
-func (s *tierMockStore) DisableMFA(context.Context, string) error                          { return nil }
+func (s *tierMockStore) EnableMFA(context.Context, string) error  { return nil }
+func (s *tierMockStore) DisableMFA(context.Context, string) error { return nil }
 func (s *tierMockStore) RecordLoginAttempt(context.Context, string, string, string, bool) error {
 	return nil
 }

@@ -15,7 +15,7 @@ import (
 
 func TestRegister_ResponseExcludesSensitiveFields(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, "", "", nil)
+	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "", nil)
 
 	body := `{"email":"test@example.com","password":"StrongP@ss1","name":"Test User","org_name":"TestOrg"}`
 	r := httptest.NewRequest("POST", "/v1/auth/register", strings.NewReader(body))
@@ -54,7 +54,7 @@ func TestRegister_ResponseExcludesSensitiveFields(t *testing.T) {
 
 func TestLogin_ResponseExcludesSensitiveFields(t *testing.T) {
 	store := newMockStore()
-	h := NewAuthHandler(store, &stubTokenManager{}, "", "", nil)
+	h := NewAuthHandler(store, &stubTokenManager{}, nil, "", "", nil)
 
 	hash, _ := auth.HashPassword("StrongP@ss1")
 	store.CreateUser(nil, &domain.User{

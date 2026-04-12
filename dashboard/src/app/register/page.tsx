@@ -156,7 +156,7 @@ function RegisterForm() {
     email: "",
     password: "",
     org_name: "",
-    data_region: "in",
+    data_region: "", // No default — user must explicitly choose
   });
   const planIntent = searchParams.get("plan");
 
@@ -222,12 +222,14 @@ function RegisterForm() {
       email?: string;
       password?: string;
       org_name?: string;
+      data_region?: string;
     } = {};
     if (form.name.trim() === "") errors.name = "Name is required";
     if (form.email.trim() === "") errors.email = "Email is required";
     if (form.password === "") errors.password = "Password is required";
     if (form.org_name.trim() === "")
       errors.org_name = "Organization name is required";
+    if (!form.data_region) errors.data_region = "Please select a data region";
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -308,8 +310,8 @@ function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <Card className="w-full max-w-lg space-y-8 p-6 sm:p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
+      <Card className="w-full max-w-2xl space-y-6 p-6 sm:p-8 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-indigo-600">
             FeatureSignals
@@ -393,127 +395,137 @@ function RegisterForm() {
             }}
             className="space-y-4"
           >
-            <div className="space-y-1.5">
-              <Label htmlFor="name">
-                Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                value={form.name}
-                onChange={(e) => {
-                  setForm({ ...form, name: e.target.value });
-                  if (fieldErrors.name)
-                    setFieldErrors({ ...fieldErrors, name: undefined });
-                }}
-                aria-invalid={!!fieldErrors.name}
-                aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                required
-              />
-              {fieldErrors.name && (
-                <p
-                  className="text-xs text-red-500"
-                  role="alert"
-                  id="name-error"
-                >
-                  {fieldErrors.name}
-                </p>
-              )}
+            {/* 2-column grid for form fields on desktop, single column on mobile */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">
+                  Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  value={form.name}
+                  onChange={(e) => {
+                    setForm({ ...form, name: e.target.value });
+                    if (fieldErrors.name)
+                      setFieldErrors({ ...fieldErrors, name: undefined });
+                  }}
+                  aria-invalid={!!fieldErrors.name}
+                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                  required
+                />
+                {fieldErrors.name && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="name-error"
+                  >
+                    {fieldErrors.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={(e) => {
+                    setForm({ ...form, email: e.target.value });
+                    if (fieldErrors.email)
+                      setFieldErrors({ ...fieldErrors, email: undefined });
+                  }}
+                  aria-invalid={!!fieldErrors.email}
+                  aria-describedby={
+                    fieldErrors.email ? "email-error" : undefined
+                  }
+                  required
+                />
+                {fieldErrors.email && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="email-error"
+                  >
+                    {fieldErrors.email}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password">
+                  Password <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(e) => {
+                    setForm({ ...form, password: e.target.value });
+                    if (fieldErrors.password)
+                      setFieldErrors({ ...fieldErrors, password: undefined });
+                  }}
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={
+                    fieldErrors.password ? "password-error" : undefined
+                  }
+                  required
+                />
+                {fieldErrors.password && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="password-error"
+                  >
+                    {fieldErrors.password}
+                  </p>
+                )}
+                <PasswordStrength password={form.password} />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="org_name">
+                  Organization Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="org_name"
+                  name="organization"
+                  type="text"
+                  autoComplete="organization"
+                  value={form.org_name}
+                  onChange={(e) => {
+                    setForm({ ...form, org_name: e.target.value });
+                    if (fieldErrors.org_name)
+                      setFieldErrors({ ...fieldErrors, org_name: undefined });
+                  }}
+                  aria-invalid={!!fieldErrors.org_name}
+                  aria-describedby={
+                    fieldErrors.org_name ? "org_name-error" : undefined
+                  }
+                  required
+                />
+                {fieldErrors.org_name && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="org_name-error"
+                  >
+                    {fieldErrors.org_name}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">
-                Email <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={(e) => {
-                  setForm({ ...form, email: e.target.value });
-                  if (fieldErrors.email)
-                    setFieldErrors({ ...fieldErrors, email: undefined });
-                }}
-                aria-invalid={!!fieldErrors.email}
-                aria-describedby={fieldErrors.email ? "email-error" : undefined}
-                required
-              />
-              {fieldErrors.email && (
-                <p
-                  className="text-xs text-red-500"
-                  role="alert"
-                  id="email-error"
-                >
-                  {fieldErrors.email}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">
-                Password <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={(e) => {
-                  setForm({ ...form, password: e.target.value });
-                  if (fieldErrors.password)
-                    setFieldErrors({ ...fieldErrors, password: undefined });
-                }}
-                aria-invalid={!!fieldErrors.password}
-                aria-describedby={
-                  fieldErrors.password ? "password-error" : undefined
-                }
-                required
-              />
-              {fieldErrors.password && (
-                <p
-                  className="text-xs text-red-500"
-                  role="alert"
-                  id="password-error"
-                >
-                  {fieldErrors.password}
-                </p>
-              )}
-              <PasswordStrength password={form.password} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="org_name">
-                Organization Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="org_name"
-                name="organization"
-                type="text"
-                autoComplete="organization"
-                value={form.org_name}
-                onChange={(e) => {
-                  setForm({ ...form, org_name: e.target.value });
-                  if (fieldErrors.org_name)
-                    setFieldErrors({ ...fieldErrors, org_name: undefined });
-                }}
-                aria-invalid={!!fieldErrors.org_name}
-                aria-describedby={
-                  fieldErrors.org_name ? "org_name-error" : undefined
-                }
-                required
-              />
-              {fieldErrors.org_name && (
-                <p
-                  className="text-xs text-red-500"
-                  role="alert"
-                  id="org_name-error"
-                >
-                  {fieldErrors.org_name}
-                </p>
-              )}
-            </div>
+
+            {/* Data region - full width */}
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium text-slate-700">
                 Data Region <span className="text-red-500">*</span>

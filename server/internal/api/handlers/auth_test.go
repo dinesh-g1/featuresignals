@@ -11,6 +11,7 @@ import (
 
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
+	"github.com/featuresignals/server/internal/domain"
 )
 
 func newAuthenticatedRequest(method, path string, body string, userID, orgID string) *http.Request {
@@ -23,7 +24,7 @@ func newAuthenticatedRequest(method, path string, body string, userID, orgID str
 func newTestAuthHandler() (*AuthHandler, *mockStore) {
 	store := newMockStore()
 	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	return NewAuthHandler(store, jwtMgr, "http://localhost:8080", "http://localhost:3000", nil), store
+	return NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000", nil), store
 }
 
 func TestAuthHandler_Register(t *testing.T) {
@@ -508,5 +509,216 @@ func TestAuthHandler_TokenExchange_Replay(t *testing.T) {
 	h.TokenExchange(w2, r2)
 	if w2.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401 on replay, got %d", w2.Code)
+	}
+}
+
+func TestAuthHandler_ForgotPassword_UnknownEmail(t *testing.T) {
+	t.Parallel()
+
+	// Even for unknown emails, should return 200 to prevent enumeration
+	h, _ := newTestAuthHandler()
+
+	body := `{"email":"unknown@example.com"}`
+	r := httptest.NewRequest("POST", "/v1/auth/forgot-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ForgotPassword(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for unknown email (prevents enumeration), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthHandler_ForgotPassword_InvalidEmail(t *testing.T) {
+	t.Parallel()
+
+	h, _ := newTestAuthHandler()
+
+	body := `{"email":"notanemail"}`
+	r := httptest.NewRequest("POST", "/v1/auth/forgot-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ForgotPassword(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid email, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthHandler_ForgotPassword_MissingEmail(t *testing.T) {
+	t.Parallel()
+
+	h, _ := newTestAuthHandler()
+
+	body := `{}`
+	r := httptest.NewRequest("POST", "/v1/auth/forgot-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ForgotPassword(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for missing email, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthHandler_ForgotPassword_KnownEmail(t *testing.T) {
+	t.Parallel()
+
+	store := newMockStore()
+	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	otpSender := &mockOTPSender{}
+	h := NewAuthHandler(store, jwtMgr, otpSender, "http://localhost:8080", "http://localhost:3000", nil)
+
+	// Create a user
+	hash, _ := auth.HashPassword("Secure@123")
+	user := &domain.User{ID: "user-1", Email: "test@example.com", Name: "Test User", PasswordHash: hash}
+	store.users["user-1"] = user
+	store.usersByEmail["test@example.com"] = user
+
+	body := `{"email":"test@example.com"}`
+	r := httptest.NewRequest("POST", "/v1/auth/forgot-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ForgotPassword(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Verify OTP was sent
+	if otpSender.lastEmail != "test@example.com" {
+		t.Errorf("expected OTP sent to test@example.com, got %s", otpSender.lastEmail)
+	}
+	if otpSender.lastOTP == "" {
+		t.Error("expected OTP to be generated")
+	}
+
+	// Verify token was stored
+	if len(store.passwordResetTokens) == 0 {
+		t.Error("expected password reset token to be stored")
+	}
+}
+
+func TestAuthHandler_ResetPassword_Success(t *testing.T) {
+	t.Parallel()
+
+	store := newMockStore()
+	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	otpSender := &mockOTPSender{}
+	h := NewAuthHandler(store, jwtMgr, otpSender, "http://localhost:8080", "http://localhost:3000", nil)
+
+	// Create a user
+	hash, _ := auth.HashPassword("Secure@123")
+	user := &domain.User{ID: "user-1", Email: "test@example.com", Name: "Test User", PasswordHash: hash}
+	store.users["user-1"] = user
+	store.usersByEmail["test@example.com"] = user
+
+	// Generate OTP (hashed, matching the ForgotPassword flow)
+	otp := "123456"
+	otpHash, _ := auth.HashPassword(otp)
+	expires := time.Now().Add(15 * time.Minute)
+	store.SetPasswordResetToken(context.Background(), "user-1", otpHash, expires, "127.0.0.1", "test-agent")
+
+	body := `{"otp":"123456","new_password":"NewSecure@456"}`
+	r := httptest.NewRequest("POST", "/v1/auth/reset-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ResetPassword(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Verify password was updated
+	updatedUser := store.users["user-1"]
+	if !auth.CheckPassword("NewSecure@456", updatedUser.PasswordHash) {
+		t.Error("password was not updated")
+	}
+
+	// Verify token was consumed (one of the tokens should be marked used)
+	consumed := false
+	for _, entry := range store.passwordResetTokens {
+		if entry.usedAt != nil {
+			consumed = true
+			break
+		}
+	}
+	if !consumed {
+		t.Error("password reset token was not marked as consumed")
+	}
+}
+
+func TestAuthHandler_ResetPassword_InvalidOTP(t *testing.T) {
+	t.Parallel()
+
+	h, _ := newTestAuthHandler()
+
+	body := `{"otp":"000000","new_password":"NewSecure@456"}`
+	r := httptest.NewRequest("POST", "/v1/auth/reset-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ResetPassword(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for invalid OTP, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuthHandler_ResetPassword_WeakPassword(t *testing.T) {
+	t.Parallel()
+
+	h, store := newTestAuthHandler()
+
+	// Create a valid token (hashed)
+	expires := time.Now().Add(15 * time.Minute)
+	otpHash, _ := auth.HashPassword("valid-otp")
+	store.SetPasswordResetToken(context.Background(), "user-1", otpHash, expires, "127.0.0.1", "test-agent")
+
+	tests := []struct {
+		name string
+		pw   string
+	}{
+		{"too short", "short"},
+		{"no uppercase", "secure@1234"},
+		{"no lowercase", "SECURE@1234"},
+		{"no digit", "Secure@abcd"},
+		{"no special", "Secure12345"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := `{"otp":"valid-otp","new_password":"` + tt.pw + `"}`
+			r := httptest.NewRequest("POST", "/v1/auth/reset-password", strings.NewReader(body))
+			w := httptest.NewRecorder()
+
+			h.ResetPassword(w, r)
+
+			if w.Code != http.StatusBadRequest {
+				t.Errorf("expected 400 for weak password (%s), got %d: %s", tt.name, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestAuthHandler_ResetPassword_ExpiredOTP(t *testing.T) {
+	t.Parallel()
+
+	store := newMockStore()
+	jwtMgr := auth.NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
+	h := NewAuthHandler(store, jwtMgr, nil, "http://localhost:8080", "http://localhost:3000", nil)
+
+	// Create an expired token (hashed)
+	expires := time.Now().Add(-1 * time.Minute) // already expired
+	otpHash, _ := auth.HashPassword("expired-otp")
+	store.SetPasswordResetToken(context.Background(), "user-1", otpHash, expires, "127.0.0.1", "test-agent")
+
+	body := `{"otp":"expired-otp","new_password":"NewSecure@456"}`
+	r := httptest.NewRequest("POST", "/v1/auth/reset-password", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.ResetPassword(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for expired OTP, got %d: %s", w.Code, w.Body.String())
 	}
 }

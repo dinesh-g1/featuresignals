@@ -39,7 +39,7 @@ type Mailer struct {
 
 // NewMailer creates a ZeptoMail lifecycle mailer. It validates required
 // fields and initialises the shared template renderer.
-func NewMailer(token, fromEmail, fromName, baseURL string, logger *slog.Logger) (*Mailer, error) {
+func NewMailer(token, fromEmail, fromName, baseURL, appURL string, logger *slog.Logger) (*Mailer, error) {
 	token = sanitizeToken(token)
 	if token == "" {
 		return nil, fmt.Errorf("zeptomail: send mail token is required")
@@ -53,7 +53,7 @@ func NewMailer(token, fromEmail, fromName, baseURL string, logger *slog.Logger) 
 	if baseURL == "" {
 		baseURL = "https://api.zeptomail.in"
 	}
-	renderer, err := mailer.NewRenderer()
+	renderer, err := mailer.NewRenderer(appURL)
 	if err != nil {
 		return nil, fmt.Errorf("zeptomail: %w", err)
 	}
@@ -135,11 +135,11 @@ func (m *Mailer) resolveFromName(override string) string {
 }
 
 type sendEnvelope struct {
-	to, toName       string
-	from, fromName   string
-	replyTo          string
+	to, toName        string
+	from, fromName    string
+	replyTo           string
 	subject, htmlBody string
-	template         string
+	template          string
 }
 
 func (m *Mailer) sendWithRetry(ctx context.Context, env sendEnvelope) error {
@@ -308,4 +308,3 @@ func marshalJSON(v any) ([]byte, error) {
 	}
 	return b, nil
 }
-

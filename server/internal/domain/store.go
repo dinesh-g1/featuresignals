@@ -105,6 +105,9 @@ type UserWriter interface {
 	SetEmailVerified(ctx context.Context, userID string) error
 	UpdateLastLoginAt(ctx context.Context, userID string) error
 	SoftDeleteUser(ctx context.Context, userID string) error
+	SetPasswordResetToken(ctx context.Context, userID, tokenHash string, expires time.Time, ip, ua string) error
+	ConsumePasswordResetToken(ctx context.Context, otp string) (userID string, err error)
+	UpdatePassword(ctx context.Context, userID, newPasswordHash string) error
 }
 
 // OrgMemberStore provides CRUD for organization members.

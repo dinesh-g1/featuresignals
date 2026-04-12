@@ -180,7 +180,7 @@ func main() {
 
 	switch cfg.EmailProvider {
 	case "zeptomail":
-		zm, err := zeptomail.NewMailer(cfg.ZeptoMailToken, cfg.ZeptoMailFromEmail, cfg.ZeptoMailFromName, cfg.ZeptoMailBaseURL, logger)
+		zm, err := zeptomail.NewMailer(cfg.ZeptoMailToken, cfg.ZeptoMailFromEmail, cfg.ZeptoMailFromName, cfg.ZeptoMailBaseURL, cfg.DashboardURL, logger)
 		if err != nil {
 			logger.Error("failed to create ZeptoMail mailer", "error", err)
 			lifecycleMailer = mailer.NewNoopMailer(logger)
@@ -189,7 +189,7 @@ func main() {
 			logger.Info("ZeptoMail lifecycle mailer configured", "from", cfg.ZeptoMailFromEmail)
 		}
 
-		zOTP, err := zeptomail.NewOTPSender(cfg.ZeptoMailToken, cfg.ZeptoMailFromEmail, cfg.ZeptoMailFromName, cfg.ZeptoMailBaseURL, logger)
+		zOTP, err := zeptomail.NewOTPSender(cfg.ZeptoMailToken, cfg.ZeptoMailFromEmail, cfg.ZeptoMailFromName, cfg.ZeptoMailBaseURL, cfg.DashboardURL, logger)
 		if err != nil {
 			logger.Error("failed to create ZeptoMail OTP sender", "error", err)
 		} else {
@@ -199,15 +199,13 @@ func main() {
 
 	case "smtp":
 		if cfg.SMTPHost != "" {
-			otpSender = email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
-			logger.Info("SMTP email OTP sender configured", "host", cfg.SMTPHost, "port", cfg.SMTPPort)
-			m, err := mailer.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, logger)
+			s, err := email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, cfg.DashboardURL, logger)
 			if err != nil {
-				logger.Warn("failed to initialize SMTP mailer, falling back to noop", "error", err)
-				lifecycleMailer = mailer.NewNoopMailer(logger)
+				logger.Warn("failed to initialize SMTP OTP sender, falling back to noop", "error", err)
+				otpSender = mailer.NewNoopMailer(logger)
 			} else {
-				lifecycleMailer = m
-				logger.Info("lifecycle SMTP mailer configured", "host", cfg.SMTPHost)
+				otpSender = s
+				logger.Info("SMTP email OTP sender configured", "host", cfg.SMTPHost, "port", cfg.SMTPPort)
 			}
 		} else {
 			logger.Warn("EMAIL_PROVIDER=smtp but SMTP_HOST not set; email disabled")

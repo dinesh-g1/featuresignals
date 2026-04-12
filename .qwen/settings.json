@@ -9,7 +9,8 @@
       "WebFetch(workflowautomation.net)",
       "Bash(cat *)",
       "Bash(npm test *)",
-      "Bash(git reset *)"
+      "Bash(git reset *)",
+      "Bash(go *)"
     ]
   },
   "$version": 3

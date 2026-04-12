@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 )
 
@@ -14,43 +15,53 @@ import (
 type mockStore struct {
 	mu sync.RWMutex
 
-	orgs           map[string]*domain.Organization
-	users          map[string]*domain.User    // id -> user
-	usersByEmail   map[string]*domain.User    // email -> user
-	orgMembers     map[string][]domain.OrgMember // orgID -> members
-	orgMembersByID map[string]*domain.OrgMember  // memberID -> member
-	projects       map[string]*domain.Project
-	projectsByOrg  map[string][]string // orgID -> []projectID
-	envs           map[string]*domain.Environment
-	envsByProject  map[string][]string // projectID -> []envID
-	flags          map[string]*domain.Flag // "projectID:key" -> flag
-	flagsByProject map[string][]string  // projectID -> []keys
-	flagStates     map[string]*domain.FlagState // "flagID:envID" -> state
-	segments       map[string]*domain.Segment // "projectID:key" -> segment
-	apiKeys        map[string]*domain.APIKey // keyHash -> apikey
-	apiKeysByEnv   map[string][]string       // envID -> []keyHash
-	apiKeysById    map[string]*domain.APIKey // id -> apikey
-	auditEntries   []domain.AuditEntry
-	envPerms       map[string][]domain.EnvPermission // memberID -> perms
-	envPermsById   map[string]*domain.EnvPermission  // id -> perm
-	webhooks       map[string]*domain.Webhook        // id -> webhook
-	webhooksByOrg  map[string][]string               // orgID -> []webhookID
-	whDeliveries     map[string][]domain.WebhookDelivery        // webhookID -> deliveries
-	approvals        map[string]*domain.ApprovalRequest         // id -> approval
-	approvalsByOrg   map[string][]string                        // orgID -> []approvalID
-	onboardingStates map[string]*domain.OnboardingState         // orgID -> state
-	oneTimeTokens    map[string]*ottEntry                       // token -> entry
-	pendingRegs      map[string]*domain.PendingRegistration     // email -> pending reg
+	orgs             map[string]*domain.Organization
+	users            map[string]*domain.User       // id -> user
+	usersByEmail     map[string]*domain.User       // email -> user
+	orgMembers       map[string][]domain.OrgMember // orgID -> members
+	orgMembersByID   map[string]*domain.OrgMember  // memberID -> member
+	projects         map[string]*domain.Project
+	projectsByOrg    map[string][]string // orgID -> []projectID
+	envs             map[string]*domain.Environment
+	envsByProject    map[string][]string          // projectID -> []envID
+	flags            map[string]*domain.Flag      // "projectID:key" -> flag
+	flagsByProject   map[string][]string          // projectID -> []keys
+	flagStates       map[string]*domain.FlagState // "flagID:envID" -> state
+	segments         map[string]*domain.Segment   // "projectID:key" -> segment
+	apiKeys          map[string]*domain.APIKey    // keyHash -> apikey
+	apiKeysByEnv     map[string][]string          // envID -> []keyHash
+	apiKeysById      map[string]*domain.APIKey    // id -> apikey
+	auditEntries     []domain.AuditEntry
+	envPerms         map[string][]domain.EnvPermission      // memberID -> perms
+	envPermsById     map[string]*domain.EnvPermission       // id -> perm
+	webhooks         map[string]*domain.Webhook             // id -> webhook
+	webhooksByOrg    map[string][]string                    // orgID -> []webhookID
+	whDeliveries     map[string][]domain.WebhookDelivery    // webhookID -> deliveries
+	approvals        map[string]*domain.ApprovalRequest     // id -> approval
+	approvalsByOrg   map[string][]string                    // orgID -> []approvalID
+	onboardingStates map[string]*domain.OnboardingState     // orgID -> state
+	oneTimeTokens    map[string]*ottEntry                   // token -> entry
+	pendingRegs      map[string]*domain.PendingRegistration // email -> pending reg
 	salesInquiries   []*domain.SalesInquiry
-	ssoByOrgID       map[string]*domain.SSOConfig        // orgID -> sso config
-	ssoConfigs       map[string]*domain.SSOConfig        // orgSlug -> sso config
+	ssoByOrgID       map[string]*domain.SSOConfig // orgID -> sso config
+	ssoConfigs       map[string]*domain.SSOConfig // orgSlug -> sso config
 	revokedTokens    map[string]bool
 	mfaSecrets       map[string]*domain.MFASecret
 	customRoles      map[string]*domain.CustomRole
-	customRolesByOrg map[string][]string // orgID -> []roleID
+	customRolesByOrg map[string][]string             // orgID -> []roleID
 	subscriptions    map[string]*domain.Subscription // stripeSubID -> subscription
 
+	// Password reset
+	passwordResetTokens map[string]*passwordResetEntry // token -> entry
+
 	idCounter int
+}
+
+type passwordResetEntry struct {
+	userID    string
+	token     string
+	expiresAt time.Time
+	usedAt    *time.Time
 }
 
 type ottEntry struct {
@@ -62,35 +73,36 @@ type ottEntry struct {
 
 func newMockStore() *mockStore {
 	return &mockStore{
-		orgs:           make(map[string]*domain.Organization),
-		users:          make(map[string]*domain.User),
-		usersByEmail:   make(map[string]*domain.User),
-		orgMembers:     make(map[string][]domain.OrgMember),
-		orgMembersByID: make(map[string]*domain.OrgMember),
-		projects:       make(map[string]*domain.Project),
-		projectsByOrg:  make(map[string][]string),
-		envs:           make(map[string]*domain.Environment),
-		envsByProject:  make(map[string][]string),
-		flags:          make(map[string]*domain.Flag),
-		flagsByProject: make(map[string][]string),
-		flagStates:     make(map[string]*domain.FlagState),
-		segments:       make(map[string]*domain.Segment),
-		apiKeys:        make(map[string]*domain.APIKey),
-		apiKeysByEnv:   make(map[string][]string),
-		apiKeysById:    make(map[string]*domain.APIKey),
-		envPerms:       make(map[string][]domain.EnvPermission),
-		envPermsById:   make(map[string]*domain.EnvPermission),
-		webhooks:       make(map[string]*domain.Webhook),
-		webhooksByOrg:    make(map[string][]string),
-		whDeliveries:     make(map[string][]domain.WebhookDelivery),
-		onboardingStates: make(map[string]*domain.OnboardingState),
-		oneTimeTokens:    make(map[string]*ottEntry),
-		pendingRegs:      make(map[string]*domain.PendingRegistration),
-		ssoByOrgID:       make(map[string]*domain.SSOConfig),
-		ssoConfigs:       make(map[string]*domain.SSOConfig),
-		customRoles:      make(map[string]*domain.CustomRole),
-		customRolesByOrg: make(map[string][]string),
-		subscriptions:    make(map[string]*domain.Subscription),
+		orgs:                make(map[string]*domain.Organization),
+		users:               make(map[string]*domain.User),
+		usersByEmail:        make(map[string]*domain.User),
+		orgMembers:          make(map[string][]domain.OrgMember),
+		orgMembersByID:      make(map[string]*domain.OrgMember),
+		projects:            make(map[string]*domain.Project),
+		projectsByOrg:       make(map[string][]string),
+		envs:                make(map[string]*domain.Environment),
+		envsByProject:       make(map[string][]string),
+		flags:               make(map[string]*domain.Flag),
+		flagsByProject:      make(map[string][]string),
+		flagStates:          make(map[string]*domain.FlagState),
+		segments:            make(map[string]*domain.Segment),
+		apiKeys:             make(map[string]*domain.APIKey),
+		apiKeysByEnv:        make(map[string][]string),
+		apiKeysById:         make(map[string]*domain.APIKey),
+		envPerms:            make(map[string][]domain.EnvPermission),
+		envPermsById:        make(map[string]*domain.EnvPermission),
+		webhooks:            make(map[string]*domain.Webhook),
+		webhooksByOrg:       make(map[string][]string),
+		whDeliveries:        make(map[string][]domain.WebhookDelivery),
+		onboardingStates:    make(map[string]*domain.OnboardingState),
+		oneTimeTokens:       make(map[string]*ottEntry),
+		pendingRegs:         make(map[string]*domain.PendingRegistration),
+		ssoByOrgID:          make(map[string]*domain.SSOConfig),
+		ssoConfigs:          make(map[string]*domain.SSOConfig),
+		customRoles:         make(map[string]*domain.CustomRole),
+		customRolesByOrg:    make(map[string][]string),
+		subscriptions:       make(map[string]*domain.Subscription),
+		passwordResetTokens: make(map[string]*passwordResetEntry),
 	}
 }
 
@@ -1372,6 +1384,47 @@ func (m *mockStore) GetDismissedHints(_ context.Context, _ string) ([]string, er
 	return nil, nil
 }
 func (m *mockStore) SetTourCompleted(_ context.Context, _ string) error { return nil }
+
+func (m *mockStore) SetPasswordResetToken(_ context.Context, userID, tokenHash string, expires time.Time, _, _ string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.passwordResetTokens[tokenHash] = &passwordResetEntry{
+		userID:    userID,
+		token:     tokenHash,
+		expiresAt: expires,
+	}
+	return nil
+}
+
+func (m *mockStore) ConsumePasswordResetToken(_ context.Context, otp string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for key, entry := range m.passwordResetTokens {
+		if entry.usedAt != nil {
+			continue
+		}
+		if time.Now().After(entry.expiresAt) {
+			continue
+		}
+		// Compare OTP against stored bcrypt hash
+		if auth.CheckPassword(otp, entry.token) {
+			now := time.Now()
+			entry.usedAt = &now
+			m.passwordResetTokens[key] = entry
+			return entry.userID, nil
+		}
+	}
+	return "", domain.ErrNotFound
+}
+
+func (m *mockStore) UpdatePassword(_ context.Context, userID, hash string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if user, ok := m.users[userID]; ok {
+		user.PasswordHash = hash
+	}
+	return nil
+}
 
 func (m *mockStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }
 func (m *mockStore) InsertStatusChecks(_ context.Context, _ []domain.StatusCheck) error {

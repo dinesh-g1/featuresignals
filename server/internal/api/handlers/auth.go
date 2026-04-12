@@ -41,15 +41,17 @@ type authStore interface {
 type AuthHandler struct {
 	store           authStore
 	jwtMgr          auth.TokenManager
+	otpSender       domain.OTPSender
 	internalChecker dto.InternalChecker
 	appBaseURL      string
 	dashboardURL    string
 }
 
-func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, appBaseURL, dashboardURL string, internalChecker dto.InternalChecker) *AuthHandler {
+func NewAuthHandler(store authStore, jwtMgr auth.TokenManager, otpSender domain.OTPSender, appBaseURL, dashboardURL string, internalChecker dto.InternalChecker) *AuthHandler {
 	return &AuthHandler{
 		store:           store,
 		jwtMgr:          jwtMgr,
+		otpSender:       otpSender,
 		internalChecker: internalChecker,
 		appBaseURL:      appBaseURL,
 		dashboardURL:    dashboardURL,
@@ -239,22 +241,41 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	failedCount, _ := h.store.CountRecentFailedAttempts(r.Context(), req.Email, time.Now().Add(-15*time.Minute))
 	if failedCount >= maxFailedLoginAttempts {
 		log.Warn("login blocked: too many failed attempts", "email", req.Email, "count", failedCount)
-		httputil.Error(w, http.StatusTooManyRequests, "Account temporarily locked due to too many failed login attempts. Please try again in 15 minutes.")
+		retryAt := time.Now().Add(15 * time.Minute)
+		httputil.JSON(w, http.StatusTooManyRequests, dto.RateLimitError{
+			Error:           "Account temporarily locked due to too many failed login attempts.",
+			AttemptsUsed:    failedCount,
+			AttemptsAllowed: maxFailedLoginAttempts,
+			RetryAfter:      retryAt.Format(time.RFC3339),
+			RetryAfterUnix:  retryAt.Unix(),
+		})
 		return
 	}
 
 	user, err := h.store.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
 		_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), false)
+		newCount, _ := h.store.CountRecentFailedAttempts(r.Context(), req.Email, time.Now().Add(-15*time.Minute))
 		log.Warn("login failed: unknown email")
-		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
+		httputil.JSON(w, http.StatusUnauthorized, dto.LoginErrorResponse{
+			Error:           "invalid credentials",
+			AttemptsUsed:    newCount,
+			AttemptsAllowed: maxFailedLoginAttempts,
+			Remaining:       max(0, maxFailedLoginAttempts-newCount),
+		})
 		return
 	}
 
 	if !auth.CheckPassword(req.Password, user.PasswordHash) {
 		_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), false)
+		newCount, _ := h.store.CountRecentFailedAttempts(r.Context(), req.Email, time.Now().Add(-15*time.Minute))
 		log.Warn("login failed: bad password", "user_id", user.ID)
-		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
+		httputil.JSON(w, http.StatusUnauthorized, dto.LoginErrorResponse{
+			Error:           "invalid credentials",
+			AttemptsUsed:    newCount,
+			AttemptsAllowed: maxFailedLoginAttempts,
+			Remaining:       max(0, maxFailedLoginAttempts-newCount),
+		})
 		return
 	}
 
@@ -511,4 +532,162 @@ func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 		resp.User = h.sanitizeUser(user)
 	}
 	httputil.JSON(w, http.StatusOK, resp)
+}
+
+// ForgotPasswordRequest represents the request to initiate password reset.
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+// ResetPasswordRequest represents the request to complete password reset.
+type ResetPasswordRequest struct {
+	OTP         string `json:"otp"`
+	NewPassword string `json:"new_password"`
+}
+
+// ForgotPassword initiates the password reset flow by sending an OTP to the
+// user's email. ALWAYS returns 200 with a generic message — regardless of
+// whether the email exists or any internal error occurs — to prevent email
+// enumeration attacks. Internal errors are logged but never exposed to the client.
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+
+	var req ForgotPasswordRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Email == "" {
+		httputil.Error(w, http.StatusBadRequest, "email is required")
+		return
+	}
+	if !validateEmail(req.Email) {
+		httputil.Error(w, http.StatusBadRequest, "invalid email format")
+		return
+	}
+
+	// ALWAYS return the same response regardless of outcome to prevent enumeration.
+	const genericMsg = "If an account exists with this email, a password reset code has been sent."
+
+	// Look up user — if not found, apply a constant delay to prevent timing
+	// enumeration, then return success anyway.
+	user, err := h.store.GetUserByEmail(r.Context(), req.Email)
+	if err != nil {
+		log.Info("password reset requested for unknown email", "email", req.Email)
+		// Constant-time delay to match the happy path (OTP gen + hash + email send)
+		time.Sleep(200 * time.Millisecond)
+		httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+		return
+	}
+
+	// Generate OTP
+	otp, err := generateOTP()
+	if err != nil {
+		log.Error("failed to generate password reset OTP", "error", err, "email", req.Email)
+		// Still return generic message — never leak internal errors
+		httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+		return
+	}
+
+	// Hash the OTP before storing (same pattern as signup OTP).
+	otpHash, err := auth.HashPassword(otp)
+	if err != nil {
+		log.Error("failed to hash password reset OTP", "error", err, "user_id", user.ID)
+		httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+		return
+	}
+
+	expires := time.Now().Add(15 * time.Minute)
+	if err := h.store.SetPasswordResetToken(r.Context(), user.ID, otpHash, expires, r.RemoteAddr, r.UserAgent()); err != nil {
+		log.Error("failed to store password reset token", "error", err, "user_id", user.ID)
+		// Still return generic message — never leak internal errors
+		httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+		return
+	}
+
+	// Send OTP email
+	if h.otpSender == nil {
+		log.Error("OTP sender not configured", "user_id", user.ID)
+		httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+		return
+	}
+	if err := h.otpSender.SendPasswordResetOTP(r.Context(), req.Email, user.Name, otp); err != nil {
+		log.Error("failed to send password reset OTP", "error", err, "user_id", user.ID)
+		// Still return generic message — never leak internal errors
+		httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+		return
+	}
+
+	log.Info("password reset OTP sent", "user_id", user.ID)
+
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: "", ActorID: &user.ID, ActorType: "user",
+		Action: "auth.forgot_password", ResourceType: "session", ResourceID: &user.ID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: genericMsg})
+}
+
+// ResetPassword completes the password reset flow by validating the OTP and
+// setting a new password.
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context())
+
+	var req ResetPasswordRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.OTP == "" {
+		httputil.Error(w, http.StatusBadRequest, "reset code is required")
+		return
+	}
+	if req.NewPassword == "" {
+		httputil.Error(w, http.StatusBadRequest, "new password is required")
+		return
+	}
+	if !ValidatePasswordStrength(req.NewPassword) {
+		httputil.Error(w, http.StatusBadRequest, "password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 digit, and 1 special character")
+		return
+	}
+
+	// Validate and consume the OTP token
+	userID, err := h.store.ConsumePasswordResetToken(r.Context(), req.OTP)
+	if err != nil {
+		log.Warn("invalid password reset token", "error", err)
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusBadRequest, "invalid or expired reset code")
+			return
+		}
+		httputil.Error(w, http.StatusBadRequest, "invalid or expired reset code")
+		return
+	}
+
+	// Hash the new password
+	hash, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		log.Error("password hashing failed", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to reset password")
+		return
+	}
+
+	// Update the password
+	if err := h.store.UpdatePassword(r.Context(), userID, hash); err != nil {
+		log.Error("failed to update password", "error", err, "user_id", userID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to reset password")
+		return
+	}
+
+	log.Info("password reset successful", "user_id", userID)
+
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: "", ActorID: &userID, ActorType: "user",
+		Action: "auth.reset_password", ResourceType: "session", ResourceID: &userID,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	httputil.JSON(w, http.StatusOK, dto.MessageResponse{Message: "Password reset successful. You can now sign in with your new password."})
 }

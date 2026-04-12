@@ -37,7 +37,7 @@ func TestNoopMailer_SendBatch(t *testing.T) {
 }
 
 func TestSMTPMailer_TemplateRendering(t *testing.T) {
-	m, err := NewSMTPMailer("localhost", 1025, "", "", "noreply@test.com", "FeatureSignals", slog.Default())
+	m, err := NewSMTPMailer("localhost", 1025, "", "", "noreply@test.com", "FeatureSignals", "https://app.featuresignals.com", slog.Default())
 	if err != nil {
 		t.Fatalf("failed to create SMTP mailer: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestSMTPMailer_TemplateRendering(t *testing.T) {
 }
 
 func TestSMTPMailer_AllTemplatesRender(t *testing.T) {
-	m, err := NewSMTPMailer("localhost", 1025, "", "", "noreply@test.com", "FeatureSignals", slog.Default())
+	m, err := NewSMTPMailer("localhost", 1025, "", "", "noreply@test.com", "FeatureSignals", "https://app.featuresignals.com", slog.Default())
 	if err != nil {
 		t.Fatalf("failed to create SMTP mailer: %v", err)
 	}

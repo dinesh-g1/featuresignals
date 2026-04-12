@@ -87,7 +87,10 @@ function handleSessionExpired() {
   }
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...options.extraHeaders,
@@ -114,18 +117,31 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     }
 
     if (res.status === 402) {
-      const upgradeError = new APIError(402, data.error || "Plan limit reached. Upgrade to Pro for unlimited access.");
+      const upgradeError = new APIError(
+        402,
+        data.error ||
+          "Plan limit reached. Upgrade to Pro for unlimited access.",
+      );
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("fs:upgrade-required", {
-          detail: { message: upgradeError.message },
-        }));
+        window.dispatchEvent(
+          new CustomEvent("fs:upgrade-required", {
+            detail: { message: upgradeError.message },
+          }),
+        );
       }
       throw upgradeError;
     }
 
-    if (res.status === 401 && data.error === "token_expired" && options.token && !options._retry) {
+    if (
+      res.status === 401 &&
+      data.error === "token_expired" &&
+      options.token &&
+      !options._retry
+    ) {
       if (!refreshPromise) {
-        refreshPromise = attemptTokenRefresh().finally(() => { refreshPromise = null; });
+        refreshPromise = attemptTokenRefresh().finally(() => {
+          refreshPromise = null;
+        });
       }
 
       const refreshed = await refreshPromise;
@@ -158,7 +174,10 @@ interface PaginatedResponse<T> {
   has_more: boolean;
 }
 
-async function requestList<T>(path: string, options: RequestOptions = {}): Promise<T[]> {
+async function requestList<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T[]> {
   const response = await request<PaginatedResponse<T> | T[]>(path, options);
   if (Array.isArray(response)) return response;
   if (response && typeof response === "object" && "data" in response) {
@@ -196,49 +215,104 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<LoginResponse>("/v1/auth/login", { method: "POST", body: data }),
   refresh: (refreshToken: string) =>
-    request<RefreshResponse>(
-      "/v1/auth/refresh", { method: "POST", body: { refresh_token: refreshToken } }),
+    request<RefreshResponse>("/v1/auth/refresh", {
+      method: "POST",
+      body: { refresh_token: refreshToken },
+    }),
   sendVerificationEmail: (token: string) =>
     request("/v1/auth/send-verification-email", { method: "POST", token }),
+
+  // Password reset
+  forgotPassword: (data: { email: string }) =>
+    request<{ message: string }>("/v1/auth/forgot-password", {
+      method: "POST",
+      body: data,
+    }),
+  resetPassword: (data: { otp: string; new_password: string }) =>
+    request<{ message: string }>("/v1/auth/reset-password", {
+      method: "POST",
+      body: data,
+    }),
 
   // Verify-first signup (OTP-based). With GeoDNS, each region's dashboard
   // talks to its co-located API. If the user selects a different data region,
   // the register page redirects to that region's dashboard before initiating.
-  initiateSignup: (data: { email: string; password: string; name: string; org_name: string; data_region?: string }) =>
-    request<{ message: string; expires_in: number }>("/v1/auth/initiate-signup", {
-      method: "POST",
-      body: data,
-    }),
+  initiateSignup: (data: {
+    email: string;
+    password: string;
+    name: string;
+    org_name: string;
+    data_region?: string;
+  }) =>
+    request<{ message: string; expires_in: number }>(
+      "/v1/auth/initiate-signup",
+      {
+        method: "POST",
+        body: data,
+      },
+    ),
   completeSignup: (data: { email: string; otp: string }) =>
     request<SignupResponse>("/v1/auth/complete-signup", {
       method: "POST",
       body: data,
     }),
   resendSignupOTP: (email: string) =>
-    request<{ message: string; expires_in: number }>("/v1/auth/resend-signup-otp", {
-      method: "POST",
-      body: { email },
-    }),
+    request<{ message: string; expires_in: number }>(
+      "/v1/auth/resend-signup-otp",
+      {
+        method: "POST",
+        body: { email },
+      },
+    ),
 
   // Regions
   listRegions: () =>
-    request<{ regions: Array<{ code: string; name: string; flag: string; api_endpoint: string; app_endpoint: string }> }>("/v1/regions", {}),
+    request<{
+      regions: Array<{
+        code: string;
+        name: string;
+        flag: string;
+        api_endpoint: string;
+        app_endpoint: string;
+      }>;
+    }>("/v1/regions", {}),
 
   // Sales inquiry
-  submitSalesInquiry: (data: { contact_name: string; email: string; company: string; team_size?: string; message?: string }) =>
-    request<{ message: string }>("/v1/sales/inquiry", { method: "POST", body: data }),
+  submitSalesInquiry: (data: {
+    contact_name: string;
+    email: string;
+    company: string;
+    team_size?: string;
+    message?: string;
+  }) =>
+    request<{ message: string }>("/v1/sales/inquiry", {
+      method: "POST",
+      body: data,
+    }),
 
   // Projects
-  listProjects: (token: string) => requestList<Project>("/v1/projects", { token }),
+  listProjects: (token: string) =>
+    requestList<Project>("/v1/projects", { token }),
   createProject: (token: string, data: { name: string; slug?: string }) =>
     request<Project>("/v1/projects", { method: "POST", body: data, token }),
-  getProject: (token: string, id: string) => request<Project>(`/v1/projects/${id}`, { token }),
+  getProject: (token: string, id: string) =>
+    request<Project>(`/v1/projects/${id}`, { token }),
 
   // Environments
   listEnvironments: (token: string, projectId: string) =>
-    requestList<Environment>(`/v1/projects/${projectId}/environments`, { token }),
-  createEnvironment: (token: string, projectId: string, data: { name: string; slug?: string; color?: string }) =>
-    request<Environment>(`/v1/projects/${projectId}/environments`, { method: "POST", body: data, token }),
+    requestList<Environment>(`/v1/projects/${projectId}/environments`, {
+      token,
+    }),
+  createEnvironment: (
+    token: string,
+    projectId: string,
+    data: { name: string; slug?: string; color?: string },
+  ) =>
+    request<Environment>(`/v1/projects/${projectId}/environments`, {
+      method: "POST",
+      body: data,
+      token,
+    }),
 
   // Flags
   listFlags: (token: string, projectId: string) =>
@@ -246,19 +320,55 @@ export const api = {
   getFlag: (token: string, projectId: string, flagKey: string) =>
     request<Flag>(`/v1/projects/${projectId}/flags/${flagKey}`, { token }),
   createFlag: (token: string, projectId: string, data: Partial<Flag>) =>
-    request<Flag>(`/v1/projects/${projectId}/flags`, { method: "POST", body: data, token }),
-  updateFlag: (token: string, projectId: string, flagKey: string, data: Partial<Flag>) =>
-    request<Flag>(`/v1/projects/${projectId}/flags/${flagKey}`, { method: "PUT", body: data, token }),
+    request<Flag>(`/v1/projects/${projectId}/flags`, {
+      method: "POST",
+      body: data,
+      token,
+    }),
+  updateFlag: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    data: Partial<Flag>,
+  ) =>
+    request<Flag>(`/v1/projects/${projectId}/flags/${flagKey}`, {
+      method: "PUT",
+      body: data,
+      token,
+    }),
   deleteFlag: (token: string, projectId: string, flagKey: string) =>
-    request(`/v1/projects/${projectId}/flags/${flagKey}`, { method: "DELETE", token }),
+    request(`/v1/projects/${projectId}/flags/${flagKey}`, {
+      method: "DELETE",
+      token,
+    }),
 
   // Flag States
-  getFlagState: (token: string, projectId: string, flagKey: string, envId: string) =>
-    request<FlagState>(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { token }),
+  getFlagState: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    envId: string,
+  ) =>
+    request<FlagState>(
+      `/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`,
+      { token },
+    ),
   listFlagStatesByEnv: (token: string, projectId: string, envId: string) =>
-    requestList<FlagState>(`/v1/projects/${projectId}/environments/${envId}/flag-states`, { token }),
-  updateFlagState: (token: string, projectId: string, flagKey: string, envId: string, data: Partial<FlagState>) =>
-    request<FlagState>(`/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`, { method: "PUT", body: data, token }),
+    requestList<FlagState>(
+      `/v1/projects/${projectId}/environments/${envId}/flag-states`,
+      { token },
+    ),
+  updateFlagState: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    envId: string,
+    data: Partial<FlagState>,
+  ) =>
+    request<FlagState>(
+      `/v1/projects/${projectId}/flags/${flagKey}/environments/${envId}`,
+      { method: "PUT", body: data, token },
+    ),
 
   // Projects (delete)
   deleteProject: (token: string, id: string) =>
@@ -266,7 +376,10 @@ export const api = {
 
   // Environments (delete)
   deleteEnvironment: (token: string, projectId: string, envId: string) =>
-    request(`/v1/projects/${projectId}/environments/${envId}`, { method: "DELETE", token }),
+    request(`/v1/projects/${projectId}/environments/${envId}`, {
+      method: "DELETE",
+      token,
+    }),
 
   // Segments
   listSegments: (token: string, projectId: string) =>
@@ -274,24 +387,56 @@ export const api = {
   getSegment: (token: string, projectId: string, segKey: string) =>
     request<Segment>(`/v1/projects/${projectId}/segments/${segKey}`, { token }),
   createSegment: (token: string, projectId: string, data: Partial<Segment>) =>
-    request<Segment>(`/v1/projects/${projectId}/segments`, { method: "POST", body: data, token }),
-  updateSegment: (token: string, projectId: string, segKey: string, data: Partial<Segment>) =>
-    request<Segment>(`/v1/projects/${projectId}/segments/${segKey}`, { method: "PUT", body: data, token }),
+    request<Segment>(`/v1/projects/${projectId}/segments`, {
+      method: "POST",
+      body: data,
+      token,
+    }),
+  updateSegment: (
+    token: string,
+    projectId: string,
+    segKey: string,
+    data: Partial<Segment>,
+  ) =>
+    request<Segment>(`/v1/projects/${projectId}/segments/${segKey}`, {
+      method: "PUT",
+      body: data,
+      token,
+    }),
   deleteSegment: (token: string, projectId: string, segKey: string) =>
-    request(`/v1/projects/${projectId}/segments/${segKey}`, { method: "DELETE", token }),
+    request(`/v1/projects/${projectId}/segments/${segKey}`, {
+      method: "DELETE",
+      token,
+    }),
 
   // API Keys
   listAPIKeys: (token: string, envId: string) =>
     requestList<APIKey>(`/v1/environments/${envId}/api-keys`, { token }),
-  createAPIKey: (token: string, envId: string, data: { name: string; type: string }) =>
-    request<APIKeyCreateResponse>(`/v1/environments/${envId}/api-keys`, { method: "POST", body: data, token }),
+  createAPIKey: (
+    token: string,
+    envId: string,
+    data: { name: string; type: string },
+  ) =>
+    request<APIKeyCreateResponse>(`/v1/environments/${envId}/api-keys`, {
+      method: "POST",
+      body: data,
+      token,
+    }),
   revokeAPIKey: (token: string, keyId: string) =>
     request(`/v1/api-keys/${keyId}`, { method: "DELETE", token }),
 
   // Audit
   listAudit: (token: string, limit?: number, offset?: number) =>
-    requestList<AuditEntry>(`/v1/audit?limit=${limit || 50}&offset=${offset || 0}`, { token }),
-  exportAudit: (token: string, format: "json" | "csv", from?: string, to?: string) => {
+    requestList<AuditEntry>(
+      `/v1/audit?limit=${limit || 50}&offset=${offset || 0}`,
+      { token },
+    ),
+  exportAudit: (
+    token: string,
+    format: "json" | "csv",
+    from?: string,
+    to?: string,
+  ) => {
     const params = new URLSearchParams({ format });
     if (from) params.set("from", from);
     if (to) params.set("to", to);
@@ -299,8 +444,7 @@ export const api = {
   },
 
   // Data Export
-  exportOrgData: (token: string) =>
-    request<Blob>("/v1/data/export", { token }),
+  exportOrgData: (token: string) => request<Blob>("/v1/data/export", { token }),
 
   // Team / Members
   listMembers: (token: string) =>
@@ -308,26 +452,61 @@ export const api = {
   inviteMember: (token: string, data: { email: string; role: string }) =>
     request("/v1/members/invite", { method: "POST", body: data, token }),
   updateMemberRole: (token: string, memberId: string, role: string) =>
-    request(`/v1/members/${memberId}`, { method: "PUT", body: { role }, token }),
+    request(`/v1/members/${memberId}`, {
+      method: "PUT",
+      body: { role },
+      token,
+    }),
   removeMember: (token: string, memberId: string) =>
     request(`/v1/members/${memberId}`, { method: "DELETE", token }),
   getMemberPermissions: (token: string, memberId: string) =>
-    requestList<EnvPermission>(`/v1/members/${memberId}/permissions`, { token }),
-  updateMemberPermissions: (token: string, memberId: string, permissions: EnvPermission[]) =>
-    request(`/v1/members/${memberId}/permissions`, { method: "PUT", body: { permissions }, token }),
+    requestList<EnvPermission>(`/v1/members/${memberId}/permissions`, {
+      token,
+    }),
+  updateMemberPermissions: (
+    token: string,
+    memberId: string,
+    permissions: EnvPermission[],
+  ) =>
+    request(`/v1/members/${memberId}/permissions`, {
+      method: "PUT",
+      body: { permissions },
+      token,
+    }),
 
   // Approvals
   listApprovals: (token: string, status?: string) =>
-    requestList<ApprovalRequest>(`/v1/approvals${status ? `?status=${status}` : ""}`, { token }),
+    requestList<ApprovalRequest>(
+      `/v1/approvals${status ? `?status=${status}` : ""}`,
+      { token },
+    ),
   getApproval: (token: string, id: string) =>
     request<ApprovalRequest>(`/v1/approvals/${id}`, { token }),
   createApproval: (token: string, data: CreateApprovalPayload) =>
-    request<ApprovalRequest>("/v1/approvals", { method: "POST", body: data, token }),
-  reviewApproval: (token: string, id: string, action: "approve" | "reject", note?: string) =>
-    request<ApprovalRequest>(`/v1/approvals/${id}/review`, { method: "POST", body: { action, note: note || "" }, token }),
+    request<ApprovalRequest>("/v1/approvals", {
+      method: "POST",
+      body: data,
+      token,
+    }),
+  reviewApproval: (
+    token: string,
+    id: string,
+    action: "approve" | "reject",
+    note?: string,
+  ) =>
+    request<ApprovalRequest>(`/v1/approvals/${id}/review`, {
+      method: "POST",
+      body: { action, note: note || "" },
+      token,
+    }),
 
   // Kill Switch
-  killFlag: (token: string, projectId: string, flagKey: string, envId: string) =>
+  killFlag: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    envId: string,
+  ) =>
     request(`/v1/projects/${projectId}/flags/${flagKey}/kill`, {
       method: "POST",
       body: { env_id: envId },
@@ -335,7 +514,13 @@ export const api = {
     }),
 
   // Flag Promotion
-  promoteFlag: (token: string, projectId: string, flagKey: string, sourceEnvId: string, targetEnvId: string) =>
+  promoteFlag: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    sourceEnvId: string,
+    targetEnvId: string,
+  ) =>
     request(`/v1/projects/${projectId}/flags/${flagKey}/promote`, {
       method: "POST",
       body: { source_env_id: sourceEnvId, target_env_id: targetEnvId },
@@ -343,20 +528,55 @@ export const api = {
     }),
 
   // Environment Comparison
-  compareEnvironments: (token: string, projectId: string, sourceEnvId: string, targetEnvId: string) =>
-    request<EnvComparisonResponse>(`/v1/projects/${projectId}/flags/compare-environments?source_env_id=${sourceEnvId}&target_env_id=${targetEnvId}`, { token }),
-  syncEnvironments: (token: string, projectId: string, data: { source_env_id: string; target_env_id: string; flag_keys: string[] }) =>
-    request(`/v1/projects/${projectId}/flags/sync-environments`, { method: "POST", body: data, token }),
+  compareEnvironments: (
+    token: string,
+    projectId: string,
+    sourceEnvId: string,
+    targetEnvId: string,
+  ) =>
+    request<EnvComparisonResponse>(
+      `/v1/projects/${projectId}/flags/compare-environments?source_env_id=${sourceEnvId}&target_env_id=${targetEnvId}`,
+      { token },
+    ),
+  syncEnvironments: (
+    token: string,
+    projectId: string,
+    data: { source_env_id: string; target_env_id: string; flag_keys: string[] },
+  ) =>
+    request(`/v1/projects/${projectId}/flags/sync-environments`, {
+      method: "POST",
+      body: data,
+      token,
+    }),
 
   // Target Inspector & Comparison
-  inspectTarget: (token: string, projectId: string, envId: string, data: TargetInput) =>
-    request<InspectTargetResult[]>(`/v1/projects/${projectId}/environments/${envId}/inspect-entity`, { method: "POST", body: data, token }),
-  compareTargets: (token: string, projectId: string, envId: string, data: { entity_a: TargetInput; entity_b: TargetInput }) =>
-    request<CompareTargetsResult[]>(`/v1/projects/${projectId}/environments/${envId}/compare-entities`, { method: "POST", body: data, token }),
+  inspectTarget: (
+    token: string,
+    projectId: string,
+    envId: string,
+    data: TargetInput,
+  ) =>
+    request<InspectTargetResult[]>(
+      `/v1/projects/${projectId}/environments/${envId}/inspect-entity`,
+      { method: "POST", body: data, token },
+    ),
+  compareTargets: (
+    token: string,
+    projectId: string,
+    envId: string,
+    data: { entity_a: TargetInput; entity_b: TargetInput },
+  ) =>
+    request<CompareTargetsResult[]>(
+      `/v1/projects/${projectId}/environments/${envId}/compare-entities`,
+      { method: "POST", body: data, token },
+    ),
 
   // Flag Usage Insights
   getFlagInsights: (token: string, projectId: string, envId: string) =>
-    requestList<FlagInsight>(`/v1/projects/${projectId}/environments/${envId}/flag-insights`, { token }),
+    requestList<FlagInsight>(
+      `/v1/projects/${projectId}/environments/${envId}/flag-insights`,
+      { token },
+    ),
 
   // Evaluation Metrics
   getEvalMetrics: (token: string) =>
@@ -367,36 +587,59 @@ export const api = {
   // Webhooks
   listWebhooks: (token: string) =>
     requestList<Webhook>("/v1/webhooks", { token }),
-  createWebhook: (token: string, data: { name: string; url: string; secret?: string; events: string[] }) =>
-    request<Webhook>("/v1/webhooks", { method: "POST", body: data, token }),
+  createWebhook: (
+    token: string,
+    data: { name: string; url: string; secret?: string; events: string[] },
+  ) => request<Webhook>("/v1/webhooks", { method: "POST", body: data, token }),
   updateWebhook: (token: string, webhookId: string, data: Partial<Webhook>) =>
-    request<Webhook>(`/v1/webhooks/${webhookId}`, { method: "PUT", body: data, token }),
+    request<Webhook>(`/v1/webhooks/${webhookId}`, {
+      method: "PUT",
+      body: data,
+      token,
+    }),
   deleteWebhook: (token: string, webhookId: string) =>
     request(`/v1/webhooks/${webhookId}`, { method: "DELETE", token }),
   listWebhookDeliveries: (token: string, webhookId: string) =>
-    requestList<WebhookDelivery>(`/v1/webhooks/${webhookId}/deliveries`, { token }),
+    requestList<WebhookDelivery>(`/v1/webhooks/${webhookId}/deliveries`, {
+      token,
+    }),
 
   // Billing
   createCheckout: (token: string, returnUrl?: string) => {
     const qs = returnUrl ? `?return_url=${encodeURIComponent(returnUrl)}` : "";
-    return request<CheckoutResponse>(`/v1/billing/checkout${qs}`, { method: "POST", token });
+    return request<CheckoutResponse>(`/v1/billing/checkout${qs}`, {
+      method: "POST",
+      token,
+    });
   },
   getSubscription: (token: string) =>
     request<BillingInfo>("/v1/billing/subscription", { token }),
   getUsage: (token: string) =>
     request<UsageInfo>("/v1/billing/usage", { token }),
   cancelSubscription: (token: string, atPeriodEnd = true) =>
-    request<{ status: string }>("/v1/billing/cancel", { method: "POST", body: { at_period_end: atPeriodEnd }, token }),
+    request<{ status: string }>("/v1/billing/cancel", {
+      method: "POST",
+      body: { at_period_end: atPeriodEnd },
+      token,
+    }),
   getBillingPortalURL: (token: string) =>
     request<{ url: string }>("/v1/billing/portal", { method: "POST", token }),
   updatePaymentGateway: (token: string, gateway: string) =>
-    request<{ gateway: string }>("/v1/billing/gateway", { method: "PUT", body: { gateway }, token }),
+    request<{ gateway: string }>("/v1/billing/gateway", {
+      method: "PUT",
+      body: { gateway },
+      token,
+    }),
 
   // Onboarding
   getOnboarding: (token: string) =>
     request<OnboardingState>("/v1/onboarding", { token }),
   updateOnboarding: (token: string, data: Record<string, boolean>) =>
-    request<OnboardingState>("/v1/onboarding", { method: "PATCH", body: data, token }),
+    request<OnboardingState>("/v1/onboarding", {
+      method: "PATCH",
+      body: data,
+      token,
+    }),
 
   // Features (plan-gated capabilities)
   getFeatures: (token: string) =>
@@ -404,7 +647,10 @@ export const api = {
 
   // Token exchange
   exchangeToken: (token: string) =>
-    request<TokenExchangeResponse>("/v1/auth/token-exchange", { method: "POST", body: { token } }),
+    request<TokenExchangeResponse>("/v1/auth/token-exchange", {
+      method: "POST",
+      body: { token },
+    }),
 
   // SSO configuration (admin)
   getSSOConfig: (token: string) =>
@@ -422,19 +668,35 @@ export const api = {
 
   // Internal analytics (admin)
   getAnalyticsOverview: (token: string, period?: string) =>
-    request<AnalyticsOverview>(`/v1/analytics/overview${period ? `?period=${period}` : ""}`, { token }),
+    request<AnalyticsOverview>(
+      `/v1/analytics/overview${period ? `?period=${period}` : ""}`,
+      { token },
+    ),
 
   // User preferences
   getDismissedHints: (token: string) =>
     request<{ hints: string[] }>("/v1/users/me/hints", { token }),
   dismissHint: (token: string, hintID: string) =>
-    request("/v1/users/me/hints", { method: "POST", body: { hint_id: hintID }, token }),
-  updateEmailPreferences: (token: string, data: { consent: boolean; preference: string }) =>
-    request("/v1/users/me/email-preferences", { method: "PUT", body: data, token }),
+    request("/v1/users/me/hints", {
+      method: "POST",
+      body: { hint_id: hintID },
+      token,
+    }),
+  updateEmailPreferences: (
+    token: string,
+    data: { consent: boolean; preference: string },
+  ) =>
+    request("/v1/users/me/email-preferences", {
+      method: "PUT",
+      body: data,
+      token,
+    }),
 
   // Feedback
-  submitFeedback: (token: string, data: { type: string; sentiment: string; message: string; page: string }) =>
-    request("/v1/feedback", { method: "POST", body: data, token }),
+  submitFeedback: (
+    token: string,
+    data: { type: string; sentiment: string; message: string; page: string },
+  ) => request("/v1/feedback", { method: "POST", body: data, token }),
 
   // Internal / Super Mode
   resetOnboarding: (token: string) =>

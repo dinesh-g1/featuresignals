@@ -25,7 +25,7 @@ func TestNewOTPSender_Validation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewOTPSender(tc.token, tc.fromEmail, "Test", "https://api.test.com", testLogger())
+			_, err := NewOTPSender(tc.token, tc.fromEmail, "Test", "https://api.test.com", "https://app.test.com", testLogger())
 			if (err != nil) != tc.wantErr {
 				t.Errorf("NewOTPSender() error = %v, wantErr %v", err, tc.wantErr)
 			}
@@ -46,7 +46,7 @@ func TestOTPSender_SendOTP_Success(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	s, err := NewOTPSender("test-token", "noreply@test.com", "Test", srv.URL, testLogger())
+	s, err := NewOTPSender("test-token", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestOTPSender_SendOTP_HTTPError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	s, _ := NewOTPSender("tok", "noreply@test.com", "Test", srv.URL, testLogger())
+	s, _ := NewOTPSender("tok", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 
 	err := s.SendOTP(context.Background(), "user@example.com", "User", "000000")
 	if err == nil {
@@ -105,7 +105,7 @@ func TestOTPSender_SendOTP_RetriesOn5xx(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	s, _ := NewOTPSender("tok", "noreply@test.com", "Test", srv.URL, testLogger())
+	s, _ := NewOTPSender("tok", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 
 	if err := s.SendOTP(context.Background(), "user@example.com", "User", "123456"); err != nil {
 		t.Fatalf("expected success after retries, got: %v", err)
@@ -117,33 +117,4 @@ func TestOTPSender_SendOTP_RetriesOn5xx(t *testing.T) {
 
 func TestOTPSender_InterfaceCompliance(t *testing.T) {
 	var _ domain.OTPSender = (*OTPSender)(nil)
-}
-
-func TestRenderOTPHTML(t *testing.T) {
-	html := renderOTPHTML("Alice", "123456")
-	if html == "" {
-		t.Fatal("rendered OTP HTML should not be empty")
-	}
-	if !containsStr(html, "123456") {
-		t.Error("OTP code should appear in rendered HTML")
-	}
-	if !containsStr(html, "Alice") {
-		t.Error("recipient name should appear in rendered HTML")
-	}
-}
-
-func TestRenderOTPHTML_EmptyName(t *testing.T) {
-	html := renderOTPHTML("", "999999")
-	if !containsStr(html, "there") {
-		t.Error("empty name should default to 'there'")
-	}
-}
-
-func containsStr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

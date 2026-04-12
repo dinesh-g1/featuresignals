@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/lifecycle"
 )
@@ -182,6 +183,78 @@ func (s *Store) SetEmailVerified(ctx context.Context, userID string) error {
 	_, err := s.pool.Exec(ctx,
 		`UPDATE users SET email_verified = true, email_verify_token = NULL, email_verify_expires_at = NULL, updated_at = now() WHERE id = $1`,
 		userID)
+	return err
+}
+
+// SetPasswordResetToken stores a password reset token for the given user.
+// It invalidates any previous unused tokens for the same user.
+func (s *Store) SetPasswordResetToken(ctx context.Context, userID, token string, expires time.Time, ip, ua string) error {
+	// Invalidate any existing unused tokens first
+	_, err := s.pool.Exec(ctx,
+		`UPDATE password_reset_tokens SET used_at = now() WHERE user_id = $1 AND used_at IS NULL`,
+		userID)
+	if err != nil {
+		return err
+	}
+	_, err = s.pool.Exec(ctx,
+		`INSERT INTO password_reset_tokens (user_id, token, expires_at, ip_address, user_agent) VALUES ($1, $2, $3, $4, $5)`,
+		userID, token, expires, ip, ua)
+	return err
+}
+
+// ConsumePasswordResetToken validates an OTP against stored hashed tokens,
+// returning the associated user ID. Returns domain.ErrNotFound if the OTP
+// is invalid, expired, or already used.
+func (s *Store) ConsumePasswordResetToken(ctx context.Context, otp string) (string, error) {
+	// Find all valid (unused, not expired) tokens
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, user_id, token, expires_at FROM password_reset_tokens WHERE used_at IS NULL AND expires_at > NOW()`)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var matchID string
+	var matchUserID string
+	found := false
+
+	for rows.Next() {
+		var id, userID, tokenHash string
+		var expiresAt time.Time
+		if err := rows.Scan(&id, &userID, &tokenHash, &expiresAt); err != nil {
+			return "", err
+		}
+		// Compare OTP against stored bcrypt hash
+		if auth.CheckPassword(otp, tokenHash) {
+			matchID = id
+			matchUserID = userID
+			found = true
+			break
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+
+	if !found {
+		return "", domain.WrapNotFound("password reset token invalid or expired")
+	}
+
+	// Mark as consumed
+	_, err = s.pool.Exec(ctx,
+		`UPDATE password_reset_tokens SET used_at = now() WHERE id = $1`,
+		matchID)
+	if err != nil {
+		return "", err
+	}
+	return matchUserID, nil
+}
+
+// UpdatePassword updates the user's password hash.
+func (s *Store) UpdatePassword(ctx context.Context, userID, newPasswordHash string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE users SET password_hash = $2, updated_at = now() WHERE id = $1`,
+		userID, newPasswordHash)
 	return err
 }
 

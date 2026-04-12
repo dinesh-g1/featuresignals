@@ -34,6 +34,7 @@ const (
 	TemplateSecurityAlert      TemplateID = "security_alert"
 	TemplateAPIKeyCreated      TemplateID = "api_key_created"
 	TemplateExportReady        TemplateID = "export_ready"
+	TemplatePasswordReset      TemplateID = "password_reset"
 
 	TemplateFeatureSpotlightSegments TemplateID = "feature_spotlight_segments"
 	TemplateFeatureSpotlightWebhooks TemplateID = "feature_spotlight_webhooks"
@@ -79,6 +80,7 @@ var TemplateMeta = map[TemplateID]EmailPriority{
 	TemplateSecurityAlert:      EmailTransactional,
 	TemplateAPIKeyCreated:      EmailImportant,
 	TemplateExportReady:        EmailTransactional,
+	TemplatePasswordReset:      EmailTransactional,
 
 	TemplateFeatureSpotlightSegments: EmailLifecycle,
 	TemplateFeatureSpotlightWebhooks: EmailLifecycle,
@@ -137,4 +139,5 @@ type Mailer interface {
 // own template, retry, and rate-limiting requirements.
 type OTPSender interface {
 	SendOTP(ctx context.Context, toEmail, toName, otp string) error
+	SendPasswordResetOTP(ctx context.Context, toEmail, toName, otp string) error
 }

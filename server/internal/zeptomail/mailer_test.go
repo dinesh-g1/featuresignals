@@ -35,7 +35,7 @@ func TestNewMailer_Validation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewMailer(tc.token, tc.fromEmail, "Test", "https://api.test.com", testLogger())
+			_, err := NewMailer(tc.token, tc.fromEmail, "Test", "https://api.test.com", "https://app.test.com", testLogger())
 			if (err != nil) != tc.wantErr {
 				t.Errorf("NewMailer() error = %v, wantErr %v", err, tc.wantErr)
 			}
@@ -56,7 +56,7 @@ func TestMailer_Send_Success(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m, err := NewMailer("test-token", "noreply@test.com", "Test", srv.URL, testLogger())
+	m, err := NewMailer("test-token", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestMailer_Send_4xxNoRetry(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, testLogger())
+	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 
 	err := m.Send(context.Background(), domain.EmailMessage{
 		To:       "user@example.com",
@@ -137,7 +137,7 @@ func TestMailer_Send_5xxRetries(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, testLogger())
+	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 
 	err := m.Send(context.Background(), domain.EmailMessage{
 		To:       "user@example.com",
@@ -165,7 +165,7 @@ func TestMailer_Send_5xxExhaustsRetries(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, testLogger())
+	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 
 	err := m.Send(context.Background(), domain.EmailMessage{
 		To:       "user@example.com",
@@ -198,7 +198,7 @@ func TestMailer_SendBatch_CollectsErrors(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, testLogger())
+	m, _ := NewMailer("tok", "noreply@test.com", "Test", srv.URL, "https://app.test.com", testLogger())
 
 	msgs := []domain.EmailMessage{
 		{To: "a@example.com", Template: domain.TemplateWelcome, Subject: "A", Data: map[string]string{"DashboardURL": "u", "DocsURL": "u"}},

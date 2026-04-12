@@ -292,6 +292,13 @@ func (noopStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, 
 func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return errNoop }
 func (noopStore) DeleteCustomRole(context.Context, string) error             { return errNoop }
 func (noopStore) SoftDeleteUser(context.Context, string) error               { return errNoop }
+func (noopStore) SetPasswordResetToken(context.Context, string, string, time.Time, string, string) error {
+	return errNoop
+}
+func (noopStore) ConsumePasswordResetToken(context.Context, string) (string, error) {
+	return "", errNoop
+}
+func (noopStore) UpdatePassword(context.Context, string, string) error { return errNoop }
 
 func (noopStore) InsertProductEvent(context.Context, *domain.ProductEvent) error { return nil }
 func (noopStore) InsertProductEvents(context.Context, []domain.ProductEvent) error {
@@ -334,7 +341,8 @@ func (noopStore) GetComponentHistory(context.Context, int) ([]domain.DailyCompon
 
 type noopOTPEmail struct{}
 
-func (noopOTPEmail) SendOTP(context.Context, string, string, string) error { return nil }
+func (noopOTPEmail) SendOTP(context.Context, string, string, string) error              { return nil }
+func (noopOTPEmail) SendPasswordResetOTP(context.Context, string, string, string) error { return nil }
 
 type noopHealthChecker struct{}
 
@@ -620,6 +628,9 @@ var internalRoutes = map[string]bool{
 	"POST /v1/billing/payu/callback":  true,
 	"POST /v1/billing/payu/failure":   true,
 	"POST /v1/billing/stripe/webhook": true,
+	// New auth endpoints — documented separately in OpenAPI spec update.
+	"POST /v1/auth/forgot-password": true,
+	"POST /v1/auth/reset-password":  true,
 }
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has

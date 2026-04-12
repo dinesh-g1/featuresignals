@@ -81,8 +81,11 @@ func TestSMTPSender_SendOTP_Success(t *testing.T) {
 		port = port*10 + int(c-'0')
 	}
 
-	sender := NewSMTPSender(host, port, "", "", "noreply@test.com", "FeatureSignals", testLogger())
-	err := sender.SendOTP(context.Background(), "user@example.com", "Alice", "123456")
+	sender, err := NewSMTPSender(host, port, "", "", "noreply@test.com", "FeatureSignals", "https://app.test.com", testLogger())
+	if err != nil {
+		t.Fatalf("NewSMTPSender() error: %v", err)
+	}
+	err = sender.SendOTP(context.Background(), "user@example.com", "Alice", "123456")
 	if err != nil {
 		t.Fatalf("SendOTP() error: %v", err)
 	}
@@ -101,8 +104,11 @@ func TestSMTPSender_SendOTP_Success(t *testing.T) {
 }
 
 func TestSMTPSender_SendOTP_DialFailure(t *testing.T) {
-	sender := NewSMTPSender("127.0.0.1", 1, "", "", "noreply@test.com", "Test", testLogger())
-	err := sender.SendOTP(context.Background(), "user@example.com", "User", "000000")
+	sender, err := NewSMTPSender("127.0.0.1", 1, "", "", "noreply@test.com", "Test", "https://app.test.com", testLogger())
+	if err != nil {
+		t.Fatalf("NewSMTPSender() error: %v", err)
+	}
+	err = sender.SendOTP(context.Background(), "user@example.com", "User", "000000")
 	if err == nil {
 		t.Fatal("expected error for unreachable host")
 	}
@@ -115,8 +121,11 @@ func TestSMTPSender_SendOTP_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	sender := NewSMTPSender("127.0.0.1", 1, "", "", "noreply@test.com", "Test", testLogger())
-	err := sender.SendOTP(ctx, "user@example.com", "User", "000000")
+	sender, err := NewSMTPSender("127.0.0.1", 1, "", "", "noreply@test.com", "Test", "https://app.test.com", testLogger())
+	if err != nil {
+		t.Fatalf("NewSMTPSender() error: %v", err)
+	}
+	err = sender.SendOTP(ctx, "user@example.com", "User", "000000")
 	if err == nil {
 		t.Fatal("expected error for cancelled context")
 	}
