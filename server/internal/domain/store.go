@@ -217,6 +217,12 @@ type ScheduleReader interface {
 	ListPendingSchedules(ctx context.Context, before time.Time) ([]FlagState, error)
 }
 
+// MagicLinkStore manages one-time login tokens for email deep links.
+type MagicLinkStore interface {
+	CreateMagicLinkToken(ctx context.Context, userID, orgID, token string, expires time.Time) error
+	ConsumeMagicLinkToken(ctx context.Context, token string) (userID, orgID string, err error)
+}
+
 // Store defines the contract for all data access operations.
 //
 // Every handler and service depends on this interface — never on a concrete
@@ -320,4 +326,5 @@ type Store interface {
 	UserPreferenceStore
 	FeedbackWriter
 	StatusRecorder
+	MagicLinkStore
 }

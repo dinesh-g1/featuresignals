@@ -2263,3 +2263,45 @@ func (s *Store) GetComponentHistory(ctx context.Context, days int) ([]domain.Dai
 	}
 	return result, rows.Err()
 }
+
+// CreateMagicLinkToken creates a one-time login token.
+func (s *Store) CreateMagicLinkToken(ctx context.Context, userID, orgID, token string, expires time.Time) error {
+	// Invalidate any existing unused tokens for this user
+	_, err := s.pool.Exec(ctx,
+		`UPDATE magic_link_tokens SET used_at = now() WHERE user_id = $1 AND used_at IS NULL`,
+		userID)
+	if err != nil {
+		return err
+	}
+	_, err = s.pool.Exec(ctx,
+		`INSERT INTO magic_link_tokens (user_id, org_id, token, expires_at) VALUES ($1, $2, $3, $4)`,
+		userID, orgID, token, expires)
+	return wrapConflict(err, "magic link token")
+}
+
+// ConsumeMagicLinkToken validates and consumes a magic link token,
+// returning the associated user and org IDs.
+func (s *Store) ConsumeMagicLinkToken(ctx context.Context, token string) (string, string, error) {
+	var userID, orgID string
+	var expiresAt time.Time
+	var usedAt *time.Time
+	err := s.pool.QueryRow(ctx,
+		`SELECT user_id, org_id, expires_at, used_at FROM magic_link_tokens WHERE token = $1`,
+		token).Scan(&userID, &orgID, &expiresAt, &usedAt)
+	if err != nil {
+		return "", "", wrapNotFound(err, "magic link token")
+	}
+	if usedAt != nil {
+		return "", "", domain.WrapExpired("magic link token already used")
+	}
+	if time.Now().After(expiresAt) {
+		return "", "", domain.WrapExpired("magic link token expired")
+	}
+	_, err = s.pool.Exec(ctx,
+		`UPDATE magic_link_tokens SET used_at = now() WHERE token = $1`,
+		token)
+	if err != nil {
+		return "", "", err
+	}
+	return userID, orgID, nil
+}

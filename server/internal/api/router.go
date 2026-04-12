@@ -181,6 +181,8 @@ func NewRouter(
 			r.Post("/auth/resend-signup-otp", signupH.ResendSignupOTP)
 			r.Post("/auth/forgot-password", authH.ForgotPassword)
 			r.Post("/auth/reset-password", authH.ResetPassword)
+			magicLinkH := handlers.NewMagicLinkHandler(store, jwtMgr, dashboardURL)
+			r.Get("/auth/magic-link", magicLinkH.Exchange)
 			r.Post("/auth/refresh", authH.Refresh)
 			r.Get("/auth/verify-email", authH.VerifyEmail)
 			r.Post("/auth/token-exchange", authH.TokenExchange)

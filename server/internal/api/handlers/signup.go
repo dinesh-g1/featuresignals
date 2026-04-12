@@ -23,11 +23,12 @@ type signupStore interface {
 	domain.EnvironmentWriter
 	domain.PendingRegistrationStore
 	domain.OnboardingStore
+	domain.MagicLinkStore
 }
 
 // SignupHandler implements the verify-first 2-step signup flow:
-//   1. InitiateSignup: validate input, hash password + OTP, store in pending_registrations, send OTP email
-//   2. CompleteSignup: verify OTP, create user + org + project + envs atomically
+//  1. InitiateSignup: validate input, hash password + OTP, store in pending_registrations, send OTP email
+//  2. CompleteSignup: verify OTP, create user + org + project + envs atomically
 type SignupHandler struct {
 	store           signupStore
 	jwtMgr          auth.TokenManager
@@ -306,6 +307,19 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer sendCancel()
+
+		// Generate a one-time magic link for auto-login from the welcome email.
+		// The link points to the magic link exchange endpoint, which consumes
+		// the token, issues JWTs, and redirects to the dashboard callback.
+		magicToken, err := generateEmailToken()
+		magicURL := h.dashboardURL + "/login?welcome=true"
+		if err == nil {
+			expires := time.Now().Add(MagicLinkExpiry)
+			if mlErr := h.store.CreateMagicLinkToken(sendCtx, user.ID, org.ID, magicToken, expires); mlErr == nil {
+				magicURL = h.dashboardURL + "/auth/magic-link?token=" + magicToken
+			}
+		}
+
 		_ = h.lifecycle.Send(sendCtx, user.ID, domain.EmailMessage{
 			To:       user.Email,
 			ToName:   user.Name,
@@ -315,6 +329,8 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 				"ToName":       user.Name,
 				"OrgName":      org.Name,
 				"DashboardURL": h.dashboardURL,
+				"MagicLinkURL": magicURL,
+				"DocsURL":      "https://docs.featuresignals.com",
 			},
 		})
 	}()

@@ -631,6 +631,7 @@ var internalRoutes = map[string]bool{
 	// New auth endpoints — documented separately in OpenAPI spec update.
 	"POST /v1/auth/forgot-password": true,
 	"POST /v1/auth/reset-password":  true,
+	"GET /v1/auth/magic-link":       true,
 }
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has
@@ -719,4 +720,10 @@ func TestAllRoutesDocumented(t *testing.T) {
 			fmt.Fprintf(os.Stderr, "  - %s\n", r)
 		}
 	}
+}
+func (noopStore) CreateMagicLinkToken(context.Context, string, string, string, time.Time) error {
+	return errNoop
+}
+func (noopStore) ConsumeMagicLinkToken(context.Context, string) (string, string, error) {
+	return "", "", errNoop
 }

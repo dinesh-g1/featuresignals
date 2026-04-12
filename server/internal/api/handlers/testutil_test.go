@@ -1433,3 +1433,6 @@ func (m *mockStore) InsertStatusChecks(_ context.Context, _ []domain.StatusCheck
 func (m *mockStore) GetComponentHistory(_ context.Context, _ int) ([]domain.DailyComponentStatus, error) {
 	return nil, nil
 }
+
+func (m *mockStore) CreateMagicLinkToken(_ context.Context, _, _, _ string, _ time.Time) error { return nil }
+func (m *mockStore) ConsumeMagicLinkToken(_ context.Context, _ string) (string, string, error) { return "", "", nil }

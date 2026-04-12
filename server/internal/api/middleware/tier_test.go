@@ -512,3 +512,5 @@ func TestIsExactProjectCreate(t *testing.T) {
 		t.Error("expected false for /v1/projects/abc/flags")
 	}
 }
+func (s *tierMockStore) CreateMagicLinkToken(context.Context, string, string, string, time.Time) error { return nil }
+func (s *tierMockStore) ConsumeMagicLinkToken(context.Context, string) (string, string, error) { return "", "", nil }

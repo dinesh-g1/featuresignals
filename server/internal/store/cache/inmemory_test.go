@@ -568,3 +568,5 @@ func TestNewCache_Initialization(t *testing.T) {
 
 	_ = time.Now() // suppress unused import
 }
+func (m *mockStore) CreateMagicLinkToken(_ context.Context, _, _, _ string, _ time.Time) error { return nil }
+func (m *mockStore) ConsumeMagicLinkToken(_ context.Context, _ string) (string, string, error) { return "", "", nil }

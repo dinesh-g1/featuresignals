@@ -1,44 +1,683 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{.Subject}}</title>
-<style>
-  body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-  .card { background: #ffffff; border-radius: 8px; padding: 40px 32px; border: 1px solid #e2e8f0; }
-  .logo { color: #4f46e5; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
-  h1 { color: #0f172a; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
-  p { color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
-  .btn { display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin: 8px 0 24px; }
-  .step { padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-  .step-num { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; background: #eef2ff; color: #4f46e5; border-radius: 50%; font-size: 12px; font-weight: 700; margin-right: 10px; }
-  .footer { text-align: center; padding: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
-  .footer a { color: #64748b; text-decoration: underline; }
-</style>
-</head>
-<body>
-<div class="wrapper">
-  <div class="card">
-    <div class="logo">FeatureSignals</div>
-    <h1>Welcome to FeatureSignals</h1>
-    <p>Hi {{.ToName}},</p>
-    <p>Your workspace is ready. You can start managing feature flags, targeting audiences, and shipping with confidence — all in under 5 minutes.</p>
-
-    <p><strong>Here's how to get started:</strong></p>
-    <div class="step"><span class="step-num">1</span> Create your first feature flag</div>
-    <div class="step"><span class="step-num">2</span> Install the SDK in your app</div>
-    <div class="step" style="border-bottom:none;"><span class="step-num">3</span> See your first evaluation</div>
-
-    <a href="{{.DashboardURL}}" class="btn">Open Your Workspace</a>
-
-    <p style="font-size:13px;color:#64748b;">Need help? Check the <a href="{{.DocsURL}}" style="color:#4f46e5;">quickstart guide</a> or reply to this email.</p>
-  </div>
-  <div class="footer">
-    <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
-    <p><a href="{{.UnsubscribeURL}}">Manage email preferences</a></p>
-  </div>
-</div>
-</body>
+<!doctype html>
+<html
+    lang="en"
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="x-apple-disable-message-reformatting" />
+        <title>{{.Subject}}</title>
+        <!--[if mso]>
+            <noscript>
+                <xml>
+                    <o:OfficeDocumentSettings>
+                        <o:AllowPNG />
+                        <o:PixelsPerInch>96</o:PixelsPerInch>
+                    </o:OfficeDocumentSettings>
+                </xml>
+            </noscript>
+        <![endif]-->
+        <style>
+            @media only screen and (max-width: 600px) {
+                .card {
+                    padding: 24px 20px !important;
+                }
+                h1 {
+                    font-size: 20px !important;
+                }
+                .cta-btn {
+                    display: block !important;
+                    width: 100% !important;
+                    text-align: center !important;
+                }
+                .step-row {
+                    display: block !important;
+                }
+                .step-row > td {
+                    display: block !important;
+                    width: 100% !important;
+                    padding: 8px 0 !important;
+                }
+            }
+            @media (prefers-color-scheme: dark) {
+                .email-bg {
+                    background-color: #1e293b !important;
+                }
+                .card-bg {
+                    background-color: #0f172a !important;
+                    border-color: #334155 !important;
+                }
+                .heading {
+                    color: #f1f5f9 !important;
+                }
+                .body-text {
+                    color: #cbd5e1 !important;
+                }
+                .cta-btn {
+                    background-color: #6366f1 !important;
+                }
+                .step-num {
+                    background-color: #312e81 !important;
+                    color: #a5b4fc !important;
+                }
+                .step-text {
+                    color: #cbd5e1 !important;
+                }
+                .footer-text {
+                    color: #64748b !important;
+                }
+                .footer-link {
+                    color: #94a3b8 !important;
+                }
+            }
+        </style>
+    </head>
+    <body
+        style="margin: 0; padding: 0; background-color: #f1f5f9"
+        class="email-bg"
+    >
+        <div
+            style="
+                display: none;
+                max-height: 0;
+                overflow: hidden;
+                opacity: 0;
+                mso-hide: all;
+            "
+            aria-hidden="true"
+        >
+            Welcome to FeatureSignals, {{.ToName}}! Your workspace
+            "{{.OrgName}}" is ready. Start managing feature flags in under 5
+            minutes.
+        </div>
+        <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            width="100%"
+            style="background-color: #f1f5f9"
+        >
+            <tr>
+                <td align="center" style="padding: 40px 16px">
+                    <!--[if mso]>
+<table role="presentation" cellpadding="0" cellspacing="0" width="600"><tr><td>
+<![endif]-->
+                    <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                        width="100%"
+                        style="
+                            max-width: 600px;
+                            background-color: #ffffff;
+                            border-radius: 12px;
+                            border: 1px solid #e2e8f0;
+                        "
+                        class="card-bg card"
+                    >
+                        <tr>
+                            <td style="padding: 40px 32px 32px">
+                                <table
+                                    role="presentation"
+                                    cellpadding="0"
+                                    cellspacing="0"
+                                    width="100%"
+                                >
+                                    <tr>
+                                        <td
+                                            align="center"
+                                            style="padding-bottom: 24px"
+                                        >
+                                            <a
+                                                href="{{.DashboardURL}}"
+                                                target="_blank"
+                                                style="text-decoration: none"
+                                            >
+                                                <!--[if mso]>
+                                                    <v:roundrect
+                                                        xmlns:v="urn:schemas-microsoft-com:vml"
+                                                        href="{{.DashboardURL}}"
+                                                        style="
+                                                            height: 40px;
+                                                            width: 180px;
+                                                        "
+                                                        arcsize="10%"
+                                                        fillcolor="#4f46e5"
+                                                    >
+                                                        <v:textbox
+                                                            inset="0,0,0,0"
+                                                            ><center
+                                                                style="
+                                                                    color: #ffffff;
+                                                                    font-family:
+                                                                        Arial,
+                                                                        sans-serif;
+                                                                    font-size: 18px;
+                                                                    font-weight: bold;
+                                                                "
+                                                            >
+                                                                FeatureSignals
+                                                            </center></v:textbox
+                                                        >
+                                                    </v:roundrect>
+                                                <![endif]-->
+                                                <!--[if !mso]><!-->
+                                                <span
+                                                    style="
+                                                        font-size: 22px;
+                                                        font-weight: 700;
+                                                        color: #4f46e5;
+                                                        font-family:
+                                                            -apple-system,
+                                                            BlinkMacSystemFont,
+                                                            &quot;Segoe UI&quot;,
+                                                            Roboto, sans-serif;
+                                                        letter-spacing: -0.02em;
+                                                    "
+                                                    >FeatureSignals</span
+                                                >
+                                                <!--<![endif]-->
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <h1
+                                                style="
+                                                    margin: 0 0 8px;
+                                                    color: #0f172a;
+                                                    font-size: 22px;
+                                                    font-weight: 600;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="heading"
+                                            >
+                                                Welcome to FeatureSignals
+                                            </h1>
+                                            <p
+                                                style="
+                                                    margin: 0 0 16px;
+                                                    color: #475569;
+                                                    font-size: 15px;
+                                                    line-height: 1.6;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="body-text"
+                                            >
+                                                Hi {{.ToName}},
+                                            </p>
+                                            <p
+                                                style="
+                                                    margin: 0 0 8px;
+                                                    color: #475569;
+                                                    font-size: 15px;
+                                                    line-height: 1.6;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="body-text"
+                                            >
+                                                Your workspace
+                                                <strong>{{.OrgName}}</strong> is
+                                                ready. You can start managing
+                                                feature flags, targeting
+                                                audiences, and shipping with
+                                                confidence.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0 0 24px">
+                                            <!--[if mso]>
+                                                <v:roundrect
+                                                    xmlns:v="urn:schemas-microsoft-com:vml"
+                                                    href="{{.MagicLinkURL}}"
+                                                    style="
+                                                        height: 44px;
+                                                        width: 220px;
+                                                        v-text-anchor: middle;
+                                                    "
+                                                    arcsize="14%"
+                                                    strokecolor="#4f46e5"
+                                                    fillcolor="#4f46e5"
+                                                >
+                                                    <w:anchorlock />
+                                                    <center
+                                                        style="
+                                                            color: #ffffff;
+                                                            font-family:
+                                                                Arial,
+                                                                sans-serif;
+                                                            font-size: 14px;
+                                                            font-weight: bold;
+                                                        "
+                                                    >
+                                                        Open Your Workspace
+                                                    </center>
+                                                </v:roundrect>
+                                            <![endif]-->
+                                            <!--[if !mso]><!-->
+                                            <a
+                                                href="{{.MagicLinkURL}}"
+                                                target="_blank"
+                                                class="cta-btn"
+                                                style="
+                                                    display: inline-block;
+                                                    background-color: #4f46e5;
+                                                    color: #ffffff;
+                                                    text-decoration: none;
+                                                    padding: 12px 32px;
+                                                    border-radius: 8px;
+                                                    font-size: 14px;
+                                                    font-weight: 600;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                >Open Your Workspace</a
+                                            >
+                                            <!--<![endif]-->
+                                            <p
+                                                style="
+                                                    margin: 8px 0 0;
+                                                    color: #94a3b8;
+                                                    font-size: 12px;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                            >
+                                                This link expires in 24 hours.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 16px 0 8px">
+                                            <p
+                                                style="
+                                                    margin: 0 0 12px;
+                                                    color: #0f172a;
+                                                    font-size: 14px;
+                                                    font-weight: 600;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="body-text"
+                                            >
+                                                Quick start — 3 steps to your
+                                                first flag:
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <table
+                                                role="presentation"
+                                                cellpadding="0"
+                                                cellspacing="0"
+                                                width="100%"
+                                                class="step-row"
+                                            >
+                                                <tr>
+                                                    <td
+                                                        style="
+                                                            padding: 8px 0;
+                                                            vertical-align: top;
+                                                            width: 36px;
+                                                        "
+                                                        class="step-row"
+                                                    >
+                                                        <span
+                                                            class="step-num"
+                                                            style="
+                                                                display: inline-block;
+                                                                width: 28px;
+                                                                height: 28px;
+                                                                line-height: 28px;
+                                                                text-align: center;
+                                                                background: #eef2ff;
+                                                                color: #4f46e5;
+                                                                border-radius: 50%;
+                                                                font-size: 13px;
+                                                                font-weight: 700;
+                                                                font-family:
+                                                                    -apple-system,
+                                                                    BlinkMacSystemFont,
+                                                                    &quot;Segoe UI&quot;,
+                                                                    Roboto,
+                                                                    sans-serif;
+                                                            "
+                                                            >1</span
+                                                        >
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 8px 0 8px
+                                                                8px;
+                                                            vertical-align: top;
+                                                        "
+                                                        class="step-row"
+                                                    >
+                                                        <p
+                                                            style="
+                                                                margin: 0;
+                                                                color: #475569;
+                                                                font-size: 14px;
+                                                                line-height: 1.5;
+                                                                font-family:
+                                                                    -apple-system,
+                                                                    BlinkMacSystemFont,
+                                                                    &quot;Segoe UI&quot;,
+                                                                    Roboto,
+                                                                    sans-serif;
+                                                            "
+                                                            class="step-text"
+                                                        >
+                                                            <strong
+                                                                >Create a
+                                                                flag</strong
+                                                            >
+                                                            — Toggle features
+                                                            on/off without
+                                                            deploying code.
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td
+                                                        style="
+                                                            padding: 8px 0;
+                                                            vertical-align: top;
+                                                            width: 36px;
+                                                        "
+                                                        class="step-row"
+                                                    >
+                                                        <span
+                                                            class="step-num"
+                                                            style="
+                                                                display: inline-block;
+                                                                width: 28px;
+                                                                height: 28px;
+                                                                line-height: 28px;
+                                                                text-align: center;
+                                                                background: #eef2ff;
+                                                                color: #4f46e5;
+                                                                border-radius: 50%;
+                                                                font-size: 13px;
+                                                                font-weight: 700;
+                                                                font-family:
+                                                                    -apple-system,
+                                                                    BlinkMacSystemFont,
+                                                                    &quot;Segoe UI&quot;,
+                                                                    Roboto,
+                                                                    sans-serif;
+                                                            "
+                                                            >2</span
+                                                        >
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 8px 0 8px
+                                                                8px;
+                                                            vertical-align: top;
+                                                        "
+                                                        class="step-row"
+                                                    >
+                                                        <p
+                                                            style="
+                                                                margin: 0;
+                                                                color: #475569;
+                                                                font-size: 14px;
+                                                                line-height: 1.5;
+                                                                font-family:
+                                                                    -apple-system,
+                                                                    BlinkMacSystemFont,
+                                                                    &quot;Segoe UI&quot;,
+                                                                    Roboto,
+                                                                    sans-serif;
+                                                            "
+                                                            class="step-text"
+                                                        >
+                                                            <strong
+                                                                >Target
+                                                                users</strong
+                                                            >
+                                                            — Roll out to
+                                                            specific audiences
+                                                            or environments.
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td
+                                                        style="
+                                                            padding: 8px 0;
+                                                            vertical-align: top;
+                                                            width: 36px;
+                                                        "
+                                                        class="step-row"
+                                                    >
+                                                        <span
+                                                            class="step-num"
+                                                            style="
+                                                                display: inline-block;
+                                                                width: 28px;
+                                                                height: 28px;
+                                                                line-height: 28px;
+                                                                text-align: center;
+                                                                background: #eef2ff;
+                                                                color: #4f46e5;
+                                                                border-radius: 50%;
+                                                                font-size: 13px;
+                                                                font-weight: 700;
+                                                                font-family:
+                                                                    -apple-system,
+                                                                    BlinkMacSystemFont,
+                                                                    &quot;Segoe UI&quot;,
+                                                                    Roboto,
+                                                                    sans-serif;
+                                                            "
+                                                            >3</span
+                                                        >
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 8px 0 8px
+                                                                8px;
+                                                            vertical-align: top;
+                                                        "
+                                                        class="step-row"
+                                                    >
+                                                        <p
+                                                            style="
+                                                                margin: 0;
+                                                                color: #475569;
+                                                                font-size: 14px;
+                                                                line-height: 1.5;
+                                                                font-family:
+                                                                    -apple-system,
+                                                                    BlinkMacSystemFont,
+                                                                    &quot;Segoe UI&quot;,
+                                                                    Roboto,
+                                                                    sans-serif;
+                                                            "
+                                                            class="step-text"
+                                                        >
+                                                            <strong
+                                                                >Ship with
+                                                                confidence</strong
+                                                            >
+                                                            — Monitor
+                                                            evaluations and flag
+                                                            health in real time.
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 24px 0 0">
+                                            <p
+                                                style="
+                                                    margin: 0;
+                                                    color: #475569;
+                                                    font-size: 13px;
+                                                    line-height: 1.6;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="body-text"
+                                            >
+                                                Need help? Check the
+                                                <a
+                                                    href="{{.DocsURL}}"
+                                                    target="_blank"
+                                                    style="
+                                                        color: #4f46e5;
+                                                        text-decoration: underline;
+                                                    "
+                                                    >quickstart guide</a
+                                                >
+                                                or reply to this email — we're
+                                                here to help.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td
+                                style="
+                                    padding: 0 32px 32px;
+                                    border-top: 1px solid #e2e8f0;
+                                "
+                            >
+                                <table
+                                    role="presentation"
+                                    cellpadding="0"
+                                    cellspacing="0"
+                                    width="100%"
+                                >
+                                    <tr>
+                                        <td
+                                            style="
+                                                padding: 24px 0 8px;
+                                                text-align: center;
+                                            "
+                                        >
+                                            <p
+                                                style="
+                                                    margin: 0 0 4px;
+                                                    color: #94a3b8;
+                                                    font-size: 12px;
+                                                    line-height: 1.5;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="footer-text"
+                                            >
+                                                FeatureSignals &middot;
+                                                Vivekananda Technology Labs
+                                            </p>
+                                            <p
+                                                style="
+                                                    margin: 0 0 4px;
+                                                    color: #94a3b8;
+                                                    font-size: 11px;
+                                                    line-height: 1.5;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="footer-text"
+                                            >
+                                                Technology Innovation Hub,
+                                                T-Hub, Hyderabad, Telangana
+                                                500032, India
+                                            </p>
+                                            <p
+                                                style="
+                                                    margin: 0;
+                                                    color: #94a3b8;
+                                                    font-size: 11px;
+                                                    line-height: 1.5;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                "
+                                                class="footer-text"
+                                            >
+                                                You received this because you
+                                                signed up for FeatureSignals.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td
+                                            align="center"
+                                            style="padding-bottom: 16px"
+                                        >
+                                            <a
+                                                href="https://featuresignals.com/privacy-policy"
+                                                target="_blank"
+                                                style="
+                                                    color: #64748b;
+                                                    font-size: 12px;
+                                                    font-family:
+                                                        -apple-system,
+                                                        BlinkMacSystemFont,
+                                                        &quot;Segoe UI&quot;,
+                                                        Roboto, sans-serif;
+                                                    text-decoration: underline;
+                                                "
+                                                class="footer-link"
+                                                >Privacy Policy</a
+                                            >
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <!--[if mso]>
+</td></tr></table>
+<![endif]-->
+                </td>
+            </tr>
+        </table>
+    </body>
 </html>
