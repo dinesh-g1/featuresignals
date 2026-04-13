@@ -96,6 +96,15 @@ function getInFlightKey(path: string, method: string): string {
   return `${method}:${path}`;
 }
 
+/**
+ * Reset internal API state (refresh promise, in-flight requests, etc).
+ * Used by tests to ensure clean state between test cases.
+ */
+export function resetAPIState(): void {
+  refreshPromise = null;
+  inFlightRequests.clear();
+}
+
 // --- Offline detection ---
 export function isOnline(): boolean {
   if (typeof navigator === "undefined") return true;
@@ -258,9 +267,13 @@ async function requestWithRetry<T>(
           !options._retry
         ) {
           if (!refreshPromise) {
-            refreshPromise = attemptTokenRefresh().finally(() => {
-              refreshPromise = null;
-            });
+            // .catch(() => {}) prevents unhandled rejection warnings while
+            // still allowing the await below to propagate errors correctly.
+            refreshPromise = attemptTokenRefresh()
+              .finally(() => {
+                refreshPromise = null;
+              })
+              .catch(() => false);
           }
 
           const refreshed = await refreshPromise;

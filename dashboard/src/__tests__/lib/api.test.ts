@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useAppStore } from "@/stores/app-store";
-import { api, APIError } from "@/lib/api";
+import { api, APIError, resetAPIState } from "@/lib/api";
 
 const API_URL = "http://localhost:8080";
 
@@ -32,16 +32,27 @@ describe("api.ts request interceptor", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     useAppStore.getState().logout();
+    resetAPIState();
 
     originalLocation = Object.getOwnPropertyDescriptor(window, "location");
+    // Stub location.href as a no-op setter to prevent jsdom navigation side effects
     Object.defineProperty(window, "location", {
       writable: true,
-      value: { href: "" },
+      value: {
+        href: "",
+        assign: vi.fn(),
+        replace: vi.fn(),
+        reload: vi.fn(),
+      },
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.restoreAllMocks();
+    resetAPIState();
+    // Let any in-flight async operations (like refresh promise) settle
+    // to prevent unhandled rejections from bleeding into subsequent tests
+    await new Promise((resolve) => setTimeout(resolve, 0));
     if (originalLocation) {
       Object.defineProperty(window, "location", originalLocation);
     }
@@ -64,14 +75,11 @@ describe("api.ts request interceptor", () => {
   it("throws APIError for non-2xx non-401 responses", async () => {
     fetchMock.mockResolvedValue(jsonResponse(400, { error: "bad request" }));
 
-    try {
-      await api.listProjects("tok");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-      expect((err as APIError).status).toBe(400);
-      expect((err as APIError).message).toBe("bad request");
-    }
+    await expect(api.listProjects("tok")).rejects.toThrow(APIError);
+    await expect(api.listProjects("tok")).rejects.toMatchObject({
+      status: 400,
+      message: "bad request",
+    });
   });
 
   it("on 401 token_expired: refreshes token and retries original request", async () => {
@@ -129,22 +137,20 @@ describe("api.ts request interceptor", () => {
   });
 
   it("on 401 token_expired with failed refresh: logs out and redirects", async () => {
-    useAppStore
-      .getState()
-      .setAuth(
-        "old-token",
-        "bad-refresh",
-        {
-          id: "u1",
-          name: "Test",
-          email: "test@test.com",
-          email_verified: true,
-          created_at: "2025-01-01T00:00:00Z",
-          updated_at: "2025-01-01T00:00:00Z",
-        },
-        undefined,
-        1000,
-      );
+    useAppStore.getState().setAuth(
+      "old-token",
+      "bad-refresh",
+      {
+        id: "u1",
+        name: "Test",
+        email: "test@test.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      undefined,
+      1000,
+    );
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
@@ -152,13 +158,9 @@ describe("api.ts request interceptor", () => {
         jsonResponse(401, { error: "invalid refresh token" }),
       );
 
-    try {
-      await api.listProjects("old-token");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-      expect((err as APIError).status).toBe(401);
-    }
+    await expect(api.listProjects("old-token")).rejects.toMatchObject({
+      status: 401,
+    });
 
     expect(useAppStore.getState().token).toBeNull();
     expect(useAppStore.getState().refreshToken).toBeNull();
@@ -183,39 +185,27 @@ describe("api.ts request interceptor", () => {
       jsonResponse(401, { error: "token_expired" }),
     );
 
-    try {
-      await api.listProjects("old-token");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-    }
+    await expect(api.listProjects("old-token")).rejects.toThrow(APIError);
 
     expect(useAppStore.getState().token).toBeNull();
     expect(window.location.href).toBe("/login?session_expired=true");
   });
 
   it("on 401 with non-expired error (tampered token): logs out without refresh attempt", async () => {
-    useAppStore
-      .getState()
-      .setAuth("bad-token", "valid-refresh", {
-        id: "u1",
-        name: "Test",
-        email: "test@test.com",
-        email_verified: true,
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      });
+    useAppStore.getState().setAuth("bad-token", "valid-refresh", {
+      id: "u1",
+      name: "Test",
+      email: "test@test.com",
+      email_verified: true,
+      created_at: "2025-01-01T00:00:00Z",
+      updated_at: "2025-01-01T00:00:00Z",
+    });
 
     fetchMock.mockResolvedValueOnce(
       jsonResponse(401, { error: "invalid or expired token" }),
     );
 
-    try {
-      await api.listProjects("bad-token");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-    }
+    await expect(api.listProjects("bad-token")).rejects.toThrow(APIError);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().token).toBeNull();
@@ -223,16 +213,14 @@ describe("api.ts request interceptor", () => {
   });
 
   it("does not retry a request that has already been retried (_retry flag)", async () => {
-    useAppStore
-      .getState()
-      .setAuth("tok", "ref", {
-        id: "u1",
-        name: "Test",
-        email: "test@test.com",
-        email_verified: true,
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      });
+    useAppStore.getState().setAuth("tok", "ref", {
+      id: "u1",
+      name: "Test",
+      email: "test@test.com",
+      email_verified: true,
+      created_at: "2025-01-01T00:00:00Z",
+      updated_at: "2025-01-01T00:00:00Z",
+    });
 
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }))
@@ -247,33 +235,26 @@ describe("api.ts request interceptor", () => {
       )
       .mockResolvedValueOnce(jsonResponse(401, { error: "token_expired" }));
 
-    try {
-      await api.listProjects("tok");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-    }
+    await expect(api.listProjects("tok")).rejects.toThrow(APIError);
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("concurrent 401s share a single refresh (mutex)", async () => {
-    useAppStore
-      .getState()
-      .setAuth(
-        "old-token",
-        "valid-refresh",
-        {
-          id: "u1",
-          name: "Test",
-          email: "test@test.com",
-          email_verified: true,
-          created_at: "2025-01-01T00:00:00Z",
-          updated_at: "2025-01-01T00:00:00Z",
-        },
-        undefined,
-        1000,
-      );
+    useAppStore.getState().setAuth(
+      "old-token",
+      "valid-refresh",
+      {
+        id: "u1",
+        name: "Test",
+        email: "test@test.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      undefined,
+      1000,
+    );
 
     let callCount = 0;
     fetchMock.mockImplementation(async (url: string) => {
@@ -315,13 +296,9 @@ describe("api.ts request interceptor", () => {
       jsonResponse(403, { error: "account_deleted" }),
     );
 
-    try {
-      await api.listProjects("tok");
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-      expect((err as APIError).status).toBe(403);
-    }
+    await expect(api.listProjects("tok")).rejects.toMatchObject({
+      status: 403,
+    });
 
     expect(window.location.href).toBe("/register");
   });
@@ -338,12 +315,7 @@ describe("api.ts request interceptor", () => {
       jsonResponse(401, { error: "token_expired" }),
     );
 
-    try {
-      await api.getPricing();
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-    }
+    await expect(api.getPricing()).rejects.toThrow(APIError);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -427,13 +399,11 @@ describe("api.completeSignup region header", () => {
       jsonResponse(500, { error: "internal error" }),
     );
 
-    try {
-      await api.completeSignup({ email: "test@example.com", otp: "123456" });
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(APIError);
-      expect((err as APIError).status).toBe(500);
-      expect((err as APIError).message).toBe("internal error");
-    }
+    await expect(
+      api.completeSignup({ email: "test@example.com", otp: "123456" }),
+    ).rejects.toMatchObject({
+      status: 500,
+      message: "internal error",
+    });
   });
 });
