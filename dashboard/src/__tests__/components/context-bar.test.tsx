@@ -1,21 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ContextBar } from "@/components/context-bar";
 
 const mockSetCurrentProject = vi.fn();
 const mockSetCurrentEnv = vi.fn();
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/dashboard",
+}));
+
 vi.mock("@/lib/api", () => ({
   api: {
     listProjects: vi.fn(),
     listEnvironments: vi.fn(),
+    getProject: vi.fn(),
     createProject: vi.fn(),
     createEnvironment: vi.fn(),
   },
 }));
 
 vi.mock("@/stores/app-store", () => ({
-  useAppStore: (selector: any) => {
+  useAppStore: (selector: (s: any) => any) => {
     const state = {
       token: "test-token",
       currentProjectId: "proj-1",
@@ -25,33 +31,6 @@ vi.mock("@/stores/app-store", () => ({
     };
     return selector(state);
   },
-}));
-
-vi.mock("@/components/ui/select", () => ({
-  Select: ({
-    value,
-    onValueChange,
-    options,
-    placeholder,
-  }: {
-    value: string;
-    onValueChange: (v: string) => void;
-    options: { value: string; label: string }[];
-    placeholder?: string;
-  }) => (
-    <select
-      data-testid="mock-select"
-      value={value}
-      onChange={(e) => onValueChange(e.target.value)}
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  ),
 }));
 
 vi.mock("@/components/create-project-dialog", () => ({
@@ -67,6 +46,7 @@ import { api } from "@/lib/api";
 const mockApi = api as unknown as {
   listProjects: ReturnType<typeof vi.fn>;
   listEnvironments: ReturnType<typeof vi.fn>;
+  getProject: ReturnType<typeof vi.fn>;
 };
 
 describe("ContextBar", () => {
@@ -77,61 +57,62 @@ describe("ContextBar", () => {
       { id: "proj-2", name: "Beta" },
     ]);
     mockApi.listEnvironments.mockResolvedValue([
-      { id: "env-1", name: "Production" },
-      { id: "env-2", name: "Staging" },
+      { id: "env-1", name: "Production", slug: "production" },
+      { id: "env-2", name: "Staging", slug: "staging" },
     ]);
+    mockApi.getProject.mockResolvedValue({ id: "proj-1", name: "Alpha" });
   });
 
-  it("calls api.listProjects on mount", async () => {
-    // Arrange & Act
+  it("renders the context bar with project and environment selectors", async () => {
     render(<ContextBar />);
 
-    // Assert
     await waitFor(() => {
       expect(mockApi.listProjects).toHaveBeenCalledWith("test-token");
     });
+
+    // Check that project selector is rendered (combobox trigger)
+    expect(screen.getByRole("button", { name: /Alpha/ })).toBeInTheDocument();
   });
 
-  it("calls api.listEnvironments when project is set", async () => {
-    // Arrange & Act
+  it("renders the environment selector when project is set", async () => {
     render(<ContextBar />);
 
-    // Assert
     await waitFor(() => {
-      expect(mockApi.listEnvironments).toHaveBeenCalledWith("test-token", "proj-1");
+      expect(mockApi.listEnvironments).toHaveBeenCalledWith(
+        "test-token",
+        "proj-1",
+      );
+    });
+
+    // Check that environment selector is rendered
+    expect(
+      screen.getByRole("button", { name: /Production/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows create buttons when no projects exist", async () => {
+    mockApi.listProjects.mockResolvedValue([]);
+
+    render(<ContextBar />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Create Project")).toBeInTheDocument();
     });
   });
 
-  it("renders project select", async () => {
-    // Arrange & Act
+  it("shows create environment button when no environments exist", async () => {
+    mockApi.listEnvironments.mockResolvedValue([]);
+
     render(<ContextBar />);
 
-    // Assert
     await waitFor(() => {
-      const selects = screen.getAllByTestId("mock-select");
-      expect(selects.length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText("Create Environment")).toBeInTheDocument();
     });
   });
 
-  it("renders environment select", async () => {
-    // Arrange & Act
+  it("renders the command palette button", async () => {
     render(<ContextBar />);
 
-    // Assert
-    await waitFor(() => {
-      const selects = screen.getAllByTestId("mock-select");
-      expect(selects.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  it("shows '+' buttons for create dialogs", async () => {
-    // Arrange & Act
-    render(<ContextBar />);
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.getByTitle("Create new project")).toBeInTheDocument();
-      expect(screen.getByTitle("Create new environment")).toBeInTheDocument();
-    });
+    expect(screen.getByLabelText("Open command palette")).toBeInTheDocument();
   });
 });

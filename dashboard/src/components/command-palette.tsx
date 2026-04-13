@@ -6,6 +6,14 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import type { Flag, Segment } from "@/lib/types";
 import { DOCS_LINKS } from "@/components/docs-link";
+import { Search } from "lucide-react";
+
+// Shared open state for external triggers
+let externalOpenSetter: ((open: boolean) => void) | null = null;
+
+export function openCommandPalette() {
+  externalOpenSetter?.(true);
+}
 
 interface PaletteItem {
   id: string;
@@ -18,59 +26,299 @@ interface PaletteItem {
 }
 
 const NAV_ITEMS: PaletteItem[] = [
-  { id: "nav-overview", label: "Overview", category: "navigation", href: "/dashboard" },
+  {
+    id: "nav-overview",
+    label: "Overview",
+    category: "navigation",
+    href: "/dashboard",
+  },
   { id: "nav-flags", label: "Flags", category: "navigation", href: "/flags" },
-  { id: "nav-segments", label: "Segments", category: "navigation", href: "/segments" },
-  { id: "nav-env-comparison", label: "Env Comparison", category: "navigation", href: "/env-comparison" },
-  { id: "nav-target-inspector", label: "Target Inspector", category: "navigation", href: "/target-inspector" },
-  { id: "nav-target-comparison", label: "Target Comparison", category: "navigation", href: "/target-comparison" },
-  { id: "nav-metrics", label: "Metrics", category: "navigation", href: "/metrics" },
-  { id: "nav-usage-insights", label: "Usage Insights", category: "navigation", href: "/usage-insights" },
-  { id: "nav-health", label: "Flag Health", category: "navigation", href: "/health" },
-  { id: "nav-audit", label: "Audit Log", category: "navigation", href: "/audit" },
-  { id: "nav-approvals", label: "Approvals", category: "navigation", href: "/approvals" },
-  { id: "nav-settings", label: "Settings", category: "navigation", href: "/settings/general" },
-  { id: "nav-team", label: "Team", category: "navigation", href: "/settings/team" },
-  { id: "nav-api-keys", label: "API Keys", category: "navigation", href: "/settings/api-keys" },
-  { id: "nav-webhooks", label: "Webhooks", category: "navigation", href: "/settings/webhooks" },
-  { id: "nav-billing", label: "Billing", category: "navigation", href: "/settings/billing" },
-  { id: "nav-notifications", label: "Notifications", category: "navigation", href: "/settings/notifications" },
-  { id: "nav-sso", label: "SSO", category: "navigation", href: "/settings/sso" },
+  {
+    id: "nav-segments",
+    label: "Segments",
+    category: "navigation",
+    href: "/segments",
+  },
+  {
+    id: "nav-env-comparison",
+    label: "Env Comparison",
+    category: "navigation",
+    href: "/env-comparison",
+  },
+  {
+    id: "nav-target-inspector",
+    label: "Target Inspector",
+    category: "navigation",
+    href: "/target-inspector",
+  },
+  {
+    id: "nav-target-comparison",
+    label: "Target Comparison",
+    category: "navigation",
+    href: "/target-comparison",
+  },
+  {
+    id: "nav-metrics",
+    label: "Metrics",
+    category: "navigation",
+    href: "/metrics",
+  },
+  {
+    id: "nav-usage-insights",
+    label: "Usage Insights",
+    category: "navigation",
+    href: "/usage-insights",
+  },
+  {
+    id: "nav-health",
+    label: "Flag Health",
+    category: "navigation",
+    href: "/health",
+  },
+  {
+    id: "nav-audit",
+    label: "Audit Log",
+    category: "navigation",
+    href: "/audit",
+  },
+  {
+    id: "nav-approvals",
+    label: "Approvals",
+    category: "navigation",
+    href: "/approvals",
+  },
+  {
+    id: "nav-settings",
+    label: "Settings",
+    category: "navigation",
+    href: "/settings/general",
+  },
+  {
+    id: "nav-team",
+    label: "Team",
+    category: "navigation",
+    href: "/settings/team",
+  },
+  {
+    id: "nav-api-keys",
+    label: "API Keys",
+    category: "navigation",
+    href: "/settings/api-keys",
+  },
+  {
+    id: "nav-webhooks",
+    label: "Webhooks",
+    category: "navigation",
+    href: "/settings/webhooks",
+  },
+  {
+    id: "nav-billing",
+    label: "Billing",
+    category: "navigation",
+    href: "/settings/billing",
+  },
+  {
+    id: "nav-notifications",
+    label: "Notifications",
+    category: "navigation",
+    href: "/settings/notifications",
+  },
+  {
+    id: "nav-sso",
+    label: "SSO",
+    category: "navigation",
+    href: "/settings/sso",
+  },
 ];
 
 const CREATE_ITEMS: PaletteItem[] = [
-  { id: "create-flag", label: "Create Flag", description: "Create a new feature flag", category: "create", href: "/flags?create=true" },
-  { id: "create-segment", label: "Create Segment", description: "Create a new user segment", category: "create", href: "/segments?create=true" },
-  { id: "create-project", label: "Create Project", description: "Set up a new project", category: "create", href: "/onboarding" },
-  { id: "create-api-key", label: "Create API Key", description: "Generate a new API key", category: "create", href: "/settings/api-keys" },
-  { id: "create-webhook", label: "Create Webhook", description: "Set up a new webhook endpoint", category: "create", href: "/settings/webhooks" },
-  { id: "invite-member", label: "Invite Team Member", description: "Add someone to your team", category: "create", href: "/settings/team" },
+  {
+    id: "create-flag",
+    label: "Create Flag",
+    description: "Create a new feature flag",
+    category: "create",
+    href: "/flags?create=true",
+  },
+  {
+    id: "create-segment",
+    label: "Create Segment",
+    description: "Create a new user segment",
+    category: "create",
+    href: "/segments?create=true",
+  },
+  {
+    id: "create-project",
+    label: "Create Project",
+    description: "Set up a new project",
+    category: "create",
+    href: "/onboarding",
+  },
+  {
+    id: "create-api-key",
+    label: "Create API Key",
+    description: "Generate a new API key",
+    category: "create",
+    href: "/settings/api-keys",
+  },
+  {
+    id: "create-webhook",
+    label: "Create Webhook",
+    description: "Set up a new webhook endpoint",
+    category: "create",
+    href: "/settings/webhooks",
+  },
+  {
+    id: "invite-member",
+    label: "Invite Team Member",
+    description: "Add someone to your team",
+    category: "create",
+    href: "/settings/team",
+  },
 ];
 
 const HELP_ITEMS: PaletteItem[] = [
-  { id: "help-tour", label: "Replay Product Tour", description: "Walk through the dashboard features again", category: "help", href: "", action: () => {
-    useAppStore.getState().requestTour();
-    window.dispatchEvent(new Event("fs:replay-tour"));
-  }},
-  { id: "help-quickstart", label: "Quickstart Guide", description: "Get up and running in 5 minutes", category: "help", href: DOCS_LINKS.quickstart, external: true },
-  { id: "help-sdks", label: "SDK Documentation", description: "Go, Node, Python, Java, React, Vue...", category: "help", href: DOCS_LINKS.sdks, external: true },
-  { id: "help-api", label: "API Reference", description: "Full REST API documentation", category: "help", href: DOCS_LINKS.apiReference, external: true },
-  { id: "help-targeting", label: "Targeting Rules", description: "How to target users with flag rules", category: "help", href: DOCS_LINKS.targeting, external: true },
-  { id: "help-segments", label: "Segments Guide", description: "Create reusable user segments", category: "help", href: DOCS_LINKS.segments, external: true },
-  { id: "help-experiments", label: "A/B Experiments", description: "Set up A/B tests with variants", category: "help", href: DOCS_LINKS.abExperiments, external: true },
-  { id: "help-approvals", label: "Approval Workflows", description: "Require reviews for production changes", category: "help", href: DOCS_LINKS.approvals, external: true },
-  { id: "help-webhooks", label: "Webhooks Guide", description: "Set up event notifications", category: "help", href: DOCS_LINKS.webhooks, external: true },
-  { id: "help-rbac", label: "Roles & Permissions", description: "RBAC with environment-level control", category: "help", href: DOCS_LINKS.rbac, external: true },
-  { id: "help-deploy", label: "Deployment Guide", description: "Docker, Kubernetes, self-hosted setup", category: "help", href: DOCS_LINKS.deployment, external: true },
-  { id: "help-support", label: "Contact Support", description: "Email support@featuresignals.com", category: "help", href: "mailto:support@featuresignals.com", external: true },
+  {
+    id: "help-tour",
+    label: "Replay Product Tour",
+    description: "Walk through the dashboard features again",
+    category: "help",
+    href: "",
+    action: () => {
+      useAppStore.getState().requestTour();
+      window.dispatchEvent(new Event("fs:replay-tour"));
+    },
+  },
+  {
+    id: "help-quickstart",
+    label: "Quickstart Guide",
+    description: "Get up and running in 5 minutes",
+    category: "help",
+    href: DOCS_LINKS.quickstart,
+    external: true,
+  },
+  {
+    id: "help-sdks",
+    label: "SDK Documentation",
+    description: "Go, Node, Python, Java, React, Vue...",
+    category: "help",
+    href: DOCS_LINKS.sdks,
+    external: true,
+  },
+  {
+    id: "help-api",
+    label: "API Reference",
+    description: "Full REST API documentation",
+    category: "help",
+    href: DOCS_LINKS.apiReference,
+    external: true,
+  },
+  {
+    id: "help-targeting",
+    label: "Targeting Rules",
+    description: "How to target users with flag rules",
+    category: "help",
+    href: DOCS_LINKS.targeting,
+    external: true,
+  },
+  {
+    id: "help-segments",
+    label: "Segments Guide",
+    description: "Create reusable user segments",
+    category: "help",
+    href: DOCS_LINKS.segments,
+    external: true,
+  },
+  {
+    id: "help-experiments",
+    label: "A/B Experiments",
+    description: "Set up A/B tests with variants",
+    category: "help",
+    href: DOCS_LINKS.abExperiments,
+    external: true,
+  },
+  {
+    id: "help-approvals",
+    label: "Approval Workflows",
+    description: "Require reviews for production changes",
+    category: "help",
+    href: DOCS_LINKS.approvals,
+    external: true,
+  },
+  {
+    id: "help-webhooks",
+    label: "Webhooks Guide",
+    description: "Set up event notifications",
+    category: "help",
+    href: DOCS_LINKS.webhooks,
+    external: true,
+  },
+  {
+    id: "help-rbac",
+    label: "Roles & Permissions",
+    description: "RBAC with environment-level control",
+    category: "help",
+    href: DOCS_LINKS.rbac,
+    external: true,
+  },
+  {
+    id: "help-deploy",
+    label: "Deployment Guide",
+    description: "Docker, Kubernetes, self-hosted setup",
+    category: "help",
+    href: DOCS_LINKS.deployment,
+    external: true,
+  },
+  {
+    id: "help-support",
+    label: "Contact Support",
+    description: "Email support@featuresignals.com",
+    category: "help",
+    href: "mailto:support@featuresignals.com",
+    external: true,
+  },
 ];
 
 const DOCS_ITEMS: PaletteItem[] = [
-  { id: "docs-flags", label: "Feature Flags", description: "Concepts: types, lifecycle, categories", category: "docs", href: DOCS_LINKS.flags, external: true },
-  { id: "docs-environments", label: "Environments", description: "Dev, staging, production setup", category: "docs", href: DOCS_LINKS.environments, external: true },
-  { id: "docs-eval-engine", label: "Evaluation Engine", description: "How flag evaluation works", category: "docs", href: DOCS_LINKS.evalEngine, external: true },
-  { id: "docs-openfeature", label: "OpenFeature", description: "Vendor-neutral flag evaluation", category: "docs", href: DOCS_LINKS.openFeature, external: true },
-  { id: "docs-relay-proxy", label: "Relay Proxy", description: "Edge caching for low latency", category: "docs", href: DOCS_LINKS.relayProxy, external: true },
+  {
+    id: "docs-flags",
+    label: "Feature Flags",
+    description: "Concepts: types, lifecycle, categories",
+    category: "docs",
+    href: DOCS_LINKS.flags,
+    external: true,
+  },
+  {
+    id: "docs-environments",
+    label: "Environments",
+    description: "Dev, staging, production setup",
+    category: "docs",
+    href: DOCS_LINKS.environments,
+    external: true,
+  },
+  {
+    id: "docs-eval-engine",
+    label: "Evaluation Engine",
+    description: "How flag evaluation works",
+    category: "docs",
+    href: DOCS_LINKS.evalEngine,
+    external: true,
+  },
+  {
+    id: "docs-openfeature",
+    label: "OpenFeature",
+    description: "Vendor-neutral flag evaluation",
+    category: "docs",
+    href: DOCS_LINKS.openFeature,
+    external: true,
+  },
+  {
+    id: "docs-relay-proxy",
+    label: "Relay Proxy",
+    description: "Edge caching for low latency",
+    category: "docs",
+    href: DOCS_LINKS.relayProxy,
+    external: true,
+  },
 ];
 
 const categoryLabels: Record<string, string> = {
@@ -133,10 +381,19 @@ export function CommandPalette() {
             href: `/segments`,
           });
         });
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     setItems(results);
   }, [token, projectId]);
+
+  useEffect(() => {
+    externalOpenSetter = setOpen;
+    return () => {
+      externalOpenSetter = null;
+    };
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -188,11 +445,14 @@ export function CommandPalette() {
     }
   }
 
-  const grouped = filteredItems.reduce<Record<string, PaletteItem[]>>((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
-    return acc;
-  }, {});
+  const grouped = filteredItems.reduce<Record<string, PaletteItem[]>>(
+    (acc, item) => {
+      if (!acc[item.category]) acc[item.category] = [];
+      acc[item.category].push(item);
+      return acc;
+    },
+    {},
+  );
 
   const flatFiltered = Object.values(grouped).flat();
 
@@ -226,48 +486,84 @@ export function CommandPalette() {
   let flatIdx = 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" role="dialog" aria-modal="true" aria-label="Command palette">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} role="presentation" />
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
+    >
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={() => setOpen(false)}
+        role="presentation"
+      />
       <div className="relative w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl">
         <div className="flex items-center border-b border-slate-200 px-4">
-          <svg className="h-5 w-5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true" focusable="false">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            className="h-5 w-5 text-slate-400 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setSelected(0); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelected(0);
+            }}
             onKeyDown={handleKeyDown}
             placeholder={getPlaceholder(query)}
             aria-label="Search commands, flags, and segments"
             className="flex-1 border-0 bg-transparent px-3 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
           />
-          <kbd className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">ESC</kbd>
+          <kbd className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+            ESC
+          </kbd>
         </div>
 
         {/* Prefix hints */}
         {!query && (
           <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2">
             <button
-              onClick={() => { setQuery("create:"); inputRef.current?.focus(); }}
+              onClick={() => {
+                setQuery("create:");
+                inputRef.current?.focus();
+              }}
               className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
             >
               create:
             </button>
             <button
-              onClick={() => { setQuery("help:"); inputRef.current?.focus(); }}
+              onClick={() => {
+                setQuery("help:");
+                inputRef.current?.focus();
+              }}
               className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 transition-colors hover:bg-blue-100"
             >
               help:
             </button>
-            <span className="text-[10px] text-slate-400">Type a prefix to filter</span>
+            <span className="text-[10px] text-slate-400">
+              Type a prefix to filter
+            </span>
           </div>
         )}
 
         <div className="max-h-80 overflow-y-auto p-2">
           {flatFiltered.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-slate-400">
-              {query.startsWith("help:") ? "No matching docs found." : "No results found."}
+              {query.startsWith("help:")
+                ? "No matching docs found."
+                : "No results found."}
             </div>
           ) : (
             Object.entries(grouped).map(([category, categoryItems]) => (
@@ -283,20 +579,28 @@ export function CommandPalette() {
                       onClick={() => handleSelect(item)}
                       onMouseEnter={() => setSelected(idx)}
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                        selected === idx ? "bg-indigo-50 text-indigo-900" : "text-slate-700 hover:bg-slate-50"
+                        selected === idx
+                          ? "bg-indigo-50 text-indigo-900"
+                          : "text-slate-700 hover:bg-slate-50"
                       }`}
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-xs text-slate-500">
                         {categoryIcons[item.category] || "#"}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{item.label}</p>
+                        <p className="text-sm font-medium truncate">
+                          {item.label}
+                        </p>
                         {item.description && (
-                          <p className="text-xs text-slate-400 truncate">{item.description}</p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {item.description}
+                          </p>
                         )}
                       </div>
                       {item.external && (
-                        <span className="shrink-0 text-[10px] text-slate-400">\u2197</span>
+                        <span className="shrink-0 text-[10px] text-slate-400">
+                          \u2197
+                        </span>
                       )}
                       {selected === idx && (
                         <kbd className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
@@ -312,11 +616,46 @@ export function CommandPalette() {
         </div>
 
         <div className="flex items-center gap-4 border-t border-slate-200 px-4 py-2 text-[10px] text-slate-400">
-          <span><kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">&uarr;</kbd> <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">&darr;</kbd> navigate</span>
-          <span><kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">&crarr;</kbd> select</span>
-          <span><kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">esc</kbd> close</span>
+          <span>
+            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+              &uarr;
+            </kbd>{" "}
+            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+              &darr;
+            </kbd>{" "}
+            navigate
+          </span>
+          <span>
+            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+              &crarr;
+            </kbd>{" "}
+            select
+          </span>
+          <span>
+            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+              esc
+            </kbd>{" "}
+            close
+          </span>
         </div>
       </div>
     </div>
+  );
+}
+
+export function CommandPaletteButton() {
+  return (
+    <button
+      onClick={() => openCommandPalette()}
+      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-500 shadow-sm transition-all hover:border-slate-300 hover:text-slate-700 hover:shadow-md"
+      aria-label="Open command palette"
+      title="Search (⌘K)"
+    >
+      <Search className="h-3.5 w-3.5" />
+      <span className="hidden sm:inline">Search...</span>
+      <kbd className="hidden rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px] font-medium sm:inline">
+        ⌘K
+      </kbd>
+    </button>
   );
 }

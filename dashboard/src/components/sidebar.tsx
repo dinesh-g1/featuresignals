@@ -8,11 +8,28 @@ import { useSidebarStore } from "@/stores/sidebar-store";
 import { useFeatures } from "@/hooks/use-features";
 import { cn } from "@/lib/utils";
 import {
-  Home, Flag, Users, ArrowLeftRight, UserSearch, UsersRound,
-  BarChart3, Heart, PieChart, CheckCircle, ClipboardList,
-  Settings, Sparkles, LogOut, Lock, X, HelpCircle,
+  Home,
+  Flag,
+  Users,
+  ArrowLeftRight,
+  UserSearch,
+  UsersRound,
+  BarChart3,
+  Heart,
+  PieChart,
+  CheckCircle,
+  ClipboardList,
+  Settings,
+  Sparkles,
+  LogOut,
+  Lock,
+  X,
+  HelpCircle,
+  CreditCard,
+  Shield,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { CollapsibleNavGroup } from "@/components/collapsible-nav-group";
 
 interface NavItem {
   href: string;
@@ -23,12 +40,16 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
+  storageKey: string;
+  defaultExpanded?: boolean;
   items: NavItem[];
 }
 
 const navGroups: NavGroup[] = [
   {
     label: "Core",
+    storageKey: "fs:nav-core",
+    defaultExpanded: true,
     items: [
       { href: "/dashboard", label: "Overview", icon: Home },
       { href: "/flags", label: "Flags", icon: Flag },
@@ -37,6 +58,8 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Analyze",
+    storageKey: "fs:nav-analyze",
+    defaultExpanded: true,
     items: [
       { href: "/usage-insights", label: "Usage Insights", icon: BarChart3 },
       { href: "/metrics", label: "Eval Metrics", icon: PieChart },
@@ -45,19 +68,42 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Debug",
+    storageKey: "fs:nav-debug",
+    defaultExpanded: true,
     items: [
-      { href: "/env-comparison", label: "Env Comparison", icon: ArrowLeftRight },
-      { href: "/target-inspector", label: "Target Inspector", icon: UserSearch },
+      {
+        href: "/env-comparison",
+        label: "Env Comparison",
+        icon: ArrowLeftRight,
+      },
+      {
+        href: "/target-inspector",
+        label: "Target Inspector",
+        icon: UserSearch,
+      },
       { href: "/target-comparison", label: "Target Compare", icon: UsersRound },
     ],
   },
   {
     label: "Governance",
+    storageKey: "fs:nav-governance",
+    defaultExpanded: true,
     items: [
-      { href: "/approvals", label: "Approvals", icon: CheckCircle, gatedFeature: "approvals" },
+      {
+        href: "/approvals",
+        label: "Approvals",
+        icon: CheckCircle,
+        gatedFeature: "approvals",
+      },
       { href: "/audit", label: "Audit Log", icon: ClipboardList },
     ],
   },
+];
+
+// Top-level standalone items (not in collapsible groups)
+const topLevelItems: NavItem[] = [
+  { href: "/settings/billing", label: "Billing", icon: CreditCard },
+  { href: "/settings/sso", label: "SSO", icon: Shield, gatedFeature: "sso" },
 ];
 
 function NavLink({
@@ -75,7 +121,11 @@ function NavLink({
   return (
     <Link
       href={locked ? "/settings/billing" : item.href}
-      title={locked ? `Upgrade to ${requiredPlan} to unlock ${item.label}` : undefined}
+      title={
+        locked
+          ? `Upgrade to ${requiredPlan} to unlock ${item.label}`
+          : undefined
+      }
       className={cn(
         "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
         locked
@@ -93,13 +143,18 @@ function NavLink({
           "h-[18px] w-[18px] shrink-0 transition-colors duration-200",
           locked
             ? "text-slate-600"
-            : active ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300",
+            : active
+              ? "text-indigo-400"
+              : "text-slate-500 group-hover:text-slate-300",
         )}
         strokeWidth={1.5}
       />
       <span className="flex-1">{item.label}</span>
       {locked && (
-        <Lock className="h-3.5 w-3.5 shrink-0 text-amber-500/70" strokeWidth={2} />
+        <Lock
+          className="h-3.5 w-3.5 shrink-0 text-amber-500/70"
+          strokeWidth={2}
+        />
       )}
     </Link>
   );
@@ -124,7 +179,10 @@ function SidebarContent() {
   return (
     <>
       <div className="flex h-14 items-center border-b border-white/[0.06] px-4">
-        <Link href="/dashboard" className="text-xl font-bold tracking-tight text-white transition-colors duration-200 hover:text-indigo-300">
+        <Link
+          href="/dashboard"
+          className="text-xl font-bold tracking-tight text-white transition-colors duration-200 hover:text-indigo-300"
+        >
           FeatureSignals
         </Link>
         <button
@@ -136,40 +194,65 @@ function SidebarContent() {
         </button>
       </div>
 
-      <nav data-tour="sidebar-nav" className="flex-1 overflow-y-auto px-2.5 py-3" aria-label="Main navigation">
-        {navGroups.map((group, gi) => (
-          <div key={group.label} className={cn(gi > 0 && "mt-5")}>
-            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const active = pathname.startsWith(item.href);
-                const locked = item.gatedFeature ? !isEnabled(item.gatedFeature) : false;
-                const requiredPlan = item.gatedFeature ? minPlanFor(item.gatedFeature) : null;
-                return (
-                  <NavLink
-                    key={item.href}
-                    item={item}
-                    active={active}
-                    locked={locked}
-                    requiredPlan={requiredPlan}
-                  />
-                );
-              })}
-            </div>
-          </div>
+      <nav
+        data-tour="sidebar-nav"
+        className="flex-1 overflow-y-auto px-2.5 py-3"
+        aria-label="Main navigation"
+      >
+        {/* Collapsible groups */}
+        {navGroups.map((group) => (
+          <CollapsibleNavGroup
+            key={group.label}
+            label={group.label}
+            storageKey={group.storageKey}
+            defaultExpanded={group.defaultExpanded}
+            items={group.items}
+          />
         ))}
 
-        <div className="mt-5">
-          <div className="space-y-0.5">
-            <NavLink
-              item={{ href: "/settings/general", label: "Settings", icon: Settings }}
-              active={pathname.startsWith("/settings")}
-              locked={false}
-              requiredPlan={null}
-            />
-          </div>
+        {/* Divider */}
+        <div className="my-3 border-t border-white/[0.06]" />
+
+        {/* Top-level standalone items (Billing, SSO) */}
+        <div className="space-y-0.5">
+          {topLevelItems.map((item) => {
+            const active = pathname.startsWith(item.href);
+            const locked = item.gatedFeature
+              ? !isEnabled(item.gatedFeature)
+              : false;
+            const requiredPlan = item.gatedFeature
+              ? minPlanFor(item.gatedFeature)
+              : null;
+            return (
+              <NavLink
+                key={item.href}
+                item={item}
+                active={active}
+                locked={locked}
+                requiredPlan={requiredPlan}
+              />
+            );
+          })}
+        </div>
+
+        {/* Divider */}
+        <div className="my-3 border-t border-white/[0.06]" />
+
+        {/* Settings */}
+        <div className="space-y-0.5">
+          <NavLink
+            item={{
+              href: "/settings/general",
+              label: "Settings",
+              icon: Settings,
+            }}
+            active={
+              pathname.startsWith("/settings") &&
+              !topLevelItems.some((i) => pathname.startsWith(i.href))
+            }
+            locked={false}
+            requiredPlan={null}
+          />
         </div>
       </nav>
 
@@ -182,21 +265,32 @@ function SidebarContent() {
             <Sparkles className="h-4 w-4 text-indigo-400" strokeWidth={1.5} />
             <div className="min-w-0">
               <p className="text-xs font-semibold text-indigo-300">
-                {organization.plan === "trial" ? "Subscribe to Pro" : "Upgrade to Pro"}
+                {organization.plan === "trial"
+                  ? "Subscribe to Pro"
+                  : "Upgrade to Pro"}
               </p>
               <p className="text-[10px] text-indigo-400/60">
-                {organization.plan === "trial" ? "Keep Pro features after trial" : "Unlock unlimited flags"}
+                {organization.plan === "trial"
+                  ? "Keep Pro features after trial"
+                  : "Unlock unlimited flags"}
               </p>
             </div>
           </Link>
         </div>
       )}
 
-      <div data-tour="sidebar-profile" className="border-t border-white/[0.06] p-2.5">
+      <div
+        data-tour="sidebar-profile"
+        className="border-t border-white/[0.06] p-2.5"
+      >
         <div className="flex items-center justify-between rounded-lg p-2 transition-all duration-200 hover:bg-white/5">
           <div className="min-w-0 text-sm">
-            <p className="truncate font-medium text-slate-300">{user?.name || "User"}</p>
-            <p className="truncate text-xs text-slate-500">{user?.email || ""}</p>
+            <p className="truncate font-medium text-slate-300">
+              {user?.name || "User"}
+            </p>
+            <p className="truncate text-xs text-slate-500">
+              {user?.email || ""}
+            </p>
           </div>
           <div className="flex items-center gap-0.5">
             <button
@@ -208,19 +302,26 @@ function SidebarContent() {
               aria-label="Replay product tour"
               title="Take a tour"
             >
-              <HelpCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              <HelpCircle
+                className="h-4 w-4"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
             </button>
             <button
               onClick={logout}
               className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-all duration-200 hover:bg-white/10 hover:text-slate-300"
               aria-label="Sign out"
             >
-              <LogOut className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+              <LogOut
+                className="h-4 w-4"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
             </button>
           </div>
         </div>
       </div>
-
     </>
   );
 }
@@ -232,14 +333,21 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside data-tour="sidebar" className="hidden h-full w-56 shrink-0 flex-col bg-gradient-to-b from-slate-900 to-slate-950 shadow-xl shadow-slate-900/20 md:flex">
+      <aside
+        data-tour="sidebar"
+        className="hidden h-full w-56 shrink-0 flex-col bg-gradient-to-b from-slate-900 to-slate-950 shadow-xl shadow-slate-900/20 md:flex"
+      >
         <SidebarContent />
       </aside>
 
       {/* Mobile overlay */}
       {isOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={close} role="presentation" />
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
+            onClick={close}
+            role="presentation"
+          />
           <aside className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl animate-slide-in-left">
             <SidebarContent />
           </aside>
