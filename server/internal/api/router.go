@@ -87,6 +87,12 @@ func NewRouter(
 	r.With(middleware.CacheControl("public, max-age=3600")).Get("/docs", docsH.Index)
 	r.With(middleware.CacheControl("public, max-age=3600")).Get("/docs/openapi.json", docsH.OpenAPISpec)
 
+	// Swagger UI + OpenAPI spec under /v1 — development only.
+	if deployMode == "development" {
+		r.Get("/v1/docs", docsH.SwaggerUI)
+		r.With(middleware.CacheControl("public, max-age=3600")).Get("/v1/openapi.json", docsH.OpenAPISpec)
+	}
+
 	// Status page endpoints (public, cacheable)
 	if statusHandler != nil {
 		r.With(middleware.CacheControl("public, max-age=30")).Get("/v1/status", statusHandler.HandleLocalStatus)
@@ -118,7 +124,7 @@ func NewRouter(
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
 	billingH := handlers.NewBillingHandler(store, billing.Registry, billing.DashboardURL, billing.AppBaseURL, logger, emitter, lifecycle)
 	onboardingH := handlers.NewOnboardingHandler(store, logger)
-	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker, dashboardURL)
+	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker, dashboardURL, appBaseURL)
 	salesH := handlers.NewSalesHandler(store, salesNotifier, salesNotifyEmail)
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)

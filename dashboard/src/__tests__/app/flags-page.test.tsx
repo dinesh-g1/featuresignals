@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
 
 vi.mock("@/lib/api", () => ({
@@ -12,7 +18,14 @@ vi.mock("@/lib/api", () => ({
     getFlagState: vi.fn(),
     updateFlagState: vi.fn(),
     updateFlag: vi.fn(),
-    getUsage: vi.fn().mockResolvedValue({ projects_used: 1, projects_limit: 3, seats_used: 1, seats_limit: 5, environments_used: 1, environments_limit: 3 }),
+    getUsage: vi.fn().mockResolvedValue({
+      projects_used: 1,
+      projects_limit: 3,
+      seats_used: 1,
+      seats_limit: 5,
+      environments_used: 1,
+      environments_limit: 3,
+    }),
     getDismissedHints: vi.fn().mockResolvedValue({ hints: [] }),
     dismissHint: vi.fn().mockResolvedValue({}),
   },
@@ -21,6 +34,7 @@ vi.mock("@/lib/api", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => "/flags",
+  useSearchParams: () => new URLSearchParams(""),
 }));
 
 vi.mock("next/link", () => ({
@@ -82,7 +96,13 @@ const mockFlags = [
 ];
 
 const mockEnvs = [
-  { id: "env-1", name: "Production", slug: "production", color: "#4f46e5", created_at: "2025-01-01T00:00:00Z" },
+  {
+    id: "env-1",
+    name: "Production",
+    slug: "production",
+    color: "#4f46e5",
+    created_at: "2025-01-01T00:00:00Z",
+  },
 ];
 
 describe("FlagsPage", () => {
@@ -91,20 +111,72 @@ describe("FlagsPage", () => {
     queryCache.clear();
 
     const store = useAppStore.getState();
-    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
+    store.setAuth(
+      "test-token",
+      "test-refresh",
+      {
+        id: "u1",
+        name: "Test",
+        email: "test@test.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      {
+        id: "org-1",
+        name: "Test Org",
+        slug: "test-org",
+        plan: "free",
+        data_region: "us",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+    );
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
     vi.mocked(api.listFlags).mockResolvedValue(mockFlags);
     vi.mocked(api.listEnvironments).mockResolvedValue(mockEnvs);
     vi.mocked(api.listFlagStatesByEnv).mockResolvedValue([
-      { id: "fs-1", flag_id: "f1", enabled: true, rules: [], percentage_rollout: 100, updated_at: "2025-01-01T00:00:00Z" },
-      { id: "fs-2", flag_id: "f2", enabled: false, rules: [], percentage_rollout: 0, updated_at: "2025-01-01T00:00:00Z" },
+      {
+        id: "fs-1",
+        flag_id: "f1",
+        enabled: true,
+        rules: [],
+        percentage_rollout: 100,
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      {
+        id: "fs-2",
+        flag_id: "f2",
+        enabled: false,
+        rules: [],
+        percentage_rollout: 0,
+        updated_at: "2025-01-01T00:00:00Z",
+      },
     ]);
-    vi.mocked(api.getFlagState).mockResolvedValue({ id: "fs-1", enabled: true, rules: [], percentage_rollout: 100, updated_at: "2025-01-01T00:00:00Z" });
+    vi.mocked(api.getFlagState).mockResolvedValue({
+      id: "fs-1",
+      enabled: true,
+      rules: [],
+      percentage_rollout: 100,
+      updated_at: "2025-01-01T00:00:00Z",
+    });
     vi.mocked(api.updateFlagState).mockResolvedValue(undefined as never);
     vi.mocked(api.deleteFlag).mockResolvedValue(undefined as unknown as void);
-    vi.mocked(api.createFlag).mockResolvedValue({ id: "f3", key: "new-flag", name: "New Flag", description: "", flag_type: "boolean", default_value: false, category: "release", status: "active", tags: [], created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
+    vi.mocked(api.createFlag).mockResolvedValue({
+      id: "f3",
+      key: "new-flag",
+      name: "New Flag",
+      description: "",
+      flag_type: "boolean",
+      default_value: false,
+      category: "release",
+      status: "active",
+      tags: [],
+      created_at: "2025-01-01T00:00:00Z",
+      updated_at: "2025-01-01T00:00:00Z",
+    });
   });
 
   afterEach(() => {
@@ -138,7 +210,13 @@ describe("FlagsPage", () => {
     const searchInput = screen.getByPlaceholderText("Search flags...");
     fireEvent.change(searchInput, { target: { value: "max" } });
 
-    expect(screen.queryByText("enable-feature")).not.toBeInTheDocument();
+    // Search is debounced (300ms) — wait for filter to apply
+    await waitFor(
+      () => {
+        expect(screen.queryByText("enable-feature")).not.toBeInTheDocument();
+      },
+      { timeout: 500 },
+    );
     expect(screen.getByText("max-items")).toBeInTheDocument();
   });
 
@@ -148,8 +226,12 @@ describe("FlagsPage", () => {
 
     fireEvent.click(screen.getByText("Create Flag"));
 
-    expect(screen.getByPlaceholderText("new-checkout-flow")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("New Checkout Flow")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("new-checkout-flow"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("New Checkout Flow"),
+    ).toBeInTheDocument();
   });
 
   it("shows empty state when no flags", async () => {

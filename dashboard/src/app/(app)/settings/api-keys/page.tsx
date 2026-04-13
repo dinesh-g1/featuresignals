@@ -28,7 +28,11 @@ export default function APIKeysPage() {
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [newKey, setNewKey] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", type: "server" });
+  const [form, setForm] = useState({
+    name: "",
+    type: "server",
+    expires_at: "",
+  });
   const [revoking, setRevoking] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string>("");
 
@@ -70,13 +74,18 @@ export default function APIKeysPage() {
       return;
     }
     try {
+      const payload = {
+        name: form.name,
+        type: form.type,
+        ...(form.expires_at ? { expires_at: form.expires_at } : {}),
+      };
       const result: APIKeyCreateResponse = await api.createAPIKey(
         token,
         selectedEnv,
-        form,
+        payload,
       );
       setNewKey(result.key ?? null);
-      setForm({ name: "", type: "server" });
+      setForm({ name: "", type: "server", expires_at: "" });
       toast("API key created", "success");
       reloadKeys();
     } catch (err: unknown) {
@@ -103,8 +112,27 @@ export default function APIKeysPage() {
     }
   }
 
+  function formatRelativeTime(dateStr: string): string {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return "just now";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? "s" : ""} ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 30) return `${diffDay} day${diffDay > 1 ? "s" : ""} ago`;
+    const diffMo = Math.floor(diffDay / 30);
+    if (diffMo < 12) return `${diffMo} month${diffMo > 1 ? "s" : ""} ago`;
+    const diffYr = Math.floor(diffDay / 365);
+    return `${diffYr} year${diffYr > 1 ? "s" : ""} ago`;
+  }
+
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
+    toast("API key copied to clipboard", "success");
   }
 
   return (
@@ -181,6 +209,13 @@ export default function APIKeysPage() {
             options={KEY_TYPE_OPTIONS}
           />
         </div>
+        <Input
+          type="datetime-local"
+          value={form.expires_at}
+          onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+          placeholder="Expires (optional)"
+          className="sm:w-auto"
+        />
         <Button type="submit" className="shrink-0">
           Create Key
         </Button>
@@ -197,57 +232,93 @@ export default function APIKeysPage() {
               docsLabel="API key types explained"
             />
           ) : (
-            keys.map((k) => (
-              <div
-                key={k.id}
-                className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors hover:bg-indigo-50/30"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900">{k.name}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {k.key_prefix}... &middot; {k.type}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge
-                    variant={k.revoked_at ? "danger" : "success"}
-                    className="px-2.5 py-0.5 text-xs"
-                  >
-                    {k.revoked_at ? "Revoked" : "Active"}
-                  </Badge>
-                  {!k.revoked_at &&
-                    (revoking === k.id ? (
-                      <div className="flex items-center gap-1">
+            keys.map((k) => {
+              const isExpired = k.expires_at
+                ? new Date(k.expires_at) < new Date()
+                : false;
+              const isRevoked = !!k.revoked_at;
+              const isDisabled = isRevoked || isExpired;
+              return (
+                <div
+                  key={k.id}
+                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-indigo-50/30"}`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-slate-900">
+                        {k.name}
+                      </p>
+                      {isExpired && !isRevoked && (
+                        <Badge
+                          variant="default"
+                          className="px-2 py-0 text-[10px]"
+                        >
+                          Expired
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {k.key_prefix}... &middot; {k.type}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {k.last_used_at ? (
+                        `Last used ${formatRelativeTime(k.last_used_at)}`
+                      ) : (
+                        <em>Never used</em>
+                      )}
+                      {k.expires_at && (
+                        <>
+                          {" \u00B7 "}
+                          {isExpired
+                            ? `Expired ${formatRelativeTime(k.expires_at)}`
+                            : `Expires ${new Date(k.expires_at).toLocaleDateString()}`}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge
+                      variant={
+                        isRevoked ? "danger" : isExpired ? "default" : "success"
+                      }
+                      className="px-2.5 py-0.5 text-xs"
+                    >
+                      {isRevoked ? "Revoked" : isExpired ? "Expired" : "Active"}
+                    </Badge>
+                    {!isDisabled &&
+                      (revoking === k.id ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="destructive-ghost"
+                            size="sm"
+                            onClick={() => handleRevoke(k.id)}
+                            className="h-auto px-2 py-1 text-xs"
+                          >
+                            Revoke
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRevoking(null)}
+                            className="h-auto px-2 py-1 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
                         <Button
                           variant="destructive-ghost"
                           size="sm"
-                          onClick={() => handleRevoke(k.id)}
+                          onClick={() => setRevoking(k.id)}
                           className="h-auto px-2 py-1 text-xs"
                         >
                           Revoke
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setRevoking(null)}
-                          className="h-auto px-2 py-1 text-xs"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="destructive-ghost"
-                        size="sm"
-                        onClick={() => setRevoking(k.id)}
-                        className="h-auto px-2 py-1 text-xs"
-                      >
-                        Revoke
-                      </Button>
-                    ))}
+                      ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </Card>

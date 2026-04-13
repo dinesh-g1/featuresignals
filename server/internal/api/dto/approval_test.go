@@ -29,7 +29,9 @@ func TestApprovalFromDomain_StripsInternal(t *testing.T) {
 	b, _ := json.Marshal(resp)
 	s := string(b)
 
-	forbidden := []string{"org_id", "requestor_id", "reviewer_id", "payload"}
+	// requestor_id is intentionally exposed — needed by frontend for "My Requests" filtering
+	// reviewer_id and payload remain internal (PII + sensitive change data)
+	forbidden := []string{"org_id", "reviewer_id", "payload"}
 	for _, f := range forbidden {
 		if strings.Contains(s, f) {
 			t.Errorf("response must not contain %q, got: %s", f, s)

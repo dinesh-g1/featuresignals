@@ -37,6 +37,7 @@ type SignupHandler struct {
 	lifecycle       LifecycleSender
 	internalChecker dto.InternalChecker
 	dashboardURL    string
+	apiBaseURL      string
 }
 
 func NewSignupHandler(
@@ -47,6 +48,7 @@ func NewSignupHandler(
 	lifecycle LifecycleSender,
 	internalChecker dto.InternalChecker,
 	dashboardURL string,
+	apiBaseURL string,
 ) *SignupHandler {
 	if emitter == nil {
 		emitter = NoopEmitter()
@@ -62,6 +64,7 @@ func NewSignupHandler(
 		lifecycle:       lifecycle,
 		internalChecker: internalChecker,
 		dashboardURL:    dashboardURL,
+		apiBaseURL:      apiBaseURL,
 	}
 }
 
@@ -309,14 +312,16 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 		defer sendCancel()
 
 		// Generate a one-time magic link for auto-login from the welcome email.
-		// The link points to the magic link exchange endpoint, which consumes
+		// The link points to the backend magic link exchange endpoint, which consumes
 		// the token, issues JWTs, and redirects to the dashboard callback.
 		magicToken, err := generateEmailToken()
 		magicURL := h.dashboardURL + "/login?welcome=true"
 		if err == nil {
 			expires := time.Now().Add(MagicLinkExpiry)
 			if mlErr := h.store.CreateMagicLinkToken(sendCtx, user.ID, org.ID, magicToken, expires); mlErr == nil {
-				magicURL = h.dashboardURL + "/auth/magic-link?token=" + magicToken
+				// Point to the backend API endpoint, not the frontend.
+				// The magic link exchange is handled by the server at /v1/auth/magic-link.
+				magicURL = h.apiBaseURL + "/v1/auth/magic-link?token=" + magicToken
 			}
 		}
 

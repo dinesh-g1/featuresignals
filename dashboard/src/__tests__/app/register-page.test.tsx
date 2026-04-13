@@ -85,7 +85,6 @@ function fillForm(opts?: { dataRegion?: string }) {
     });
     fireEvent.click(radio);
   } else {
-    // Default to India if not specified
     const radio = screen.getByRole("radio", { name: /India/i });
     fireEvent.click(radio);
   }
@@ -103,8 +102,12 @@ describe("RegisterPage", () => {
     expect(screen.getByText("FeatureSignals")).toBeInTheDocument();
   });
 
-  it("shows password strength indicators", () => {
+  it("shows password strength indicators when password is entered", () => {
     render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "Test1!" },
+    });
 
     expect(screen.getByText("8+ characters")).toBeInTheDocument();
     expect(screen.getByText("1 uppercase letter")).toBeInTheDocument();
@@ -177,7 +180,7 @@ describe("RegisterPage", () => {
     expect(link).toHaveAttribute("href", "/login");
   });
 
-  it("back button on OTP step returns to form", async () => {
+  it("'Wrong email? Go back' button returns to form step", async () => {
     vi.mocked(api.initiateSignup).mockResolvedValue({
       message: "OK",
       expires_in: 300,
@@ -190,39 +193,54 @@ describe("RegisterPage", () => {
       expect(screen.getByText("Verify your email")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("Back to account details"));
+    fireEvent.click(screen.getByText(/Wrong email\? Go back/i));
 
     expect(screen.getByText("Create your account")).toBeInTheDocument();
   });
 
-  it("calls completeSignup with default 'in' region when no region changed", async () => {
+  it("preserves form data when going back from OTP step", async () => {
     vi.mocked(api.initiateSignup).mockResolvedValue({
       message: "OK",
       expires_in: 300,
     });
-    vi.mocked(api.completeSignup).mockResolvedValue({
-      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
-      user: {
-        id: "u1",
-        name: "Test User",
-        email: "test@example.com",
-        email_verified: true,
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      },
-      organization: {
-        id: "o1",
-        name: "Test Org",
-        slug: "test-org",
-        plan: "trial",
-        data_region: "in",
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      },
-      onboarding_completed: false,
+    render(<RegisterPage />);
+
+    fillForm();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => {
+      expect(screen.getByText("Verify your email")).toBeInTheDocument();
     });
 
+    fireEvent.click(screen.getByText(/Wrong email\? Go back/i));
+
+    const emailInput = screen.getByLabelText(/^Email/) as HTMLInputElement;
+    expect(emailInput.value).toBe("test@example.com");
+    const nameInput = screen.getByLabelText(/^Name/) as HTMLInputElement;
+    expect(nameInput.value).toBe("Test User");
+  });
+
+  it("shows OTP step with email address displayed", async () => {
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
     render(<RegisterPage />);
+
+    fillForm();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("test@example.com")).toBeInTheDocument();
+    });
+  });
+
+  it("shows Verify button disabled when OTP is empty", async () => {
+    vi.mocked(api.initiateSignup).mockResolvedValue({
+      message: "OK",
+      expires_in: 300,
+    });
+    render(<RegisterPage />);
+
     fillForm();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
@@ -230,67 +248,107 @@ describe("RegisterPage", () => {
       expect(screen.getByText("Verify your email")).toBeInTheDocument();
     });
 
-    const otpInput = screen.getByLabelText("Enter 6-digit verification code");
-    fireEvent.change(otpInput, { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: /Verify/i }));
-
-    await waitFor(() => {
-      expect(api.completeSignup).toHaveBeenCalledWith({
-        email: "test@example.com",
-        otp: "123456",
-      });
-    });
+    // Verify button should be disabled when OTP is empty
+    expect(screen.getByRole("button", { name: /Verify/i })).toBeDisabled();
   });
 
-  it("calls completeSignup without region argument when United States is selected", async () => {
+  it("shows resend cooldown text after OTP step", async () => {
     vi.mocked(api.initiateSignup).mockResolvedValue({
       message: "OK",
       expires_in: 300,
     });
-    vi.mocked(api.completeSignup).mockResolvedValue({
-      tokens: { access_token: "tok", refresh_token: "ref", expires_at: 9999 },
-      user: {
-        id: "u1",
-        name: "Test User",
-        email: "test@example.com",
-        email_verified: true,
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      },
-      organization: {
-        id: "o1",
-        name: "Test Org",
-        slug: "test-org",
-        plan: "trial",
-        data_region: "us",
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      },
-      onboarding_completed: false,
-    });
-
     render(<RegisterPage />);
-    fillForm({ dataRegion: "United States" });
 
+    fillForm();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     await waitFor(() => {
       expect(screen.getByText("Verify your email")).toBeInTheDocument();
     });
 
-    expect(api.initiateSignup).toHaveBeenCalledWith(
-      expect.objectContaining({ data_region: "us" }),
-    );
+    // Should show countdown text
+    expect(screen.getByText(/Resend code in/)).toBeInTheDocument();
+    // Resend button should NOT be visible yet
+    expect(
+      screen.queryByRole("button", { name: /Resend/ }),
+    ).not.toBeInTheDocument();
+  });
 
-    const otpInput = screen.getByLabelText("Enter 6-digit verification code");
-    fireEvent.change(otpInput, { target: { value: "654321" } });
-    fireEvent.click(screen.getByRole("button", { name: /Verify/i }));
+  it("shows inline email validation error for invalid email", () => {
+    render(<RegisterPage />);
+
+    const emailInput = screen.getByLabelText(/^Email/);
+    fireEvent.change(emailInput, { target: { value: "not-an-email" } });
+    // Blur the field to trigger inline validation (touched state)
+    fireEvent.blur(emailInput);
+
+    expect(
+      screen.getByText("Please enter a valid email address"),
+    ).toBeInTheDocument();
+  });
+
+  it("disables continue button when email is invalid", () => {
+    render(<RegisterPage />);
+
+    fillForm({ dataRegion: "India" });
+
+    const emailInput = screen.getByLabelText(/^Email/);
+    fireEvent.change(emailInput, { target: { value: "bad-email" } });
+    // Blur to trigger touched state and inline validation
+    fireEvent.blur(emailInput);
+
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  });
+
+  it("shows region selection error inline when no region selected", () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText(/^Name/), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Email/), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: "StrongP@ss1" },
+    });
+    fireEvent.change(screen.getByLabelText(/Organization Name/), {
+      target: { value: "Test Org" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(screen.getByText("Please select a data region")).toBeInTheDocument();
+  });
+
+  it("shows region unavailable error when API fails", async () => {
+    vi.mocked(api.listRegions).mockRejectedValue(new Error("Network error"));
+    render(<RegisterPage />);
 
     await waitFor(() => {
-      expect(api.completeSignup).toHaveBeenCalledWith({
-        email: "test@example.com",
-        otp: "654321",
-      });
+      expect(
+        screen.getByText(
+          "This region is temporarily unavailable. Please select another.",
+        ),
+      ).toBeInTheDocument();
     });
+  });
+
+  it("hides password strength when password is empty", () => {
+    render(<RegisterPage />);
+
+    const password = screen.getByLabelText(/^Password/) as HTMLInputElement;
+    expect(password.value).toBe("");
+    expect(screen.queryByText("8+ characters")).not.toBeInTheDocument();
+  });
+
+  it("shows password strength inline as user types", () => {
+    render(<RegisterPage />);
+
+    const passwordInput = screen.getByLabelText(/^Password/);
+    fireEvent.change(passwordInput, { target: { value: "weak" } });
+
+    expect(screen.getByText("8+ characters")).toBeInTheDocument();
+    expect(screen.getByText("1 lowercase letter")).toBeInTheDocument();
   });
 });

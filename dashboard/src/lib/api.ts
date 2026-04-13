@@ -37,6 +37,8 @@ import type {
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const REQUEST_TIMEOUT_MS = 30_000;
+const MAX_RETRIES = 3;
 
 interface RequestOptions {
   method?: string;
@@ -87,10 +89,79 @@ function handleSessionExpired() {
   }
 }
 
-async function request<T>(
+// --- Request deduplication ---
+const inFlightRequests = new Map<string, Promise<unknown>>();
+
+function getInFlightKey(path: string, method: string): string {
+  return `${method}:${path}`;
+}
+
+// --- Offline detection ---
+export function isOnline(): boolean {
+  if (typeof navigator === "undefined") return true;
+  return navigator.onLine ?? true; // default to true if undefined (jsdom)
+}
+
+let offlineToastShown = false;
+
+function showOfflineToast(isOffline: boolean) {
+  if (typeof window === "undefined" || offlineToastShown) return;
+  offlineToastShown = true;
+
+  const toast = document.createElement("div");
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${isOffline ? "#ef4444" : "#22c55e"};
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: opacity 0.3s ease;
+  `;
+  toast.textContent = isOffline
+    ? "You're offline. Check your network connection."
+    : "You're back online!";
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => {
+      document.body.removeChild(toast);
+      offlineToastShown = false;
+    }, 300);
+  }, 3000);
+}
+
+export function setupOfflineDetection(): void {
+  if (typeof window === "undefined") return;
+
+  if (!isOnline()) {
+    showOfflineToast(true);
+  }
+
+  window.addEventListener("offline", () => {
+    showOfflineToast(true);
+  });
+
+  window.addEventListener("online", () => {
+    showOfflineToast(false);
+  });
+}
+
+// --- Core request with timeout, retry, and dedup ---
+async function executeFetch(
   path: string,
-  options: RequestOptions = {},
-): Promise<T> {
+  options: RequestOptions,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...options.extraHeaders,
@@ -100,70 +171,151 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${options.token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    method: options.method || "GET",
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      method: options.method || "GET",
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+    return res;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: "Unknown error" }));
-
-    if (res.status === 403 && data.error === "account_deleted") {
-      if (typeof window !== "undefined") {
-        window.location.href = "/register";
-      }
-      throw new APIError(403, data.error);
-    }
-
-    if (res.status === 402) {
-      const upgradeError = new APIError(
-        402,
-        data.error ||
-          "Plan limit reached. Upgrade to Pro for unlimited access.",
-      );
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("fs:upgrade-required", {
-            detail: { message: upgradeError.message },
-          }),
-        );
-      }
-      throw upgradeError;
-    }
-
-    if (
-      res.status === 401 &&
-      data.error === "token_expired" &&
-      options.token &&
-      !options._retry
-    ) {
-      if (!refreshPromise) {
-        refreshPromise = attemptTokenRefresh().finally(() => {
-          refreshPromise = null;
-        });
-      }
-
-      const refreshed = await refreshPromise;
-      if (refreshed) {
-        const newToken = useAppStore.getState().token;
-        return request<T>(path, { ...options, token: newToken!, _retry: true });
-      }
-
-      handleSessionExpired();
-      throw new APIError(401, "session_expired");
-    }
-
-    if (res.status === 401 && options.token) {
-      handleSessionExpired();
-      throw new APIError(401, data.error || "Request failed");
-    }
-
-    throw new APIError(res.status, data.error || "Request failed");
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  // Offline check
+  if (!isOnline()) {
+    throw new Error("You're offline. Check your network connection.");
   }
 
-  if (res.status === 204) return undefined as T;
-  return res.json();
+  const method = options.method || "GET";
+
+  // Deduplication for GET requests (skip for retried requests to avoid deadlock with token refresh)
+  if (method === "GET" && !options._retry) {
+    const key = getInFlightKey(path, method);
+    if (inFlightRequests.has(key)) {
+      return inFlightRequests.get(key) as Promise<T>;
+    }
+
+    const promise = requestWithRetry<T>(path, options);
+    inFlightRequests.set(key, promise);
+    promise.finally(() => {
+      inFlightRequests.delete(key);
+    });
+    return promise;
+  }
+
+  return requestWithRetry<T>(path, options);
+}
+
+async function requestWithRetry<T>(
+  path: string,
+  options: RequestOptions,
+): Promise<T> {
+  const method = options.method || "GET";
+  const isGet = method === "GET";
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await executeFetch(path, options);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Unknown error" }));
+
+        if (res.status === 403 && data.error === "account_deleted") {
+          if (typeof window !== "undefined") {
+            window.location.href = "/register";
+          }
+          throw new APIError(403, data.error);
+        }
+
+        if (res.status === 402) {
+          const upgradeError = new APIError(
+            402,
+            data.error ||
+              "Plan limit reached. Upgrade to Pro for unlimited access.",
+          );
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("fs:upgrade-required", {
+                detail: { message: upgradeError.message },
+              }),
+            );
+          }
+          throw upgradeError;
+        }
+
+        if (
+          res.status === 401 &&
+          data.error === "token_expired" &&
+          options.token &&
+          !options._retry
+        ) {
+          if (!refreshPromise) {
+            refreshPromise = attemptTokenRefresh().finally(() => {
+              refreshPromise = null;
+            });
+          }
+
+          const refreshed = await refreshPromise;
+          if (refreshed) {
+            const newToken = useAppStore.getState().token;
+            return request<T>(path, {
+              ...options,
+              token: newToken!,
+              _retry: true,
+            });
+          }
+
+          handleSessionExpired();
+          throw new APIError(401, "session_expired");
+        }
+
+        if (res.status === 401 && options.token) {
+          handleSessionExpired();
+          throw new APIError(401, data.error || "Request failed");
+        }
+
+        throw new APIError(res.status, data.error || "Request failed");
+      }
+
+      if (res.status === 204) return undefined as T;
+      return res.json();
+    } catch (error) {
+      lastError = error as Error;
+
+      // Don't retry API errors (those are intentional server responses)
+      if (error instanceof APIError) {
+        throw error;
+      }
+
+      // Don't retry on last attempt
+      if (attempt === MAX_RETRIES) {
+        if ((error as Error).name === "AbortError") {
+          throw new Error("Request timed out. Please try again.");
+        }
+        throw error;
+      }
+
+      // Only retry GET requests on network/timeout errors
+      if (!isGet) {
+        throw error;
+      }
+
+      // Exponential backoff with jitter: 1s, 2s, 4s
+      const backoffMs = Math.pow(2, attempt - 1) * 1000;
+      const jitter = Math.random() * 1000;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs + jitter));
+    }
+  }
+
+  throw lastError || new Error("Request failed");
 }
 
 interface PaginatedResponse<T> {
@@ -415,7 +567,7 @@ export const api = {
   createAPIKey: (
     token: string,
     envId: string,
-    data: { name: string; type: string },
+    data: { name: string; type: string; expires_at?: string },
   ) =>
     request<APIKeyCreateResponse>(`/v1/environments/${envId}/api-keys`, {
       method: "POST",
@@ -603,6 +755,11 @@ export const api = {
     requestList<WebhookDelivery>(`/v1/webhooks/${webhookId}/deliveries`, {
       token,
     }),
+  testWebhook: (token: string, webhookId: string) =>
+    request<{ success: boolean; response_status: number; message?: string }>(
+      `/v1/webhooks/${webhookId}/test`,
+      { method: "POST", token },
+    ),
 
   // Billing
   createCheckout: (token: string, returnUrl?: string) => {
@@ -702,3 +859,8 @@ export const api = {
   resetOnboarding: (token: string) =>
     request("/v1/internal/reset-onboarding", { method: "POST", token }),
 };
+
+// Initialize offline detection in browser environments
+if (typeof window !== "undefined") {
+  setupOfflineDetection();
+}

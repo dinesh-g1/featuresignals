@@ -148,7 +148,10 @@ export interface WebhookDelivery {
   id: string;
   event_type: string;
   response_status: number;
+  response_body?: string;
   success: boolean;
+  attempt: number;
+  max_attempts: number;
   delivered_at: string;
 }
 
@@ -158,6 +161,7 @@ export interface ApprovalRequest {
   env_id: string;
   change_type: string;
   status: string;
+  requestor_id: string;
   review_note?: string;
   reviewed_at?: string;
   created_at: string;
@@ -177,6 +181,8 @@ export interface BillingInfo {
   current_period_start?: string;
   current_period_end?: string;
   cancel_at_period_end?: boolean;
+  card_last4?: string;
+  card_exp_date?: string;
 }
 
 export interface UsageMetric {

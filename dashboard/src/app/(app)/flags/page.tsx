@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -22,7 +23,7 @@ import {
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
-import { Flag, Search, ChevronRight, Trash2 } from "lucide-react";
+import { Flag, Search, ChevronRight, Trash2, Loader2 } from "lucide-react";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { DOCS_LINKS } from "@/components/docs-link";
@@ -83,6 +84,8 @@ export default function FlagsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const {
     data: flags,
@@ -94,7 +97,14 @@ export default function FlagsPage() {
   const { data: batchStates } = useFlagStates(projectId, currentEnvId);
   const stateMap = useFlagStateMap(batchStates, flags);
 
+  // Debounced search
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -110,6 +120,16 @@ export default function FlagsPage() {
     description: "",
     default_value: "false",
   });
+
+  const suggestedKey = useMemo(() => {
+    if (!newFlag.name) return "";
+    return newFlag.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
+  }, [newFlag.name]);
   const [fieldErrors, setFieldErrors] = useState<{
     key?: string;
     name?: string;
@@ -117,6 +137,52 @@ export default function FlagsPage() {
   }>({});
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
+
+  // Initialize filters from URL search params on mount
+  useEffect(() => {
+    const params = searchParams;
+    const s = params.get("search");
+    if (s) setSearchInput(s);
+    const t = params.get("type");
+    if (t) setTypeFilter(t);
+    const c = params.get("category");
+    if (c) setCategoryFilter(c);
+    const st = params.get("status");
+    if (st) setStatusFilter(st);
+    const tag = params.get("tag");
+    if (tag) setTagFilter(tag);
+    const sb = params.get("sortBy");
+    if (sb && ["key", "name", "created_at", "updated_at"].includes(sb))
+      setSortBy(sb as SortKey);
+    const sd = params.get("sortDir");
+    if (sd === "asc" || sd === "desc") setSortDir(sd);
+  }, [searchParams]);
+
+  // Update URL when filters change
+  const updateUrlFromFilters = useCallback(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (typeFilter !== "all") params.set("type", typeFilter);
+    if (categoryFilter !== "all") params.set("category", categoryFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (tagFilter) params.set("tag", tagFilter);
+    if (sortBy !== "created_at") params.set("sortBy", sortBy);
+    if (sortDir !== "desc") params.set("sortDir", sortDir);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [
+    search,
+    typeFilter,
+    categoryFilter,
+    statusFilter,
+    tagFilter,
+    sortBy,
+    sortDir,
+    router,
+  ]);
+
+  useEffect(() => {
+    updateUrlFromFilters();
+  }, [updateUrlFromFilters]);
 
   const createFlag = useCreateFlag(projectId);
   const deleteFlag = useDeleteFlag(projectId);
@@ -391,6 +457,12 @@ export default function FlagsPage() {
                   {fieldErrors.name}
                 </p>
               )}
+              {suggestedKey && !fieldErrors.name && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Suggested key:{" "}
+                  <code className="font-mono">{suggestedKey}</code>
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -538,8 +610,8 @@ export default function FlagsPage() {
             type="text"
             placeholder="Search flags..."
             aria-label="Search flags"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -643,13 +715,21 @@ export default function FlagsPage() {
                       ))}
 
                       {currentEnvId && (
-                        <Switch
-                          size="sm"
-                          checked={st?.enabled ?? false}
-                          onCheckedChange={() => handleQuickToggle(flag.key)}
-                          disabled={toggling === flag.key}
-                          aria-label={`Toggle in ${currentEnvName || "current env"}`}
-                        />
+                        <span className="relative inline-flex items-center">
+                          <Switch
+                            size="sm"
+                            checked={st?.enabled ?? false}
+                            onCheckedChange={() => handleQuickToggle(flag.key)}
+                            disabled={toggling === flag.key}
+                            aria-label={`Toggle in ${currentEnvName || "current env"}`}
+                            className={
+                              toggling === flag.key ? "opacity-50" : ""
+                            }
+                          />
+                          {toggling === flag.key && (
+                            <Loader2 className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin text-slate-500" />
+                          )}
+                        </span>
                       )}
 
                       <span className="hidden text-xs text-slate-400 sm:inline">

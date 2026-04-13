@@ -1,4 +1,14 @@
-import type { Project, Environment, Flag, Segment, AuditEntry, OrgMember, Webhook, ApprovalRequest, APIKey } from "@/lib/types";
+import type {
+  Project,
+  Environment,
+  Flag,
+  Segment,
+  AuditEntry,
+  OrgMember,
+  Webhook,
+  ApprovalRequest,
+  APIKey,
+} from "@/lib/types";
 
 export function createMockProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -11,7 +21,9 @@ export function createMockProject(overrides: Partial<Project> = {}): Project {
   };
 }
 
-export function createMockEnvironment(overrides: Partial<Environment> = {}): Environment {
+export function createMockEnvironment(
+  overrides: Partial<Environment> = {},
+): Environment {
   return {
     id: "env-1",
     name: "Production",
@@ -53,7 +65,9 @@ export function createMockSegment(overrides: Partial<Segment> = {}): Segment {
   };
 }
 
-export function createMockAuditEntry(overrides: Partial<AuditEntry> = {}): AuditEntry {
+export function createMockAuditEntry(
+  overrides: Partial<AuditEntry> = {},
+): AuditEntry {
   return {
     id: "audit-1",
     action: "flag.created",
@@ -64,7 +78,9 @@ export function createMockAuditEntry(overrides: Partial<AuditEntry> = {}): Audit
   };
 }
 
-export function createMockMember(overrides: Partial<OrgMember> = {}): OrgMember {
+export function createMockMember(
+  overrides: Partial<OrgMember> = {},
+): OrgMember {
   return {
     id: "member-1",
     org_id: "org-1",
@@ -89,13 +105,16 @@ export function createMockWebhook(overrides: Partial<Webhook> = {}): Webhook {
   };
 }
 
-export function createMockApproval(overrides: Partial<ApprovalRequest> = {}): ApprovalRequest {
+export function createMockApproval(
+  overrides: Partial<ApprovalRequest> = {},
+): ApprovalRequest {
   return {
     id: "appr-1",
     flag_id: "flag-1",
     env_id: "env-1",
     change_type: "toggle",
     status: "pending",
+    requestor_id: "user-1",
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
     ...overrides,

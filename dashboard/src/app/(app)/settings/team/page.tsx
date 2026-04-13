@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Trash2, ChevronDown, Users } from "lucide-react";
+import { Trash2, ChevronDown, Users, Mail } from "lucide-react";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import type { OrgMember, EnvPermission, Environment } from "@/lib/types";
 
@@ -33,11 +33,39 @@ const roleBadgeVariant: Record<
   viewer: "default",
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function formatRelativeTime(dateString: string | null | undefined): string {
+  if (!dateString) return "Never logged in";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Never logged in";
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
+
+  if (diffSec < 60) return "Just now";
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? "" : "s"} ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  return date.toLocaleDateString();
+}
+
+interface PendingInvitation {
+  id: string;
+  email: string;
+  role: string;
+  invited_at: string;
+}
+
 export default function TeamPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const user = useAppStore((s) => s.user);
   const [members, setMembers] = useState<OrgMember[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({
@@ -45,16 +73,42 @@ export default function TeamPage() {
     role: "developer",
   });
   const [fieldError, setFieldError] = useState<string>("");
+  const [emailFormatError, setEmailFormatError] = useState(false);
   const [editingRole, setEditingRole] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [expandedPerms, setExpandedPerms] = useState<string | null>(null);
   const [permMap, setPermMap] = useState<Record<string, EnvPermission[]>>({});
 
+  const handleEmailChange = useCallback((value: string) => {
+    setInviteForm((prev) => ({ ...prev, email: value }));
+    setEmailFormatError(value.length > 0 && !EMAIL_REGEX.test(value));
+    setFieldError("");
+  }, []);
+
   function reload() {
     if (!token) return;
     api
       .listMembers(token)
-      .then((m) => setMembers(m ?? []))
+      .then((m) => {
+        const all = m ?? [];
+        const accepted = all.filter(
+          (mem) => mem.role !== "pending" && mem.role !== "invited",
+        );
+        const pending = all
+          .filter((mem) => mem.role === "pending" || mem.role === "invited")
+          .map((mem) => {
+            const raw = mem as unknown as Record<string, string>;
+            return {
+              id: mem.id,
+              email: mem.email,
+              role: mem.role,
+              invited_at:
+                raw.invited_at ?? raw.created_at ?? new Date().toISOString(),
+            };
+          });
+        setMembers(accepted);
+        setPendingInvites(pending);
+      })
       .catch(() => {});
     if (projectId) {
       api
@@ -74,13 +128,29 @@ export default function TeamPage() {
       setFieldError("Email is required");
       return;
     }
+    if (!EMAIL_REGEX.test(inviteForm.email.trim())) {
+      setEmailFormatError(true);
+      return;
+    }
     setFieldError("");
+    setEmailFormatError(false);
     if (!token) return;
     await api.inviteMember(token, inviteForm);
     setShowInvite(false);
     setInviteForm({ email: "", role: "developer" });
     setFieldError("");
+    setEmailFormatError(false);
     reload();
+  }
+
+  async function handleResendInvite(invite: PendingInvitation) {
+    if (!token) return;
+    try {
+      await api.inviteMember(token, { email: invite.email, role: invite.role });
+      toast("Invitation resent", "success");
+    } catch {
+      toast("Failed to resend invitation", "error");
+    }
   }
 
   async function handleRoleChange(memberId: string, role: string) {
@@ -178,20 +248,36 @@ export default function TeamPage() {
                 <Label className="text-xs">Email</Label>
                 <Input
                   value={inviteForm.email}
-                  onChange={(e) => {
-                    setInviteForm({ ...inviteForm, email: e.target.value });
-                    setFieldError("");
-                  }}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="developer@company.com"
                   required
                   type="email"
-                  className="mt-1 py-1.5"
-                  aria-invalid={!!fieldError}
-                  aria-describedby={fieldError ? "email-error" : undefined}
+                  className={cn(
+                    "mt-1 py-1.5",
+                    emailFormatError &&
+                      "border-red-300 focus:ring-red-500 focus:border-red-500",
+                  )}
+                  aria-invalid={!!fieldError || emailFormatError}
+                  aria-describedby={
+                    fieldError
+                      ? "email-error"
+                      : emailFormatError
+                        ? "email-format-error"
+                        : undefined
+                  }
                 />
-                {fieldError && (
+                {emailFormatError && (
                   <p
-                    className="text-xs text-red-500"
+                    className="text-xs text-red-500 mt-1"
+                    role="alert"
+                    id="email-format-error"
+                  >
+                    Invalid email format
+                  </p>
+                )}
+                {fieldError && !emailFormatError && (
+                  <p
+                    className="text-xs text-red-500 mt-1"
                     role="alert"
                     id="email-error"
                   >
@@ -255,7 +341,17 @@ export default function TeamPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0">
+                  <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0 flex-wrap">
+                    <span className="text-xs text-slate-400 hidden sm:inline">
+                      {formatRelativeTime(
+                        (member as unknown as Record<string, string>)
+                          .last_active_at ??
+                          (member as unknown as Record<string, string>)
+                            .last_login_at ??
+                          (member as unknown as Record<string, string>)
+                            .created_at,
+                      )}
+                    </span>
                     {editingRole === member.id ? (
                       <div onClick={(e) => e.stopPropagation()}>
                         <Select
@@ -399,6 +495,50 @@ export default function TeamPage() {
             ))
           )}
         </div>
+
+        {pendingInvites.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Pending Invitations ({pendingInvites.length})
+            </h3>
+            <div className="space-y-2">
+              {pendingInvites.map((invite) => (
+                <div
+                  key={invite.id}
+                  className="flex flex-col gap-2 rounded-lg bg-amber-50/50 p-3 ring-1 ring-amber-100 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 shrink-0">
+                      {invite.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">
+                        {invite.email}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Invited {formatRelativeTime(invite.invited_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0">
+                    <Badge variant="default" className="px-2.5 py-0.5 text-xs">
+                      pending
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResendInvite(invite)}
+                      className="h-auto px-2 py-1 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                    >
+                      Resend
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

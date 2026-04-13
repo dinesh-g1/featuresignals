@@ -8,6 +8,7 @@ import { useAppStore } from "@/stores/app-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { PasswordStrengthInline } from "@/components/ui/password-strength";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -58,13 +59,10 @@ export default function ResetPasswordPage() {
 
   function handleOTPChange(index: number, value: string) {
     if (!/^[0-9]?$/.test(value)) return;
-
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
     setFieldErrors((prev) => ({ ...prev, otp: undefined }));
-
-    // Auto-advance to next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -74,11 +72,9 @@ export default function ResetPasswordPage() {
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>,
   ) {
-    // Backspace: clear current and move to previous
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
-    // Paste handling
     if (e.key === "v" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       navigator.clipboard
@@ -284,6 +280,7 @@ export default function ResetPasswordPage() {
                 {fieldErrors.newPassword}
               </p>
             )}
+            <PasswordStrengthInline password={newPassword} />
           </div>
 
           {/* Confirm Password */}

@@ -7,15 +7,16 @@ import (
 )
 
 type ApprovalResponse struct {
-	ID         string                `json:"id"`
-	FlagID     string                `json:"flag_id"`
-	EnvID      string                `json:"env_id"`
-	ChangeType string                `json:"change_type"`
-	Status     domain.ApprovalStatus `json:"status"`
-	ReviewNote string                `json:"review_note,omitempty"`
-	ReviewedAt *time.Time            `json:"reviewed_at,omitempty"`
-	CreatedAt  time.Time             `json:"created_at"`
-	UpdatedAt  time.Time             `json:"updated_at"`
+	ID          string                `json:"id"`
+	FlagID      string                `json:"flag_id"`
+	EnvID       string                `json:"env_id"`
+	ChangeType  string                `json:"change_type"`
+	Status      domain.ApprovalStatus `json:"status"`
+	RequestorID string                `json:"requestor_id"`
+	ReviewNote  string                `json:"review_note,omitempty"`
+	ReviewedAt  *time.Time            `json:"reviewed_at,omitempty"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
 }
 
 func ApprovalFromDomain(a *domain.ApprovalRequest) *ApprovalResponse {
@@ -23,15 +24,16 @@ func ApprovalFromDomain(a *domain.ApprovalRequest) *ApprovalResponse {
 		return nil
 	}
 	return &ApprovalResponse{
-		ID:         a.ID,
-		FlagID:     a.FlagID,
-		EnvID:      a.EnvID,
-		ChangeType: a.ChangeType,
-		Status:     a.Status,
-		ReviewNote: a.ReviewNote,
-		ReviewedAt: a.ReviewedAt,
-		CreatedAt:  a.CreatedAt,
-		UpdatedAt:  a.UpdatedAt,
+		ID:          a.ID,
+		FlagID:      a.FlagID,
+		EnvID:       a.EnvID,
+		ChangeType:  a.ChangeType,
+		Status:      a.Status,
+		RequestorID: a.RequestorID,
+		ReviewNote:  a.ReviewNote,
+		ReviewedAt:  a.ReviewedAt,
+		CreatedAt:   a.CreatedAt,
+		UpdatedAt:   a.UpdatedAt,
 	}
 }
 

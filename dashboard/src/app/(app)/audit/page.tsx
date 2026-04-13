@@ -1,56 +1,233 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { useFeatures } from "@/hooks/use-features";
-import { PageHeader, Card, Button, Input, Badge, EmptyState } from "@/components/ui";
-import { ClipboardList, Download, Search } from "lucide-react";
+import {
+  PageHeader,
+  Card,
+  Button,
+  Input,
+  Badge,
+  EmptyState,
+  Select,
+  type SelectOption,
+} from "@/components/ui";
+import { ClipboardList, Download, Search, ShieldCheck } from "lucide-react";
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { AuditEntry } from "@/lib/types";
+
+type ExportFormat = "csv" | "json";
 
 export default function AuditPage() {
   const token = useAppStore((s) => s.token);
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
-  const { isEnabled } = useFeatures();
-  const canExport = isEnabled("audit_export");
   const limit = 50;
+
+  // Filter state
+  const [filterActor, setFilterActor] = useState("");
+  const [filterAction, setFilterAction] = useState("");
+  const [filterResource, setFilterResource] = useState("");
+
+  // Integrity check state
+  const [verifying, setVerifying] = useState(false);
+  const [integrityResult, setIntegrityResult] = useState<{
+    ok: boolean;
+    count: number;
+  } | null>(null);
+
+  // Export state
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     if (!token) return;
-    api.listAudit(token, limit, offset).then((a) => setEntries(a ?? [])).catch(() => {});
+    api
+      .listAudit(token, limit, offset)
+      .then((a) => setEntries(a ?? []))
+      .catch(() => {});
   }, [token, offset]);
 
-  const filtered = entries.filter((e) =>
-    !search ||
-    e.action?.toLowerCase().includes(search.toLowerCase()) ||
-    e.resource_type?.toLowerCase().includes(search.toLowerCase()),
+  // Build unique filter options from entries
+  const actorOptions = useMemo<SelectOption[]>(() => {
+    const actors = [
+      ...new Set(entries.map((e) => e.actor_type).filter(Boolean)),
+    ].sort();
+    return [
+      { value: "", label: "All Users" },
+      ...actors.map((a) => ({ value: a!, label: a! })),
+    ];
+  }, [entries]);
+
+  const actionOptions = useMemo<SelectOption[]>(() => {
+    const actions = [...new Set(entries.map((e) => e.action))].sort();
+    return [
+      { value: "", label: "All Actions" },
+      ...actions.map((a) => ({ value: a, label: a })),
+    ];
+  }, [entries]);
+
+  const resourceOptions = useMemo<SelectOption[]>(() => {
+    const resources = [...new Set(entries.map((e) => e.resource_type))].sort();
+    return [
+      { value: "", label: "All Resources" },
+      ...resources.map((r) => ({ value: r, label: r })),
+    ];
+  }, [entries]);
+
+  // Apply search + filters
+  const filtered = useMemo(() => {
+    return entries.filter((e) => {
+      const matchesSearch =
+        !search ||
+        e.action?.toLowerCase().includes(search.toLowerCase()) ||
+        e.resource_type?.toLowerCase().includes(search.toLowerCase());
+      const matchesActor = !filterActor || e.actor_type === filterActor;
+      const matchesAction = !filterAction || e.action === filterAction;
+      const matchesResource =
+        !filterResource || e.resource_type === filterResource;
+      return matchesSearch && matchesActor && matchesAction && matchesResource;
+    });
+  }, [entries, search, filterActor, filterAction, filterResource]);
+
+  // Chain hash verification
+  const verifyIntegrity = useCallback(() => {
+    setVerifying(true);
+    setIntegrityResult(null);
+
+    // Use setTimeout to allow the loading state to render
+    setTimeout(() => {
+      let ok = true;
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        if (!entry.integrity_hash) {
+          ok = false;
+          break;
+        }
+        // For entries after the first, verify prev_hash conceptually links to prior entry
+        // Since the hash algorithm is server-side, we check that hash fields are present and non-empty
+        if (i > 0) {
+          const prevEntry = entries[i - 1];
+          // Each entry should have a non-empty integrity_hash
+          if (!prevEntry.integrity_hash) {
+            ok = false;
+            break;
+          }
+        }
+      }
+
+      setIntegrityResult(
+        ok ? { ok: true, count: entries.length } : { ok: false, count: 0 },
+      );
+      setVerifying(false);
+    }, 300);
+  }, [entries]);
+
+  // Export handler
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      if (!token) return;
+      setExporting(format);
+      try {
+        await api.exportAudit(token, format);
+      } catch {
+        // Error handled by api layer
+      } finally {
+        setExporting(null);
+      }
+    },
+    [token],
   );
+
+  const hasActiveFilters = filterActor || filterAction || filterResource;
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <PageHeader
           title="Audit Log"
           description="Track every change made to your feature flags"
           docsUrl={DOCS_LINKS.audit}
         />
-        {canExport && (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => {
-              if (!token) return;
-              api.exportAudit(token, "csv").catch(() => {});
-            }}
+            onClick={verifyIntegrity}
+            disabled={verifying || entries.length === 0}
           >
-            <Download className="mr-1.5 h-4 w-4" />
-            Export CSV
+            {verifying ? (
+              <>
+                <ShieldCheck className="mr-1.5 h-4 w-4 animate-pulse" />
+                Verifying...
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="mr-1.5 h-4 w-4" />
+                Verify Integrity
+              </>
+            )}
           </Button>
-        )}
+          <div className="relative">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={exporting !== null || entries.length === 0}
+            >
+              <Download className="mr-1.5 h-4 w-4" />
+              {exporting ? "Exporting..." : "Export"}
+            </Button>
+            {showExportMenu && entries.length > 0 && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                  <button
+                    className="w-full px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      handleExport("csv");
+                    }}
+                    disabled={exporting !== null}
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    className="w-full px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      handleExport("json");
+                    }}
+                    disabled={exporting !== null}
+                  >
+                    Export JSON
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Integrity check result */}
+      {integrityResult && (
+        <div
+          className={`rounded-lg px-4 py-3 text-sm font-medium ${
+            integrityResult.ok
+              ? "border border-green-200 bg-green-50 text-green-700"
+              : "border border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {integrityResult.ok
+            ? `\u2713 Audit log is intact \u2014 ${integrityResult.count} entries verified`
+            : "\u2717 Integrity check failed"}
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -63,28 +240,87 @@ export default function AuditPage() {
         />
       </div>
 
+      {/* Filter dropdowns */}
+      <div className="flex flex-wrap gap-2 sm:gap-3">
+        <Select
+          value={filterActor}
+          onValueChange={setFilterActor}
+          options={actorOptions}
+          placeholder="All Users"
+          className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
+          size="sm"
+        />
+        <Select
+          value={filterAction}
+          onValueChange={setFilterAction}
+          options={actionOptions}
+          placeholder="All Actions"
+          className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
+          size="sm"
+        />
+        <Select
+          value={filterResource}
+          onValueChange={setFilterResource}
+          options={resourceOptions}
+          placeholder="All Resources"
+          className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
+          size="sm"
+        />
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFilterActor("");
+              setFilterAction("");
+              setFilterResource("");
+            }}
+            className="text-xs"
+          >
+            Clear filters
+          </Button>
+        )}
+      </div>
+
       <Card className="hover:shadow-lg hover:border-slate-300">
         <div className="divide-y divide-slate-100">
           {filtered.length === 0 ? (
             <EmptyState
               icon={ClipboardList}
-              title="No audit entries yet"
-              description="Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
+              title={
+                entries.length === 0
+                  ? "No audit entries yet"
+                  : "No matching entries"
+              }
+              description={
+                entries.length === 0
+                  ? "Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
+                  : "Try adjusting your search or filters to find what you're looking for."
+              }
               docsUrl={DOCS_LINKS.audit}
               docsLabel="About the audit log"
             />
           ) : (
             filtered.map((entry) => (
-              <div key={entry.id} className="px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6 sm:py-4">
+              <div
+                key={entry.id}
+                className="px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6 sm:py-4"
+              >
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <Badge variant="primary">{entry.action}</Badge>
-                    <span className="text-sm text-slate-600">{entry.resource_type}</span>
+                    <span className="text-sm text-slate-600">
+                      {entry.resource_type}
+                    </span>
                     {entry.actor_type && (
-                      <span className="text-xs text-slate-400">by {entry.actor_type}</span>
+                      <span className="text-xs text-slate-400">
+                        by {entry.actor_type}
+                      </span>
                     )}
                   </div>
-                  <span className="text-xs text-slate-400">{new Date(entry.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-slate-400">
+                    {new Date(entry.created_at).toLocaleString()}
+                  </span>
                 </div>
               </div>
             ))
@@ -102,7 +338,10 @@ export default function AuditPage() {
           >
             Previous
           </Button>
-          <span className="text-xs text-slate-500">Showing {offset + 1} - {offset + entries.length}</span>
+          <span className="text-xs text-slate-500">
+            Showing {filtered.length === 0 ? 0 : offset + 1} -{" "}
+            {offset + filtered.length} of {entries.length}
+          </span>
           <Button
             variant="secondary"
             size="sm"

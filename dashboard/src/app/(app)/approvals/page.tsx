@@ -1,35 +1,153 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { PageHeader, Card, Button, Badge, EmptyState, Textarea } from "@/components/ui";
+import {
+  PageHeader,
+  Card,
+  Button,
+  Badge,
+  EmptyState,
+  Textarea,
+} from "@/components/ui";
 import { toast } from "@/components/toast";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Clock } from "lucide-react";
 import type { ApprovalRequest } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STATUS_VARIANT: Record<string, "warning" | "success" | "danger" | "info"> = {
+const STATUS_VARIANT: Record<
+  string,
+  "warning" | "success" | "danger" | "info"
+> = {
   pending: "warning",
   approved: "success",
   rejected: "danger",
   applied: "info",
 };
 
+const SLA_HOURS = 24;
+const SLA_MS = SLA_HOURS * 60 * 60 * 1000;
+
+function useSlaNow() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function slaInfo(createdAt: string, now: number) {
+  const created = new Date(createdAt).getTime();
+  const elapsed = now - created;
+  const remaining = SLA_MS - elapsed;
+  const elapsedHours = elapsed / (1000 * 60 * 60);
+  const remainingHours = remaining / (1000 * 60 * 60);
+  const progress = Math.min(1, Math.max(0, elapsed / SLA_MS));
+  const expired = remaining <= 0;
+
+  let urgencyColor: "green" | "yellow" | "red" = "green";
+  if (expired) {
+    urgencyColor = "red";
+  } else if (remainingHours < 4) {
+    urgencyColor = "red";
+  } else if (remainingHours < 12) {
+    urgencyColor = "yellow";
+  }
+
+  const elapsedLabel =
+    elapsedHours < 1
+      ? `${Math.round(elapsed / (1000 * 60))}m ago`
+      : elapsedHours < 24
+        ? `${Math.floor(elapsedHours)}h ago`
+        : `${(elapsedHours / 24).toFixed(1)}d ago`;
+
+  const dueLabel = expired
+    ? `OVERDUE -- requested ${elapsedLabel}`
+    : remainingHours < 1
+      ? `Due in ${Math.round(remainingHours * 60)}m`
+      : remainingHours < 24
+        ? `Due in ${Math.ceil(remainingHours)}h`
+        : `Due in ${(remainingHours / 24).toFixed(1)}d`;
+
+  return { elapsedLabel, dueLabel, urgencyColor, progress, expired };
+}
+
+function SlaProgress({ ar, now }: { ar: ApprovalRequest; now: number }) {
+  if (ar.status !== "pending") return null;
+  const { dueLabel, urgencyColor, progress, expired } = slaInfo(
+    ar.created_at,
+    now,
+  );
+
+  const barColor =
+    urgencyColor === "red"
+      ? "bg-red-500"
+      : urgencyColor === "yellow"
+        ? "bg-amber-400"
+        : "bg-emerald-500";
+
+  const textColor =
+    urgencyColor === "red"
+      ? "text-red-600"
+      : urgencyColor === "yellow"
+        ? "text-amber-600"
+        : "text-slate-500";
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <Clock className={cn("h-3.5 w-3.5 flex-shrink-0", textColor)} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={cn(
+              "text-xs font-medium truncate",
+              expired ? "text-red-600" : textColor,
+            )}
+          >
+            {dueLabel}
+          </span>
+          <span className="text-xs text-slate-400 flex-shrink-0">
+            Requested {slaInfo(ar.created_at, now).elapsedLabel}
+          </span>
+        </div>
+        <div className="mt-1 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-1000",
+              barColor,
+            )}
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ApprovalsPage() {
   const token = useAppStore((s) => s.token);
+  const user = useAppStore((s) => s.user);
+  const now = useSlaNow();
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState<"all" | "mine">("all");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
 
   function reload() {
     if (!token) return;
-    api.listApprovals(token, filter || undefined).then((a) => setApprovals(a ?? [])).catch(() => {});
+    api
+      .listApprovals(token, filter || undefined)
+      .then((a) => setApprovals(a ?? []))
+      .catch(() => {});
   }
 
-  useEffect(() => { reload(); }, [token, filter]);
+  useEffect(() => {
+    reload();
+  }, [token, filter]);
 
   async function handleReview(id: string, action: "approve" | "reject") {
     if (!token) return;
@@ -39,13 +157,29 @@ export default function ApprovalsPage() {
       setReviewingId(null);
       setNote("");
       reload();
-      toast(action === "approve" ? "Approval granted" : "Request rejected", "success");
+      toast(
+        action === "approve" ? "Approval granted" : "Request rejected",
+        "success",
+      );
     } catch {
       toast("Failed to submit review", "error");
     } finally {
       setLoading(false);
     }
   }
+
+  const filteredByTab = useMemo(() => {
+    if (tab === "mine" && user) {
+      return approvals.filter((a) => a.requestor_id === user.id);
+    }
+    return approvals;
+  }, [approvals, tab, user]);
+
+  const handleTabChange = useCallback((t: "all" | "mine") => {
+    setTab(t);
+    setReviewingId(null);
+    setNote("");
+  }, []);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -54,6 +188,7 @@ export default function ApprovalsPage() {
         description="Review and approve flag changes before they go live"
       />
 
+      {/* Status filter buttons */}
       <div className="flex flex-wrap items-center gap-2">
         {["", "pending", "approved", "rejected", "applied"].map((s) => (
           <button
@@ -61,7 +196,9 @@ export default function ApprovalsPage() {
             onClick={() => setFilter(s)}
             className={cn(
               "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-              filter === s ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "text-slate-500 hover:bg-slate-100",
+              filter === s
+                ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200"
+                : "text-slate-500 hover:bg-slate-100",
             )}
           >
             {s || "All"}
@@ -69,38 +206,80 @@ export default function ApprovalsPage() {
         ))}
       </div>
 
+      {/* Tabs: All Requests / My Requests */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {[
+          { key: "all" as const, label: "All Requests" },
+          { key: "mine" as const, label: "My Requests" },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => handleTabChange(key)}
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+              tab === key
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <Card className="hover:shadow-lg hover:border-slate-300">
-        {approvals.length === 0 ? (
+        {filteredByTab.length === 0 ? (
           <EmptyState
             icon={CheckCircle}
-            title="No approval requests"
-            description="Changes requiring approval will appear here."
+            title={
+              tab === "mine" ? "No requests from you" : "No approval requests"
+            }
+            description={
+              tab === "mine"
+                ? "You haven't submitted any approval requests yet."
+                : "Changes requiring approval will appear here."
+            }
           />
         ) : (
           <div className="divide-y divide-slate-100">
-            {approvals.map((ar) => {
+            {filteredByTab.map((ar) => {
               const isReviewing = reviewingId === ar.id;
               return (
-                <div key={ar.id} className="px-4 py-3 space-y-2 sm:px-6 sm:py-4">
+                <div
+                  key={ar.id}
+                  className="px-4 py-3 space-y-2 sm:px-6 sm:py-4"
+                >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       <Badge variant={STATUS_VARIANT[ar.status] || "default"}>
                         {ar.status}
                       </Badge>
-                      <span className="text-sm font-medium text-slate-700">{ar.change_type}</span>
-                      <span className="text-xs text-slate-400">Flag: {ar.flag_id?.slice(0, 8)}&hellip;</span>
+                      <span className="text-sm font-medium text-slate-700">
+                        {ar.change_type}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        Flag: {ar.flag_id?.slice(0, 8)}&hellip;
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">{new Date(ar.created_at).toLocaleString()}</span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(ar.created_at).toLocaleString()}
+                      </span>
                       {ar.status === "pending" && !isReviewing && (
-                        <Button size="sm" onClick={() => setReviewingId(ar.id)}>Review</Button>
+                        <Button size="sm" onClick={() => setReviewingId(ar.id)}>
+                          Review
+                        </Button>
                       )}
                     </div>
                   </div>
 
+                  {/* SLA countdown progress bar */}
+                  <SlaProgress ar={ar} now={now} />
+
                   {ar.review_note && (
                     <p className="text-xs text-slate-500">
-                      <span className="font-medium">Review note:</span> {ar.review_note}
+                      <span className="font-medium">Review note:</span>{" "}
+                      {ar.review_note}
                     </p>
                   )}
 
@@ -113,13 +292,30 @@ export default function ApprovalsPage() {
                         rows={2}
                       />
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => handleReview(ar.id, "approve")} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                        <Button
+                          size="sm"
+                          onClick={() => handleReview(ar.id, "approve")}
+                          disabled={loading}
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                        >
                           Approve & Apply
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleReview(ar.id, "reject")} disabled={loading}>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleReview(ar.id, "reject")}
+                          disabled={loading}
+                        >
                           Reject
                         </Button>
-                        <Button size="sm" variant="secondary" onClick={() => { setReviewingId(null); setNote(""); }}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setReviewingId(null);
+                            setNote("");
+                          }}
+                        >
                           Cancel
                         </Button>
                       </div>
