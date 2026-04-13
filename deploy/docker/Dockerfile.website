@@ -4,7 +4,6 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Layer 1: Install dependencies (cached unless package*.json change)
-# No npm cache mount — Tailwind 4 has platform-specific native binaries
 COPY package*.json ./
 RUN npm ci
 
@@ -17,15 +16,14 @@ COPY postcss.config.* ./
 COPY .dockerignore ./
 RUN npm run build && npm cache clean --force
 
+# Serve static export with a lightweight static server
 FROM node:22-alpine
+RUN npm install -g serve
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
-COPY --from=builder --chown=appuser:appgroup /app/.next/standalone ./
-COPY --from=builder --chown=appuser:appgroup /app/.next/static ./.next/static
-COPY --from=builder --chown=appuser:appgroup /app/public ./public
+COPY --from=builder --chown=appuser:appgroup /app/out ./out
 
 USER appuser
 ENV PORT=3001
-ENV HOSTNAME="0.0.0.0"
 EXPOSE 3001
-CMD ["node", "server.js"]
+CMD ["serve", "out", "-l", "3001", "--no-request-logging"]
