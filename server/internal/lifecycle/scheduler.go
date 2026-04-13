@@ -17,6 +17,7 @@ type SchedulerStore interface {
 	ListInactiveUsers(ctx context.Context, since time.Time) ([]UserRow, error)
 	ListRenewalOrgs(ctx context.Context, withinDays int) ([]OrgUserPair, error)
 	ListActiveDigestUsers(ctx context.Context) ([]DigestRow, error)
+	MarkDigestSent(ctx context.Context, userID string) error
 	ListUsersWithoutFeatureUsage(ctx context.Context, feature string, daysSinceSignup int) ([]UserRow, error)
 }
 
@@ -42,13 +43,17 @@ type UserRow struct {
 
 // DigestRow carries user + org + activity data for weekly digest emails.
 type DigestRow struct {
-	UserID    string
-	Email     string
-	Name      string
-	OrgID     string
-	OrgName   string
-	FlagCount int
-	EvalCount int
+	UserID          string
+	Email           string
+	Name            string
+	OrgID           string
+	OrgName         string
+	ProjectCount    int
+	EnvCount        int
+	FlagCount       int
+	ActiveFlagCount int
+	EvalCount       int
+	TopFlagKey      string
 }
 
 // Scheduler runs periodic lifecycle email jobs as a goroutine inside
@@ -61,11 +66,12 @@ type Scheduler struct {
 	logger       *slog.Logger
 	interval     time.Duration
 	dashboardURL string
+	settingsURL  string
 }
 
 // NewScheduler creates a lifecycle scheduler. The interval controls how
 // often the scheduler polls for pending emails (typically 1 hour).
-func NewScheduler(store SchedulerStore, sender Sender, emitter domain.EventEmitter, logger *slog.Logger, interval time.Duration, dashboardURL string) *Scheduler {
+func NewScheduler(store SchedulerStore, sender Sender, emitter domain.EventEmitter, logger *slog.Logger, interval time.Duration, dashboardURL, settingsURL string) *Scheduler {
 	if interval < time.Minute {
 		interval = time.Hour
 	}
@@ -76,6 +82,7 @@ func NewScheduler(store SchedulerStore, sender Sender, emitter domain.EventEmitt
 		logger:       logger.With("component", "lifecycle_scheduler"),
 		interval:     interval,
 		dashboardURL: dashboardURL,
+		settingsURL:  settingsURL,
 	}
 }
 
@@ -259,20 +266,37 @@ func (s *Scheduler) sendWeeklyDigest(ctx context.Context) {
 		s.logger.Error("failed to list digest users", "error", err)
 		return
 	}
+
+	weekStart := time.Now().UTC().AddDate(0, 0, -7).Format("Jan 2")
+	weekEnd := time.Now().UTC().AddDate(0, 0, -1).Format("Jan 2")
+
 	for _, r := range rows {
-		_ = s.sender.Send(ctx, r.UserID, domain.EmailMessage{
+		err := s.sender.Send(ctx, r.UserID, domain.EmailMessage{
 			To:       r.Email,
 			ToName:   r.Name,
 			Template: domain.TemplateWeeklyDigest,
-			Subject:  "Your FeatureSignals weekly",
+			Subject:  fmt.Sprintf("%s weekly summary for %s", r.OrgName, weekStart+" – "+weekEnd),
 			Data: map[string]string{
-				"ToName":       r.Name,
-				"OrgName":      r.OrgName,
-				"FlagCount":    fmt.Sprintf("%d", r.FlagCount),
-				"EvalCount":    fmt.Sprintf("%d", r.EvalCount),
-				"DashboardURL": s.dashboardURL,
+				"ToName":          r.Name,
+				"OrgName":         r.OrgName,
+				"ProjectCount":    fmt.Sprintf("%d", r.ProjectCount),
+				"EnvCount":        fmt.Sprintf("%d", r.EnvCount),
+				"FlagCount":       fmt.Sprintf("%d", r.FlagCount),
+				"ActiveFlagCount": fmt.Sprintf("%d", r.ActiveFlagCount),
+				"EvalCount":       fmt.Sprintf("%d", r.EvalCount),
+				"TopFlagKey":      r.TopFlagKey,
+				"WeekStart":       weekStart,
+				"WeekEnd":         weekEnd,
+				"DashboardURL":    s.dashboardURL,
+				"FlagsURL":        s.dashboardURL + "/flags",
+				"AnalyticsURL":    s.dashboardURL + "/analytics",
+				"SettingsURL":     s.settingsURL,
+				"UnsubscribeURL":  s.settingsURL + "/notifications",
 			},
 		})
+		if err == nil {
+			_ = s.store.MarkDigestSent(ctx, r.UserID)
+		}
 	}
 	if len(rows) > 0 {
 		s.logger.Info("sent weekly digest emails", "count", len(rows))
@@ -282,10 +306,10 @@ func (s *Scheduler) sendWeeklyDigest(ctx context.Context) {
 // featureSpotlight defines a re-onboarding email that teaches the user
 // about a feature they haven't explored yet.
 type featureSpotlight struct {
-	feature     string
+	feature      string
 	minDaysSince int
-	template    domain.TemplateID
-	subject     string
+	template     domain.TemplateID
+	subject      string
 }
 
 var spotlights = []featureSpotlight{

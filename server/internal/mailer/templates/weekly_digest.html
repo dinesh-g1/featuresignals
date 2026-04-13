@@ -1,42 +1,358 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{.Subject}}</title>
-<style>
-body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-.wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-.card { background: #ffffff; border-radius: 8px; padding: 40px 32px; border: 1px solid #e2e8f0; }
-.logo { color: #4f46e5; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 24px; }
-h1 { color: #0f172a; font-size: 22px; font-weight: 600; margin: 0 0 12px; }
-p { color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
-.btn { display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin: 8px 0 24px; }
-.footer { text-align: center; padding: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
-.footer a { color: #64748b; text-decoration: underline; }
-.stats { background: #eef2ff; border-radius: 6px; padding: 20px; margin: 16px 0; }
-.stat-row { padding: 6px 0; font-size: 14px; color: #3730a3; }
-.stat-row strong { color: #1e1b4b; }
-</style>
-</head>
-<body>
-<div class="wrapper">
-  <div class="card">
-    <div class="logo">FeatureSignals</div>
-    <h1>Your FeatureSignals weekly</h1>
-    <p>Hi {{.ToName}},</p>
-    <p>Here is a snapshot for <strong>{{.OrgName}}</strong> over the past week.</p>
-    <div class="stats">
-      <div class="stat-row"><strong>{{.FlagCount}}</strong> feature flags</div>
-      <div class="stat-row"><strong>{{.EvalCount}}</strong> evaluations</div>
-    </div>
-    <p>Open the dashboard for full detail on flags, environments, and activity.</p>
-    <a href="{{.DashboardURL}}" class="btn">Open dashboard</a>
-  </div>
-  <div class="footer">
-    <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
-    <p><a href="{{.UnsubscribeURL}}">Manage email preferences</a></p>
-  </div>
-</div>
-</body>
+{{/* weekly_digest.html - weekly organizational summary for FeatureSignals
+users. Required variables: ToName, OrgName, WeekStart, WeekEnd, ProjectCount,
+EnvCount, FlagCount, ActiveFlagCount, EvalCount, TopFlagKey, DashboardURL,
+FlagsURL, AnalyticsURL, SettingsURL, UnsubscribeURL, Subject */}}
+<!doctype html>
+<html
+    lang="en"
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <!--[if mso]>
+            <noscript>
+                <xml>
+                    <o:OfficeDocumentSettings>
+                        <o:AllowPNG />
+                        <o:PixelsPerInch>96</o:PixelsPerInch>
+                    </o:OfficeDocumentSettings>
+                </xml>
+            </noscript>
+        <![endif]-->
+        <title>{{.Subject}}</title>
+        <style>
+            :root {
+                color-scheme: light dark;
+                supported-color-schemes: light dark;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #f8fafc;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+            }
+            .wrapper {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 40px 20px;
+            }
+            .card {
+                background: #ffffff;
+                border-radius: 8px;
+                padding: 40px 32px;
+                border: 1px solid #e2e8f0;
+            }
+            .logo {
+                color: #4f46e5;
+                font-size: 20px;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                margin-bottom: 28px;
+            }
+            h1 {
+                color: #0f172a;
+                font-size: 22px;
+                font-weight: 600;
+                margin: 0 0 4px;
+            }
+            .subtitle {
+                color: #94a3b8;
+                font-size: 14px;
+                margin: 0 0 24px;
+            }
+            p {
+                color: #475569;
+                font-size: 15px;
+                line-height: 1.6;
+                margin: 0 0 16px;
+            }
+            .stats-grid {
+                display: flex;
+                gap: 16px;
+                margin: 24px 0;
+            }
+            .stat-card {
+                flex: 1;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                text-align: center;
+            }
+            .stat-value {
+                font-size: 28px;
+                font-weight: 700;
+                color: #4f46e5;
+                line-height: 1;
+                margin-bottom: 4px;
+            }
+            .stat-label {
+                font-size: 12px;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 600;
+            }
+            .insight-box {
+                background: #eef2ff;
+                border-radius: 8px;
+                padding: 16px 20px;
+                margin: 20px 0;
+            }
+            .insight-label {
+                font-size: 12px;
+                color: #6366f1;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 600;
+                margin: 0 0 4px;
+            }
+            .insight-text {
+                color: #312e81;
+                font-size: 14px;
+                margin: 0;
+            }
+            .insight-text strong {
+                color: #1e1b4b;
+            }
+            .btn {
+                display: inline-block;
+                background: #4f46e5;
+                color: #ffffff !important;
+                text-decoration: none;
+                padding: 12px 28px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 600;
+                margin: 8px 0 24px;
+                mso-padding-alt: 12px 28px;
+            }
+            .btn:hover {
+                background: #4338ca;
+            }
+            .secondary-links {
+                margin: 16px 0 24px;
+                font-size: 14px;
+            }
+            .secondary-links a {
+                color: #4f46e5;
+                text-decoration: none;
+                margin-right: 20px;
+                font-weight: 500;
+            }
+            .secondary-links a:hover {
+                text-decoration: underline;
+            }
+            .divider {
+                border: none;
+                border-top: 1px solid #e2e8f0;
+                margin: 24px 0;
+            }
+            .footer {
+                text-align: center;
+                padding: 24px 0 0;
+                color: #94a3b8;
+                font-size: 12px;
+                line-height: 1.5;
+            }
+            .footer a {
+                color: #64748b;
+                text-decoration: underline;
+            }
+            .preheader {
+                display: none !important;
+                max-height: 0;
+                overflow: hidden;
+                mso-hide: all;
+                font-size: 1px;
+                line-height: 1px;
+                color: #f8fafc;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #0f172a !important;
+                }
+                .wrapper {
+                    background-color: #0f172a !important;
+                }
+                .card {
+                    background: #1e293b !important;
+                    border-color: #334155 !important;
+                }
+                .logo {
+                    color: #818cf8 !important;
+                }
+                h1 {
+                    color: #f1f5f9 !important;
+                }
+                .subtitle {
+                    color: #64748b !important;
+                }
+                p {
+                    color: #cbd5e1 !important;
+                }
+                .stat-card {
+                    background: #0f172a !important;
+                    border-color: #334155 !important;
+                }
+                .stat-value {
+                    color: #818cf8 !important;
+                }
+                .stat-label {
+                    color: #94a3b8 !important;
+                }
+                .insight-box {
+                    background: #1e1b4b !important;
+                }
+                .insight-label {
+                    color: #a5b4fc !important;
+                }
+                .insight-text {
+                    color: #c7d2fe !important;
+                }
+                .insight-text strong {
+                    color: #e0e7ff !important;
+                }
+                .btn {
+                    background: #6366f1 !important;
+                }
+                .secondary-links a {
+                    color: #818cf8 !important;
+                }
+                .divider {
+                    border-top-color: #334155 !important;
+                }
+                .footer {
+                    color: #64748b !important;
+                }
+                .footer a {
+                    color: #94a3b8 !important;
+                }
+            }
+            [data-ogsc] .card {
+                background: #1e293b !important;
+                border-color: #334155 !important;
+            }
+            [data-ogsc] h1 {
+                color: #f1f5f9 !important;
+            }
+            [data-ogsc] p {
+                color: #cbd5e1 !important;
+            }
+
+            @media only screen and (max-width: 600px) {
+                .wrapper {
+                    padding: 20px 12px !important;
+                }
+                .card {
+                    padding: 24px 20px !important;
+                }
+                h1 {
+                    font-size: 20px !important;
+                }
+                .stats-grid {
+                    flex-direction: column;
+                    gap: 12px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="preheader" aria-hidden="true">
+            {{.OrgName}} — {{.FlagCount}} feature flags, {{.EvalCount}}
+            evaluations this week. Review your dashboard for
+            details.&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+        </div>
+        <div
+            class="wrapper"
+            role="article"
+            aria-roledescription="email"
+            aria-label="Weekly digest for {{.OrgName}}"
+        >
+            <div class="card">
+                <div class="logo" aria-label="FeatureSignals">
+                    FeatureSignals
+                </div>
+
+                <h1>Weekly summary for {{.OrgName}}</h1>
+                <p class="subtitle">{{.WeekStart}} – {{.WeekEnd}}, 2026</p>
+
+                <p>Hi {{.ToName}},</p>
+                <p>
+                    Here is your organization's activity overview for the past
+                    week. Your flags are running — here's how they performed.
+                </p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{{.FlagCount}}</div>
+                        <div class="stat-label">Feature Flags</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{.ActiveFlagCount}}</div>
+                        <div class="stat-label">Active Flags</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{.EvalCount}}</div>
+                        <div class="stat-label">Evaluations</div>
+                    </div>
+                </div>
+
+                {{if .TopFlagKey}}
+                <div class="insight-box">
+                    <p class="insight-label">Most Recently Updated</p>
+                    <p class="insight-text">
+                        <strong>{{.TopFlagKey}}</strong> was modified this week
+                        — review the latest changes.
+                    </p>
+                </div>
+                {{end}} {{if and (eq .FlagCount "0") (eq .ProjectCount "0")}}
+                <hr class="divider" />
+                <p>
+                    <strong>Getting started?</strong> Create your first project
+                    to begin managing feature flags with confidence.
+                </p>
+                <a href="{{.DashboardURL}}" class="btn"
+                    >Create your first project</a
+                >
+                {{else if eq .EvalCount "0"}}
+                <hr class="divider" />
+                <p>
+                    <strong>No evaluations yet.</strong> Install the
+                    FeatureSignals SDK in your app to start evaluating flags in
+                    real time.
+                </p>
+                <a href="{{.DashboardURL}}" class="btn">View SDK docs</a>
+                {{else}}
+                <hr class="divider" />
+                <p>
+                    Review your full flag inventory, environment configurations,
+                    and evaluation history in the dashboard.
+                </p>
+                <a href="{{.DashboardURL}}" class="btn">Open dashboard</a>
+
+                <div class="secondary-links">
+                    <a href="{{.FlagsURL}}">All flags →</a>
+                    <a href="{{.AnalyticsURL}}">Analytics →</a>
+                </div>
+                {{end}}
+            </div>
+            <div class="footer" role="contentinfo">
+                <p>FeatureSignals &middot; Vivekananda Technology Labs</p>
+                <p>
+                    <a href="{{.UnsubscribeURL}}">Manage email preferences</a>
+                </p>
+            </div>
+        </div>
+    </body>
 </html>

@@ -257,7 +257,8 @@ func main() {
 	logger.Info("lifecycle processor started")
 
 	// Lifecycle scheduler (trial reminders, weekly digests, re-engagement)
-	lifecycleSched := lifecycle.NewScheduler(store, lifecycleProcessor, eventEmitter, logger, 1*time.Hour, cfg.DashboardURL)
+	settingsURL := cfg.DashboardURL + "/settings"
+	lifecycleSched := lifecycle.NewScheduler(store, lifecycleProcessor, eventEmitter, logger, 1*time.Hour, cfg.DashboardURL, settingsURL)
 	lifecycleSchedCtx, lifecycleSchedCancel := context.WithCancel(context.Background())
 	defer lifecycleSchedCancel()
 	go lifecycleSched.Run(lifecycleSchedCtx)
