@@ -249,7 +249,7 @@ export default function SecurityPage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
               >
                 Start Free
               </Link>
@@ -309,7 +309,7 @@ export default function SecurityPage() {
                   className="rounded-xl border border-slate-200 bg-white p-6"
                 >
                   <div className="flex items-center justify-between">
-                    <FileCheck className="h-6 w-6 text-indigo-600" />
+                    <FileCheck className="h-5 w-5 text-indigo-600 sm:h-6 sm:w-6" />
                     <StatusBadge status={fw.status} />
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-slate-900">
@@ -353,7 +353,7 @@ export default function SecurityPage() {
             <SectionReveal>
               <a
                 href="/status"
-                className="group flex h-full flex-col rounded-xl border border-slate-200 bg-white p-8 transition-shadow hover:shadow-md"
+                className="group flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 sm:p-6 lg:p-8 transition-shadow hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
                   <span className="relative flex h-3 w-3">
@@ -480,7 +480,7 @@ export default function SecurityPage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
               >
                 Start Free
               </Link>

@@ -18,7 +18,7 @@ const categoryColors: Record<string, string> = {
 
 export default function BlogPage() {
   return (
-    <section className="mx-auto max-w-4xl px-6 py-20">
+    <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
       <SectionReveal>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
           Blog
@@ -78,7 +78,7 @@ export default function BlogPage() {
                 type="email"
                 placeholder="you@company.com"
                 
-                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <button
                 

@@ -90,7 +90,7 @@ export default function ContactPage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl px-6 py-20">
+    <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
       <SectionReveal>
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
@@ -162,7 +162,7 @@ export default function ContactPage() {
                   id="name"
                   type="text"
                   required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
                   placeholder="Jane Doe"
                 />
               </div>
@@ -177,7 +177,7 @@ export default function ContactPage() {
                   id="email"
                   type="email"
                   required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
                   placeholder="jane@company.com"
                 />
               </div>
@@ -195,7 +195,7 @@ export default function ContactPage() {
                   id="company"
                   type="text"
                   required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
                   placeholder="Acme Inc."
                 />
               </div>
@@ -209,7 +209,7 @@ export default function ContactPage() {
                 <select
                   id="team-size"
                   required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
                 >
                   <option value="">Select...</option>
                   {TEAM_SIZES.map((size) => (
@@ -232,7 +232,7 @@ export default function ContactPage() {
                 id="message"
                 rows={4}
                 required
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
                 placeholder="Tell us about your use case, deployment requirements, or questions..."
               />
             </div>

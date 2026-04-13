@@ -114,7 +114,7 @@ export default function PricingPage() {
 
         <SectionReveal className="mt-10 sm:mt-16">
           {/* Currency switcher */}
-          <div className="mb-8 flex items-center justify-center gap-3">
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
             <label
               htmlFor="currency-select"
               className="text-sm font-medium text-slate-500"
@@ -263,7 +263,7 @@ export default function PricingPage() {
               <a
                 key={b.label}
                 href="/security"
-                className={`rounded-full px-3 py-1 text-[11px] font-bold transition-opacity hover:opacity-80 ${b.color}`}
+                className={`rounded-full px-3 py-1 text-xs font-bold sm:text-sm transition-opacity hover:opacity-80 ${b.color}`}
               >
                 {b.label}
               </a>
@@ -889,7 +889,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
       <div
         className={cn(
           "overflow-hidden transition-all duration-200",
-          open ? "max-h-96 pb-4" : "max-h-0",
+          open ? "max-h-[32rem] pb-4" : "max-h-0",
         )}
       >
         <p className="text-sm leading-relaxed text-slate-600">{answer}</p>

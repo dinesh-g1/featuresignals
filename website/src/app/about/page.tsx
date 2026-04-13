@@ -107,7 +107,7 @@ export default function AboutPage() {
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
                   <Code className="h-5 w-5" />
                 </div>
-                <div className="mt-2 text-lg font-bold text-slate-900">
+                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
                   8 SDKs
                 </div>
               </div>
@@ -115,7 +115,7 @@ export default function AboutPage() {
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
                   <Zap className="h-5 w-5" />
                 </div>
-                <div className="mt-2 text-lg font-bold text-slate-900">
+                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
                   Sub-millisecond evaluation
                 </div>
               </div>
@@ -123,7 +123,7 @@ export default function AboutPage() {
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
                   <Cloud className="h-5 w-5" />
                 </div>
-                <div className="mt-2 text-lg font-bold text-slate-900">
+                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
                   Apache-2.0 Open Source
                 </div>
               </div>
@@ -131,7 +131,7 @@ export default function AboutPage() {
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
                   <Users className="h-5 w-5" />
                 </div>
-                <div className="mt-2 text-lg font-bold text-slate-900">
+                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
                   500+ Organizations
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function AboutPage() {
             <dl className="mt-4 space-y-4 text-sm">
               <div>
                 <dt className="font-semibold text-slate-700">Legal Name</dt>
-                <dd className="mt-0.5 text-slate-600">
+                <dd className="mt-0.5 break-words text-slate-600">
                   Vivekananda Technology Labs
                 </dd>
               </div>
@@ -185,14 +185,14 @@ export default function AboutPage() {
                 <dt className="font-semibold text-slate-700">
                   Registered Address
                 </dt>
-                <dd className="mt-0.5 text-slate-600">
+                <dd className="mt-0.5 break-words text-slate-600">
                   Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
                   Hyderabad, Telangana - 500089, India
                 </dd>
               </div>
               <div>
                 <dt className="font-semibold text-slate-700">Contact</dt>
-                <dd className="mt-0.5 text-slate-600">
+                <dd className="mt-0.5 break-words text-slate-600">
                   <a
                     href="mailto:support@featuresignals.com"
                     className="font-medium text-indigo-600 underline decoration-indigo-200 hover:text-indigo-700"
@@ -205,7 +205,7 @@ export default function AboutPage() {
                 <dt className="font-semibold text-slate-700">
                   Nature of Business
                 </dt>
-                <dd className="mt-0.5 text-slate-600">
+                <dd className="mt-0.5 break-words text-slate-600">
                   IT Services — Cloud-hosted software, APIs, SDKs, and developer
                   tools for feature management.
                 </dd>

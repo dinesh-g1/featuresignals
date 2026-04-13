@@ -335,7 +335,7 @@ export default function IntegrationsPage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
               >
                 Start Free
               </Link>
@@ -458,7 +458,7 @@ export default function IntegrationsPage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
               >
                 Start Free
               </Link>

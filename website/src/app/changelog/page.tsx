@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 
 export default function ChangelogPage() {
   return (
-    <section className="mx-auto max-w-3xl px-6 py-20">
+    <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
       <SectionReveal>
-        <h1 className="text-4xl font-bold text-slate-900">Changelog</h1>
-        <p className="mt-4 text-slate-500 leading-relaxed">
+        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Changelog</h1>
+        <p className="mt-4 text-base text-slate-500 leading-relaxed sm:text-lg">
           Product updates, new features, and improvements.
         </p>
       </SectionReveal>
@@ -28,7 +28,7 @@ export default function ChangelogPage() {
                 Latest
               </span>
             </div>
-            <h2 className="mt-3 text-xl font-semibold text-slate-900">
+            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
               Flag Engine & Toggle Categories
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
@@ -78,7 +78,7 @@ export default function ChangelogPage() {
                 April 2026
               </time>
             </div>
-            <h2 className="mt-3 text-xl font-semibold text-slate-900">
+            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
               API Security Hardening
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
@@ -165,7 +165,7 @@ export default function ChangelogPage() {
                 Phase 3 — April 2026
               </time>
             </div>
-            <h2 className="mt-3 text-xl font-semibold text-slate-900">
+            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
               Scale & Differentiation
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
@@ -214,7 +214,7 @@ export default function ChangelogPage() {
                 Phase 2 — March 2026
               </time>
             </div>
-            <h2 className="mt-3 text-xl font-semibold text-slate-900">
+            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
               Enterprise Readiness
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
@@ -277,7 +277,7 @@ export default function ChangelogPage() {
                 Phase 1 — February 2026
               </time>
             </div>
-            <h2 className="mt-3 text-xl font-semibold text-slate-900">
+            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
               Core Platform (MVP)
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
@@ -335,7 +335,7 @@ export default function ChangelogPage() {
                 type="email"
                 placeholder="you@company.com"
                 
-                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <button
                 
