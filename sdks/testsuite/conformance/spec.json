@@ -1,0 +1,312 @@
+{
+  "spec_version": "1.0.0",
+  "name": "FSAutoResearch SDK Conformance Specification",
+  "description": "This specification defines the API surface, method signatures, and expected behavior that all FSAutoResearch SDK implementations must provide.",
+  "required_apis": {
+    "initialization": {
+      "description": "SDK initialization and flag fetching",
+      "methods": [
+        {
+          "name": "initialize",
+          "signature": "initialize(config: SDKConfig) => Promise<void>",
+          "description": "Initialize the SDK with configuration and fetch flags from the server.",
+          "parameters": {
+            "config": {
+              "env_key": { "type": "string", "required": true, "description": "Environment key for authentication" },
+              "base_url": { "type": "string", "required": true, "description": "Base URL of the feature flag service" },
+              "polling_interval": { "type": "number", "required": false, "default": 30000, "description": "Polling interval in milliseconds" },
+              "enable_sse": { "type": "boolean", "required": false, "default": true, "description": "Enable SSE real-time updates" },
+              "timeout": { "type": "number", "required": false, "default": 5000, "description": "Request timeout in milliseconds" },
+              "offline_mode": { "type": "boolean", "required": false, "default": false, "description": "Start in offline mode" },
+              "default_flags": { "type": "object", "required": false, "description": "Default flags to use before server response" }
+            }
+          },
+          "behavior": {
+            "fetches_flags": "Must fetch all flags from the server during initialization",
+            "timeout": "Must complete within 500ms for flag fetch",
+            "error_handling": "Must not throw; errors should be logged or emitted via error event",
+            "offline": "Must use default_flags if offline_mode is true"
+          }
+        },
+        {
+          "name": "destroy",
+          "signature": "destroy() => Promise<void>",
+          "description": "Shut down the SDK, close connections, and release resources.",
+          "behavior": {
+            "closes_sse": "Must close any active SSE connections",
+            "stops_polling": "Must stop any active polling timers",
+            "idempotent": "Must be safe to call multiple times"
+          }
+        },
+        {
+          "name": "is_initialized",
+          "signature": "isInitialized() => boolean",
+          "description": "Check whether the SDK has completed initialization.",
+          "returns": { "type": "boolean" }
+        }
+      ]
+    },
+    "evaluation": {
+      "description": "Feature flag evaluation methods",
+      "methods": [
+        {
+          "name": "is_enabled",
+          "signature": "isEnabled(flagKey: string, defaultValue?: boolean, context?: EvalContext) => boolean",
+          "description": "Evaluate a boolean feature flag.",
+          "parameters": {
+            "flagKey": { "type": "string", "required": true },
+            "defaultValue": { "type": "boolean", "required": false, "default": false },
+            "context": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "user_key": { "type": "string", "description": "Unique user identifier for targeting and rollout" },
+                "attributes": { "type": "object<string, string>", "description": "User attributes for targeting rules" }
+              }
+            }
+          },
+          "returns": { "type": "boolean" },
+          "behavior": {
+            "unknown_flag": "Returns defaultValue for unknown flag keys",
+            "disabled_flag": "Returns false for disabled flags",
+            "targeting": "Respects targeting rules when context is provided",
+            "percentage": "Returns deterministic result for same user_key",
+            "no_side_effects": "Must not modify SDK state"
+          }
+        },
+        {
+          "name": "variation_string",
+          "signature": "variationString(flagKey: string, defaultValue: string, context?: EvalContext) => string",
+          "description": "Evaluate a string feature flag.",
+          "parameters": {
+            "flagKey": { "type": "string", "required": true },
+            "defaultValue": { "type": "string", "required": true },
+            "context": { "type": "object", "required": false }
+          },
+          "returns": { "type": "string" },
+          "behavior": {
+            "unknown_flag": "Returns defaultValue for unknown flag keys",
+            "type_mismatch": "Returns defaultValue if flag is not a string type"
+          }
+        },
+        {
+          "name": "variation_number",
+          "signature": "variationNumber(flagKey: string, defaultValue: number, context?: EvalContext) => number",
+          "description": "Evaluate a number feature flag.",
+          "parameters": {
+            "flagKey": { "type": "string", "required": true },
+            "defaultValue": { "type": "number", "required": true },
+            "context": { "type": "object", "required": false }
+          },
+          "returns": { "type": "number" },
+          "behavior": {
+            "unknown_flag": "Returns defaultValue for unknown flag keys",
+            "type_mismatch": "Returns defaultValue if flag is not a number type"
+          }
+        },
+        {
+          "name": "variation_json",
+          "signature": "variationJSON(flagKey: string, defaultValue: object, context?: EvalContext) => object",
+          "description": "Evaluate a JSON feature flag. Returns a parsed object.",
+          "parameters": {
+            "flagKey": { "type": "string", "required": true },
+            "defaultValue": { "type": "object", "required": true },
+            "context": { "type": "object", "required": false }
+          },
+          "returns": { "type": "object" },
+          "behavior": {
+            "unknown_flag": "Returns defaultValue for unknown flag keys",
+            "type_mismatch": "Returns defaultValue if flag is not a JSON type",
+            "parse": "Must return a parsed object, not a JSON string"
+          }
+        },
+        {
+          "name": "variation",
+          "signature": "variation(flagKey: string, defaultValue: any, context?: EvalContext) => any",
+          "description": "Generic variation method that returns the flag value regardless of type.",
+          "parameters": {
+            "flagKey": { "type": "string", "required": true },
+            "defaultValue": { "type": "any", "required": true },
+            "context": { "type": "object", "required": false }
+          },
+          "returns": { "type": "any" }
+        },
+        {
+          "name": "get_all_flags",
+          "signature": "getAllFlags() => object",
+          "description": "Return all currently loaded flags as a key-value map.",
+          "returns": { "type": "object<string, any>" }
+        },
+        {
+          "name": "evaluate_bulk",
+          "signature": "evaluateBulk(requests: EvaluateRequest[], context?: EvalContext) => EvaluateResponse[]",
+          "description": "Evaluate multiple flags in a single call.",
+          "parameters": {
+            "requests": {
+              "type": "array",
+              "items": {
+                "flagKey": { "type": "string" },
+                "defaultValue": { "type": "any" }
+              }
+            },
+            "context": { "type": "object", "required": false }
+          },
+          "returns": {
+            "type": "array",
+            "items": {
+              "flagKey": { "type": "string" },
+              "value": { "type": "any" },
+              "reason": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "tracking": {
+      "description": "Impression tracking",
+      "methods": [
+        {
+          "name": "track",
+          "signature": "track(flagKey: string, userKey: string, value: any) => void",
+          "description": "Record an impression event for analytics.",
+          "parameters": {
+            "flagKey": { "type": "string", "required": true },
+            "userKey": { "type": "string", "required": true },
+            "value": { "type": "any", "required": true }
+          },
+          "behavior": {
+            "async": "Should not block the calling thread",
+            "batching": "May batch impressions before sending"
+          }
+        }
+      ]
+    },
+    "events": {
+      "description": "Event emission for SDK lifecycle",
+      "events": [
+        {
+          "name": "ready",
+          "description": "Emitted when the SDK has finished initialization and flags are available."
+        },
+        {
+          "name": "error",
+          "description": "Emitted when an error occurs. Payload contains error details.",
+          "payload": {
+            "message": { "type": "string" },
+            "code": { "type": "string" },
+            "details": { "type": "object" }
+          }
+        },
+        {
+          "name": "flags_change",
+          "description": "Emitted when flags are updated via SSE or polling.",
+          "payload": {
+            "changed_flags": { "type": "array<string>" },
+            "source": { "type": "string", "enum": ["sse", "poll"] }
+          }
+        },
+        {
+          "name": "impression",
+          "description": "Emitted when a flag is evaluated.",
+          "payload": {
+            "flagKey": { "type": "string" },
+            "value": { "type": "any" },
+            "context": { "type": "object" },
+            "timestamp": { "type": "string", "format": "ISO8601" }
+          }
+        }
+      ]
+    },
+    "openfeature_provider": {
+      "description": "OpenFeature provider interface implementation",
+      "required": false,
+      "methods": [
+        {
+          "name": "resolve_boolean_value",
+          "signature": "resolveBooleanValue(flagKey: string, defaultValue: boolean, context: EvaluationContext) => ResolutionDetails<boolean>"
+        },
+        {
+          "name": "resolve_string_value",
+          "signature": "resolveStringValue(flagKey: string, defaultValue: string, context: EvaluationContext) => ResolutionDetails<string>"
+        },
+        {
+          "name": "resolve_number_value",
+          "signature": "resolveNumberValue(flagKey: string, defaultValue: number, context: EvaluationContext) => ResolutionDetails<number>"
+        },
+        {
+          "name": "resolve_object_value",
+          "signature": "resolveObjectValue(flagKey: string, defaultValue: object, context: EvaluationContext) => ResolutionDetails<object>"
+        }
+      ],
+      "resolution_details": {
+        "value": { "type": "any" },
+        "variant": { "type": "string", "description": "The variant key that was selected" },
+        "reason": {
+          "type": "string",
+          "enum": ["STATIC", "DEFAULT", "TARGETING_MATCH", "SPLIT", "CACHED", "ERROR", "DISABLED"]
+        },
+        "error_code": { "type": "string", "required": false },
+        "error_message": { "type": "string", "required": false }
+      }
+    }
+  },
+  "flag_format": {
+    "description": "The JSON format for flags as served by the API",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "type": { "type": "string", "enum": ["boolean", "string", "number", "json", "ab"] },
+        "enabled": { "type": "boolean" },
+        "default_value": { "type": "any" },
+        "rules": {
+          "type": "array",
+          "items": {
+            "attribute": { "type": "string" },
+            "operator": { "type": "string", "enum": ["equals", "contains", "starts_with", "ends_with"] },
+            "value": { "type": "any" },
+            "return": { "type": "any" }
+          }
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "key": { "type": "string" },
+            "value": { "type": "any" },
+            "weight": { "type": "integer", "description": "Weight out of 10000 (10000 = 100%)" }
+          }
+        },
+        "percentage_rollout": { "type": "integer", "description": "Rollout percentage out of 10000 (10000 = 100%)" }
+      },
+      "required": ["key", "type", "enabled", "default_value"]
+    }
+  },
+  "server_endpoints": {
+    "get_flags": {
+      "method": "GET",
+      "path": "/api/client/{envKey}/flags",
+      "description": "Retrieve all feature flags for the given environment"
+    },
+    "sse_stream": {
+      "method": "GET",
+      "path": "/api/stream/{envKey}",
+      "description": "Establish an SSE connection for real-time flag updates",
+      "events": ["connected", "flags_change", "update", "heartbeat"]
+    },
+    "evaluate": {
+      "method": "POST",
+      "path": "/api/evaluate",
+      "description": "Evaluate a single flag server-side"
+    },
+    "bulk_evaluate": {
+      "method": "POST",
+      "path": "/api/evaluate/bulk",
+      "description": "Evaluate multiple flags server-side"
+    },
+    "track": {
+      "method": "POST",
+      "path": "/api/track",
+      "description": "Record an impression event"
+    }
+  }
+}

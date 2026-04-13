@@ -1,0 +1,44 @@
+{
+  "report_version": "1.0.0",
+  "generated_at": "",
+  "test_server": "http://localhost:8181",
+  "summary": {
+    "sdks_tested": 0,
+    "sdks_passed": 0,
+    "total_tests": 0,
+    "tests_passed": 0,
+    "tests_failed": 0,
+    "overall_score": "pending"
+  },
+  "scores": {
+    "go": "pending",
+    "node": "pending",
+    "python": "pending",
+    "java": "pending",
+    "dotnet": "pending",
+    "ruby": "pending",
+    "react": "pending",
+    "vue": "pending"
+  },
+  "sdks": [],
+  "test_categories": [
+    "initialization",
+    "boolean_evaluation",
+    "string_evaluation",
+    "number_evaluation",
+    "json_evaluation",
+    "ab_evaluation",
+    "default_value",
+    "targeting",
+    "percentage_rollout",
+    "real_time_updates",
+    "polling_fallback",
+    "offline_mode",
+    "error_handling_invalid_key",
+    "error_handling_invalid_url",
+    "concurrent_access",
+    "memory_usage",
+    "openfeature_provider"
+  ],
+  "notes": "Run './scripts/run-all.sh' to execute conformance tests, then './scripts/report.sh' to generate this report."
+}
