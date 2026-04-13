@@ -43,7 +43,12 @@ pnpm-debug.log*
 /server/server
 /server/relay
 /server/stalescan
+/server/genspec
+/server/licensegen
 *.out
+
+# Generated documentation (build artifacts)
+server/internal/api/docs/swagger.html
 
 # Python
 __pycache__/
@@ -53,16 +58,15 @@ __pycache__/
 .eggs/
 .venv/
 
+# Private documentation and sensitive business data (compliance, strategy, operations)
+# These files contain confidential information and must not be pushed to public repositories
+private/
+
 # Claude local settings
 .claude/settings.local.json
 
 # Local developer config (VPS host, etc.)
 .featuresignals/
-
-# Internal documentation and operational scripts (not for public repo)
-PLAN.md
-SERVER_SETUP.md
-deploy/db-connect.sh
 .internal/
 
 # Misc
