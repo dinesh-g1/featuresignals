@@ -16,14 +16,6 @@ COPY postcss.config.* ./
 COPY .dockerignore ./
 RUN npm run build && npm cache clean --force
 
-# Serve static export with a lightweight static server
-FROM node:22-alpine
-RUN npm install -g serve
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-WORKDIR /app
-COPY --from=builder --chown=appuser:appgroup /app/out ./out
-
-USER appuser
-ENV PORT=3001
-EXPOSE 3001
-CMD ["serve", "out", "-l", "3001", "--no-request-logging"]
+FROM alpine:3.19
+COPY --from=builder /app/out /dist
+CMD ["sh", "-c", "cp -r /dist/* /srv/website/ && echo 'Website ready'"]
