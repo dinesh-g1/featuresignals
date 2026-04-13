@@ -19,6 +19,7 @@ import { MobileNav } from "./mobile-nav";
 const topLinks = [
   { href: "/pricing", label: "Pricing" },
   { href: "/blog", label: "Blog" },
+  { href: "/contact", label: "Contact Sales" },
 ];
 
 function NavListItem({ item }: { item: NavItem }) {
@@ -33,16 +34,21 @@ function NavListItem({ item }: { item: NavItem }) {
       <Wrapper
         href={item.href}
         {...(extra as Record<string, string>)}
-        className="group flex items-start gap-3 rounded-lg p-3 transition-colors duration-150 hover:bg-slate-50"
+        className="group relative flex items-start gap-3 rounded-lg p-3 transition-colors duration-150 hover:bg-slate-50"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100 transition-colors duration-150 group-hover:bg-indigo-100">
           <Ico className="h-4 w-4" strokeWidth={1.5} />
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium text-slate-900">
               {item.title}
             </span>
+            {item.badge && (
+              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {item.badge}
+              </span>
+            )}
             {item.external && (
               <ExternalLink className="h-3 w-3 text-slate-400" />
             )}
@@ -161,7 +167,7 @@ export function Header() {
                       "rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
                       pathname === link.href || pathname === `${link.href}/`
                         ? "text-indigo-600"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                     )}
                   >
                     {link.label}

@@ -12,6 +12,8 @@ import {
   Package,
   GitBranch,
   Rocket,
+  Brain,
+  Webhook,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,64 +23,62 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   external?: boolean;
+  badge?: string;
 }
 
 export const platformItems: NavItem[] = [
   {
-    title: "Feature Flags",
-    description: "Multi-type flags, targeting, percentage rollouts",
-    href: "/features#ship-with-confidence",
+    title: "Core Features",
+    description: "Flag engine, targeting, rollouts, A/B testing",
+    href: "/features",
     icon: Flag,
   },
   {
-    title: "Experimentation",
-    description: "A/B tests, weighted variants, mutual exclusion",
-    href: "/features#experiment-measure",
-    icon: FlaskConical,
+    title: "AI Capabilities",
+    description: "AI flag cleanup, anomaly detection, auto-remediation",
+    href: "/features/ai",
+    icon: Brain,
+    badge: "New",
   },
   {
-    title: "Debugging",
-    description: "Target inspector, environment comparison",
-    href: "/features#debug-troubleshoot",
-    icon: Search,
-  },
-  {
-    title: "Governance",
-    description: "Audit logs, RBAC, approval workflows",
-    href: "/features#govern-comply",
+    title: "Security & Governance",
+    description: "RBAC, audit logs, SSO, approvals, compliance",
+    href: "/features/security",
     icon: ShieldCheck,
   },
   {
-    title: "Deployment",
-    description: "Docker, Kubernetes, relay proxy, self-hosted",
-    href: "/features#deploy-your-way",
-    icon: Cloud,
+    title: "Integrations",
+    description: "Slack, GitHub, Jira, Datadog, webhooks",
+    href: "/features/integrations",
+    icon: Webhook,
   },
-];
-
-export const learnMoreItems: NavItem[] = [
   {
     title: "Use Cases",
     description: "Real workflows for engineering teams",
     href: "/use-cases",
     icon: Layers,
   },
+];
+
+export const learnMoreItems: NavItem[] = [
   {
-    title: "Security & Trust",
-    description: "Encryption, RBAC, SOC 2, GDPR",
-    href: "/security",
-    icon: Lock,
+    title: "Pricing",
+    description: "Simple, transparent pricing — starts free",
+    href: "/pricing",
+    icon: Layers,
   },
   {
-    title: "How We Compare",
-    description: "vs LaunchDarkly, Unleash, and more",
-    href: "/features#comparison",
-    icon: ArrowLeftRight,
+    title: "Documentation",
+    description: "Getting started, concepts, guides",
+    href: "https://docs.featuresignals.com",
+    icon: BookOpen,
+    external: true,
   },
 ];
 
 export const productFooterLinks = [
-  { title: "See all features", href: "/features" },
+  { title: "Core features", href: "/features" },
+  { title: "AI capabilities", href: "/features/ai" },
   { title: "What's new", href: "/changelog" },
 ];
 

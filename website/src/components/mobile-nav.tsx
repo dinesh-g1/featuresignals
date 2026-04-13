@@ -35,7 +35,7 @@ function AccordionSection({
         <ChevronDown
           className={cn(
             "h-4 w-4 text-slate-400 transition-transform duration-200",
-            open && "rotate-180"
+            open && "rotate-180",
           )}
         />
       </button>
@@ -61,18 +61,26 @@ function AccordionSection({
                     href={item.href}
                     {...(extra as Record<string, string>)}
                     onClick={onNavigate}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50"
+                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50"
                   >
-                    <Ico className="h-4 w-4 shrink-0 text-indigo-600" strokeWidth={1.5} />
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium text-slate-700">
-                          {item.title}
+                    <div className="flex items-center gap-3">
+                      <Ico
+                        className="h-4 w-4 shrink-0 text-indigo-600"
+                        strokeWidth={1.5}
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        {item.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {item.badge && (
+                        <span className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          {item.badge}
                         </span>
-                        {item.external && (
-                          <ExternalLink className="h-3 w-3 text-slate-400" />
-                        )}
-                      </div>
+                      )}
+                      {item.external && (
+                        <ExternalLink className="h-3 w-3 text-slate-400" />
+                      )}
                     </div>
                   </Tag>
                 );
@@ -172,7 +180,7 @@ export function MobileNav({ pathname }: { pathname: string }) {
                           "block rounded-lg px-3 py-3 text-base font-medium transition-colors",
                           pathname === link.href
                             ? "text-indigo-600"
-                            : "text-slate-900 hover:bg-slate-50"
+                            : "text-slate-900 hover:bg-slate-50",
                         )}
                       >
                         {link.label}

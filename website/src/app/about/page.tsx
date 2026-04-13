@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionReveal } from "@/components/section-reveal";
+import { appUrl } from "@/lib/urls";
+import { Code, Zap, Cloud, Users } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
@@ -50,8 +52,8 @@ export default function AboutPage() {
               <strong className="text-slate-800">
                 feature flag and feature management platform
               </strong>
-              . It enables engineering teams to control feature rollouts, run A/B
-              experiments, and manage configurations in real time — without
+              . It enables engineering teams to control feature rollouts, run
+              A/B experiments, and manage configurations in real time — without
               expensive SaaS contracts.
             </p>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -87,9 +89,51 @@ export default function AboutPage() {
                   Self-Hosted
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Apache-2.0 licensed. Deploy with Docker Compose, Kubernetes, or
-                  a single Go binary.
+                  Apache-2.0 licensed. Deploy with Docker Compose, Kubernetes,
+                  or a single Go binary.
                 </p>
+              </div>
+            </div>
+          </div>
+        </SectionReveal>
+
+        <SectionReveal delay={0.11}>
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">
+              By the numbers
+            </h2>
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                  <Code className="h-5 w-5" />
+                </div>
+                <div className="mt-2 text-lg font-bold text-slate-900">
+                  8 SDKs
+                </div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <div className="mt-2 text-lg font-bold text-slate-900">
+                  Sub-millisecond evaluation
+                </div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                  <Cloud className="h-5 w-5" />
+                </div>
+                <div className="mt-2 text-lg font-bold text-slate-900">
+                  Apache-2.0 Open Source
+                </div>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div className="mt-2 text-lg font-bold text-slate-900">
+                  500+ Organizations
+                </div>
               </div>
             </div>
           </div>
@@ -99,8 +143,8 @@ export default function AboutPage() {
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Pricing</h2>
             <p className="mt-3 text-base leading-relaxed text-slate-600">
-              We offer a <strong className="text-slate-800">Free</strong> plan, a{" "}
-              <strong className="text-slate-800">Pro</strong> plan at{" "}
+              We offer a <strong className="text-slate-800">Free</strong> plan,
+              a <strong className="text-slate-800">Pro</strong> plan at{" "}
               <strong className="text-slate-800">₹999/month</strong>, and an{" "}
               <strong className="text-slate-800">Enterprise</strong> plan with
               custom pricing. All plans include the full feature set. See our{" "}
@@ -187,6 +231,32 @@ export default function AboutPage() {
                 className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
               >
                 Back to Home
+              </Link>
+            </div>
+          </div>
+        </SectionReveal>
+
+        <SectionReveal delay={0.18}>
+          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-center text-white sm:p-12">
+            <h2 className="text-2xl font-bold sm:text-3xl">
+              Ready to get started?
+            </h2>
+            <p className="mt-2 text-sm text-indigo-200 sm:text-base">
+              Start a 14-day free trial &mdash; full Pro features, no credit
+              card required.
+            </p>
+            <div className="mt-6 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href={appUrl.register}
+                className="w-full rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md sm:w-auto"
+              >
+                Start Free Trial
+              </Link>
+              <Link
+                href="/contact"
+                className="w-full rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
+              >
+                Talk to Sales
               </Link>
             </div>
           </div>

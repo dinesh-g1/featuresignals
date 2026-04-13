@@ -19,13 +19,13 @@ export function CodeTabs({ tabs, id }: { tabs: Tab[]; id: string }) {
       <div className="flex overflow-x-auto scrollbar-hide border-b border-white/10">
         {tabs.map((tab, i) => (
           <button
-            key={`${id}-${tab.lang}`}
+            key={`${id}-${i}`}
             onClick={() => setActive(i)}
             className={cn(
               "shrink-0 px-4 py-2.5 text-xs font-medium transition-colors duration-150",
               i === active
                 ? "border-b-2 border-indigo-400 text-indigo-300 bg-white/5"
-                : "text-slate-400 hover:text-slate-300"
+                : "text-slate-400 hover:text-slate-300",
             )}
           >
             {tab.label}

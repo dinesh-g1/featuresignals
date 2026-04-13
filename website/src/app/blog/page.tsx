@@ -62,30 +62,33 @@ export default function BlogPage() {
       </div>
 
       <SectionReveal delay={0.3}>
-        <div className="mt-16 rounded-xl border border-indigo-100 bg-indigo-50/50 p-8 text-center">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Stay in the loop
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Follow our{" "}
-            <Link
-              href="/changelog"
-              className="font-medium text-indigo-600 underline hover:text-indigo-700"
+        <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-6 py-8 text-center sm:px-10">
+            <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
+              Stay in the loop
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              Get product updates, feature announcements, and engineering
+              insights. No spam, unsubscribe anytime.
+            </p>
+            <div
+              className="mx-auto mt-5 flex max-w-sm flex-col gap-2 sm:flex-row"
             >
-              changelog
-            </Link>{" "}
-            for product updates, or star us on{" "}
-            <a
-              href="https://github.com/dinesh-g1/featuresignals"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-indigo-600 underline hover:text-indigo-700"
-            >
-              GitHub
-            </a>{" "}
-            to get notified of new releases.
-          </p>
-        </div>
+              <input
+                type="email"
+                placeholder="you@company.com"
+                
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <button
+                
+                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+              >
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </section>
       </SectionReveal>
     </section>
   );

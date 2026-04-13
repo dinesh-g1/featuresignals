@@ -446,13 +446,17 @@ function OnboardingContent() {
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
       <div className="text-center">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+          <Sparkles className="h-3.5 w-3.5" />
+          AI-Powered Feature Management
+        </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           Welcome{greeting} to{" "}
           <span className="text-indigo-600">FeatureSignals</span>
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           Your workspace is ready. Let&apos;s get your first flag live in under
-          5 minutes.
+          5 minutes. Open-source, AI-powered cleanup, and predictable pricing.
         </p>
       </div>
 

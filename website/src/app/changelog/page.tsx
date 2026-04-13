@@ -83,9 +83,9 @@ export default function ChangelogPage() {
             </h2>
             <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
               <li>
-                <strong>Broken Object Level Authorization fix</strong> — API
-                key revocation now verifies org ownership to prevent
-                cross-tenant access
+                <strong>Broken Object Level Authorization fix</strong> — API key
+                revocation now verifies org ownership to prevent cross-tenant
+                access
               </li>
               <li>
                 <strong>JWT token type enforcement</strong> — Refresh tokens can
@@ -113,8 +113,8 @@ export default function ChangelogPage() {
               </li>
               <li>
                 <strong>Content-Security-Policy header</strong> — Added{" "}
-                <code>{`default-src 'none'; frame-ancestors 'none'`}</code> to all
-                responses
+                <code>{`default-src 'none'; frame-ancestors 'none'`}</code> to
+                all responses
               </li>
               <li>
                 <strong>SSRF protection</strong> — Webhook URLs block private
@@ -125,8 +125,8 @@ export default function ChangelogPage() {
                 array capped at 100 items
               </li>
               <li>
-                <strong>PII masking in logs</strong> — Emails, tokens, and
-                phone numbers are masked in server logs
+                <strong>PII masking in logs</strong> — Emails, tokens, and phone
+                numbers are masked in server logs
               </li>
               <li>
                 <strong>Security audit logging</strong> —{" "}
@@ -302,8 +302,8 @@ export default function ChangelogPage() {
                 OpenFeature provider
               </li>
               <li>
-                <strong>React SDK</strong> — Provider component, hooks
-                (useFlag, useFlags, useReady, useError)
+                <strong>React SDK</strong> — Provider component, hooks (useFlag,
+                useFlags, useReady, useError)
               </li>
               <li>
                 <strong>Flag Engine</strong> — Next.js with flag management,
@@ -319,15 +319,33 @@ export default function ChangelogPage() {
       </div>
 
       <SectionReveal delay={0.16}>
-        <div className="mt-12 rounded-xl border border-indigo-100 bg-indigo-50/50 p-6 text-center">
-          <p className="text-sm text-slate-600">
-            Want deeper dives into feature management?{" "}
-            <Link href="/blog" className="font-medium text-indigo-600 underline hover:text-indigo-700">
-              Read our blog
-            </Link>{" "}
-            for best practices and engineering guides.
-          </p>
-        </div>
+        <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-6 py-8 text-center sm:px-10">
+            <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
+              Stay in the loop
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              Get product updates, feature announcements, and engineering
+              insights. No spam, unsubscribe anytime.
+            </p>
+            <div
+              className="mx-auto mt-5 flex max-w-sm flex-col gap-2 sm:flex-row"
+            >
+              <input
+                type="email"
+                placeholder="you@company.com"
+                
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <button
+                
+                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+              >
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </section>
       </SectionReveal>
     </section>
   );

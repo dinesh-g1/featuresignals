@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { CodeTabs } from "@/components/code-tabs";
 import { appUrl } from "@/lib/urls";
 import { SectionReveal } from "@/components/section-reveal";
@@ -10,9 +11,12 @@ import {
   Code,
   FlaskConical,
   Layers,
-  Tag,
-  UserSearch,
+  Settings2,
+  Package,
   Users,
+  UserCog,
+  UserSearch,
+  Tag,
 } from "lucide-react";
 
 const colorMap: Record<
@@ -408,88 +412,138 @@ export default function UseCasesPage() {
         </p>
       </div>
 
+      <SectionReveal className="mt-6 sm:mt-8">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
+            <Package className="h-4 w-4" />
+            For Platform Engineers
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-700 ring-1 ring-inset ring-violet-200">
+            <UserCog className="h-4 w-4" />
+            For Product Engineers
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+            <BarChart3 className="h-4 w-4" />
+            For Engineering Managers
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+            <Settings2 className="h-4 w-4" />
+            For DevOps Teams
+          </span>
+        </div>
+      </SectionReveal>
+
       <div className="mt-10 space-y-8 sm:mt-16 sm:space-y-12">
         {useCases.map((uc, i) => {
           const c = colorMap[uc.color];
           const Icon = uc.icon;
           return (
-            <SectionReveal key={uc.title}>
-              <div className="group rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:border-slate-300 hover:shadow-xl sm:p-8">
-                <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-start md:gap-8">
-                  <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:h-14 sm:w-14 ${c.bg} ${c.text} ring-1 ${c.ring}`}
-                  >
-                    <Icon
-                      className="h-6 w-6 sm:h-7 sm:w-7"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-3">
-                      <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                        {uc.title}
-                      </h2>
-                      <span
-                        className={`self-start rounded-full ${c.bg} px-3 py-0.5 text-xs font-medium ${c.stepText} ring-1 ${c.ring}`}
-                      >
-                        {uc.subtitle}
-                      </span>
+            <Fragment key={uc.title}>
+              <SectionReveal>
+                <div className="group rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:border-slate-300 hover:shadow-xl sm:p-8">
+                  <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-start md:gap-8">
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:h-14 sm:w-14 ${c.bg} ${c.text} ring-1 ${c.ring}`}
+                    >
+                      <Icon
+                        className="h-6 w-6 sm:h-7 sm:w-7"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
                     </div>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
-                      {uc.description}
-                    </p>
-                    <div className="mt-4 sm:mt-5">
-                      <h3 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                        How it works
-                      </h3>
-                      <ol className="mt-3 space-y-2">
-                        {uc.steps.map((step, j) => (
-                          <li
-                            key={step}
-                            className="flex items-start gap-2 sm:gap-3"
-                          >
-                            <span
-                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${c.bg} text-xs font-bold ${c.stepText}`}
-                            >
-                              {j + 1}
-                            </span>
-                            <span className="text-sm text-slate-600">
-                              {step}
-                            </span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                    {uc.code.length > 0 && (
-                      <div className="mt-4 sm:mt-5">
-                        <h3 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                          See it in code
-                        </h3>
-                        <CodeTabs tabs={uc.code} id={`usecase-${i}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-3">
+                        <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
+                          {uc.title}
+                        </h2>
+                        <span
+                          className={`self-start rounded-full ${c.bg} px-3 py-0.5 text-xs font-medium ${c.stepText} ring-1 ${c.ring}`}
+                        >
+                          {uc.subtitle}
+                        </span>
                       </div>
-                    )}
-                    <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                      <a
-                        href={appUrl.register}
-                        className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
-                      >
-                        Try this workflow free &rarr;
-                      </a>
-                      <span className="text-slate-300">|</span>
-                      <a
-                        href="https://docs.featuresignals.com/getting-started/quickstart"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-slate-500 transition-colors hover:text-slate-700"
-                      >
-                        Quickstart guide
-                      </a>
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
+                        {uc.description}
+                      </p>
+                      <div className="mt-4 sm:mt-5">
+                        <h3 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                          How it works
+                        </h3>
+                        <ol className="mt-3 space-y-2">
+                          {uc.steps.map((step, j) => (
+                            <li
+                              key={step}
+                              className="flex items-start gap-2 sm:gap-3"
+                            >
+                              <span
+                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${c.bg} text-xs font-bold ${c.stepText}`}
+                              >
+                                {j + 1}
+                              </span>
+                              <span className="text-sm text-slate-600">
+                                {step}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                      {uc.code.length > 0 && (
+                        <div className="mt-4 sm:mt-5">
+                          <h3 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                            See it in code
+                          </h3>
+                          <CodeTabs tabs={uc.code} id={`usecase-${i}`} />
+                        </div>
+                      )}
+                      <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
+                        <a
+                          href={appUrl.register}
+                          className="text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                        >
+                          Try this workflow free &rarr;
+                        </a>
+                        <span className="text-slate-300">|</span>
+                        <a
+                          href="https://docs.featuresignals.com/getting-started/quickstart"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-slate-500 transition-colors hover:text-slate-700"
+                        >
+                          Quickstart guide
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </SectionReveal>
+              </SectionReveal>
+              {i === 3 && (
+                <SectionReveal>
+                  <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 text-center text-white sm:p-10">
+                    <h2 className="text-xl font-bold sm:text-2xl">
+                      Try this workflow free
+                    </h2>
+                    <p className="mt-2 text-sm text-indigo-200 sm:text-base">
+                      Start a 14-day free trial &mdash; full Pro features, no
+                      credit card required.
+                    </p>
+                    <div className="mt-6 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row sm:gap-4">
+                      <a
+                        href={appUrl.register}
+                        className="w-full rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md sm:w-auto"
+                      >
+                        Try this workflow free
+                      </a>
+                      <a
+                        href="/pricing"
+                        className="w-full rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
+                      >
+                        View Pricing
+                      </a>
+                    </div>
+                  </div>
+                </SectionReveal>
+              )}
+            </Fragment>
           );
         })}
       </div>

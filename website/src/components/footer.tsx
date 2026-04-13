@@ -6,26 +6,31 @@ const footerSections = [
   {
     title: "Product",
     links: [
-      { label: "Features", href: "/features" },
+      { label: "Core Features", href: "/features" },
+      { label: "AI Capabilities", href: "/features/ai" },
+      { label: "Security & Governance", href: "/features/security" },
+      { label: "Integrations", href: "/features/integrations" },
       { label: "Use Cases", href: "/use-cases" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Security & Trust", href: "/security" },
     ],
   },
   {
     title: "Get Started",
     links: [
       { label: "Start Free Trial", href: appUrl.register, highlight: true },
+      { label: "Request Demo", href: "/contact" },
       { label: "Log in", href: appUrl.login },
       { label: "Flag Engine", href: appUrl.home },
-      { label: "Contact Sales", href: "/contact" },
     ],
   },
   {
     title: "Developers",
     links: [
       { label: "Documentation", href: "https://docs.featuresignals.com" },
-      { label: "API Playground", href: "https://docs.featuresignals.com/api-playground" },
+      {
+        label: "API Playground",
+        href: "https://docs.featuresignals.com/api-playground",
+      },
       { label: "SDKs", href: "https://docs.featuresignals.com/sdks/overview" },
       { label: "GitHub", href: "https://github.com/dinesh-g1/featuresignals" },
     ],
@@ -35,9 +40,13 @@ const footerSections = [
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Changelog", href: "/changelog" },
-      { label: "Quickstart Guide", href: "https://docs.featuresignals.com/getting-started/quickstart" },
+      {
+        label: "Quickstart Guide",
+        href: "https://docs.featuresignals.com/getting-started/quickstart",
+      },
       { label: "About", href: "/about" },
       { label: "Status", href: "/status" },
+      { label: "Contact Sales", href: "/contact" },
     ],
   },
   {
@@ -84,9 +93,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-        {/* Link columns + Brand column */}
         <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-6">
-          {/* Link sections — spans 5 columns on large screens */}
           <div className="col-span-2 grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-5 lg:col-span-4">
             {footerSections.map((section) => (
               <div key={section.title}>
@@ -125,9 +132,7 @@ export function Footer() {
             ))}
           </div>
 
-          {/* Brand / Trust column — right side like SigNoz */}
           <div className="col-span-2 flex flex-col items-start gap-5 border-t border-slate-200 pt-6 lg:col-span-2 lg:items-end lg:border-t-0 lg:pt-0">
-            {/* Logo */}
             <Link
               href="/"
               className="flex items-center gap-2 text-lg font-bold tracking-tight text-indigo-600 transition-colors hover:text-indigo-700"
@@ -136,7 +141,6 @@ export function Footer() {
               FeatureSignals
             </Link>
 
-            {/* Status indicator */}
             <Link
               href="/status"
               className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
@@ -147,7 +151,6 @@ export function Footer() {
               System Status
             </Link>
 
-            {/* Social links */}
             <div className="flex items-center gap-3">
               <a
                 href="https://github.com/dinesh-g1/featuresignals"
@@ -178,12 +181,10 @@ export function Footer() {
               </a>
             </div>
 
-            {/* Compliance badges */}
             <ComplianceBadges />
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="mt-8 border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
           <p className="font-medium text-slate-500">
             Proudly built in Bharat, engineered for the world.
@@ -193,8 +194,8 @@ export function Footer() {
             trading as FeatureSignals. Apache-2.0 License.
           </p>
           <p className="mt-1">
-            Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
-            Hyderabad, Telangana - 500089, India
+            Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,
+            Telangana - 500089, India
           </p>
         </div>
       </div>

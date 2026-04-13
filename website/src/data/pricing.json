@@ -7,9 +7,21 @@
     "methodology": "Cost-plus pricing based on actual cloud infrastructure costs with target 60-80% gross margin for SaaS.",
     "saas_infrastructure": {
       "provider": "Hetzner Cloud (EU)",
-      "api_server": { "instance": "CPX42 (8 vCPU, 16 GB)", "cost_eur": 25.49, "cost_inr": 2345 },
-      "database": { "instance": "CPX32 (4 vCPU, 8 GB)", "cost_eur": 13.99, "cost_inr": 1287 },
-      "demo_env": { "instance": "CPX22 (3 vCPU, 4 GB)", "cost_eur": 7.99, "cost_inr": 735 },
+      "api_server": {
+        "instance": "CPX42 (8 vCPU, 16 GB)",
+        "cost_eur": 25.49,
+        "cost_inr": 2345
+      },
+      "database": {
+        "instance": "CPX32 (4 vCPU, 8 GB)",
+        "cost_eur": 13.99,
+        "cost_inr": 1287
+      },
+      "demo_env": {
+        "instance": "CPX22 (3 vCPU, 4 GB)",
+        "cost_eur": 7.99,
+        "cost_inr": 735
+      },
       "backups": { "cost_inr": 875 },
       "total_monthly_inr": 5242,
       "per_customer_cost_at_100": 372,
@@ -121,71 +133,9 @@
       "network": "SSE connections + API calls; ~1 KB per evaluation"
     },
     "providers": {
-      "hetzner": {
-        "name": "Hetzner Cloud",
-        "region": "EU (Falkenstein / Helsinki / Ashburn)",
-        "currency": "EUR",
-        "tiers": [
-          {
-            "tier": "Small Team",
-            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
-            "instances": "CPX22 (3 vCPU, 4 GB RAM, 80 GB NVMe) — all-in-one",
-            "monthly_cost": "€7.99",
-            "monthly_cost_inr": "~₹735",
-            "includes": "API + Dashboard + PostgreSQL on one server, 20 TB traffic"
-          },
-          {
-            "tier": "Growing Team",
-            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
-            "instances": "CPX32 (4 vCPU, 8 GB) for app + CPX22 for DB",
-            "monthly_cost": "€21.98",
-            "monthly_cost_inr": "~₹2,022",
-            "includes": "Separate API/DB servers, relay proxy, backups"
-          },
-          {
-            "tier": "Scale",
-            "use_case": "50+ users, multi-region, >1M evals/day",
-            "instances": "CPX42 (8 vCPU, 16 GB) + CPX32 DB + CPX22 relay per region",
-            "monthly_cost": "€47.47+",
-            "monthly_cost_inr": "~₹4,367+",
-            "includes": "Multi-instance API, relay proxies per region, automated backups"
-          }
-        ]
-      },
-      "digitalocean": {
-        "name": "DigitalOcean",
-        "region": "Bangalore (BLR1) / Singapore (SGP1)",
-        "currency": "USD",
-        "tiers": [
-          {
-            "tier": "Small Team",
-            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
-            "instances": "Basic Droplet 2 GB (1 vCPU, 50 GB SSD)",
-            "monthly_cost": "$12",
-            "monthly_cost_inr": "~₹1,008",
-            "includes": "All services on one droplet, 2 TB transfer"
-          },
-          {
-            "tier": "Growing Team",
-            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
-            "instances": "4 GB Droplet ($24) + Managed DB ($15)",
-            "monthly_cost": "$39",
-            "monthly_cost_inr": "~₹3,276",
-            "includes": "Separate app server + managed PostgreSQL, automated backups"
-          },
-          {
-            "tier": "Scale",
-            "use_case": "50+ users, multi-region, >1M evals/day",
-            "instances": "8 GB Droplet ($48) + Managed DB ($30) + Load Balancer ($12)",
-            "monthly_cost": "$90+",
-            "monthly_cost_inr": "~₹7,560+",
-            "includes": "Multi-instance with managed DB, load balancer, relay proxies"
-          }
-        ]
-      },
       "aws": {
         "name": "Amazon Web Services",
-        "region": "ap-south-1 (Mumbai)",
+        "region": "ap-south-1 (Mumbai) / us-east-1 (N. Virginia)",
         "currency": "USD",
         "tiers": [
           {
@@ -214,9 +164,40 @@
           }
         ]
       },
+      "azure": {
+        "name": "Microsoft Azure",
+        "region": "Central India (Pune) / East US (Virginia)",
+        "currency": "USD",
+        "tiers": [
+          {
+            "tier": "Small Team",
+            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
+            "instances": "B2s (2 vCPU, 4 GB) + PostgreSQL on same VM",
+            "monthly_cost": "~$20",
+            "monthly_cost_inr": "~₹1,680",
+            "includes": "Single VM with all services, 32 GB Premium SSD"
+          },
+          {
+            "tier": "Growing Team",
+            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
+            "instances": "B2ms ($40) + Azure DB for PostgreSQL Basic ($15)",
+            "monthly_cost": "~$55",
+            "monthly_cost_inr": "~₹4,620",
+            "includes": "Separate app VM + managed PostgreSQL, automated backups"
+          },
+          {
+            "tier": "Scale",
+            "use_case": "50+ users, multi-region, >1M evals/day",
+            "instances": "D2s_v3 ($68) + Azure DB Flexible ($30) + Load Balancer ($18)",
+            "monthly_cost": "~$116+",
+            "monthly_cost_inr": "~₹9,744+",
+            "includes": "Availability Set, managed PostgreSQL, Azure Load Balancer, Monitor"
+          }
+        ]
+      },
       "gcp": {
         "name": "Google Cloud Platform",
-        "region": "asia-south1 (Mumbai)",
+        "region": "asia-south1 (Mumbai) / us-central1 (Iowa)",
         "currency": "USD",
         "tiers": [
           {
@@ -242,6 +223,37 @@
             "monthly_cost": "~$92+",
             "monthly_cost_inr": "~₹7,728+",
             "includes": "Managed instance group, Cloud SQL HA, load balancing, Cloud Monitoring"
+          }
+        ]
+      },
+      "hetzner": {
+        "name": "Hetzner Cloud",
+        "region": "EU (Falkenstein / Helsinki / Ashburn)",
+        "currency": "EUR",
+        "tiers": [
+          {
+            "tier": "Small Team",
+            "use_case": "Up to 10 users, 5 projects, <50k evals/day",
+            "instances": "CPX22 (3 vCPU, 4 GB RAM, 80 GB NVMe) — all-in-one",
+            "monthly_cost": "€7.99",
+            "monthly_cost_inr": "~₹735",
+            "includes": "API + Dashboard + PostgreSQL on one server, 20 TB traffic"
+          },
+          {
+            "tier": "Growing Team",
+            "use_case": "Up to 50 users, 20 projects, <500k evals/day",
+            "instances": "CPX32 (4 vCPU, 8 GB) for app + CPX22 for DB",
+            "monthly_cost": "€21.98",
+            "monthly_cost_inr": "~₹2,022",
+            "includes": "Separate API/DB servers, relay proxy, backups"
+          },
+          {
+            "tier": "Scale",
+            "use_case": "50+ users, multi-region, >1M evals/day",
+            "instances": "CPX42 (8 vCPU, 16 GB) + CPX32 DB + CPX22 relay per region",
+            "monthly_cost": "€47.47+",
+            "monthly_cost_inr": "~₹4,367+",
+            "includes": "Multi-instance API, relay proxies per region, automated backups"
           }
         ]
       }
