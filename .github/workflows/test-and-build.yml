@@ -39,6 +39,7 @@ jobs:
     outputs:
       server: ${{ steps.filter.outputs.server }}
       dashboard: ${{ steps.filter.outputs.dashboard }}
+      website: ${{ steps.filter.outputs.website }}
       docs: ${{ steps.filter.outputs.docs }}
       sdk-go: ${{ steps.filter.outputs.sdk-go }}
       sdk-node: ${{ steps.filter.outputs.sdk-node }}
@@ -59,6 +60,7 @@ jobs:
 
           SERVER=$(has_match '^server/')
           DASHBOARD=$(has_match '^dashboard/')
+          WEBSITE=$(has_match '^website/')
           DOCS=$(has_match '^docs/')
           SDK_GO=$(has_match '^sdks/go/')
           SDK_NODE=$(has_match '^sdks/node/')
@@ -69,6 +71,7 @@ jobs:
           {
             echo "server=$SERVER"
             echo "dashboard=$DASHBOARD"
+            echo "website=$WEBSITE"
             echo "docs=$DOCS"
             echo "sdk-go=$SDK_GO"
             echo "sdk-node=$SDK_NODE"
@@ -80,7 +83,7 @@ jobs:
           echo "### Detected Changes" >> "$GITHUB_STEP_SUMMARY"
           echo "| Area | Changed |" >> "$GITHUB_STEP_SUMMARY"
           echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
-          for pair in "Server:$SERVER" "Dashboard:$DASHBOARD" "Docs:$DOCS" \
+          for pair in "Server:$SERVER" "Dashboard:$DASHBOARD" "Website:$WEBSITE" "Docs:$DOCS" \
                       "SDK Go:$SDK_GO" "SDK Node:$SDK_NODE" "SDK Python:$SDK_PYTHON" \
                       "SDK Java:$SDK_JAVA" "Deploy:$DEPLOY"; do
             name="${pair%%:*}"
@@ -409,6 +412,8 @@ jobs:
         github.event_name != 'pull_request'
         || needs.detect-changes.outputs.server == 'true'
         || needs.detect-changes.outputs.dashboard == 'true'
+        || needs.detect-changes.outputs.website == 'true'
+        || needs.detect-changes.outputs.docs == 'true'
         || needs.detect-changes.outputs.deploy == 'true'
       )
     runs-on: ubuntu-latest
@@ -424,12 +429,18 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           SERVER_TAGS="ghcr.io/${OWNER}/featuresignals-server:sha-${SHA_SHORT}"
           DASH_TAGS="ghcr.io/${OWNER}/featuresignals-dashboard:sha-${SHA_SHORT}"
+          WEBSITE_TAGS="ghcr.io/${OWNER}/featuresignals-website:sha-${SHA_SHORT}"
+          DOCS_TAGS="ghcr.io/${OWNER}/featuresignals-docs:sha-${SHA_SHORT}"
 
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             SERVER_TAGS="${SERVER_TAGS}
           ghcr.io/${OWNER}/featuresignals-server:latest"
             DASH_TAGS="${DASH_TAGS}
           ghcr.io/${OWNER}/featuresignals-dashboard:latest"
+            WEBSITE_TAGS="${WEBSITE_TAGS}
+          ghcr.io/${OWNER}/featuresignals-website:latest"
+            DOCS_TAGS="${DOCS_TAGS}
+          ghcr.io/${OWNER}/featuresignals-docs:latest"
           fi
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/}"
@@ -437,6 +448,10 @@ jobs:
           ghcr.io/${OWNER}/featuresignals-server:${VERSION}"
             DASH_TAGS="${DASH_TAGS}
           ghcr.io/${OWNER}/featuresignals-dashboard:${VERSION}"
+            WEBSITE_TAGS="${WEBSITE_TAGS}
+          ghcr.io/${OWNER}/featuresignals-website:${VERSION}"
+            DOCS_TAGS="${DOCS_TAGS}
+          ghcr.io/${OWNER}/featuresignals-docs:${VERSION}"
           fi
 
           {
@@ -447,6 +462,16 @@ jobs:
           {
             echo "dashboard_tags<<TAGS_EOF"
             echo "$DASH_TAGS"
+            echo "TAGS_EOF"
+          } >> $GITHUB_OUTPUT
+          {
+            echo "website_tags<<TAGS_EOF"
+            echo "$WEBSITE_TAGS"
+            echo "TAGS_EOF"
+          } >> $GITHUB_OUTPUT
+          {
+            echo "docs_tags<<TAGS_EOF"
+            echo "$DOCS_TAGS"
             echo "TAGS_EOF"
           } >> $GITHUB_OUTPUT
 
@@ -499,6 +524,30 @@ jobs:
           cache-from: type=gha,scope=dashboard
           cache-to: type=gha,mode=max,scope=dashboard
 
+      - name: Build & push website image
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.website == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./website
+          file: deploy/docker/Dockerfile.website
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.tags.outputs.should_push == 'true' }}
+          tags: ${{ steps.tags.outputs.website_tags }}
+          cache-from: type=gha,scope=website
+          cache-to: type=gha,mode=max,scope=website
+
+      - name: Build & push docs image
+        if: github.event_name != 'pull_request' || needs.detect-changes.outputs.docs == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docs
+          file: deploy/docker/Dockerfile.docs
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.tags.outputs.should_push == 'true' }}
+          tags: ${{ steps.tags.outputs.docs_tags }}
+          cache-from: type=gha,scope=docs
+          cache-to: type=gha,mode=max,scope=docs
+
       - name: Post build summary
         run: |
           echo "## Docker Images" >> $GITHUB_STEP_SUMMARY
@@ -512,4 +561,12 @@ jobs:
           echo "### Dashboard" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.tags.outputs.dashboard_tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "### Website" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.tags.outputs.website_tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "### Docs" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.tags.outputs.docs_tags }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

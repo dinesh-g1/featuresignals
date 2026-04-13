@@ -107,6 +107,8 @@ if [ "$USE_REGISTRY" = "true" ]; then
   PULL_TARGETS=""
   [ "$SERVER_CHANGED" = true ] && PULL_TARGETS="$PULL_TARGETS server"
   [ "$DASH_CHANGED" = true ] && PULL_TARGETS="$PULL_TARGETS dashboard"
+  [ "$WEBSITE_CHANGED" = true ] && PULL_TARGETS="$PULL_TARGETS website-build"
+  [ "$DOCS_CHANGED" = true ] && PULL_TARGETS="$PULL_TARGETS docs-build"
 
   if [ -n "$PULL_TARGETS" ]; then
     echo "==> Pulling pre-built images from registry (tag: $IMAGE_TAG):$PULL_TARGETS"
@@ -123,8 +125,6 @@ if [ "$USE_REGISTRY" = "true" ]; then
   BUILD_AUX=""
   [ "$CADDY_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX caddy"
   [ "$MIGRATION_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX migrate"
-  [ "$WEBSITE_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX website-build"
-  [ "$DOCS_CHANGED" = true ] && BUILD_AUX="$BUILD_AUX docs-build"
 
   if [ -n "$BUILD_AUX" ]; then
     echo "==> Building changed auxiliary services:$BUILD_AUX"
