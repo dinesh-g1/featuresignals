@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeatures } from "@/hooks/use-features";
@@ -35,7 +36,7 @@ function NavLink({
 }) {
   const Icon = item.icon;
   return (
-    <a
+    <Link
       href={locked ? "/settings/billing" : item.href}
       title={
         locked
@@ -43,7 +44,7 @@ function NavLink({
           : undefined
       }
       className={cn(
-        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
         locked
           ? "text-slate-600 hover:bg-amber-500/10 hover:text-amber-400"
           : active
@@ -72,16 +73,16 @@ function NavLink({
           strokeWidth={2}
         />
       )}
-    </a>
+    </Link>
   );
 }
 
-export function CollapsibleNavGroup({
+const CollapsibleNavGroupInner = ({
   label,
   defaultExpanded = true,
   storageKey,
   items,
-}: CollapsibleNavGroupProps) {
+}: CollapsibleNavGroupProps) => {
   const pathname = usePathname();
   const { isEnabled, minPlanFor } = useFeatures();
   const [expanded, setExpanded] = useState(() => {
@@ -98,58 +99,75 @@ export function CollapsibleNavGroup({
     }
   }, [expanded, storageKey]);
 
-  // Check if any item in this group is active
-  const hasActiveItem = items.some((item) => pathname.startsWith(item.href));
-
-  // Auto-expand when navigating to a child page
-  useEffect(() => {
-    if (hasActiveItem && !expanded) {
-      setTimeout(() => setExpanded(true), 0);
-    }
-  }, [hasActiveItem, expanded]);
+  const renderedItems = useMemo(
+    () =>
+      items.map((item) => {
+        const active = pathname.startsWith(item.href);
+        const locked = item.gatedFeature
+          ? !isEnabled(item.gatedFeature)
+          : false;
+        const requiredPlan = item.gatedFeature
+          ? minPlanFor(item.gatedFeature)
+          : null;
+        return (
+          <NavLink
+            key={item.href}
+            item={item}
+            active={active}
+            locked={locked}
+            requiredPlan={requiredPlan}
+          />
+        );
+      }),
+    [items, pathname, isEnabled, minPlanFor],
+  );
 
   return (
     <div className="mb-1">
       <button
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "group flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-200",
+          "group flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-all duration-200",
           expanded
-            ? "text-slate-400 hover:text-slate-300"
-            : "text-slate-500 hover:text-slate-400",
+            ? "bg-white/[0.08] text-indigo-300"
+            : "text-slate-500 hover:text-slate-300",
         )}
         aria-expanded={expanded}
       >
-        {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform" />
-        )}
+        <span
+          className={cn(
+            "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-all duration-200",
+            expanded
+              ? "bg-indigo-500/30 text-indigo-200"
+              : "bg-white/5 text-slate-500",
+          )}
+        >
+          {expanded ? (
+            <ChevronDown className="h-3 w-3" />
+          ) : (
+            <ChevronRight className="h-3 w-3" />
+          )}
+        </span>
         <span className="flex-1 text-left">{label}</span>
       </button>
 
       {expanded && (
-        <div className="mt-0.5 space-y-0.5 pl-1">
-          {items.map((item) => {
-            const active = pathname.startsWith(item.href);
-            const locked = item.gatedFeature
-              ? !isEnabled(item.gatedFeature)
-              : false;
-            const requiredPlan = item.gatedFeature
-              ? minPlanFor(item.gatedFeature)
-              : null;
-            return (
-              <NavLink
-                key={item.href}
-                item={item}
-                active={active}
-                locked={locked}
-                requiredPlan={requiredPlan}
-              />
-            );
-          })}
-        </div>
+        <div className="mt-0.5 space-y-0.5 pl-4">{renderedItems}</div>
       )}
     </div>
   );
-}
+};
+
+// Memoize so parent re-renders (from SidebarContent's usePathname) don't cascade down.
+// Each group subscribes to pathname independently via its own usePathname() call.
+export const CollapsibleNavGroup = memo(
+  CollapsibleNavGroupInner,
+  // Only re-render when items or label change (structural props).
+  // pathname changes are handled internally via usePathname().
+  (prev, next) =>
+    prev.label === next.label &&
+    prev.storageKey === next.storageKey &&
+    prev.defaultExpanded === next.defaultExpanded &&
+    prev.items.length === next.items.length &&
+    prev.items.every((item, i) => item.href === next.items[i]?.href),
+);

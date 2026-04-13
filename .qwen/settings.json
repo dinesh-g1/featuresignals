@@ -10,7 +10,9 @@
       "Bash(cat *)",
       "Bash(npm test *)",
       "Bash(git reset *)",
-      "Bash(go *)"
+      "Bash(go *)",
+      "Bash(python3 *)",
+      "Bash(mv *)"
     ]
   },
   "$version": 3

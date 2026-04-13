@@ -650,13 +650,13 @@ function StepProjectSetup({
         Set Up Your Project
       </h2>
       <p className="mt-1 text-sm text-slate-500">
-        A project groups your feature flags and environments together. We
-        created a default project for you &mdash; select it or create a new one.
+        A project groups your feature flags and environments together. Create a
+        new project or select an existing one to get started.
       </p>
 
       {projects.length > 0 && (
         <div className="mt-6 space-y-2">
-          <Label>Select a project</Label>
+          <Label>Select an existing project</Label>
           <div className="grid gap-2">
             {projects.map((p) => (
               <button

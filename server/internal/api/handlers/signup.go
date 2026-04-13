@@ -263,17 +263,6 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project := &domain.Project{
-		OrgID: org.ID,
-		Name:  "Default Project",
-		Slug:  "default",
-	}
-	if err := h.store.CreateProject(ctx, project); err != nil {
-		log.Error("failed to create default project", "error", err)
-	}
-
-	BootstrapEnvironments(ctx, h.store, project.ID)
-
 	// Update last login
 	_ = h.store.UpdateLastLoginAt(ctx, user.ID)
 

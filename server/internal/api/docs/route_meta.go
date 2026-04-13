@@ -70,7 +70,7 @@ var AllRouteMeta = []RouteMeta{
 	// ── Projects ────────────────────────────────────────────────────────
 	{Method: "GET", Path: "/v1/projects", Tag: "Projects", Summary: "List projects", Description: "Returns all projects the authenticated user has access to.", Security: []string{"bearer"}, RespType: "PaginatedResponse", Status: 200},
 	{Method: "GET", Path: "/v1/projects/{projectID}", Tag: "Projects", Summary: "Get project", Description: "Returns a single project by ID.", Security: []string{"bearer"}, RespType: "ProjectResponse", Status: 200},
-	{Method: "POST", Path: "/v1/projects", Tag: "Projects", Summary: "Create project", Description: "Creates a new project with default environments.", Security: []string{"bearer"}, ReqType: "CreateProjectRequest", RespType: "ProjectResponse", Status: 201},
+	{Method: "POST", Path: "/v1/projects", Tag: "Projects", Summary: "Create project", Description: "Creates a new project.", Security: []string{"bearer"}, ReqType: "CreateProjectRequest", RespType: "ProjectResponse", Status: 201},
 	{Method: "DELETE", Path: "/v1/projects/{projectID}", Tag: "Projects", Summary: "Delete project", Description: "Permanently deletes a project and all associated resources.", Security: []string{"bearer"}, Status: 204},
 
 	// ── Environments ────────────────────────────────────────────────────

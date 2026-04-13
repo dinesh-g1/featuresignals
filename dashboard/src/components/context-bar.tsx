@@ -1,18 +1,23 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { ContextSelector } from "@/components/context-selector";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { CommandPaletteButton } from "@/components/command-palette";
 
 export function ContextBar() {
-  return (
-    <div className="shrink-0 border-b border-slate-200/50 bg-white/70 shadow-sm shadow-slate-100/80 backdrop-blur-xl">
-      <div className="flex items-center gap-3 px-4 py-2 sm:px-6 lg:px-8">
-        {/* Project & Environment selectors */}
-        <ContextSelector />
+  const pathname = usePathname();
+  const isOrgPage =
+    pathname?.startsWith("/settings/billing") ||
+    pathname?.startsWith("/settings/sso") ||
+    pathname?.startsWith("/audit") ||
+    pathname?.startsWith("/approvals");
 
-        {/* Divider */}
-        <div className="hidden h-6 w-px bg-slate-200 sm:block" />
+  return (
+    <div className="shrink-0 border-b border-slate-200/40 bg-white/80 backdrop-blur-xl relative z-[50]">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 sm:px-5 lg:px-6">
+        {/* Project & Environment selectors */}
+        {!isOrgPage && <ContextSelector />}
 
         {/* Breadcrumb */}
         <Breadcrumb />

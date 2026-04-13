@@ -6,6 +6,9 @@ import { useFeatures } from "@/hooks/use-features";
 import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
 
+// Pages that live under /settings but render their own layout (top-level nav items)
+const STANDALONE_SETTINGS_PAGES = ["/settings/billing", "/settings/sso"];
+
 interface SettingsTab {
   href: string;
   label: string;
@@ -27,6 +30,14 @@ export default function SettingsLayout({
 }) {
   const pathname = usePathname();
   const { isEnabled, minPlanFor } = useFeatures();
+
+  const isStandalone = STANDALONE_SETTINGS_PAGES.some(
+    (p) => pathname === p || pathname?.startsWith(p + "/"),
+  );
+
+  if (isStandalone) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

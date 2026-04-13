@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
+import { useFeatures } from "@/hooks/use-features";
 import { api, APIError } from "@/lib/api";
 import type { SSOConfig, SSOTestResult } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,7 @@ import {
   AlertTriangle,
   Loader2,
   Trash2,
+  Lock,
 } from "lucide-react";
 
 type ProviderType = "saml" | "oidc";
@@ -53,8 +56,41 @@ const emptyForm: FormState = {
   default_role: "developer",
 };
 
+function SSOUpgradeGate() {
+  const router = useRouter();
+  const { minPlanFor } = useFeatures();
+  const plan = minPlanFor("sso");
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+        <Lock className="h-8 w-8 text-amber-500" />
+      </div>
+      <h2 className="mt-4 text-lg font-semibold text-slate-900">
+        SSO requires {plan} plan
+      </h2>
+      <p className="mt-2 max-w-sm text-sm text-slate-500">
+        Enterprise SSO with SAML/OIDC support is available on the {plan} plan
+        and above.
+      </p>
+      <Button
+        onClick={() => router.push("/settings/billing")}
+        className="mt-6 bg-indigo-600 hover:bg-indigo-700"
+      >
+        Upgrade to {plan}
+      </Button>
+    </div>
+  );
+}
+
 export default function SSOSettingsPage() {
   const token = useAppStore((s) => s.token);
+  const { isEnabled } = useFeatures();
+
+  // Enforce SSO gate at the page level — redirects locked users to billing
+  if (!isEnabled("sso")) {
+    return <SSOUpgradeGate />;
+  }
+
   const [config, setConfig] = useState<SSOConfig | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -127,7 +163,9 @@ export default function SSOSettingsPage() {
       setSuccess("SSO configuration saved successfully.");
       setTestResult(null);
     } catch (e) {
-      setError(e instanceof APIError ? e.message : "Failed to save SSO configuration");
+      setError(
+        e instanceof APIError ? e.message : "Failed to save SSO configuration",
+      );
     } finally {
       setSaving(false);
     }
@@ -151,7 +189,13 @@ export default function SSOSettingsPage() {
   };
 
   const handleDelete = async () => {
-    if (!token || !confirm("Remove SSO configuration? Users will need to use email/password login.")) return;
+    if (
+      !token ||
+      !confirm(
+        "Remove SSO configuration? Users will need to use email/password login.",
+      )
+    )
+      return;
     setError("");
     try {
       await api.deleteSSOConfig(token);
@@ -160,7 +204,11 @@ export default function SSOSettingsPage() {
       setSuccess("SSO configuration removed.");
       setTestResult(null);
     } catch (e) {
-      setError(e instanceof APIError ? e.message : "Failed to delete SSO configuration");
+      setError(
+        e instanceof APIError
+          ? e.message
+          : "Failed to delete SSO configuration",
+      );
     }
   };
 
@@ -213,7 +261,9 @@ export default function SSOSettingsPage() {
         <div className="space-y-5">
           {/* Provider type selection */}
           <div>
-            <Label className="text-sm font-medium">Identity Provider Protocol</Label>
+            <Label className="text-sm font-medium">
+              Identity Provider Protocol
+            </Label>
             <div className="mt-2 flex gap-3">
               {(["oidc", "saml"] as const).map((type) => (
                 <button
@@ -224,7 +274,7 @@ export default function SSOSettingsPage() {
                     "flex-1 rounded-lg border-2 p-4 text-left transition-all",
                     form.provider_type === type
                       ? "border-indigo-500 bg-indigo-50/50"
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-slate-200 hover:border-slate-300",
                   )}
                 >
                   <div className="text-sm font-semibold text-slate-900">
@@ -253,7 +303,8 @@ export default function SSOSettingsPage() {
                   className="mt-1"
                 />
                 <p className="mt-1 text-xs text-slate-400">
-                  The OpenID Connect discovery endpoint (/.well-known/openid-configuration will be appended)
+                  The OpenID Connect discovery endpoint
+                  (/.well-known/openid-configuration will be appended)
                 </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -266,7 +317,9 @@ export default function SSOSettingsPage() {
                     className="mt-1"
                   />
                   {config?.has_client_secret && !form.client_secret && (
-                    <p className="mt-1 text-xs text-slate-400">Client ID is set</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Client ID is set
+                    </p>
                   )}
                 </div>
                 <div>
@@ -276,11 +329,15 @@ export default function SSOSettingsPage() {
                     type="password"
                     placeholder={config?.has_client_secret ? "••••••••" : ""}
                     value={form.client_secret}
-                    onChange={(e) => updateForm("client_secret", e.target.value)}
+                    onChange={(e) =>
+                      updateForm("client_secret", e.target.value)
+                    }
                     className="mt-1"
                   />
                   {config?.has_client_secret && !form.client_secret && (
-                    <p className="mt-1 text-xs text-slate-400">Leave blank to keep existing secret</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Leave blank to keep existing secret
+                    </p>
                   )}
                 </div>
               </div>
@@ -300,11 +357,14 @@ export default function SSOSettingsPage() {
                   className="mt-1"
                 />
                 <p className="mt-1 text-xs text-slate-400">
-                  URL to your IdP&apos;s SAML metadata. Alternatively, paste metadata XML below.
+                  URL to your IdP&apos;s SAML metadata. Alternatively, paste
+                  metadata XML below.
                 </p>
               </div>
               <div>
-                <Label htmlFor="metadata_xml">IdP Metadata XML (optional)</Label>
+                <Label htmlFor="metadata_xml">
+                  IdP Metadata XML (optional)
+                </Label>
                 <textarea
                   id="metadata_xml"
                   rows={4}
@@ -314,7 +374,9 @@ export default function SSOSettingsPage() {
                   className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                 />
                 {config?.has_metadata_xml && !form.metadata_xml && (
-                  <p className="mt-1 text-xs text-slate-400">Metadata XML is already stored. Leave blank to keep.</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Metadata XML is already stored. Leave blank to keep.
+                  </p>
                 )}
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -348,7 +410,9 @@ export default function SSOSettingsPage() {
                   className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                 />
                 {config?.has_certificate && !form.certificate && (
-                  <p className="mt-1 text-xs text-slate-400">Certificate is already stored. Leave blank to keep.</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Certificate is already stored. Leave blank to keep.
+                  </p>
                 )}
               </div>
             </>
@@ -359,7 +423,9 @@ export default function SSOSettingsPage() {
             <h3 className="text-sm font-semibold text-slate-900">Settings</h3>
             <div className="mt-3 space-y-3">
               <div>
-                <Label htmlFor="default_role">Default Role for New SSO Users</Label>
+                <Label htmlFor="default_role">
+                  Default Role for New SSO Users
+                </Label>
                 <select
                   id="default_role"
                   value={form.default_role}
@@ -383,8 +449,12 @@ export default function SSOSettingsPage() {
                   className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <div>
-                  <span className="text-sm font-medium text-slate-900">Enable SSO</span>
-                  <p className="text-xs text-slate-400">Allow team members to sign in via your identity provider.</p>
+                  <span className="text-sm font-medium text-slate-900">
+                    Enable SSO
+                  </span>
+                  <p className="text-xs text-slate-400">
+                    Allow team members to sign in via your identity provider.
+                  </p>
                 </div>
               </label>
 
@@ -396,9 +466,13 @@ export default function SSOSettingsPage() {
                   className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <div>
-                  <span className="text-sm font-medium text-slate-900">Enforce SSO</span>
+                  <span className="text-sm font-medium text-slate-900">
+                    Enforce SSO
+                  </span>
                   <p className="text-xs text-slate-400">
-                    Block email/password login for all members. Organization owners can still use password login as a break-glass mechanism.
+                    Block email/password login for all members. Organization
+                    owners can still use password login as a break-glass
+                    mechanism.
                   </p>
                 </div>
               </label>
@@ -407,7 +481,9 @@ export default function SSOSettingsPage() {
                 <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                   <p className="text-xs text-amber-800">
-                    When enforcement is enabled, all non-owner members must use SSO. Test your SSO configuration before enabling enforcement.
+                    When enforcement is enabled, all non-owner members must use
+                    SSO. Test your SSO configuration before enabling
+                    enforcement.
                   </p>
                 </div>
               )}
@@ -421,7 +497,7 @@ export default function SSOSettingsPage() {
                 "flex items-center gap-2 rounded-lg border p-3 text-sm",
                 testResult.success
                   ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-red-200 bg-red-50 text-red-700"
+                  : "border-red-200 bg-red-50 text-red-700",
               )}
             >
               {testResult.success ? (
@@ -440,7 +516,11 @@ export default function SSOSettingsPage() {
               {config ? "Update Configuration" : "Save Configuration"}
             </Button>
             {config && (
-              <Button variant="secondary" onClick={handleTest} disabled={testing}>
+              <Button
+                variant="secondary"
+                onClick={handleTest}
+                disabled={testing}
+              >
                 {testing ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 ) : (
@@ -460,7 +540,8 @@ export default function SSOSettingsPage() {
             Service Provider Details
           </h3>
           <p className="mt-1 text-xs text-slate-500">
-            Use these values when configuring FeatureSignals in your Identity Provider.
+            Use these values when configuring FeatureSignals in your Identity
+            Provider.
           </p>
           <div className="mt-3 space-y-2">
             <CopyField

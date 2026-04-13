@@ -192,19 +192,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project := &domain.Project{
-		OrgID: org.ID,
-		Name:  "Default Project",
-		Slug:  "default",
-	}
-	if err := h.store.CreateProject(r.Context(), project); err != nil {
-		log.Error("failed to create default project", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to create default project")
-		return
-	}
-
-	BootstrapEnvironments(r.Context(), h.store, project.ID)
-
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), org.DataRegion)
 	if err != nil {
 		log.Error("token generation failed", "error", err)

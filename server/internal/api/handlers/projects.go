@@ -65,8 +65,6 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	BootstrapEnvironments(r.Context(), h.store, project.ID, orgID)
-
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(project)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{

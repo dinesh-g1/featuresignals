@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useFeatures } from "@/hooks/use-features";
@@ -106,6 +106,56 @@ const topLevelItems: NavItem[] = [
   { href: "/settings/sso", label: "SSO", icon: Shield, gatedFeature: "sso" },
 ];
 
+// Small component that reads pathname internally so SidebarContent doesn't re-render on nav
+function TopLevelNavItems() {
+  const pathname = usePathname();
+  const { isEnabled, minPlanFor } = useFeatures();
+
+  return (
+    <div className="space-y-0.5">
+      {topLevelItems.map((item) => {
+        const active = pathname.startsWith(item.href);
+        const locked = item.gatedFeature
+          ? !isEnabled(item.gatedFeature)
+          : false;
+        const requiredPlan = item.gatedFeature
+          ? minPlanFor(item.gatedFeature)
+          : null;
+        return (
+          <NavLink
+            key={item.href}
+            item={item}
+            active={active}
+            locked={locked}
+            requiredPlan={requiredPlan}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function SettingsNavItem() {
+  const pathname = usePathname();
+  return (
+    <div className="space-y-0.5">
+      <NavLink
+        item={{
+          href: "/settings/general",
+          label: "Settings",
+          icon: Settings,
+        }}
+        active={
+          pathname.startsWith("/settings") &&
+          !topLevelItems.some((i) => pathname.startsWith(i.href))
+        }
+        locked={false}
+        requiredPlan={null}
+      />
+    </div>
+  );
+}
+
 function NavLink({
   item,
   active,
@@ -161,20 +211,20 @@ function NavLink({
 }
 
 function SidebarContent() {
-  const pathname = usePathname();
   const closeSidebar = useSidebarStore((s) => s.close);
+  const isOpen = useSidebarStore((s) => s.isOpen);
   const user = useAppStore((s) => s.user);
   const organization = useAppStore((s) => s.organization);
   const logout = useAppStore((s) => s.logout);
   const { isEnabled, minPlanFor } = useFeatures();
 
-  const prevPathname = useRef(pathname);
+  // Close mobile sidebar when navigating to a new page
   useEffect(() => {
-    if (prevPathname.current !== pathname) {
-      prevPathname.current = pathname;
-      closeSidebar();
+    if (isOpen) {
+      const timer = setTimeout(() => closeSidebar(), 50);
+      return () => clearTimeout(timer);
     }
-  }, [pathname, closeSidebar]);
+  }, [isOpen, closeSidebar]);
 
   return (
     <>
@@ -199,7 +249,7 @@ function SidebarContent() {
         className="flex-1 overflow-y-auto px-2.5 py-3"
         aria-label="Main navigation"
       >
-        {/* Collapsible groups */}
+        {/* Collapsible groups — each group reads pathname internally via usePathname() */}
         {navGroups.map((group) => (
           <CollapsibleNavGroup
             key={group.label}
@@ -214,46 +264,13 @@ function SidebarContent() {
         <div className="my-3 border-t border-white/[0.06]" />
 
         {/* Top-level standalone items (Billing, SSO) */}
-        <div className="space-y-0.5">
-          {topLevelItems.map((item) => {
-            const active = pathname.startsWith(item.href);
-            const locked = item.gatedFeature
-              ? !isEnabled(item.gatedFeature)
-              : false;
-            const requiredPlan = item.gatedFeature
-              ? minPlanFor(item.gatedFeature)
-              : null;
-            return (
-              <NavLink
-                key={item.href}
-                item={item}
-                active={active}
-                locked={locked}
-                requiredPlan={requiredPlan}
-              />
-            );
-          })}
-        </div>
+        <TopLevelNavItems />
 
         {/* Divider */}
         <div className="my-3 border-t border-white/[0.06]" />
 
         {/* Settings */}
-        <div className="space-y-0.5">
-          <NavLink
-            item={{
-              href: "/settings/general",
-              label: "Settings",
-              icon: Settings,
-            }}
-            active={
-              pathname.startsWith("/settings") &&
-              !topLevelItems.some((i) => pathname.startsWith(i.href))
-            }
-            locked={false}
-            requiredPlan={null}
-          />
-        </div>
+        <SettingsNavItem />
       </nav>
 
       {(organization?.plan === "free" || organization?.plan === "trial") && (
