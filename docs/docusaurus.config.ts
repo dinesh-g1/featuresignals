@@ -22,7 +22,12 @@ const config: Config = {
   projectName: "featuresignals",
 
   onBrokenLinks: "warn",
-  onBrokenMarkdownLinks: "warn",
+
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: "warn",
+    },
+  },
 
   headTags: [
     {

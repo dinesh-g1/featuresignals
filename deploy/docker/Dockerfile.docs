@@ -10,6 +10,7 @@ RUN npm ci
 
 # Layer 2: Build (uses cached node_modules)
 COPY src/ src/
+COPY docs/ docs/
 COPY static/ static/
 COPY docusaurus.config.ts ./
 COPY sidebars.ts ./
