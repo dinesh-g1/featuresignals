@@ -22,6 +22,7 @@ import { SectionReveal } from "@/components/section-reveal";
 import {
   LocalizedPrice,
   LocalizedSelfHostCost,
+  ProPriceLabel,
 } from "@/components/localized-price";
 import { trustedBy, logoPlaceholders, trustMetrics } from "@/data/testimonials";
 
@@ -537,7 +538,7 @@ export default function HomePage() {
               {(
                 [
                   {
-                    metric: <LocalizedPrice />,
+                    metric: "price" as const,
                     vs: "$12/connection",
                     label: "Pro plan pricing",
                     detail: "Unlimited everything. No per-seat fees.",
@@ -563,7 +564,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-center gap-4">
                     <div>
                       <div className="text-2xl font-extrabold text-indigo-600">
-                        {typeof metric === "string" ? metric : metric}
+                        {metric === "price" ? <ProPriceLabel /> : metric}
                       </div>
                       <div className="text-xs text-slate-500">
                         FeatureSignals
@@ -714,7 +715,7 @@ export default function HomePage() {
                   },
                   {
                     plan: "Pro",
-                    price: "__loc__" as const,
+                    price: "price" as const,
                     detail: "Unlimited everything",
                     highlight: true as const,
                   },
@@ -735,7 +736,7 @@ export default function HomePage() {
                 >
                   <div className="text-sm font-bold text-slate-900">{plan}</div>
                   <div className="mt-1 text-2xl font-extrabold text-indigo-600">
-                    {price === "__loc__" ? <LocalizedPrice /> : price}
+                    {price === "price" ? <LocalizedPrice /> : price}
                   </div>
                   <div className="mt-1 text-xs text-slate-500">{detail}</div>
                 </div>

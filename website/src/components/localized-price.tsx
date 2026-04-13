@@ -20,3 +20,12 @@ export function LocalizedSelfHostCost() {
   }, []);
   return <>{fmtINR(735, cur)}/mo</>;
 }
+
+/** Renders just the localized price text (e.g. "$12/mo") — no /month suffix */
+export function ProPriceLabel() {
+  const [cur, setCur] = useState("INR");
+  useEffect(() => {
+    setCur(detectCurrency());
+  }, []);
+  return <>{fmtINR(BASE_PRICE_INR, cur)}</>;
+}
