@@ -101,8 +101,8 @@ has_changes() { echo "$CHANGED_FILES" | grep -qE "$1" && return 0 || return 1; }
 
 SERVER_CHANGED=false;    has_changes '^server/' && SERVER_CHANGED=true
 DASH_CHANGED=false;      has_changes '^dashboard/' && DASH_CHANGED=true
-WEBSITE_CHANGED=false;   has_changes '^website/' && WEBSITE_CHANGED=true
-DOCS_CHANGED=false;      has_changes '^docs/' && DOCS_CHANGED=true
+WEBSITE_CHANGED=false;   has_changes '^(website/|deploy/docker/Dockerfile\.website)' && WEBSITE_CHANGED=true
+DOCS_CHANGED=false;      has_changes '^(docs/|deploy/docker/Dockerfile\.docs)' && DOCS_CHANGED=true
 CADDY_CHANGED=false;     has_changes '^deploy/(Caddyfile|docker/Dockerfile\.caddy)' && CADDY_CHANGED=true
 MIGRATION_CHANGED=false; has_changes '^server/migrations/' && MIGRATION_CHANGED=true
 
