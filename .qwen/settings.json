@@ -16,7 +16,10 @@
       "Bash(gh *)",
       "Bash(sleep *)",
       "Bash(curl *)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "Bash(ls *)",
+      "Bash(open *)",
+      "Bash(docker info)"
     ]
   },
   "$version": 3
