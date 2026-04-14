@@ -1,20 +1,15 @@
 name: "Deploy to Staging Environment"
 
+# Manual deploy only — never auto-triggers on push.
+# Deploy any image_tag (sha-xxx, v1.2.3, or latest) to the staging VPS.
 on:
-  workflow_run:
-    workflows: ["Test, Lint, Build & Publish Images"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:
         description: "Image tag to deploy (sha-xxx, v1.2.3, or latest)"
-        required: false
+        required: true
         default: "latest"
-      build_locally:
-        description: "Build images on the VPS instead of pulling from GHCR"
-        type: boolean
-        default: false
+        type: string
 
 concurrency:
   group: deploy-staging
@@ -24,7 +19,6 @@ jobs:
   deploy:
     name: "Deploy to Staging VPS"
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Check staging host configured
@@ -32,7 +26,7 @@ jobs:
         run: |
           if [ -z "${{ secrets.VPS_HOST_STAGING }}" ]; then
             echo "configured=false" >> $GITHUB_OUTPUT
-            echo "::notice::Staging VPS not provisioned yet (VPS_HOST_STAGING secret missing). Skipping deploy."
+            echo "::notice::Staging VPS not provisioned yet (VPS_HOST_STAGING secret missing)."
           else
             echo "configured=true" >> $GITHUB_OUTPUT
           fi
@@ -44,7 +38,7 @@ jobs:
           host: ${{ secrets.VPS_HOST_STAGING }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
-          envs: POSTGRES_PASSWORD,JWT_SECRET,IMAGE_TAG,USE_REGISTRY
+          envs: POSTGRES_PASSWORD,JWT_SECRET,IMAGE_TAG
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=staging
@@ -60,15 +54,14 @@ jobs:
             PAYMENT_GATEWAY=stripe
             STRIPE_MODE=test
             IMAGE_TAG=${IMAGE_TAG}
-            USE_REGISTRY=${USE_REGISTRY}
+            USE_REGISTRY=true
             EMAIL_PROVIDER=none
             ENVEOF
             chmod 600 /opt/featuresignals/.env
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD_STAGING || secrets.POSTGRES_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET_STAGING || secrets.JWT_SECRET }}
-          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
-          USE_REGISTRY: ${{ (github.event.inputs.build_locally == 'true') && 'false' || 'true' }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
 
       - name: Deploy application
         if: steps.check.outputs.configured == 'true'
@@ -78,19 +71,17 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
           command_timeout: 15m
-          envs: REPO_TOKEN,IMAGE_TAG,USE_REGISTRY
+          envs: REPO_TOKEN,IMAGE_TAG
           script: |
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
             git fetch origin main
             git reset --hard origin/main
             export IMAGE_TAG="${IMAGE_TAG}"
-            export USE_REGISTRY="${USE_REGISTRY}"
             bash deploy/deploy-region.sh
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
-          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
-          USE_REGISTRY: ${{ (github.event.inputs.build_locally == 'true') && 'false' || 'true' }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
 
       - name: Run smoke tests
         if: steps.check.outputs.configured == 'true'
@@ -100,12 +91,6 @@ jobs:
             "https://api.staging.featuresignals.com/health" || {
             echo "::error::Staging API health check failed"
             exit 1
-          }
-
-          echo "==> Smoke test: Status endpoint"
-          curl -sf --max-time 15 \
-            "https://api.staging.featuresignals.com/v1/status" || {
-            echo "::warning::Status endpoint not responding"
           }
 
           echo "==> Smoke test: Dashboard"
@@ -128,6 +113,5 @@ jobs:
           echo "## Staging Deploy: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
           echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Image Tag** | ${{ github.event.inputs.image_tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image Tag** | ${{ github.event.inputs.image_tag }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Result** | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY

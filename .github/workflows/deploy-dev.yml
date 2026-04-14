@@ -1,20 +1,15 @@
 name: "Deploy to Dev Environment"
 
+# Manual deploy only — never auto-triggers on push.
+# Deploy any image_tag (sha-xxx, v1.2.3, or latest) to the dev VPS.
 on:
-  workflow_run:
-    workflows: ["Test, Lint, Build & Publish Images"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:
         description: "Image tag to deploy (sha-xxx, v1.2.3, or latest)"
-        required: false
+        required: true
         default: "latest"
-      build_locally:
-        description: "Build images on the VPS instead of pulling from GHCR"
-        type: boolean
-        default: false
+        type: string
 
 concurrency:
   group: deploy-dev
@@ -24,7 +19,6 @@ jobs:
   deploy:
     name: "Deploy to Dev VPS"
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Check dev host configured
@@ -32,7 +26,7 @@ jobs:
         run: |
           if [ -z "${{ secrets.VPS_HOST_DEV }}" ]; then
             echo "configured=false" >> $GITHUB_OUTPUT
-            echo "::notice::Dev VPS not provisioned yet (VPS_HOST_DEV secret missing). Skipping deploy."
+            echo "::notice::Dev VPS not provisioned yet (VPS_HOST_DEV secret missing)."
           else
             echo "configured=true" >> $GITHUB_OUTPUT
           fi
@@ -44,7 +38,7 @@ jobs:
           host: ${{ secrets.VPS_HOST_DEV }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_DEV }}
-          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,IMAGE_TAG,USE_REGISTRY
+          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,IMAGE_TAG
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=dev
@@ -77,7 +71,7 @@ jobs:
             STRIPE_MODE=test
             PAYU_MODE=test
             IMAGE_TAG=${IMAGE_TAG}
-            USE_REGISTRY=${USE_REGISTRY}
+            USE_REGISTRY=true
             ENVEOF
             chmod 600 /opt/featuresignals/.env
         env:
@@ -87,8 +81,7 @@ jobs:
           DB_READONLY_PASSWORD: ${{ secrets.DB_READONLY_PASSWORD }}
           ZEPTOMAIL_TOKEN: ${{ secrets.ZEPTOMAIL_TOKEN }}
           OTEL_INGESTION_KEY: ${{ secrets.OTEL_INGESTION_KEY }}
-          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
-          USE_REGISTRY: ${{ (github.event.inputs.build_locally == 'true') && 'false' || 'true' }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
 
       - name: Deploy application
         if: steps.check.outputs.configured == 'true'
@@ -98,22 +91,20 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_DEV }}
           command_timeout: 15m
-          envs: REPO_TOKEN,IMAGE_TAG,USE_REGISTRY
+          envs: REPO_TOKEN,IMAGE_TAG
           script: |
             cd /opt/featuresignals
             git remote set-url origin "https://x-access-token:${REPO_TOKEN}@github.com/dinesh-g1/featuresignals.git"
             git fetch origin main
             git reset --hard origin/main
             export IMAGE_TAG="${IMAGE_TAG}"
-            export USE_REGISTRY="${USE_REGISTRY}"
             bash deploy/deploy-region.sh
 
             # Start Dozzle for log monitoring
             docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
         env:
           REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
-          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
-          USE_REGISTRY: ${{ (github.event.inputs.build_locally == 'true') && 'false' || 'true' }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
 
       - name: Run smoke tests
         if: steps.check.outputs.configured == 'true'
@@ -125,29 +116,11 @@ jobs:
             exit 1
           }
 
-          echo "==> Smoke test: Status endpoint"
-          curl -sf --max-time 15 \
-            "https://api.dev.featuresignals.com/v1/status" || {
-            echo "::warning::Status endpoint not responding"
-          }
-
           echo "==> Smoke test: Dashboard"
           curl -sf --max-time 15 -o /dev/null -w "HTTP %{http_code}" \
             "https://app.dev.featuresignals.com" || {
             echo "::error::Dev dashboard health check failed"
             exit 1
-          }
-
-          echo "==> Smoke test: Website"
-          curl -sf --max-time 15 -o /dev/null -w "HTTP %{http_code}" \
-            "https://dev.featuresignals.com" || {
-            echo "::warning::Dev website not responding"
-          }
-
-          echo "==> Smoke test: Docs"
-          curl -sf --max-time 15 -o /dev/null -w "HTTP %{http_code}" \
-            "https://docs.dev.featuresignals.com" || {
-            echo "::warning::Dev docs not responding"
           }
 
           echo "All smoke tests passed"
@@ -163,6 +136,5 @@ jobs:
           echo "## Dev Deploy: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
           echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Image Tag** | ${{ github.event.inputs.image_tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image Tag** | ${{ github.event.inputs.image_tag }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Result** | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY

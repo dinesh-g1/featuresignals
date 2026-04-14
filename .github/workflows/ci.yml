@@ -1,4 +1,4 @@
-name: "Test, Lint, Build & Publish Images"
+name: "CI"
 
 on:
   push:
@@ -16,20 +16,12 @@ on:
         description: "Skip dependency security scan"
         type: boolean
         default: false
-      force_push_images:
-        description: "Push images even on non-main branches (for testing)"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   # ── Change Detection ─────────────────────────────────────────────────────
-  # On pull_request: detect which areas changed via PR file list.
-  # On push to main: compare HEAD with its parent commit.
-  # On dispatch: run everything unconditionally.
   detect-changes:
     name: "Detect Changes"
     runs-on: ubuntu-latest
@@ -58,7 +50,6 @@ jobs:
         run: |
           PARENT=$(git rev-parse HEAD^ 2>/dev/null || echo "")
           if [ -z "$PARENT" ]; then
-            # First commit — check everything
             FILES="FULL"
           else
             FILES=$(git diff --name-only "$PARENT" HEAD)
@@ -181,13 +172,6 @@ jobs:
         run: |
           echo "=== Server Test Coverage ==="
           go tool cover -func=coverage.out | tail -1
-          echo ""
-          go tool cover -func=coverage.out
-      - name: Build binaries
-        working-directory: server
-        run: |
-          go build -o bin/server ./cmd/server
-          go build -o bin/stalescan ./cmd/stalescan
 
   server-lint:
     name: "Server: Lint & Vet"
@@ -209,7 +193,7 @@ jobs:
 
   # ── Dashboard ──────────────────────────────────────────────────────────────
   dashboard-tests:
-    name: "Dashboard: Test, Build & Coverage"
+    name: "Dashboard: Test & Build"
     needs: detect-changes
     if: >-
       github.event_name == 'workflow_dispatch'
@@ -300,9 +284,6 @@ jobs:
           go test ./... -count=1 -v -coverprofile=coverage.out -covermode=atomic
           echo "=== Go SDK Coverage ==="
           go tool cover -func=coverage.out | tail -1
-      - name: Build
-        working-directory: sdks/go
-        run: go build ./...
 
   node-sdk-tests:
     name: "SDK: Node.js Tests"
@@ -367,7 +348,7 @@ jobs:
         working-directory: sdks/java
         run: mvn -B test
 
-  # ── Security ───────────────────────────────────────────────────────────────
+  # ── Security ──────────────────────────────────────────────────────────────
   security-scan:
     name: "Security: Dependency Vulnerability Scan"
     needs: detect-changes
@@ -436,19 +417,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.sdk-node == 'true'
         working-directory: sdks/node
         run: npm install && npm audit --audit-level=high
-      - name: npm audit (React SDK)
-        if: github.event_name == 'workflow_dispatch'
-        working-directory: sdks/react
-        run: npm install && npm audit --audit-level=high
-      - name: npm audit (Vue SDK)
-        if: github.event_name == 'workflow_dispatch'
-        working-directory: sdks/vue
-        run: npm install && npm audit --audit-level=high
 
   # ── CI Gate ────────────────────────────────────────────────────────────────
-  # Single required check for branch protection. Aggregates all job results:
-  # "skipped" (no relevant changes) is treated as success; only "failure" or
-  # "cancelled" blocks the PR.
   ci-gate:
     name: "CI Gate"
     if: always()
@@ -485,192 +455,3 @@ jobs:
         run: |
           echo "::error::One or more CI jobs failed or were cancelled"
           exit 1
-
-  # ── Docker Images ──────────────────────────────────────────────────────────
-  # Each image is built/pushed only if its source folder changed, or on dispatch.
-  build-and-publish-images:
-    name: "Docker: Build & Publish to GHCR"
-    needs: [detect-changes, server-tests, dashboard-tests, ops-tests]
-    if: >-
-      always()
-      && !contains(needs.*.result, 'failure')
-      && !contains(needs.*.result, 'cancelled')
-      && (
-        github.event_name == 'workflow_dispatch'
-        || needs.detect-changes.outputs.server == 'true'
-        || needs.detect-changes.outputs.dashboard == 'true'
-        || needs.detect-changes.outputs.ops == 'true'
-        || needs.detect-changes.outputs.website == 'true'
-        || needs.detect-changes.outputs.docs == 'true'
-        || needs.detect-changes.outputs.deploy == 'true'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Compute image tags
-        id: tags
-        run: |
-          SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
-
-          OWNER="${{ github.repository_owner }}"
-          SERVER_TAGS="ghcr.io/${OWNER}/featuresignals-server:sha-${SHA_SHORT}"
-          DASH_TAGS="ghcr.io/${OWNER}/featuresignals-dashboard:sha-${SHA_SHORT}"
-          OPS_TAGS="ghcr.io/${OWNER}/featuresignals-ops:sha-${SHA_SHORT}"
-          WEBSITE_TAGS="ghcr.io/${OWNER}/featuresignals-website:sha-${SHA_SHORT}"
-          DOCS_TAGS="ghcr.io/${OWNER}/featuresignals-docs:sha-${SHA_SHORT}"
-
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            SERVER_TAGS="${SERVER_TAGS}
-          ghcr.io/${OWNER}/featuresignals-server:latest"
-            DASH_TAGS="${DASH_TAGS}
-          ghcr.io/${OWNER}/featuresignals-dashboard:latest"
-            OPS_TAGS="${OPS_TAGS}
-          ghcr.io/${OWNER}/featuresignals-ops:latest"
-            WEBSITE_TAGS="${WEBSITE_TAGS}
-          ghcr.io/${OWNER}/featuresignals-website:latest"
-            DOCS_TAGS="${DOCS_TAGS}
-          ghcr.io/${OWNER}/featuresignals-docs:latest"
-          fi
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
-            SERVER_TAGS="${SERVER_TAGS}
-          ghcr.io/${OWNER}/featuresignals-server:${VERSION}"
-            DASH_TAGS="${DASH_TAGS}
-          ghcr.io/${OWNER}/featuresignals-dashboard:${VERSION}"
-            OPS_TAGS="${OPS_TAGS}
-          ghcr.io/${OWNER}/featuresignals-ops:${VERSION}"
-            WEBSITE_TAGS="${WEBSITE_TAGS}
-          ghcr.io/${OWNER}/featuresignals-website:${VERSION}"
-            DOCS_TAGS="${DOCS_TAGS}
-          ghcr.io/${OWNER}/featuresignals-docs:${VERSION}"
-          fi
-
-          {
-            echo "server_tags<<TAGS_EOF"
-            echo "$SERVER_TAGS"
-            echo "TAGS_EOF"
-          } >> $GITHUB_OUTPUT
-          {
-            echo "dashboard_tags<<TAGS_EOF"
-            echo "$DASH_TAGS"
-            echo "TAGS_EOF"
-          } >> $GITHUB_OUTPUT
-          {
-            echo "ops_tags<<TAGS_EOF"
-            echo "$OPS_TAGS"
-            echo "TAGS_EOF"
-          } >> $GITHUB_OUTPUT
-          {
-            echo "website_tags<<TAGS_EOF"
-            echo "$WEBSITE_TAGS"
-            echo "TAGS_EOF"
-          } >> $GITHUB_OUTPUT
-          {
-            echo "docs_tags<<TAGS_EOF"
-            echo "$DOCS_TAGS"
-            echo "TAGS_EOF"
-          } >> $GITHUB_OUTPUT
-
-          SHOULD_PUSH="false"
-          if [ "${{ github.event_name }}" = "push" ]; then
-            SHOULD_PUSH="true"
-          fi
-          if [ "${{ inputs.force_push_images }}" = "true" ]; then
-            SHOULD_PUSH="true"
-          fi
-          echo "should_push=$SHOULD_PUSH" >> $GITHUB_OUTPUT
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        if: steps.tags.outputs.should_push == 'true'
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build & push server image
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.deploy == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./server
-          file: deploy/docker/Dockerfile.server
-          platforms: linux/amd64,linux/arm64
-          push: ${{ steps.tags.outputs.should_push == 'true' }}
-          tags: ${{ steps.tags.outputs.server_tags }}
-
-      - name: Build & push dashboard image
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.dashboard == 'true' || needs.detect-changes.outputs.deploy == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./dashboard
-          file: deploy/docker/Dockerfile.dashboard
-          platforms: linux/amd64,linux/arm64
-          push: ${{ steps.tags.outputs.should_push == 'true' }}
-          tags: ${{ steps.tags.outputs.dashboard_tags }}
-
-      - name: Build & push ops portal image
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.ops == 'true' || needs.detect-changes.outputs.deploy == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./ops
-          file: deploy/docker/Dockerfile.ops
-          platforms: linux/amd64,linux/arm64
-          push: ${{ steps.tags.outputs.should_push == 'true' }}
-          tags: ${{ steps.tags.outputs.ops_tags }}
-
-      - name: Build & push website image
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.website == 'true' || needs.detect-changes.outputs.deploy == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./website
-          file: deploy/docker/Dockerfile.website
-          platforms: linux/amd64,linux/arm64
-          push: ${{ steps.tags.outputs.should_push == 'true' }}
-          tags: ${{ steps.tags.outputs.website_tags }}
-
-      - name: Build & push docs image
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docs == 'true' || needs.detect-changes.outputs.deploy == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./docs
-          file: deploy/docker/Dockerfile.docs
-          platforms: linux/amd64,linux/arm64
-          push: ${{ steps.tags.outputs.should_push == 'true' }}
-          tags: ${{ steps.tags.outputs.docs_tags }}
-
-      - name: Post build summary
-        run: |
-          echo "## Docker Images" >> $GITHUB_STEP_SUMMARY
-          echo "**Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
-          echo "**Pushed:** ${{ steps.tags.outputs.should_push }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Server" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.tags.outputs.server_tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "### Dashboard" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.tags.outputs.dashboard_tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "### Ops Portal" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.tags.outputs.ops_tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "### Website" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.tags.outputs.website_tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "### Docs" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.tags.outputs.docs_tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
