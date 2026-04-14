@@ -52,6 +52,7 @@ jobs:
             DOMAIN_APP=app.staging.featuresignals.com
             DOMAIN_MAIN=staging.featuresignals.com
             DOMAIN_DOCS=docs.staging.featuresignals.com
+            DOMAIN_OPS=ops.staging.featuresignals.com
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
             OTEL_ENABLED=false

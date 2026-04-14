@@ -1,3 +1,5 @@
+# SAFETY: This workflow MUST remain on workflow_dispatch only.
+# It provisions production infrastructure and must never trigger automatically.
 name: Provision Isolated Customer VPS
 
 on:

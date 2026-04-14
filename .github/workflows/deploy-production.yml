@@ -51,6 +51,7 @@ jobs:
             domain_app: app.featuresignals.com
             domain_main: featuresignals.com
             domain_docs: docs.featuresignals.com
+            domain_ops: ops.featuresignals.com
             payment_gateway: payu
           - region: us
             host_secret: VPS_HOST_US
@@ -81,7 +82,7 @@ jobs:
           host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_REGIONAL }}
-          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,LOCAL_REGION,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE,IMAGE_TAG,USE_REGISTRY
+          envs: REGION,DOMAIN_API,DOMAIN_APP,DOMAIN_MAIN,DOMAIN_DOCS,DOMAIN_OPS,POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,OTEL_INGESTION_KEY,LOCAL_REGION,PAYMENT_GATEWAY,PAYU_MERCHANT_KEY,PAYU_SALT,PAYU_MODE,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,STRIPE_PRICE_ID,STRIPE_MODE,IMAGE_TAG,USE_REGISTRY
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=${{ matrix.region }}
@@ -89,6 +90,7 @@ jobs:
             DOMAIN_APP=${{ matrix.domain_app }}
             ${{ matrix.domain_main && format('DOMAIN_MAIN={0}', matrix.domain_main) || '' }}
             ${{ matrix.domain_docs && format('DOMAIN_DOCS={0}', matrix.domain_docs) || '' }}
+            ${{ matrix.domain_ops && format('DOMAIN_OPS={0}', matrix.domain_ops) || '' }}
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             JWT_SECRET=${JWT_SECRET}
             DB_ADMIN_PASSWORD=${DB_ADMIN_PASSWORD}

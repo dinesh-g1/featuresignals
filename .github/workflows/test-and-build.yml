@@ -46,6 +46,7 @@ jobs:
       sdk-python: ${{ steps.filter.outputs.sdk-python }}
       sdk-java: ${{ steps.filter.outputs.sdk-java }}
       deploy: ${{ steps.filter.outputs.deploy }}
+      ops: ${{ steps.filter.outputs.ops }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -75,6 +76,7 @@ jobs:
             echo "sdk-python=$(has_match '^sdks/python/')"
             echo "sdk-java=$(has_match '^sdks/java/')"
             echo "deploy=$(has_match '^deploy/')"
+            echo "ops=$(has_match '^ops/')"
           } >> "$GITHUB_OUTPUT"
 
           echo "### Detected Changes (push to main)" >> "$GITHUB_STEP_SUMMARY"
@@ -82,7 +84,7 @@ jobs:
           echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
           for pair in "Server:$(has_match '^server/')" "Dashboard:$(has_match '^dashboard/')" "Website:$(has_match '^website/')" "Docs:$(has_match '^docs/')" \
                       "SDK Go:$(has_match '^sdks/go/')" "SDK Node:$(has_match '^sdks/node/')" "SDK Python:$(has_match '^sdks/python/')" \
-                      "SDK Java:$(has_match '^sdks/java/')" "Deploy:$(has_match '^deploy/')"; do
+                      "SDK Java:$(has_match '^sdks/java/')" "Deploy:$(has_match '^deploy/')" "Ops:$(has_match '^ops/')"; do
             name="${pair%%:*}"
             val="${pair##*:}"
             echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
@@ -109,6 +111,7 @@ jobs:
             echo "sdk-python=$(has_match '^sdks/python/')"
             echo "sdk-java=$(has_match '^sdks/java/')"
             echo "deploy=$(has_match '^deploy/')"
+            echo "ops=$(has_match '^ops/')"
           } >> "$GITHUB_OUTPUT"
 
           echo "### Detected Changes (pull request)" >> "$GITHUB_STEP_SUMMARY"
@@ -116,7 +119,7 @@ jobs:
           echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
           for pair in "Server:$(has_match '^server/')" "Dashboard:$(has_match '^dashboard/')" "Website:$(has_match '^website/')" "Docs:$(has_match '^docs/')" \
                       "SDK Go:$(has_match '^sdks/go/')" "SDK Node:$(has_match '^sdks/node/')" "SDK Python:$(has_match '^sdks/python/')" \
-                      "SDK Java:$(has_match '^sdks/java/')" "Deploy:$(has_match '^deploy/')"; do
+                      "SDK Java:$(has_match '^sdks/java/')" "Deploy:$(has_match '^deploy/')" "Ops:$(has_match '^ops/')"; do
             name="${pair%%:*}"
             val="${pair##*:}"
             echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
@@ -134,6 +137,7 @@ jobs:
           echo "sdk-python=${{ steps.filter-push.outputs.sdk-python || steps.filter-pr.outputs.sdk-python || 'true' }}" >> $GITHUB_OUTPUT
           echo "sdk-java=${{ steps.filter-push.outputs.sdk-java || steps.filter-pr.outputs.sdk-java || 'true' }}" >> $GITHUB_OUTPUT
           echo "deploy=${{ steps.filter-push.outputs.deploy || steps.filter-pr.outputs.deploy || 'true' }}" >> $GITHUB_OUTPUT
+          echo "ops=${{ steps.filter-push.outputs.ops || steps.filter-pr.outputs.ops || 'true' }}" >> $GITHUB_OUTPUT
 
   # ── Server ─────────────────────────────────────────────────────────────────
   server-tests:
@@ -225,6 +229,32 @@ jobs:
         run: npm run test:coverage
       - name: Build
         working-directory: dashboard
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+
+  # ── Ops Portal ─────────────────────────────────────────────────────────────
+  ops-tests:
+    name: "Ops Portal: Test & Build"
+    needs: detect-changes
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || needs.detect-changes.outputs.ops == 'true'
+      || needs.detect-changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install
+        working-directory: ops
+        run: npm ci
+      - name: Lint
+        working-directory: ops
+        run: npm run lint --if-present
+      - name: Build
+        working-directory: ops
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
@@ -347,6 +377,7 @@ jobs:
         github.event_name == 'workflow_dispatch'
         || needs.detect-changes.outputs.server == 'true'
         || needs.detect-changes.outputs.dashboard == 'true'
+        || needs.detect-changes.outputs.ops == 'true'
         || needs.detect-changes.outputs.docs == 'true'
         || needs.detect-changes.outputs.sdk-go == 'true'
         || needs.detect-changes.outputs.sdk-node == 'true'
@@ -368,6 +399,7 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch'
           || needs.detect-changes.outputs.dashboard == 'true'
+          || needs.detect-changes.outputs.ops == 'true'
           || needs.detect-changes.outputs.docs == 'true'
           || needs.detect-changes.outputs.sdk-node == 'true'
         with:
@@ -387,6 +419,10 @@ jobs:
       - name: npm audit (dashboard)
         if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.dashboard == 'true'
         working-directory: dashboard
+        run: npm install && npm audit --audit-level=high
+      - name: npm audit (ops portal)
+        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.ops == 'true'
+        working-directory: ops
         run: npm install && npm audit --audit-level=high
       - name: npm audit (docs)
         if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docs == 'true'
@@ -420,6 +456,7 @@ jobs:
       - server-tests
       - server-lint
       - dashboard-tests
+      - ops-tests
       - docs-build
       - go-sdk-tests
       - node-sdk-tests
@@ -436,6 +473,7 @@ jobs:
           echo "| Server: Test & Coverage | ${{ needs.server-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Server: Lint & Vet | ${{ needs.server-lint.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Dashboard: Test & Build | ${{ needs.dashboard-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Ops Portal: Test & Build | ${{ needs.ops-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Docs: Build | ${{ needs.docs-build.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| SDK: Go | ${{ needs.go-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| SDK: Node.js | ${{ needs.node-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
@@ -452,7 +490,7 @@ jobs:
   # Each image is built/pushed only if its source folder changed, or on dispatch.
   build-and-publish-images:
     name: "Docker: Build & Publish to GHCR"
-    needs: [detect-changes, server-tests, dashboard-tests]
+    needs: [detect-changes, server-tests, dashboard-tests, ops-tests]
     if: >-
       always()
       && !contains(needs.*.result, 'failure')
@@ -461,6 +499,7 @@ jobs:
         github.event_name == 'workflow_dispatch'
         || needs.detect-changes.outputs.server == 'true'
         || needs.detect-changes.outputs.dashboard == 'true'
+        || needs.detect-changes.outputs.ops == 'true'
         || needs.detect-changes.outputs.website == 'true'
         || needs.detect-changes.outputs.docs == 'true'
         || needs.detect-changes.outputs.deploy == 'true'
@@ -478,6 +517,7 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           SERVER_TAGS="ghcr.io/${OWNER}/featuresignals-server:sha-${SHA_SHORT}"
           DASH_TAGS="ghcr.io/${OWNER}/featuresignals-dashboard:sha-${SHA_SHORT}"
+          OPS_TAGS="ghcr.io/${OWNER}/featuresignals-ops:sha-${SHA_SHORT}"
           WEBSITE_TAGS="ghcr.io/${OWNER}/featuresignals-website:sha-${SHA_SHORT}"
           DOCS_TAGS="ghcr.io/${OWNER}/featuresignals-docs:sha-${SHA_SHORT}"
 
@@ -486,6 +526,8 @@ jobs:
           ghcr.io/${OWNER}/featuresignals-server:latest"
             DASH_TAGS="${DASH_TAGS}
           ghcr.io/${OWNER}/featuresignals-dashboard:latest"
+            OPS_TAGS="${OPS_TAGS}
+          ghcr.io/${OWNER}/featuresignals-ops:latest"
             WEBSITE_TAGS="${WEBSITE_TAGS}
           ghcr.io/${OWNER}/featuresignals-website:latest"
             DOCS_TAGS="${DOCS_TAGS}
@@ -497,6 +539,8 @@ jobs:
           ghcr.io/${OWNER}/featuresignals-server:${VERSION}"
             DASH_TAGS="${DASH_TAGS}
           ghcr.io/${OWNER}/featuresignals-dashboard:${VERSION}"
+            OPS_TAGS="${OPS_TAGS}
+          ghcr.io/${OWNER}/featuresignals-ops:${VERSION}"
             WEBSITE_TAGS="${WEBSITE_TAGS}
           ghcr.io/${OWNER}/featuresignals-website:${VERSION}"
             DOCS_TAGS="${DOCS_TAGS}
@@ -511,6 +555,11 @@ jobs:
           {
             echo "dashboard_tags<<TAGS_EOF"
             echo "$DASH_TAGS"
+            echo "TAGS_EOF"
+          } >> $GITHUB_OUTPUT
+          {
+            echo "ops_tags<<TAGS_EOF"
+            echo "$OPS_TAGS"
             echo "TAGS_EOF"
           } >> $GITHUB_OUTPUT
           {
@@ -569,6 +618,16 @@ jobs:
           push: ${{ steps.tags.outputs.should_push == 'true' }}
           tags: ${{ steps.tags.outputs.dashboard_tags }}
 
+      - name: Build & push ops portal image
+        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.ops == 'true' || needs.detect-changes.outputs.deploy == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ops
+          file: deploy/docker/Dockerfile.ops
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.tags.outputs.should_push == 'true' }}
+          tags: ${{ steps.tags.outputs.ops_tags }}
+
       - name: Build & push website image
         if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.website == 'true' || needs.detect-changes.outputs.deploy == 'true'
         uses: docker/build-push-action@v6
@@ -602,6 +661,10 @@ jobs:
           echo "### Dashboard" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.tags.outputs.dashboard_tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "### Ops Portal" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.tags.outputs.ops_tags }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "### Website" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

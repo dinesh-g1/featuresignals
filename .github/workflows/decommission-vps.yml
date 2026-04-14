@@ -1,3 +1,5 @@
+# SAFETY: This workflow MUST remain on workflow_dispatch only.
+# It destroys production infrastructure and must never trigger automatically.
 name: Decommission Isolated Customer VPS
 
 on:

@@ -135,6 +135,43 @@ services:
           memory: 512M
           cpus: "1.0"
 
+  # Ops Portal — internal admin portal (primary region only)
+  ops:
+    profiles: ["full"]
+    image: ghcr.io/dinesh-g1/featuresignals-ops:${IMAGE_TAG:-latest}
+    build:
+      context: ./ops
+      dockerfile: ../deploy/docker/Dockerfile.ops
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
+        NEXT_PUBLIC_APP_URL: https://${DOMAIN_APP}
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      HOSTNAME: "0.0.0.0"
+      NEXT_PUBLIC_API_URL: https://${DOMAIN_API}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/login",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
   # Primary region only — activated via --profile full
   website-build:
     profiles: ["full"]
@@ -180,6 +217,7 @@ services:
       DOMAIN_APP: ${DOMAIN_APP}
       DOMAIN_MAIN: ${DOMAIN_MAIN:-}
       DOMAIN_DOCS: ${DOMAIN_DOCS:-}
+      DOMAIN_OPS: ${DOMAIN_OPS:-}
     healthcheck:
       test:
         [
