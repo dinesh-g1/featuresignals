@@ -509,8 +509,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ steps.tags.outputs.should_push == 'true' }}
           tags: ${{ steps.tags.outputs.server_tags }}
-          cache-from: type=gha,scope=server
-          cache-to: type=gha,mode=max,scope=server
 
       - name: Build & push dashboard image
         if: github.event_name != 'pull_request' || needs.detect-changes.outputs.dashboard == 'true'
@@ -521,8 +519,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ steps.tags.outputs.should_push == 'true' }}
           tags: ${{ steps.tags.outputs.dashboard_tags }}
-          cache-from: type=gha,scope=dashboard
-          cache-to: type=gha,mode=max,scope=dashboard
 
       - name: Build & push website image
         if: github.event_name != 'pull_request' || needs.detect-changes.outputs.website == 'true'
@@ -533,8 +529,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ steps.tags.outputs.should_push == 'true' }}
           tags: ${{ steps.tags.outputs.website_tags }}
-          cache-from: type=gha,scope=website
-          cache-to: type=gha,mode=max,scope=website
 
       - name: Build & push docs image
         if: github.event_name != 'pull_request' || needs.detect-changes.outputs.docs == 'true'
@@ -545,8 +539,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ steps.tags.outputs.should_push == 'true' }}
           tags: ${{ steps.tags.outputs.docs_tags }}
-          cache-from: type=gha,scope=docs
-          cache-to: type=gha,mode=max,scope=docs
 
       - name: Post build summary
         run: |

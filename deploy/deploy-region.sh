@@ -29,25 +29,25 @@ DC="docker compose --project-directory $PROJECT_DIR --env-file $PROJECT_DIR/.env
 # ── Deployment lock ──────────────────────────────────────────────────────────
 exec 200>"$LOCKFILE"
 if ! flock -n 200; then
-  # Check if the locking process is still alive (stale lock detection)
-  if [ -f "$LOCKFILE" ]; then
-    LOCK_PID=$(cat "$LOCKFILE" 2>/dev/null || true)
-    if [ -n "$LOCK_PID" ] && ! kill -0 "$LOCK_PID" 2>/dev/null; then
-      echo "WARNING: Stale lock detected (PID $LOCK_PID no longer running). Removing and retrying..."
-      flock -u 200 2>/dev/null || true
-      rm -f "$LOCKFILE"
-      exec 200>"$LOCKFILE"
-      if ! flock -n 200; then
-        echo "ERROR: Could not acquire deploy lock after cleanup attempt"
-        exit 1
-      fi
-    else
-      echo "ERROR: Another deploy is already in progress (lock: $LOCKFILE${LOCK_PID:+, PID: $LOCK_PID})"
+  LOCK_PID=$(cat "$LOCKFILE" 2>/dev/null || true)
+  if [ -n "$LOCK_PID" ] && ! kill -0 "$LOCK_PID" 2>/dev/null; then
+    echo "WARNING: Stale lock detected (PID $LOCK_PID no longer running). Removing and retrying..."
+    flock -u 200 2>/dev/null || true
+    rm -f "$LOCKFILE"
+    exec 200>"$LOCKFILE"
+    if ! flock -n 200; then
+      echo "ERROR: Could not acquire deploy lock after cleanup attempt"
       exit 1
     fi
   else
-    echo "ERROR: Could not acquire deploy lock"
-    exit 1
+    echo "WARNING: Lock file exists but PID is empty or process alive. Forcing recovery..."
+    flock -u 200 2>/dev/null || true
+    rm -f "$LOCKFILE"
+    exec 200>"$LOCKFILE"
+    if ! flock -n 200; then
+      echo "ERROR: Could not acquire deploy lock after forced cleanup (another deploy may be in progress)"
+      exit 1
+    fi
   fi
 fi
 echo $$ > "$LOCKFILE"
