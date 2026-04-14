@@ -92,3 +92,6 @@ sdks/java/target/
 .terraform.lock.hcl
 .qwen/
 .zed/
+
+# Ops portal sensitive docs (internal procedures, infra details)
+ops/docs/*.md
