@@ -345,7 +345,7 @@ func (h *SSOAuthHandler) provisionAndLogin(ctx context.Context, cfg *domain.SSOC
 		logger.Warn("failed to update last login at", "error", err, "user_id", user.ID)
 	}
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, cfg.OrgID, string(member.Role), "")
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, cfg.OrgID, string(member.Role), user.Email, "")
 	if err != nil {
 		return nil, fmt.Errorf("generate tokens: %w", err)
 	}

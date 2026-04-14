@@ -1,0 +1,174 @@
+---
+# Ansible Playbook: Deploy FeatureSignals to Isolated Customer VPS
+# This runs after Terraform provisions the VPS
+# Prerequisites: VPS is SSH-accessible, Docker is installed (via cloud-init)
+
+- name: Deploy FeatureSignals to Customer VPS
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    customer_name: "{{ customer_name }}"
+    org_id: "{{ org_id }}"
+    subdomain: "{{ customer_name }}.featuresignals.com"
+    app_dir: /opt/featuresignals
+
+    # These should be passed as extra_vars or from vault
+    db_password: "{{ vault_db_password }}"
+    jwt_secret: "{{ vault_jwt_secret }}"
+    license_key: "{{ vault_license_key }}"
+    local_region: "{{ vault_local_region | default('eu') }}"
+    otel_endpoint: "{{ vault_otel_endpoint | default('https://signoz.featuresignals.com:4317') }}"
+    otel_ingestion_key: "{{ vault_otel_ingestion_key | default('') }}"
+
+  tasks:
+    - name: Verify Docker is installed
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      debug:
+        msg: "Docker installed: {{ docker_version.stdout }}"
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0750'
+        owner: root
+        group: root
+
+    - name: Create subdirectories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0750'
+      loop:
+        - "{{ app_dir }}/scripts"
+        - "{{ app_dir }}/backups"
+        - "{{ app_dir }}/logs"
+        - "{{ app_dir }}/data/postgres"
+
+    - name: Copy docker-compose.yml
+      copy:
+        src: ../../deploy/docker-compose.onprem.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: Generate Caddyfile
+      template:
+        src: templates/Caddyfile.j2
+        dest: "{{ app_dir }}/Caddyfile"
+        mode: '0644'
+      vars:
+        caddy_subdomain: "{{ subdomain }}"
+
+    - name: Create .env file
+      copy:
+        content: |
+          # FeatureSignals Environment Configuration
+          # Managed by automation - DO NOT EDIT MANUALLY
+
+          DEPLOYMENT_MODE=onprem
+          LOCAL_REGION={{ local_region }}
+
+          # Database
+          DATABASE_URL=postgres://fs:{{ db_password }}@fs-postgres:5432/featuresignals?sslmode=disable
+          DB_MAX_CONNS=20
+          DB_MIN_CONNS=5
+
+          # Auth
+          JWT_SECRET={{ jwt_secret }}
+          TOKEN_TTL_MINUTES=15
+          REFRESH_TTL_HOURS=168
+
+          # App URLs
+          APP_BASE_URL=https://{{ subdomain }}
+          DASHBOARD_URL=https://{{ subdomain }}/dashboard
+          CORS_ORIGIN=https://{{ subdomain }}
+
+          # License
+          LICENSE_KEY={{ license_key }}
+
+          # Email (optional - uses central service)
+          EMAIL_PROVIDER=none
+
+          # Observability
+          OTEL_ENABLED=true
+          OTEL_EXPORTER_OTLP_ENDPOINT={{ otel_endpoint }}
+          OTEL_INGESTION_KEY={{ otel_ingestion_key }}
+          OTEL_SERVICE_NAME=api-{{ customer_name }}
+
+          # Business
+          AUDIT_RETENTION_DAYS=90
+          TRIAL_DURATION_DAYS=14
+        dest: "{{ app_dir }}/.env"
+        mode: '0600'
+
+    - name: Create management scripts
+      copy:
+        src: "scripts/{{ item }}"
+        dest: "{{ app_dir }}/scripts/{{ item }}"
+        mode: '0755'
+      loop:
+        - backup.sh
+        - restart.sh
+        - logs.sh
+        - health-check.sh
+
+    - name: Pull Docker images
+      command: docker compose pull
+      args:
+        chdir: "{{ app_dir }}"
+      timeout: 300
+
+    - name: Run database migrations
+      command: docker compose run --rm server /app/server migrate up
+      args:
+        chdir: "{{ app_dir }}"
+      timeout: 120
+
+    - name: Start all services
+      command: docker compose up -d
+      args:
+        chdir: "{{ app_dir }}"
+      timeout: 120
+
+    - name: Wait for API to be healthy
+      uri:
+        url: "https://{{ subdomain }}/health"
+        status_code: 200
+      register: health_result
+      retries: 30
+      delay: 10
+      until: health_result.status == 200
+
+    - name: Verify deployment
+      command: docker compose ps
+      args:
+        chdir: "{{ app_dir }}"
+      register: compose_ps
+      changed_when: false
+
+    - name: Display deployment status
+      debug:
+        msg: |
+          Deployment complete for {{ subdomain }}
+
+          Services:
+          {{ compose_ps.stdout }}
+
+          URL: https://{{ subdomain }}
+
+  handlers:
+    - name: Restart all services
+      command: docker compose restart
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Reload Caddy
+      command: docker compose exec caddy caddy reload
+      args:
+        chdir: "{{ app_dir }}"

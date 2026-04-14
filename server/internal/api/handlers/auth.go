@@ -192,7 +192,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), org.DataRegion)
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), user.Email, org.DataRegion)
 	if err != nil {
 		log.Error("token generation failed", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
@@ -309,7 +309,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if orgErr == nil && org != nil {
 		dataRegion = org.DataRegion
 	}
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, orgID, role, dataRegion)
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, orgID, role, user.Email, dataRegion)
 	if err != nil {
 		log.Error("token generation failed on login", "error", err, "user_id", user.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
@@ -381,7 +381,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(claims.UserID, claims.OrgID, claims.Role, claims.DataRegion)
+	tokens, err := h.jwtMgr.GenerateTokenPair(claims.UserID, claims.OrgID, claims.Role, "", claims.DataRegion)
 	if err != nil {
 		log.Error("token refresh failed", "error", err, "user_id", claims.UserID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")
@@ -502,7 +502,7 @@ func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 		role = string(member.Role)
 	}
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(userID, orgID, role, "")
+	tokens, err := h.jwtMgr.GenerateTokenPair(userID, orgID, role, "", "")
 	if err != nil {
 		log.Error("failed to generate tokens for token exchange", "error", err, "user_id", userID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")

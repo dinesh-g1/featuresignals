@@ -23,7 +23,7 @@ var ErrTokenExpired = errors.New("token expired")
 // TokenManager defines the contract for JWT token operations.
 // Depend on this interface instead of *JWTManager for testability.
 type TokenManager interface {
-	GenerateTokenPair(userID, orgID, role, dataRegion string) (*TokenPair, error)
+	GenerateTokenPair(userID, orgID, role, email, dataRegion string) (*TokenPair, error)
 	ValidateToken(tokenStr string) (*Claims, error)
 	ValidateRefreshToken(tokenStr string) (*Claims, error)
 }
@@ -32,6 +32,7 @@ type Claims struct {
 	UserID     string `json:"user_id"`
 	OrgID      string `json:"org_id"`
 	Role       string `json:"role"`
+	Email      string `json:"email,omitempty"`
 	DataRegion string `json:"data_region,omitempty"`
 	jwt.RegisteredClaims
 }
@@ -62,7 +63,7 @@ func generateJTI() string {
 	return hex.EncodeToString(b)
 }
 
-func (m *JWTManager) GenerateTokenPair(userID, orgID, role, dataRegion string) (*TokenPair, error) {
+func (m *JWTManager) GenerateTokenPair(userID, orgID, role, email, dataRegion string) (*TokenPair, error) {
 	now := time.Now()
 	expiresAt := now.Add(m.tokenTTL)
 
@@ -70,6 +71,7 @@ func (m *JWTManager) GenerateTokenPair(userID, orgID, role, dataRegion string) (
 		UserID:     userID,
 		OrgID:      orgID,
 		Role:       role,
+		Email:      email,
 		DataRegion: dataRegion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        generateJTI(),
@@ -89,6 +91,7 @@ func (m *JWTManager) GenerateTokenPair(userID, orgID, role, dataRegion string) (
 		UserID:     userID,
 		OrgID:      orgID,
 		Role:       role,
+		Email:      email,
 		DataRegion: dataRegion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        generateJTI(),

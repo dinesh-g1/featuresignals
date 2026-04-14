@@ -78,7 +78,7 @@ func (h *MagicLinkHandler) Exchange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT pair
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(member.Role), org.DataRegion)
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(member.Role), user.Email, org.DataRegion)
 	if err != nil {
 		log.Error("failed to generate tokens for magic link", "error", err, "user_id", userID)
 		http.Redirect(w, r, h.dashboardURL+"/login?magic_link_error=error", http.StatusFound)

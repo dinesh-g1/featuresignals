@@ -512,5 +512,90 @@ func TestIsExactProjectCreate(t *testing.T) {
 		t.Error("expected false for /v1/projects/abc/flags")
 	}
 }
-func (s *tierMockStore) CreateMagicLinkToken(context.Context, string, string, string, time.Time) error { return nil }
-func (s *tierMockStore) ConsumeMagicLinkToken(context.Context, string) (string, string, error) { return "", "", nil }
+func (s *tierMockStore) CreateMagicLinkToken(context.Context, string, string, string, time.Time) error {
+	return nil
+}
+func (s *tierMockStore) ConsumeMagicLinkToken(context.Context, string) (string, string, error) {
+	return "", "", nil
+}
+
+// ─── OpsStore stubs (required by domain.Store) ────────────────────────
+
+func (s *tierMockStore) ListCustomerEnvironments(context.Context, string, string, string, string, int, int) ([]domain.CustomerEnvironment, int, error) {
+	return nil, 0, nil
+}
+func (s *tierMockStore) GetCustomerEnvironment(context.Context, string) (*domain.CustomerEnvironment, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) GetCustomerEnvironmentByVPSID(context.Context, string) (*domain.CustomerEnvironment, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) CreateCustomerEnvironment(context.Context, *domain.CustomerEnvironment) error {
+	return nil
+}
+func (s *tierMockStore) UpdateCustomerEnvironment(context.Context, string, map[string]any) error {
+	return nil
+}
+func (s *tierMockStore) DeleteCustomerEnvironment(context.Context, string) error { return nil }
+func (s *tierMockStore) ListLicenses(context.Context, string, string, string) ([]domain.License, int, error) {
+	return nil, 0, nil
+}
+func (s *tierMockStore) GetLicense(context.Context, string) (*domain.License, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) GetLicenseByOrg(context.Context, string) (*domain.License, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) CreateLicense(context.Context, *domain.License) error        { return nil }
+func (s *tierMockStore) UpdateLicense(context.Context, string, map[string]any) error { return nil }
+func (s *tierMockStore) RevokeLicense(context.Context, string, string) error         { return nil }
+func (s *tierMockStore) OverrideLicenseQuota(context.Context, string, map[string]any) error {
+	return nil
+}
+func (s *tierMockStore) ResetLicenseUsage(context.Context, string) error { return nil }
+func (s *tierMockStore) ListOpsUsers(context.Context) ([]domain.OpsUser, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetOpsUser(context.Context, string) (*domain.OpsUser, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) GetOpsUserByUserID(context.Context, string) (*domain.OpsUser, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) CreateOpsUser(context.Context, *domain.OpsUser) error { return nil }
+func (s *tierMockStore) UpdateOpsUser(context.Context, string, map[string]any) error {
+	return nil
+}
+func (s *tierMockStore) DeleteOpsUser(context.Context, string) error { return nil }
+func (s *tierMockStore) ListSandboxes(context.Context, string, string) ([]domain.SandboxEnvironment, int, error) {
+	return nil, 0, nil
+}
+func (s *tierMockStore) CreateSandbox(context.Context, *domain.SandboxEnvironment) error {
+	return nil
+}
+func (s *tierMockStore) RenewSandbox(context.Context, string) (*domain.SandboxEnvironment, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) DecommissionSandbox(context.Context, string) error { return nil }
+func (s *tierMockStore) GetExpiringSandboxes(context.Context, int) ([]domain.SandboxEnvironment, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListOrgCostDaily(context.Context, string, string, string) ([]domain.OrgCostDaily, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListOrgCostMonthly(context.Context, string) ([]domain.OrgCostMonthlySummary, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetFinancialSummary(context.Context) (*domain.FinancialSummary, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListOpsAuditLogs(context.Context, string, string, string, string, string, int, int) ([]domain.OpsAuditLog, int, error) {
+	return nil, 0, nil
+}
+func (s *tierMockStore) CreateOpsAuditLog(context.Context, *domain.OpsAuditLog) error { return nil }
+func (s *tierMockStore) ListCustomers(context.Context, string, string, string) ([]domain.CustomerSummary, int, error) {
+	return nil, 0, nil
+}
+func (s *tierMockStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
+	return nil, fmt.Errorf("not found")
+}

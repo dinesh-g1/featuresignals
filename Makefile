@@ -139,9 +139,13 @@ dev-dash: ## Run Next.js dashboard natively
 	@echo "==> Starting dashboard on :3000..."
 	cd dashboard && npm run dev
 
-dev-website: ## Run Next.js marketing website natively (port 3001)
-	@echo "==> Starting website on :3001..."
-	cd website && PORT=3001 npm run dev
+dev-ops: ## Run Ops Portal natively (port 3001)
+	@echo "==> Starting ops portal on :3001..."
+	cd ops && npm run dev
+
+dev-website: ## Run Next.js marketing website natively (port 3002)
+	@echo "==> Starting website on :3002..."
+	cd website && PORT=3002 npm run dev
 
 dev-docs: ## Run Docusaurus docs natively (port 3002)
 	@echo "==> Starting docs on :3002..."

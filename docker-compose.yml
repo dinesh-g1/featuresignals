@@ -77,5 +77,31 @@ services:
       timeout: 5s
       retries: 3
 
+  ops:
+    build:
+      context: ./ops
+      dockerfile: ../deploy/docker/Dockerfile.ops
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    environment:
+      HOSTNAME: "0.0.0.0"
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3001/login",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   pgdata:

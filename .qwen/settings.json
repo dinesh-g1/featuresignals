@@ -12,7 +12,11 @@
       "Bash(git reset *)",
       "Bash(go *)",
       "Bash(python3 *)",
-      "Bash(mv *)"
+      "Bash(mv *)",
+      "Bash(gh *)",
+      "Bash(sleep *)",
+      "Bash(curl *)",
+      "Bash(sed *)"
     ]
   },
   "$version": 3

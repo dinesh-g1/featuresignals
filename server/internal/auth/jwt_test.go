@@ -8,7 +8,7 @@ import (
 func TestGenerateTokenPair(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestGenerateTokenPair(t *testing.T) {
 func TestValidateToken_Valid(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestValidateToken_Valid(t *testing.T) {
 func TestValidateRefreshToken(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "developer", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "developer", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestValidateRefreshToken(t *testing.T) {
 func TestValidateToken_RejectsRefreshToken(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestValidateToken_RejectsRefreshToken(t *testing.T) {
 func TestValidateRefreshToken_RejectsAccessToken(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestValidateRefreshToken_RejectsAccessToken(t *testing.T) {
 func TestValidateToken_ExpiredToken(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", -1*time.Minute, -1*time.Minute)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -113,14 +113,14 @@ func TestValidateToken_ExpiredToken(t *testing.T) {
 		t.Error("expected error for expired token")
 	}
 	if err != ErrTokenExpired {
-		t.Errorf("expected ErrTokenExpired, got %v", err)
+		t.Errorf("expected ErrTokenExpired,  got %v", err)
 	}
 }
 
 func TestValidateRefreshToken_ExpiredToken(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", -1*time.Minute, -1*time.Minute)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestValidateRefreshToken_ExpiredToken(t *testing.T) {
 		t.Error("expected error for expired refresh token")
 	}
 	if err != ErrTokenExpired {
-		t.Errorf("expected ErrTokenExpired, got %v", err)
+		t.Errorf("expected ErrTokenExpired,  got %v", err)
 	}
 }
 
@@ -152,7 +152,7 @@ func TestValidateToken_WrongSecret(t *testing.T) {
 	mgr1 := NewJWTManager("secret-one-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 	mgr2 := NewJWTManager("secret-two-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair, err := mgr1.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr1.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -162,7 +162,7 @@ func TestValidateToken_WrongSecret(t *testing.T) {
 		t.Error("expected error when validating with wrong secret")
 	}
 	if err != ErrInvalidToken {
-		t.Errorf("expected ErrInvalidToken for wrong secret, got %v", err)
+		t.Errorf("expected ErrInvalidToken for wrong secret,  got %v", err)
 	}
 }
 
@@ -175,7 +175,7 @@ func TestExpiredVsInvalid_AreDifferentErrors(t *testing.T) {
 func TestValidateToken_ExpiredReturnsExpiredNotInvalid(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", -1*time.Minute, 24*time.Hour)
 
-	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-123", "org-456", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error: %v", err)
 	}
@@ -210,8 +210,8 @@ func TestValidateToken_GarbageReturnsInvalidNotExpired(t *testing.T) {
 func TestGenerateTokenPair_DifferentUsersGetDifferentTokens(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair1, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "")
-	pair2, _ := mgr.GenerateTokenPair("user-2", "org-1", "admin", "")
+	pair1, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "", "")
+	pair2, _ := mgr.GenerateTokenPair("user-2", "org-1", "admin", "", "")
 
 	if pair1.AccessToken == pair2.AccessToken {
 		t.Error("different users should get different tokens")
@@ -220,7 +220,7 @@ func TestGenerateTokenPair_DifferentUsersGetDifferentTokens(t *testing.T) {
 
 func TestGenerateTokenPair_ContainsJTI(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
-	pair, err := mgr.GenerateTokenPair("user-1", "org-1", "admin", "")
+	pair, err := mgr.GenerateTokenPair("user-1", "org-1", "admin", "", "")
 	if err != nil {
 		t.Fatalf("GenerateTokenPair error: %v", err)
 	}
@@ -249,8 +249,8 @@ func TestGenerateTokenPair_ContainsJTI(t *testing.T) {
 func TestGenerateTokenPair_UniqueJTIs(t *testing.T) {
 	mgr := NewJWTManager("test-secret-32-chars-long-enough", 15*time.Minute, 24*time.Hour)
 
-	pair1, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "")
-	pair2, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "")
+	pair1, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "", "")
+	pair2, _ := mgr.GenerateTokenPair("user-1", "org-1", "admin", "", "")
 
 	c1, _ := mgr.ValidateToken(pair1.AccessToken)
 	c2, _ := mgr.ValidateToken(pair2.AccessToken)
@@ -259,4 +259,3 @@ func TestGenerateTokenPair_UniqueJTIs(t *testing.T) {
 		t.Fatal("successive token generations should produce unique JTIs")
 	}
 }
-

@@ -441,5 +441,59 @@ func NewRouter(
 		})
 	})
 
+	// ── Operations Portal API (/api/v1/ops) ─────────────────────────
+	// Restricted to @featuresignals.com users via middleware check
+	opsH := handlers.NewOpsHandler(store)
+	r.Route("/api/v1/ops", func(r chi.Router) {
+		r.Use(jwtAuth)
+		r.Use(middleware.RequireJSON)
+		// Domain restriction: only @featuresignals.com users
+		r.Use(middleware.RequireDomain("featuresignals.com"))
+
+		// Environments
+		r.Get("/environments", opsH.ListEnvironments)
+		r.Get("/environments/{id}", opsH.GetEnvironment)
+		r.Get("/environments/vps/{vps_id}", opsH.GetEnvironment)
+		r.Post("/environments/provision", opsH.ProvisionEnvironment)
+		r.Post("/environments/{id}/decommission", opsH.DecommissionEnvironment)
+		r.Post("/environments/{id}/maintenance", opsH.ToggleMaintenance)
+		r.Post("/environments/{id}/debug", opsH.ToggleDebug)
+		r.Post("/environments/{id}/restart", opsH.RestartEnvironment)
+
+		// Licenses
+		r.Get("/licenses", opsH.ListLicenses)
+		r.Get("/licenses/{id}", opsH.GetLicense)
+		r.Get("/licenses/org/{org_id}", opsH.GetLicenseByOrg)
+		r.Post("/licenses", opsH.CreateLicense)
+		r.Post("/licenses/{id}/revoke", opsH.RevokeLicense)
+		r.Post("/licenses/{id}/quota-override", opsH.OverrideLicenseQuota)
+		r.Post("/licenses/{id}/reset-usage", opsH.ResetLicenseUsage)
+
+		// Sandboxes
+		r.Get("/sandboxes", opsH.ListSandboxes)
+		r.Post("/sandboxes", opsH.CreateSandbox)
+		r.Post("/sandboxes/{id}/renew", opsH.RenewSandbox)
+		r.Post("/sandboxes/{id}/decommission", opsH.DecommissionSandbox)
+
+		// Financial
+		r.Get("/financial/costs/daily", opsH.GetCostDaily)
+		r.Get("/financial/costs/monthly", opsH.GetCostMonthly)
+		r.Get("/financial/summary", opsH.GetFinancialSummary)
+
+		// Customers
+		r.Get("/customers", opsH.ListCustomers)
+		r.Get("/customers/{org_id}", opsH.GetCustomerDetail)
+
+		// Ops Users
+		r.Get("/users", opsH.ListOpsUsers)
+		r.Get("/users/{id}", opsH.GetOpsUser)
+		r.Get("/users/me", opsH.GetMe)
+		r.Post("/users", opsH.CreateOpsUser)
+		r.Patch("/users/{id}", opsH.UpdateOpsUser)
+
+		// Audit
+		r.Get("/audit", opsH.ListOpsAuditLogs)
+	})
+
 	return r
 }

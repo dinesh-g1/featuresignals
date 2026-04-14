@@ -269,7 +269,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	// Clean up pending registration
 	_ = h.store.DeletePendingRegistration(ctx, pr.ID)
 
-	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), org.DataRegion)
+	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), user.Email, org.DataRegion)
 	if err != nil {
 		log.Error("token generation failed", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate tokens")

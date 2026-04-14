@@ -1,0 +1,151 @@
+name: Decommission Isolated Customer VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      vps_id:
+        description: "Hetzner VPS ID to decommission"
+        required: true
+        type: string
+      org_id:
+        description: "Organization ID"
+        required: true
+        type: string
+      customer_name:
+        description: "Customer identifier"
+        required: true
+        type: string
+      reason:
+        description: "Reason for decommission"
+        required: true
+        type: string
+
+jobs:
+  backup:
+    name: Create Final Backup
+    runs-on: ubuntu-latest
+    outputs:
+      vps_ip: ${{ steps.lookup.outputs.vps_ip }}
+    steps:
+      - name: Lookup VPS IP from Ops Portal
+        id: lookup
+        run: |
+          VPS_IP=$(curl -s "${{ vars.OPS_PORTAL_URL }}/api/v1/environments/vps/${{ github.event.inputs.vps_id }}" \
+            -H "Authorization: Bearer ${{ secrets.OPS_API_KEY }}" | jq -r '.vps_ip')
+          echo "vps_ip=$VPS_IP" >> $GITHUB_OUTPUT
+
+      - name: Create Database Backup
+        run: |
+          mkdir -p backups
+
+          # SSH to VPS and create backup
+          ssh -o StrictHostKeyChecking=no \
+            -i ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }} \
+            root@${{ steps.lookup.outputs.vps_ip }} \
+            "docker exec fs-postgres pg_dump -U fs featuresignals | gzip > /tmp/final_backup.sql.gz"
+
+          # Download backup
+          scp -o StrictHostKeyChecking=no \
+            -i ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }} \
+            root@${{ steps.lookup.outputs.vps_ip }}:/tmp/final_backup.sql.gz \
+            backups/${{ github.event.inputs.org_id }}-final-backup.sql.gz
+
+      - name: Upload Backup to S3
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.S3_BACKUP_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_BACKUP_SECRET_KEY }}
+          aws-region: eu-central-1
+      - run: |
+          aws s3 cp backups/${{ github.event.inputs.org_id }}-final-backup.sql.gz \
+            s3://featuresignals-backups/decommissioned/${{ github.event.inputs.org_id }}/
+          echo "Backup uploaded to S3"
+
+  terraform-destroy:
+    name: Destroy Infrastructure
+    needs: backup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        working-directory: infra/terraform/modules/vps
+        run: terraform init
+
+      - name: Terraform Destroy
+        working-directory: infra/terraform/modules/vps
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: |
+          terraform destroy -auto-approve \
+            -var="hetzner_token=${{ secrets.HCLOUD_TOKEN }}" \
+            -var="customer_name=${{ github.event.inputs.customer_name }}" \
+            -var="org_id=${{ github.event.inputs.org_id }}"
+
+  dns-cleanup:
+    name: Delete DNS Record
+    needs: backup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Cloudflare record ID
+        id: lookup
+        run: |
+          RECORD_ID=$(curl -s "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/dns_records?name=${{ github.event.inputs.customer_name }}.featuresignals.com" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" | jq -r '.result[0].id')
+          echo "record_id=$RECORD_ID" >> $GITHUB_OUTPUT
+
+      - name: Delete DNS record
+        if: steps.lookup.outputs.record_id != 'null' && steps.lookup.outputs.record_id != ''
+        run: |
+          curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/dns_records/${{ steps.lookup.outputs.record_id }}" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}"
+
+  ops-update:
+    name: Update Operations DB
+    needs: [terraform-destroy, dns-cleanup]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update environment status
+        run: |
+          curl -X PATCH "${{ vars.OPS_PORTAL_URL }}/api/v1/environments/${{ github.event.inputs.vps_id }}" \
+            -H "Authorization: Bearer ${{ secrets.OPS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "status": "decommissioned",
+              "decommission_reason": "${{ github.event.inputs.reason }}",
+              "backup_location": "s3://featuresignals-backups/decommissioned/${{ github.event.inputs.org_id }}/"
+            }'
+
+      - name: Revoke license
+        run: |
+          curl -X POST "${{ vars.OPS_PORTAL_URL }}/api/v1/licenses/${{ github.event.inputs.org_id }}/revoke" \
+            -H "Authorization: Bearer ${{ secrets.OPS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "reason": "Environment decommissioned: ${{ github.event.inputs.reason }}"
+            }'
+
+  notify:
+    name: Notify Teams
+    needs: [ops-update]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: customer-success
+          slack-message: |
+            🗑️ *VPS Decommissioned*
+
+            Customer: `${{ github.event.inputs.customer_name }}`
+            Org ID: `${{ github.event.inputs.org_id }}`
+            Reason: `${{ github.event.inputs.reason }}`
+            Backup: `s3://featuresignals-backups/decommissioned/${{ github.event.inputs.org_id }}/`
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

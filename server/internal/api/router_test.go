@@ -620,18 +620,49 @@ func TestStatusHistoryEndpoint_IsPublic(t *testing.T) {
 // OpenAPI spec (health checks, internal status, payment gateway callbacks that
 // are server-to-server only).
 var internalRoutes = map[string]bool{
-	"GET /health":                     true,
-	"GET /v1/status":                  true,
-	"GET /v1/status/global":           true,
-	"GET /v1/status/history":          true,
-	"GET /v1/status/sla":              true,
-	"POST /v1/billing/payu/callback":  true,
-	"POST /v1/billing/payu/failure":   true,
+	"GET /health": true,
+	"GET /v1/status": true,
+	"GET /v1/status/global": true,
+	"GET /v1/status/history": true,
+	"GET /v1/status/sla": true,
+	"POST /v1/billing/payu/callback": true,
+	"POST /v1/billing/payu/failure": true,
 	"POST /v1/billing/stripe/webhook": true,
 	// New auth endpoints — documented separately in OpenAPI spec update.
 	"POST /v1/auth/forgot-password": true,
-	"POST /v1/auth/reset-password":  true,
-	"GET /v1/auth/magic-link":       true,
+	"POST /v1/auth/reset-password": true,
+	"GET /v1/auth/magic-link": true,
+	// Operations Portal routes — internal only, not part of public API.
+	"GET /api/v1/ops/environments": true,
+	"GET /api/v1/ops/environments/{id}": true,
+	"GET /api/v1/ops/environments/vps/{vps_id}": true,
+	"POST /api/v1/ops/environments/provision": true,
+	"POST /api/v1/ops/environments/{id}/decommission": true,
+	"POST /api/v1/ops/environments/{id}/maintenance": true,
+	"POST /api/v1/ops/environments/{id}/debug": true,
+	"POST /api/v1/ops/environments/{id}/restart": true,
+	"GET /api/v1/ops/licenses": true,
+	"GET /api/v1/ops/licenses/{id}": true,
+	"GET /api/v1/ops/licenses/org/{org_id}": true,
+	"POST /api/v1/ops/licenses": true,
+	"POST /api/v1/ops/licenses/{id}/revoke": true,
+	"POST /api/v1/ops/licenses/{id}/quota-override": true,
+	"POST /api/v1/ops/licenses/{id}/reset-usage": true,
+	"GET /api/v1/ops/sandboxes": true,
+	"POST /api/v1/ops/sandboxes": true,
+	"POST /api/v1/ops/sandboxes/{id}/renew": true,
+	"POST /api/v1/ops/sandboxes/{id}/decommission": true,
+	"GET /api/v1/ops/financial/costs/daily": true,
+	"GET /api/v1/ops/financial/costs/monthly": true,
+	"GET /api/v1/ops/financial/summary": true,
+	"GET /api/v1/ops/customers": true,
+	"GET /api/v1/ops/customers/{org_id}": true,
+	"GET /api/v1/ops/users": true,
+	"GET /api/v1/ops/users/{id}": true,
+	"GET /api/v1/ops/users/me": true,
+	"POST /api/v1/ops/users": true,
+	"PATCH /api/v1/ops/users/{id}": true,
+	"GET /api/v1/ops/audit": true,
 }
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has
@@ -726,4 +757,85 @@ func (noopStore) CreateMagicLinkToken(context.Context, string, string, string, t
 }
 func (noopStore) ConsumeMagicLinkToken(context.Context, string) (string, string, error) {
 	return "", "", errNoop
+}
+
+// ─── OpsStore stubs (required by domain.Store) ────────────────────────
+
+func (noopStore) ListCustomerEnvironments(context.Context, string, string, string, string, int, int) ([]domain.CustomerEnvironment, int, error) {
+	return nil, 0, nil
+}
+func (noopStore) GetCustomerEnvironment(context.Context, string) (*domain.CustomerEnvironment, error) {
+	return nil, errNoop
+}
+func (noopStore) GetCustomerEnvironmentByVPSID(context.Context, string) (*domain.CustomerEnvironment, error) {
+	return nil, errNoop
+}
+func (noopStore) CreateCustomerEnvironment(context.Context, *domain.CustomerEnvironment) error {
+	return errNoop
+}
+func (noopStore) UpdateCustomerEnvironment(context.Context, string, map[string]any) error {
+	return errNoop
+}
+func (noopStore) DeleteCustomerEnvironment(context.Context, string) error { return errNoop }
+func (noopStore) ListLicenses(context.Context, string, string, string) ([]domain.License, int, error) {
+	return nil, 0, nil
+}
+func (noopStore) GetLicense(context.Context, string) (*domain.License, error) {
+	return nil, errNoop
+}
+func (noopStore) GetLicenseByOrg(context.Context, string) (*domain.License, error) {
+	return nil, errNoop
+}
+func (noopStore) CreateLicense(context.Context, *domain.License) error        { return errNoop }
+func (noopStore) UpdateLicense(context.Context, string, map[string]any) error { return errNoop }
+func (noopStore) RevokeLicense(context.Context, string, string) error         { return errNoop }
+func (noopStore) OverrideLicenseQuota(context.Context, string, map[string]any) error {
+	return errNoop
+}
+func (noopStore) ResetLicenseUsage(context.Context, string) error { return errNoop }
+func (noopStore) ListOpsUsers(context.Context) ([]domain.OpsUser, error) {
+	return nil, nil
+}
+func (noopStore) GetOpsUser(context.Context, string) (*domain.OpsUser, error) {
+	return nil, errNoop
+}
+func (noopStore) GetOpsUserByUserID(context.Context, string) (*domain.OpsUser, error) {
+	return nil, errNoop
+}
+func (noopStore) CreateOpsUser(context.Context, *domain.OpsUser) error { return errNoop }
+func (noopStore) UpdateOpsUser(context.Context, string, map[string]any) error {
+	return errNoop
+}
+func (noopStore) DeleteOpsUser(context.Context, string) error { return errNoop }
+func (noopStore) ListSandboxes(context.Context, string, string) ([]domain.SandboxEnvironment, int, error) {
+	return nil, 0, nil
+}
+func (noopStore) CreateSandbox(context.Context, *domain.SandboxEnvironment) error {
+	return errNoop
+}
+func (noopStore) RenewSandbox(context.Context, string) (*domain.SandboxEnvironment, error) {
+	return nil, errNoop
+}
+func (noopStore) DecommissionSandbox(context.Context, string) error { return errNoop }
+func (noopStore) GetExpiringSandboxes(context.Context, int) ([]domain.SandboxEnvironment, error) {
+	return nil, nil
+}
+func (noopStore) ListOrgCostDaily(context.Context, string, string, string) ([]domain.OrgCostDaily, error) {
+	return nil, nil
+}
+func (noopStore) ListOrgCostMonthly(context.Context, string) ([]domain.OrgCostMonthlySummary, error) {
+	return nil, nil
+}
+func (noopStore) GetFinancialSummary(context.Context) (*domain.FinancialSummary, error) {
+	return nil, nil
+}
+func (noopStore) ListOpsAuditLogs(context.Context, string, string, string, string, string, int, int) ([]domain.OpsAuditLog, int, error) {
+	return nil, 0, nil
+}
+func (noopStore) CreateOpsAuditLog(context.Context, *domain.OpsAuditLog) error { return errNoop }
+func (noopStore) ListCustomers(context.Context, string, string, string) ([]domain.CustomerSummary, int, error) {
+	return nil, 0, nil
+}
+func (noopStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
+	return nil, errNoop
 }

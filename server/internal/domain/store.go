@@ -327,4 +327,5 @@ type Store interface {
 	FeedbackWriter
 	StatusRecorder
 	MagicLinkStore
+	OpsStore
 }

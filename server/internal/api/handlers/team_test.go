@@ -18,7 +18,7 @@ import (
 
 type stubTokenManager struct{}
 
-func (s *stubTokenManager) GenerateTokenPair(userID, orgID, role, dataRegion string) (*auth.TokenPair, error) {
+func (s *stubTokenManager) GenerateTokenPair(userID, orgID, role, email, dataRegion string) (*auth.TokenPair, error) {
 	return &auth.TokenPair{AccessToken: "tok", RefreshToken: "ref"}, nil
 }
 func (s *stubTokenManager) ValidateToken(tokenStr string) (*auth.Claims, error) {
@@ -63,7 +63,7 @@ func TestTeamHandler_List(t *testing.T) {
 
 	var resp struct {
 		Data  []dto.MemberResponse `json:"data"`
-		Total int              `json:"total"`
+		Total int                  `json:"total"`
 	}
 	json.NewDecoder(rr.Body).Decode(&resp)
 	if len(resp.Data) != 1 {
