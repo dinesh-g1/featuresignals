@@ -19,7 +19,15 @@
       "Bash(sed *)",
       "Bash(ls *)",
       "Bash(open *)",
-      "Bash(docker info)"
+      "Bash(docker info)",
+      "Bash(pkill *)",
+      "Bash(lsof *)",
+      "Bash(xargs *)",
+      "Bash(set *)",
+      "Bash(source *)",
+      "Bash(tr *)",
+      "Bash(/users/dr/startups/featuresignals/start-server.sh)",
+      "Bash(kill *)"
     ]
   },
   "$version": 3

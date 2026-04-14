@@ -71,7 +71,9 @@ export function EnvironmentsPage() {
       );
       setEnvs((prev) => prev.map((e) => (e.id === id ? updated : e)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to toggle maintenance");
+      setError(
+        err instanceof Error ? err.message : "Failed to toggle maintenance",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -458,12 +460,12 @@ function ProvisionModal({
     plan: "enterprise",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError(null);
     try {
       await environments.provision(form);
       onSuccess();

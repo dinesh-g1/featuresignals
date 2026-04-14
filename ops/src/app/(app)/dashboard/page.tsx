@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   description: "Ops Portal Dashboard",
 };
 
-export default function DashboardPage() {
+export default function Page() {
   return <DashboardPage />;
 }

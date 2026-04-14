@@ -1,3 +1,5 @@
+import React from "react";
+
 export function capitalize(str: string): string {
   if (!str) return "";
   return str

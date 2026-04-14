@@ -54,7 +54,7 @@ export function DashboardPage() {
     try {
       const [summaryData, customerData] = await Promise.all([
         financial.getSummary().catch(() => null),
-        customers.list({ limit: 1 }).catch(() => null),
+        customers.list().catch(() => null),
       ]);
 
       if (summaryData) setSummary(summaryData);

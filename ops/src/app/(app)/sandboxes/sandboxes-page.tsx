@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { Activity, Plus, RefreshCw, X } from "lucide-react";
 
 export function SandboxesPage() {
-  const [sandboxes, setSandboxes] = useState<SandboxEnvironment[]>([]);
+  const [sandboxList, setSandboxes] = useState<SandboxEnvironment[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export function SandboxesPage() {
 
   const loadSandboxes = useCallback(async () => {
     setLoading(true);
-      setError(null);
+    setError(null);
     try {
       const result = await sandboxes.list({
         status: statusFilter || undefined,
@@ -64,7 +64,10 @@ export function SandboxesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={loadSandboxes} className="rounded-lg border border-gray-700 bg-gray-800 p-2 text-gray-400 transition hover:text-white">
+          <button
+            onClick={loadSandboxes}
+            className="rounded-lg border border-gray-700 bg-gray-800 p-2 text-gray-400 transition hover:text-white"
+          >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button
@@ -78,7 +81,11 @@ export function SandboxesPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
+        >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
@@ -86,34 +93,63 @@ export function SandboxesPage() {
         </select>
       </div>
 
-      {loading ? <LoadingSpinner fullPage /> : (
+      {loading ? (
+        <LoadingSpinner fullPage />
+      ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-gray-800">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800 bg-gray-900/50">
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Sandbox</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Owner</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Purpose</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Expires</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Renewals</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Sandbox
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Owner
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Purpose
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Expires
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Renewals
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {sandboxes.map((s) => (
-                  <tr key={s.id} className="bg-gray-900 transition hover:bg-gray-800/50">
+                {sandboxList.map((s) => (
+                  <tr
+                    key={s.id}
+                    className="bg-gray-900 transition hover:bg-gray-800/50"
+                  >
                     <td className="px-4 py-3">
                       <p className="font-medium text-white">{s.subdomain}</p>
-                      <p className="text-xs text-gray-500">{s.vps_ip} ({s.vps_type})</p>
+                      <p className="text-xs text-gray-500">
+                        {s.vps_ip} ({s.vps_type})
+                      </p>
                     </td>
-                    <td className="px-4 py-3 text-gray-300">{s.owner_email || s.owner_user_id.slice(0, 8)}</td>
-                    <td className="px-4 py-3 text-gray-400">{s.purpose || "—"}</td>
+                    <td className="px-4 py-3 text-gray-300">
+                      {s.owner_email || s.owner_user_id.slice(0, 8)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-400">
+                      {s.purpose || "—"}
+                    </td>
                     <td className="px-4 py-3">{statusBadge(s.status)}</td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-gray-300">{formatDate(s.expires_at)}</span>
-                      <span className="ml-2 text-xs text-gray-500">({timeAgo(s.expires_at)})</span>
+                      <span className="text-sm text-gray-300">
+                        {formatDate(s.expires_at)}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({timeAgo(s.expires_at)})
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-gray-400">
                       {s.renewal_count}/{s.max_renewals}
@@ -141,9 +177,12 @@ export function SandboxesPage() {
                     </td>
                   </tr>
                 ))}
-                {sandboxes.length === 0 && (
+                {sandboxList.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                    <td
+                      colSpan={7}
+                      className="px-4 py-12 text-center text-gray-500"
+                    >
                       <Activity className="mx-auto mb-3 h-8 w-8 text-gray-600" />
                       No sandboxes found
                     </td>
@@ -155,21 +194,34 @@ export function SandboxesPage() {
         </>
       )}
 
-      {showCreate && <CreateSandboxModal onClose={() => setShowCreate(false)} onSuccess={() => { setShowCreate(false); loadSandboxes(); }} />}
+      {showCreate && (
+        <CreateSandboxModal
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => {
+            setShowCreate(false);
+            loadSandboxes();
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function CreateSandboxModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function CreateSandboxModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [purpose, setPurpose] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-      setError(null);
-    setError("");
+    setError(null);
     try {
       await sandboxes.create({ purpose });
       onSuccess();
@@ -185,13 +237,18 @@ function CreateSandboxModal({ onClose, onSuccess }: { onClose: () => void; onSuc
       <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Create Sandbox</h2>
-          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white">
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-300">Purpose</label>
+            <label className="mb-1 block text-sm font-medium text-gray-300">
+              Purpose
+            </label>
             <input
               type="text"
               required
@@ -204,10 +261,24 @@ function CreateSandboxModal({ onClose, onSuccess }: { onClose: () => void; onSuc
           <p className="text-xs text-gray-500">
             Sandbox expires in 30 days. Max 2 renewals (60 days total).
           </p>
-          {error && <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</div>}
+          {error && (
+            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700">Cancel</button>
-            <button type="submit" disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
               {loading ? "Creating..." : "Create"}
             </button>
           </div>

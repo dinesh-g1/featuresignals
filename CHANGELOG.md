@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Internal IAM Strategy** (`.internal/identity-access-management-strategy.md`): Comprehensive guide for centralized identity and access management covering internal team operations, customer IAM, environment lifecycle, and governance
+- **Implementation Checklist** (`.internal/implementation-checklist.md`): Phase-by-phase checklist for rolling out Zoho One, environment provisioning, customer IAM enhancements, and compliance
+- **Architecture Diagrams** (`.internal/architecture-diagrams.md`): Mermaid diagrams for identity flow, user lifecycle, environment provisioning, permission decisions, feedback loops, and data flow
+- **Quick Reference** (`.internal/quick-reference.md`): Founder's cheat sheet for common operations, department access matrices, emergency procedures, and quarterly rituals
+- **Environment CLI Spec** (`.internal/environment-cli-spec.md`): Specification for self-service developer environment creation/management
+- **Database migration 000087**: User lifecycle audit tables (`user_lifecycle_events`, `permission_audit_log`, `access_reviews`, `service_accounts`)
+- **Domain models** (`server/internal/domain/user_lifecycle.go`): Go structs for lifecycle events, permission audit logs, access reviews, and service accounts
+
 ## [2026-04-09] — Documentation Sync & SEO Hardening
 
 ### Added

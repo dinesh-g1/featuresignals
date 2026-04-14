@@ -1,45 +1,29 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAppStore, hydrateStore } from "@/stores/app-store";
+import { useAppStore } from "@/stores/app-store";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
 /**
  * AuthGuard wraps all protected routes in the ops portal.
  *
- * Behavior:
- * - Not hydrated → show loading spinner
- * - Hydrated, no token → redirect to /login
- * - Hydrated, has token, on /login → redirect to /dashboard
- * - Hydrated, has token → render children with proactive token refresh
- *
- * Token storage uses "ops_" prefix to avoid collisions with the main dashboard.
+ * Hydration is handled once by <HydrateAuth /> in the root layout.
+ * This component only waits for hydration, then either renders children
+ * or redirects to /login.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { hydrated, token, expiresAt } = useAppStore();
-  const [isReady, setIsReady] = useState(false);
-
-  // Hydrate from localStorage on mount, then mark ready
-  const handleHydration = useCallback(() => {
-    hydrateStore();
-    // Use requestAnimationFrame to ensure store is populated before proceeding
-    requestAnimationFrame(() => {
-      setIsReady(true);
-    });
-  }, []);
-
-  useEffect(() => {
-    handleHydration();
-  }, [handleHydration]);
+  const hydrated = useAppStore((s) => s.hydrated);
+  const token = useAppStore((s) => s.token);
+  const expiresAt = useAppStore((s) => s.expiresAt);
 
   // Proactive token refresh
   useEffect(() => {
-    if (!isReady || !token || !expiresAt) return;
+    if (!hydrated || !token || !expiresAt) return;
 
-    const REFRESH_BUFFER_MS = 5 * 60 * 1000;
+    const REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 min
     const timeUntilExpiry = expiresAt - Date.now();
 
     if (timeUntilExpiry <= 0) {
@@ -59,12 +43,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
       return () => clearTimeout(refreshTimeout);
     }
-  }, [token, expiresAt, router, isReady]);
+  }, [hydrated, token, expiresAt, router]);
 
-  if (!isReady) {
+  // Wait for hydration (happens on first render via root layout)
+  if (!hydrated) {
     return <LoadingSpinner fullPage />;
   }
 
+  // Not authenticated — redirect to login
   if (!token) {
     if (pathname !== "/login") {
       router.replace("/login");

@@ -14,7 +14,7 @@ export function OpsUsersPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-      setError(null);
+    setError(null);
     try {
       const result = await opsUsers.list();
       setUsers(result.users);
@@ -184,13 +184,13 @@ function CreateOpsUserModal({
     max_sandbox_envs: "2",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-      setError(null);
-    setError("");
+    setError(null);
+    setError(null);
     try {
       await opsUsers.create({
         user_id: form.user_id,

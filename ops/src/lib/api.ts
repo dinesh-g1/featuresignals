@@ -103,7 +103,10 @@ function setStoredToken(
   else localStorage.removeItem("ops_access_token");
   if (refreshToken) localStorage.setItem("ops_refresh_token", refreshToken);
   else localStorage.removeItem("ops_refresh_token");
-  if (expiresAt) localStorage.setItem("ops_expires_at", String(expiresAt));
+  // Server returns expires_at in seconds; convert to milliseconds for
+  // consistent JS Date comparisons (see auth-guard.tsx token refresh logic).
+  if (expiresAt)
+    localStorage.setItem("ops_expires_at", String(expiresAt * 1000));
   else localStorage.removeItem("ops_expires_at");
 }
 
@@ -527,3 +530,9 @@ export const audit = {
 };
 
 export { APIError };
+export type {
+  ProvisionVPSRequest,
+  DecommissionRequest,
+  CreateSandboxRequest,
+  LicenseQuotaOverride,
+};

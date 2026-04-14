@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, FormEvent, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import * as api from "@/lib/api";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -9,16 +9,20 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 /**
  * Login page for the Ops Portal.
  *
- * Key behaviors:
- * - Reuses the same /v1/auth/login API endpoint as the main dashboard
- * - Enforces @featuresignals.com domain restriction (server-side check too)
- * - If already logged in, redirects to /dashboard
- * - Shows session_expired message if redirected from expired token
- * - Shows domain restriction error for non-featuresignals.com emails
+ * Hydration is handled by <HydrateAuth /> in the root layout.
+ * The form renders immediately; redirects to dashboard after hydration
+ * confirms an existing valid token.
  */
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner fullPage />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const setAuth = useAppStore((s) => s.setAuth);
   const token = useAppStore((s) => s.token);
   const hydrated = useAppStore((s) => s.hydrated);
@@ -28,14 +32,19 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If already authenticated, redirect to dashboard
+  // After hydration, redirect to dashboard if already logged in
   useEffect(() => {
     if (hydrated && token) {
       router.replace("/dashboard");
     }
   }, [hydrated, token, router]);
 
-  const isSessionExpired = searchParams.get("session_expired") === "true";
+  // Read session_expired param after mount (avoid useSearchParams during prerender)
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsSessionExpired(params.get("session_expired") === "true");
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,8 +54,6 @@ export default function LoginPage() {
     try {
       const response = await api.login(email, password);
 
-      // Server-side should already reject non-featuresignals.com,
-      // but we double-check client-side for defense in depth.
       if (!response.user.email.endsWith("@featuresignals.com")) {
         setError(
           "Access is restricted to @featuresignals.com email addresses.",
@@ -85,13 +92,9 @@ export default function LoginPage() {
     }
   };
 
-  // Don't render until hydrated (prevents flash of login for logged-in users)
-  if (!hydrated) {
-    return <LoadingSpinner fullPage />;
-  }
-
-  // If already logged in, the useEffect will redirect — show spinner
-  if (token) {
+  // Already logged in — redirect (the useEffect above handles it,
+  // but this prevents a flash of the form)
+  if (hydrated && token) {
     return <LoadingSpinner fullPage />;
   }
 
@@ -140,7 +143,6 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -160,7 +162,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -179,14 +180,12 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Error */}
             {error && (
               <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400 border border-red-500/20">
                 {error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -204,7 +203,6 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-xs text-gray-500">
           Restricted to authorized @featuresignals.com personnel only.
         </p>

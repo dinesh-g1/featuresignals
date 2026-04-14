@@ -15,7 +15,13 @@ interface AppState {
   opsRole: OpsUser | null;
 
   // Actions
-  setAuth: (user: User, org: Organization, token: string, refreshToken: string, expiresAt: number) => void;
+  setAuth: (
+    user: User,
+    org: Organization,
+    token: string,
+    refreshToken: string,
+    expiresAt: number,
+  ) => void;
   setOpsRole: (opsUser: OpsUser) => void;
   logout: () => void;
   setHydrated: () => void;
@@ -34,17 +40,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   hydrated: false,
 
   setAuth: (user, org, token, refreshToken, expiresAt) => {
+    // Server returns expires_at in seconds (Unix timestamp).
+    // Convert to milliseconds for consistent JS Date comparisons.
+    const expiresAtMs = expiresAt * 1000;
     set({
       user,
       organization: org,
       token,
       refreshToken,
-      expiresAt,
+      expiresAt: expiresAtMs,
     });
     // Persist to localStorage
     localStorage.setItem("ops_access_token", token);
     localStorage.setItem("ops_refresh_token", refreshToken);
-    localStorage.setItem("ops_expires_at", String(expiresAt));
+    localStorage.setItem("ops_expires_at", String(expiresAtMs));
     localStorage.setItem("ops_user", JSON.stringify(user));
     localStorage.setItem("ops_organization", JSON.stringify(org));
   },
@@ -97,21 +106,29 @@ export function hydrateStore() {
 
   const token = localStorage.getItem("ops_access_token");
   const refreshToken = localStorage.getItem("ops_refresh_token");
-  const expiresAt = localStorage.getItem("ops_expires_at");
+  const expiresAtRaw = localStorage.getItem("ops_expires_at");
   const userStr = localStorage.getItem("ops_user");
   const orgStr = localStorage.getItem("ops_organization");
   const opsRoleStr = localStorage.getItem("ops_ops_role");
 
-  if (token && userStr && orgStr) {
-    useAppStore.setState({
-      token,
-      refreshToken,
-      expiresAt: expiresAt ? Number(expiresAt) : null,
-      user: JSON.parse(userStr),
-      organization: JSON.parse(orgStr),
-      opsRole: opsRoleStr ? JSON.parse(opsRoleStr) : null,
-    });
+  // Server returns expires_at in seconds, but we store it as milliseconds.
+  // Handle both cases: if the value looks like seconds (smaller than 1e12),
+  // convert to milliseconds for consistent JS Date comparisons.
+  let expiresAtMs: number | null = null;
+  if (expiresAtRaw) {
+    const val = Number(expiresAtRaw);
+    expiresAtMs = val < 1e12 ? val * 1000 : val;
   }
 
-  useAppStore.setState({ hydrated: true });
+  // Single atomic state update — prevents race conditions between
+  // token availability and hydrated flag.
+  useAppStore.setState({
+    token: token || null,
+    refreshToken: refreshToken || null,
+    expiresAt: expiresAtMs,
+    user: userStr ? JSON.parse(userStr) : null,
+    organization: orgStr ? JSON.parse(orgStr) : null,
+    opsRole: opsRoleStr ? JSON.parse(opsRoleStr) : null,
+    hydrated: true,
+  });
 }
