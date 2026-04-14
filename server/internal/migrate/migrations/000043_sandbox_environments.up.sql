@@ -47,10 +47,10 @@ CREATE INDEX idx_sandbox_status ON sandbox_environments(status);
 CREATE INDEX idx_sandbox_expires ON sandbox_environments(expires_at);
 CREATE INDEX idx_sandbox_subdomain ON sandbox_environments(subdomain);
 
--- Find expired sandboxes
+-- Expired sandboxes index (partial index cannot use NOW() as it is volatile)
 CREATE INDEX idx_sandbox_expired
     ON sandbox_environments(expires_at)
-    WHERE status = 'active' AND expires_at < NOW();
+    WHERE status = 'active';
 
 -- Updated at trigger
 CREATE OR REPLACE FUNCTION update_sandbox_updated_at()
