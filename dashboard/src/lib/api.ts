@@ -460,6 +460,16 @@ export const api = {
     requestList<Project>("/v1/projects", { token }),
   createProject: (token: string, data: { name: string; slug?: string }) =>
     request<Project>("/v1/projects", { method: "POST", body: data, token }),
+  updateProject: (
+    token: string,
+    id: string,
+    data: { name: string; slug?: string },
+  ) =>
+    request<Project>(`/v1/projects/${id}`, {
+      method: "PUT",
+      body: data,
+      token,
+    }),
   getProject: (token: string, id: string) =>
     request<Project>(`/v1/projects/${id}`, { token }),
 
@@ -475,6 +485,17 @@ export const api = {
   ) =>
     request<Environment>(`/v1/projects/${projectId}/environments`, {
       method: "POST",
+      body: data,
+      token,
+    }),
+  updateEnvironment: (
+    token: string,
+    projectId: string,
+    envId: string,
+    data: { name: string; slug?: string; color?: string },
+  ) =>
+    request<Environment>(`/v1/projects/${projectId}/environments/${envId}`, {
+      method: "PUT",
       body: data,
       token,
     }),
@@ -632,9 +653,14 @@ export const api = {
     request(`/v1/api-keys/${keyId}`, { method: "DELETE", token }),
 
   // Audit
-  listAudit: (token: string, limit?: number, offset?: number) =>
+  listAudit: (
+    token: string,
+    limit?: number,
+    offset?: number,
+    projectId?: string,
+  ) =>
     requestList<AuditEntry>(
-      `/v1/audit?limit=${limit || 50}&offset=${offset || 0}`,
+      `/v1/audit?limit=${limit || 50}&offset=${offset || 0}${projectId ? `&project_id=${projectId}` : ""}`,
       { token },
     ),
   exportAudit: (

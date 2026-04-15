@@ -75,6 +75,7 @@ func (m *mockStore) ListProjects(_ context.Context, _ string) ([]domain.Project,
 	return nil, nil
 }
 func (m *mockStore) DeleteProject(_ context.Context, _ string) error                  { return nil }
+func (m *mockStore) UpdateProject(_ context.Context, _ *domain.Project) error         { return nil }
 func (m *mockStore) CreateEnvironment(_ context.Context, _ *domain.Environment) error { return nil }
 func (m *mockStore) ListEnvironments(_ context.Context, _ string) ([]domain.Environment, error) {
 	return nil, nil
@@ -82,13 +83,14 @@ func (m *mockStore) ListEnvironments(_ context.Context, _ string) ([]domain.Envi
 func (m *mockStore) GetEnvironment(_ context.Context, _ string) (*domain.Environment, error) {
 	return nil, nil
 }
-func (m *mockStore) DeleteEnvironment(_ context.Context, _ string) error          { return nil }
-func (m *mockStore) CreateFlag(_ context.Context, _ *domain.Flag) error           { return nil }
-func (m *mockStore) GetFlag(_ context.Context, _, _ string) (*domain.Flag, error) { return nil, nil }
-func (m *mockStore) ListFlags(_ context.Context, _ string) ([]domain.Flag, error) { return nil, nil }
-func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error           { return nil }
-func (m *mockStore) DeleteFlag(_ context.Context, _ string) error                 { return nil }
-func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error { return nil }
+func (m *mockStore) DeleteEnvironment(_ context.Context, _ string) error              { return nil }
+func (m *mockStore) UpdateEnvironment(_ context.Context, _ *domain.Environment) error { return nil }
+func (m *mockStore) CreateFlag(_ context.Context, _ *domain.Flag) error               { return nil }
+func (m *mockStore) GetFlag(_ context.Context, _, _ string) (*domain.Flag, error)     { return nil, nil }
+func (m *mockStore) ListFlags(_ context.Context, _ string) ([]domain.Flag, error)     { return nil, nil }
+func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error               { return nil }
+func (m *mockStore) DeleteFlag(_ context.Context, _ string) error                     { return nil }
+func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error     { return nil }
 func (m *mockStore) GetFlagState(_ context.Context, _, _ string) (*domain.FlagState, error) {
 	return nil, nil
 }
@@ -123,6 +125,9 @@ func (m *mockStore) UpdateAPIKeyLastUsed(_ context.Context, _ string) error     
 func (m *mockStore) CreateAuditEntry(_ context.Context, _ *domain.AuditEntry) error { return nil }
 func (m *mockStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error)  { return 0, nil }
 func (m *mockStore) ListAuditEntries(_ context.Context, _ string, _, _ int) ([]domain.AuditEntry, error) {
+	return nil, nil
+}
+func (m *mockStore) ListAuditEntriesByProject(_ context.Context, _, _ string, _, _ int) ([]domain.AuditEntry, error) {
 	return nil, nil
 }
 func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ string) ([]domain.AuditEntry, error) {

@@ -411,6 +411,16 @@ func (s *Store) DeleteProject(ctx context.Context, id string) error {
 	return err
 }
 
+func (s *Store) UpdateProject(ctx context.Context, p *domain.Project) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE projects SET name = $1, slug = $2, updated_at = NOW() WHERE id = $3`,
+		p.Name, p.Slug, p.ID)
+	if err != nil {
+		return wrapConflict(err, "project slug")
+	}
+	return nil
+}
+
 // --- Environments ---
 
 func (s *Store) CreateEnvironment(ctx context.Context, e *domain.Environment) error {
@@ -452,6 +462,16 @@ func (s *Store) GetEnvironment(ctx context.Context, id string) (*domain.Environm
 func (s *Store) DeleteEnvironment(ctx context.Context, id string) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM environments WHERE id = $1`, id)
 	return err
+}
+
+func (s *Store) UpdateEnvironment(ctx context.Context, e *domain.Environment) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE environments SET name = $1, slug = $2, color = $3, updated_at = NOW() WHERE id = $4`,
+		e.Name, e.Slug, e.Color, e.ID)
+	if err != nil {
+		return wrapConflict(err, "environment slug")
+	}
+	return nil
 }
 
 // ResolveOrgIDByEnvID returns the organization ID that owns the given
@@ -1012,9 +1032,9 @@ func (s *Store) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) 
 	entry.IntegrityHash = entry.ComputeIntegrityHash(prevHash)
 
 	err = tx.QueryRow(ctx,
-		`INSERT INTO audit_logs (org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at`,
-		entry.OrgID, entry.ActorID, entry.ActorType, entry.Action, entry.ResourceType, entry.ResourceID,
+		`INSERT INTO audit_logs (org_id, project_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id, created_at`,
+		entry.OrgID, entry.ProjectID, entry.ActorID, entry.ActorType, entry.Action, entry.ResourceType, entry.ResourceID,
 		entry.BeforeState, entry.AfterState, entry.Metadata,
 		entry.IPAddress, entry.UserAgent, entry.IntegrityHash,
 	).Scan(&entry.ID, &entry.CreatedAt)
@@ -1026,6 +1046,24 @@ func (s *Store) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) 
 }
 
 func (s *Store) ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]domain.AuditEntry, error) {
+	entries, err := s.listAuditEntries(ctx, orgID, limit, offset, "")
+	if err != nil {
+		// Fallback for databases before migration 90 (no project_id column)
+		return s.listAuditEntriesLegacy(ctx, orgID, limit, offset)
+	}
+	return entries, nil
+}
+
+func (s *Store) ListAuditEntriesByProject(ctx context.Context, orgID, projectID string, limit, offset int) ([]domain.AuditEntry, error) {
+	entries, err := s.listAuditEntries(ctx, orgID, limit, offset, projectID)
+	if err != nil {
+		// Fallback: if project_id column doesn't exist, return unfiltered entries
+		return s.listAuditEntriesLegacy(ctx, orgID, limit, offset)
+	}
+	return entries, nil
+}
+
+func (s *Store) listAuditEntriesLegacy(ctx context.Context, orgID string, limit, offset int) ([]domain.AuditEntry, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash, created_at
 		 FROM audit_logs WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, orgID, limit, offset)
@@ -1039,6 +1077,38 @@ func (s *Store) ListAuditEntries(ctx context.Context, orgID string, limit, offse
 		if err := rows.Scan(&e.ID, &e.OrgID, &e.ActorID, &e.ActorType, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Metadata, &e.IPAddress, &e.UserAgent, &e.IntegrityHash, &e.CreatedAt); err != nil {
 			return nil, err
 		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
+func (s *Store) listAuditEntries(ctx context.Context, orgID string, limit, offset int, projectID string) ([]domain.AuditEntry, error) {
+	var query string
+	var args []interface{}
+
+	if projectID != "" {
+		query = `SELECT id, org_id, project_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash, created_at
+		 FROM audit_logs WHERE org_id = $1 AND (project_id = $2 OR project_id IS NULL) ORDER BY created_at DESC LIMIT $3 OFFSET $4`
+		args = []interface{}{orgID, projectID, limit, offset}
+	} else {
+		query = `SELECT id, org_id, project_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash, created_at
+		 FROM audit_logs WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+		args = []interface{}{orgID, limit, offset}
+	}
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	entries := []domain.AuditEntry{}
+	for rows.Next() {
+		var e domain.AuditEntry
+		var projectID *string
+		if err := rows.Scan(&e.ID, &e.OrgID, &projectID, &e.ActorID, &e.ActorType, &e.Action, &e.ResourceType, &e.ResourceID, &e.BeforeState, &e.AfterState, &e.Metadata, &e.IPAddress, &e.UserAgent, &e.IntegrityHash, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		e.ProjectID = projectID
 		entries = append(entries, e)
 	}
 	return entries, nil

@@ -1,36 +1,50 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
+import { api } from "@/lib/api";
+import { EventBus } from "@/lib/event-bus";
 import {
   PageHeader,
   StatCard,
   Card,
-  CardHeader,
   Badge,
   EmptyState,
   DashboardPageSkeleton,
+  Button,
+  Input,
+  Label,
 } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
 import {
   Flag,
-  FolderOpen,
+  Globe,
   Clock,
   Sparkles,
   Zap,
   ChevronRight,
+  FolderOpen,
+  Plus,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
-import { useProjects, useFlags, useAudit } from "@/hooks/use-data";
-import { useUpgradeNudge } from "@/hooks/use-upgrade-nudge";
+import {
+  useProjects,
+  useFlags,
+  useEnvironments,
+  useAudit,
+} from "@/hooks/use-data";
 import { DOCS_LINKS } from "@/components/docs-link";
-import { WorkspaceHealth } from "@/components/workspace-health";
+import { toast } from "@/components/toast";
 
+// ---------------------------------------------------------------------------
+// UpgradeCard — org-level upgrade prompt
+// ---------------------------------------------------------------------------
 function UpgradeCard() {
   const organization = useAppStore((s) => s.organization);
   const plan = organization?.plan;
   const trialExpiresAt = organization?.trial_expires_at;
-  const { usage } = useUpgradeNudge();
 
   if (plan === "pro" || plan === "enterprise") return null;
 
@@ -51,8 +65,8 @@ function UpgradeCard() {
                 {daysLeft} day{daysLeft !== 1 ? "s" : ""} left on your Pro trial
               </h3>
               <p className="mt-0.5 text-sm text-slate-600">
-                Upgrade now to keep unlimited projects, environments, and team
-                members after your trial ends.
+                Upgrade to keep unlimited projects, environments, and team
+                members.
               </p>
             </div>
           </div>
@@ -68,20 +82,6 @@ function UpgradeCard() {
     );
   }
 
-  const usageLines: string[] = [];
-  if (usage) {
-    if (usage.projects_limit > 0)
-      usageLines.push(
-        `${usage.projects_used}/${usage.projects_limit} projects`,
-      );
-    if (usage.seats_limit > 0)
-      usageLines.push(`${usage.seats_used}/${usage.seats_limit} team seats`);
-    if (usage.environments_limit > 0)
-      usageLines.push(
-        `${usage.environments_used}/${usage.environments_limit} environments`,
-      );
-  }
-
   return (
     <Card className="border-slate-200/60 bg-gradient-to-r from-slate-50 via-white to-indigo-50/40 p-5 shadow-md shadow-slate-100/50">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -94,9 +94,8 @@ function UpgradeCard() {
               Unlock the full power of FeatureSignals
             </h3>
             <p className="mt-0.5 text-sm text-slate-600">
-              {usageLines.length > 0
-                ? `You're using ${usageLines.join(", ")} on the Free plan. Upgrade to Pro for unlimited everything.`
-                : "You're on the Free plan. Upgrade to Pro for unlimited projects, environments, and team members."}
+              Upgrade to Pro for unlimited projects, environments, and team
+              members.
             </p>
           </div>
         </div>
@@ -112,10 +111,22 @@ function UpgradeCard() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// DashboardPage — workspace overview
+// ---------------------------------------------------------------------------
 export default function DashboardPage() {
+  const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const user = useAppStore((s) => s.user);
+  const organization = useAppStore((s) => s.organization);
+
+  // ── ALL hooks BEFORE any early return (React rules) ──────────────────
+  const [showCreateFirst, setShowCreateFirst] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createSlug, setCreateSlug] = useState("");
+  const [createError, setCreateError] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const {
     data: projects,
@@ -123,15 +134,74 @@ export default function DashboardPage() {
     error: projectsError,
     refetch: refetchProjects,
   } = useProjects();
-  const { data: flags } = useFlags(currentProjectId);
-  const { data: audit } = useAudit(10, 0);
 
+  // Note: flags, envs, audit hooks are moved INSIDE the project-scoped
+  // section below so they never fire with null projectId
+
+  // Auto-select first project when projects load and none is selected
   useEffect(() => {
     if (projects && projects.length > 0 && !currentProjectId) {
       setCurrentProject(projects[0].id);
     }
   }, [projects, currentProjectId, setCurrentProject]);
 
+  // Listen for project/env changes from other components (deletion, creation)
+  useEffect(() => {
+    const unsub = EventBus.subscribe("projects:changed", refetchProjects);
+    return unsub;
+  }, [refetchProjects]);
+
+  // Detect when the current project was deleted and clear selection
+  useEffect(() => {
+    if (currentProjectId && projects && projects.length > 0) {
+      const stillExists = projects.some((p) => p.id === currentProjectId);
+      if (!stillExists) {
+        setCurrentProject(projects[0].id);
+      }
+    }
+  }, [currentProjectId, projects, setCurrentProject]);
+
+  // ── First-project creation handler (MUST be before early returns) ────
+  const handleCreateFirstProject = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!createName.trim()) {
+        setCreateError("Project name is required");
+        return;
+      }
+      if (!token) {
+        setCreateError("Not authenticated");
+        return;
+      }
+      try {
+        setCreating(true);
+        setCreateError("");
+        const project = await api.createProject(token, {
+          name: createName.trim(),
+          slug: createSlug.trim() || undefined,
+        });
+        EventBus.dispatch("projects:changed");
+        await refetchProjects();
+        setCurrentProject(project.id);
+        toast(
+          "Project created! Now add an environment and your first flag.",
+          "success",
+        );
+        setShowCreateFirst(false);
+        setCreateName("");
+        setCreateSlug("");
+      } catch (err: unknown) {
+        setCreateError(
+          err instanceof Error ? err.message : "Failed to create project",
+        );
+      } finally {
+        setCreating(false);
+      }
+    },
+    [createName, createSlug, token, refetchProjects, setCurrentProject],
+  );
+
+  // ── Loading / Error guards ───────────────────────────────────────────
   if (projectsLoading) {
     return <DashboardPageSkeleton />;
   }
@@ -146,28 +216,203 @@ export default function DashboardPage() {
     );
   }
 
-  if (!currentProjectId && (!projects || projects.length === 0)) {
+  // ── No projects — welcoming empty state with inline creation ─────────
+  if (!projects || projects.length === 0) {
     return (
-      <EmptyState
-        icon={Flag}
-        title="Welcome to FeatureSignals"
-        description="Create your first project to start managing feature flags. Projects group related flags for a single application or service."
-        docsUrl={DOCS_LINKS.quickstart}
-        docsLabel="Quickstart guide"
-        className="py-24"
-      />
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          title="Welcome to FeatureSignals"
+          description={`Welcome${user?.name ? `, ${user.name.split(" ")[0]}` : ""}. Let's set up your workspace.`}
+        />
+
+        {!showCreateFirst ? (
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <EmptyState
+              icon={FolderOpen}
+              title="Create your first project"
+              description="Projects group feature flags and environments for a single application or service. Start by naming your project."
+              action={
+                <Button onClick={() => setShowCreateFirst(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Project
+                </Button>
+              }
+              docsUrl={DOCS_LINKS.environments}
+              docsLabel="Learn about projects & environments"
+              className="py-16"
+            />
+          </div>
+        ) : (
+          <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/50 via-white to-purple-50/30 p-6 max-w-lg mx-auto">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+                <FolderOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Name your project
+                </h3>
+                <p className="text-sm text-slate-500">
+                  This will be your workspace for managing flags and
+                  environments.
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleCreateFirstProject} className="space-y-4">
+              <div>
+                <Label htmlFor="first-project-name">Project Name</Label>
+                <Input
+                  id="first-project-name"
+                  value={createName}
+                  onChange={(e) => {
+                    setCreateName(e.target.value);
+                    setCreateError("");
+                  }}
+                  placeholder="e.g. My Web App, Mobile API, Backend Service"
+                  className="mt-1"
+                  autoFocus
+                />
+                {createError && (
+                  <p className="text-xs text-red-500 mt-1">{createError}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="first-project-slug">Slug</Label>
+                <Input
+                  id="first-project-slug"
+                  value={createSlug}
+                  onChange={(e) => setCreateSlug(e.target.value)}
+                  placeholder="auto-generated from name"
+                  className="mt-1"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Leave blank to auto-generate
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={creating}>
+                  {creating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Project
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setShowCreateFirst(false);
+                    setCreateName("");
+                    setCreateError("");
+                  }}
+                  disabled={creating}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Card>
+        )}
+      </div>
     );
   }
 
-  // Determine if this is a new user who needs the Get Started checklist
-  const isNewUser =
-    (!flags || flags.length === 0) && (!audit || audit.length === 0);
+  // ── Projects exist but none selected ─────────────────────────────────
+  if (!currentProjectId) {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          title="Overview"
+          description={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
+        />
+        <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/50 via-white to-purple-50/30 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+              <FolderOpen className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Select a project to get started
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                You have{" "}
+                <strong>
+                  {projects.length} project{projects.length > 1 ? "s" : ""}
+                </strong>
+                . Use the project selector above to switch between them.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {projects.slice(0, 5).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setCurrentProject(p.id)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── Project selected — render project-scoped overview ────────────────
+  return <ProjectOverview user={user} organization={organization} />;
+}
+
+// ---------------------------------------------------------------------------
+// ProjectOverview — only renders when a project IS selected.
+// All data-fetching hooks live HERE so they never fire with null projectId.
+// ---------------------------------------------------------------------------
+function ProjectOverview({
+  user,
+  organization,
+}: {
+  user: { name?: string } | null;
+  organization: { plan?: string; trial_expires_at?: string } | null;
+}) {
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const { data: projects } = useProjects();
+  const { data: flags, refetch: refetchFlags } = useFlags(currentProjectId);
+  const { data: envs, refetch: refetchEnvs } =
+    useEnvironments(currentProjectId);
+  const { data: audit } = useAudit(10, 0, currentProjectId);
+
+  // Auto-refresh when flags/environments change elsewhere
+  useEffect(() => {
+    const unsubFlags = EventBus.subscribe("flags:changed", refetchFlags);
+    const unsubEnvs = EventBus.subscribe("environments:changed", refetchEnvs);
+    return () => {
+      unsubFlags();
+      unsubEnvs();
+    };
+  }, [refetchFlags, refetchEnvs]);
+
+  const currentProject = projects?.find((p) => p.id === currentProjectId);
+  const flagCount = flags?.length ?? 0;
+  const envCount = envs?.length ?? 0;
+  const recentChanges = audit?.length ?? 0;
+  const isNewUser = flagCount === 0 && recentChanges === 0;
+  const needsEnv = envCount === 0;
 
   return (
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
         title="Overview"
-        description={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
+        description={
+          currentProject
+            ? `${currentProject.name} (${currentProject.slug})`
+            : `Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`
+        }
       />
 
       {/* Quick Action Buttons */}
@@ -180,11 +425,11 @@ export default function DashboardPage() {
           Create Flag
         </Link>
         <Link
-          href="/settings/general"
+          href="/environments"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-md"
         >
-          <FolderOpen className="h-4 w-4" />
-          Manage Projects
+          <Globe className="h-4 w-4" />
+          Manage Environments
         </Link>
         <a
           href={DOCS_LINKS.quickstart}
@@ -197,43 +442,64 @@ export default function DashboardPage() {
         </a>
       </div>
 
+      {/* Environment creation prompt when project has no environments */}
+      {needsEnv && (
+        <Card className="border-amber-200/60 bg-gradient-to-r from-amber-50/80 via-white to-orange-50/50">
+          <div className="flex items-start gap-4 px-4 py-4 sm:px-6">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <Globe className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-slate-900">
+                Set up your first environment
+              </h3>
+              <p className="mt-0.5 text-sm text-slate-600">
+                Environments let you manage flag states independently across
+                deployment stages like development, staging, and production.
+              </p>
+              <div className="mt-3">
+                <Link href="/environments">
+                  <Button size="sm">
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    Create Environment
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Get Started Checklist for New Users */}
       {isNewUser && (
         <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/80 via-white to-purple-50/50">
-          <CardHeader>
+          <div className="px-4 py-3 sm:px-6">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-indigo-600" />
               <h2 className="font-semibold text-slate-900">Get Started</h2>
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="mt-0.5 text-sm text-slate-600">
               Complete these steps to set up your workspace
             </p>
-          </CardHeader>
+          </div>
           <div className="divide-y divide-slate-100">
             {[
               {
                 step: 1,
-                label: "Create a project",
-                desc: "Group your feature flags and environments",
-                href: "/settings/general",
-                done: (projects ?? []).length > 0,
+                label: "Create an environment",
+                desc: "Development, staging, or production",
+                href: "/environments",
+                done: envCount > 0,
               },
               {
                 step: 2,
-                label: "Set up an environment",
-                desc: "Development, staging, or production",
-                href: "/settings/general",
-                done: true,
-              },
-              {
-                step: 3,
                 label: "Create your first flag",
                 desc: "Control features without deploying code",
                 href: "/flags",
-                done: (flags ?? []).length > 0,
+                done: flagCount > 0,
               },
               {
-                step: 4,
+                step: 3,
                 label: "Install the SDK",
                 desc: "Connect your app in under 3 minutes",
                 href: "/onboarding",
@@ -279,35 +545,36 @@ export default function DashboardPage() {
         </Card>
       )}
 
+      {/* Project-Scoped Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
         <StatCard
-          label="Projects"
-          value={(projects ?? []).length}
-          icon={FolderOpen}
+          label="Feature Flags"
+          value={flagCount}
+          icon={Flag}
           color="indigo"
         />
         <StatCard
-          label="Feature Flags"
-          value={(flags ?? []).length}
-          icon={Flag}
+          label="Environments"
+          value={envCount}
+          icon={Globe}
           color="emerald"
         />
         <StatCard
           label="Recent Changes"
-          value={(audit ?? []).length}
+          value={recentChanges}
           icon={Clock}
           color="amber"
         />
       </div>
 
-      <WorkspaceHealth />
+      {/* Upgrade CTA */}
+      {organization?.plan !== "enterprise" && <UpgradeCard />}
 
-      <UpgradeCard />
-
+      {/* Recent Activity */}
       <Card className="transition-all duration-300 hover:shadow-lg hover:border-slate-300/80">
-        <CardHeader>
+        <div className="px-4 py-3 sm:px-6">
           <h2 className="font-semibold text-slate-900">Recent Activity</h2>
-        </CardHeader>
+        </div>
         <div className="divide-y divide-slate-100">
           {!audit || audit.length === 0 ? (
             <EmptyState

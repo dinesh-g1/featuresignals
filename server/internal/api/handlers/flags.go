@@ -137,6 +137,7 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	afterState, _ := json.Marshal(flag)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &projectID,
 		ActorID:      &userID,
 		ActorType:    "user",
 		Action:       "flag.created",
@@ -276,6 +277,7 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 	afterState, _ := json.Marshal(flag)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &projectID,
 		ActorID:      &userID,
 		ActorType:    "user",
 		Action:       "flag.updated",
@@ -320,6 +322,7 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	beforeState, _ := json.Marshal(flag)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &projectID,
 		ActorID:      &userID,
 		ActorType:    "user",
 		Action:       "flag.deleted",
@@ -338,7 +341,7 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 type UpdateFlagStateRequest struct {
 	Enabled            *bool                  `json:"enabled"`
 	DefaultValue       json.RawMessage        `json:"default_value,omitempty"`
-	Rules              []domain.TargetingRule  `json:"rules,omitempty"`
+	Rules              []domain.TargetingRule `json:"rules,omitempty"`
 	PercentageRollout  *int                   `json:"percentage_rollout,omitempty"`
 	Variants           []domain.Variant       `json:"variants,omitempty"`
 	ScheduledEnableAt  *string                `json:"scheduled_enable_at,omitempty"`
@@ -441,6 +444,7 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	afterState, _ := json.Marshal(state)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &projectID,
 		ActorID:      &userID,
 		ActorType:    "user",
 		Action:       "flag.state_updated",
@@ -534,6 +538,7 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 	afterState, _ := json.Marshal(target)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &projectID,
 		ActorID:      &userID,
 		ActorType:    "user",
 		Action:       "flag.promoted",
@@ -596,6 +601,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 	afterState, _ := json.Marshal(state)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &projectID,
 		ActorID:      &userID,
 		ActorType:    "user",
 		Action:       "flag.killed",
@@ -613,20 +619,20 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 // --- Environment Comparison ---
 
 type EnvDiff struct {
-	FlagKey        string `json:"flag_key"`
-	SourceEnabled  *bool  `json:"source_enabled"`
-	TargetEnabled  *bool  `json:"target_enabled"`
-	SourceRollout  *int   `json:"source_rollout"`
-	TargetRollout  *int   `json:"target_rollout"`
-	SourceRules    int    `json:"source_rules"`
-	TargetRules    int    `json:"target_rules"`
-	Differences    []string `json:"differences"`
+	FlagKey       string   `json:"flag_key"`
+	SourceEnabled *bool    `json:"source_enabled"`
+	TargetEnabled *bool    `json:"target_enabled"`
+	SourceRollout *int     `json:"source_rollout"`
+	TargetRollout *int     `json:"target_rollout"`
+	SourceRules   int      `json:"source_rules"`
+	TargetRules   int      `json:"target_rules"`
+	Differences   []string `json:"differences"`
 }
 
 type EnvComparisonResponse struct {
-	Total       int       `json:"total"`
-	DiffCount   int       `json:"diff_count"`
-	Diffs       []EnvDiff `json:"diffs"`
+	Total     int       `json:"total"`
+	DiffCount int       `json:"diff_count"`
+	Diffs     []EnvDiff `json:"diffs"`
 }
 
 // CompareEnvironments returns per-flag diffs between two environments.
@@ -785,6 +791,7 @@ func (h *FlagHandler) SyncEnvironments(w http.ResponseWriter, r *http.Request) {
 		afterState, _ := json.Marshal(target)
 		h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 			OrgID:        orgID,
+			ProjectID:    &projectID,
 			ActorID:      &userID,
 			ActorType:    "user",
 			Action:       "flag.synced",

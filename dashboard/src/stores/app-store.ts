@@ -12,13 +12,20 @@ interface AppState {
   tourCompleted: boolean;
   currentProjectId: string | null;
   currentEnvId: string | null;
-  setAuth: (token: string, refreshToken: string, user: User | null, organization?: Organization | null, expiresAt?: number, onboardingCompleted?: boolean) => void;
+  setAuth: (
+    token: string,
+    refreshToken: string,
+    user: User | null,
+    organization?: Organization | null,
+    expiresAt?: number,
+    onboardingCompleted?: boolean,
+  ) => void;
   setOrganization: (organization: Organization) => void;
   setTourCompleted: () => void;
   requestTour: () => void;
   logout: () => void;
   setCurrentProject: (id: string) => void;
-  setCurrentEnv: (id: string) => void;
+  setCurrentEnv: (id: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -33,7 +40,14 @@ export const useAppStore = create<AppState>()(
       tourCompleted: false,
       currentProjectId: null,
       currentEnvId: null,
-      setAuth: (token, refreshToken, user, organization, expiresAt, onboardingCompleted) =>
+      setAuth: (
+        token,
+        refreshToken,
+        user,
+        organization,
+        expiresAt,
+        onboardingCompleted,
+      ) =>
         set((state) => ({
           token,
           refreshToken,
@@ -58,10 +72,12 @@ export const useAppStore = create<AppState>()(
           currentProjectId: null,
           currentEnvId: null,
         }),
-      setCurrentProject: (id) => set((state) => ({
-        currentProjectId: id,
-        currentEnvId: state.currentProjectId !== id ? null : state.currentEnvId,
-      })),
+      setCurrentProject: (id) =>
+        set((state) => ({
+          currentProjectId: id,
+          currentEnvId:
+            state.currentProjectId !== id ? null : state.currentEnvId,
+        })),
       setCurrentEnv: (id) => set({ currentEnvId: id }),
     }),
     { name: "featuresignals-store" },

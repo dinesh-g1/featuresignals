@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "@/lib/api";
+import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import type { Environment } from "@/lib/types";
 
@@ -60,6 +61,7 @@ export function CreateEnvironmentDialog({
         name: trimmed,
         color,
       });
+      EventBus.dispatch("environments:changed");
       setName("");
       setColor("#64748b");
       setError("");

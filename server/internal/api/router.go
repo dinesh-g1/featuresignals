@@ -346,7 +346,9 @@ func NewRouter(
 				r.Use(middleware.RequireRole(writers...))
 
 				r.Post("/projects", projectH.Create)
+				r.Put("/projects/{projectID}", projectH.Update)
 				r.Post("/projects/{projectID}/environments", envH.Create)
+				r.Put("/projects/{projectID}/environments/{envID}", envH.Update)
 				r.Post("/projects/{projectID}/flags", flagH.Create)
 				r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
 				r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)

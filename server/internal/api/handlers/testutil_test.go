@@ -347,6 +347,18 @@ func (m *mockStore) DeleteProject(ctx context.Context, id string) error {
 	return nil
 }
 
+func (m *mockStore) UpdateProject(ctx context.Context, p *domain.Project) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	existing, ok := m.projects[p.ID]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	existing.Name = p.Name
+	existing.Slug = p.Slug
+	return nil
+}
+
 func (m *mockStore) CreateEnvironment(ctx context.Context, e *domain.Environment) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -382,6 +394,19 @@ func (m *mockStore) DeleteEnvironment(ctx context.Context, id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.envs, id)
+	return nil
+}
+
+func (m *mockStore) UpdateEnvironment(ctx context.Context, e *domain.Environment) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	existing, ok := m.envs[e.ID]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	existing.Name = e.Name
+	existing.Slug = e.Slug
+	existing.Color = e.Color
 	return nil
 }
 
@@ -606,12 +631,22 @@ func (m *mockStore) CreateAuditEntry(ctx context.Context, entry *domain.AuditEnt
 }
 
 func (m *mockStore) ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]domain.AuditEntry, error) {
+	return m.listAuditEntriesByProject(orgID, "", limit, offset)
+}
+
+func (m *mockStore) ListAuditEntriesByProject(ctx context.Context, orgID, projectID string, limit, offset int) ([]domain.AuditEntry, error) {
+	return m.listAuditEntriesByProject(orgID, projectID, limit, offset)
+}
+
+func (m *mockStore) listAuditEntriesByProject(orgID, projectID string, limit, offset int) ([]domain.AuditEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.AuditEntry
 	for _, e := range m.auditEntries {
 		if e.OrgID == orgID {
-			result = append(result, e)
+			if projectID == "" || e.ProjectID == nil || *e.ProjectID == projectID {
+				result = append(result, e)
+			}
 		}
 	}
 	if offset >= len(result) {

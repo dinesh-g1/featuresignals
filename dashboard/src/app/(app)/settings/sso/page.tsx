@@ -86,11 +86,7 @@ export default function SSOSettingsPage() {
   const token = useAppStore((s) => s.token);
   const { isEnabled } = useFeatures();
 
-  // Enforce SSO gate at the page level — redirects locked users to billing
-  if (!isEnabled("sso")) {
-    return <SSOUpgradeGate />;
-  }
-
+  // ALL hooks must be declared before any early return (React rules)
   const [config, setConfig] = useState<SSOConfig | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -99,6 +95,11 @@ export default function SSOSettingsPage() {
   const [testResult, setTestResult] = useState<SSOTestResult | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Enforce SSO gate at the page level — shows upgrade gate for non-SSO users
+  if (!isEnabled("sso")) {
+    return <SSOUpgradeGate />;
+  }
 
   const loadConfig = useCallback(async () => {
     if (!token) return;

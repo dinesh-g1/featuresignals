@@ -28,7 +28,22 @@
       "Bash(tr *)",
       "Bash(/users/dr/startups/featuresignals/start-server.sh)",
       "Bash(kill *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(git pull *)",
+      "Bash(git stash)",
+      "Bash(git stash *)",
+      "Bash(cd *)",
+      "Bash(npx *)",
+      "Bash(head *)",
+      "Bash(echo *)",
+      "Bash(docker compose exec *)",
+      "Bash(tail *)",
+      "Bash(do)",
+      "Bash(then)",
+      "Bash(true)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(git checkout *)"
     ]
   },
   "$version": 3

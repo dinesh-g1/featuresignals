@@ -75,12 +75,14 @@ func (s *tierMockStore) GetProject(context.Context, string) (*domain.Project, er
 	return nil, fmt.Errorf("not found")
 }
 func (s *tierMockStore) DeleteProject(context.Context, string) error                  { return nil }
+func (s *tierMockStore) UpdateProject(context.Context, *domain.Project) error         { return nil }
 func (s *tierMockStore) CreateEnvironment(context.Context, *domain.Environment) error { return nil }
 func (s *tierMockStore) GetEnvironment(context.Context, string) (*domain.Environment, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) DeleteEnvironment(context.Context, string) error { return nil }
-func (s *tierMockStore) CreateFlag(context.Context, *domain.Flag) error  { return nil }
+func (s *tierMockStore) DeleteEnvironment(context.Context, string) error              { return nil }
+func (s *tierMockStore) UpdateEnvironment(context.Context, *domain.Environment) error { return nil }
+func (s *tierMockStore) CreateFlag(context.Context, *domain.Flag) error               { return nil }
 func (s *tierMockStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, fmt.Errorf("not found")
 }
@@ -154,6 +156,9 @@ func (s *tierMockStore) UpdateApprovalRequest(context.Context, *domain.ApprovalR
 func (s *tierMockStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { return nil }
 func (s *tierMockStore) PurgeAuditEntries(context.Context, time.Time) (int, error)  { return 0, nil }
 func (s *tierMockStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListAuditEntriesByProject(context.Context, string, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, nil
 }
 func (s *tierMockStore) ListAuditEntriesForExport(context.Context, string, string, string) ([]domain.AuditEntry, error) {

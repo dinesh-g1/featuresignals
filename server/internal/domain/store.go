@@ -51,6 +51,7 @@ type AuditWriter interface {
 // AuditReader provides read access to the audit log.
 type AuditReader interface {
 	ListAuditEntries(ctx context.Context, orgID string, limit, offset int) ([]AuditEntry, error)
+	ListAuditEntriesByProject(ctx context.Context, orgID, projectID string, limit, offset int) ([]AuditEntry, error)
 	ListAuditEntriesForExport(ctx context.Context, orgID string, from, to string) ([]AuditEntry, error)
 	GetLastAuditHash(ctx context.Context, orgID string) (string, error)
 	CountAuditEntries(ctx context.Context, orgID string) (int, error)
@@ -65,6 +66,7 @@ type ProjectReader interface {
 // ProjectWriter provides mutating operations on projects.
 type ProjectWriter interface {
 	CreateProject(ctx context.Context, p *Project) error
+	UpdateProject(ctx context.Context, p *Project) error
 	DeleteProject(ctx context.Context, id string) error
 }
 
@@ -77,6 +79,7 @@ type EnvironmentReader interface {
 // EnvironmentWriter provides mutating operations on environments.
 type EnvironmentWriter interface {
 	CreateEnvironment(ctx context.Context, e *Environment) error
+	UpdateEnvironment(ctx context.Context, e *Environment) error
 	DeleteEnvironment(ctx context.Context, id string) error
 }
 

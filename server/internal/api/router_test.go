@@ -82,7 +82,8 @@ func (noopStore) GetProject(context.Context, string) (*domain.Project, error) {
 func (noopStore) ListProjects(context.Context, string) ([]domain.Project, error) {
 	return nil, errNoop
 }
-func (noopStore) DeleteProject(context.Context, string) error { return errNoop }
+func (noopStore) DeleteProject(context.Context, string) error          { return errNoop }
+func (noopStore) UpdateProject(context.Context, *domain.Project) error { return errNoop }
 
 func (noopStore) CreateEnvironment(context.Context, *domain.Environment) error { return errNoop }
 func (noopStore) ListEnvironments(context.Context, string) ([]domain.Environment, error) {
@@ -91,7 +92,8 @@ func (noopStore) ListEnvironments(context.Context, string) ([]domain.Environment
 func (noopStore) GetEnvironment(context.Context, string) (*domain.Environment, error) {
 	return nil, errNoop
 }
-func (noopStore) DeleteEnvironment(context.Context, string) error { return errNoop }
+func (noopStore) DeleteEnvironment(context.Context, string) error              { return errNoop }
+func (noopStore) UpdateEnvironment(context.Context, *domain.Environment) error { return errNoop }
 
 func (noopStore) CreateFlag(context.Context, *domain.Flag) error { return errNoop }
 func (noopStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
@@ -171,6 +173,9 @@ func (noopStore) UpdateApprovalRequest(context.Context, *domain.ApprovalRequest)
 func (noopStore) CreateAuditEntry(context.Context, *domain.AuditEntry) error { return errNoop }
 func (noopStore) PurgeAuditEntries(context.Context, time.Time) (int, error)  { return 0, errNoop }
 func (noopStore) ListAuditEntries(context.Context, string, int, int) ([]domain.AuditEntry, error) {
+	return nil, errNoop
+}
+func (noopStore) ListAuditEntriesByProject(context.Context, string, string, int, int) ([]domain.AuditEntry, error) {
 	return nil, errNoop
 }
 func (noopStore) ListAuditEntriesForExport(context.Context, string, string, string) ([]domain.AuditEntry, error) {

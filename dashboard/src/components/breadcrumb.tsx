@@ -36,6 +36,10 @@ const ROUTE_BREADCRUMBS: Array<{
     build: () => [{ label: "Segments" }],
   },
   {
+    pattern: /^\/environments$/,
+    build: () => [{ label: "Environments" }],
+  },
+  {
     pattern: /^\/usage-insights$/,
     build: () => [{ label: "Usage Insights" }],
   },

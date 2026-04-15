@@ -1,90 +1,71 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
-import { toast } from "@/components/toast";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Building2, FolderOpen, Plus, Server, Trash2 } from "lucide-react";
-import type { Environment, Project } from "@/lib/types";
+import {
+  Building2,
+  FolderOpen,
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowRight,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import { toast } from "@/components/toast";
+import Link from "next/link";
+import type { Project } from "@/lib/types";
 
 export default function SettingsGeneralPage() {
   const token = useAppStore((s) => s.token);
   const organization = useAppStore((s) => s.organization);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [envs, setEnvs] = useState<Environment[]>([]);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", color: "#6B7280" });
-  const [fieldError, setFieldError] = useState<string>("");
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  function reloadEnvs() {
-    if (!token || !projectId) return;
-    api
-      .listEnvironments(token, projectId)
-      .then((e) => setEnvs(e ?? []))
-      .catch(() => {});
-  }
+  // Dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formSlug, setFormSlug] = useState("");
+  const [fieldError, setFieldError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    reloadEnvs();
-  }, [token, projectId]);
-
-  useEffect(() => {
+  const loadProjects = useCallback(async () => {
     if (!token) return;
-    api
-      .listProjects(token)
-      .then((p) => setProjects(p ?? []))
-      .catch(() => {});
+    try {
+      setLoading(true);
+      const list = await api.listProjects(token);
+      setProjects(list);
+    } catch {
+      // Silently fail, user sees empty state
+    } finally {
+      setLoading(false);
+    }
   }, [token]);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name.trim()) {
-      setFieldError("Environment name is required");
-      return;
-    }
-    if (!token || !projectId) {
-      toast("Select a project first", "error");
-      return;
-    }
-    try {
-      await api.createEnvironment(token, projectId, form);
-      setShowCreate(false);
-      setForm({ name: "", slug: "", color: "#6B7280" });
-      setFieldError("");
-      toast("Environment created", "success");
-      reloadEnvs();
-    } catch (err: unknown) {
-      toast(
-        err instanceof Error ? err.message : "Failed to create environment",
-        "error",
-      );
-    }
-  }
-
-  async function handleDelete(envId: string) {
-    if (!token || !projectId) return;
-    try {
-      await api.deleteEnvironment(token, projectId, envId);
-      setDeleting(null);
-      toast("Environment deleted", "success");
-      reloadEnvs();
-    } catch (err: unknown) {
-      toast(
-        err instanceof Error ? err.message : "Failed to delete environment",
-        "error",
-      );
-      setDeleting(null);
-    }
-  }
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const currentProject = projects.find((p) => p.id === projectId);
   const planLabel =
@@ -100,9 +81,98 @@ export default function SettingsGeneralPage() {
         ? "success"
         : "default";
 
+  // --- Project CRUD ---
+
+  function openCreateDialog() {
+    setEditingProject(null);
+    setFormName("");
+    setFormSlug("");
+    setFieldError("");
+    setCreateDialogOpen(true);
+  }
+
+  function openEditDialog(project: Project) {
+    setEditingProject(project);
+    setFormName(project.name);
+    setFormSlug(project.slug);
+    setFieldError("");
+    setEditDialogOpen(true);
+  }
+
+  async function handleSaveProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formName.trim()) {
+      setFieldError("Project name is required");
+      return;
+    }
+    if (!token) return;
+
+    try {
+      setSubmitting(true);
+      if (editingProject) {
+        await api.updateProject(token, editingProject.id, {
+          name: formName.trim(),
+          slug: formSlug.trim() || undefined,
+        });
+        EventBus.dispatch("projects:changed");
+        toast("Project updated", "success");
+      } else {
+        const project = await api.createProject(token, {
+          name: formName.trim(),
+          slug: formSlug.trim() || undefined,
+        });
+        EventBus.dispatch("projects:changed");
+        setCurrentProject(project.id);
+        toast("Project created", "success");
+      }
+      setCreateDialogOpen(false);
+      setEditDialogOpen(false);
+      loadProjects();
+    } catch (err: unknown) {
+      toast(
+        err instanceof Error ? err.message : "Failed to save project",
+        "error",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function openDeleteDialog(project: Project) {
+    setDeletingProject(project);
+    setDeleteDialogOpen(true);
+  }
+
+  async function handleDeleteProject() {
+    if (!deletingProject || !token) return;
+    try {
+      setSubmitting(true);
+      await api.deleteProject(token, deletingProject.id);
+      EventBus.dispatch("projects:changed");
+      if (projectId === deletingProject.id) {
+        // Reset selection - pick another project if available
+        const remaining = projects.filter((p) => p.id !== deletingProject.id);
+        setCurrentProject(
+          remaining.length > 0 ? remaining[0].id : projects[0]?.id || "",
+        );
+      }
+      toast("Project deleted", "success");
+      setDeleteDialogOpen(false);
+      setDeletingProject(null);
+      loadProjects();
+    } catch (err: unknown) {
+      toast(
+        err instanceof Error ? err.message : "Failed to delete project",
+        "error",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Organization overview */}
+      {/* Organization + Current Project */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -143,7 +213,6 @@ export default function SettingsGeneralPage() {
           </dl>
         </Card>
 
-        {/* Current project overview */}
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
@@ -153,7 +222,9 @@ export default function SettingsGeneralPage() {
               <h2 className="text-sm font-semibold text-slate-900">
                 Current Project
               </h2>
-              <p className="text-xs text-slate-500">Selected in sidebar</p>
+              <p className="text-xs text-slate-500">
+                Selected in the context bar
+              </p>
             </div>
           </div>
           {currentProject ? (
@@ -170,192 +241,309 @@ export default function SettingsGeneralPage() {
                   {currentProject.slug}
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-slate-500">Environments</dt>
-                <dd className="text-sm font-medium text-slate-900">
-                  {envs.length}
-                </dd>
-              </div>
             </dl>
           ) : (
             <p className="text-sm text-slate-400">
-              No project selected. Use the sidebar to pick one.
+              No project selected. Use the context bar above to pick one.
             </p>
           )}
         </Card>
       </div>
 
-      {/* Environments management */}
-      {projectId && (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-slate-900">
-                  Environments
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Manage environments for{" "}
-                  <span className="font-medium text-slate-700">
-                    {currentProject?.name || "this project"}
-                  </span>
+      {/* Projects Management */}
+      <Card className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Projects</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Manage all projects in your organization. Deleting a project
+              removes all environments, flags, and segments within it.
+            </p>
+          </div>
+          <Button size="sm" onClick={openCreateDialog}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            New Project
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+          </div>
+        ) : projects.length === 0 ? (
+          <p className="text-sm text-slate-400 py-8 text-center">
+            No projects yet. Create your first one to get started.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {projects.map((project) => {
+              const isActive = project.id === projectId;
+              return (
+                <div
+                  key={project.id}
+                  className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
+                    isActive
+                      ? "border-indigo-200 bg-indigo-50/30"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+                      <FolderOpen className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {project.name}
+                        {isActive && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                            Active
+                          </span>
+                        )}
+                      </p>
+                      <p className="font-mono text-xs text-slate-500">
+                        {project.slug}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(project)}
+                      title="Rename project"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDeleteDialog(project)}
+                      className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                      title="Delete project"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Quick link to Environments */}
+      <Card className="p-4 sm:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              Manage Environments
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+              Create, edit, and delete environments for the current project.
+            </p>
+          </div>
+          <Link href="/environments">
+            <Button>
+              Open Environments
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      {/* --- Dialogs --- */}
+
+      {/* Create Project */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Project</DialogTitle>
+            <DialogDescription>
+              Projects group feature flags and environments for a single
+              application or service.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveProject} className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="create-project-name">Project Name</Label>
+              <Input
+                id="create-project-name"
+                value={formName}
+                onChange={(e) => {
+                  setFormName(e.target.value);
+                  setFieldError("");
+                }}
+                placeholder="e.g. My Web App, Mobile API"
+                className="mt-1"
+                autoFocus
+              />
+              {fieldError && (
+                <p className="text-xs text-red-500 mt-1">{fieldError}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="create-project-slug">Slug</Label>
+              <Input
+                id="create-project-slug"
+                value={formSlug}
+                onChange={(e) => setFormSlug(e.target.value)}
+                placeholder="auto-generated from name"
+                className="mt-1"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Leave blank to auto-generate
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setCreateDialogOpen(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Project
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+            <DialogDescription>
+              Update the project name and slug. This won&apos;t affect existing
+              flags or environments.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveProject} className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="edit-project-name">Project Name</Label>
+              <Input
+                id="edit-project-name"
+                value={formName}
+                onChange={(e) => {
+                  setFormName(e.target.value);
+                  setFieldError("");
+                }}
+                className="mt-1"
+                autoFocus
+              />
+              {fieldError && (
+                <p className="text-xs text-red-500 mt-1">{fieldError}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="edit-project-slug">Slug</Label>
+              <Input
+                id="edit-project-slug"
+                value={formSlug}
+                onChange={(e) => setFormSlug(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditDialogOpen(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Project Confirmation */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Project
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="mt-3 space-y-3">
+                <p className="font-semibold text-slate-900">
+                  Are you sure you want to delete &ldquo;{deletingProject?.name}
+                  &rdquo;?
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                  <p className="font-semibold text-red-800 mb-1">
+                    This action will permanently delete:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-red-700">
+                    <li>This project</li>
+                    <li>All environments within it</li>
+                    <li>All feature flags and their configurations</li>
+                    <li>All user segments</li>
+                    <li>All API keys and flag states</li>
+                  </ul>
+                </div>
+                <p className="text-sm font-semibold text-red-600">
+                  This action cannot be undone.
                 </p>
               </div>
-              <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
-                <Plus className="h-4 w-4" />
-                Add Environment
-              </Button>
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            {showCreate && (
-              <form
-                onSubmit={handleCreate}
-                noValidate
-                className="mb-5 rounded-lg border border-indigo-100 bg-indigo-50/30 p-4 space-y-3"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <Label className="text-xs">Name</Label>
-                    <Input
-                      value={form.name}
-                      onChange={(e) => {
-                        setForm({ ...form, name: e.target.value });
-                        setFieldError("");
-                      }}
-                      placeholder="e.g. QA"
-                      aria-invalid={!!fieldError}
-                      aria-describedby={
-                        fieldError ? "env-name-error" : undefined
-                      }
-                      className="mt-1 py-1.5"
-                    />
-                    {fieldError && (
-                      <p
-                        id="env-name-error"
-                        className="text-xs text-red-500 mt-1"
-                        role="alert"
-                      >
-                        {fieldError}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Slug</Label>
-                    <Input
-                      value={form.slug}
-                      onChange={(e) =>
-                        setForm({ ...form, slug: e.target.value })
-                      }
-                      placeholder="auto-generated"
-                      className="mt-1 py-1.5"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Color</Label>
-                    <input
-                      type="color"
-                      value={form.color}
-                      onChange={(e) =>
-                        setForm({ ...form, color: e.target.value })
-                      }
-                      className="mt-1 h-9 w-full rounded-lg border border-slate-300 cursor-pointer"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" size="sm">
-                    Create
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowCreate(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {envs.length === 0 ? (
-              <EmptyState
-                icon={Server}
-                title="No environments yet"
-                description="Add your first environment to get started with feature flags."
-              />
-            ) : (
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {envs.map((env) => (
-                  <div
-                    key={env.id}
-                    className="group relative rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-indigo-200 hover:shadow-md"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white shadow-sm"
-                        style={{ backgroundColor: env.color }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-800">
-                          {env.name}
-                        </p>
-                        <p className="mt-0.5 font-mono text-xs text-slate-400">
-                          {env.slug}
-                        </p>
-                      </div>
-                    </div>
-                    {deleting === env.id ? (
-                      <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-                        <span className="text-xs text-red-600">
-                          Delete this?
-                        </span>
-                        <Button
-                          variant="destructive-ghost"
-                          size="sm"
-                          onClick={() => handleDelete(env.id)}
-                          className="h-auto px-2 py-0.5 text-xs"
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleting(null)}
-                          className="h-auto px-2 py-0.5 text-xs"
-                        >
-                          No
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setDeleting(env.id)}
-                        className="absolute right-3 top-3 opacity-0 transition-all group-hover:opacity-100 text-slate-300 hover:bg-red-50 hover:text-red-500"
-                        title="Delete environment"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {!projectId && (
-        <EmptyState
-          icon={FolderOpen}
-          title="No project selected"
-          description="Create or select a project using the sidebar to manage environments."
-          className="rounded-xl border border-dashed border-slate-300 py-16"
-        />
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setDeletingProject(null);
+              }}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProject}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Project
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

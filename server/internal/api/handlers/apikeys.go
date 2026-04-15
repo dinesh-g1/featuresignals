@@ -115,6 +115,7 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	meta, _ := json.Marshal(map[string]string{"key_prefix": apiKey.KeyPrefix, "env_id": envID})
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &env.ProjectID,
 		ActorID:      &actorID,
 		ActorType:    "user",
 		Action:       "api_key.created",
@@ -179,7 +180,7 @@ func (h *APIKeyHandler) Rotate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
-		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		OrgID: orgID, ProjectID: &env.ProjectID, ActorID: &userID, ActorType: "user",
 		Action: "apikey.rotated", ResourceType: "api_key", ResourceID: &newKey.ID,
 		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
 	})
@@ -245,6 +246,7 @@ func (h *APIKeyHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 	meta, _ := json.Marshal(map[string]string{"key_prefix": apiKey.KeyPrefix})
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
 		OrgID:        orgID,
+		ProjectID:    &env.ProjectID,
 		ActorID:      &actorID,
 		ActorType:    "user",
 		Action:       "api_key.revoked",

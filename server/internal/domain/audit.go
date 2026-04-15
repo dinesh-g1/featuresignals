@@ -13,6 +13,7 @@ import (
 type AuditEntry struct {
 	ID            string          `json:"id" db:"id"`
 	OrgID         string          `json:"org_id" db:"org_id"`
+	ProjectID     *string         `json:"project_id,omitempty" db:"project_id"`
 	ActorID       *string         `json:"actor_id,omitempty" db:"actor_id"`
 	ActorType     string          `json:"actor_type" db:"actor_type"`
 	Action        string          `json:"action" db:"action"`

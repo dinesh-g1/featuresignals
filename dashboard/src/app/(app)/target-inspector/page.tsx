@@ -13,7 +13,7 @@ import {
   Badge,
   EmptyState,
 } from "@/components/ui";
-import { UserSearch, X, Search } from "lucide-react";
+import { UserSearch, X, Search, Globe, FolderOpen } from "lucide-react";
 import type { InspectTargetResult } from "@/lib/types";
 
 export default function TargetInspectorPage() {
@@ -70,6 +70,40 @@ export default function TargetInspectorPage() {
   const filtered = results?.filter(
     (r) => !search || r.flag_key.toLowerCase().includes(search.toLowerCase()),
   );
+
+  if (!projectId) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Target Inspector"
+          description="Evaluate all flags for a specific target to see exactly what they would receive"
+        />
+        <EmptyState
+          icon={FolderOpen}
+          title="No project selected"
+          description="Select a project using the context bar above to inspect target evaluations."
+          className="py-16"
+        />
+      </div>
+    );
+  }
+
+  if (!currentEnvId) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Target Inspector"
+          description="Evaluate all flags for a specific target to see exactly what they would receive"
+        />
+        <EmptyState
+          icon={Globe}
+          title="No environment selected"
+          description="Select an environment using the context bar above to inspect target evaluations."
+          className="py-16"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

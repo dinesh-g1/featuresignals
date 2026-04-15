@@ -70,7 +70,17 @@ func RunUp(ctx context.Context, databaseURL string, logger *slog.Logger, skip bo
 	if err == migrate.ErrNilVersion {
 		logger.Info("no previous migrations found, applying all")
 	} else if dirty {
-		return fmt.Errorf("database is at a dirty version (version %d), fix manually before proceeding", curVer)
+		// Dirty state means a migration partially applied. Force to the PREVIOUS
+		// version so m.Up() will re-run the failed migration from scratch.
+		prevVer := uint(0)
+		if curVer > 0 {
+			prevVer = curVer - 1
+		}
+		logger.Warn("database is at a dirty version, forcing to previous version to recover", "dirty_version", curVer, "target_version", prevVer)
+		if err := m.Force(int(prevVer)); err != nil {
+			return fmt.Errorf("database is dirty and force-recovery failed (version %d): %w", curVer, err)
+		}
+		logger.Info("dirty flag cleared, reapplying pending migrations")
 	} else {
 		logger.Info("current migration version", "version", curVer)
 	}

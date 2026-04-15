@@ -13,7 +13,7 @@ import {
   Badge,
   EmptyState,
 } from "@/components/ui";
-import { UsersRound, X } from "lucide-react";
+import { UsersRound, X, Globe, FolderOpen } from "lucide-react";
 import type { CompareTargetsResult } from "@/lib/types";
 
 function AttrEditor({
@@ -132,6 +132,40 @@ export default function TargetComparisonPage() {
 
   const filtered = results?.filter((r) => !showDiffOnly || r.is_different);
   const diffCount = results?.filter((r) => r.is_different).length ?? 0;
+
+  if (!projectId) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Target Comparison"
+          description="Compare flag evaluations for two targets side by side"
+        />
+        <EmptyState
+          icon={FolderOpen}
+          title="No project selected"
+          description="Select a project using the context bar above to compare target evaluations."
+          className="py-16"
+        />
+      </div>
+    );
+  }
+
+  if (!currentEnvId) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Target Comparison"
+          description="Compare flag evaluations for two targets side by side"
+        />
+        <EmptyState
+          icon={Globe}
+          title="No environment selected"
+          description="Select an environment using the context bar above to compare target evaluations."
+          className="py-16"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

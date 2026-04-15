@@ -21,6 +21,7 @@ type ExportFormat = "csv" | "json";
 
 export default function AuditPage() {
   const token = useAppStore((s) => s.token);
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
@@ -45,7 +46,7 @@ export default function AuditPage() {
   useEffect(() => {
     if (!token) return;
     api
-      .listAudit(token, limit, offset)
+      .listAudit(token, limit, offset, currentProjectId ?? undefined)
       .then((a) => setEntries(a ?? []))
       .catch(() => {});
   }, [token, offset]);

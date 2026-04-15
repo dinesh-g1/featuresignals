@@ -15,7 +15,9 @@ import type {
   Segment,
 } from "@/lib/types";
 
-function cacheKey(...parts: (string | number | null | undefined)[]): string | null {
+function cacheKey(
+  ...parts: (string | number | null | undefined)[]
+): string | null {
   if (parts.some((p) => p == null || p === "")) return null;
   return parts.join(":");
 }
@@ -31,9 +33,13 @@ export function useProjects() {
 export function useEnvironments(projectId: string | null) {
   const token = useAppStore((s) => s.token);
   const key = cacheKey("environments", projectId);
-  return useQuery<Environment[]>(key, () => api.listEnvironments(token!, projectId!), {
-    enabled: !!token && !!projectId,
-  });
+  return useQuery<Environment[]>(
+    key,
+    () => api.listEnvironments(token!, projectId!),
+    {
+      enabled: !!token && !!projectId,
+    },
+  );
 }
 
 export function useFlags(projectId: string | null) {
@@ -62,7 +68,11 @@ export function useFlag(projectId: string | null, flagKey: string | null) {
   });
 }
 
-export function useFlagState(projectId: string | null, flagKey: string | null, envId: string | null) {
+export function useFlagState(
+  projectId: string | null,
+  flagKey: string | null,
+  envId: string | null,
+) {
   const token = useAppStore((s) => s.token);
   const key = cacheKey("flag-state", projectId, flagKey, envId);
   return useQuery<FlagState>(
@@ -88,20 +98,33 @@ export function useMembers() {
   });
 }
 
-export function useAudit(limit = 50, offset = 0) {
+export function useAudit(limit = 50, offset = 0, projectId?: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("audit", `${limit}`, `${offset}`);
-  return useQuery<AuditEntry[]>(key, () => api.listAudit(token!, limit, offset), {
-    enabled: !!token,
-  });
+  const key = cacheKey(
+    "audit",
+    `${limit}`,
+    `${offset}`,
+    projectId ?? undefined,
+  );
+  return useQuery<AuditEntry[]>(
+    key,
+    () => api.listAudit(token!, limit, offset, projectId ?? undefined),
+    {
+      enabled: !!token,
+    },
+  );
 }
 
 export function useApprovals(status?: string) {
   const token = useAppStore((s) => s.token);
   const key = cacheKey("approvals", status ?? "all");
-  return useQuery<ApprovalRequest[]>(key, () => api.listApprovals(token!, status), {
-    enabled: !!token,
-  });
+  return useQuery<ApprovalRequest[]>(
+    key,
+    () => api.listApprovals(token!, status),
+    {
+      enabled: !!token,
+    },
+  );
 }
 
 export function useCreateFlag(projectId: string | null) {
@@ -120,10 +143,15 @@ export function useDeleteFlag(projectId: string | null) {
   );
 }
 
-export function useUpdateFlagState(projectId: string | null, flagKey: string | null, envId: string | null) {
+export function useUpdateFlagState(
+  projectId: string | null,
+  flagKey: string | null,
+  envId: string | null,
+) {
   const token = useAppStore((s) => s.token);
   return useMutation(
-    (data: Partial<FlagState>) => api.updateFlagState(token!, projectId!, flagKey!, envId!, data),
+    (data: Partial<FlagState>) =>
+      api.updateFlagState(token!, projectId!, flagKey!, envId!, data),
     {
       invalidateKeys: [
         `flag-state:${projectId}:${flagKey}:${envId}`,
@@ -133,7 +161,10 @@ export function useUpdateFlagState(projectId: string | null, flagKey: string | n
   );
 }
 
-export function useFlagStateMap(flagStates: FlagState[] | undefined, flags: Flag[] | undefined) {
+export function useFlagStateMap(
+  flagStates: FlagState[] | undefined,
+  flags: Flag[] | undefined,
+) {
   return useMemo(() => {
     if (!flagStates || !flags) return new Map<string, FlagState>();
     const map = new Map<string, FlagState>();

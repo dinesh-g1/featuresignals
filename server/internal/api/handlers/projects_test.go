@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -404,5 +405,262 @@ func TestEnvironmentHandler_Delete(t *testing.T) {
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("expected 204, got %d", w.Code)
+	}
+}
+
+// --- Project Update Tests ---
+
+func TestProjectHandler_Update(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Old Name", Slug: "old-slug"}
+	store.CreateProject(context.Background(), p)
+
+	body := `{"name":"New Name","slug":"new-slug"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+p.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var project domain.Project
+	json.Unmarshal(w.Body.Bytes(), &project)
+
+	if project.Name != "New Name" {
+		t.Errorf("expected 'New Name', got '%s'", project.Name)
+	}
+	if project.Slug != "new-slug" {
+		t.Errorf("expected 'new-slug', got '%s'", project.Slug)
+	}
+}
+
+func TestProjectHandler_Update_MissingName(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Test", Slug: "test"}
+	store.CreateProject(context.Background(), p)
+
+	body := `{"name":""}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+p.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestProjectHandler_Update_NameTooLong(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Test", Slug: "test"}
+	store.CreateProject(context.Background(), p)
+
+	longName := strings.Repeat("a", 256)
+	body := fmt.Sprintf(`{"name":"%s"}`, longName)
+	r := httptest.NewRequest("PUT", "/v1/projects/"+p.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestProjectHandler_Update_KeepsExistingSlug(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Old Name", Slug: "existing-slug"}
+	store.CreateProject(context.Background(), p)
+
+	body := `{"name":"New Name"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+p.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var project domain.Project
+	json.Unmarshal(w.Body.Bytes(), &project)
+
+	if project.Name != "New Name" {
+		t.Errorf("expected 'New Name', got '%s'", project.Name)
+	}
+	if project.Slug != "existing-slug" {
+		t.Errorf("expected to keep 'existing-slug', got '%s'", project.Slug)
+	}
+}
+
+func TestProjectHandler_Update_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewProjectHandler(store)
+
+	p := &domain.Project{OrgID: "org-1", Name: "Secret", Slug: "secret"}
+	store.CreateProject(context.Background(), p)
+
+	body := `{"name":"Hacked"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+p.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": p.ID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org update, got %d", w.Code)
+	}
+}
+
+// --- Environment Update Tests ---
+
+func TestEnvironmentHandler_Update(t *testing.T) {
+	store := newMockStore()
+	h := NewEnvironmentHandler(store)
+
+	projID := setupTestProject(store, "org-1")
+	env := &domain.Environment{ProjectID: projID, Name: "Old", Slug: "old", Color: "#000000"}
+	store.CreateEnvironment(context.Background(), env)
+
+	body := `{"name":"New Name","slug":"new-slug","color":"#EF4444"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/environments/"+env.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "envID": env.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var updatedEnv domain.Environment
+	json.Unmarshal(w.Body.Bytes(), &updatedEnv)
+
+	if updatedEnv.Name != "New Name" {
+		t.Errorf("expected 'New Name', got '%s'", updatedEnv.Name)
+	}
+	if updatedEnv.Slug != "new-slug" {
+		t.Errorf("expected 'new-slug', got '%s'", updatedEnv.Slug)
+	}
+	if updatedEnv.Color != "#EF4444" {
+		t.Errorf("expected '#EF4444', got '%s'", updatedEnv.Color)
+	}
+}
+
+func TestEnvironmentHandler_Update_MissingName(t *testing.T) {
+	store := newMockStore()
+	h := NewEnvironmentHandler(store)
+
+	projID := setupTestProject(store, "org-1")
+	env := &domain.Environment{ProjectID: projID, Name: "Test", Slug: "test"}
+	store.CreateEnvironment(context.Background(), env)
+
+	body := `{"name":""}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/environments/"+env.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "envID": env.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestEnvironmentHandler_Update_NameTooLong(t *testing.T) {
+	store := newMockStore()
+	h := NewEnvironmentHandler(store)
+
+	projID := setupTestProject(store, "org-1")
+	env := &domain.Environment{ProjectID: projID, Name: "Test", Slug: "test"}
+	store.CreateEnvironment(context.Background(), env)
+
+	longName := strings.Repeat("a", 101)
+	body := fmt.Sprintf(`{"name":"%s"}`, longName)
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/environments/"+env.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "envID": env.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestEnvironmentHandler_Update_KeepsExistingValues(t *testing.T) {
+	store := newMockStore()
+	h := NewEnvironmentHandler(store)
+
+	projID := setupTestProject(store, "org-1")
+	env := &domain.Environment{ProjectID: projID, Name: "Old", Slug: "old-slug", Color: "#6B7280"}
+	store.CreateEnvironment(context.Background(), env)
+
+	body := `{"name":"New Name"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/environments/"+env.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "envID": env.ID})
+	r = requestWithAuth(r, "user-1", "org-1", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var updatedEnv domain.Environment
+	json.Unmarshal(w.Body.Bytes(), &updatedEnv)
+
+	if updatedEnv.Name != "New Name" {
+		t.Errorf("expected 'New Name', got '%s'", updatedEnv.Name)
+	}
+	if updatedEnv.Slug != "old-slug" {
+		t.Errorf("expected to keep 'old-slug', got '%s'", updatedEnv.Slug)
+	}
+	if updatedEnv.Color != "#6B7280" {
+		t.Errorf("expected to keep '#6B7280', got '%s'", updatedEnv.Color)
+	}
+}
+
+func TestEnvironmentHandler_Update_OrgIsolation(t *testing.T) {
+	store := newMockStore()
+	h := NewEnvironmentHandler(store)
+
+	projID := setupTestProject(store, "org-1")
+	env := &domain.Environment{ProjectID: projID, Name: "Test", Slug: "test"}
+	store.CreateEnvironment(context.Background(), env)
+
+	body := `{"name":"Hacked"}`
+	r := httptest.NewRequest("PUT", "/v1/projects/"+projID+"/environments/"+env.ID, strings.NewReader(body))
+	r = requestWithChi(r, map[string]string{"projectID": projID, "envID": env.ID})
+	r = requestWithAuth(r, "attacker", "org-2", "admin")
+	w := httptest.NewRecorder()
+
+	h.Update(w, r)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404 for cross-org update, got %d", w.Code)
 	}
 }

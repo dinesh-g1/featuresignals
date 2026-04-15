@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import {
@@ -36,6 +37,10 @@ import {
   useDeleteFlag,
 } from "@/hooks/use-data";
 import { useMutation } from "@/hooks/use-query";
+import {
+  PrerequisiteGate,
+  usePrerequisites,
+} from "@/components/prerequisite-gate";
 import type { FlagState } from "@/lib/types";
 
 const FLAG_TYPE_OPTIONS = [
@@ -272,6 +277,7 @@ export default function FlagsPage() {
         description: "",
         default_value: "false",
       });
+      EventBus.dispatch("flags:changed");
       toast("Flag created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
@@ -282,6 +288,7 @@ export default function FlagsPage() {
     const result = await deleteFlag.mutate(flagKey);
     setDeleting(null);
     if (result !== undefined) {
+      EventBus.dispatch("flags:changed");
       toast("Flag deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
@@ -364,20 +371,317 @@ export default function FlagsPage() {
     sortDir,
   ]);
 
-  const currentEnvName = (envs ?? []).find((e) => e.id === currentEnvId)?.name;
+  const {
+    state: prereqState,
+    loading: prereqLoading,
+    refresh: refreshPrereqs,
+  } = usePrerequisites();
 
-  if (!projectId) {
-    return (
-      <EmptyState
-        icon={Flag}
-        title="No project selected"
-        description="Create a project first, then come back here to manage your feature flags."
-        docsUrl={DOCS_LINKS.quickstart}
-        docsLabel="Quickstart guide"
-        className="py-24"
-      />
-    );
+  if (prereqLoading) {
+    return <FlagsPageSkeleton />;
   }
+
+  return (
+    <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
+      <FlagsWithData
+        search={search}
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        tagFilter={tagFilter}
+        setTagFilter={setTagFilter}
+        showCreate={showCreate}
+        setShowCreate={setShowCreate}
+        newFlag={newFlag}
+        setNewFlag={setNewFlag}
+        fieldErrors={fieldErrors}
+        setFieldErrors={setFieldErrors}
+        deleting={deleting}
+        setDeleting={setDeleting}
+        toggling={toggling}
+        setToggling={setToggling}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortDir={sortDir}
+        setSortDir={setSortDir}
+      />
+    </PrerequisiteGate>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FlagsWithData — ONLY called when prerequisites ARE met (inside the gate).
+// All data-fetching hooks live here so they NEVER fire with null projectId.
+// ---------------------------------------------------------------------------
+function FlagsWithData({
+  search,
+  searchInput,
+  setSearchInput,
+  typeFilter,
+  setTypeFilter,
+  categoryFilter,
+  setCategoryFilter,
+  statusFilter,
+  setStatusFilter,
+  tagFilter,
+  setTagFilter,
+  showCreate,
+  setShowCreate,
+  newFlag,
+  setNewFlag,
+  fieldErrors,
+  setFieldErrors,
+  deleting,
+  setDeleting,
+  toggling,
+  setToggling,
+  sortBy,
+  setSortBy,
+  sortDir,
+  setSortDir,
+}: {
+  search: string;
+  searchInput: string;
+  setSearchInput: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (v: string) => void;
+  statusFilter: string;
+  setStatusFilter: (v: string) => void;
+  tagFilter: string;
+  setTagFilter: (v: string) => void;
+  showCreate: boolean;
+  setShowCreate: (v: boolean) => void;
+  newFlag: {
+    key: string;
+    name: string;
+    flag_type: string;
+    category: string;
+    description: string;
+    default_value: string;
+  };
+  setNewFlag: (v: any) => void;
+  fieldErrors: { key?: string; name?: string; default_value?: string };
+  setFieldErrors: (v: any) => void;
+  deleting: string | null;
+  setDeleting: (v: string | null) => void;
+  toggling: string | null;
+  setToggling: (v: string | null) => void;
+  sortBy: SortKey;
+  setSortBy: (v: SortKey) => void;
+  sortDir: "asc" | "desc";
+  setSortDir: (v: "asc" | "desc") => void;
+}) {
+  const token = useAppStore((s) => s.token);
+  const projectId = useAppStore((s) => s.currentProjectId);
+  const currentEnvId = useAppStore((s) => s.currentEnvId);
+
+  // These hooks ONLY run when FlagsWithData is rendered, which is inside
+  // PrerequisiteGate — so projectId/currentEnvId are guaranteed non-null.
+  const {
+    data: flags,
+    loading: flagsLoading,
+    error: flagsError,
+    refetch: refetchFlags,
+  } = useFlags(projectId);
+  const { data: envs } = useEnvironments(projectId);
+  const { data: batchStates } = useFlagStates(projectId, currentEnvId);
+  const stateMap = useFlagStateMap(batchStates, flags);
+
+  const currentEnvName = (envs ?? []).find((e) => e.id === currentEnvId)?.name;
+  const suggestedKey = useMemo(() => {
+    if (!newFlag.name) return "";
+    return newFlag.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
+  }, [newFlag.name]);
+
+  const createFlag = useCreateFlag(projectId);
+  const deleteFlag = useDeleteFlag(projectId);
+
+  const toggleMutation = useMutation(
+    async ({ flagKey, enabled }: { flagKey: string; enabled: boolean }) => {
+      return api.updateFlagState(token!, projectId!, flagKey, currentEnvId!, {
+        enabled,
+      });
+    },
+    {
+      invalidateKeys:
+        projectId && currentEnvId
+          ? [`flag-states:${projectId}:${currentEnvId}`]
+          : [],
+    },
+  );
+
+  function defaultValueForType(type: string): string {
+    switch (type) {
+      case "string":
+        return '""';
+      case "number":
+        return "0";
+      case "json":
+        return "{}";
+      default:
+        return "false";
+    }
+  }
+
+  function handleTypeChange(type: string) {
+    setNewFlag({
+      ...newFlag,
+      flag_type: type,
+      default_value: defaultValueForType(type),
+    });
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !projectId) {
+      toast("Select a project first", "error");
+      return;
+    }
+    const errors: { key?: string; name?: string; default_value?: string } = {};
+    if (!newFlag.key.trim()) errors.key = "Key is required";
+    if (!newFlag.name.trim()) errors.name = "Name is required";
+    if (newFlag.flag_type === "json") {
+      try {
+        JSON.parse(newFlag.default_value);
+      } catch {
+        errors.default_value = "Invalid JSON format";
+      }
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    let parsedDefault: unknown;
+    try {
+      parsedDefault = JSON.parse(newFlag.default_value);
+    } catch {
+      toast("Default value must be valid JSON", "error");
+      return;
+    }
+    const result = await createFlag.mutate({
+      key: newFlag.key,
+      name: newFlag.name,
+      flag_type: newFlag.flag_type,
+      category: newFlag.category,
+      description: newFlag.description,
+      default_value: parsedDefault,
+    });
+    if (result) {
+      setShowCreate(false);
+      setNewFlag({
+        key: "",
+        name: "",
+        flag_type: "boolean",
+        category: "release",
+        description: "",
+        default_value: "false",
+      });
+      EventBus.dispatch("flags:changed");
+      toast("Flag created", "success");
+    } else if (createFlag.error) {
+      toast(createFlag.error, "error");
+    }
+  }
+
+  async function handleDelete(flagKey: string) {
+    const result = await deleteFlag.mutate(flagKey);
+    setDeleting(null);
+    if (result !== undefined) {
+      EventBus.dispatch("flags:changed");
+      toast("Flag deleted", "success");
+    } else if (deleteFlag.error) {
+      toast(deleteFlag.error, "error");
+    }
+  }
+
+  async function handleQuickToggle(flagKey: string) {
+    if (!currentEnvId) {
+      toast("Select an environment first", "error");
+      return;
+    }
+    setToggling(flagKey);
+    const current = stateMap.get(flagKey);
+    const result = await toggleMutation.mutate({
+      flagKey,
+      enabled: !current?.enabled,
+    });
+    setToggling(null);
+    if (!result && toggleMutation.error) {
+      toast(toggleMutation.error, "error");
+    }
+  }
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    (flags ?? []).forEach((f) => f.tags?.forEach((t: string) => tags.add(t)));
+    return Array.from(tags).sort();
+  }, [flags]);
+
+  const tagOptions = useMemo(
+    () => [
+      { value: "", label: "All Tags" },
+      ...allTags.map((t) => ({ value: t, label: t })),
+    ],
+    [allTags],
+  );
+
+  function handleSort(key: SortKey) {
+    if (sortBy === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  }
+
+  const filtered = useMemo(() => {
+    let result = (flags ?? []).filter(
+      (f) =>
+        (f.key ?? "").includes(search) ||
+        (f.name ?? "").toLowerCase().includes(search.toLowerCase()),
+    );
+    if (typeFilter !== "all") {
+      result = result.filter((f) => f.flag_type === typeFilter);
+    }
+    if (categoryFilter !== "all") {
+      result = result.filter((f) => f.category === categoryFilter);
+    }
+    if (statusFilter !== "all") {
+      result = result.filter((f) => f.status === statusFilter);
+    }
+    if (tagFilter) {
+      result = result.filter((f) => f.tags?.includes(tagFilter));
+    }
+    result.sort((a, b) => {
+      const aVal = a[sortBy] || "";
+      const bVal = b[sortBy] || "";
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return result;
+  }, [
+    flags,
+    search,
+    typeFilter,
+    categoryFilter,
+    statusFilter,
+    tagFilter,
+    sortBy,
+    sortDir,
+  ]);
 
   if (flagsError) {
     return (
@@ -392,6 +696,134 @@ export default function FlagsPage() {
   if (flagsLoading) {
     return <FlagsPageSkeleton />;
   }
+
+  return (
+    <FlagsContent
+      flags={flags}
+      envs={envs}
+      stateMap={stateMap}
+      currentEnvName={currentEnvName}
+      suggestedKey={suggestedKey}
+      search={search}
+      searchInput={searchInput}
+      setSearchInput={setSearchInput}
+      typeFilter={typeFilter}
+      setTypeFilter={setTypeFilter}
+      categoryFilter={categoryFilter}
+      setCategoryFilter={setCategoryFilter}
+      statusFilter={statusFilter}
+      setStatusFilter={setStatusFilter}
+      tagFilter={tagFilter}
+      setTagFilter={setTagFilter}
+      allTags={allTags}
+      tagOptions={tagOptions}
+      sortBy={sortBy}
+      sortDir={sortDir}
+      handleSort={handleSort}
+      showCreate={showCreate}
+      setShowCreate={setShowCreate}
+      newFlag={newFlag}
+      setNewFlag={setNewFlag}
+      handleTypeChange={handleTypeChange}
+      handleCreate={handleCreate}
+      createFlag={createFlag}
+      fieldErrors={fieldErrors}
+      setFieldErrors={setFieldErrors}
+      deleting={deleting}
+      setDeleting={setDeleting}
+      toggling={toggling}
+      handleQuickToggle={handleQuickToggle}
+      handleDelete={handleDelete}
+      deleteFlag={deleteFlag}
+      filtered={filtered}
+      refetchFlags={refetchFlags}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FlagsContent — pure presentational component (no data hooks)
+// ---------------------------------------------------------------------------
+function FlagsContent({
+  flags,
+  envs,
+  stateMap,
+  currentEnvName,
+  suggestedKey,
+  search,
+  searchInput,
+  setSearchInput,
+  typeFilter,
+  setTypeFilter,
+  categoryFilter,
+  setCategoryFilter,
+  statusFilter,
+  setStatusFilter,
+  tagFilter,
+  setTagFilter,
+  allTags,
+  tagOptions,
+  sortBy,
+  sortDir,
+  handleSort,
+  showCreate,
+  setShowCreate,
+  newFlag,
+  setNewFlag,
+  handleTypeChange,
+  handleCreate,
+  createFlag,
+  fieldErrors,
+  setFieldErrors,
+  deleting,
+  setDeleting,
+  toggling,
+  handleQuickToggle,
+  handleDelete,
+  deleteFlag,
+  filtered,
+  refetchFlags,
+}: {
+  flags: any[] | undefined;
+  envs: any[] | undefined;
+  stateMap: Map<string, any>;
+  currentEnvName: string | undefined;
+  suggestedKey: string;
+  search: string;
+  searchInput: string;
+  setSearchInput: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (v: string) => void;
+  statusFilter: string;
+  setStatusFilter: (v: string) => void;
+  tagFilter: string;
+  setTagFilter: (v: string) => void;
+  allTags: string[];
+  tagOptions: { value: string; label: string }[];
+  sortBy: SortKey;
+  sortDir: "asc" | "desc";
+  handleSort: (key: SortKey) => void;
+  showCreate: boolean;
+  setShowCreate: (v: boolean) => void;
+  newFlag: any;
+  setNewFlag: (v: any) => void;
+  handleTypeChange: (v: string) => void;
+  handleCreate: (e: React.FormEvent) => void;
+  createFlag: any;
+  fieldErrors: any;
+  setFieldErrors: (v: any) => void;
+  deleting: string | null;
+  setDeleting: (v: string | null) => void;
+  toggling: string | null;
+  handleQuickToggle: (key: string) => void;
+  handleDelete: (key: string) => void;
+  deleteFlag: any;
+  filtered: any[];
+  refetchFlags: () => void;
+}) {
+  const currentEnvId = useAppStore((s) => s.currentEnvId);
 
   return (
     <div className="space-y-4 sm:space-y-6">

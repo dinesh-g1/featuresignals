@@ -4,8 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { PageHeader, Card, CardHeader, Badge, LoadingSpinner } from "@/components/ui";
-import { ChevronRight } from "lucide-react";
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  Badge,
+  LoadingSpinner,
+  EmptyState,
+} from "@/components/ui";
+import { ChevronRight, FolderOpen } from "lucide-react";
 import type { Flag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -18,10 +25,13 @@ export default function FlagHealthPage() {
   useEffect(() => {
     if (!token || !projectId) return;
     setLoading(true);
-    api.listFlags(token, projectId).then((f) => {
-      setFlags(f ?? []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    api
+      .listFlags(token, projectId)
+      .then((f) => {
+        setFlags(f ?? []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [token, projectId]);
 
   const now = new Date();
@@ -70,12 +80,40 @@ export default function FlagHealthPage() {
 
   const healthScore = useMemo(() => {
     if (flags.length === 0) return 100;
-    const issues = staleFlags.length + expired.length + noExpiration.length * 0.5;
+    const issues =
+      staleFlags.length + expired.length + noExpiration.length * 0.5;
     return Math.max(0, Math.round(100 - (issues / flags.length) * 100));
   }, [flags, staleFlags, expired, noExpiration]);
 
-  const scoreColor = healthScore >= 80 ? "text-emerald-600" : healthScore >= 50 ? "text-amber-600" : "text-red-600";
-  const scoreBg = healthScore >= 80 ? "bg-emerald-50 ring-emerald-100" : healthScore >= 50 ? "bg-amber-50 ring-amber-100" : "bg-red-50 ring-red-100";
+  const scoreColor =
+    healthScore >= 80
+      ? "text-emerald-600"
+      : healthScore >= 50
+        ? "text-amber-600"
+        : "text-red-600";
+  const scoreBg =
+    healthScore >= 80
+      ? "bg-emerald-50 ring-emerald-100"
+      : healthScore >= 50
+        ? "bg-amber-50 ring-amber-100"
+        : "bg-red-50 ring-red-100";
+
+  if (!projectId) {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          title="Flag Health"
+          description="Monitor technical debt and flag hygiene"
+        />
+        <EmptyState
+          icon={FolderOpen}
+          title="No project selected"
+          description="Select a project using the context bar above to view your flag health metrics."
+          className="py-16"
+        />
+      </div>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner fullPage />;
@@ -89,51 +127,117 @@ export default function FlagHealthPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6">
-        <div className={cn("rounded-xl border border-slate-200 bg-white p-4 text-center ring-1 sm:p-6", scoreBg)}>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Health Score</p>
-          <p className={cn("mt-2 text-3xl font-bold sm:text-5xl", scoreColor)}>{healthScore}</p>
+        <div
+          className={cn(
+            "rounded-xl border border-slate-200 bg-white p-4 text-center ring-1 sm:p-6",
+            scoreBg,
+          )}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Health Score
+          </p>
+          <p className={cn("mt-2 text-3xl font-bold sm:text-5xl", scoreColor)}>
+            {healthScore}
+          </p>
           <p className="mt-1 text-xs text-slate-500">out of 100</p>
         </div>
-        <HealthStatCard label="Total Flags" value={flags.length} color="indigo" />
-        <HealthStatCard label="Stale" value={staleFlags.length} color={staleFlags.length > 0 ? "amber" : "emerald"} />
-        <HealthStatCard label="Expired" value={expired.length} color={expired.length > 0 ? "red" : "emerald"} />
+        <HealthStatCard
+          label="Total Flags"
+          value={flags.length}
+          color="indigo"
+        />
+        <HealthStatCard
+          label="Stale"
+          value={staleFlags.length}
+          color={staleFlags.length > 0 ? "amber" : "emerald"}
+        />
+        <HealthStatCard
+          label="Expired"
+          value={expired.length}
+          color={expired.length > 0 ? "red" : "emerald"}
+        />
       </div>
 
       {expired.length > 0 && (
-        <HealthSection title="Expired Flags" subtitle="These flags have passed their expiration date and are being auto-disabled by the eval engine.">
+        <HealthSection
+          title="Expired Flags"
+          subtitle="These flags have passed their expiration date and are being auto-disabled by the eval engine."
+        >
           {expired.map((f) => (
-            <FlagRow key={f.id} flag={f} badge={`Expired ${new Date(f.expires_at!).toLocaleDateString()}`} variant="danger" />
+            <FlagRow
+              key={f.id}
+              flag={f}
+              badge={`Expired ${new Date(f.expires_at!).toLocaleDateString()}`}
+              variant="danger"
+            />
           ))}
         </HealthSection>
       )}
 
       {expiringSoon.length > 0 && (
-        <HealthSection title="Expiring Soon" subtitle={`These flags expire within the next ${EXPIRING_SOON_DAYS} days.`}>
+        <HealthSection
+          title="Expiring Soon"
+          subtitle={`These flags expire within the next ${EXPIRING_SOON_DAYS} days.`}
+        >
           {expiringSoon.map((f) => {
-            const daysLeft = Math.ceil((new Date(f.expires_at!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-            return <FlagRow key={f.id} flag={f} badge={`${daysLeft}d left`} variant="warning" />;
+            const daysLeft = Math.ceil(
+              (new Date(f.expires_at!).getTime() - now.getTime()) /
+                (1000 * 60 * 60 * 24),
+            );
+            return (
+              <FlagRow
+                key={f.id}
+                flag={f}
+                badge={`${daysLeft}d left`}
+                variant="warning"
+              />
+            );
           })}
         </HealthSection>
       )}
 
       {staleFlags.length > 0 && (
-        <HealthSection title="Stale Flags" subtitle="Not updated within their category threshold. Consider cleaning up.">
+        <HealthSection
+          title="Stale Flags"
+          subtitle="Not updated within their category threshold. Consider cleaning up."
+        >
           {staleFlags.map((f) => {
-            const age = Math.floor((now.getTime() - new Date(f.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-            return <FlagRow key={f.id} flag={f} badge={`${age}d old`} variant="default" />;
+            const age = Math.floor(
+              (now.getTime() - new Date(f.updated_at).getTime()) /
+                (1000 * 60 * 60 * 24),
+            );
+            return (
+              <FlagRow
+                key={f.id}
+                flag={f}
+                badge={`${age}d old`}
+                variant="default"
+              />
+            );
           })}
         </HealthSection>
       )}
 
       {noDescription.length > 0 && (
-        <HealthSection title="Missing Description" subtitle="Flags without descriptions are harder for the team to understand.">
+        <HealthSection
+          title="Missing Description"
+          subtitle="Flags without descriptions are harder for the team to understand."
+        >
           {noDescription.map((f) => (
-            <FlagRow key={f.id} flag={f} badge="No description" variant="default" />
+            <FlagRow
+              key={f.id}
+              flag={f}
+              badge="No description"
+              variant="default"
+            />
           ))}
         </HealthSection>
       )}
 
-      <HealthSection title="No Expiration Set" subtitle={`${noExpiration.length} of ${flags.length} flags have no expiration date. Consider adding one to prevent flag debt.`}>
+      <HealthSection
+        title="No Expiration Set"
+        subtitle={`${noExpiration.length} of ${flags.length} flags have no expiration date. Consider adding one to prevent flag debt.`}
+      >
         <div className="text-sm text-slate-500 px-4 py-4 sm:px-6">
           {noExpiration.length === 0
             ? "All flags have expiration dates set."
@@ -144,7 +248,15 @@ export default function FlagHealthPage() {
   );
 }
 
-function HealthStatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function HealthStatCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
   const colors: Record<string, string> = {
     indigo: "text-indigo-600",
     emerald: "text-emerald-600",
@@ -153,13 +265,30 @@ function HealthStatCard({ label, value, color }: { label: string; value: number;
   };
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 text-center transition-all hover:shadow-lg hover:border-slate-300 sm:p-6">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className={cn("mt-2 text-2xl font-bold sm:text-3xl", colors[color] || "text-slate-900")}>{value}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-2 text-2xl font-bold sm:text-3xl",
+          colors[color] || "text-slate-900",
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
 
-function HealthSection({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function HealthSection({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
   return (
     <Card className="hover:shadow-lg hover:border-slate-300">
       <CardHeader>
@@ -171,11 +300,24 @@ function HealthSection({ title, subtitle, children }: { title: string; subtitle:
   );
 }
 
-function FlagRow({ flag, badge, variant }: { flag: Flag; badge: string; variant: "danger" | "warning" | "default" }) {
+function FlagRow({
+  flag,
+  badge,
+  variant,
+}: {
+  flag: Flag;
+  badge: string;
+  variant: "danger" | "warning" | "default";
+}) {
   return (
-    <Link href={`/flags/${flag.key}`} className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6">
+    <Link
+      href={`/flags/${flag.key}`}
+      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6"
+    >
       <div className="min-w-0">
-        <p className="font-mono text-sm font-medium text-slate-900">{flag.key}</p>
+        <p className="font-mono text-sm font-medium text-slate-900">
+          {flag.key}
+        </p>
         <p className="text-xs text-slate-500 truncate">{flag.name}</p>
       </div>
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">

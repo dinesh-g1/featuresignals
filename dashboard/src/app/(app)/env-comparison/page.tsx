@@ -4,11 +4,22 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, CardHeader, Button, Badge, EmptyState } from "@/components/ui";
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  Button,
+  Badge,
+  EmptyState,
+} from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeftRight } from "lucide-react";
-import type { Environment, EnvComparisonItem, EnvComparisonResponse } from "@/lib/types";
+import { ArrowLeftRight, FolderOpen, Globe } from "lucide-react";
+import type {
+  Environment,
+  EnvComparisonItem,
+  EnvComparisonResponse,
+} from "@/lib/types";
 
 export default function EnvComparisonPage() {
   const token = useAppStore((s) => s.token);
@@ -16,31 +27,49 @@ export default function EnvComparisonPage() {
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [sourceEnv, setSourceEnv] = useState("");
   const [targetEnv, setTargetEnv] = useState("");
-  const [comparison, setComparison] = useState<EnvComparisonResponse | null>(null);
+  const [comparison, setComparison] = useState<EnvComparisonResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api.listEnvironments(token, projectId).then((e) => setEnvs(e ?? [])).catch(() => {});
+    api
+      .listEnvironments(token, projectId)
+      .then((e) => setEnvs(e ?? []))
+      .catch(() => {});
   }, [token, projectId]);
 
-  const sourceOptions = useMemo(() => [
-    { value: "", label: "Select source…" },
-    ...envs.map((e) => ({ value: e.id, label: e.name })),
-  ], [envs]);
+  const sourceOptions = useMemo(
+    () => [
+      { value: "", label: "Select source…" },
+      ...envs.map((e) => ({ value: e.id, label: e.name })),
+    ],
+    [envs],
+  );
 
-  const targetOptions = useMemo(() => [
-    { value: "", label: "Select target…" },
-    ...envs.filter((e) => e.id !== sourceEnv).map((e) => ({ value: e.id, label: e.name })),
-  ], [envs, sourceEnv]);
+  const targetOptions = useMemo(
+    () => [
+      { value: "", label: "Select target…" },
+      ...envs
+        .filter((e) => e.id !== sourceEnv)
+        .map((e) => ({ value: e.id, label: e.name })),
+    ],
+    [envs, sourceEnv],
+  );
 
   async function handleCompare() {
     if (!token || !projectId || !sourceEnv || !targetEnv) return;
     setLoading(true);
     try {
-      const result = await api.compareEnvironments(token, projectId, sourceEnv, targetEnv);
+      const result = await api.compareEnvironments(
+        token,
+        projectId,
+        sourceEnv,
+        targetEnv,
+      );
       setComparison(result);
       setSelected(new Set());
     } catch (err: unknown) {
@@ -89,6 +118,23 @@ export default function EnvComparisonPage() {
   const sourceName = envs.find((e) => e.id === sourceEnv)?.name || "Source";
   const targetName = envs.find((e) => e.id === targetEnv)?.name || "Target";
 
+  if (!projectId) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Environment Comparison"
+          description="Compare flag states between two environments and sync differences"
+        />
+        <EmptyState
+          icon={FolderOpen}
+          title="No project selected"
+          description="Select a project using the context bar above to compare environments."
+          className="py-16"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
@@ -100,7 +146,12 @@ export default function EnvComparisonPage() {
         <div className="flex-1">
           <Label>Source Environment</Label>
           <div className="mt-1">
-            <Select value={sourceEnv} onValueChange={setSourceEnv} options={sourceOptions} placeholder="Select source…" />
+            <Select
+              value={sourceEnv}
+              onValueChange={setSourceEnv}
+              options={sourceOptions}
+              placeholder="Select source…"
+            />
           </div>
         </div>
         <div className="hidden items-center pb-2 sm:flex">
@@ -109,10 +160,18 @@ export default function EnvComparisonPage() {
         <div className="flex-1">
           <Label>Target Environment</Label>
           <div className="mt-1">
-            <Select value={targetEnv} onValueChange={setTargetEnv} options={targetOptions} placeholder="Select target…" />
+            <Select
+              value={targetEnv}
+              onValueChange={setTargetEnv}
+              options={targetOptions}
+              placeholder="Select target…"
+            />
           </div>
         </div>
-        <Button onClick={handleCompare} disabled={!sourceEnv || !targetEnv || loading}>
+        <Button
+          onClick={handleCompare}
+          disabled={!sourceEnv || !targetEnv || loading}
+        >
           {loading ? "Comparing..." : "Compare"}
         </Button>
       </div>
@@ -121,16 +180,28 @@ export default function EnvComparisonPage() {
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <Card className="p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Flags</p>
-              <p className="mt-1 text-2xl font-bold text-slate-900">{comparison.total}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Total Flags
+              </p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">
+                {comparison.total}
+              </p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Differences</p>
-              <p className="mt-1 text-2xl font-bold text-amber-600">{comparison.diff_count}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Differences
+              </p>
+              <p className="mt-1 text-2xl font-bold text-amber-600">
+                {comparison.diff_count}
+              </p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Identical</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-600">{comparison.total - comparison.diff_count}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Identical
+              </p>
+              <p className="mt-1 text-2xl font-bold text-emerald-600">
+                {comparison.total - comparison.diff_count}
+              </p>
             </Card>
           </div>
 
@@ -145,12 +216,16 @@ export default function EnvComparisonPage() {
                     className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="text-sm font-medium text-slate-700">
-                    {selected.size > 0 ? `${selected.size} selected` : "Select flags to sync"}
+                    {selected.size > 0
+                      ? `${selected.size} selected`
+                      : "Select flags to sync"}
                   </span>
                 </div>
                 {selected.size > 0 && (
                   <Button size="sm" onClick={handleSync} disabled={syncing}>
-                    {syncing ? "Syncing..." : `Apply ${selected.size} Change${selected.size > 1 ? "s" : ""}`}
+                    {syncing
+                      ? "Syncing..."
+                      : `Apply ${selected.size} Change${selected.size > 1 ? "s" : ""}`}
                   </Button>
                 )}
               </div>
@@ -162,14 +237,21 @@ export default function EnvComparisonPage() {
                       <th className="px-4 py-3 sm:px-6">Flag</th>
                       <th className="px-4 py-3">{sourceName} Enabled</th>
                       <th className="px-4 py-3">{targetName} Enabled</th>
-                      <th className="hidden px-4 py-3 sm:table-cell">{sourceName} Rollout</th>
-                      <th className="hidden px-4 py-3 sm:table-cell">{targetName} Rollout</th>
+                      <th className="hidden px-4 py-3 sm:table-cell">
+                        {sourceName} Rollout
+                      </th>
+                      <th className="hidden px-4 py-3 sm:table-cell">
+                        {targetName} Rollout
+                      </th>
                       <th className="px-4 py-3">Differences</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {(comparison.diffs ?? []).map((d) => (
-                      <tr key={d.flag_key} className="transition-colors hover:bg-indigo-50/30">
+                      <tr
+                        key={d.flag_key}
+                        className="transition-colors hover:bg-indigo-50/30"
+                      >
                         <td className="px-4 py-3 sm:px-6">
                           <input
                             type="checkbox"
@@ -178,23 +260,39 @@ export default function EnvComparisonPage() {
                             className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                           />
                         </td>
-                        <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">{d.flag_key}</td>
+                        <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
+                          {d.flag_key}
+                        </td>
                         <td className="px-4 py-3">
                           {d.source_enabled != null && (
-                            <span className={`inline-block h-2 w-2 rounded-full ${d.source_enabled ? "bg-emerald-500" : "bg-slate-300"}`} />
+                            <span
+                              className={`inline-block h-2 w-2 rounded-full ${d.source_enabled ? "bg-emerald-500" : "bg-slate-300"}`}
+                            />
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {d.target_enabled != null && (
-                            <span className={`inline-block h-2 w-2 rounded-full ${d.target_enabled ? "bg-emerald-500" : "bg-slate-300"}`} />
+                            <span
+                              className={`inline-block h-2 w-2 rounded-full ${d.target_enabled ? "bg-emerald-500" : "bg-slate-300"}`}
+                            />
                           )}
                         </td>
-                        <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">{d.source_rollout != null ? `${(d.source_rollout / 100).toFixed(0)}%` : "—"}</td>
-                        <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">{d.target_rollout != null ? `${(d.target_rollout / 100).toFixed(0)}%` : "—"}</td>
+                        <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
+                          {d.source_rollout != null
+                            ? `${(d.source_rollout / 100).toFixed(0)}%`
+                            : "—"}
+                        </td>
+                        <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
+                          {d.target_rollout != null
+                            ? `${(d.target_rollout / 100).toFixed(0)}%`
+                            : "—"}
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {d.differences?.map((diff: string) => (
-                              <Badge key={diff} variant="warning">{diff}</Badge>
+                              <Badge key={diff} variant="warning">
+                                {diff}
+                              </Badge>
                             ))}
                           </div>
                         </td>
@@ -208,7 +306,9 @@ export default function EnvComparisonPage() {
 
           {(comparison.diffs ?? []).length === 0 && (
             <Card className="px-6 py-12 text-center">
-              <p className="text-sm font-medium text-emerald-600">All flags are identical between these environments</p>
+              <p className="text-sm font-medium text-emerald-600">
+                All flags are identical between these environments
+              </p>
             </Card>
           )}
         </>

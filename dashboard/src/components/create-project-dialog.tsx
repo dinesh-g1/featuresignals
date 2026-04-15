@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { api } from "@/lib/api";
+import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import type { Project } from "@/lib/types";
 
@@ -46,6 +47,7 @@ export function CreateProjectDialog({
     setFieldError("");
     try {
       const created = await api.createProject(token, { name: trimmed });
+      EventBus.dispatch("projects:changed");
       setName("");
       setError("");
       onCreated(created);

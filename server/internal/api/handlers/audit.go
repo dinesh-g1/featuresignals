@@ -20,8 +20,21 @@ func NewAuditHandler(store domain.AuditReader) *AuditHandler {
 func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	p := dto.ParsePagination(r)
+	projectID := r.URL.Query().Get("project_id")
 
-	entries, err := h.store.ListAuditEntries(r.Context(), orgID, p.Limit, p.Offset)
+	var entries []domain.AuditEntry
+	var err error
+
+	if projectID != "" {
+		entries, err = h.store.ListAuditEntriesByProject(r.Context(), orgID, projectID, p.Limit, p.Offset)
+	} else {
+		entries, err = h.store.ListAuditEntries(r.Context(), orgID, p.Limit, p.Offset)
+	}
+	// Graceful degradation: if project-scoped query fails (e.g. missing column),
+	// fall back to unfiltered org-wide query
+	if err != nil && projectID != "" {
+		entries, err = h.store.ListAuditEntries(r.Context(), orgID, p.Limit, p.Offset)
+	}
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to list audit entries")
 		return

@@ -17,6 +17,10 @@ import { Select } from "@/components/ui/select";
 import { Users, Trash2, ChevronDown } from "lucide-react";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { DOCS_LINKS } from "@/components/docs-link";
+import {
+  PrerequisiteGate,
+  usePrerequisites,
+} from "@/components/prerequisite-gate";
 import type { Segment, Condition } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -120,17 +124,80 @@ export default function SegmentsPage() {
     }
   }
 
-  if (!projectId) {
+  const {
+    state: prereqState,
+    loading: prereqLoading,
+    refresh: refreshPrereqs,
+  } = usePrerequisites();
+
+  if (prereqLoading) {
     return (
-      <EmptyState
-        icon={Users}
-        title="No project selected"
-        description="Create a project using the sidebar to start managing segments."
-        className="py-24"
-      />
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+      </div>
     );
   }
 
+  return (
+    <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
+      <SegmentsContent
+        segments={segments}
+        showCreate={showCreate}
+        setShowCreate={setShowCreate}
+        form={form}
+        setForm={setForm}
+        fieldErrors={fieldErrors}
+        setFieldErrors={setFieldErrors}
+        deleting={deleting}
+        setDeleting={setDeleting}
+        expanded={expanded}
+        setExpanded={setExpanded}
+        handleCreate={handleCreate}
+        handleDelete={handleDelete}
+        handleSaveRules={handleSaveRules}
+        reload={reload}
+      />
+    </PrerequisiteGate>
+  );
+}
+
+function SegmentsContent({
+  segments,
+  showCreate,
+  setShowCreate,
+  form,
+  setForm,
+  fieldErrors,
+  setFieldErrors,
+  deleting,
+  setDeleting,
+  expanded,
+  setExpanded,
+  handleCreate,
+  handleDelete,
+  handleSaveRules,
+  reload,
+}: {
+  segments: Segment[];
+  showCreate: boolean;
+  setShowCreate: (v: boolean) => void;
+  form: { key: string; name: string; description: string; match_type: string };
+  setForm: (v: any) => void;
+  fieldErrors: { key?: string; name?: string };
+  setFieldErrors: (v: any) => void;
+  deleting: string | null;
+  setDeleting: (v: string | null) => void;
+  expanded: string | null;
+  setExpanded: (v: string | null) => void;
+  handleCreate: (e: React.FormEvent) => void;
+  handleDelete: (key: string) => void;
+  handleSaveRules: (
+    segKey: string,
+    rules: Condition[],
+    matchType: string,
+  ) => void;
+  reload: () => void;
+}) {
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
@@ -318,9 +385,9 @@ export default function SegmentsPage() {
                       <SegmentRulesEditor
                         rules={seg.rules ?? []}
                         matchType={seg.match_type}
-                        onSave={(rules, matchType) =>
-                          handleSaveRules(seg.key, rules, matchType)
-                        }
+                        onSave={async (rules, matchType) => {
+                          await handleSaveRules(seg.key, rules, matchType);
+                        }}
                       />
                     </div>
                   )}

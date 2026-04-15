@@ -34,10 +34,10 @@ type UpdateSegmentRequest struct {
 }
 
 type CreateSegmentRequest struct {
-	Key         string            `json:"key"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	MatchType   string            `json:"match_type"`
+	Key         string             `json:"key"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	MatchType   string             `json:"match_type"`
 	Rules       []domain.Condition `json:"rules"`
 }
 
@@ -94,7 +94,7 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(seg)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
-		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		OrgID: orgID, ProjectID: &projectID, ActorID: &userID, ActorType: "user",
 		Action: "segment.created", ResourceType: "segment", ResourceID: &seg.ID,
 		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
 	})
@@ -185,7 +185,7 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	afterState, _ := json.Marshal(seg)
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
-		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		OrgID: orgID, ProjectID: &projectID, ActorID: &userID, ActorType: "user",
 		Action: "segment.updated", ResourceType: "segment", ResourceID: &seg.ID,
 		BeforeState: beforeState, AfterState: afterState,
 		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
@@ -219,7 +219,7 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	userID := middleware.GetUserID(r.Context())
 	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
-		OrgID: orgID, ActorID: &userID, ActorType: "user",
+		OrgID: orgID, ProjectID: &projectID, ActorID: &userID, ActorType: "user",
 		Action: "segment.deleted", ResourceType: "segment", ResourceID: &seg.ID,
 		BeforeState: beforeState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
 	})

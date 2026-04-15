@@ -11,9 +11,7 @@ import {
   Home,
   Flag,
   Users,
-  ArrowLeftRight,
-  UserSearch,
-  UsersRound,
+  Globe,
   BarChart3,
   Heart,
   PieChart,
@@ -27,6 +25,9 @@ import {
   HelpCircle,
   CreditCard,
   Shield,
+  ArrowLeftRight,
+  UserSearch,
+  UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CollapsibleNavGroup } from "@/components/collapsible-nav-group";
@@ -45,25 +46,28 @@ interface NavGroup {
   items: NavItem[];
 }
 
+// Professional grouping based on Linear/Vercel/Stripe patterns
+// Grouped by FUNCTION, not abstract concepts
 const navGroups: NavGroup[] = [
   {
-    label: "Core",
-    storageKey: "fs:nav-core",
+    label: "Workspace",
+    storageKey: "fs:nav-workspace",
     defaultExpanded: true,
     items: [
       { href: "/dashboard", label: "Overview", icon: Home },
       { href: "/flags", label: "Flags", icon: Flag },
       { href: "/segments", label: "Segments", icon: Users },
+      { href: "/environments", label: "Environments", icon: Globe },
     ],
   },
   {
-    label: "Analyze",
-    storageKey: "fs:nav-analyze",
+    label: "Insights",
+    storageKey: "fs:nav-insights",
     defaultExpanded: true,
     items: [
-      { href: "/usage-insights", label: "Usage Insights", icon: BarChart3 },
-      { href: "/metrics", label: "Eval Metrics", icon: PieChart },
-      { href: "/health", label: "Flag Health", icon: Heart },
+      { href: "/usage-insights", label: "Usage", icon: BarChart3 },
+      { href: "/health", label: "Health", icon: Heart },
+      { href: "/metrics", label: "Metrics", icon: PieChart },
     ],
   },
   {
@@ -73,7 +77,7 @@ const navGroups: NavGroup[] = [
     items: [
       {
         href: "/env-comparison",
-        label: "Env Comparison",
+        label: "Env Compare",
         icon: ArrowLeftRight,
       },
       {
@@ -100,13 +104,13 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-// Top-level standalone items (not in collapsible groups)
+// Top-level standalone items
 const topLevelItems: NavItem[] = [
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings/sso", label: "SSO", icon: Shield, gatedFeature: "sso" },
 ];
 
-// Small component that reads pathname internally so SidebarContent doesn't re-render on nav
+// Small component that reads pathname internally
 function TopLevelNavItems() {
   const pathname = usePathname();
   const { isEnabled, minPlanFor } = useFeatures();
@@ -218,7 +222,7 @@ function SidebarContent() {
   const logout = useAppStore((s) => s.logout);
   const { isEnabled, minPlanFor } = useFeatures();
 
-  // Close mobile sidebar when navigating to a new page
+  // Close mobile sidebar when navigating
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => closeSidebar(), 50);
@@ -249,7 +253,7 @@ function SidebarContent() {
         className="flex-1 overflow-y-auto px-2.5 py-3"
         aria-label="Main navigation"
       >
-        {/* Collapsible groups — each group reads pathname internally via usePathname() */}
+        {/* Collapsible groups */}
         {navGroups.map((group) => (
           <CollapsibleNavGroup
             key={group.label}
@@ -263,13 +267,13 @@ function SidebarContent() {
         {/* Divider */}
         <div className="my-3 border-t border-white/[0.06]" />
 
-        {/* Top-level standalone items (Billing, SSO) */}
+        {/* Top-level standalone */}
         <TopLevelNavItems />
 
         {/* Divider */}
         <div className="my-3 border-t border-white/[0.06]" />
 
-        {/* Settings */}
+        {/* Settings - single entry point */}
         <SettingsNavItem />
       </nav>
 
