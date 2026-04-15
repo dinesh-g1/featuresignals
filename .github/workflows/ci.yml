@@ -13,6 +13,16 @@ on:
         description: "Skip dependency security scan"
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      skip_sdk_tests:
+        description: "Skip SDK tests"
+        type: boolean
+        default: false
+      skip_security_scan:
+        description: "Skip dependency security scan"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
