@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 jobs:
-  # ── Change Detection ─────────────────────────────────────────────────────
+  # -- Change Detection -----------------------------------------------------
   detect-changes:
     name: "Detect Changes"
     runs-on: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
             echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
           done
 
-  # ── Server ─────────────────────────────────────────────────────────────────
+  # -- Server -----------------------------------------------------------------
   server-tests:
     name: "Server: Test & Coverage"
     needs: detect-changes
@@ -152,7 +152,7 @@ jobs:
         working-directory: server
         run: go vet ./...
 
-  # ── Dashboard ──────────────────────────────────────────────────────────────
+  # -- Dashboard --------------------------------------------------------------
   dashboard-tests:
     name: "Dashboard: Test & Build"
     needs: detect-changes
@@ -178,7 +178,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
 
-  # ── Ops Portal ─────────────────────────────────────────────────────────────
+  # -- Ops Portal -------------------------------------------------------------
   ops-tests:
     name: "Ops Portal: Test & Build"
     needs: detect-changes
@@ -204,7 +204,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
 
-  # ── Documentation ──────────────────────────────────────────────────────────
+  # -- Documentation ----------------------------------------------------------
   docs-build:
     name: "Docs: Build Verification"
     needs: detect-changes
@@ -222,7 +222,7 @@ jobs:
         working-directory: docs
         run: npm install && npm run build
 
-  # ── SDK Tests ──────────────────────────────────────────────────────────────
+  # -- SDK Tests --------------------------------------------------------------
   go-sdk-tests:
     name: "SDK: Go Tests"
     needs: detect-changes
@@ -309,7 +309,7 @@ jobs:
         working-directory: sdks/java
         run: mvn -B test
 
-  # ── Security ──────────────────────────────────────────────────────────────
+  # -- Security --------------------------------------------------------------
   security-scan:
     name: "Security: Dependency Vulnerability Scan"
     needs: detect-changes
@@ -379,7 +379,7 @@ jobs:
         working-directory: sdks/node
         run: npm install && npm audit --audit-level=high
 
-  # ── CI Gate ────────────────────────────────────────────────────────────────
+  # -- CI Gate ----------------------------------------------------------------
   ci-gate:
     name: "CI Gate"
     if: always()
