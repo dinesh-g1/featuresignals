@@ -61,7 +61,7 @@ func (s *Store) CreateOrganization(ctx context.Context, org *domain.Organization
 	if org.DataRegion == "" {
 		org.DataRegion = domain.RegionUS
 	}
-	defaults := domain.PlanDefaults[org.Plan]
+	defaults := domain.PlanDefaults()[org.Plan]
 	err := s.pool.QueryRow(ctx,
 		`INSERT INTO organizations (name, slug, plan, plan_seats_limit, plan_projects_limit, plan_environments_limit, trial_expires_at, data_region)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at, updated_at`,
@@ -1654,7 +1654,7 @@ func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince
 }
 
 func (s *Store) DowngradeOrgToFree(ctx context.Context, orgID string) error {
-	defaults := domain.PlanDefaults[domain.PlanFree]
+	defaults := domain.PlanDefaults()[domain.PlanFree]
 	_, err := s.pool.Exec(ctx,
 		`UPDATE organizations SET
 		   plan = $1, trial_expires_at = NULL,

@@ -31,7 +31,7 @@ func (r *mockOrgResolver) ResolveOrgIDByEnvID(ctx context.Context, envID string)
 
 func TestNotifyFlagChange_EnqueuesEvent(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	d := NewDispatcher(&notifierMockStore{}, logger)
+	d := NewDispatcher(&notifierMockStore{}, logger, nil)
 	resolver := &mockOrgResolver{orgID: "org-123"}
 	n := NewNotifier(d, resolver)
 
@@ -58,7 +58,7 @@ func TestNotifyFlagChange_EnqueuesEvent(t *testing.T) {
 
 func TestNotifyFlagChange_ResolverFailure(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	d := NewDispatcher(&notifierMockStore{}, logger)
+	d := NewDispatcher(&notifierMockStore{}, logger, nil)
 	resolver := &mockOrgResolver{err: fmt.Errorf("not found")}
 	n := NewNotifier(d, resolver)
 
@@ -79,7 +79,7 @@ func TestNotifyFlagChange_ResolverFailure(t *testing.T) {
 
 func TestNotifyFlagChange_NilResolver(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	d := NewDispatcher(&notifierMockStore{}, logger)
+	d := NewDispatcher(&notifierMockStore{}, logger, nil)
 	n := NewNotifier(d, nil)
 
 	n.NotifyFlagChange(context.Background(), "env-1", "flag-1", "deleted")

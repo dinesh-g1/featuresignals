@@ -10,7 +10,7 @@ import (
 
 // RegionPricingResponse is the public API response for per-region pricing.
 type RegionPricingResponse struct {
-	Regions    map[string]RegionCosts `json:"region_costs"`
+	Regions    map[string]RegionCosts      `json:"region_costs"`
 	Breakdowns map[string]PricingBreakdown `json:"breakdowns"`
 }
 
@@ -24,7 +24,7 @@ func HandleRegionPricing(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	proPlan, ok := domain.Pricing.Plans[domain.PlanPro]
+	proPlan, ok := domain.Pricing().Plans[domain.PlanPro]
 	actualPrice := 999.0
 	if ok && proPlan.Price != nil {
 		actualPrice = *proPlan.Price

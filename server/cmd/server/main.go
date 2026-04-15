@@ -101,7 +101,6 @@ func main() {
 		}
 	}
 	otelInstruments := observability.NewInstruments()
-	_ = otelInstruments // used by handlers via closure; full wiring in router TODO
 
 	// Database (with optional pgx tracing via otelpgx)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -156,7 +155,7 @@ func main() {
 	evalCache := cache.NewCache(store, logger, sseServer)
 
 	// Webhook dispatcher
-	whDispatcher := webhook.NewDispatcher(store, logger)
+	whDispatcher := webhook.NewDispatcher(store, logger, otelInstruments)
 	whCtx, whCancel := context.WithCancel(context.Background())
 	defer whCancel()
 	whDispatcher.Start(whCtx)
@@ -271,7 +270,7 @@ func main() {
 	// Router
 	regionsEnabled := !cfg.IsOnPrem()
 
-	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, api.BillingConfig{
+	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,

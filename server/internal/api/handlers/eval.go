@@ -36,6 +36,11 @@ type MetricsRecorder interface {
 	Record(flagKey, envID, reason string)
 }
 
+// OTELRecorder records evaluation metrics via OTEL.
+type OTELRecorder interface {
+	RecordEval(ctx context.Context, flagKey, reason string, durationMs float64)
+}
+
 // ValueRecorder optionally tracks evaluated values for insights.
 type ValueRecorder interface {
 	RecordValue(flagKey, envID string, value interface{})
@@ -67,9 +72,10 @@ type EvalHandler struct {
 	sseServer StreamServer
 	logger    *slog.Logger
 	metrics   MetricsRecorder
+	otel      OTELRecorder
 }
 
-func NewEvalHandler(store evalHandlerStore, cache RulesetCache, engine Evaluator, sseServer StreamServer, logger *slog.Logger, mc MetricsRecorder) *EvalHandler {
+func NewEvalHandler(store evalHandlerStore, cache RulesetCache, engine Evaluator, sseServer StreamServer, logger *slog.Logger, mc MetricsRecorder, otel OTELRecorder) *EvalHandler {
 	return &EvalHandler{
 		store:     store,
 		cache:     cache,
@@ -77,6 +83,7 @@ func NewEvalHandler(store evalHandlerStore, cache RulesetCache, engine Evaluator
 		sseServer: sseServer,
 		logger:    logger,
 		metrics:   mc,
+		otel:      otel,
 	}
 }
 
@@ -157,6 +164,9 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 			vr.RecordValue(req.FlagKey, envID, result.Value)
 		}
 	}
+	if h.otel != nil {
+		h.otel.RecordEval(r.Context(), req.FlagKey, result.Reason, 0)
+	}
 
 	httputil.JSON(w, http.StatusOK, result)
 }
@@ -194,6 +204,9 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 				vr.RecordValue(key, envID, result.Value)
 			}
 		}
+		if h.otel != nil {
+			h.otel.RecordEval(r.Context(), key, result.Reason, 0)
+		}
 	}
 
 	httputil.JSON(w, http.StatusOK, results)
@@ -221,7 +234,7 @@ func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 
 	// Extract context from query params
 	ctx := domain.EvalContext{
-		Key: r.URL.Query().Get("key"),
+		Key:        r.URL.Query().Get("key"),
 		Attributes: make(map[string]interface{}),
 	}
 	if ctx.Key == "" {
@@ -238,6 +251,9 @@ func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 			if vr, ok := h.metrics.(ValueRecorder); ok {
 				vr.RecordValue(k, envID, v.Value)
 			}
+		}
+		if h.otel != nil {
+			h.otel.RecordEval(r.Context(), k, v.Reason, 0)
 		}
 	}
 

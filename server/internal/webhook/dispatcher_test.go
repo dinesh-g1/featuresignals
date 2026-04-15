@@ -59,7 +59,7 @@ func TestDispatcher_DeliverSuccess(t *testing.T) {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	d := NewDispatcher(store, logger)
+	d := NewDispatcher(store, logger, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -116,7 +116,7 @@ func TestDispatcher_RetryOn500(t *testing.T) {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	d := NewDispatcher(store, logger)
+	d := NewDispatcher(store, logger, nil)
 	d.maxRetries = 3
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -148,7 +148,7 @@ func TestDispatcher_EventFilter(t *testing.T) {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	d := NewDispatcher(store, logger)
+	d := NewDispatcher(store, logger, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -172,7 +172,7 @@ func TestDispatcher_DisabledWebhook(t *testing.T) {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	d := NewDispatcher(store, logger)
+	d := NewDispatcher(store, logger, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -204,7 +204,7 @@ func TestDispatcher_NoRetryOn4xx(t *testing.T) {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	d := NewDispatcher(store, logger)
+	d := NewDispatcher(store, logger, nil)
 	d.maxRetries = 3
 
 	ctx, cancel := context.WithCancel(context.Background())

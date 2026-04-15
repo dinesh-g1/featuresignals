@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"sync"
 	"time"
 )
 
@@ -89,7 +90,7 @@ func GetPlanDefaults() map[string]PlanLimits {
 		PlanPro:        {Seats: -1, Projects: -1, Environments: -1},
 		PlanEnterprise: {Seats: -1, Projects: -1, Environments: -1},
 	}
-	if p, ok := Pricing.Plans[PlanFree]; ok {
+	if p, ok := Pricing().Plans[PlanFree]; ok {
 		defaults[PlanFree] = PlanLimits{
 			Seats:        p.Limits.Seats,
 			Projects:     p.Limits.Projects,
@@ -101,7 +102,17 @@ func GetPlanDefaults() map[string]PlanLimits {
 	return defaults
 }
 
-var PlanDefaults = GetPlanDefaults()
+// planDefaults caches the plan defaults singleton. Loaded on first access.
+var planDefaults map[string]PlanLimits
+var planDefaultsOnce sync.Once
+
+// PlanDefaults returns the singleton plan defaults. Computed once on first access.
+func PlanDefaults() map[string]PlanLimits {
+	planDefaultsOnce.Do(func() {
+		planDefaults = GetPlanDefaults()
+	})
+	return planDefaults
+}
 
 // DunningGraceDays is how long a subscription can remain past_due before
 // the system automatically downgrades the org to the Free plan. Stripe

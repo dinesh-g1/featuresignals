@@ -63,10 +63,16 @@ type Dispatcher struct {
 	work       chan deliveryWork
 	maxRetries int
 	workers    int
+	recorder   OTELMetricsRecorder
+}
+
+// OTELMetricsRecorder records webhook metrics via OTEL.
+type OTELMetricsRecorder interface {
+	RecordWebhookDelivery(ctx context.Context, success bool, durationMs float64)
 }
 
 // NewDispatcher creates a dispatcher that processes events on a background goroutine.
-func NewDispatcher(store Store, logger *slog.Logger) *Dispatcher {
+func NewDispatcher(store Store, logger *slog.Logger, recorder OTELMetricsRecorder) *Dispatcher {
 	return &Dispatcher{
 		store:      store,
 		client:     &http.Client{Timeout: 10 * time.Second},
@@ -75,6 +81,7 @@ func NewDispatcher(store Store, logger *slog.Logger) *Dispatcher {
 		work:       make(chan deliveryWork, 256),
 		maxRetries: 3,
 		workers:    defaultWorkers,
+		recorder:   recorder,
 	}
 }
 
@@ -165,6 +172,7 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 	)
 	defer span.End()
 
+	start := time.Now()
 	payload, _ := json.Marshal(evt)
 
 	var lastStatus int
@@ -226,6 +234,11 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 		attribute.Bool("success", success),
 		attribute.Int("response_status", lastStatus),
 	)
+
+	if d.recorder != nil {
+		durationMs := float64(time.Since(start).Milliseconds())
+		d.recorder.RecordWebhookDelivery(ctx, success, durationMs)
+	}
 
 	delivery := &domain.WebhookDelivery{
 		WebhookID:      wh.ID,

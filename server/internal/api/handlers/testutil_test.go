@@ -1122,7 +1122,7 @@ func (m *mockStore) DowngradeOrgToFree(ctx context.Context, orgID string) error 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if org, ok := m.orgs[orgID]; ok {
-		defaults := domain.PlanDefaults[domain.PlanFree]
+		defaults := domain.PlanDefaults()[domain.PlanFree]
 		org.Plan = domain.PlanFree
 		org.TrialExpiresAt = nil
 		org.PlanSeatsLimit = defaults.Seats

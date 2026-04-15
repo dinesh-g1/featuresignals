@@ -5,9 +5,11 @@ import (
 	"regexp"
 )
 
-var flagKeyRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,127}$`)
+// FlagKeyRe validates flag keys: lowercase alphanumeric, hyphens, underscores (max 128 chars).
+var FlagKeyRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,127}$`)
 
-var validFlagTypes = map[FlagType]bool{
+// ValidFlagTypes is the set of recognized flag types.
+var ValidFlagTypes = map[FlagType]bool{
 	FlagTypeBoolean: true,
 	FlagTypeString:  true,
 	FlagTypeNumber:  true,
@@ -17,7 +19,7 @@ var validFlagTypes = map[FlagType]bool{
 
 // IsValid returns true if ft is a recognized flag type.
 func (ft FlagType) IsValid() bool {
-	return validFlagTypes[ft]
+	return ValidFlagTypes[ft]
 }
 
 var validFlagCategories = map[FlagCategory]bool{
@@ -72,7 +74,7 @@ func (f *Flag) Validate() error {
 	if f.Key == "" {
 		return NewValidationError("key", "is required")
 	}
-	if !flagKeyRe.MatchString(f.Key) {
+	if !FlagKeyRe.MatchString(f.Key) {
 		return NewValidationError("key", "must match pattern: lowercase alphanumeric, hyphens, underscores (max 128 chars)")
 	}
 	if f.Name == "" {
@@ -142,7 +144,7 @@ func (s *Segment) Validate() error {
 	if s.Key == "" {
 		return NewValidationError("key", "is required")
 	}
-	if !flagKeyRe.MatchString(s.Key) {
+	if !FlagKeyRe.MatchString(s.Key) {
 		return NewValidationError("key", "must match pattern: lowercase alphanumeric, hyphens, underscores (max 128 chars)")
 	}
 	if s.Name == "" {

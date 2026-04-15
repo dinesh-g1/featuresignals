@@ -4,33 +4,24 @@ import (
 	"net"
 	"net/mail"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/featuresignals/server/internal/domain"
 )
 
-var flagKeyRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,127}$`)
-
-var validFlagTypes = map[domain.FlagType]bool{
-	domain.FlagTypeBoolean: true,
-	domain.FlagTypeString:  true,
-	domain.FlagTypeNumber:  true,
-	domain.FlagTypeJSON:    true,
-	domain.FlagTypeAB:      true,
-}
-
+// Validation helpers reuse regex and maps from the domain package to maintain
+// a single source of truth.
 func validateEmail(s string) bool {
 	_, err := mail.ParseAddress(s)
 	return err == nil
 }
 
 func validateFlagKey(s string) bool {
-	return flagKeyRe.MatchString(s)
+	return domain.FlagKeyRe.MatchString(s)
 }
 
 func validateFlagType(s string) bool {
-	return validFlagTypes[domain.FlagType(s)]
+	return domain.ValidFlagTypes[domain.FlagType(s)]
 }
 
 func validateStringLength(s string, max int) bool {

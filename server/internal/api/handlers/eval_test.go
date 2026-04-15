@@ -23,7 +23,7 @@ func newTestEvalHandler(store domain.Store) *EvalHandler {
 	c := cache.NewCache(store, logger, nil)
 	engine := eval.NewEngine()
 	sseServer := sse.NewServer(logger)
-	return NewEvalHandler(store, c, engine, sseServer, logger, nil)
+	return NewEvalHandler(store, c, engine, sseServer, logger, nil, nil)
 }
 
 // setupEvalFixtures creates a complete environment with a flag, API key, and environment for testing eval endpoints.

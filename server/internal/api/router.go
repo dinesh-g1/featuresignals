@@ -17,6 +17,7 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/pricing"
 	"github.com/featuresignals/server/internal/status"
@@ -40,6 +41,7 @@ func NewRouter(
 	sseServer handlers.StreamServer,
 	logger *slog.Logger,
 	metricsCollector *metrics.Collector,
+	otelInstruments *observability.Instruments,
 	billing BillingConfig,
 	otpSender domain.OTPSender,
 	appBaseURL string,
@@ -120,7 +122,7 @@ func NewRouter(
 	teamH := handlers.NewTeamHandler(store, jwtMgr, emitter, lifecycle, dashboardURL)
 	webhookH := handlers.NewWebhookHandler(store)
 	approvalH := handlers.NewApprovalHandler(store)
-	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector)
+	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
@@ -175,7 +177,7 @@ func NewRouter(
 
 		// Public pricing endpoint — single source of truth for all clients
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
-			httputil.JSON(w, http.StatusOK, domain.Pricing)
+			httputil.JSON(w, http.StatusOK, domain.Pricing())
 		})
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing/regions", pricing.HandleRegionPricing)
 

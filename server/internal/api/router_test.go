@@ -23,6 +23,7 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/metrics"
+	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
@@ -379,6 +380,7 @@ func newTestRouter(t *testing.T) http.Handler {
 	evalCache := cache.NewCache(store, logger, nil)
 	sseServer := sse.NewServer(logger)
 	metricsCollector := metrics.NewCollector()
+	otelInstruments := observability.NewInstruments()
 
 	statusH := status.NewHandler(noopHealthChecker{}, noopPoolStats{}, "us", store, evalCache, sseServer)
 
@@ -390,6 +392,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		sseServer,
 		logger,
 		metricsCollector,
+		otelInstruments,
 		api.BillingConfig{Registry: payment.NewRegistry()},
 		noopOTPEmail{},
 		"http://localhost:8080",

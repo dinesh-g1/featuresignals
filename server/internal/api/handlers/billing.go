@@ -242,7 +242,7 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 		Processed:       true,
 	})
 
-	proLimits := domain.PlanDefaults[domain.PlanPro]
+	proLimits := domain.PlanDefaults()[domain.PlanPro]
 	if err := h.store.UpdateOrgPlan(ctx, org.ID, domain.PlanPro, proLimits); err != nil {
 		h.logger.Error("failed to update org plan after payu payment", "error", err, "org_id", org.ID)
 		http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=failed", http.StatusSeeOther)
@@ -378,7 +378,7 @@ func (h *BillingHandler) handleStripeCheckoutCompleted(ctx context.Context, even
 		Processed:       true,
 	})
 
-	proLimits := domain.PlanDefaults[domain.PlanPro]
+	proLimits := domain.PlanDefaults()[domain.PlanPro]
 	if err := h.store.UpdateOrgPlan(ctx, orgID, domain.PlanPro, proLimits); err != nil {
 		h.logger.Error("failed to update org plan after stripe checkout", "error", err, "org_id", orgID)
 		return
@@ -474,7 +474,7 @@ func (h *BillingHandler) handleStripeSubscriptionCanceled(ctx context.Context, e
 	sub.UpdatedAt = time.Now()
 	_ = h.store.UpsertSubscription(ctx, sub)
 
-	freeLimits := domain.PlanDefaults[domain.PlanFree]
+	freeLimits := domain.PlanDefaults()[domain.PlanFree]
 	_ = h.store.UpdateOrgPlan(ctx, sub.OrgID, domain.PlanFree, freeLimits)
 
 	_ = h.store.CreatePaymentEvent(ctx, &domain.PaymentEvent{
@@ -594,7 +594,7 @@ func (h *BillingHandler) CancelSubscription(w http.ResponseWriter, r *http.Reque
 		sub.CancelAtPeriodEnd = true
 	} else {
 		sub.Status = "canceled"
-		freeLimits := domain.PlanDefaults[domain.PlanFree]
+		freeLimits := domain.PlanDefaults()[domain.PlanFree]
 		_ = h.store.UpdateOrgPlan(r.Context(), orgID, domain.PlanFree, freeLimits)
 	}
 	sub.UpdatedAt = time.Now()
@@ -616,8 +616,8 @@ func (h *BillingHandler) CancelSubscription(w http.ResponseWriter, r *http.Reque
 			Template: domain.TemplateCancellation,
 			Subject:  "Your subscription has been canceled",
 			Data: map[string]string{
-				"org_name":   org.Name,
-				"end_date":   endDate,
+				"org_name":    org.Name,
+				"end_date":    endDate,
 				"billing_url": h.dashboardURL + "/settings/billing",
 			},
 		})
