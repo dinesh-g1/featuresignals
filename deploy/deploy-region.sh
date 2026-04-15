@@ -176,12 +176,35 @@ if [ "$DOCS_CHANGED" = true ]; then
   docker volume rm -f featuresignals_docs-dist 2>/dev/null || true
 fi
 
+# ── Pre-flight: verify server can start ──────────────────────────────────────
+echo "==> Pre-flight: checking server startup..."
+PREFLIGHT_OUTPUT=$(docker run --rm \
+  --env-file "$PROJECT_DIR/.env" \
+  -e DATABASE_URL="postgres://fs:${POSTGRES_PASSWORD}@127.0.0.1:5432/featuresignals?sslmode=disable" \
+  "ghcr.io/dinesh-g1/featuresignals-server:${IMAGE_TAG:-latest}" \
+  server 2>&1 &
+  PREFLIGHT_PID=$!
+  sleep 5
+  kill $PREFLIGHT_PID 2>/dev/null || true
+  wait $PREFLIGHT_PID 2>/dev/null || true
+  docker ps -a --filter "ancestor=ghcr.io/dinesh-g1/featuresignals-server:${IMAGE_TAG:-latest}" --format '{{.Status}}' | head -1
+)
+echo "   Server pre-flight: $PREFLIGHT_OUTPUT"
+
 # ── Start services ───────────────────────────────────────────────────────────
 echo "==> Starting services..."
 if ! $DC up -d 2>&1; then
   echo "==> Deploy failed. Showing logs..."
-  $DC logs --tail=50 migrate postgres server 2>&1 || true
+  echo "=== SERVER LOGS ==="
+  $DC logs --tail=200 server 2>&1 || true
+  echo "=== POSTGRES LOGS ==="
+  $DC logs --tail=50 postgres 2>&1 || true
+  echo "=== MIGRATE LOGS ==="
+  $DC logs --tail=50 migrate 2>&1 || true
+  echo "=== ALL CONTAINERS ==="
   $DC ps -a 2>&1 || true
+  echo "=== SERVER INSPECT ==="
+  docker inspect featuresignals-server-1 2>&1 | grep -E "ExitCode|Error|OomKilled" || true
   exit 1
 fi
 
