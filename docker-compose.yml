@@ -28,7 +28,8 @@ services:
       DATABASE_URL: postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: dev-secret-change-in-production
       PORT: "8080"
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ENABLED: "true"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
       DEPLOYMENT_MODE: cloud
       EMAIL_PROVIDER: none
       APP_BASE_URL: http://localhost:8080

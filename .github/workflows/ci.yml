@@ -1,9 +1,6 @@
 name: "CI"
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -42,17 +39,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
-      - name: Detect changed paths (push to main)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        id: filter-push
+      - name: Detect changed paths
+        id: filter
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PARENT=$(git rev-parse HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PARENT" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # On manual dispatch, run everything
             FILES="FULL"
           else
-            FILES=$(git diff --name-only "$PARENT" HEAD)
+            # On pull_request, get changed files from PR
+            FILES=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
+              --paginate -q '.[].filename')
           fi
 
           has_match() { [ "$FILES" = "FULL" ] && echo "true" || (echo "$FILES" | grep -qE "$1" && echo "true" || echo "false"); }
@@ -70,7 +70,7 @@ jobs:
             echo "ops=$(has_match '^ops/')"
           } >> "$GITHUB_OUTPUT"
 
-          echo "### Detected Changes (push to main)" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Detected Changes" >> "$GITHUB_STEP_SUMMARY"
           echo "| Area | Changed |" >> "$GITHUB_STEP_SUMMARY"
           echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
           for pair in "Server:$(has_match '^server/')" "Dashboard:$(has_match '^dashboard/')" "Website:$(has_match '^website/')" "Docs:$(has_match '^docs/')" \
@@ -80,55 +80,6 @@ jobs:
             val="${pair##*:}"
             echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
           done
-
-      - name: Detect changed paths (pull_request)
-        if: github.event_name == 'pull_request'
-        id: filter-pr
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          FILES=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
-            --paginate -q '.[].filename')
-
-          has_match() { echo "$FILES" | grep -qE "$1" && echo "true" || echo "false"; }
-
-          {
-            echo "server=$(has_match '^server/')"
-            echo "dashboard=$(has_match '^dashboard/')"
-            echo "website=$(has_match '^website/')"
-            echo "docs=$(has_match '^docs/')"
-            echo "sdk-go=$(has_match '^sdks/go/')"
-            echo "sdk-node=$(has_match '^sdks/node/')"
-            echo "sdk-python=$(has_match '^sdks/python/')"
-            echo "sdk-java=$(has_match '^sdks/java/')"
-            echo "deploy=$(has_match '^deploy/')"
-            echo "ops=$(has_match '^ops/')"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "### Detected Changes (pull request)" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Area | Changed |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
-          for pair in "Server:$(has_match '^server/')" "Dashboard:$(has_match '^dashboard/')" "Website:$(has_match '^website/')" "Docs:$(has_match '^docs/')" \
-                      "SDK Go:$(has_match '^sdks/go/')" "SDK Node:$(has_match '^sdks/node/')" "SDK Python:$(has_match '^sdks/python/')" \
-                      "SDK Java:$(has_match '^sdks/java/')" "Deploy:$(has_match '^deploy/')" "Ops:$(has_match '^ops/')"; do
-            name="${pair%%:*}"
-            val="${pair##*:}"
-            echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
-          done
-
-      - name: Merge outputs
-        id: filter
-        run: |
-          echo "server=${{ steps.filter-push.outputs.server || steps.filter-pr.outputs.server || 'true' }}" >> $GITHUB_OUTPUT
-          echo "dashboard=${{ steps.filter-push.outputs.dashboard || steps.filter-pr.outputs.dashboard || 'true' }}" >> $GITHUB_OUTPUT
-          echo "website=${{ steps.filter-push.outputs.website || steps.filter-pr.outputs.website || 'true' }}" >> $GITHUB_OUTPUT
-          echo "docs=${{ steps.filter-push.outputs.docs || steps.filter-pr.outputs.docs || 'true' }}" >> $GITHUB_OUTPUT
-          echo "sdk-go=${{ steps.filter-push.outputs.sdk-go || steps.filter-pr.outputs.sdk-go || 'true' }}" >> $GITHUB_OUTPUT
-          echo "sdk-node=${{ steps.filter-push.outputs.sdk-node || steps.filter-pr.outputs.sdk-node || 'true' }}" >> $GITHUB_OUTPUT
-          echo "sdk-python=${{ steps.filter-push.outputs.sdk-python || steps.filter-pr.outputs.sdk-python || 'true' }}" >> $GITHUB_OUTPUT
-          echo "sdk-java=${{ steps.filter-push.outputs.sdk-java || steps.filter-pr.outputs.sdk-java || 'true' }}" >> $GITHUB_OUTPUT
-          echo "deploy=${{ steps.filter-push.outputs.deploy || steps.filter-pr.outputs.deploy || 'true' }}" >> $GITHUB_OUTPUT
-          echo "ops=${{ steps.filter-push.outputs.ops || steps.filter-pr.outputs.ops || 'true' }}" >> $GITHUB_OUTPUT
 
   # ── Server ─────────────────────────────────────────────────────────────────
   server-tests:
