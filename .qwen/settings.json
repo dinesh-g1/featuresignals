@@ -43,7 +43,8 @@
       "Bash(true)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(xxd)"
     ]
   },
   "$version": 3

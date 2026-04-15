@@ -38,7 +38,7 @@ jobs:
           host: ${{ secrets.VPS_HOST_DEV }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_DEV }}
-          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,IMAGE_TAG
+          envs: POSTGRES_PASSWORD,JWT_SECRET,DB_ADMIN_PASSWORD,DB_READONLY_PASSWORD,ZEPTOMAIL_TOKEN,IMAGE_TAG,OTEL_INGESTION_KEY
           script: |
             cat > /opt/featuresignals/.env << ENVEOF
             REGION=dev
@@ -98,7 +98,15 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             export IMAGE_TAG="${IMAGE_TAG}"
-            bash deploy/deploy-region.sh
+            bash deploy/deploy-region.sh 2>&1 || {
+              echo "==> Deploy failed — capturing detailed server logs"
+              docker compose --env-file .env -f deploy/docker-compose.region.yml --profile full logs --tail=200 server 2>&1
+              echo "==> Container status:"
+              docker compose --env-file .env -f deploy/docker-compose.region.yml --profile full ps -a 2>&1
+              echo "==> .env contents (redacted):"
+              grep -v PASSWORD .env | grep -v SECRET | grep -v TOKEN | grep -v KEY 2>/dev/null
+              exit 1
+            }
 
             # Start Dozzle for log monitoring
             docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
