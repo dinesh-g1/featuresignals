@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import { cn } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -659,7 +659,7 @@ export default function WebhooksPage() {
                                   </span>
                                 </div>
                                 <span className="text-[10px] text-slate-400 ml-7 sm:ml-0">
-                                  {new Date(d.delivered_at).toLocaleString()}
+                                  {timeAgo(d.delivered_at)}
                                 </span>
                               </div>
                               {d.response_body && (

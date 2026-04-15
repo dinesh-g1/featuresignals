@@ -24,6 +24,7 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
+import { ENVIRONMENT_COLORS } from "@/lib/constants";
 import type { Environment } from "@/lib/types";
 
 interface PrerequisiteState {
@@ -61,15 +62,6 @@ export function PrerequisiteGate({
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
-
-  const presetColors = [
-    { value: "#10B981", name: "Green", slug: "production" },
-    { value: "#F59E0B", name: "Amber", slug: "staging" },
-    { value: "#3B82F6", name: "Blue", slug: "development" },
-    { value: "#8B5CF6", name: "Purple", slug: "test" },
-    { value: "#14B8A6", name: "Teal", slug: "qa" },
-    { value: "#64748B", name: "Slate", slug: "custom" },
-  ];
 
   async function handleCreateProject() {
     if (!projectName.trim() || !token) return;
@@ -369,14 +361,14 @@ export function PrerequisiteGate({
             <div>
               <Label>Color</Label>
               <div className="mt-2 flex gap-2">
-                {presetColors.map((color) => (
+                {ENVIRONMENT_COLORS.map((color) => (
                   <button
                     key={color.value}
                     onClick={() => {
                       setEnvColor(color.value);
                       setEnvName((prev) => {
                         // Auto-fill name if empty
-                        if (!prev) return color.name;
+                        if (!prev) return color.label;
                         return prev;
                       });
                       handleCreateEnvironment(color.slug);
@@ -387,7 +379,7 @@ export function PrerequisiteGate({
                         : "border-transparent"
                     }`}
                     style={{ backgroundColor: color.value }}
-                    title={color.name}
+                    title={color.label}
                   >
                     {envColor === color.value && (
                       <CheckCircle2 className="h-4 w-4 text-white drop-shadow" />

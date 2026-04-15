@@ -37,6 +37,7 @@ import {
 } from "@/hooks/use-data";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { toast } from "@/components/toast";
+import { timeAgo } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // UpgradeCard — org-level upgrade prompt
@@ -595,7 +596,7 @@ function ProjectOverview({
                   </span>
                 </div>
                 <span className="text-xs text-slate-400">
-                  {new Date(entry.created_at).toLocaleString()}
+                  {timeAgo(entry.created_at)}
                 </span>
               </div>
             ))

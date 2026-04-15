@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { useApprovals } from "@/hooks/use-data";
 import {
   PageHeader,
   Card,
@@ -14,7 +15,7 @@ import {
 import { toast } from "@/components/toast";
 import { CheckCircle, Clock } from "lucide-react";
 import type { ApprovalRequest } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 
 const STATUS_VARIANT: Record<
   string,
@@ -130,24 +131,13 @@ export default function ApprovalsPage() {
   const token = useAppStore((s) => s.token);
   const user = useAppStore((s) => s.user);
   const now = useSlaNow();
-  const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
   const [filter, setFilter] = useState("");
   const [tab, setTab] = useState<"all" | "mine">("all");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function reload() {
-    if (!token) return;
-    api
-      .listApprovals(token, filter || undefined)
-      .then((a) => setApprovals(a ?? []))
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    reload();
-  }, [token, filter]);
+  const { data: approvals = [], refetch } = useApprovals(filter || undefined);
 
   async function handleReview(id: string, action: "approve" | "reject") {
     if (!token) return;
@@ -156,7 +146,7 @@ export default function ApprovalsPage() {
       await api.reviewApproval(token, id, action, note);
       setReviewingId(null);
       setNote("");
-      reload();
+      refetch();
       toast(
         action === "approve" ? "Approval granted" : "Request rejected",
         "success",
@@ -263,7 +253,7 @@ export default function ApprovalsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-400">
-                        {new Date(ar.created_at).toLocaleString()}
+                        {timeAgo(ar.created_at)}
                       </span>
                       {ar.status === "pending" && !isReviewing && (
                         <Button size="sm" onClick={() => setReviewingId(ar.id)}>

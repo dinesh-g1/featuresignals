@@ -35,7 +35,7 @@ import type {
   AuditEntry,
   TargetingRule,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 export default function FlagDetailPage() {
   const params = useParams();
@@ -847,7 +847,7 @@ export default function FlagDetailPage() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="flex-1 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-emerald-100">
                           <span className="font-medium">Scheduled: </span>
-                          {new Date(state.scheduled_enable_at).toLocaleString()}
+                          {formatDate(state.scheduled_enable_at)}
                         </div>
                         <Button
                           size="sm"
@@ -890,9 +890,7 @@ export default function FlagDetailPage() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="flex-1 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100">
                           <span className="font-medium">Scheduled: </span>
-                          {new Date(
-                            state.scheduled_disable_at,
-                          ).toLocaleString()}
+                          {formatDate(state.scheduled_disable_at)}
                         </div>
                         <Button
                           size="sm"

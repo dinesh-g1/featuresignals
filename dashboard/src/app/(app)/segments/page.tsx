@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import {
+  useSegments,
+  useCreateSegment,
+  useDeleteSegment,
+} from "@/hooks/use-data";
 import { SegmentRulesEditor } from "@/components/segment-rules-editor";
 import { toast } from "@/components/toast";
 import {
@@ -14,7 +19,8 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
-import { Users, Trash2, ChevronDown } from "lucide-react";
+import { InlineCreateForm } from "@/components/ui/inline-create-form";
+import { Users, Trash2, ChevronDown, Loader2 } from "lucide-react";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { DOCS_LINKS } from "@/components/docs-link";
 import {
@@ -22,7 +28,7 @@ import {
   usePrerequisites,
 } from "@/components/prerequisite-gate";
 import type { Segment, Condition } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, suggestSlug } from "@/lib/utils";
 
 const MATCH_TYPE_OPTIONS = [
   { value: "all", label: "All conditions must match" },
@@ -32,7 +38,6 @@ const MATCH_TYPE_OPTIONS = [
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
-  const [segments, setSegments] = useState<Segment[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
     key: "",
@@ -47,17 +52,9 @@ export default function SegmentsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  function reload() {
-    if (!token || !projectId) return;
-    api
-      .listSegments(token, projectId)
-      .then((s) => setSegments(s ?? []))
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    reload();
-  }, [token, projectId]);
+  const { data: segments = [], refetch } = useSegments(projectId);
+  const createSegment = useCreateSegment(projectId);
+  const deleteSegment = useDeleteSegment(projectId);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -74,11 +71,11 @@ export default function SegmentsPage() {
       return;
     }
     try {
-      await api.createSegment(token, projectId, { ...form, rules: [] });
+      await createSegment.mutate({ ...form, rules: [] });
       setShowCreate(false);
       setForm({ key: "", name: "", description: "", match_type: "all" });
       toast("Segment created", "success");
-      reload();
+      refetch();
     } catch (err: unknown) {
       toast(
         err instanceof Error ? err.message : "Failed to create segment",
@@ -88,12 +85,11 @@ export default function SegmentsPage() {
   }
 
   async function handleDelete(segKey: string) {
-    if (!token || !projectId) return;
     try {
-      await api.deleteSegment(token, projectId, segKey);
+      await deleteSegment.mutate(segKey);
       setDeleting(null);
       toast("Segment deleted", "success");
-      reload();
+      refetch();
     } catch (err: unknown) {
       toast(
         err instanceof Error ? err.message : "Failed to delete segment",
@@ -115,7 +111,7 @@ export default function SegmentsPage() {
         match_type: matchType,
       });
       toast("Segment rules saved", "success");
-      reload();
+      refetch();
     } catch (err: unknown) {
       toast(
         err instanceof Error ? err.message : "Failed to save rules",
@@ -133,7 +129,7 @@ export default function SegmentsPage() {
   if (prereqLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
       </div>
     );
   }
@@ -155,7 +151,6 @@ export default function SegmentsPage() {
         handleCreate={handleCreate}
         handleDelete={handleDelete}
         handleSaveRules={handleSaveRules}
-        reload={reload}
       />
     </PrerequisiteGate>
   );
@@ -176,7 +171,6 @@ function SegmentsContent({
   handleCreate,
   handleDelete,
   handleSaveRules,
-  reload,
 }: {
   segments: Segment[];
   showCreate: boolean;
@@ -196,7 +190,6 @@ function SegmentsContent({
     rules: Condition[],
     matchType: string,
   ) => void;
-  reload: () => void;
 }) {
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -214,91 +207,98 @@ function SegmentsContent({
       <ContextualHint hint={HINTS.segmentsIntro} />
 
       {showCreate && (
-        <form
-          onSubmit={handleCreate}
-          noValidate
-          className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6"
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Key</Label>
-              <Input
-                value={form.key}
-                onChange={(e) => {
-                  setForm({ ...form, key: e.target.value });
-                  if (fieldErrors.key)
-                    setFieldErrors({ ...fieldErrors, key: undefined });
-                }}
-                placeholder="beta-users"
-                required
-                className="mt-1"
-                aria-invalid={!!fieldErrors.key}
-                aria-describedby={fieldErrors.key ? "key-error" : undefined}
-              />
-              {fieldErrors.key && (
-                <p className="text-xs text-red-500" role="alert" id="key-error">
-                  {fieldErrors.key}
-                </p>
-              )}
+        <InlineCreateForm variant="indigo">
+          <form onSubmit={handleCreate} noValidate className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Key</Label>
+                <Input
+                  value={form.key}
+                  onChange={(e) => {
+                    setForm({ ...form, key: e.target.value });
+                    if (fieldErrors.key)
+                      setFieldErrors({ ...fieldErrors, key: undefined });
+                  }}
+                  onBlur={(e) => {
+                    if (!form.key && form.name) {
+                      setForm({ ...form, key: suggestSlug(form.name) });
+                    }
+                  }}
+                  placeholder="beta-users"
+                  required
+                  className="mt-1"
+                  aria-invalid={!!fieldErrors.key}
+                  aria-describedby={fieldErrors.key ? "key-error" : undefined}
+                />
+                {fieldErrors.key && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="key-error"
+                  >
+                    {fieldErrors.key}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => {
+                    setForm({ ...form, name: e.target.value });
+                    if (fieldErrors.name)
+                      setFieldErrors({ ...fieldErrors, name: undefined });
+                  }}
+                  placeholder="Beta Users"
+                  required
+                  className="mt-1"
+                  aria-invalid={!!fieldErrors.name}
+                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                />
+                {fieldErrors.name && (
+                  <p
+                    className="text-xs text-red-500"
+                    role="alert"
+                    id="name-error"
+                  >
+                    {fieldErrors.name}
+                  </p>
+                )}
+              </div>
             </div>
             <div>
-              <Label>Name</Label>
+              <Label>Description</Label>
               <Input
-                value={form.name}
-                onChange={(e) => {
-                  setForm({ ...form, name: e.target.value });
-                  if (fieldErrors.name)
-                    setFieldErrors({ ...fieldErrors, name: undefined });
-                }}
-                placeholder="Beta Users"
-                required
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                placeholder="Users enrolled in beta program"
                 className="mt-1"
-                aria-invalid={!!fieldErrors.name}
-                aria-describedby={fieldErrors.name ? "name-error" : undefined}
-              />
-              {fieldErrors.name && (
-                <p
-                  className="text-xs text-red-500"
-                  role="alert"
-                  id="name-error"
-                >
-                  {fieldErrors.name}
-                </p>
-              )}
-            </div>
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Input
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              placeholder="Users enrolled in beta program"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>Match Type</Label>
-            <div className="mt-1">
-              <Select
-                value={form.match_type}
-                onValueChange={(val) => setForm({ ...form, match_type: val })}
-                options={MATCH_TYPE_OPTIONS}
               />
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit">Create</Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setShowCreate(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
+            <div>
+              <Label>Match Type</Label>
+              <div className="mt-1">
+                <Select
+                  value={form.match_type}
+                  onValueChange={(val) => setForm({ ...form, match_type: val })}
+                  options={MATCH_TYPE_OPTIONS}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit">Create</Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowCreate(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </InlineCreateForm>
       )}
 
       <Card>

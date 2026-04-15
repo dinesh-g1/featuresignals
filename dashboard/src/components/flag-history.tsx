@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui";
 import { toast } from "@/components/toast";
-import { cn } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 import {
   Clock,
   RotateCcw,
@@ -287,7 +287,7 @@ export function FlagHistory({
                     </button>
 
                     <div className="flex-1 text-xs text-slate-500">
-                      {new Date(v.created_at).toLocaleString()}
+                      {timeAgo(v.created_at)}
                     </div>
 
                     {v.changed_by && (

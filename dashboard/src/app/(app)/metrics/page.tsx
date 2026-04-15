@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { PageHeader, Card, CardHeader, CardContent, Button, LoadingSpinner } from "@/components/ui";
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardContent,
+  Button,
+  LoadingSpinner,
+} from "@/components/ui";
+import { formatDate } from "@/lib/utils";
 
 interface Counter {
   flag_key: string;
@@ -51,9 +59,7 @@ export default function MetricsPage() {
   const envCounters = useMemo(() => {
     if (!data) return [];
     const counters = data.counters ?? [];
-    return envId
-      ? counters.filter((c) => c.env_id === envId)
-      : counters;
+    return envId ? counters.filter((c) => c.env_id === envId) : counters;
   }, [data, envId]);
 
   const topFlags = useMemo(() => {
@@ -61,9 +67,7 @@ export default function MetricsPage() {
     for (const c of envCounters) {
       map.set(c.flag_key, (map.get(c.flag_key) || 0) + c.count);
     }
-    return [...map.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20);
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
   }, [envCounters]);
 
   const reasonBreakdown = useMemo(() => {
@@ -89,7 +93,7 @@ export default function MetricsPage() {
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
         title="Evaluation Metrics"
-        description={`Flag evaluation counts since ${data ? new Date(data.window_start).toLocaleString() : "—"}`}
+        description={`Flag evaluation counts since ${data ? formatDate(data.window_start) : "—"}`}
         actions={
           <Button
             variant="secondary"
@@ -106,27 +110,43 @@ export default function MetricsPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-6">
         <Card className="p-4 text-center hover:shadow-lg hover:border-slate-300 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Evaluations</p>
-          <p className="mt-2 text-3xl font-bold text-indigo-600 sm:text-4xl">{(data?.total_evaluations || 0).toLocaleString()}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Total Evaluations
+          </p>
+          <p className="mt-2 text-3xl font-bold text-indigo-600 sm:text-4xl">
+            {(data?.total_evaluations || 0).toLocaleString()}
+          </p>
         </Card>
         <Card className="p-4 text-center hover:shadow-lg hover:border-slate-300 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Current Environment</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-600 sm:text-4xl">{totalEnv.toLocaleString()}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Current Environment
+          </p>
+          <p className="mt-2 text-3xl font-bold text-emerald-600 sm:text-4xl">
+            {totalEnv.toLocaleString()}
+          </p>
         </Card>
         <Card className="p-4 text-center hover:shadow-lg hover:border-slate-300 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Unique Flags Evaluated</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">{topFlags.length}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Unique Flags Evaluated
+          </p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
+            {topFlags.length}
+          </p>
         </Card>
       </div>
 
       <Card className="hover:shadow-lg hover:border-slate-300">
         <CardHeader>
           <h2 className="font-semibold text-slate-900">Evaluation Reasons</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Distribution of why flags returned their values</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Distribution of why flags returned their values
+          </p>
         </CardHeader>
         <CardContent>
           {reasonBreakdown.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-4">No evaluations recorded yet.</p>
+            <p className="text-sm text-slate-400 text-center py-4">
+              No evaluations recorded yet.
+            </p>
           ) : (
             <div className="flex flex-wrap gap-2 sm:gap-3">
               {reasonBreakdown.map(([reason, count]) => (
@@ -134,8 +154,12 @@ export default function MetricsPage() {
                   key={reason}
                   className={`rounded-lg px-3 py-2 ring-1 sm:px-4 sm:py-3 ${REASON_COLORS[reason] || "bg-slate-100 text-slate-600 ring-slate-200"}`}
                 >
-                  <p className="text-xs font-medium uppercase tracking-wider opacity-70">{reason}</p>
-                  <p className="mt-1 text-xl font-bold sm:text-2xl">{count.toLocaleString()}</p>
+                  <p className="text-xs font-medium uppercase tracking-wider opacity-70">
+                    {reason}
+                  </p>
+                  <p className="mt-1 text-xl font-bold sm:text-2xl">
+                    {count.toLocaleString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -146,22 +170,35 @@ export default function MetricsPage() {
       <Card className="hover:shadow-lg hover:border-slate-300">
         <CardHeader>
           <h2 className="font-semibold text-slate-900">Top Evaluated Flags</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Most-evaluated flags in the current environment</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Most-evaluated flags in the current environment
+          </p>
         </CardHeader>
         <div className="divide-y divide-slate-100">
           {topFlags.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">No evaluations recorded yet.</p>
+            <p className="text-sm text-slate-400 text-center py-8">
+              No evaluations recorded yet.
+            </p>
           ) : (
             topFlags.map(([key, count]) => (
-              <div key={key} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
-                <span className="w-28 truncate font-mono text-sm font-medium text-slate-900 sm:w-48">{key}</span>
+              <div
+                key={key}
+                className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6"
+              >
+                <span className="w-28 truncate font-mono text-sm font-medium text-slate-900 sm:w-48">
+                  {key}
+                </span>
                 <div className="flex-1 h-5 rounded-full bg-slate-100 sm:h-6">
                   <div
                     className="h-full rounded-full bg-indigo-500 transition-all"
-                    style={{ width: `${Math.max(2, (count / maxFlagCount) * 100)}%` }}
+                    style={{
+                      width: `${Math.max(2, (count / maxFlagCount) * 100)}%`,
+                    }}
                   />
                 </div>
-                <span className="w-16 text-right text-sm font-semibold text-slate-700 sm:w-20">{count.toLocaleString()}</span>
+                <span className="w-16 text-right text-sm font-semibold text-slate-700 sm:w-20">
+                  {count.toLocaleString()}
+                </span>
               </div>
             ))
           )}

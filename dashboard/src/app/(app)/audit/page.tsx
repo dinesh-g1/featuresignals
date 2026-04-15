@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { api } from "@/lib/api";
+import { useState, useMemo, useCallback } from "react";
+import { useAudit } from "@/hooks/use-data";
 import { useAppStore } from "@/stores/app-store";
 import {
   PageHeader,
@@ -16,13 +16,13 @@ import {
 import { ClipboardList, Download, Search, ShieldCheck } from "lucide-react";
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { AuditEntry } from "@/lib/types";
+import { timeAgo } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 type ExportFormat = "csv" | "json";
 
 export default function AuditPage() {
-  const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 50;
@@ -43,13 +43,8 @@ export default function AuditPage() {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  useEffect(() => {
-    if (!token) return;
-    api
-      .listAudit(token, limit, offset, currentProjectId ?? undefined)
-      .then((a) => setEntries(a ?? []))
-      .catch(() => {});
-  }, [token, offset]);
+  const { data: entries = [] } = useAudit(limit, offset, currentProjectId);
+  const token = useAppStore((s) => s.token);
 
   // Build unique filter options from entries
   const actorOptions = useMemo<SelectOption[]>(() => {
@@ -320,7 +315,7 @@ export default function AuditPage() {
                     )}
                   </div>
                   <span className="text-xs text-slate-400">
-                    {new Date(entry.created_at).toLocaleString()}
+                    {timeAgo(entry.created_at)}
                   </span>
                 </div>
               </div>
