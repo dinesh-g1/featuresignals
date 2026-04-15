@@ -1,11 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
+import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Badge, EmptyState } from "@/components/ui";
+import {
+  CreateEnvironmentDialog,
+  EditEnvironmentDialog,
+  DeleteDialog,
+} from "@/components/entity-dialog";
 import {
   Globe,
   Plus,
@@ -19,31 +24,13 @@ import {
   Flag,
 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   PrerequisiteGate,
   usePrerequisites,
 } from "@/components/prerequisite-gate";
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { Environment, Project } from "@/lib/types";
-
-const presetColors = [
-  { label: "Green", value: "#22c55e", slug: "production" },
-  { label: "Amber", value: "#f59e0b", slug: "staging" },
-  { label: "Red", value: "#ef4444", slug: "production" },
-  { label: "Blue", value: "#3b82f6", slug: "development" },
-  { label: "Purple", value: "#8b5cf6", slug: "test" },
-  { label: "Teal", value: "#14b8a6", slug: "qa" },
-  { label: "Slate", value: "#64748b", slug: "custom" },
-];
+import { useAppStore } from "@/stores/app-store";
+import { useEnvironments, useProjects } from "@/hooks/use-data";
 
 export default function EnvironmentsPage() {
   const {
@@ -68,13 +55,13 @@ export default function EnvironmentsPage() {
 }
 
 function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
-  const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
+  const token = useAppStore((s) => s.token);
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [envs, setEnvs] = useState<Environment[]>([]);
+  const { data: projects = [] } = useProjects();
+  const { data: envs = [], refetch } = useEnvironments(currentProjectId);
   const [loading, setLoading] = useState(true);
 
   // Dialog state
@@ -83,89 +70,36 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingEnv, setEditingEnv] = useState<Environment | null>(null);
   const [deletingEnv, setDeletingEnv] = useState<Environment | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", color: "#64748b" });
-  const [fieldError, setFieldError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const loadData = useCallback(async () => {
-    if (!token || !currentProjectId) return;
-    try {
-      setLoading(true);
-      const [projectsList, envsList] = await Promise.all([
-        api.listProjects(token),
-        api.listEnvironments(token, currentProjectId),
-      ]);
-      setProjects(projectsList);
-      setEnvs(envsList);
-
-      // Validate current env selection
-      if (currentEnvId && !envsList.find((e) => e.id === currentEnvId)) {
-        setCurrentEnv(null);
-      }
-    } catch (err) {
-      toast("Failed to load environments", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [token, currentProjectId, currentEnvId, setCurrentEnv]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   const currentProject = projects.find((p) => p.id === currentProjectId);
 
+  // Initial load check
+  useEffect(() => {
+    if (
+      currentEnvId &&
+      envs.length > 0 &&
+      !envs.find((e) => e.id === currentEnvId)
+    ) {
+      setCurrentEnv(null);
+    }
+  }, [currentEnvId, envs, setCurrentEnv]);
+
+  // Mark loading done once data arrives
+  useEffect(() => {
+    if (envs.length > 0 || projects.length > 0) {
+      setLoading(false);
+    }
+  }, [envs, projects]);
+
   function openCreateDialog() {
     setEditingEnv(null);
-    setForm({ name: "", slug: "", color: "#64748b" });
-    setFieldError("");
     setCreateDialogOpen(true);
   }
 
   function openEditDialog(env: Environment) {
     setEditingEnv(env);
-    setForm({ name: env.name, slug: env.slug, color: env.color });
-    setFieldError("");
     setEditDialogOpen(true);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name.trim()) {
-      setFieldError("Environment name is required");
-      return;
-    }
-    if (!token || !currentProjectId) return;
-
-    try {
-      setSubmitting(true);
-      if (editingEnv) {
-        await api.updateEnvironment(
-          token,
-          currentProjectId,
-          editingEnv.id,
-          form,
-        );
-        EventBus.dispatch("environments:changed");
-        toast("Environment updated", "success");
-      } else {
-        const env = await api.createEnvironment(token, currentProjectId, form);
-        EventBus.dispatch("environments:changed");
-        setCurrentEnv(env.id);
-        toast("Environment created", "success");
-      }
-      setCreateDialogOpen(false);
-      setEditDialogOpen(false);
-      loadData();
-      onRefresh();
-    } catch (err: unknown) {
-      toast(
-        err instanceof Error ? err.message : "Failed to save environment",
-        "error",
-      );
-    } finally {
-      setSubmitting(false);
-    }
   }
 
   function openDeleteDialog(env: Environment) {
@@ -173,19 +107,53 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
     setDeleteDialogOpen(true);
   }
 
+  async function handleCreate(data: {
+    name: string;
+    slug?: string;
+    color?: string;
+  }) {
+    if (!token || !currentProjectId) throw new Error("Missing context");
+    const env = await api.createEnvironment(token, currentProjectId, data);
+    EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
+    setCurrentEnv(env.id);
+    toast("Environment created", "success");
+    refetch();
+    onRefresh();
+    return env;
+  }
+
+  async function handleUpdate(data: {
+    name: string;
+    slug?: string;
+    color?: string;
+  }): Promise<Environment> {
+    if (!token || !currentProjectId || !editingEnv)
+      throw new Error("Missing context");
+    const env = await api.updateEnvironment(
+      token,
+      currentProjectId,
+      editingEnv.id,
+      data,
+    );
+    EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
+    toast("Environment updated", "success");
+    refetch();
+    onRefresh();
+    return env;
+  }
+
   async function handleDelete() {
     if (!deletingEnv || !token || !currentProjectId) return;
+    setSubmitting(true);
     try {
-      setSubmitting(true);
       await api.deleteEnvironment(token, currentProjectId, deletingEnv.id);
-      EventBus.dispatch("environments:changed");
+      EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
       if (currentEnvId === deletingEnv.id) {
         setCurrentEnv(null);
       }
-      setDeleteDialogOpen(false);
       setDeletingEnv(null);
       toast("Environment deleted", "success");
-      loadData();
+      refetch();
       onRefresh();
     } catch (err: unknown) {
       toast(
@@ -346,211 +314,38 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
       )}
 
       {/* Create Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Environment</DialogTitle>
-            <DialogDescription>
-              Add a new deployment environment for managing flag states
-              independently.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="env-name">Environment Name</Label>
-              <Input
-                id="env-name"
-                value={form.name}
-                onChange={(e) => {
-                  setForm({ ...form, name: e.target.value });
-                  setFieldError("");
-                }}
-                placeholder="e.g. Production, Staging, Development"
-                className="mt-1"
-                autoFocus
-              />
-              {fieldError && (
-                <p className="text-xs text-red-500 mt-1">{fieldError}</p>
-              )}
-            </div>
-            <div>
-              <Label>Color</Label>
-              <div className="mt-2 flex gap-2">
-                {presetColors.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        color: c.value,
-                        slug: form.slug || c.slug,
-                      })
-                    }
-                    className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${
-                      form.color === c.value
-                        ? "border-slate-900 shadow-md"
-                        : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                    title={c.label}
-                  />
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setCreateDialogOpen(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Environment
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateEnvironmentDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreate={handleCreate}
+        onSuccess={() => setCreateDialogOpen(false)}
+      />
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Environment</DialogTitle>
-            <DialogDescription>
-              Update environment details. Changes may affect API keys and flag
-              states.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="edit-env-name">Environment Name</Label>
-              <Input
-                id="edit-env-name"
-                value={form.name}
-                onChange={(e) => {
-                  setForm({ ...form, name: e.target.value });
-                  setFieldError("");
-                }}
-                className="mt-1"
-                autoFocus
-              />
-              {fieldError && (
-                <p className="text-xs text-red-500 mt-1">{fieldError}</p>
-              )}
-            </div>
-            <div>
-              <Label>Color</Label>
-              <div className="mt-2 flex gap-2">
-                {presetColors.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setForm({ ...form, color: c.value })}
-                    className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${
-                      form.color === c.value
-                        ? "border-slate-900 shadow-md"
-                        : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                    title={c.label}
-                  />
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setEditDialogOpen(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <EditEnvironmentDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        environment={editingEnv}
+        onUpdate={handleUpdate}
+        onSuccess={() => setEditDialogOpen(false)}
+      />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600">
-              Delete Environment
-            </DialogTitle>
-            <DialogDescription className="space-y-3">
-              <p className="font-semibold text-slate-900">
-                Are you sure you want to delete "{deletingEnv?.name}"?
-              </p>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
-                <p className="font-semibold text-red-800 mb-1">This will:</p>
-                <ul className="list-disc list-inside space-y-1 text-red-700">
-                  <li>Permanently delete this environment</li>
-                  <li>Delete all flag states for this environment</li>
-                  <li>Delete all API keys associated with this environment</li>
-                  <li>Remove environment-specific configurations</li>
-                </ul>
-              </div>
-              <p className="text-sm font-semibold text-red-600">
-                This action cannot be undone.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setDeleteDialogOpen(false);
-                setDeletingEnv(null);
-              }}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Environment
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Dialog */}
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={(v) => {
+          if (!submitting) setDeleteDialogOpen(v);
+        }}
+        title="Delete Environment"
+        description={`Are you sure you want to delete "${deletingEnv?.name}"?`}
+        consequences={[
+          "Permanently delete this environment",
+          "Delete all flag states for this environment",
+          "Delete all API keys associated with this environment",
+          "Remove environment-specific configurations",
+        ]}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
