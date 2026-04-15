@@ -70,6 +70,7 @@ jobs:
             PAYMENT_GATEWAY=stripe
             STRIPE_MODE=test
             PAYU_MODE=test
+            CORS_ENABLED=true
             ALLOWED_ORIGINS=https://ops.dev.featuresignals.com,https://app.dev.featuresignals.com,https://dashboard.dev.featuresignals.com
             IMAGE_TAG=${IMAGE_TAG}
             USE_REGISTRY=true
