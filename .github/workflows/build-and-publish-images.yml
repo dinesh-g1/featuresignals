@@ -25,6 +25,15 @@ permissions:
   packages: write
 
 jobs:
+  # -- Run CI if not skipped ------------------------------------------------
+  ci:
+    name: "CI Validation"
+    if: ${{ inputs.skip_tests != true }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      skip_sdk_tests: true
+      skip_security_scan: true
+
   # -- Build & Publish ------------------------------------------------------
   build:
     name: "Build Images"
