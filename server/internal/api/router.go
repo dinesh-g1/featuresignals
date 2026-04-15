@@ -112,6 +112,7 @@ func NewRouter(
 	projectH := handlers.NewProjectHandler(store)
 	envH := handlers.NewEnvironmentHandler(store)
 	flagH := handlers.NewFlagHandler(store, emitter)
+	flagHistoryH := handlers.NewFlagHistoryHandler(store)
 	segmentH := handlers.NewSegmentHandler(store)
 	apiKeyH := handlers.NewAPIKeyHandler(store)
 	auditH := handlers.NewAuditHandler(store)
@@ -260,6 +261,14 @@ func NewRouter(
 			r.Post("/track", metricsH.TrackImpression)
 		})
 
+		// Agent API endpoints (authenticated via API key, stricter rate limits)
+		// These endpoints are optimized for AI agent programmatic access with
+		// <5ms evaluation latency, structured errors, and agent key scoping.
+		r.Route("/agent", func(r chi.Router) {
+			agentH := handlers.NewAgentHandler(store, evalCache, engine, nil, logger)
+			agentH.RegisterRoutes(r)
+		})
+
 		// Management API (authenticated via JWT, with trial expiry and tier enforcement)
 		r.Group(func(r chi.Router) {
 			r.Use(jwtAuth)
@@ -295,6 +304,9 @@ func NewRouter(
 				r.Get("/projects/{projectID}/environments", envH.List)
 				r.Get("/projects/{projectID}/flags", flagH.List)
 				r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
+				r.Get("/projects/{projectID}/flags/{flagKey}/history", flagHistoryH.ListVersions)
+				r.Get("/projects/{projectID}/flags/{flagKey}/history/{version}", flagHistoryH.GetVersion)
+				r.Post("/projects/{projectID}/flags/{flagKey}/rollback", flagHistoryH.Rollback)
 				r.Get("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.GetState)
 				r.Get("/projects/{projectID}/environments/{envID}/flag-states", flagH.ListFlagStates)
 				r.Get("/projects/{projectID}/flags/compare-environments", flagH.CompareEnvironments)

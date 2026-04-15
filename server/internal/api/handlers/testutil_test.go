@@ -1521,3 +1521,14 @@ func (m *mockStore) ListCustomers(context.Context, string, string, string) ([]do
 func (m *mockStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
 	return nil, fmt.Errorf("not found")
 }
+
+// FlagVersionStore stubs
+func (m *mockStore) ListFlagVersions(_ context.Context, _ string, _, _ int) ([]domain.FlagVersion, error) {
+	return nil, nil
+}
+func (m *mockStore) GetFlagVersion(_ context.Context, _ string, _ int) (*domain.FlagVersion, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (m *mockStore) RollbackFlagToVersion(_ context.Context, _ string, _ int, _, _ string) error {
+	return nil
+}

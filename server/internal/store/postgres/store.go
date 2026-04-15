@@ -531,6 +531,94 @@ func (s *Store) DeleteFlag(ctx context.Context, id string) error {
 	return err
 }
 
+// --- Flag Versions ---
+
+func (s *Store) ListFlagVersions(ctx context.Context, flagID string, limit, offset int) ([]domain.FlagVersion, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, flag_id, version, config, previous_config, changed_by, change_reason, created_at
+		 FROM flag_versions WHERE flag_id = $1
+		 ORDER BY version DESC LIMIT $2 OFFSET $3`,
+		flagID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("list flag versions: %w", err)
+	}
+	defer rows.Close()
+
+	var versions []domain.FlagVersion
+	for rows.Next() {
+		var v domain.FlagVersion
+		var changedBy, changeReason *string
+		if err := rows.Scan(&v.ID, &v.FlagID, &v.Version, &v.Config, &v.PreviousConfig, &changedBy, &changeReason, &v.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan flag version: %w", err)
+		}
+		v.ChangedBy = changedBy
+		v.ChangeReason = changeReason
+		versions = append(versions, v)
+	}
+	return versions, rows.Err()
+}
+
+func (s *Store) GetFlagVersion(ctx context.Context, flagID string, version int) (*domain.FlagVersion, error) {
+	v := &domain.FlagVersion{}
+	var changedBy, changeReason *string
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, flag_id, version, config, previous_config, changed_by, change_reason, created_at
+		 FROM flag_versions WHERE flag_id = $1 AND version = $2`,
+		flagID, version,
+	).Scan(&v.ID, &v.FlagID, &v.Version, &v.Config, &v.PreviousConfig, &changedBy, &changeReason, &v.CreatedAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "flag version")
+	}
+	v.ChangedBy = changedBy
+	v.ChangeReason = changeReason
+	return v, nil
+}
+
+func (s *Store) RollbackFlagToVersion(ctx context.Context, flagID string, version int, userID string, reason string) error {
+	// Get the target version config
+	targetVersion, err := s.GetFlagVersion(ctx, flagID, version)
+	if err != nil {
+		return err
+	}
+
+	// Extract flag config from the version snapshot
+	var flagConfig struct {
+		Key          string     `json:"key"`
+		Name         string     `json:"name"`
+		Description  string     `json:"description"`
+		FlagType     string     `json:"flag_type"`
+		DefaultValue string     `json:"default_value"`
+		Tags         []string   `json:"tags"`
+		ExpiresAt    *time.Time `json:"expires_at"`
+	}
+
+	if err := json.Unmarshal(targetVersion.Config, &flagConfig); err != nil {
+		return fmt.Errorf("unmarshal flag config: %w", err)
+	}
+
+	// Update the flag with the old config
+	_, err = s.pool.Exec(ctx,
+		`UPDATE flags SET name=$1, description=$2, flag_type=$3, default_value=$4, tags=$5, expires_at=$6, updated_at=NOW()
+		 WHERE id = $7`,
+		flagConfig.Name, flagConfig.Description, flagConfig.FlagType, flagConfig.DefaultValue,
+		flagConfig.Tags, flagConfig.ExpiresAt, flagID)
+	if err != nil {
+		return fmt.Errorf("rollback flag: %w", err)
+	}
+
+	// The trigger will auto-create a new version entry for this rollback
+	// We need to update the latest version with the rollback metadata
+	_, err = s.pool.Exec(ctx,
+		`UPDATE flag_versions SET changed_by=$1, change_reason=$2
+		 WHERE flag_id=$3 AND version = (SELECT MAX(version) FROM flag_versions WHERE flag_id=$3)`,
+		userID, reason, flagID)
+	if err != nil {
+		return fmt.Errorf("update version metadata: %w", err)
+	}
+
+	return nil
+}
+
 // --- Flag States ---
 
 func (s *Store) UpsertFlagState(ctx context.Context, fs *domain.FlagState) error {

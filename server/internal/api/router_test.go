@@ -333,7 +333,16 @@ func (noopStore) GetDismissedHints(context.Context, string) ([]string, error) {
 }
 func (noopStore) SetTourCompleted(context.Context, string) error { return nil }
 
-func (noopStore) InsertFeedback(context.Context, *domain.Feedback) error         { return nil }
+func (noopStore) InsertFeedback(context.Context, *domain.Feedback) error { return nil }
+func (noopStore) ListFlagVersions(context.Context, string, int, int) ([]domain.FlagVersion, error) {
+	return nil, nil
+}
+func (noopStore) GetFlagVersion(context.Context, string, int) (*domain.FlagVersion, error) {
+	return nil, nil
+}
+func (noopStore) RollbackFlagToVersion(context.Context, string, int, string, string) error {
+	return nil
+}
 func (noopStore) InsertStatusChecks(context.Context, []domain.StatusCheck) error { return nil }
 func (noopStore) GetComponentHistory(context.Context, int) ([]domain.DailyComponentStatus, error) {
 	return nil, nil
@@ -620,49 +629,49 @@ func TestStatusHistoryEndpoint_IsPublic(t *testing.T) {
 // OpenAPI spec (health checks, internal status, payment gateway callbacks that
 // are server-to-server only).
 var internalRoutes = map[string]bool{
-	"GET /health": true,
-	"GET /v1/status": true,
-	"GET /v1/status/global": true,
-	"GET /v1/status/history": true,
-	"GET /v1/status/sla": true,
-	"POST /v1/billing/payu/callback": true,
-	"POST /v1/billing/payu/failure": true,
+	"GET /health":                     true,
+	"GET /v1/status":                  true,
+	"GET /v1/status/global":           true,
+	"GET /v1/status/history":          true,
+	"GET /v1/status/sla":              true,
+	"POST /v1/billing/payu/callback":  true,
+	"POST /v1/billing/payu/failure":   true,
 	"POST /v1/billing/stripe/webhook": true,
 	// New auth endpoints — documented separately in OpenAPI spec update.
 	"POST /v1/auth/forgot-password": true,
-	"POST /v1/auth/reset-password": true,
-	"GET /v1/auth/magic-link": true,
+	"POST /v1/auth/reset-password":  true,
+	"GET /v1/auth/magic-link":       true,
 	// Operations Portal routes — internal only, not part of public API.
-	"GET /api/v1/ops/environments": true,
-	"GET /api/v1/ops/environments/{id}": true,
-	"GET /api/v1/ops/environments/vps/{vps_id}": true,
-	"POST /api/v1/ops/environments/provision": true,
+	"GET /api/v1/ops/environments":                    true,
+	"GET /api/v1/ops/environments/{id}":               true,
+	"GET /api/v1/ops/environments/vps/{vps_id}":       true,
+	"POST /api/v1/ops/environments/provision":         true,
 	"POST /api/v1/ops/environments/{id}/decommission": true,
-	"POST /api/v1/ops/environments/{id}/maintenance": true,
-	"POST /api/v1/ops/environments/{id}/debug": true,
-	"POST /api/v1/ops/environments/{id}/restart": true,
-	"GET /api/v1/ops/licenses": true,
-	"GET /api/v1/ops/licenses/{id}": true,
-	"GET /api/v1/ops/licenses/org/{org_id}": true,
-	"POST /api/v1/ops/licenses": true,
-	"POST /api/v1/ops/licenses/{id}/revoke": true,
-	"POST /api/v1/ops/licenses/{id}/quota-override": true,
-	"POST /api/v1/ops/licenses/{id}/reset-usage": true,
-	"GET /api/v1/ops/sandboxes": true,
-	"POST /api/v1/ops/sandboxes": true,
-	"POST /api/v1/ops/sandboxes/{id}/renew": true,
-	"POST /api/v1/ops/sandboxes/{id}/decommission": true,
-	"GET /api/v1/ops/financial/costs/daily": true,
-	"GET /api/v1/ops/financial/costs/monthly": true,
-	"GET /api/v1/ops/financial/summary": true,
-	"GET /api/v1/ops/customers": true,
-	"GET /api/v1/ops/customers/{org_id}": true,
-	"GET /api/v1/ops/users": true,
-	"GET /api/v1/ops/users/{id}": true,
-	"GET /api/v1/ops/users/me": true,
-	"POST /api/v1/ops/users": true,
-	"PATCH /api/v1/ops/users/{id}": true,
-	"GET /api/v1/ops/audit": true,
+	"POST /api/v1/ops/environments/{id}/maintenance":  true,
+	"POST /api/v1/ops/environments/{id}/debug":        true,
+	"POST /api/v1/ops/environments/{id}/restart":      true,
+	"GET /api/v1/ops/licenses":                        true,
+	"GET /api/v1/ops/licenses/{id}":                   true,
+	"GET /api/v1/ops/licenses/org/{org_id}":           true,
+	"POST /api/v1/ops/licenses":                       true,
+	"POST /api/v1/ops/licenses/{id}/revoke":           true,
+	"POST /api/v1/ops/licenses/{id}/quota-override":   true,
+	"POST /api/v1/ops/licenses/{id}/reset-usage":      true,
+	"GET /api/v1/ops/sandboxes":                       true,
+	"POST /api/v1/ops/sandboxes":                      true,
+	"POST /api/v1/ops/sandboxes/{id}/renew":           true,
+	"POST /api/v1/ops/sandboxes/{id}/decommission":    true,
+	"GET /api/v1/ops/financial/costs/daily":           true,
+	"GET /api/v1/ops/financial/costs/monthly":         true,
+	"GET /api/v1/ops/financial/summary":               true,
+	"GET /api/v1/ops/customers":                       true,
+	"GET /api/v1/ops/customers/{org_id}":              true,
+	"GET /api/v1/ops/users":                           true,
+	"GET /api/v1/ops/users/{id}":                      true,
+	"GET /api/v1/ops/users/me":                        true,
+	"POST /api/v1/ops/users":                          true,
+	"PATCH /api/v1/ops/users/{id}":                    true,
+	"GET /api/v1/ops/audit":                           true,
 }
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has

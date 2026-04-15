@@ -321,6 +321,18 @@ func (m *mockStore) GetDismissedHints(_ context.Context, _ string) ([]string, er
 func (m *mockStore) SetTourCompleted(_ context.Context, _ string) error { return nil }
 
 func (m *mockStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }
+
+// FlagVersionStore stubs
+func (m *mockStore) ListFlagVersions(_ context.Context, _ string, _, _ int) ([]domain.FlagVersion, error) {
+	return nil, nil
+}
+func (m *mockStore) GetFlagVersion(_ context.Context, _ string, _ int) (*domain.FlagVersion, error) {
+	return nil, nil
+}
+func (m *mockStore) RollbackFlagToVersion(_ context.Context, _ string, _ int, _, _ string) error {
+	return nil
+}
+
 func (m *mockStore) InsertStatusChecks(_ context.Context, _ []domain.StatusCheck) error {
 	return nil
 }

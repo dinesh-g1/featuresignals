@@ -283,6 +283,13 @@ type FeedbackWriter interface {
 	InsertFeedback(ctx context.Context, fb *Feedback) error
 }
 
+// FlagVersionStore provides CRUD for flag version history.
+type FlagVersionStore interface {
+	ListFlagVersions(ctx context.Context, flagID string, limit, offset int) ([]FlagVersion, error)
+	GetFlagVersion(ctx context.Context, flagID string, version int) (*FlagVersion, error)
+	RollbackFlagToVersion(ctx context.Context, flagID string, version int, userID string, reason string) error
+}
+
 // StatusRecorder records and queries infrastructure health checks.
 type StatusRecorder interface {
 	InsertStatusChecks(ctx context.Context, checks []StatusCheck) error
@@ -325,6 +332,7 @@ type Store interface {
 	EventStore
 	UserPreferenceStore
 	FeedbackWriter
+	FlagVersionStore
 	StatusRecorder
 	MagicLinkStore
 	OpsStore

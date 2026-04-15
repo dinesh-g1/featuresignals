@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
+import { FlagHistory } from "@/components/flag-history";
 import {
   Card,
   CardContent,
@@ -1056,28 +1057,19 @@ export default function FlagDetailPage() {
         </TabsContent>
 
         <TabsContent value="history">
-          <Card>
-            {audit.length === 0 ? (
-              <EmptyState
-                icon={Clock}
-                title="No audit history for this flag yet."
-              />
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {audit.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4"
-                  >
-                    <Badge variant="primary">{entry.action}</Badge>
-                    <span className="text-xs text-slate-400">
-                      {new Date(entry.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          {flag && (
+            <FlagHistory
+              token={token}
+              projectId={projectId}
+              flagKey={flagKey}
+              flagId={flag.id}
+              onRollback={() => {
+                if (token && projectId) {
+                  api.getFlag(token, projectId, flagKey).then(setFlag);
+                }
+              }}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

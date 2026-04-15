@@ -315,6 +315,17 @@ func (s *tierMockStore) GetDismissedHints(context.Context, string) ([]string, er
 func (s *tierMockStore) SetTourCompleted(context.Context, string) error { return nil }
 
 func (s *tierMockStore) InsertFeedback(_ context.Context, _ *domain.Feedback) error { return nil }
+
+// FlagVersionStore stubs
+func (s *tierMockStore) ListFlagVersions(_ context.Context, _ string, _, _ int) ([]domain.FlagVersion, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetFlagVersion(_ context.Context, _ string, _ int) (*domain.FlagVersion, error) {
+	return nil, nil
+}
+func (s *tierMockStore) RollbackFlagToVersion(_ context.Context, _ string, _ int, _, _ string) error {
+	return nil
+}
 func (s *tierMockStore) InsertStatusChecks(_ context.Context, _ []domain.StatusCheck) error {
 	return nil
 }

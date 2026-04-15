@@ -27,7 +27,8 @@
       "Bash(source *)",
       "Bash(tr *)",
       "Bash(/users/dr/startups/featuresignals/start-server.sh)",
-      "Bash(kill *)"
+      "Bash(kill *)",
+      "Bash(node *)"
     ]
   },
   "$version": 3

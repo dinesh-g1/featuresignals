@@ -507,6 +507,47 @@ export const api = {
       token,
     }),
 
+  // Flag Versions & History
+  listFlagVersions: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    limit = 50,
+    offset = 0,
+  ) =>
+    request<{
+      data: Array<{
+        id: string;
+        version: number;
+        config: Record<string, unknown>;
+        previous_config: Record<string, unknown> | null;
+        changed_by: string | null;
+        change_reason: string | null;
+        created_at: string;
+      }>;
+      total: number;
+      limit: number;
+      offset: number;
+    }>(
+      `/v1/projects/${projectId}/flags/${flagKey}/history?limit=${limit}&offset=${offset}`,
+      { token },
+    ),
+  rollbackFlag: (
+    token: string,
+    projectId: string,
+    flagKey: string,
+    version: number,
+    reason: string,
+  ) =>
+    request<{ message: string; version: number }>(
+      `/v1/projects/${projectId}/flags/${flagKey}/rollback`,
+      {
+        method: "POST",
+        body: { version, reason },
+        token,
+      },
+    ),
+
   // Flag States
   getFlagState: (
     token: string,
