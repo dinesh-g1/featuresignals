@@ -56,8 +56,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # On manual dispatch, run everything
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
+            # On manual dispatch or reusable workflow call, run everything
             FILES="FULL"
           else
             # On pull_request, get changed files from PR
