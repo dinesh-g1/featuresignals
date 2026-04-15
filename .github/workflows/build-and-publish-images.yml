@@ -106,8 +106,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ inputs.push_images }}
           tags: ${{ steps.tags.outputs.dashboard_tags }}
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:8080
 
       - name: Build ops portal image
         uses: docker/build-push-action@v6
@@ -117,8 +117,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ inputs.push_images }}
           tags: ${{ steps.tags.outputs.ops_tags }}
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:8080
 
       - name: Build website image
         uses: docker/build-push-action@v6
