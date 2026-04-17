@@ -82,6 +82,8 @@ services:
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
       STRIPE_MODE: ${STRIPE_MODE:-test}
+      CORS_ENABLED: ${CORS_ENABLED:-false}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     healthcheck:
       test:
         [
