@@ -202,3 +202,19 @@ export interface LicenseQuotaOverride {
   max_projects?: number;
   max_environments?: number;
 }
+
+export interface Customer {
+  org_id: string;
+  org_name: string;
+  org_slug: string;
+  plan: string;
+  deployment_model: string;
+  data_region: string;
+  status: string;
+  mrr: number;
+  monthly_cost: number;
+  margin: number;
+  last_health_check?: string;
+  health_score: number;
+  created_at: string;
+}

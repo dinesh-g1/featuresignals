@@ -1,20 +1,20 @@
-import {
-  User,
-  Organization,
-  LoginResponse,
-  SignupResponse,
+/**
+ * Ops Portal API client.
+ *
+ * Independent from the customer dashboard API.
+ * Uses its own token storage and auth endpoints.
+ */
+
+import type {
+  Customer,
   CustomerEnvironment,
   License,
-  SandboxEnvironment,
-  OrgCostDaily,
-  OrgCostMonthlySummary,
   OpsUser,
   OpsAuditLog,
   ProvisionVPSRequest,
-  DecommissionRequest,
-  CreateSandboxRequest,
-  LicenseQuotaOverride,
-} from "./types";
+  SandboxEnvironment,
+  OrgCostDaily,
+} from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 if (!API_URL) {
@@ -24,7 +24,7 @@ if (!API_URL) {
 }
 const REQUEST_TIMEOUT_MS = 30_000;
 
-class APIError extends Error {
+export class APIError extends Error {
   constructor(
     public status: number,
     message: string,
@@ -32,6 +32,31 @@ class APIError extends Error {
     super(message);
     this.name = "APIError";
   }
+}
+
+// ─── Token storage (independent from customer dashboard) ──────────────
+
+const TOKEN_KEY = "ops_access_token";
+const REFRESH_KEY = "ops_refresh_token";
+const EXPIRES_KEY = "ops_expires_at";
+const USER_KEY = "ops_user";
+
+export function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function getStoredRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(REFRESH_KEY);
+}
+
+export function clearStoredAuth() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem(EXPIRES_KEY);
+  localStorage.removeItem(USER_KEY);
 }
 
 // ─── Core request helper ────────────────────────────────────────────────
@@ -79,460 +104,283 @@ async function request<T>(
   } catch (err) {
     clearTimeout(timeoutId);
     if (err instanceof APIError) throw err;
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new APIError(0, "Request timed out");
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new APIError(408, "Request timed out");
     }
-    throw new APIError(0, err instanceof Error ? err.message : "Unknown error");
+    throw new APIError(500, "Network error");
   }
 }
 
-// ─── Token storage ──────────────────────────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────
 
-function getStoredToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("ops_access_token");
-}
-
-function setStoredToken(
-  token: string | null,
-  refreshToken: string | null,
-  expiresAt: number | null,
-) {
-  if (typeof window === "undefined") return;
-  if (token) localStorage.setItem("ops_access_token", token);
-  else localStorage.removeItem("ops_access_token");
-  if (refreshToken) localStorage.setItem("ops_refresh_token", refreshToken);
-  else localStorage.removeItem("ops_refresh_token");
-  // Server returns expires_at in seconds; convert to milliseconds for
-  // consistent JS Date comparisons (see auth-guard.tsx token refresh logic).
-  if (expiresAt)
-    localStorage.setItem("ops_expires_at", String(expiresAt * 1000));
-  else localStorage.removeItem("ops_expires_at");
-}
-
-function getStoredRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("ops_refresh_token");
-}
-
-// ─── Auth API ───────────────────────────────────────────────────────────
-
-export async function login(
-  email: string,
-  password: string,
-): Promise<LoginResponse> {
-  const response = await request<LoginResponse>(
-    "POST",
-    "/v1/auth/login",
-    { email, password },
-    false,
-  );
-
-  // Validate featuresignals.com domain
-  if (!response.user.email.endsWith("@featuresignals.com")) {
-    throw new APIError(
-      403,
-      "Access restricted to @featuresignals.com email addresses only",
-    );
-  }
-
-  // Check if user has internal tier or is explicitly allowed
-  if (response.user.tier !== "internal") {
-    // Still allow login but they'll have limited ops role
-    // The backend ops_users table determines actual permissions
-  }
-
-  setStoredToken(
-    response.tokens.access_token,
-    response.tokens.refresh_token,
-    response.tokens.expires_at,
-  );
-  return response;
-}
-
-export async function refreshToken(): Promise<{
-  access_token: string;
+export interface OpsLoginResponse {
+  token: string;
   refresh_token: string;
-  expires_at: number;
-}> {
-  const refreshTokenValue = getStoredRefreshToken();
-  if (!refreshTokenValue) {
-    throw new APIError(401, "No refresh token available");
+  expires_at: string;
+  user: OpsUser;
+}
+
+export async function login(email: string, password: string): Promise<OpsLoginResponse> {
+  return request<OpsLoginResponse>("POST", "/api/v1/ops/auth/login", { email, password }, false);
+}
+
+export async function refreshToken(rt: string): Promise<OpsLoginResponse> {
+  return request<OpsLoginResponse>("POST", "/api/v1/ops/auth/refresh", { refresh_token: rt }, false);
+}
+
+export async function logout(): Promise<void> {
+  const rt = getStoredRefreshToken();
+  try {
+    await request("POST", "/api/v1/ops/auth/logout", rt ? { refresh_token: rt } : undefined);
+  } catch {
+    // Ignore errors on logout
   }
-
-  const response = await request<{
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-  }>("POST", "/v1/auth/refresh", { refresh_token: refreshTokenValue }, false);
-
-  setStoredToken(
-    response.access_token,
-    response.refresh_token,
-    response.expires_at,
-  );
-  return response;
+  clearStoredAuth();
 }
 
-export function logout() {
-  setStoredToken(null, null, null);
+export function persistAuth(response: OpsLoginResponse) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TOKEN_KEY, response.token);
+  localStorage.setItem(REFRESH_KEY, response.refresh_token);
+  localStorage.setItem(EXPIRES_KEY, response.expires_at);
+  localStorage.setItem(USER_KEY, JSON.stringify(response.user));
 }
 
-// ─── Environments API ───────────────────────────────────────────────────
+// ─── Environments ─────────────────────────────────────────────────────
 
-export const environments = {
-  list: (params?: {
-    status?: string;
-    deployment_model?: string;
-    region?: string;
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
-    const qs = new URLSearchParams();
-    if (params?.status) qs.set("status", params.status);
-    if (params?.deployment_model)
-      qs.set("deployment_model", params.deployment_model);
-    if (params?.region) qs.set("region", params.region);
-    if (params?.search) qs.set("search", params.search);
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.offset) qs.set("offset", String(params.offset));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ environments: CustomerEnvironment[]; total: number }>(
-      "GET",
-      `/api/v1/ops/environments${query}`,
-    );
-  },
+export async function listEnvironments(params?: {
+  status?: string;
+  model?: string;
+  region?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ environments: CustomerEnvironment[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set("status", params.status);
+  if (params?.model) qs.set("model", params.model);
+  if (params?.region) qs.set("region", params.region);
+  if (params?.search) qs.set("search", params.search);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  const query = qs.toString();
+  return request("GET", `/api/v1/ops/environments${query ? `?${query}` : ""}`);
+}
 
-  get: (id: string) =>
-    request<CustomerEnvironment>("GET", `/api/v1/ops/environments/${id}`),
+export async function getEnvironment(id: string): Promise<CustomerEnvironment> {
+  return request("GET", `/api/v1/ops/environments/${id}`);
+}
 
-  getByVpsId: (vpsId: string) =>
-    request<CustomerEnvironment>(
-      "GET",
-      `/api/v1/ops/environments/vps/${vpsId}`,
-    ),
+export async function provisionEnvironment(body: ProvisionVPSRequest): Promise<CustomerEnvironment> {
+  return request("POST", "/api/v1/ops/environments/provision", body);
+}
 
-  provision: (data: ProvisionVPSRequest) =>
-    request<{ environment: CustomerEnvironment; workflow_url: string }>(
-      "POST",
-      "/api/v1/ops/environments/provision",
-      data,
-    ),
+export async function decommissionEnvironment(id: string, reason: string): Promise<CustomerEnvironment> {
+  return request("POST", `/api/v1/ops/environments/${id}/decommission`, { reason });
+}
 
-  decommission: (id: string, reason: string) =>
-    request<{ success: boolean }>(
-      "POST",
-      `/api/v1/ops/environments/${id}/decommission`,
-      { reason },
-    ),
+export async function toggleMaintenance(id: string, enabled: boolean, reason?: string): Promise<CustomerEnvironment> {
+  return request("POST", `/api/v1/ops/environments/${id}/maintenance`, { enabled, reason });
+}
 
-  toggleMaintenance: (id: string, enabled: boolean, reason?: string) =>
-    request<CustomerEnvironment>(
-      "POST",
-      `/api/v1/ops/environments/${id}/maintenance`,
-      {
-        enabled,
-        reason,
-      },
-    ),
+export async function toggleDebug(id: string, enabled: boolean): Promise<CustomerEnvironment> {
+  return request("POST", `/api/v1/ops/environments/${id}/debug`, { enabled });
+}
 
-  toggleDebug: (id: string, enabled: boolean, duration_hours = 4) =>
-    request<CustomerEnvironment>(
-      "POST",
-      `/api/v1/ops/environments/${id}/debug`,
-      {
-        enabled,
-        duration_hours,
-      },
-    ),
+export async function restartEnvironment(id: string): Promise<CustomerEnvironment> {
+  return request("POST", `/api/v1/ops/environments/${id}/restart`);
+}
 
-  restart: (id: string) =>
-    request<{ success: boolean }>(
-      "POST",
-      `/api/v1/ops/environments/${id}/restart`,
-    ),
+// ─── Licenses ─────────────────────────────────────────────────────────
 
-  getLogs: (id: string, params?: { service?: string; lines?: number }) => {
-    const qs = new URLSearchParams();
-    if (params?.service) qs.set("service", params.service);
-    if (params?.lines) qs.set("lines", String(params.lines));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ logs: string[] }>(
-      "GET",
-      `/api/v1/ops/environments/${id}/logs${query}`,
-    );
-  },
+export async function listLicenses(params?: { plan?: string }): Promise<{ licenses: License[]; total: number }> {
+  return request("GET", "/api/v1/ops/licenses");
+}
 
-  getMetrics: (id: string) =>
-    request<{
-      cpu: number;
-      memory: number;
-      disk: number;
-      requests_per_min: number;
-      error_rate: number;
-    }>("GET", `/api/v1/ops/environments/${id}/metrics`),
-};
+export async function getLicense(id: string): Promise<License> {
+  return request("GET", `/api/v1/ops/licenses/${id}`);
+}
 
-// ─── Licenses API ───────────────────────────────────────────────────────
+export async function createLicense(body: {
+  org_id: string;
+  customer_name: string;
+  customer_email?: string;
+  plan: string;
+  billing_cycle: string;
+  max_seats?: number;
+  max_environments?: number;
+  max_projects?: number;
+  max_evaluations_per_month?: number;
+  max_api_calls_per_month?: number;
+  expires_at?: string;
+}): Promise<License> {
+  return request("POST", "/api/v1/ops/licenses", body);
+}
 
-export const licenses = {
-  list: (params?: {
-    plan?: string;
-    deployment_model?: string;
-    search?: string;
-  }) => {
-    const qs = new URLSearchParams();
-    if (params?.plan) qs.set("plan", params.plan);
-    if (params?.deployment_model)
-      qs.set("deployment_model", params.deployment_model);
-    if (params?.search) qs.set("search", params.search);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ licenses: License[]; total: number }>(
-      "GET",
-      `/api/v1/ops/licenses${query}`,
-    );
-  },
+export async function revokeLicense(id: string, reason: string): Promise<void> {
+  return request("POST", `/api/v1/ops/licenses/${id}/revoke`, { reason });
+}
 
-  get: (id: string) => request<License>("GET", `/api/v1/ops/licenses/${id}`),
+// ─── Sandboxes ────────────────────────────────────────────────────────
 
-  getByOrg: (orgId: string) =>
-    request<License | null>("GET", `/api/v1/ops/licenses/org/${orgId}`),
+export async function listSandboxes(params?: { status?: string }): Promise<{ sandboxes: SandboxEnvironment[]; total: number }> {
+  return request("GET", "/api/v1/ops/sandboxes");
+}
 
-  create: (data: {
-    org_id: string;
-    customer_name: string;
-    customer_email?: string;
-    plan: string;
-    billing_cycle?: string;
-    max_seats?: number;
-    max_projects?: number;
-    max_environments?: number;
-    max_evaluations_per_month?: number;
-    max_api_calls_per_month?: number;
-    features?: Record<string, boolean>;
-    expires_at?: string;
-  }) => request<License>("POST", "/api/v1/ops/licenses", data),
+export async function createSandbox(body: {
+  purpose: string;
+  ttl_hours?: number;
+  vps_type?: string;
+  region?: string;
+}): Promise<SandboxEnvironment> {
+  return request("POST", "/api/v1/ops/sandboxes", body);
+}
 
-  revoke: (id: string, reason: string) =>
-    request<{ success: boolean }>("POST", `/api/v1/ops/licenses/${id}/revoke`, {
-      reason,
-    }),
+export async function renewSandbox(id: string, hours?: number): Promise<SandboxEnvironment> {
+  return request("POST", `/api/v1/ops/sandboxes/${id}/renew`, { hours });
+}
 
-  overrideQuota: (id: string, overrides: LicenseQuotaOverride) =>
-    request<License>(
-      "POST",
-      `/api/v1/ops/licenses/${id}/quota-override`,
-      overrides,
-    ),
+export async function decommissionSandbox(id: string): Promise<void> {
+  return request("POST", `/api/v1/ops/sandboxes/${id}/decommission`);
+}
 
-  resetUsage: (id: string) =>
-    request<{ success: boolean }>(
-      "POST",
-      `/api/v1/ops/licenses/${id}/reset-usage`,
-    ),
-};
+// ─── Financial ────────────────────────────────────────────────────────
 
-// ─── Sandboxes API ──────────────────────────────────────────────────────
+export async function listDailyCosts(params?: {
+  org_id?: string;
+  start_date?: string;
+  end_date?: string;
+}): Promise<{ costs: OrgCostDaily[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.org_id) qs.set("org_id", params.org_id);
+  if (params?.start_date) qs.set("start_date", params.start_date);
+  if (params?.end_date) qs.set("end_date", params.end_date);
+  const query = qs.toString();
+  return request("GET", `/api/v1/ops/financial/costs/daily${query ? `?${query}` : ""}`);
+}
 
-export const sandboxes = {
-  list: (params?: { status?: string; owner_id?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.status) qs.set("status", params.status);
-    if (params?.owner_id) qs.set("owner_id", params.owner_id);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ sandboxes: SandboxEnvironment[]; total: number }>(
-      "GET",
-      `/api/v1/ops/sandboxes${query}`,
-    );
-  },
+export async function getMonthlySummary(): Promise<{
+  summaries: { org_id: string; month: string; total_cost: number }[];
+}> {
+  return request("GET", "/api/v1/ops/financial/costs/monthly");
+}
 
-  create: (data: CreateSandboxRequest) =>
-    request<{ sandbox: SandboxEnvironment }>(
-      "POST",
-      "/api/v1/ops/sandboxes",
-      data,
-    ),
+export async function getSummary(): Promise<{
+  total_mrr: number;
+  total_cost: number;
+  total_margin: number;
+  margin_by_tier: Record<string, { mrr: number; cost: number; margin: number }>;
+  top_customers: { org_id: string; org_name: string; mrr: number; cost: number; margin: number }[];
+  negative_margin: { org_id: string; org_name: string; mrr: number; cost: number; margin: number }[];
+}> {
+  return request("GET", "/api/v1/ops/financial/summary");
+}
 
-  renew: (id: string) =>
-    request<SandboxEnvironment>("POST", `/api/v1/ops/sandboxes/${id}/renew`),
+// ─── Ops Users ────────────────────────────────────────────────────────
 
-  decommission: (id: string) =>
-    request<{ success: boolean }>(
-      "POST",
-      `/api/v1/ops/sandboxes/${id}/decommission`,
-    ),
+export async function listOpsUsers(): Promise<{ users: OpsUser[]; total: number }> {
+  return request("GET", "/api/v1/ops/users");
+}
 
-  getExpiredSoon: (days = 7) =>
-    request<{ sandboxes: SandboxEnvironment[] }>(
-      "GET",
-      `/api/v1/ops/sandboxes/expiring?days=${days}`,
-    ),
-};
+export async function createOpsUser(body: {
+  user_id: string;
+  ops_role: string;
+  max_sandbox_envs?: number;
+}): Promise<OpsUser> {
+  return request("POST", "/api/v1/ops/users", body);
+}
 
-// ─── Financial API ──────────────────────────────────────────────────────
+export async function updateOpsUser(
+  id: string,
+  body: { ops_role?: string; is_active?: boolean },
+): Promise<OpsUser> {
+  return request("PUT", `/api/v1/ops/users/${id}`, body);
+}
 
-export const financial = {
-  getCostDaily: (orgId: string, startDate?: string, endDate?: string) => {
-    const qs = new URLSearchParams();
-    if (orgId) qs.set("org_id", orgId);
-    if (startDate) qs.set("start_date", startDate);
-    if (endDate) qs.set("end_date", endDate);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ costs: OrgCostDaily[] }>(
-      "GET",
-      `/api/v1/ops/financial/costs/daily${query}`,
-    );
-  },
+export async function deleteOpsUser(id: string): Promise<void> {
+  return request("DELETE", `/api/v1/ops/users/${id}`);
+}
 
-  getCostMonthly: (month?: string) => {
-    const qs = new URLSearchParams();
-    if (month) qs.set("month", month);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ summaries: OrgCostMonthlySummary[] }>(
-      "GET",
-      `/api/v1/ops/financial/costs/monthly${query}`,
-    );
-  },
+// ─── Audit Log ────────────────────────────────────────────────────────
 
-  getSummary: () =>
-    request<{
-      total_mrr: number;
-      total_cost: number;
-      total_margin: number;
-      margin_by_tier: Record<
-        string,
-        { mrr: number; cost: number; margin: number }
-      >;
-      top_customers: Array<{
-        org_id: string;
-        org_name: string;
-        mrr: number;
-        cost: number;
-        margin: number;
-      }>;
-      negative_margin: Array<{
-        org_id: string;
-        org_name: string;
-        mrr: number;
-        cost: number;
-        margin: number;
-      }>;
-    }>("GET", "/api/v1/ops/financial/summary"),
-};
+export async function listAuditLogs(params?: {
+  action?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ logs: OpsAuditLog[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.action) qs.set("action", params.action);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  const query = qs.toString();
+  return request("GET", `/api/v1/ops/audit${query ? `?${query}` : ""}`);
+}
 
-// ─── Customers API ──────────────────────────────────────────────────────
+// ─── Customers ────────────────────────────────────────────────────────
+
+export async function listCustomers(): Promise<{ customers: Customer[]; total: number }> {
+  return request("GET", "/api/v1/ops/customers");
+}
+
+export async function getCustomer(orgId: string): Promise<Customer> {
+  return request("GET", `/api/v1/ops/customers/${orgId}`);
+}
+
+// ─── Namespace exports for backward compatibility ─────────────────────
 
 export const customers = {
-  list: (params?: {
-    plan?: string;
-    deployment_model?: string;
-    search?: string;
-    health?: string;
-  }) => {
-    const qs = new URLSearchParams();
-    if (params?.plan) qs.set("plan", params.plan);
-    if (params?.deployment_model)
-      qs.set("deployment_model", params.deployment_model);
-    if (params?.search) qs.set("search", params.search);
-    if (params?.health) qs.set("health", params.health);
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{
-      customers: Array<{
-        org_id: string;
-        org_name: string;
-        org_slug: string;
-        plan: string;
-        deployment_model: string;
-        data_region: string;
-        status: string;
-        mrr: number;
-        monthly_cost: number;
-        margin: number;
-        last_health_check?: string;
-        health_score: number;
-        created_at: string;
-      }>;
-      total: number;
-    }>("GET", `/api/v1/ops/customers${query}`);
-  },
-
-  getDetail: (orgId: string) =>
-    request<{
-      org: Organization;
-      environment?: CustomerEnvironment;
-      license?: License;
-      monthly_cost: number;
-      mrr: number;
-      health_score: number;
-      recent_audit_logs: OpsAuditLog[];
-    }>("GET", `/api/v1/ops/customers/${orgId}`),
+  list: async (params?: { search?: string; plan?: string; deployment_model?: string }) => listCustomers(),
+  get: getCustomer,
 };
 
-// ─── Ops Users API ──────────────────────────────────────────────────────
-
-export const opsUsers = {
-  list: () => request<{ users: OpsUser[] }>("GET", "/api/v1/ops/users"),
-
-  get: (id: string) => request<OpsUser>("GET", `/api/v1/ops/users/${id}`),
-
-  create: (data: {
-    user_id: string;
-    ops_role: string;
-    allowed_env_types?: string[];
-    allowed_regions?: string[];
-    max_sandbox_envs?: number;
-  }) => request<OpsUser>("POST", "/api/v1/ops/users", data),
-
-  update: (
-    id: string,
-    data: {
-      ops_role?: string;
-      allowed_env_types?: string[];
-      allowed_regions?: string[];
-      max_sandbox_envs?: number;
-      is_active?: boolean;
-    },
-  ) => request<OpsUser>("PATCH", `/api/v1/ops/users/${id}`, data),
-
-  delete: (id: string) =>
-    request<{ success: boolean }>("DELETE", `/api/v1/ops/users/${id}`),
-
-  getMe: () => request<OpsUser>("GET", "/api/v1/ops/users/me"),
+export const financial = {
+  listDailyCosts,
+  getMonthlySummary,
+  getSummary,
+  getCostMonthly: getMonthlySummary,
 };
-
-// ─── Audit API ──────────────────────────────────────────────────────────
 
 export const audit = {
-  list: (params?: {
-    action?: string;
-    target_type?: string;
-    user_id?: string;
-    start_date?: string;
-    end_date?: string;
-    limit?: number;
-    offset?: number;
-  }) => {
-    const qs = new URLSearchParams();
-    if (params?.action) qs.set("action", params.action);
-    if (params?.target_type) qs.set("target_type", params.target_type);
-    if (params?.user_id) qs.set("user_id", params.user_id);
-    if (params?.start_date) qs.set("start_date", params.start_date);
-    if (params?.end_date) qs.set("end_date", params.end_date);
-    if (params?.limit) qs.set("limit", String(params.limit));
-    if (params?.offset) qs.set("offset", String(params.offset));
-    const query = qs.toString() ? `?${qs.toString()}` : "";
-    return request<{ logs: OpsAuditLog[]; total: number }>(
-      "GET",
-      `/api/v1/ops/audit${query}`,
-    );
-  },
+  list: listAuditLogs,
 };
 
-export { APIError };
-export type {
-  ProvisionVPSRequest,
-  DecommissionRequest,
-  CreateSandboxRequest,
-  LicenseQuotaOverride,
+export const environments = {
+  list: async (params?: { search?: string; status?: string; deployment_model?: string; limit?: number; offset?: number }) => {
+    return listEnvironments({
+      search: params?.search,
+      status: params?.status,
+      model: params?.deployment_model,
+      limit: params?.limit,
+      offset: params?.offset,
+    });
+  },
+  get: getEnvironment,
+  provision: provisionEnvironment,
+  decommission: decommissionEnvironment,
+  toggleMaintenance,
+  toggleDebug,
+  restart: restartEnvironment,
 };
+
+export const sandboxes = {
+  list: listSandboxes,
+  create: createSandbox,
+  renew: renewSandbox,
+  decommission: decommissionSandbox,
+};
+
+export const licenses = {
+  list: listLicenses,
+  get: getLicense,
+  create: createLicense,
+  revoke: revokeLicense,
+};
+
+export const opsUsers = {
+  list: listOpsUsers,
+  create: createOpsUser,
+  update: updateOpsUser,
+  delete: deleteOpsUser,
+};
+
+export type { ProvisionVPSRequest } from "@/lib/types";

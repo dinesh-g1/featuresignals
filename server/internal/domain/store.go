@@ -340,4 +340,5 @@ type Store interface {
 	MagicLinkStore
 	OpsStore
 	IntegrationStore
+	OpsPortalStore
 }

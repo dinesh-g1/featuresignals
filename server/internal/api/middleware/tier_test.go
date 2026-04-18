@@ -637,3 +637,10 @@ func (s *tierMockStore) TestIntegration(context.Context, string) (*domain.Integr
 func (s *tierMockStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
 	return nil, nil
 }
+
+func (s *tierMockStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
+func (s *tierMockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *tierMockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
+func (s *tierMockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *tierMockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
+func (s *tierMockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
