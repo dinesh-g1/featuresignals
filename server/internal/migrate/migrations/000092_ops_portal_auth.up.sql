@@ -5,7 +5,7 @@
 BEGIN;
 
 -- Ops portal credentials (separate from customer users table)
-CREATE TABLE ops_portal_credentials (
+CREATE TABLE IF NOT EXISTS ops_portal_credentials (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ops_user_id UUID NOT NULL REFERENCES ops_users(id) ON DELETE CASCADE,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -14,10 +14,10 @@ CREATE TABLE ops_portal_credentials (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_ops_creds_email ON ops_portal_credentials(email);
+CREATE INDEX IF NOT EXISTS idx_ops_creds_email ON ops_portal_credentials(email);
 
 -- Ops portal sessions (independent from customer sessions)
-CREATE TABLE ops_portal_sessions (
+CREATE TABLE IF NOT EXISTS ops_portal_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ops_user_id UUID NOT NULL REFERENCES ops_users(id) ON DELETE CASCADE,
     refresh_token_hash TEXT NOT NULL,
@@ -27,15 +27,10 @@ CREATE TABLE ops_portal_sessions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_ops_sessions_user ON ops_portal_sessions(ops_user_id);
-CREATE INDEX idx_ops_sessions_refresh ON ops_portal_sessions(refresh_token_hash);
-CREATE INDEX idx_ops_sessions_expires ON ops_portal_sessions(expires_at) WHERE expires_at > NOW();
-
--- Seed founder account (password: admin123 — change immediately)
--- email: admin@featuresignals.com
--- This is a placeholder — the actual founder should set up their account via CLI
-INSERT INTO ops_users (ops_role, allowed_env_types, allowed_regions, max_sandbox_envs, is_active)
-VALUES ('founder', '{shared,isolated,onprem}', '{in,us,eu,asia}', -1, true)
-ON CONFLICT DO NOTHING;
+CREATE INDEX IF NOT EXISTS idx_ops_sessions_user ON ops_portal_sessions(ops_user_id);
+CREATE INDEX IF NOT EXISTS idx_ops_sessions_refresh ON ops_portal_sessions(refresh_token_hash);
+-- Note: Cannot use WHERE expires_at > NOW() in index predicate (NOW() is not IMMUTABLE).
+-- Expiration is checked at query time instead.
+CREATE INDEX IF NOT EXISTS idx_ops_sessions_expires ON ops_portal_sessions(expires_at);
 
 COMMIT;
