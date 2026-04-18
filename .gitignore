@@ -94,6 +94,3 @@ sdks/java/target/
 
 # Ops portal sensitive docs (internal procedures, infra details)
 ops/docs/*.md
-
-# Internal architecture and business strategy (NEVER public)
-.internal/
