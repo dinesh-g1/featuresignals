@@ -856,3 +856,25 @@ func (noopStore) ListCustomers(context.Context, string, string, string) ([]domai
 func (noopStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
 	return nil, errNoop
 }
+
+func (noopStore) CreateIntegration(context.Context, domain.CreateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (noopStore) GetIntegration(context.Context, string, string) (*domain.Integration, error) {
+	return nil, nil
+}
+func (noopStore) ListIntegrations(context.Context, string) ([]domain.Integration, error) {
+	return nil, nil
+}
+func (noopStore) UpdateIntegration(context.Context, string, string, domain.UpdateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (noopStore) DeleteIntegration(context.Context, string, string) error {
+	return nil
+}
+func (noopStore) TestIntegration(context.Context, string) (*domain.IntegrationDelivery, error) {
+	return nil, nil
+}
+func (noopStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
+	return nil, nil
+}

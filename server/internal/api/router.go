@@ -121,6 +121,7 @@ func NewRouter(
 	auditExportH := handlers.NewAuditExportHandler(store)
 	teamH := handlers.NewTeamHandler(store, jwtMgr, emitter, lifecycle, dashboardURL)
 	webhookH := handlers.NewWebhookHandler(store)
+	integrationH := handlers.NewIntegrationHandler(store, logger)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
@@ -417,6 +418,12 @@ func NewRouter(
 				r.Get("/webhooks/{webhookID}", webhookH.Get)
 				r.Put("/webhooks/{webhookID}", webhookH.Update)
 				r.Delete("/webhooks/{webhookID}", webhookH.Delete)
+
+			// ── Integrations ───────────────────────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(writers...))
+				r.Route("/integrations", integrationH.RegisterRoutes)
+			})
 				r.Get("/webhooks/{webhookID}/deliveries", webhookH.ListDeliveries)
 			})
 

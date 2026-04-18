@@ -339,4 +339,5 @@ type Store interface {
 	StatusRecorder
 	MagicLinkStore
 	OpsStore
+	IntegrationStore
 }
