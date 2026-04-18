@@ -224,7 +224,11 @@ export default function WebhooksPage() {
   async function handleTest(wh: Webhook) {
     if (!token) return;
     setTestingId(wh.id);
-    setTestResults((prev) => ({ ...prev, [wh.id]: undefined as any }));
+    setTestResults((prev) => {
+      const next = { ...prev };
+      delete next[wh.id];
+      return next;
+    });
     try {
       const result = await api.testWebhook(token, wh.id);
       setTestResults((prev) => ({

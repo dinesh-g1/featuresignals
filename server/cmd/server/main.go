@@ -234,12 +234,18 @@ func main() {
 	// Payment gateway registry (Strategy pattern)
 	paymentRegistry := payment.NewRegistry()
 	if cfg.PayUMerchantKey != "" {
-		paymentRegistry.Register(payupkg.NewProvider(cfg.PayUMerchantKey, cfg.PayUSalt, cfg.PayUMode))
-		logger.Info("PayU payment gateway registered", "mode", cfg.PayUMode)
+		if err := paymentRegistry.Register(payupkg.NewProvider(cfg.PayUMerchantKey, cfg.PayUSalt, cfg.PayUMode)); err != nil {
+			logger.Error("failed to register PayU payment gateway", "error", err)
+		} else {
+			logger.Info("PayU payment gateway registered", "mode", cfg.PayUMode)
+		}
 	}
 	if cfg.StripeSecretKey != "" {
-		paymentRegistry.Register(stripepkg.NewProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripePriceID))
-		logger.Info("Stripe payment gateway registered", "mode", cfg.StripeMode)
+		if err := paymentRegistry.Register(stripepkg.NewProvider(cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripePriceID)); err != nil {
+			logger.Error("failed to register Stripe payment gateway", "error", err)
+		} else {
+			logger.Info("Stripe payment gateway registered", "mode", cfg.StripeMode)
+		}
 	}
 
 	// Product event emitter (async, non-blocking, batched writes)

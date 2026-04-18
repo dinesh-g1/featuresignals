@@ -1818,7 +1818,7 @@
       "name": "FeatureSignals",
       "url": "https://featuresignals.com"
     },
-    "description": "Complete API reference for FeatureSignals — feature flag management platform.",
+    "description": "Complete API reference for FeatureSignals \u2014 feature flag management platform.",
     "license": {
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
@@ -2202,7 +2202,7 @@
                 }
               }
             },
-            "description": "List approvals — success"
+            "description": "List approvals \u2014 success"
           },
           "400": {
             "content": {
@@ -2276,7 +2276,7 @@
                 }
               }
             },
-            "description": "Create approval — success"
+            "description": "Create approval \u2014 success"
           },
           "400": {
             "content": {
@@ -2347,7 +2347,7 @@
                 }
               }
             },
-            "description": "Get approval — success"
+            "description": "Get approval \u2014 success"
           },
           "400": {
             "content": {
@@ -2428,7 +2428,7 @@
                 }
               }
             },
-            "description": "Review approval — success"
+            "description": "Review approval \u2014 success"
           },
           "400": {
             "content": {
@@ -2494,7 +2494,7 @@
                 }
               }
             },
-            "description": "List audit log — success"
+            "description": "List audit log \u2014 success"
           },
           "400": {
             "content": {
@@ -2629,7 +2629,7 @@
                 }
               }
             },
-            "description": "Complete signup — success"
+            "description": "Complete signup \u2014 success"
           },
           "400": {
             "content": {
@@ -2701,7 +2701,7 @@
                 }
               }
             },
-            "description": "Initiate signup — success"
+            "description": "Initiate signup \u2014 success"
           },
           "400": {
             "content": {
@@ -2773,7 +2773,7 @@
                 }
               }
             },
-            "description": "Log in — success"
+            "description": "Log in \u2014 success"
           },
           "400": {
             "content": {
@@ -2835,7 +2835,7 @@
                 }
               }
             },
-            "description": "Log out — success"
+            "description": "Log out \u2014 success"
           },
           "400": {
             "content": {
@@ -2911,7 +2911,7 @@
                 }
               }
             },
-            "description": "Disable MFA — success"
+            "description": "Disable MFA \u2014 success"
           },
           "400": {
             "content": {
@@ -2977,7 +2977,7 @@
                 }
               }
             },
-            "description": "Enable MFA — success"
+            "description": "Enable MFA \u2014 success"
           },
           "400": {
             "content": {
@@ -3043,7 +3043,7 @@
                 }
               }
             },
-            "description": "Get MFA status — success"
+            "description": "Get MFA status \u2014 success"
           },
           "400": {
             "content": {
@@ -3119,7 +3119,7 @@
                 }
               }
             },
-            "description": "Verify MFA code — success"
+            "description": "Verify MFA code \u2014 success"
           },
           "400": {
             "content": {
@@ -3195,7 +3195,7 @@
                 }
               }
             },
-            "description": "Refresh token — success"
+            "description": "Refresh token \u2014 success"
           },
           "400": {
             "content": {
@@ -3267,7 +3267,7 @@
                 }
               }
             },
-            "description": "Resend signup OTP — success"
+            "description": "Resend signup OTP \u2014 success"
           },
           "400": {
             "content": {
@@ -3329,7 +3329,7 @@
                 }
               }
             },
-            "description": "Send verification email — success"
+            "description": "Send verification email \u2014 success"
           },
           "400": {
             "content": {
@@ -3405,7 +3405,7 @@
                 }
               }
             },
-            "description": "Exchange one-time token — success"
+            "description": "Exchange one-time token \u2014 success"
           },
           "400": {
             "content": {
@@ -3532,7 +3532,7 @@
                 }
               }
             },
-            "description": "Cancel subscription — success"
+            "description": "Cancel subscription \u2014 success"
           },
           "400": {
             "content": {
@@ -3598,7 +3598,7 @@
                 }
               }
             },
-            "description": "Create checkout session — success"
+            "description": "Create checkout session \u2014 success"
           },
           "400": {
             "content": {
@@ -3674,7 +3674,7 @@
                 }
               }
             },
-            "description": "Update payment gateway — success"
+            "description": "Update payment gateway \u2014 success"
           },
           "400": {
             "content": {
@@ -3850,7 +3850,7 @@
                 }
               }
             },
-            "description": "Get billing portal URL — success"
+            "description": "Get billing portal URL \u2014 success"
           },
           "400": {
             "content": {
@@ -3971,7 +3971,7 @@
                 }
               }
             },
-            "description": "Get subscription — success"
+            "description": "Get subscription \u2014 success"
           },
           "400": {
             "content": {
@@ -4037,7 +4037,7 @@
                 }
               }
             },
-            "description": "Get usage — success"
+            "description": "Get usage \u2014 success"
           },
           "400": {
             "content": {
@@ -4286,7 +4286,7 @@
                 }
               }
             },
-            "description": "List API keys — success"
+            "description": "List API keys \u2014 success"
           },
           "400": {
             "content": {
@@ -4434,7 +4434,7 @@
                 }
               }
             },
-            "description": "Evaluate a single flag — success"
+            "description": "Evaluate a single flag \u2014 success"
           },
           "400": {
             "content": {
@@ -4569,7 +4569,7 @@
                 }
               }
             },
-            "description": "List enabled features — success"
+            "description": "List enabled features \u2014 success"
           },
           "400": {
             "content": {
@@ -4704,7 +4704,7 @@
                 }
               }
             },
-            "description": "Get IP allowlist — success"
+            "description": "Get IP allowlist \u2014 success"
           },
           "400": {
             "content": {
@@ -4778,7 +4778,7 @@
                 }
               }
             },
-            "description": "Update IP allowlist — success"
+            "description": "Update IP allowlist \u2014 success"
           },
           "400": {
             "content": {
@@ -4844,7 +4844,7 @@
                 }
               }
             },
-            "description": "List members — success"
+            "description": "List members \u2014 success"
           },
           "400": {
             "content": {
@@ -4920,7 +4920,7 @@
                 }
               }
             },
-            "description": "Invite member — success"
+            "description": "Invite member \u2014 success"
           },
           "400": {
             "content": {
@@ -5258,7 +5258,7 @@
                 }
               }
             },
-            "description": "Get evaluation metrics — success"
+            "description": "Get evaluation metrics \u2014 success"
           },
           "400": {
             "content": {
@@ -5324,7 +5324,7 @@
                 }
               }
             },
-            "description": "Reset evaluation metrics — success"
+            "description": "Reset evaluation metrics \u2014 success"
           },
           "400": {
             "content": {
@@ -5508,7 +5508,7 @@
                 }
               }
             },
-            "description": "Get onboarding state — success"
+            "description": "Get onboarding state \u2014 success"
           },
           "400": {
             "content": {
@@ -5582,7 +5582,7 @@
                 }
               }
             },
-            "description": "Update onboarding state — success"
+            "description": "Update onboarding state \u2014 success"
           },
           "400": {
             "content": {
@@ -5758,7 +5758,7 @@
                 }
               }
             },
-            "description": "List projects — success"
+            "description": "List projects \u2014 success"
           },
           "400": {
             "content": {
@@ -5832,7 +5832,7 @@
                 }
               }
             },
-            "description": "Create project — success"
+            "description": "Create project \u2014 success"
           },
           "400": {
             "content": {
@@ -5965,7 +5965,7 @@
                 }
               }
             },
-            "description": "Get project — success"
+            "description": "Get project \u2014 success"
           },
           "400": {
             "content": {
@@ -6017,6 +6017,95 @@
         "tags": [
           "Projects"
         ]
+      },
+      "put": {
+        "description": "Updates a project's name.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The updated project name.",
+                    "example": "My Updated Project"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Update project - success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update project",
+        "tags": [
+          "Projects"
+        ]
       }
     },
     "/v1/projects/{projectID}/environments": {
@@ -6036,7 +6125,7 @@
                 }
               }
             },
-            "description": "List environments — success"
+            "description": "List environments \u2014 success"
           },
           "400": {
             "content": {
@@ -6115,7 +6204,7 @@
                 }
               }
             },
-            "description": "Create environment — success"
+            "description": "Create environment \u2014 success"
           },
           "400": {
             "content": {
@@ -6231,6 +6320,98 @@
           }
         ],
         "summary": "Delete environment",
+        "tags": [
+          "Environments"
+        ]
+      },
+      "put": {
+        "description": "Updates an environment's name.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectID"
+          },
+          {
+            "$ref": "#/components/parameters/EnvID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The updated environment name.",
+                    "example": "production"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentResponse"
+                }
+              }
+            },
+            "description": "Update environment - success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update environment",
         "tags": [
           "Environments"
         ]
@@ -6400,7 +6581,7 @@
                 }
               }
             },
-            "description": "List flag states — success"
+            "description": "List flag states \u2014 success"
           },
           "400": {
             "content": {
@@ -6548,7 +6729,7 @@
                 }
               }
             },
-            "description": "List flags — success"
+            "description": "List flags \u2014 success"
           },
           "400": {
             "content": {
@@ -6627,7 +6808,7 @@
                 }
               }
             },
-            "description": "Create flag — success"
+            "description": "Create flag \u2014 success"
           },
           "400": {
             "content": {
@@ -6698,7 +6879,7 @@
                 }
               }
             },
-            "description": "Compare environments — success"
+            "description": "Compare environments \u2014 success"
           },
           "400": {
             "content": {
@@ -6911,7 +7092,7 @@
                 }
               }
             },
-            "description": "Get flag — success"
+            "description": "Get flag \u2014 success"
           },
           "400": {
             "content": {
@@ -6993,7 +7174,7 @@
                 }
               }
             },
-            "description": "Update flag — success"
+            "description": "Update flag \u2014 success"
           },
           "400": {
             "content": {
@@ -7070,7 +7251,7 @@
                 }
               }
             },
-            "description": "Get flag state — success"
+            "description": "Get flag state \u2014 success"
           },
           "400": {
             "content": {
@@ -7155,7 +7336,7 @@
                 }
               }
             },
-            "description": "Update flag state — success"
+            "description": "Update flag state \u2014 success"
           },
           "400": {
             "content": {
@@ -7239,7 +7420,7 @@
                 }
               }
             },
-            "description": "Kill switch — success"
+            "description": "Kill switch \u2014 success"
           },
           "400": {
             "content": {
@@ -7323,7 +7504,7 @@
                 }
               }
             },
-            "description": "Promote flag — success"
+            "description": "Promote flag \u2014 success"
           },
           "400": {
             "content": {
@@ -7394,7 +7575,7 @@
                 }
               }
             },
-            "description": "List segments — success"
+            "description": "List segments \u2014 success"
           },
           "400": {
             "content": {
@@ -7473,7 +7654,7 @@
                 }
               }
             },
-            "description": "Create segment — success"
+            "description": "Create segment \u2014 success"
           },
           "400": {
             "content": {
@@ -7612,7 +7793,7 @@
                 }
               }
             },
-            "description": "Get segment — success"
+            "description": "Get segment \u2014 success"
           },
           "400": {
             "content": {
@@ -7694,7 +7875,7 @@
                 }
               }
             },
-            "description": "Update segment — success"
+            "description": "Update segment \u2014 success"
           },
           "400": {
             "content": {
@@ -8545,7 +8726,7 @@
                 }
               }
             },
-            "description": "Get SSO config — success"
+            "description": "Get SSO config \u2014 success"
           },
           "400": {
             "content": {
@@ -8619,7 +8800,7 @@
                 }
               }
             },
-            "description": "Create/update SSO config — success"
+            "description": "Create/update SSO config \u2014 success"
           },
           "400": {
             "content": {
@@ -9701,7 +9882,7 @@
                 }
               }
             },
-            "description": "Dismiss hint — success"
+            "description": "Dismiss hint \u2014 success"
           },
           "400": {
             "content": {
@@ -9767,7 +9948,7 @@
                 }
               }
             },
-            "description": "List webhooks — success"
+            "description": "List webhooks \u2014 success"
           },
           "400": {
             "content": {
@@ -9841,7 +10022,7 @@
                 }
               }
             },
-            "description": "Create webhook — success"
+            "description": "Create webhook \u2014 success"
           },
           "400": {
             "content": {
@@ -9974,7 +10155,7 @@
                 }
               }
             },
-            "description": "Get webhook — success"
+            "description": "Get webhook \u2014 success"
           },
           "400": {
             "content": {
@@ -10053,7 +10234,7 @@
                 }
               }
             },
-            "description": "Update webhook — success"
+            "description": "Update webhook \u2014 success"
           },
           "400": {
             "content": {
@@ -10124,7 +10305,7 @@
                 }
               }
             },
-            "description": "List deliveries — success"
+            "description": "List deliveries \u2014 success"
           },
           "400": {
             "content": {
@@ -10200,7 +10381,7 @@
       "name": "Analytics"
     },
     {
-      "description": "Approval workflow for flag changes — Pro+",
+      "description": "Approval workflow for flag changes \u2014 Pro+",
       "name": "Approvals"
     },
     {
@@ -10216,11 +10397,11 @@
       "name": "Billing"
     },
     {
-      "description": "Custom role templates — Enterprise",
+      "description": "Custom role templates \u2014 Enterprise",
       "name": "Custom Roles"
     },
     {
-      "description": "Organization data export — Pro+",
+      "description": "Organization data export \u2014 Pro+",
       "name": "Data Export"
     },
     {
@@ -10252,7 +10433,7 @@
       "name": "Health"
     },
     {
-      "description": "IP allowlist management — Enterprise",
+      "description": "IP allowlist management \u2014 Enterprise",
       "name": "IP Allowlist"
     },
     {
@@ -10260,7 +10441,7 @@
       "name": "Insights"
     },
     {
-      "description": "Multi-factor authentication (TOTP) — Pro+",
+      "description": "Multi-factor authentication (TOTP) \u2014 Pro+",
       "name": "MFA"
     },
     {
@@ -10280,11 +10461,11 @@
       "name": "Projects"
     },
     {
-      "description": "SCIM 2.0 user provisioning — Enterprise",
+      "description": "SCIM 2.0 user provisioning \u2014 Enterprise",
       "name": "SCIM"
     },
     {
-      "description": "SSO configuration (SAML 2.0 / OIDC) — Enterprise",
+      "description": "SSO configuration (SAML 2.0 / OIDC) \u2014 Enterprise",
       "name": "SSO"
     },
     {
@@ -10308,7 +10489,7 @@
       "name": "User"
     },
     {
-      "description": "Webhook configuration and delivery history — Pro+",
+      "description": "Webhook configuration and delivery history \u2014 Pro+",
       "name": "Webhooks"
     }
   ]

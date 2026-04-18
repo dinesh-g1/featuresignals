@@ -24,7 +24,13 @@ func HandleRegionPricing(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	proPlan, ok := domain.Pricing().Plans[domain.PlanPro]
+	pricingCfg, err := domain.Pricing()
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "pricing config unavailable")
+		return
+	}
+
+	proPlan, ok := pricingCfg.Plans[domain.PlanPro]
 	actualPrice := 999.0
 	if ok && proPlan.Price != nil {
 		actualPrice = *proPlan.Price

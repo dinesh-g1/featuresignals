@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -59,27 +60,31 @@ func LoadPricing() (PricingConfig, error) {
 	return pricingConfig, nil
 }
 
-// MustLoadPricing loads the embedded pricing.json exactly once and panics on
-// failure. Use during application initialization.
+// MustLoadPricing loads the embedded pricing.json exactly once and calls
+// log.Fatal on failure. Use during application initialization.
 func MustLoadPricing() PricingConfig {
 	cfg, err := LoadPricing()
 	if err != nil {
-		panic(err)
+		log.Fatal("failed to load pricing config", "error", err)
 	}
 	return cfg
 }
 
-// Pricing returns the singleton PricingConfig. Panics if not yet loaded.
-// Prefer LoadPricing() or MustLoadPricing() during initialization.
-func Pricing() PricingConfig {
+// Pricing returns the singleton PricingConfig and an error if not yet loaded
+// or if loading failed. Prefer calling this over direct access to pricingConfig.
+func Pricing() (PricingConfig, error) {
 	if pricingErr != nil {
-		panic("pricing config not loaded or failed to parse: " + pricingErr.Error())
+		return PricingConfig{}, fmt.Errorf("pricing config not loaded or failed to parse: %w", pricingErr)
 	}
-	return pricingConfig
+	return pricingConfig, nil
 }
 
 func ProPlanAmount() string {
-	if p, ok := Pricing().Plans[PlanPro]; ok && p.Price != nil {
+	cfg, err := Pricing()
+	if err != nil {
+		return "999.00"
+	}
+	if p, ok := cfg.Plans[PlanPro]; ok && p.Price != nil {
 		return fmt.Sprintf("%.2f", *p.Price)
 	}
 	return "999.00"

@@ -90,14 +90,17 @@ func GetPlanDefaults() map[string]PlanLimits {
 		PlanPro:        {Seats: -1, Projects: -1, Environments: -1},
 		PlanEnterprise: {Seats: -1, Projects: -1, Environments: -1},
 	}
-	if p, ok := Pricing().Plans[PlanFree]; ok {
-		defaults[PlanFree] = PlanLimits{
-			Seats:        p.Limits.Seats,
-			Projects:     p.Limits.Projects,
-			Environments: p.Limits.Environments,
+	cfg, err := Pricing()
+	if err == nil {
+		if p, ok := cfg.Plans[PlanFree]; ok {
+			defaults[PlanFree] = PlanLimits{
+				Seats:        p.Limits.Seats,
+				Projects:     p.Limits.Projects,
+				Environments: p.Limits.Environments,
+			}
+		} else {
+			defaults[PlanFree] = PlanLimits{Seats: 3, Projects: 1, Environments: 3}
 		}
-	} else {
-		defaults[PlanFree] = PlanLimits{Seats: 3, Projects: 1, Environments: 3}
 	}
 	return defaults
 }

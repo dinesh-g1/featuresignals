@@ -256,12 +256,12 @@ func ListAllFiles() ([]EmbeddedFile, error) {
 
 // MigrationSource returns the embedded filesystem containing all migrations.
 // This can be used for inspection or debugging.
-func MigrationSource() fs.FS {
+func MigrationSource() (fs.FS, error) {
 	sub, err := fs.Sub(migrationFS, "migrations")
 	if err != nil {
-		panic(fmt.Sprintf("failed to create migration sub-FS: %v", err))
+		return nil, fmt.Errorf("failed to create migration sub-FS: %w", err)
 	}
-	return sub
+	return sub, nil
 }
 
 // ReadMigrationFile reads and returns the content of a specific migration file.

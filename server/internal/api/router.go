@@ -177,7 +177,12 @@ func NewRouter(
 
 		// Public pricing endpoint — single source of truth for all clients
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing", func(w http.ResponseWriter, _ *http.Request) {
-			httputil.JSON(w, http.StatusOK, domain.Pricing())
+			cfg, err := domain.Pricing()
+			if err != nil {
+				httputil.Error(w, http.StatusInternalServerError, "pricing config unavailable")
+				return
+			}
+			httputil.JSON(w, http.StatusOK, cfg)
 		})
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing/regions", pricing.HandleRegionPricing)
 

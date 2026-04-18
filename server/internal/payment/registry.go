@@ -13,12 +13,13 @@ func NewRegistry() *Registry {
 	return &Registry{gateways: make(map[string]Gateway)}
 }
 
-// Register adds a gateway to the registry. Panics if name is empty.
-func (r *Registry) Register(gw Gateway) {
+// Register adds a gateway to the registry. Returns an error if name is empty.
+func (r *Registry) Register(gw Gateway) error {
 	if gw.Name() == "" {
-		panic("payment: gateway name must not be empty")
+		return fmt.Errorf("payment: gateway name must not be empty")
 	}
 	r.gateways[gw.Name()] = gw
+	return nil
 }
 
 // Get returns the gateway with the given name or an error if not found.

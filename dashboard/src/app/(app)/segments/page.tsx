@@ -30,6 +30,18 @@ import {
 import type { Segment, Condition } from "@/lib/types";
 import { cn, suggestSlug } from "@/lib/utils";
 
+interface SegmentFormState {
+  key: string;
+  name: string;
+  description: string;
+  match_type: string;
+}
+
+interface SegmentFieldErrors {
+  key?: string;
+  name?: string;
+}
+
 const MATCH_TYPE_OPTIONS = [
   { value: "all", label: "All conditions must match" },
   { value: "any", label: "Any condition must match" },
@@ -175,10 +187,10 @@ function SegmentsContent({
   segments: Segment[];
   showCreate: boolean;
   setShowCreate: (v: boolean) => void;
-  form: { key: string; name: string; description: string; match_type: string };
-  setForm: (v: any) => void;
-  fieldErrors: { key?: string; name?: string };
-  setFieldErrors: (v: any) => void;
+  form: SegmentFormState;
+  setForm: (v: SegmentFormState) => void;
+  fieldErrors: SegmentFieldErrors;
+  setFieldErrors: (v: SegmentFieldErrors) => void;
   deleting: string | null;
   setDeleting: (v: string | null) => void;
   expanded: string | null;

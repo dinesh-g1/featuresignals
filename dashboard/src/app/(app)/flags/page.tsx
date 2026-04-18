@@ -37,11 +37,21 @@ import {
   useDeleteFlag,
 } from "@/hooks/use-data";
 import { useMutation } from "@/hooks/use-query";
+
+interface MutationResult<TArgs, TData> {
+  mutate: (args: TArgs) => Promise<TData | undefined>;
+  loading: boolean;
+  error: string | null;
+}
 import {
   PrerequisiteGate,
   usePrerequisites,
 } from "@/components/prerequisite-gate";
-import type { FlagState } from "@/lib/types";
+import type {
+  FlagState,
+  Flag as FlagType,
+  Environment as EnvironmentType,
+} from "@/lib/types";
 
 const FLAG_TYPE_OPTIONS = [
   { value: "all", label: "All Types" },
@@ -84,6 +94,21 @@ const CREATE_CATEGORY_OPTIONS = [
 ];
 
 type SortKey = "key" | "name" | "created_at" | "updated_at";
+
+interface NewFlagState {
+  key: string;
+  name: string;
+  flag_type: string;
+  category: string;
+  description: string;
+  default_value: string;
+}
+
+interface FieldErrors {
+  key?: string;
+  name?: string;
+  default_value?: string;
+}
 
 export default function FlagsPage() {
   const token = useAppStore((s) => s.token);
@@ -466,9 +491,9 @@ function FlagsWithData({
     description: string;
     default_value: string;
   };
-  setNewFlag: (v: any) => void;
-  fieldErrors: { key?: string; name?: string; default_value?: string };
-  setFieldErrors: (v: any) => void;
+  setNewFlag: (v: NewFlagState) => void;
+  fieldErrors: FieldErrors;
+  setFieldErrors: (v: FieldErrors) => void;
   deleting: string | null;
   setDeleting: (v: string | null) => void;
   toggling: string | null;
@@ -784,9 +809,9 @@ function FlagsContent({
   filtered,
   refetchFlags,
 }: {
-  flags: any[] | undefined;
-  envs: any[] | undefined;
-  stateMap: Map<string, any>;
+  flags: FlagType[] | undefined;
+  envs: EnvironmentType[] | undefined;
+  stateMap: Map<string, FlagState>;
   currentEnvName: string | undefined;
   suggestedKey: string;
   search: string;
@@ -807,20 +832,20 @@ function FlagsContent({
   handleSort: (key: SortKey) => void;
   showCreate: boolean;
   setShowCreate: (v: boolean) => void;
-  newFlag: any;
-  setNewFlag: (v: any) => void;
+  newFlag: NewFlagState;
+  setNewFlag: (v: NewFlagState) => void;
   handleTypeChange: (v: string) => void;
   handleCreate: (e: React.FormEvent) => void;
-  createFlag: any;
-  fieldErrors: any;
-  setFieldErrors: (v: any) => void;
+  createFlag: MutationResult<Record<string, unknown>, unknown>;
+  fieldErrors: FieldErrors;
+  setFieldErrors: (v: FieldErrors) => void;
   deleting: string | null;
   setDeleting: (v: string | null) => void;
   toggling: string | null;
   handleQuickToggle: (key: string) => void;
   handleDelete: (key: string) => void;
-  deleteFlag: any;
-  filtered: any[];
+  deleteFlag: MutationResult<string, unknown>;
+  filtered: FlagType[];
   refetchFlags: () => void;
 }) {
   const currentEnvId = useAppStore((s) => s.currentEnvId);

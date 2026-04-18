@@ -27,7 +27,9 @@ func (s *stubGateway) CreateBillingPortalURL(context.Context, string, string) (s
 func TestRegistry_RegisterAndGet(t *testing.T) {
 	r := NewRegistry()
 	gw := &stubGateway{name: "test"}
-	r.Register(gw)
+	if err := r.Register(gw); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	got, err := r.Get("test")
 	if err != nil {
@@ -48,7 +50,9 @@ func TestRegistry_Get_NotFound(t *testing.T) {
 
 func TestRegistry_Has(t *testing.T) {
 	r := NewRegistry()
-	r.Register(&stubGateway{name: "stripe"})
+	if err := r.Register(&stubGateway{name: "stripe"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if !r.Has("stripe") {
 		t.Error("Has(stripe) = false, want true")
@@ -60,8 +64,12 @@ func TestRegistry_Has(t *testing.T) {
 
 func TestRegistry_Names(t *testing.T) {
 	r := NewRegistry()
-	r.Register(&stubGateway{name: "payu"})
-	r.Register(&stubGateway{name: "stripe"})
+	if err := r.Register(&stubGateway{name: "payu"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := r.Register(&stubGateway{name: "stripe"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	names := r.Names()
 	if len(names) != 2 {
@@ -77,21 +85,22 @@ func TestRegistry_Names(t *testing.T) {
 	}
 }
 
-func TestRegistry_Register_EmptyName_Panics(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic for empty gateway name")
-		}
-	}()
-
+func TestRegistry_Register_EmptyName_ReturnsError(t *testing.T) {
 	r := NewRegistry()
-	r.Register(&stubGateway{name: ""})
+	err := r.Register(&stubGateway{name: ""})
+	if err == nil {
+		t.Error("expected error for empty gateway name")
+	}
 }
 
 func TestRegistry_MultipleGateways(t *testing.T) {
 	r := NewRegistry()
-	r.Register(&stubGateway{name: "payu"})
-	r.Register(&stubGateway{name: "stripe"})
+	if err := r.Register(&stubGateway{name: "payu"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := r.Register(&stubGateway{name: "stripe"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	tests := []struct {
 		name    string

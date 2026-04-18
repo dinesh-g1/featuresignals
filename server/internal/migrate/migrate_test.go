@@ -73,7 +73,10 @@ func TestListAllFiles(t *testing.T) {
 }
 
 func TestMigrationSource(t *testing.T) {
-	src := MigrationSource()
+	src, err := MigrationSource()
+	if err != nil {
+		t.Fatalf("MigrationSource() returned error: %v", err)
+	}
 	if src == nil {
 		t.Fatal("MigrationSource() returned nil")
 	}
