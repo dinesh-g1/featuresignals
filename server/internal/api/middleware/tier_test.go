@@ -615,3 +615,25 @@ func (s *tierMockStore) ListCustomers(context.Context, string, string, string) (
 func (s *tierMockStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
 	return nil, fmt.Errorf("not found")
 }
+
+func (s *tierMockStore) CreateIntegration(context.Context, domain.CreateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (s *tierMockStore) GetIntegration(context.Context, string, string) (*domain.Integration, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListIntegrations(context.Context, string) ([]domain.Integration, error) {
+	return nil, nil
+}
+func (s *tierMockStore) UpdateIntegration(context.Context, string, string, domain.UpdateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (s *tierMockStore) DeleteIntegration(context.Context, string, string) error {
+	return nil
+}
+func (s *tierMockStore) TestIntegration(context.Context, string) (*domain.IntegrationDelivery, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
+	return nil, nil
+}

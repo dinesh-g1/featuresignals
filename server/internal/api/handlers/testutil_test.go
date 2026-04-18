@@ -1567,3 +1567,25 @@ func (m *mockStore) GetFlagVersion(_ context.Context, _ string, _ int) (*domain.
 func (m *mockStore) RollbackFlagToVersion(_ context.Context, _ string, _ int, _, _ string) error {
 	return nil
 }
+
+func (s *mockStore) CreateIntegration(context.Context, domain.CreateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (s *mockStore) GetIntegration(context.Context, string, string) (*domain.Integration, error) {
+	return nil, nil
+}
+func (s *mockStore) ListIntegrations(context.Context, string) ([]domain.Integration, error) {
+	return nil, nil
+}
+func (s *mockStore) UpdateIntegration(context.Context, string, string, domain.UpdateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (s *mockStore) DeleteIntegration(context.Context, string, string) error {
+	return nil
+}
+func (s *mockStore) TestIntegration(context.Context, string) (*domain.IntegrationDelivery, error) {
+	return nil, nil
+}
+func (s *mockStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
+	return nil, nil
+}
