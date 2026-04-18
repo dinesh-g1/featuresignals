@@ -39,6 +39,7 @@ type CustomerEnvironment struct {
 	LastHealthCheck      *time.Time `json:"last_health_check,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            time.Time  `json:"updated_at"`
+	PasswordHash    string    `json:"-"`
 }
 
 // ─── License ──────────────────────────────────────────────────────────
@@ -79,6 +80,7 @@ type License struct {
 	PhoneHomeStatus      string     `json:"phone_home_status,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            time.Time  `json:"updated_at"`
+	PasswordHash    string    `json:"-"`
 }
 
 // ─── Ops User ─────────────────────────────────────────────────────────
@@ -93,6 +95,7 @@ type OpsUser struct {
 	IsActive        bool      `json:"is_active"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
+	PasswordHash    string    `json:"-"`
 	// Joined from users table
 	UserEmail string `json:"user_email,omitempty"`
 	UserName  string `json:"user_name,omitempty"`
@@ -115,6 +118,7 @@ type SandboxEnvironment struct {
 	TotalCost        int64      `json:"total_cost"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
+	PasswordHash    string    `json:"-"`
 	DecommissionedAt *time.Time `json:"decommissioned_at,omitempty"`
 	// Joined
 	OwnerEmail string `json:"owner_email,omitempty"`

@@ -472,6 +472,12 @@ func NewRouter(
 	// ── Operations Portal API (/api/v1/ops) ─────────────────────────
 	// Restricted to @featuresignals.com users via middleware check
 	opsH := handlers.NewOpsHandler(store)
+	opsAuthH := handlers.NewOpsAuthHandler(store, logger)
+		// ── Ops Portal Auth (public) ────────────────────────────────
+		r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
+		r.Post("/api/v1/ops/auth/refresh", opsAuthH.Refresh)
+		r.Post("/api/v1/ops/auth/logout", opsAuthH.Logout)
+
 	r.Route("/api/v1/ops", func(r chi.Router) {
 		r.Use(jwtAuth)
 		r.Use(middleware.RequireJSON)

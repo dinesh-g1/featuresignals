@@ -1589,3 +1589,10 @@ func (s *mockStore) TestIntegration(context.Context, string) (*domain.Integratio
 func (s *mockStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
 	return nil, nil
 }
+
+func (s *mockStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
+func (s *mockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
+func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *mockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
+func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }

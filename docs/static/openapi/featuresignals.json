@@ -11426,6 +11426,94 @@
           }
         }
       }
+    },
+    "/api/v1/ops/auth/login": {
+      "post": {
+        "summary": "Ops portal login",
+        "description": "Authenticate an ops portal user with email and password.",
+        "tags": [
+          "Ops Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login success"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/v1/ops/auth/refresh": {
+      "post": {
+        "summary": "Ops portal refresh token",
+        "description": "Refresh an ops portal access token.",
+        "tags": [
+          "Ops Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refresh_token"
+                ],
+                "properties": {
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Refresh success"
+          },
+          "401": {
+            "description": "Invalid refresh token"
+          }
+        }
+      }
+    },
+    "/api/v1/ops/auth/logout": {
+      "post": {
+        "summary": "Ops portal logout",
+        "description": "Log out and invalidate the current session.",
+        "tags": [
+          "Ops Auth"
+        ],
+        "responses": {
+          "204": {
+            "description": "Logged out"
+          }
+        }
+      }
     }
   },
   "security": [

@@ -878,3 +878,10 @@ func (noopStore) TestIntegration(context.Context, string) (*domain.IntegrationDe
 func (noopStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
 	return nil, nil
 }
+
+func (noopStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
+func (noopStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (noopStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
+func (noopStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (noopStore) DeleteOpsSession(context.Context, string, string) error { return nil }
+func (noopStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
