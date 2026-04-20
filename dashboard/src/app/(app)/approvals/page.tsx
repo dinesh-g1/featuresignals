@@ -118,8 +118,8 @@ function SlaProgress({ ar, now }: { ar: ApprovalRequest; now: number }) {
             className={cn(
               "h-full rounded-full transition-all duration-1000",
               barColor,
+              `w-[${progress * 100}%]`,
             )}
-            style={{ width: `${progress * 100}%` }}
           />
         </div>
       </div>

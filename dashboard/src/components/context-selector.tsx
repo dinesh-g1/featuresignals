@@ -227,9 +227,8 @@ function Combobox({
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute left-0 z-[9999] w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl"
+          className="absolute left-0 z-[9999] w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl top-full translate-y-1"
           role="listbox"
-          style={{ top: "calc(100% + 4px)" }}
         >
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-slate-100 px-2 py-1.5">

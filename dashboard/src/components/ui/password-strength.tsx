@@ -48,7 +48,9 @@ interface PasswordStrengthInlineProps {
   password: string;
 }
 
-export function PasswordStrengthInline({ password }: PasswordStrengthInlineProps) {
+export function PasswordStrengthInline({
+  password,
+}: PasswordStrengthInlineProps) {
   const { score, checks, level } = getPasswordStrength(password);
 
   if (!password) return null;
@@ -69,8 +71,8 @@ export function PasswordStrengthInline({ password }: PasswordStrengthInlineProps
           className={cn(
             "h-full rounded-full transition-all duration-300",
             levelColors[level],
+            `w-[${(score / 5) * 100}%]`,
           )}
-          style={{ width: `${(score / 5) * 100}%` }}
         />
       </div>
       {/* Checklist */}
@@ -83,11 +85,7 @@ export function PasswordStrengthInline({ password }: PasswordStrengthInlineProps
               c.met ? "text-emerald-600" : "text-slate-400",
             )}
           >
-            {c.met ? (
-              <Check className="h-3 w-3" />
-            ) : (
-              <X className="h-3 w-3" />
-            )}
+            {c.met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
             <span className="truncate">{c.label}</span>
           </div>
         ))}

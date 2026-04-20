@@ -273,10 +273,12 @@ func main() {
 	defer statusRecorderCancel()
 	go runStatusRecorder(statusRecorderCtx, store, statusH, logger)
 
-	// Router
+	// Router with context for rate limiter cleanup
+	routerCtx, cancelRouter := context.WithCancel(context.Background())
+	defer cancelRouter()
 	regionsEnabled := !cfg.IsOnPrem()
 
-	router := api.NewRouter(store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
+	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,

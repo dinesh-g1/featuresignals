@@ -248,7 +248,10 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 		return "", 0, fmt.Errorf("zeptomail marshal: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.baseURL+"/v1.1/email", bytes.NewReader(body))
+	// Ensure a timeout for the outbound HTTP call
+	reqCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, m.baseURL+"/v1.1/email", bytes.NewReader(body))
 	if err != nil {
 		return "", 0, fmt.Errorf("zeptomail request: %w", err)
 	}

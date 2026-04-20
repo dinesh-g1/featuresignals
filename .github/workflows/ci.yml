@@ -151,6 +151,15 @@ jobs:
       - name: Vet
         working-directory: server
         run: go vet ./...
+      - name: Panic Check
+        working-directory: server
+        run: |
+          echo "Checking for panic() calls in production code..."
+          if grep -r "panic(" --include="*.go" --exclude="*_test.go" .; then
+            echo "::error::Found panic() calls in production code. Use proper error handling instead."
+            exit 1
+          fi
+          echo "✓ No panic() calls found."
 
   # -- Dashboard --------------------------------------------------------------
   dashboard-tests:
@@ -169,6 +178,21 @@ jobs:
       - name: Install
         working-directory: dashboard
         run: npm ci
+      - name: TypeScript Quality Check
+        working-directory: dashboard
+        run: |
+          echo "Checking for console.log and any types in TypeScript code..."
+          # Check for console.log in committed code
+          if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "::error::Found console.log in committed code. Use structured logging instead."
+            exit 1
+          fi
+          # Check for any types in TypeScript
+          if grep -r ": any\b" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "::error::Found 'any' types in TypeScript code. Use proper interfaces or unknown with type guards."
+            exit 1
+          fi
+          echo "✓ No console.log or any types found."
       - name: Test with coverage
         working-directory: dashboard
         run: npm run test:coverage
@@ -195,6 +219,21 @@ jobs:
       - name: Install
         working-directory: ops
         run: npm ci
+      - name: TypeScript Quality Check
+        working-directory: ops
+        run: |
+          echo "Checking for console.log and any types in TypeScript code..."
+          # Check for console.log in committed code
+          if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "::error::Found console.log in committed code. Use structured logging instead."
+            exit 1
+          fi
+          # Check for any types in TypeScript
+          if grep -r ": any\b" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "::error::Found 'any' types in TypeScript code. Use proper interfaces or unknown with type guards."
+            exit 1
+          fi
+          echo "✓ No console.log or any types found."
       - name: Lint
         working-directory: ops
         run: npm run lint --if-present
@@ -245,6 +284,15 @@ jobs:
           go test ./... -count=1 -v -coverprofile=coverage.out -covermode=atomic
           echo "=== Go SDK Coverage ==="
           go tool cover -func=coverage.out | tail -1
+      - name: Panic Check (SDK)
+        working-directory: sdks/go
+        run: |
+          echo "Checking for panic() calls in SDK production code..."
+          if grep -r "panic(" --include="*.go" --exclude="*_test.go" .; then
+            echo "::error::Found panic() calls in SDK production code. Use proper error handling instead."
+            exit 1
+          fi
+          echo "✓ No panic() calls found in SDK."
 
   node-sdk-tests:
     name: "SDK: Node.js Tests"
@@ -266,6 +314,21 @@ jobs:
         run: |
           npm install
           node --test --experimental-strip-types --experimental-test-coverage src/__tests__/client.test.ts
+      - name: TypeScript Quality Check (SDK)
+        working-directory: sdks/node
+        run: |
+          echo "Checking for console.log and any types in SDK TypeScript code..."
+          # Check for console.log in committed code
+          if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "::error::Found console.log in committed SDK code. Use structured logging instead."
+            exit 1
+          fi
+          # Check for any types in TypeScript
+          if grep -r ": any\b" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo "::error::Found 'any' types in SDK TypeScript code. Use proper interfaces or unknown with type guards."
+            exit 1
+          fi
+          echo "✓ No console.log or any types found in SDK."
 
   python-sdk-tests:
     name: "SDK: Python Tests"

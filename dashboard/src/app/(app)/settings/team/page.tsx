@@ -439,8 +439,7 @@ export default function TeamPage() {
                         >
                           <div className="flex items-center gap-2">
                             <div
-                              className="h-2.5 w-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: env.color }}
+                              className={`h-2.5 w-2.5 rounded-full shrink-0 bg-[${env.color}]`}
                             />
                             <span className="text-xs font-medium text-slate-700">
                               {env.name}

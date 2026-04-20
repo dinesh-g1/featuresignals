@@ -173,10 +173,7 @@ export default function UsageInsightsPage() {
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-16 rounded-full bg-slate-200 overflow-hidden sm:w-24">
                         <div
-                          className="h-full rounded-full bg-emerald-500 transition-all"
-                          style={{
-                            width: `${Math.min(ins.true_percentage ?? 0, 100)}%`,
-                          }}
+                          className={`h-full rounded-full bg-emerald-500 transition-all w-[${Math.min(ins.true_percentage ?? 0, 100)}%]`}
                         />
                       </div>
                       <span className="text-xs font-medium text-slate-600">

@@ -775,8 +775,8 @@ function UsageCard({
           className={cn(
             "h-1.5 rounded-full transition-all",
             isNearLimit ? "bg-amber-500" : "bg-indigo-500",
+            `w-[${pct}%]`,
           )}
-          style={{ width: `${pct}%` }}
         />
       </div>
     </div>

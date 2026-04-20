@@ -114,8 +114,7 @@ export function CreateEnvironmentDialog({
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  className={`h-8 w-8 rounded-full transition-all ${color === c.value ? "ring-2 ring-offset-2 ring-indigo-500 scale-110" : "hover:scale-105"}`}
-                  style={{ backgroundColor: c.value }}
+                  className={`h-8 w-8 rounded-full transition-all ${color === c.value ? "ring-2 ring-offset-2 ring-indigo-500 scale-110" : "hover:scale-105"} bg-[${c.value}]`}
                   title={c.label}
                 />
               ))}

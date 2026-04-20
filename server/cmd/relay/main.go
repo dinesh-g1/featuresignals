@@ -116,7 +116,9 @@ type RelayProxy struct {
 
 func (p *RelayProxy) Sync(ctx context.Context) error {
 	url := fmt.Sprintf("%s/v1/client/%s/flags?key=relay", p.upstream, p.envKey)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	reqCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(reqCtx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -190,7 +192,7 @@ func (p *RelayProxy) connectSSE(ctx context.Context) error {
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Cache-Control", "no-cache")
 
-	sseClient := &http.Client{Timeout: 0}
+	sseClient := &http.Client{Timeout: 5 * 60 * time.Second}
 	resp, err := sseClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("SSE connect: %w", err)

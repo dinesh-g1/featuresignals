@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/auth"
+	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/metrics"
@@ -34,6 +36,7 @@ type BillingConfig struct {
 // passed as interfaces so the router (and the handlers it creates) can be
 // tested without real infrastructure.
 func NewRouter(
+	ctx context.Context,
 	store domain.Store,
 	jwtMgr auth.TokenManager,
 	evalCache handlers.RulesetCache,
@@ -58,6 +61,14 @@ func NewRouter(
 ) http.Handler {
 	r := chi.NewRouter()
 
+	// Extract config from internalChecker (passed as dto.InternalChecker interface)
+	cfg, ok := internalChecker.(*config.Config)
+	if !ok {
+		// Fallback: create minimal config for safety
+		cfg = &config.Config{}
+		logger.Warn("internalChecker is not *config.Config, using empty config")
+	}
+
 	// CORS is handled by Caddy at the edge layer in staging/production.
 	// See deploy/Caddyfile.region for the full configuration.
 	// For local dev only, we inject CORS when CORS_ENABLED=true.
@@ -70,6 +81,7 @@ func NewRouter(
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
 	r.Use(middleware.Logging(logger))
+	r.Use(middleware.LicenseValidation(cfg, logger))
 	r.Use(middleware.SafeRecoverer)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -189,7 +201,7 @@ func NewRouter(
 
 		// Public auth routes (rate-limited to prevent brute force)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RateLimit(20))
+			r.Use(middleware.RateLimit(ctx, 20))
 
 			r.Post("/auth/login", authH.Login)
 			r.Post("/auth/initiate-signup", signupH.InitiateSignup)
@@ -284,7 +296,7 @@ func NewRouter(
 			r.Use(middleware.CacheControl("private, no-cache"))
 			r.Use(middleware.TrialExpiry(store, logger))
 			r.Use(middleware.TierEnforce(store, logger))
-			r.Use(middleware.TierRateLimit(store))
+			r.Use(middleware.TierRateLimit(ctx, store))
 
 			// ── Features endpoint (returns plan capabilities) ──────
 			r.Group(func(r chi.Router) {
@@ -419,11 +431,11 @@ func NewRouter(
 				r.Put("/webhooks/{webhookID}", webhookH.Update)
 				r.Delete("/webhooks/{webhookID}", webhookH.Delete)
 
-			// ── Integrations ───────────────────────────────────────
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireRole(writers...))
-				r.Route("/integrations", integrationH.RegisterRoutes)
-			})
+				// ── Integrations ───────────────────────────────────────
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireRole(writers...))
+					r.Route("/integrations", integrationH.RegisterRoutes)
+				})
 				r.Get("/webhooks/{webhookID}/deliveries", webhookH.ListDeliveries)
 			})
 
@@ -473,10 +485,10 @@ func NewRouter(
 	// Restricted to @featuresignals.com users via middleware check
 	opsH := handlers.NewOpsHandler(store)
 	opsAuthH := handlers.NewOpsAuthHandler(store, logger)
-		// ── Ops Portal Auth (public) ────────────────────────────────
-		r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
-		r.Post("/api/v1/ops/auth/refresh", opsAuthH.Refresh)
-		r.Post("/api/v1/ops/auth/logout", opsAuthH.Logout)
+	// ── Ops Portal Auth (public) ────────────────────────────────
+	r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
+	r.Post("/api/v1/ops/auth/refresh", opsAuthH.Refresh)
+	r.Post("/api/v1/ops/auth/logout", opsAuthH.Logout)
 
 	r.Route("/api/v1/ops", func(r chi.Router) {
 		r.Use(jwtAuth)

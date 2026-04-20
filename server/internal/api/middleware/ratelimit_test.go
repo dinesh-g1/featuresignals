@@ -1,13 +1,21 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
+func testContext(t *testing.T) context.Context {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Cleanup(cancel)
+	return ctx
+}
+
 func TestRateLimit_AllowsUnderLimit(t *testing.T) {
-	handler := RateLimit(100)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := RateLimit(testContext(t), 100)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -25,7 +33,7 @@ func TestRateLimit_AllowsUnderLimit(t *testing.T) {
 }
 
 func TestRateLimit_BlocksOverLimit(t *testing.T) {
-	handler := RateLimit(5)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := RateLimit(testContext(t), 5)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -46,7 +54,7 @@ func TestRateLimit_BlocksOverLimit(t *testing.T) {
 }
 
 func TestRateLimit_DifferentClientsIndependent(t *testing.T) {
-	handler := RateLimit(2)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := RateLimit(testContext(t), 2)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -77,7 +85,7 @@ func TestRateLimit_DifferentClientsIndependent(t *testing.T) {
 }
 
 func TestRateLimit_APIKeyBasedLimiting(t *testing.T) {
-	handler := RateLimit(2)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := RateLimit(testContext(t), 2)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 

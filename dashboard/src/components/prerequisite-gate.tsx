@@ -373,12 +373,11 @@ export function PrerequisiteGate({
                       });
                       handleCreateEnvironment(color.slug);
                     }}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all hover:scale-110 ${
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all hover:scale-110 bg-[${color.value}] ${
                       envColor === color.value
                         ? "border-slate-900 shadow-md"
                         : "border-transparent"
                     }`}
-                    style={{ backgroundColor: color.value }}
                     title={color.label}
                   >
                     {envColor === color.value && (

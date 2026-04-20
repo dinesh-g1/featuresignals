@@ -384,7 +384,12 @@ func newTestRouter(t *testing.T) http.Handler {
 
 	statusH := status.NewHandler(noopHealthChecker{}, noopPoolStats{}, "us", store, evalCache, sseServer)
 
+	// Create context for rate limiter cleanup
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
 	return api.NewRouter(
+		ctx,
 		store,
 		jwtMgr,
 		evalCache,
@@ -881,7 +886,11 @@ func (noopStore) ListDeliveries(context.Context, string, int) ([]domain.Integrat
 
 func (noopStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
 func (noopStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
-func (noopStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
-func (noopStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (noopStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) {
+	return "", nil
+}
+func (noopStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
 func (noopStore) DeleteOpsSession(context.Context, string, string) error { return nil }
-func (noopStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
+func (noopStore) DeleteAllOpsSessions(context.Context, string) error     { return nil }
