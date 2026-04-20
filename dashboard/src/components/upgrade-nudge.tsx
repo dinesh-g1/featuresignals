@@ -60,10 +60,8 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
                   className={cn(
                     "h-full rounded-full transition-all",
                     isUrgent ? "bg-amber-500" : "bg-indigo-500",
+                    `w-[${Math.min(100, (nudge.current / nudge.limit) * 100)}%]`,
                   )}
-                  style={{
-                    width: `${Math.min(100, (nudge.current / nudge.limit) * 100)}%`,
-                  }}
                 />
               </div>
               <span className="shrink-0 text-xs tabular-nums text-slate-500">

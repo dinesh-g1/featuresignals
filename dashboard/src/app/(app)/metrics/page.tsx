@@ -190,10 +190,7 @@ export default function MetricsPage() {
                 </span>
                 <div className="flex-1 h-5 rounded-full bg-slate-100 sm:h-6">
                   <div
-                    className="h-full rounded-full bg-indigo-500 transition-all"
-                    style={{
-                      width: `${Math.max(2, (count / maxFlagCount) * 100)}%`,
-                    }}
+                    className={`h-full rounded-full bg-indigo-500 transition-all w-[${Math.max(2, (count / maxFlagCount) * 100)}%]`}
                   />
                 </div>
                 <span className="w-16 text-right text-sm font-semibold text-slate-700 sm:w-20">

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sync"
@@ -33,6 +34,7 @@ type rateLimiter struct {
 	visitors map[string]*visitor
 	rate     int
 	window   time.Duration
+	cancel   context.CancelFunc
 }
 
 type visitor struct {
@@ -40,24 +42,33 @@ type visitor struct {
 	resetAt time.Time
 }
 
-func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
+func RateLimit(ctx context.Context, requestsPerMinute int) func(http.Handler) http.Handler {
 	rl := &rateLimiter{
 		visitors: make(map[string]*visitor),
 		rate:     requestsPerMinute,
 		window:   time.Minute,
 	}
 
+	// Use provided context for cancellation
+	cleanupCtx, cancel := context.WithCancel(ctx)
+	rl.cancel = cancel
 	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
 		for {
-			time.Sleep(time.Minute)
-			rl.mu.Lock()
-			now := time.Now()
-			for k, v := range rl.visitors {
-				if now.After(v.resetAt) {
-					delete(rl.visitors, k)
+			select {
+			case <-ticker.C:
+				rl.mu.Lock()
+				now := time.Now()
+				for k, v := range rl.visitors {
+					if now.After(v.resetAt) {
+						delete(rl.visitors, k)
+					}
 				}
+				rl.mu.Unlock()
+			case <-cleanupCtx.Done():
+				return
 			}
-			rl.mu.Unlock()
 		}
 	}()
 
@@ -111,24 +122,33 @@ func RateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
 // TierRateLimit applies rate limiting based on the org's plan tier.
 // Must be placed after JWTAuth and TrialExpiry so the org plan can be resolved.
 // Falls back to free-tier limits if the org cannot be loaded.
-func TierRateLimit(orgReader domain.OrgReader) func(http.Handler) http.Handler {
+func TierRateLimit(ctx context.Context, store domain.Store) func(http.Handler) http.Handler {
 	rl := &rateLimiter{
 		visitors: make(map[string]*visitor),
 		rate:     100, // default (overridden per-request by tier)
 		window:   time.Minute,
 	}
 
+	// Use provided context for cancellation
+	cleanupCtx, cancel := context.WithCancel(ctx)
+	rl.cancel = cancel
 	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
 		for {
-			time.Sleep(time.Minute)
-			rl.mu.Lock()
-			now := time.Now()
-			for k, v := range rl.visitors {
-				if now.After(v.resetAt) {
-					delete(rl.visitors, k)
+			select {
+			case <-ticker.C:
+				rl.mu.Lock()
+				now := time.Now()
+				for k, v := range rl.visitors {
+					if now.After(v.resetAt) {
+						delete(rl.visitors, k)
+					}
 				}
+				rl.mu.Unlock()
+			case <-cleanupCtx.Done():
+				return
 			}
-			rl.mu.Unlock()
 		}
 	}()
 
@@ -138,7 +158,7 @@ func TierRateLimit(orgReader domain.OrgReader) func(http.Handler) http.Handler {
 			limit := tierLimits[domain.PlanFree]
 
 			if orgID != "" {
-				if org, err := orgReader.GetOrganization(r.Context(), orgID); err == nil {
+				if org, err := store.GetOrganization(r.Context(), orgID); err == nil {
 					if l, ok := tierLimits[org.Plan]; ok {
 						limit = l
 					}
@@ -193,24 +213,33 @@ func TierRateLimit(orgReader domain.OrgReader) func(http.Handler) http.Handler {
 // AgentRateLimit applies stricter rate limiting for AI agent management endpoints.
 // Agent keys are identified by a special header or key prefix.
 // This prevents runaway AI agents from overusing management APIs.
-func AgentRateLimit(requestsPerMinute int) func(http.Handler) http.Handler {
+func AgentRateLimit(ctx context.Context, requestsPerMinute int) func(http.Handler) http.Handler {
 	rl := &rateLimiter{
 		visitors: make(map[string]*visitor),
 		rate:     requestsPerMinute,
 		window:   time.Minute,
 	}
 
+	// Use provided context for cancellation
+	cleanupCtx, cancel := context.WithCancel(ctx)
+	rl.cancel = cancel
 	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
 		for {
-			time.Sleep(time.Minute)
-			rl.mu.Lock()
-			now := time.Now()
-			for k, v := range rl.visitors {
-				if now.After(v.resetAt) {
-					delete(rl.visitors, k)
+			select {
+			case <-ticker.C:
+				rl.mu.Lock()
+				now := time.Now()
+				for k, v := range rl.visitors {
+					if now.After(v.resetAt) {
+						delete(rl.visitors, k)
+					}
 				}
+				rl.mu.Unlock()
+			case <-cleanupCtx.Done():
+				return
 			}
-			rl.mu.Unlock()
 		}
 	}()
 

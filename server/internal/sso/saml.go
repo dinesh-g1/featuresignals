@@ -1,6 +1,7 @@
 package sso
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"encoding/xml"
@@ -187,8 +188,14 @@ func parseIDPMetadata(data []byte) (*saml.EntityDescriptor, error) {
 }
 
 func fetchIDPMetadata(metadataURL string) (*saml.EntityDescriptor, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", metadataURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create metadata request: %w", err)
+	}
 	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Get(metadataURL)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch metadata: %w", err)
 	}

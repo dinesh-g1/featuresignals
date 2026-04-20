@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Activity, Check, AlertTriangle, Flag, Users, Key, Shield } from "lucide-react";
+import {
+  Activity,
+  Check,
+  AlertTriangle,
+  Flag,
+  Users,
+  Key,
+  Shield,
+} from "lucide-react";
 import type { UsageInfo } from "@/lib/types";
 
 interface HealthCheck {
@@ -14,14 +22,18 @@ interface HealthCheck {
   icon: React.ElementType;
 }
 
-function computeHealthChecks(usage: UsageInfo | null, flagCount: number): HealthCheck[] {
+function computeHealthChecks(
+  usage: UsageInfo | null,
+  flagCount: number,
+): HealthCheck[] {
   const checks: HealthCheck[] = [];
 
   checks.push({
     label: "Feature flags",
     icon: Flag,
     status: flagCount > 0 ? "pass" : "fail",
-    detail: flagCount > 0 ? `${flagCount} flags configured` : "No flags created yet",
+    detail:
+      flagCount > 0 ? `${flagCount} flags configured` : "No flags created yet",
   });
 
   if (usage) {
@@ -29,16 +41,20 @@ function computeHealthChecks(usage: UsageInfo | null, flagCount: number): Health
       label: "Team setup",
       icon: Users,
       status: usage.seats_used > 1 ? "pass" : "warn",
-      detail: usage.seats_used > 1 ? `${usage.seats_used} team members` : "Only 1 member — invite your team",
+      detail:
+        usage.seats_used > 1
+          ? `${usage.seats_used} team members`
+          : "Only 1 member — invite your team",
     });
 
     checks.push({
       label: "Environments",
       icon: Key,
       status: usage.environments_used >= 2 ? "pass" : "warn",
-      detail: usage.environments_used >= 2
-        ? `${usage.environments_used} environments configured`
-        : "Add a staging environment for safe testing",
+      detail:
+        usage.environments_used >= 2
+          ? `${usage.environments_used} environments configured`
+          : "Add a staging environment for safe testing",
     });
   }
 
@@ -46,7 +62,10 @@ function computeHealthChecks(usage: UsageInfo | null, flagCount: number): Health
     label: "SDK connected",
     icon: Shield,
     status: flagCount > 0 ? "pass" : "warn",
-    detail: flagCount > 0 ? "Flags are being evaluated" : "Connect an SDK to start evaluating",
+    detail:
+      flagCount > 0
+        ? "Flags are being evaluated"
+        : "Connect an SDK to start evaluating",
   });
 
   return checks;
@@ -63,10 +82,35 @@ function getOverallScore(checks: HealthCheck[]): number {
 }
 
 const StatusIcon = ({ status }: { status: "pass" | "warn" | "fail" }) => {
-  const label = status === "pass" ? "Passing" : status === "warn" ? "Needs attention" : "Action required";
-  if (status === "pass") return <Check className="h-3.5 w-3.5 text-emerald-500" aria-label={label} role="img" />;
-  if (status === "warn") return <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-label={label} role="img" />;
-  return <AlertTriangle className="h-3.5 w-3.5 text-red-500" aria-label={label} role="img" />;
+  const label =
+    status === "pass"
+      ? "Passing"
+      : status === "warn"
+        ? "Needs attention"
+        : "Action required";
+  if (status === "pass")
+    return (
+      <Check
+        className="h-3.5 w-3.5 text-emerald-500"
+        aria-label={label}
+        role="img"
+      />
+    );
+  if (status === "warn")
+    return (
+      <AlertTriangle
+        className="h-3.5 w-3.5 text-amber-500"
+        aria-label={label}
+        role="img"
+      />
+    );
+  return (
+    <AlertTriangle
+      className="h-3.5 w-3.5 text-red-500"
+      aria-label={label}
+      role="img"
+    />
+  );
 };
 
 export function WorkspaceHealth() {
@@ -77,12 +121,18 @@ export function WorkspaceHealth() {
 
   useEffect(() => {
     if (!token) return;
-    api.getUsage(token).then(setUsage).catch(() => {});
+    api
+      .getUsage(token)
+      .then(setUsage)
+      .catch(() => {});
   }, [token]);
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api.listFlags(token, projectId).then((flags) => setFlagCount(flags?.length ?? 0)).catch(() => {});
+    api
+      .listFlags(token, projectId)
+      .then((flags) => setFlagCount(flags?.length ?? 0))
+      .catch(() => {});
   }, [token, projectId]);
 
   const checks = computeHealthChecks(usage, flagCount);
@@ -93,25 +143,42 @@ export function WorkspaceHealth() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-slate-900">Workspace Health</h3>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Workspace Health
+          </h3>
         </div>
-        <div className={cn(
-          "rounded-full px-2.5 py-0.5 text-xs font-bold",
-          score >= 80 ? "bg-emerald-50 text-emerald-700" :
-          score >= 50 ? "bg-amber-50 text-amber-700" :
-          "bg-red-50 text-red-700",
-        )}>
+        <div
+          className={cn(
+            "rounded-full px-2.5 py-0.5 text-xs font-bold",
+            score >= 80
+              ? "bg-emerald-50 text-emerald-700"
+              : score >= 50
+                ? "bg-amber-50 text-amber-700"
+                : "bg-red-50 text-red-700",
+          )}
+        >
           {score}%
         </div>
       </div>
 
-      <div className="h-1.5 w-full rounded-full bg-slate-100 mb-4" role="progressbar" aria-valuenow={score} aria-valuemin={0} aria-valuemax={100} aria-label={`Workspace health: ${score}%`}>
+      <div
+        className="h-1.5 w-full rounded-full bg-slate-100 mb-4"
+        role="progressbar"
+        aria-valuenow={score}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Workspace health: ${score}%`}
+      >
         <div
           className={cn(
             "h-1.5 rounded-full transition-all",
-            score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500",
+            score >= 80
+              ? "bg-emerald-500"
+              : score >= 50
+                ? "bg-amber-500"
+                : "bg-red-500",
+            `w-[${score}%]`,
           )}
-          style={{ width: `${score}%` }}
         />
       </div>
 
@@ -120,7 +187,9 @@ export function WorkspaceHealth() {
           <div key={check.label} className="flex items-center gap-2.5">
             <StatusIcon status={check.status} />
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-medium text-slate-700">{check.label}</span>
+              <span className="text-xs font-medium text-slate-700">
+                {check.label}
+              </span>
               <span className="mx-1 text-slate-300">·</span>
               <span className="text-xs text-slate-500">{check.detail}</span>
             </div>

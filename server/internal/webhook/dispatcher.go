@@ -190,7 +190,9 @@ func (d *Dispatcher) deliver(ctx context.Context, wh domain.Webhook, evt Event) 
 			}
 		}
 
-		req, err := http.NewRequestWithContext(ctx, "POST", wh.URL, bytes.NewReader(payload))
+		attemptCtx, attemptCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer attemptCancel()
+		req, err := http.NewRequestWithContext(attemptCtx, "POST", wh.URL, bytes.NewReader(payload))
 		if err != nil {
 			d.logger.Error("failed to create webhook request", "error", err, "webhook_id", wh.ID)
 			return

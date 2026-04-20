@@ -116,12 +116,11 @@ export function CreateEnvironmentDialog({
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${
+                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 bg-[${c.value}] ${
                     color === c.value
                       ? "border-slate-900 shadow-md"
                       : "border-transparent"
                   }`}
-                  style={{ backgroundColor: c.value }}
                   title={c.label}
                 />
               ))}
@@ -256,12 +255,11 @@ export function EditEnvironmentDialog({
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${
+                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 bg-[${c.value}] ${
                     color === c.value
                       ? "border-slate-900 shadow-md"
                       : "border-transparent"
                   }`}
-                  style={{ backgroundColor: c.value }}
                   title={c.label}
                 />
               ))}

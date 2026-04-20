@@ -49,13 +49,22 @@ export default function AnalyticsPage() {
   }, [loadData]);
 
   if (error) {
-    return <ErrorDisplay title="Analytics unavailable" message={error} onRetry={loadData} />;
+    return (
+      <ErrorDisplay
+        title="Analytics unavailable"
+        message={error}
+        onRetry={loadData}
+      />
+    );
   }
 
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader title="Analytics" description="Internal KPI dashboard — product health at a glance" />
+        <PageHeader
+          title="Analytics"
+          description="Internal KPI dashboard — product health at a glance"
+        />
         <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
           {PERIODS.map((p) => (
             <button
@@ -80,30 +89,56 @@ export default function AnalyticsPage() {
       ) : data ? (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Active Workspaces" value={data.active_workspaces} icon={Building2} color="indigo" />
-            <StatCard label="Active Users" value={data.active_users} icon={Users} color="emerald" />
-            <StatCard label="Auth Events" value={data.event_counts?.auth ?? 0} icon={TrendingUp} color="amber" />
-            <StatCard label="Flag Events" value={data.event_counts?.flag ?? 0} icon={BarChart3} color="indigo" />
+            <StatCard
+              label="Active Workspaces"
+              value={data.active_workspaces}
+              icon={Building2}
+              color="indigo"
+            />
+            <StatCard
+              label="Active Users"
+              value={data.active_users}
+              icon={Users}
+              color="emerald"
+            />
+            <StatCard
+              label="Auth Events"
+              value={data.event_counts?.auth ?? 0}
+              icon={TrendingUp}
+              color="amber"
+            />
+            <StatCard
+              label="Flag Events"
+              value={data.event_counts?.flag ?? 0}
+              icon={BarChart3}
+              color="indigo"
+            />
           </div>
 
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-slate-900">Acquisition Funnel</h2>
+              <h2 className="font-semibold text-slate-900">
+                Acquisition Funnel
+              </h2>
             </CardHeader>
             <div className="px-4 pb-4 sm:px-6 sm:pb-6">
               <div className="space-y-3">
                 {Object.entries(FUNNEL_LABELS).map(([event, label]) => {
                   const count = data.funnel?.[event] ?? 0;
-                  const maxCount = Math.max(...Object.values(data.funnel ?? {}), 1);
+                  const maxCount = Math.max(
+                    ...Object.values(data.funnel ?? {}),
+                    1,
+                  );
                   const pct = Math.round((count / maxCount) * 100);
                   return (
                     <div key={event} className="flex items-center gap-3">
-                      <span className="w-32 shrink-0 text-sm text-slate-600">{label}</span>
+                      <span className="w-32 shrink-0 text-sm text-slate-600">
+                        {label}
+                      </span>
                       <div className="flex-1">
                         <div className="h-7 overflow-hidden rounded-md bg-slate-100">
                           <div
-                            className="flex h-full items-center rounded-md bg-indigo-500 px-2 text-xs font-medium text-white transition-all"
-                            style={{ width: `${Math.max(pct, 2)}%` }}
+                            className={`flex h-full items-center rounded-md bg-indigo-500 px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
                           >
                             {count}
                           </div>
@@ -119,32 +154,52 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <h2 className="font-semibold text-slate-900">Plan Distribution</h2>
+                <h2 className="font-semibold text-slate-900">
+                  Plan Distribution
+                </h2>
               </CardHeader>
               <div className="divide-y divide-slate-100">
-                {Object.entries(data.plan_distribution ?? {}).map(([plan, count]) => (
-                  <div key={plan} className="flex items-center justify-between px-4 py-3 sm:px-6">
-                    <span className="text-sm font-medium capitalize text-slate-700">{plan}</span>
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-                      {count}
-                    </span>
-                  </div>
-                ))}
+                {Object.entries(data.plan_distribution ?? {}).map(
+                  ([plan, count]) => (
+                    <div
+                      key={plan}
+                      className="flex items-center justify-between px-4 py-3 sm:px-6"
+                    >
+                      <span className="text-sm font-medium capitalize text-slate-700">
+                        {plan}
+                      </span>
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                        {count}
+                      </span>
+                    </div>
+                  ),
+                )}
                 {Object.keys(data.plan_distribution ?? {}).length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-slate-400">No data yet</p>
+                  <p className="px-4 py-6 text-center text-sm text-slate-400">
+                    No data yet
+                  </p>
                 )}
               </div>
             </Card>
 
             <Card>
               <CardHeader>
-                <h2 className="font-semibold text-slate-900">Event Volume by Category</h2>
+                <h2 className="font-semibold text-slate-900">
+                  Event Volume by Category
+                </h2>
               </CardHeader>
               <div className="divide-y divide-slate-100">
                 {Object.entries(data.event_counts ?? {}).map(([cat, count]) => (
-                  <div key={cat} className="flex items-center justify-between px-4 py-3 sm:px-6">
-                    <span className="text-sm font-medium capitalize text-slate-700">{cat}</span>
-                    <span className="text-sm tabular-nums text-slate-600">{count.toLocaleString()}</span>
+                  <div
+                    key={cat}
+                    className="flex items-center justify-between px-4 py-3 sm:px-6"
+                  >
+                    <span className="text-sm font-medium capitalize text-slate-700">
+                      {cat}
+                    </span>
+                    <span className="text-sm tabular-nums text-slate-600">
+                      {count.toLocaleString()}
+                    </span>
                   </div>
                 ))}
               </div>

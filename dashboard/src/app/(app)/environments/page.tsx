@@ -251,8 +251,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                 {/* Environment info */}
                 <div className="flex items-start gap-3 mb-4">
                   <div
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow-sm"
-                    style={{ backgroundColor: env.color }}
+                    className={`mt-0.5 h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow-sm bg-[${env.color}]`}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-900">

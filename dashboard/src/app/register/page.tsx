@@ -234,8 +234,7 @@ function ResendCooldown({
     <div className="flex flex-col items-center gap-2">
       <div className="h-1 w-32 overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-indigo-500 transition-all duration-1000"
-          style={{ width: `${progress}%` }}
+          className={`h-full rounded-full bg-indigo-500 transition-all duration-1000 w-[${progress}%]`}
         />
       </div>
       <p className="text-xs text-slate-400">Resend code in {countdown}s</p>
