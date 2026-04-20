@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/httputil"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,12 +20,13 @@ import (
 // OpsAuthHandler handles ops portal authentication endpoints.
 type OpsAuthHandler struct {
 	store  domain.OpsPortalStore
+	jwtMgr auth.TokenManager
 	logger *slog.Logger
 }
 
 // NewOpsAuthHandler creates a new ops auth handler.
-func NewOpsAuthHandler(store domain.OpsPortalStore, logger *slog.Logger) *OpsAuthHandler {
-	return &OpsAuthHandler{store: store, logger: logger}
+func NewOpsAuthHandler(store domain.OpsPortalStore, jwtMgr auth.TokenManager, logger *slog.Logger) *OpsAuthHandler {
+	return &OpsAuthHandler{store: store, jwtMgr: jwtMgr, logger: logger}
 }
 
 // Login handles POST /api/v1/ops/auth/login
@@ -54,18 +56,18 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate tokens
-	accessToken, err := generateToken(user.ID, user.OpsRole, 8*time.Hour)
+	// Generate JWT token pair
+	// For ops portal, we use empty orgID and data region since ops users are not tied to a specific org
+	tokenPair, err := h.jwtMgr.GenerateTokenPair(user.UserID, "", user.OpsRole, user.UserEmail, "")
 	if err != nil {
-		logger.Error("failed to generate access token", "error", err)
+		logger.Error("failed to generate token pair", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
-	refreshTokenRaw := generateRefreshToken()
-	refreshTokenHash := hashToken(refreshTokenRaw)
-
-	expiresAt := time.Now().UTC().Add(7 * 24 * time.Hour)
+	// Store refresh token hash for session management
+	refreshTokenHash := hashToken(tokenPair.RefreshToken)
+	expiresAt := time.Unix(tokenPair.ExpiresAt, 0).UTC()
 	if _, err := h.store.CreateOpsSession(r.Context(), user.ID, refreshTokenHash, expiresAt); err != nil {
 		logger.Error("failed to create session", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")
@@ -78,8 +80,8 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	user.PasswordHash = ""
 
 	httputil.JSON(w, http.StatusOK, domain.OpsLoginResponse{
-		Token:        accessToken,
-		RefreshToken: refreshTokenRaw,
+		Token:        tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
 		ExpiresAt:    expiresAt,
 		User:         *user,
 	})
@@ -95,6 +97,14 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate the refresh token JWT first (checks expiration and signature)
+	claims, err := h.jwtMgr.ValidateRefreshToken(req.RefreshToken)
+	if err != nil {
+		httputil.Error(w, http.StatusUnauthorized, "invalid or expired refresh token")
+		return
+	}
+
+	// Look up the session by hash to ensure it hasn't been revoked
 	refreshTokenHash := hashToken(req.RefreshToken)
 	user, err := h.store.GetOpsSessionByRefreshToken(r.Context(), refreshTokenHash)
 	if err != nil {
@@ -107,10 +117,23 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Rotate refresh token
-	newRefreshTokenRaw := generateRefreshToken()
-	newRefreshTokenHash := hashToken(newRefreshTokenRaw)
-	expiresAt := time.Now().UTC().Add(7 * 24 * time.Hour)
+	// Ensure the JWT user matches the session user
+	if claims.UserID != user.UserID {
+		httputil.Error(w, http.StatusUnauthorized, "token mismatch")
+		return
+	}
+
+	// Generate new JWT token pair
+	tokenPair, err := h.jwtMgr.GenerateTokenPair(user.UserID, "", user.OpsRole, user.UserEmail, "")
+	if err != nil {
+		logger.Error("failed to generate token pair", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	// Rotate refresh token: delete old, store new hash
+	newRefreshTokenHash := hashToken(tokenPair.RefreshToken)
+	expiresAt := time.Unix(tokenPair.ExpiresAt, 0).UTC()
 
 	// Delete old session, create new one
 	if err := h.store.DeleteOpsSession(r.Context(), user.ID, refreshTokenHash); err != nil {
@@ -122,16 +145,9 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := generateToken(user.ID, user.OpsRole, 8*time.Hour)
-	if err != nil {
-		logger.Error("failed to generate access token", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
-		return
-	}
-
 	httputil.JSON(w, http.StatusOK, domain.OpsLoginResponse{
-		Token:        accessToken,
-		RefreshToken: newRefreshTokenRaw,
+		Token:        tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
 		ExpiresAt:    expiresAt,
 		User:         *user,
 	})

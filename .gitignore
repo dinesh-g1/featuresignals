@@ -61,6 +61,7 @@ __pycache__/
 # Private documentation and sensitive business data (compliance, strategy, operations)
 # These files contain confidential information and must not be pushed to public repositories
 private/
+.internal/
 
 # Claude local settings
 .claude/settings.local.json

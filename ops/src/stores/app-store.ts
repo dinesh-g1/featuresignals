@@ -47,7 +47,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   logout: () => {
     api.logout();
-    set({ token: null, refreshToken: null, expiresAt: null, user: null, organization: null, opsRole: null });
+    set({
+      token: null,
+      refreshToken: null,
+      expiresAt: null,
+      user: null,
+      organization: null,
+      opsRole: null,
+    });
   },
 
   setHydrated: () => set({ hydrated: true }),
@@ -66,7 +73,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       return true;
     } catch {
       api.clearStoredAuth();
-      set({ token: null, refreshToken: null, expiresAt: null, user: null, organization: null, opsRole: null });
+      set({
+        token: null,
+        refreshToken: null,
+        expiresAt: null,
+        user: null,
+        organization: null,
+        opsRole: null,
+      });
       return false;
     }
   },
@@ -81,11 +95,26 @@ export function hydrateAuth() {
   if (token && refreshToken && expiresAt && userRaw) {
     try {
       const user = JSON.parse(userRaw) as OpsUser;
+
+      // Parse expiresAt which could be either numeric timestamp string or ISO string
+      let expiresAtNum: number;
+      if (/^\d+$/.test(expiresAt)) {
+        // Numeric timestamp string
+        expiresAtNum = Number(expiresAt);
+      } else {
+        // ISO string - parse and convert to timestamp
+        expiresAtNum = new Date(expiresAt).getTime();
+      }
+
       useAppStore.setState({
         token,
         refreshToken,
-        expiresAt: Number(expiresAt),
-        user: { id: user.user_id || "", email: user.user_email || "", name: user.user_name || "" },
+        expiresAt: expiresAtNum,
+        user: {
+          id: user.user_id || "",
+          email: user.user_email || "",
+          name: user.user_name || "",
+        },
         organization: { id: user.user_id || "", name: "FeatureSignals" },
         opsRole: user,
         hydrated: true,

@@ -32,6 +32,12 @@ type RevocationChecker interface {
 func JWTAuth(jwtMgr auth.TokenManager, revoker ...RevocationChecker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip authentication for OPTIONS preflight requests
+			if r.Method == http.MethodOptions {
+				next.ServeHTTP(w, r)
+				return
+			}
+			
 			header := r.Header.Get("Authorization")
 			if header == "" {
 				httputil.Error(w, http.StatusUnauthorized, "missing authorization header")

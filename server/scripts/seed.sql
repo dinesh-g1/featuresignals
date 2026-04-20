@@ -3,6 +3,7 @@
 --
 -- Creates a sample org, user, project, environments, flags, and API keys
 -- so you can start exercising the API immediately.
+-- Also creates ops portal admin user for internal operations.
 
 BEGIN;
 
@@ -72,6 +73,41 @@ VALUES
    'fs_srv_seed_', 'Prod Server Key', 'server', NOW())
 ON CONFLICT (id) DO NOTHING;
 
+-- Ops portal admin user (separate from customer dashboard)
+-- User for ops portal (password: "password123")
+--    bcrypt hash of "password123"
+INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
+VALUES (
+  'user-ops-001',
+  'ops@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'Ops Admin',
+  NOW(), NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Ops user record
+INSERT INTO ops_users (id, user_id, ops_role, allowed_env_types, allowed_regions, max_sandbox_envs, is_active)
+VALUES (
+  'ops-user-001',
+  'user-ops-001',
+  'founder',
+  '{shared,isolated,onprem}',
+  '{in,us,eu}',
+  -1,  -- unlimited sandboxes for founder
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Ops portal credentials
+INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
+VALUES (
+  'ops-user-001',
+  'ops@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+)
+ON CONFLICT (ops_user_id, email) DO NOTHING;
+
 COMMIT;
 
 -- Summary:
@@ -81,3 +117,4 @@ COMMIT;
 --   Environments: development, staging, production
 --   Flags:        dark-mode, new-checkout, banner-text
 --   API Keys:     Dev + Prod server keys
+--   Ops Portal:   ops@featuresignals.com / password123 (founder role)

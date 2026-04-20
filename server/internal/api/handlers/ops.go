@@ -610,6 +610,71 @@ func (h *OpsHandler) GetCustomerDetail(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, detail)
 }
 
+func (h *OpsHandler) CreateOrganization(w http.ResponseWriter, r *http.Request) {
+	log := httputil.LoggerFromContext(r.Context()).With("handler", "ops_create_org")
+	userID := middleware.GetUserID(r.Context())
+
+	var req struct {
+		Name       string `json:"name"`
+		Slug       string `json:"slug,omitempty"`
+		Plan       string `json:"plan,omitempty"`
+		DataRegion string `json:"data_region,omitempty"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Name == "" {
+		httputil.Error(w, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	// Generate slug if not provided
+	slug := req.Slug
+	if slug == "" {
+		slug = slugify(req.Name)
+	}
+
+	// Set defaults
+	plan := req.Plan
+	if plan == "" {
+		plan = domain.PlanFree
+	}
+	dataRegion := req.DataRegion
+	if dataRegion == "" {
+		dataRegion = domain.RegionUS
+	}
+
+	org := &domain.Organization{
+		Name:       req.Name,
+		Slug:       slug,
+		Plan:       plan,
+		DataRegion: dataRegion,
+		// Trial expires at will be set by store.CreateOrganization based on plan
+	}
+
+	if err := h.store.CreateOrganization(r.Context(), org); err != nil {
+		if errors.Is(err, domain.ErrConflict) {
+			httputil.Error(w, http.StatusConflict, "organization with this slug already exists")
+			return
+		}
+		log.Error("failed to create organization", "error", err, "name", req.Name)
+		httputil.Error(w, http.StatusInternalServerError, "failed to create organization")
+		return
+	}
+
+	h.auditLog(r, userID, "create_org", "organization", org.ID, map[string]any{
+		"name":        org.Name,
+		"slug":        org.Slug,
+		"plan":        org.Plan,
+		"data_region": org.DataRegion,
+	})
+
+	log.Info("organization created", "org_id", org.ID, "name", org.Name, "plan", org.Plan)
+	httputil.JSON(w, http.StatusCreated, org)
+}
+
 // ─── Ops User Routes ──────────────────────────────────────────────────
 
 func (h *OpsHandler) ListOpsUsers(w http.ResponseWriter, r *http.Request) {

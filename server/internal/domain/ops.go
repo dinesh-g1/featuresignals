@@ -39,7 +39,7 @@ type CustomerEnvironment struct {
 	LastHealthCheck      *time.Time `json:"last_health_check,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            time.Time  `json:"updated_at"`
-	PasswordHash    string    `json:"-"`
+	PasswordHash         string     `json:"-"`
 }
 
 // ─── License ──────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ type License struct {
 	PhoneHomeStatus      string     `json:"phone_home_status,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            time.Time  `json:"updated_at"`
-	PasswordHash    string    `json:"-"`
+	PasswordHash         string     `json:"-"`
 }
 
 // ─── Ops User ─────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ type SandboxEnvironment struct {
 	TotalCost        int64      `json:"total_cost"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
-	PasswordHash    string    `json:"-"`
+	PasswordHash     string     `json:"-"`
 	DecommissionedAt *time.Time `json:"decommissioned_at,omitempty"`
 	// Joined
 	OwnerEmail string `json:"owner_email,omitempty"`
@@ -214,6 +214,7 @@ type OpsStore interface {
 	// Customer summary
 	GetCustomerDetail(ctx context.Context, orgID string) (*CustomerDetail, error)
 	ListCustomers(ctx context.Context, plan, deploymentModel, search string) ([]CustomerSummary, int, error)
+	CreateOrganization(ctx context.Context, org *Organization) error
 }
 
 // CustomerSummary is a joined row for the customer list view.

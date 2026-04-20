@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { customers } from "@/lib/api";
 import { statusBadge, formatCurrency, marginColor, timeAgo } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Users, Search, RefreshCw } from "lucide-react";
+import { Users, Search, RefreshCw, Plus, X } from "lucide-react";
 import Link from "next/link";
 
 export function CustomersPage() {
@@ -32,6 +32,7 @@ export function CustomersPage() {
   const [planFilter, setPlanFilter] = useState("");
   const [modelFilter, setModelFilter] = useState("");
   const [offset, setOffset] = useState(0);
+  const [showCreate, setShowCreate] = useState(false);
   const limit = 25;
 
   const loadCustomers = useCallback(async () => {
@@ -65,17 +66,26 @@ export function CustomersPage() {
           </p>
         </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
-          {error}
+        {error && (
+          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
+          >
+            <Plus className="mr-2 h-4 w-4 inline" />
+            Create Customer
+          </button>
+          <button
+            onClick={loadCustomers}
+            className="rounded-lg border border-gray-700 bg-gray-800 p-2 text-gray-400 transition hover:text-white"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
-      )}
-        <button
-          onClick={loadCustomers}
-          className="rounded-lg border border-gray-700 bg-gray-800 p-2 text-gray-400 transition hover:text-white"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -234,6 +244,150 @@ export function CustomersPage() {
           </div>
         </>
       )}
+
+      {/* Create Customer Modal */}
+      {showCreate && (
+        <CreateCustomerModal
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => {
+            setShowCreate(false);
+            loadCustomers();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateCustomerModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    plan: "free",
+    data_region: "us",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await customers.create(form);
+      onSuccess();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create customer";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-lg rounded-xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Create Customer</h2>
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-300">
+              Organization Name
+            </label>
+            <input
+              type="text"
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Acme Corporation"
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-300">
+              Slug (optional)
+            </label>
+            <input
+              type="text"
+              value={form.slug}
+              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              placeholder="acme"
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Leave empty to auto‑generate from name
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">
+                Plan
+              </label>
+              <select
+                value={form.plan}
+                onChange={(e) => setForm({ ...form, plan: e.target.value })}
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              >
+                <option value="free">Free</option>
+                <option value="trial">Trial (14 days)</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">
+                Data Region
+              </label>
+              <select
+                value={form.data_region}
+                onChange={(e) =>
+                  setForm({ ...form, data_region: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              >
+                <option value="us">United States</option>
+                <option value="eu">Europe</option>
+                <option value="in">India</option>
+              </select>
+            </div>
+          </div>
+          {error && (
+            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? "Creating..." : "Create Customer"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
