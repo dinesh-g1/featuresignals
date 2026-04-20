@@ -2285,12 +2285,12 @@ func (s *Store) ListRenewalOrgs(ctx context.Context, withinDays int) ([]lifecycl
 func (s *Store) ListActiveDigestUsers(ctx context.Context) ([]lifecycle.DigestRow, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT u.id, u.email, u.name, o.id, o.name,
-		        COALESCE((SELECT COUNT(DISTINCT p.id) FROM projects p WHERE p.org_id = o.id AND p.deleted_at IS NULL), 0),
-		        COALESCE((SELECT COUNT(*) FROM environments e JOIN projects p ON p.id = e.project_id WHERE p.org_id = o.id AND p.deleted_at IS NULL), 0),
-		        COALESCE((SELECT COUNT(*) FROM flags f JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id AND p.deleted_at IS NULL AND f.deleted_at IS NULL), 0),
-		        COALESCE((SELECT COUNT(DISTINCT f.id) FROM flags f JOIN flag_states fs ON fs.flag_id = f.id JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id AND p.deleted_at IS NULL AND f.deleted_at IS NULL AND fs.enabled = true), 0),
+		        COALESCE((SELECT COUNT(DISTINCT p.id) FROM projects p WHERE p.org_id = o.id), 0),
+		        COALESCE((SELECT COUNT(*) FROM environments e JOIN projects p ON p.id = e.project_id WHERE p.org_id = o.id), 0),
+		        COALESCE((SELECT COUNT(*) FROM flags f JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id), 0),
+		        COALESCE((SELECT COUNT(DISTINCT f.id) FROM flags f JOIN flag_states fs ON fs.flag_id = f.id JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id AND fs.enabled = true), 0),
 		        0,
-		        COALESCE((SELECT f.key FROM flags f JOIN flag_states fs ON fs.flag_id = f.id JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id AND p.deleted_at IS NULL AND f.deleted_at IS NULL AND fs.updated_at > NOW() - INTERVAL '7 days' ORDER BY fs.updated_at DESC LIMIT 1), '')
+		        COALESCE((SELECT f.key FROM flags f JOIN flag_states fs ON fs.flag_id = f.id JOIN projects p ON p.id = f.project_id WHERE p.org_id = o.id AND fs.updated_at > NOW() - INTERVAL '7 days' ORDER BY fs.updated_at DESC LIMIT 1), '')
 		 FROM users u
 		 JOIN org_members om ON om.user_id = u.id
 		 JOIN organizations o ON o.id = om.org_id

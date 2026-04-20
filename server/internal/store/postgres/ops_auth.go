@@ -26,12 +26,14 @@ func (s *Store) GetOpsUserByEmail(ctx context.Context, email string) (*domain.Op
 	var passwordHash string
 	err := s.pool.QueryRow(ctx, `
 		SELECT ou.id, ou.user_id, ou.ops_role, ou.allowed_env_types, ou.allowed_regions,
-		       ou.max_sandbox_envs, ou.is_active, opc.password_hash
+		       ou.max_sandbox_envs, ou.is_active, opc.password_hash,
+		       COALESCE(u.email, ''), COALESCE(u.name, '')
 		FROM ops_users ou
 		JOIN ops_portal_credentials opc ON opc.ops_user_id = ou.id
+		LEFT JOIN users u ON ou.user_id = u.id
 		WHERE opc.email = $1 AND ou.is_active = true
 	`, email).Scan(&u.ID, &u.UserID, &u.OpsRole, &u.AllowedEnvTypes, &u.AllowedRegions,
-		&u.MaxSandboxEnvs, &u.IsActive, &passwordHash)
+		&u.MaxSandboxEnvs, &u.IsActive, &passwordHash, &u.UserEmail, &u.UserName)
 	if err != nil {
 		return nil, wrapNotFound(err, "ops user")
 	}
