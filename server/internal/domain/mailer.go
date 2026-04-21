@@ -34,6 +34,7 @@ const (
 	TemplateSecurityAlert      TemplateID = "security_alert"
 	TemplateAPIKeyCreated      TemplateID = "api_key_created"
 	TemplateExportReady        TemplateID = "export_ready"
+	TemplateEnvironmentReady   TemplateID = "environment_ready"
 	TemplatePasswordReset      TemplateID = "password_reset"
 
 	TemplateFeatureSpotlightSegments TemplateID = "feature_spotlight_segments"
@@ -80,8 +81,8 @@ var TemplateMeta = map[TemplateID]EmailPriority{
 	TemplateSecurityAlert:      EmailTransactional,
 	TemplateAPIKeyCreated:      EmailImportant,
 	TemplateExportReady:        EmailTransactional,
+	TemplateEnvironmentReady:   EmailTransactional,
 	TemplatePasswordReset:      EmailTransactional,
-
 	TemplateFeatureSpotlightSegments: EmailLifecycle,
 	TemplateFeatureSpotlightWebhooks: EmailLifecycle,
 	TemplateFeatureSpotlightTeam:     EmailLifecycle,
@@ -120,6 +121,7 @@ var SenderIdentity = map[TemplateID]struct {
 	TemplateSecurityAlert:      {FromEmail: "security@featuresignals.com", ReplyTo: "security@featuresignals.com"},
 	TemplateDeletionRequested:  {FromEmail: "noreply@featuresignals.com", ReplyTo: "support@featuresignals.com"},
 	TemplateDeletionCanceled:   {FromEmail: "noreply@featuresignals.com", ReplyTo: "support@featuresignals.com"},
+	TemplateEnvironmentReady:   {FromEmail: "noreply@featuresignals.com", ReplyTo: "support@featuresignals.com"},
 }
 
 // Mailer is the port for sending lifecycle and transactional emails.

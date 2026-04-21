@@ -1,10 +1,10 @@
 import React from "react";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function capitalize(str: string): string {
   if (!str) return "";
-  return str
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function formatCurrency(cents: number): string {
@@ -15,7 +15,11 @@ export function formatDate(dateStr: string): string {
   if (!dateStr) return "—";
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   } catch {
     return dateStr;
   }
@@ -106,7 +110,9 @@ export function planBadge(plan: string): React.ReactNode {
   };
 
   return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${colorMap[plan] || "bg-gray-500/10 text-gray-400"}`}>
+    <span
+      className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${colorMap[plan] || "bg-gray-500/10 text-gray-400"}`}
+    >
       {plan}
     </span>
   );
@@ -116,4 +122,8 @@ export function marginColor(margin: number): string {
   if (margin >= 70) return "text-green-400";
   if (margin >= 50) return "text-yellow-400";
   return "text-red-400";
+}
+
+export function cn(...inputs: (string | undefined | null | false)[]) {
+  return twMerge(clsx(inputs));
 }

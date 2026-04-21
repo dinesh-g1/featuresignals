@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e11]:
+      - button "Open issues overlay" [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "0"
+          - generic [ref=e15]: "1"
+        - generic [ref=e16]: Issue
+      - button "Collapse issues badge" [ref=e17]:
+        - img [ref=e18]
+  - alert [ref=e20]: FeatureSignals Ops Portal
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - heading "FeatureSignals Ops" [level=1] [ref=e24]
+      - paragraph [ref=e25]: Internal operations portal
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]: Email
+        - textbox "Email" [ref=e29]:
+          - /placeholder: you@featuresignals.com
+      - generic [ref=e30]:
+        - generic [ref=e31]: Password
+        - generic [ref=e32]:
+          - textbox "Password" [ref=e33]:
+            - /placeholder: ••••••••
+          - button [ref=e34]:
+            - img [ref=e35]
+      - button "Sign in" [ref=e38]
+    - paragraph [ref=e39]: Internal use only. Unauthorized access is prohibited.

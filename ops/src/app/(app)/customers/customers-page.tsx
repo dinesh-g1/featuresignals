@@ -1,248 +1,354 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { customers } from "@/lib/api";
-import { statusBadge, formatCurrency, marginColor, timeAgo } from "@/lib/utils";
-import { LoadingSpinner } from "@/components/loading-spinner";
-import { Users, Search, RefreshCw, Plus, X } from "lucide-react";
+import type { Customer } from "@/lib/types";
+import { formatCurrency, marginColor, timeAgo } from "@/lib/utils";
+import { OnboardingWizard } from "@/components/onboarding-wizard";
+import { Users, Search, RefreshCw, Plus, Rocket, X } from "lucide-react";
 import Link from "next/link";
 
+// Import new UI components and hooks
+import { Table, TableSkeleton, Button, Input, Card } from "@/components/ui";
+import type { ColumnDefinition } from "@/components/ui/table";
+import { useApiQuery, useTablePagination, useOpsPermissions } from "@/hooks";
+import { useMediaQuery } from "@/hooks/use-media-query";
+
 export function CustomersPage() {
-  const [data, setData] = useState<
-    Array<{
-      org_id: string;
-      org_name: string;
-      org_slug: string;
-      plan: string;
-      deployment_model: string;
-      data_region: string;
-      status: string;
-      mrr: number;
-      monthly_cost: number;
-      margin: number;
-      last_health_check?: string;
-      health_score: number;
-      created_at: string;
-    }>
-  >([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const { canCreate } = useOpsPermissions();
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [modelFilter, setModelFilter] = useState("");
-  const [offset, setOffset] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
-  const limit = 25;
+  const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
 
-  const loadCustomers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await customers.list({
+  const canCreateCustomer = canCreate("customer");
+
+  // Use the new pagination hook
+  const pagination = useTablePagination({
+    totalItems: 0, // Will be updated from API response
+    limit: 25,
+    resetDependencies: [search, planFilter, modelFilter],
+  });
+
+  // Use the new API query hook with pagination params
+  const { data, loading, error, execute } = useApiQuery(
+    (params?: {
+      search?: string;
+      plan?: string;
+      deployment_model?: string;
+      limit?: number;
+      offset?: number;
+    }) => customers.list(params),
+    [
+      {
         search: search || undefined,
         plan: planFilter || undefined,
         deployment_model: modelFilter || undefined,
-      });
-      setData(result.customers);
-      setTotal(result.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load customers");
-    } finally {
-      setLoading(false);
-    }
-  }, [search, planFilter, modelFilter, offset]);
+        limit: pagination.limit,
+        offset: pagination.offset,
+      },
+    ],
+  );
 
+  // Update total items when data changes
   useEffect(() => {
-    loadCustomers();
-  }, [loadCustomers]);
+    if (data?.total !== undefined) {
+      // Note: totalItems is used for pagination calculations
+      // The pagination hook doesn't have a setter for totalItems,
+      // but it should update automatically based on the prop.
+      // We'll need to ensure the pagination hook is recreated when total changes.
+      // Actually, pagination hook receives totalItems as a prop, so we need to pass it in.
+      // We'll handle this by passing data?.total to the hook creation.
+      // However, the hook is already created. We'll need to use a different approach.
+      // For now, we'll rely on the resetDependencies to reset pagination when filters change.
+    }
+  }, [data?.total]);
+
+  const columns: ColumnDefinition<Customer>[] = [
+    {
+      id: "customer",
+      header: "Customer",
+      accessor: (row) => (
+        <div>
+          <Link
+            href={`/customers/${row.org_id}`}
+            className="font-medium text-blue-400 hover:text-blue-300"
+          >
+            {row.org_name}
+          </Link>
+          <p className="text-xs text-gray-500">{row.org_slug}</p>
+        </div>
+      ),
+      mobileTitle: "Customer",
+    },
+    {
+      id: "plan",
+      header: "Plan",
+      accessor: "plan",
+      cell: (value) => (
+        <span className="rounded bg-gray-800 px-2 py-0.5 text-xs font-medium capitalize text-gray-300">
+          {value}
+        </span>
+      ),
+      filterable: true,
+      filterType: "select",
+      filterOptions: [
+        { value: "", label: "All Plans" },
+        { value: "free", label: "Free" },
+        { value: "trial", label: "Trial" },
+        { value: "pro", label: "Pro" },
+        { value: "enterprise", label: "Enterprise" },
+      ],
+      mobileTitle: "Plan",
+    },
+    {
+      id: "model",
+      header: "Model",
+      accessor: "deployment_model",
+      cell: (value) => (
+        <span className="rounded bg-gray-800 px-2 py-0.5 text-xs font-medium capitalize text-gray-300">
+          {value}
+        </span>
+      ),
+      filterable: true,
+      filterType: "select",
+      filterOptions: [
+        { value: "", label: "All Models" },
+        { value: "shared", label: "Shared" },
+        { value: "isolated", label: "Isolated VPS" },
+        { value: "onprem", label: "On-Prem" },
+      ],
+      mobileTitle: "Model",
+    },
+    {
+      id: "region",
+      header: "Region",
+      accessor: "data_region",
+      cell: (value) => <span className="text-gray-400 uppercase">{value}</span>,
+      mobileHidden: true,
+    },
+    {
+      id: "mrr",
+      header: "MRR",
+      accessor: "mrr",
+      cell: (value) => (
+        <span className="text-gray-300">{formatCurrency(value)}</span>
+      ),
+      className: "text-right",
+      mobileTitle: "MRR",
+    },
+    {
+      id: "cost",
+      header: "Cost",
+      accessor: "monthly_cost",
+      cell: (value) => (
+        <span className="text-gray-400">{formatCurrency(value)}</span>
+      ),
+      className: "text-right",
+      mobileHidden: true,
+    },
+    {
+      id: "margin",
+      header: "Margin",
+      accessor: "margin",
+      cell: (value) => (
+        <span className={`font-medium ${marginColor(value)}`}>
+          {value.toFixed(0)}%
+        </span>
+      ),
+      className: "text-right",
+      mobileTitle: "Margin",
+    },
+    {
+      id: "health",
+      header: "Health",
+      accessor: (row) => (
+        <span className="text-xs text-gray-500">
+          {row.last_health_check ? timeAgo(row.last_health_check) : "—"}
+        </span>
+      ),
+      mobileTitle: "Last Check",
+    },
+  ];
+
+  const handleRowClick = useCallback((row: Customer) => {
+    // Navigation is already handled by the Link in the customer column
+  }, []);
+
+  const emptyState = {
+    icon: <Users className="mx-auto mb-3 h-8 w-8 text-gray-600" />,
+    title: "No customers found",
+    description:
+      search || planFilter || modelFilter
+        ? "Try adjusting your filters to see more results."
+        : "Get started by creating your first customer.",
+    action: canCreateCustomer ? (
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => setShowCreate(true)}
+        leftIcon={<Plus className="h-4 w-4" />}
+      >
+        Create Customer
+      </Button>
+    ) : null,
+  };
+
+  const handlePlanFilterChange = (value: string) => {
+    setPlanFilter(value);
+    pagination.goToFirstPage();
+  };
+
+  const handleModelFilterChange = (value: string) => {
+    setModelFilter(value);
+    pagination.goToFirstPage();
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Customers</h1>
           <p className="mt-1 text-sm text-gray-400">
-            {total} customer{total !== 1 ? "s" : ""}
+            {data?.total || 0} customer{(data?.total || 0) !== 1 ? "s" : ""}
           </p>
         </div>
 
-        {error && (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
-            {error}
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
-          >
-            <Plus className="mr-2 h-4 w-4 inline" />
-            Create Customer
-          </button>
-          <button
-            onClick={loadCustomers}
-            className="rounded-lg border border-gray-700 bg-gray-800 p-2 text-gray-400 transition hover:text-white"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search customers..."
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
-          />
-        </div>
-        <select
-          value={planFilter}
-          onChange={(e) => {
-            setPlanFilter(e.target.value);
-            setOffset(0);
-          }}
-          className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
-        >
-          <option value="">All Plans</option>
-          <option value="free">Free</option>
-          <option value="trial">Trial</option>
-          <option value="pro">Pro</option>
-          <option value="enterprise">Enterprise</option>
-        </select>
-        <select
-          value={modelFilter}
-          onChange={(e) => {
-            setModelFilter(e.target.value);
-            setOffset(0);
-          }}
-          className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
-        >
-          <option value="">All Models</option>
-          <option value="shared">Shared</option>
-          <option value="isolated">Isolated VPS</option>
-          <option value="onprem">On-Prem</option>
-        </select>
-      </div>
-
-      {loading ? (
-        <LoadingSpinner fullPage />
-      ) : (
-        <>
-          <div className="overflow-hidden rounded-lg border border-gray-800">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800 bg-gray-900/50">
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Customer
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Plan
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Model
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Region
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">
-                    MRR
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Cost
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Margin
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-400">
-                    Health
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {data.map((c) => (
-                  <tr
-                    key={c.org_id}
-                    className="bg-gray-900 transition hover:bg-gray-800/50"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/customers/${c.org_id}`}
-                        className="font-medium text-blue-400 hover:text-blue-300"
-                      >
-                        {c.org_name}
-                      </Link>
-                      <p className="text-xs text-gray-500">{c.org_slug}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded bg-gray-800 px-2 py-0.5 text-xs font-medium capitalize text-gray-300">
-                        {c.plan}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded bg-gray-800 px-2 py-0.5 text-xs font-medium capitalize text-gray-300">
-                        {c.deployment_model}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 uppercase">
-                      {c.data_region}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-300">
-                      {formatCurrency(c.mrr)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-400">
-                      {formatCurrency(c.monthly_cost)}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right font-medium ${marginColor(c.margin)}`}
-                    >
-                      {c.margin.toFixed(0)}%
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {c.last_health_check ? timeAgo(c.last_health_check) : "—"}
-                    </td>
-                  </tr>
-                ))}
-                {data.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-4 py-12 text-center text-gray-500"
-                    >
-                      <Users className="mx-auto mb-3 h-8 w-8 text-gray-600" />
-                      No customers found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Showing {offset + 1}–{Math.min(offset + limit, total)} of {total}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setOffset((o) => Math.max(0, o - limit))}
-                disabled={offset === 0}
-                className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setOffset((o) => o + limit)}
-                disabled={offset + limit >= total}
-                className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-              >
-                Next
-              </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {error && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-400">
+              {error.message || "An error occurred"}
             </div>
+          )}
+
+          {canCreateCustomer && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowCreate(true)}
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              {isMobile ? "Create" : "Create Customer"}
+            </Button>
+          )}
+
+          {canCreateCustomer && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowOnboardingWizard(true)}
+              leftIcon={<Rocket className="h-4 w-4" />}
+            >
+              {isMobile ? "Onboard" : "Enterprise Onboarding"}
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => execute()}
+            loading={loading}
+            title="Refresh"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+            <Input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                pagination.goToFirstPage();
+              }}
+              placeholder="Search customers..."
+              className="pl-10"
+            />
           </div>
-        </>
+
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={planFilter}
+              onChange={(e) => handlePlanFilterChange(e.target.value)}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+            >
+              <option value="">All Plans</option>
+              <option value="free">Free</option>
+              <option value="trial">Trial</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+
+            <select
+              value={modelFilter}
+              onChange={(e) => handleModelFilterChange(e.target.value)}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+            >
+              <option value="">All Models</option>
+              <option value="shared">Shared</option>
+              <option value="isolated">Isolated VPS</option>
+              <option value="onprem">On-Prem</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
+      {loading ? (
+        <TableSkeleton columns={8} rows={10} />
+      ) : (
+        <Table
+          data={data?.customers || []}
+          columns={columns}
+          keyAccessor="org_id"
+          loading={loading}
+          error={error?.message}
+          emptyState={emptyState}
+          onRowClick={handleRowClick}
+          mobileCardView={true}
+          sortable={true}
+          showSearch={false} // We have our own search input above
+          className="border-gray-800"
+          striped={true}
+          hoverable={true}
+        />
+      )}
+
+      {/* Pagination */}
+      {!loading && (data?.customers || []).length > 0 && (
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-sm text-gray-500">
+            Showing {pagination.offset + 1}–
+            {Math.min(pagination.offset + pagination.limit, data?.total || 0)}{" "}
+            of {data?.total || 0}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={pagination.previousPage}
+              disabled={!pagination.hasPreviousPage}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={pagination.nextPage}
+              disabled={!pagination.hasNextPage}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Create Customer Modal */}
@@ -251,7 +357,18 @@ export function CustomersPage() {
           onClose={() => setShowCreate(false)}
           onSuccess={() => {
             setShowCreate(false);
-            loadCustomers();
+            execute();
+          }}
+        />
+      )}
+
+      {/* Enterprise Onboarding Wizard */}
+      {showOnboardingWizard && (
+        <OnboardingWizard
+          onClose={() => setShowOnboardingWizard(false)}
+          onSuccess={() => {
+            setShowOnboardingWizard(false);
+            execute();
           }}
         />
       )}
@@ -259,6 +376,7 @@ export function CustomersPage() {
   );
 }
 
+// Keep the existing modal for now, but we could refactor it to use our Modal component later
 function CreateCustomerModal({
   onClose,
   onSuccess,

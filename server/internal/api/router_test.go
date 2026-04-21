@@ -658,6 +658,7 @@ var internalRoutes = map[string]bool{
 	"GET /api/v1/ops/environments":                    true,
 	"GET /api/v1/ops/environments/{id}":               true,
 	"GET /api/v1/ops/environments/vps/{vps_id}":       true,
+	"PATCH /api/v1/ops/environments/{id}":             true,
 	"POST /api/v1/ops/environments/provision":         true,
 	"POST /api/v1/ops/environments/{id}/decommission": true,
 	"POST /api/v1/ops/environments/{id}/maintenance":  true,

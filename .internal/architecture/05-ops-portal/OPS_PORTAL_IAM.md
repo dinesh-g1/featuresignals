@@ -114,26 +114,26 @@ Ops Portal VPS (Hetzner cx22, €4.51/mo)
 
 | Method | Audience | Setup | Security Level |
 |--------|----------|-------|----------------|
-| **Google Workspace SSO** | Full-time employees (`@featuresignals.com`) | Google OAuth2, domain-restricted | High (MFA enforced by Google) |
+| **Zoho Workspace SSO** | Full-time employees (`@featuresignals.com`) | Zoho OAuth2, domain-restricted | High (MFA enforced by Zoho) |
 | **Email Magic Link** | Contractors, partners, temporary access | Time-limited link (15 min expiry) | Medium (email account security) |
 | **Future: SAML/OIDC** | Enterprise integrations (Okta, Azure AD) | SAML/OIDC provider config | High (enterprise MFA) |
 
-### 3.2 Google Workspace SSO Flow
+### 3.2 Zoho Workspace SSO Flow
 
 ```
-User clicks "Sign in with Google"
+User clicks "Sign in with Zoho"
        │
        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Google OAuth2 Flow                                           │
-│ 1. Redirect to Google consent screen                         │
-│ 2. User authenticates with Google credentials                │
-│ 3. Google redirects back with authorization code             │
+│ Zoho OAuth2 Flow                                           │
+│ 1. Redirect to Zoho consent screen                         │
+│ 2. User authenticates with Zoho credentials                │
+│ 3. Zoho redirects back with authorization code             │
 │ 4. Ops Portal exchanges code for access token + ID token     │
 │ 5. Validate ID token:                                        │
 │    ├── Signature valid                                       │
 │    ├── Audience matches ops portal client ID                 │
-│    ├── Issuer is accounts.google.com                         │
+│    ├── Issuer is accounts.zoho.com                         │
 │    └── Email domain is @featuresignals.com                   │
 │ 6. Check if user exists in ops_users table                   │
 │    ├── If exists: load role, create session                  │
@@ -171,9 +171,9 @@ User enters email address
 // ops/src/lib/auth-config.ts
 
 export const authConfig = {
-  google: {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  zoho: {
+    clientId: process.env.ZOHO_CLIENT_ID,
+    clientSecret: process.env.ZOHO_CLIENT_SECRET,
     allowedDomains: ["featuresignals.com"],
     scopes: ["openid", "email", "profile"],
   },
@@ -1080,7 +1080,7 @@ Implementation:
 - [ ] Implement customer subdomain management UI
 - [ ] Add sales team role with appropriate permissions (create customers, view envs, no provisioning)
 - [ ] Set up ops portal VPS with independent PostgreSQL
-- [ ] Implement Google Workspace SSO authentication
+- [ ] Implement Zoho Workspace SSO authentication
 - [ ] Implement email magic link authentication
 - [ ] Create ops_users, ops_sessions, ops_roles, ops_audit_log tables
 - [ ] Seed system roles and initial team members

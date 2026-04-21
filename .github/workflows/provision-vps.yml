@@ -1,0 +1,232 @@
+# SAFETY: This workflow MUST remain on workflow_dispatch only.
+# It provisions production infrastructure and must never trigger automatically.
+name: Provision Isolated Customer VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      customer_name:
+        description: "Customer identifier (used in subdomain)"
+        required: true
+        type: string
+      org_id:
+        description: "Organization ID"
+        required: true
+        type: string
+      vps_type:
+        description: "Hetzner VPS type"
+        required: true
+        default: "cx32"
+        type: choice
+        options:
+          - cx22
+          - cx32
+          - cx42
+          - cpX11
+          - cpX21
+          - cpX31
+      region:
+        description: "Hetzner region"
+        required: true
+        default: "fsn1"
+        type: choice
+        options:
+          - fsn1
+          - nbg1
+          - hel1
+          - ash
+      plan:
+        description: "Customer plan"
+        required: true
+        default: "enterprise"
+        type: string
+
+jobs:
+  provision-infra:
+    name: Provision Infrastructure (Terraform)
+    runs-on: ubuntu-latest
+    outputs:
+      vps_ip: ${{ steps.terraform.outputs.vps_ip }}
+      vps_id: ${{ steps.terraform.outputs.vps_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        working-directory: infra/terraform/modules/vps
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/terraform/modules/vps
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: |
+          terraform plan \
+            -var="hetzner_token=${{ secrets.HCLOUD_TOKEN }}" \
+            -var="customer_name=${{ github.event.inputs.customer_name }}" \
+            -var="org_id=${{ github.event.inputs.org_id }}" \
+            -var="vps_type=${{ github.event.inputs.vps_type }}" \
+            -var="region=${{ github.event.inputs.region }}" \
+            -var="ssh_public_key=${{ secrets.DEPLOY_SSH_PUBLIC_KEY }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        id: terraform
+        working-directory: infra/terraform/modules/vps
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: |
+          terraform apply -auto-approve tfplan
+
+          VPS_IP=$(terraform output -raw vps_ip)
+          VPS_ID=$(terraform output -raw vps_id)
+
+          echo "vps_ip=$VPS_IP" >> $GITHUB_OUTPUT
+          echo "vps_id=$VPS_ID" >> $GITHUB_OUTPUT
+
+  configure:
+    name: Configure VPS (Ansible)
+    needs: provision-infra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for SSH
+        run: |
+          echo "Waiting for VPS to be SSH-ready..."
+          for i in {1..30}; do
+            if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
+              -i ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }} \
+              root@${{ needs.provision-infra.outputs.vps_ip }} echo "SSH ready"; then
+              echo "SSH is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 10
+          done
+
+      - name: Create inventory file
+        run: |
+          echo "[vps]" > inventory.ini
+          echo "${{ needs.provision-infra.outputs.vps_ip }} ansible_user=root ansible_ssh_private_key_file=${{ runner.temp }}/deploy_key" >> inventory.ini
+
+          # Write SSH key to temp file
+          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ${{ runner.temp }}/deploy_key
+          chmod 600 ${{ runner.temp }}/deploy_key
+
+      - name: Run Ansible Playbook
+        uses: dawidd6/action-ansible-playbook@v3
+        with:
+          playbook: infra/ansible/playbooks/vps-deploy.yml
+          directory: .
+          inventory: ${{ runner.temp }}/inventory.ini
+          options: |
+            --private-key=${{ runner.temp }}/deploy_key
+            --extra-vars "customer_name=${{ github.event.inputs.customer_name }}"
+            --extra-vars "org_id=${{ github.event.inputs.org_id }}"
+            --extra-vars "subdomain=${{ github.event.inputs.customer_name }}.featuresignals.com"
+          vault_password: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          extra_vars: |
+            vault_db_password=${{ secrets.random_db_password() }}
+            vault_jwt_secret=${{ secrets.random_jwt_secret() }}
+            vault_license_key=${{ secrets.LICENSE_KEY_TEMPLATE }}
+            vault_local_region=${{ github.event.inputs.region }}
+            vault_otel_endpoint=${{ secrets.OTEL_ENDPOINT }}
+            vault_otel_ingestion_key=${{ secrets.OTEL_INGESTION_KEY }}
+
+  dns:
+    name: Create DNS Record
+    needs: provision-infra
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create A record in Cloudflare
+        run: |
+          RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/dns_records" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "type": "A",
+              "name": "${{ github.event.inputs.customer_name }}.featuresignals.com",
+              "content": "${{ needs.provision-infra.outputs.vps_ip }}",
+              "ttl": 3600,
+              "proxied": false
+            }')
+
+          RECORD_ID=$(echo $RESPONSE | jq -r '.result.id')
+          echo "DNS record created: $RECORD_ID"
+          echo "record_id=$RECORD_ID" >> $GITHUB_ENV
+
+  register:
+    name: Register in Operations DB
+    needs: [provision-infra, configure, dns]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create provisioning record
+        id: create-env
+        run: |
+          RESPONSE=$(curl -s -X POST "${{ vars.OPS_PORTAL_URL }}/api/v1/ops/environments/provision" \
+            -H "Authorization: Bearer ${{ secrets.OPS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "customer_name": "${{ github.event.inputs.customer_name }}",
+              "org_id": "${{ github.event.inputs.org_id }}",
+              "vps_type": "${{ github.event.inputs.vps_type }}",
+              "region": "${{ github.event.inputs.region }}",
+              "plan": "${{ github.event.inputs.plan }}"
+            }')
+
+          ENV_ID=$(echo "$RESPONSE" | jq -r '.environment.id')
+          if [ "$ENV_ID" = "null" ] || [ -z "$ENV_ID" ]; then
+            echo "Failed to parse environment ID from response:"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "env_id=$ENV_ID" >> $GITHUB_OUTPUT
+          echo "Created environment: $ENV_ID"
+
+      - name: Update with provisioned details
+        run: |
+          curl -X PATCH "${{ vars.OPS_PORTAL_URL }}/api/v1/ops/environments/${{ steps.create-env.outputs.env_id }}" \
+            -H "Authorization: Bearer ${{ secrets.OPS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "vps_id": "${{ needs.provision-infra.outputs.vps_id }}",
+              "vps_ip": "${{ needs.provision-infra.outputs.vps_ip }}",
+              "subdomain": "${{ github.event.inputs.customer_name }}.featuresignals.com",
+              "custom_domain": "",
+              "cloudflare_record_id": "${{ env.record_id }}",
+              "vps_type": "${{ github.event.inputs.vps_type }}",
+              "vps_region": "${{ github.event.inputs.region }}",
+              "monthly_vps_cost": 0,
+              "monthly_backup_cost": 0,
+              "monthly_support_cost": 0,
+              "status": "active"
+            }'
+
+  notify:
+    name: Notify Teams
+    needs: [provision-infra, configure, dns, register]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: customer-success
+          slack-message: |
+            ✅ *VPS Provisioned Successfully*
+
+            Customer: `${{ github.event.inputs.customer_name }}`
+            Org ID: `${{ github.event.inputs.org_id }}`
+            URL: https://${{ github.event.inputs.customer_name }}.featuresignals.com
+            IP: `${{ needs.provision-infra.outputs.vps_ip }}`
+            VPS Type: `${{ github.event.inputs.vps_type }}`
+            Region: `${{ github.event.inputs.region }}`
+            Plan: `${{ github.event.inputs.plan }}`
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

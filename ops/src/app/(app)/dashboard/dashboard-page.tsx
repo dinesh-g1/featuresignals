@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   TrendingUp,
 } from "lucide-react";
+import { StatCard } from "@/components/ui";
 
 export function DashboardPage() {
   const user = useAppStore((s) => s.user);
@@ -91,19 +92,19 @@ export function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          icon={<Users className="h-5 w-5 text-blue-400" />}
+          icon={<Users className="h-5 w-5" />}
           label="Total Customers"
           value={customerCount > 0 ? customerCount.toLocaleString() : "—"}
           subtext="Across all deployment models"
         />
         <StatCard
-          icon={<Server className="h-5 w-5 text-green-400" />}
+          icon={<Server className="h-5 w-5" />}
           label="Active Environments"
           value={envCount > 0 ? envCount.toLocaleString() : "—"}
           subtext="Shared + Isolated + On-Prem"
         />
         <StatCard
-          icon={<DollarSign className="h-5 w-5 text-emerald-400" />}
+          icon={<DollarSign className="h-5 w-5" />}
           label="Monthly Revenue"
           value={
             summary ? `$${(summary.total_mrr / 100).toLocaleString()}` : "—"
@@ -111,7 +112,7 @@ export function DashboardPage() {
           subtext="MRR from all tiers"
         />
         <StatCard
-          icon={<TrendingUp className="h-5 w-5 text-purple-400" />}
+          icon={<TrendingUp className="h-5 w-5" />}
           label="Avg Margin"
           value={summary ? `${summary.total_margin.toFixed(0)}%` : "—"}
           subtext="Gross margin across tiers"
@@ -222,31 +223,6 @@ export function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  subtext,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  subtext: string;
-}) {
-  return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-      <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-gray-800 p-2">{icon}</div>
-        <div>
-          <p className="text-sm text-gray-400">{label}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-        </div>
-      </div>
-      <p className="mt-2 text-xs text-gray-500">{subtext}</p>
     </div>
   );
 }

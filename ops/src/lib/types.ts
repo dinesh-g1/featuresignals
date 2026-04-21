@@ -57,12 +57,23 @@ export interface CustomerEnvironment {
   vps_disk_gb?: number;
   subdomain?: string;
   custom_domain?: string;
+  cloudflare_record_id?: string;
   monthly_vps_cost: number;
   monthly_backup_cost: number;
   monthly_support_cost: number;
-  status: "provisioning" | "active" | "maintenance" | "suspended" | "decommissioning" | "decommissioned";
+  status:
+    | "provisioning"
+    | "active"
+    | "maintenance"
+    | "suspended"
+    | "decommissioning"
+    | "decommissioned";
   maintenance_mode: boolean;
   maintenance_reason?: string;
+  maintenance_enabled_by?: string;
+  maintenance_enabled_at?: string;
+  debug_mode_enabled_by?: string;
+  debug_mode_enabled_at?: string;
   debug_mode: boolean;
   debug_mode_expires_at?: string;
   provisioned_at?: string;
@@ -89,17 +100,27 @@ export interface License {
   max_environments?: number;
   max_evaluations_per_month?: number;
   max_api_calls_per_month?: number;
+  max_storage_gb?: number;
+  features?: Record<string, unknown>;
   current_seats: number;
   current_projects: number;
   current_environments: number;
   evaluations_this_month: number;
   api_calls_this_month: number;
+  storage_used_gb?: number;
+  last_usage_reset?: string;
   breach_count: number;
+  last_breach_at?: string;
+  breach_action?: string;
   issued_at: string;
   expires_at?: string;
   revoked_at?: string;
+  revoked_reason?: string;
   deployment_model: string;
   phone_home_enabled: boolean;
+  phone_home_interval_hours?: number;
+  last_phone_home_at?: string;
+  phone_home_status?: string;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -116,7 +137,12 @@ export interface SandboxEnvironment {
   vps_ip: string;
   vps_type: string;
   subdomain: string;
-  status: "provisioning" | "active" | "suspended" | "decommissioning" | "decommissioned";
+  status:
+    | "provisioning"
+    | "active"
+    | "suspended"
+    | "decommissioning"
+    | "decommissioned";
   expires_at: string;
   renewal_count: number;
   max_renewals: number;
@@ -154,7 +180,12 @@ export interface OrgCostMonthlySummary {
 export interface OpsUser {
   id: string;
   user_id: string;
-  ops_role: "founder" | "engineer" | "customer_success" | "demo_team" | "finance";
+  ops_role:
+    | "founder"
+    | "engineer"
+    | "customer_success"
+    | "demo_team"
+    | "finance";
   allowed_env_types: string[];
   allowed_regions: string[];
   max_sandbox_envs: number;
@@ -178,6 +209,7 @@ export interface OpsAuditLog {
 
 export interface ProvisionVPSRequest {
   customer_name: string;
+  customer_email?: string;
   org_id: string;
   vps_type: string;
   region: string;
@@ -204,6 +236,7 @@ export interface LicenseQuotaOverride {
 }
 
 export interface Customer {
+  id: string;
   org_id: string;
   org_name: string;
   org_slug: string;
@@ -217,4 +250,25 @@ export interface Customer {
   last_health_check?: string;
   health_score: number;
   created_at: string;
+}
+
+export interface CustomerDetail {
+  org: Organization;
+  environment?: CustomerEnvironment;
+  license?: License;
+  monthly_cost: number;
+  mrr: number;
+  health_score: number;
+  recent_audit_logs: OpsAuditLog[];
+}
+
+export interface EnvironmentUpdate {
+  subdomain?: string;
+  custom_domain?: string;
+  vps_type?: string;
+  vps_region?: string;
+  monthly_vps_cost?: number;
+  monthly_backup_cost?: number;
+  monthly_support_cost?: number;
+  status?: string;
 }

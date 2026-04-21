@@ -7,10 +7,13 @@
 
 import type {
   Customer,
+  CustomerDetail,
   CustomerEnvironment,
+  EnvironmentUpdate,
   License,
   OpsUser,
   OpsAuditLog,
+  Organization,
   ProvisionVPSRequest,
   SandboxEnvironment,
   OrgCostDaily,
@@ -205,6 +208,13 @@ export async function getEnvironment(id: string): Promise<CustomerEnvironment> {
   return request("GET", `/api/v1/ops/environments/${id}`);
 }
 
+export async function updateEnvironment(
+  id: string,
+  updates: EnvironmentUpdate,
+): Promise<CustomerEnvironment> {
+  return request("PATCH", `/api/v1/ops/environments/${id}`, updates);
+}
+
 export async function provisionEnvironment(
   body: ProvisionVPSRequest,
 ): Promise<CustomerEnvironment> {
@@ -274,6 +284,27 @@ export async function createLicense(body: {
 
 export async function revokeLicense(id: string, reason: string): Promise<void> {
   return request("POST", `/api/v1/ops/licenses/${id}/revoke`, { reason });
+}
+
+export async function getLicenseByOrg(orgId: string): Promise<License> {
+  return request("GET", `/api/v1/ops/licenses/org/${orgId}`);
+}
+
+export async function overrideLicenseQuota(
+  id: string,
+  body: {
+    max_evaluations_per_month?: number;
+    max_api_calls_per_month?: number;
+    max_seats?: number;
+    max_projects?: number;
+    max_environments?: number;
+  },
+): Promise<License> {
+  return request("POST", `/api/v1/ops/licenses/${id}/quota-override`, body);
+}
+
+export async function resetLicenseUsage(id: string): Promise<void> {
+  return request("POST", `/api/v1/ops/licenses/${id}/reset-usage`);
 }
 
 // ─── Sandboxes ────────────────────────────────────────────────────────
@@ -396,14 +427,28 @@ export async function listAuditLogs(params?: {
 
 // ─── Customers ────────────────────────────────────────────────────────
 
-export async function listCustomers(): Promise<{
+export async function listCustomers(params?: {
+  plan?: string;
+  deployment_model?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{
   customers: Customer[];
   total: number;
 }> {
-  return request("GET", "/api/v1/ops/customers");
+  const qs = new URLSearchParams();
+  if (params?.plan) qs.set("plan", params.plan);
+  if (params?.deployment_model)
+    qs.set("deployment_model", params.deployment_model);
+  if (params?.search) qs.set("search", params.search);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  const query = qs.toString();
+  return request("GET", `/api/v1/ops/customers${query ? `?${query}` : ""}`);
 }
 
-export async function getCustomer(orgId: string): Promise<Customer> {
+export async function getCustomer(orgId: string): Promise<CustomerDetail> {
   return request("GET", `/api/v1/ops/customers/${orgId}`);
 }
 
@@ -413,7 +458,7 @@ export async function createCustomer(body: {
   plan?: string;
   data_region?: string;
   deployment_model?: string;
-}): Promise<Customer> {
+}): Promise<Organization> {
   return request("POST", "/api/v1/ops/customers", body);
 }
 
@@ -424,7 +469,9 @@ export const customers = {
     search?: string;
     plan?: string;
     deployment_model?: string;
-  }) => listCustomers(),
+    limit?: number;
+    offset?: number;
+  }) => listCustomers(params),
   get: getCustomer,
   create: createCustomer,
 };
@@ -457,6 +504,7 @@ export const environments = {
     });
   },
   get: getEnvironment,
+  update: updateEnvironment,
   provision: provisionEnvironment,
   decommission: decommissionEnvironment,
   toggleMaintenance,
@@ -476,6 +524,9 @@ export const licenses = {
   get: getLicense,
   create: createLicense,
   revoke: revokeLicense,
+  getByOrg: getLicenseByOrg,
+  overrideQuota: overrideLicenseQuota,
+  resetUsage: resetLicenseUsage,
 };
 
 export const opsUsers = {

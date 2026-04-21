@@ -28,8 +28,7 @@ All prior planning documents (IAM strategy, infrastructure strategy, integration
 | 6 | **Finance** | [Cost Attribution Engine](./architecture/06-cost/COST_ENGINE.md) | Per-environment cost tracking, revenue attribution, financial dashboards, optimization rules. |
 | 7 | **Licensing** | [Unified License System](./architecture/07-licensing/LICENSE_SYSTEM.md) | Open Core enforcement (Community features bypass license), Trial/Pro/Enterprise tiers, trial → Free auto-degradation, phone-home agent, offline grace periods. |
 | 8 | **Repository** | [Repository Strategy](./architecture/08-repo-strategy/REPO_STRATEGY.md) | Monorepo architecture, CODEOWNERS, SDK co-versioning, CI change detection. |
-| 9 | **Execution Plan** | [Unified Execution Plan](./architecture/09-roadmap/EXECUTION_PLAN.md) | **THE single source of truth.** What's implemented, gap analysis, unified customer journeys, execution phases, automated testing, release process, decision pipeline, integrations, monitoring, daily ops, risks, KPIs. |
-| 10 | **Roadmap (Historical)** | [Implementation Roadmap](./architecture/09-roadmap/IMPLEMENTATION_ROADMAP.md) | Historical reference only. Superseded by the Execution Plan. |
+| 9 | **Execution Plan** | [Unified Execution Plan](./architecture/09-roadmap/EXECUTION_PLAN.md) | **THE single source of truth.** Market domination strategy, competitive analysis, 8-phase execution plan with dependencies, Phase 1 completion report, enterprise moats, 100% market share success metrics. |
 
 ---
 
@@ -90,6 +89,7 @@ Before implementation begins, all stakeholders must review and approve:
 | 1.1.0 | 2026-01-15 | Engineering | Merged clarifications: Open Core business model, persistent vs ephemeral environments, CI zero inter-dependency, `.env.example` single source of truth, trial → Free degradation, Pro/Enterprise tier matrix. Deleted separate clarification files. |
 | 1.2.0 | 2026-01-15 | Engineering | Added unified customer onboarding flow, single-endpoint architecture (`app.featuresignals.com`), region selection at signup, dedicated VPS custom subdomains, enterprise onboarding via Ops Portal, Cloudflare geo-routing to regional origins. |
 | 2.0.0 | 2026-01-15 | Engineering | Consolidated all `.internal/` planning documents (strategy, operational, integration, monitoring, pipeline, daily-ops, archive) into architecture folder. Created [Unified Execution Plan](./architecture/09-roadmap/EXECUTION_PLAN.md) as single source of truth. Deleted all other `.internal/` subfolders. |
+| 3.0.0 | 2026-01-15 | Engineering | Merged IMPLEMENTATION_ROADMAP.md + EXECUTION_PLAN.md into unified market domination roadmap. Added 100% market share strategy, competitive analysis, 8-phase execution plan with dependencies, Phase 1 completion report, enterprise moats, market domination KPIs. |
 
 ---
 

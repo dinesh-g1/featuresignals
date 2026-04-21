@@ -305,6 +305,11 @@ func (m *opsMockStore) GetCustomerDetail(_ context.Context, orgID string) (*doma
 	return nil, domain.ErrNotFound
 }
 
+func (m *opsMockStore) CreateOrganization(_ context.Context, org *domain.Organization) error {
+	m.orgs[org.ID] = org
+	return nil
+}
+
 func (m *opsMockStore) GetOrganization(_ context.Context, id string) (*domain.Organization, error) {
 	if org, ok := m.orgs[id]; ok {
 		return org, nil
@@ -399,7 +404,7 @@ func TestOpsHandler_ListEnvironments(t *testing.T) {
 		ID: "env-1", OrgID: "org-1", DeploymentModel: "isolated",
 		Status: "active", Subdomain: "acme.featuresignals.com",
 	}
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/environments", nil)
 	w := httptest.NewRecorder()
@@ -426,7 +431,7 @@ func TestOpsHandler_ListEnvironments(t *testing.T) {
 
 func TestOpsHandler_GetEnvironment_NotFound(t *testing.T) {
 	store := newOpsMockStore()
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/environments/nonexistent", nil)
 	w := httptest.NewRecorder()
@@ -442,7 +447,7 @@ func TestOpsHandler_GetEnvironment_NotFound(t *testing.T) {
 
 func TestOpsHandler_ProvisionEnvironment_Validation(t *testing.T) {
 	store := newOpsMockStore()
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	tests := []struct {
 		name       string
@@ -490,7 +495,7 @@ func TestOpsHandler_ToggleMaintenance(t *testing.T) {
 	store.envs["env-1"] = &domain.CustomerEnvironment{
 		ID: "env-1", OrgID: "org-1", Status: "active",
 	}
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	body := `{"enabled": true, "reason": "Database migration"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/ops/environments/env-1/maintenance", bytes.NewBufferString(body))
@@ -515,7 +520,7 @@ func TestOpsHandler_ToggleMaintenance(t *testing.T) {
 func TestOpsHandler_CreateLicense_Validation(t *testing.T) {
 	store := newOpsMockStore()
 	store.orgs["org-1"] = &domain.Organization{ID: "org-1", Name: "Test Org"}
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	tests := []struct {
 		name       string
@@ -558,7 +563,7 @@ func TestOpsHandler_RevokeLicense(t *testing.T) {
 	store.licenses["lic-1"] = &domain.License{
 		ID: "lic-1", OrgID: "org-1", CustomerName: "Test",
 	}
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	body := `{"reason": "Contract ended"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/ops/licenses/lic-1/revoke", bytes.NewBufferString(body))
@@ -582,7 +587,7 @@ func TestOpsHandler_RevokeLicense(t *testing.T) {
 
 func TestOpsHandler_GetFinancialSummary(t *testing.T) {
 	store := newOpsMockStore()
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/financial/summary", nil)
 	w := httptest.NewRecorder()
@@ -613,7 +618,7 @@ func TestOpsHandler_CreateSandbox_Validation(t *testing.T) {
 		ID: "ops-1", UserID: "user-1", OpsRole: "engineer",
 		IsActive: true, MaxSandboxEnvs: 2,
 	}
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	tests := []struct {
 		name       string
@@ -653,7 +658,7 @@ func TestOpsHandler_ListOpsAuditLogs(t *testing.T) {
 		{ID: "1", OpsUserID: "user-1", Action: "provision_env", TargetType: "environment", CreatedAt: time.Now()},
 		{ID: "2", OpsUserID: "user-1", Action: "toggle_maintenance", TargetType: "environment", CreatedAt: time.Now()},
 	}
-	handler := NewOpsHandler(store)
+	handler := NewOpsHandler(store, NoopLifecycle())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/audit", nil)
 	w := httptest.NewRecorder()

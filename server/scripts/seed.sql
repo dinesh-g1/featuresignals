@@ -108,6 +108,130 @@ VALUES (
 )
 ON CONFLICT (ops_user_id, email) DO NOTHING;
 
+-- Ops portal engineer user (password: "password123")
+INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
+VALUES (
+  'user-ops-002',
+  'engineer@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'Ops Engineer',
+  NOW(), NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_users (id, user_id, ops_role, allowed_env_types, allowed_regions, max_sandbox_envs, is_active)
+VALUES (
+  'ops-user-002',
+  'user-ops-002',
+  'engineer',
+  '{shared,isolated,onprem}',
+  '{in,us,eu}',
+  5,  -- engineers can have up to 5 sandboxes
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
+VALUES (
+  'ops-user-002',
+  'engineer@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+)
+ON CONFLICT (ops_user_id, email) DO NOTHING;
+
+-- Ops portal customer success user (password: "password123")
+INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
+VALUES (
+  'user-ops-003',
+  'success@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'Customer Success',
+  NOW(), NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_users (id, user_id, ops_role, allowed_env_types, allowed_regions, max_sandbox_envs, is_active)
+VALUES (
+  'ops-user-003',
+  'user-ops-003',
+  'customer_success',
+  '{shared,isolated}',  -- no on-prem access
+  '{in,us,eu}',
+  0,  -- no sandbox access
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
+VALUES (
+  'ops-user-003',
+  'success@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+)
+ON CONFLICT (ops_user_id, email) DO NOTHING;
+
+-- Ops portal demo team user (password: "password123")
+INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
+VALUES (
+  'user-ops-004',
+  'demo@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'Demo Team',
+  NOW(), NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_users (id, user_id, ops_role, allowed_env_types, allowed_regions, max_sandbox_envs, is_active)
+VALUES (
+  'ops-user-004',
+  'user-ops-004',
+  'demo_team',
+  '{shared}',  -- only shared environments
+  '{in,us}',
+  3,  -- demo team can have 3 sandboxes
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
+VALUES (
+  'ops-user-004',
+  'demo@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+)
+ON CONFLICT (ops_user_id, email) DO NOTHING;
+
+-- Ops portal finance user (password: "password123")
+INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
+VALUES (
+  'user-ops-005',
+  'finance@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  'Finance',
+  NOW(), NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_users (id, user_id, ops_role, allowed_env_types, allowed_regions, max_sandbox_envs, is_active)
+VALUES (
+  'ops-user-005',
+  'user-ops-005',
+  'finance',
+  '{}',  -- no environment access
+  '{}',  -- no region access
+  0,  -- no sandbox access
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
+VALUES (
+  'ops-user-005',
+  'finance@featuresignals.com',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+)
+ON CONFLICT (ops_user_id, email) DO NOTHING;
+
 COMMIT;
 
 -- Summary:
@@ -117,4 +241,9 @@ COMMIT;
 --   Environments: development, staging, production
 --   Flags:        dark-mode, new-checkout, banner-text
 --   API Keys:     Dev + Prod server keys
---   Ops Portal:   ops@featuresignals.com / password123 (founder role)
+--   Ops Portal Roles (password: "password123"):
+--     Founder:        ops@featuresignals.com       (full access)
+--     Engineer:       engineer@featuresignals.com  (provision, debug, no finance)
+--     Customer Success: success@featuresignals.com (view only, no on-prem)
+--     Demo Team:      demo@featuresignals.com      (shared envs only, 3 sandboxes)
+--     Finance:        finance@featuresignals.com   (financial dashboards only)

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { environments, ProvisionVPSRequest } from "@/lib/api";
 import { CustomerEnvironment } from "@/lib/types";
 import { statusBadge, timeAgo, formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { ProgressBar, MultiStepProgress } from "@/components/ui";
 import {
   Server,
   Search,
@@ -60,6 +61,38 @@ export function EnvironmentsPage() {
   useEffect(() => {
     loadEnvs();
   }, [loadEnvs]);
+
+  // Poll for provisioning environments
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Check if any environment is in provisioning state
+    const hasProvisioningEnvs = envs.some(
+      (env) => env.status === "provisioning",
+    );
+
+    if (hasProvisioningEnvs && !pollingIntervalRef.current) {
+      // Start polling every 5 seconds for provisioning environments
+      pollingIntervalRef.current = setInterval(() => {
+        loadEnvs();
+      }, 5000);
+
+      console.log("Started polling for provisioning environments");
+    } else if (!hasProvisioningEnvs && pollingIntervalRef.current) {
+      // Stop polling when no provisioning environments remain
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+      console.log("Stopped polling - no provisioning environments");
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [envs, loadEnvs]);
 
   async function handleToggleMaintenance(id: string, enabled: boolean) {
     setActionLoading(id);
@@ -235,7 +268,21 @@ export function EnvironmentsPage() {
                         {env.deployment_model}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{statusBadge(env.status)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        {statusBadge(env.status)}
+                        {env.status === "provisioning" && (
+                          <div className="mt-1">
+                            <ProgressBar
+                              indeterminate={true}
+                              size="xs"
+                              variant="primary"
+                              showValue={false}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-gray-400">
                       {env.vps_region || "—"}
                     </td>
@@ -332,7 +379,10 @@ export function EnvironmentsPage() {
 
           {/* Expanded detail */}
           {expandedId && (
-            <ExpandedDetail env={envs.find((e) => e.id === expandedId)!} />
+            <ExpandedDetail
+              env={envs.find((e) => e.id === expandedId)!}
+              onUpdate={loadEnvs}
+            />
           )}
 
           {/* Pagination */}
@@ -374,16 +424,259 @@ export function EnvironmentsPage() {
   );
 }
 
-function ExpandedDetail({ env }: { env: CustomerEnvironment }) {
+function ExpandedDetail({
+  env,
+  onUpdate,
+}: {
+  env: CustomerEnvironment;
+  onUpdate?: () => void;
+}) {
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    subdomain: env.subdomain || "",
+    custom_domain: env.custom_domain || "",
+    vps_type: env.vps_type || "",
+    vps_region: env.vps_region || "",
+    monthly_vps_cost: env.monthly_vps_cost || 0,
+    monthly_backup_cost: env.monthly_backup_cost || 0,
+    monthly_support_cost: env.monthly_support_cost || 0,
+    status: env.status || "",
+  });
+
+  const handleSave = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Filter out empty strings and keep only changed fields
+      const updates: Record<string, any> = {};
+      if (editForm.subdomain !== env.subdomain)
+        updates.subdomain = editForm.subdomain || null;
+      if (editForm.custom_domain !== env.custom_domain)
+        updates.custom_domain = editForm.custom_domain || null;
+      if (editForm.vps_type !== env.vps_type)
+        updates.vps_type = editForm.vps_type || null;
+      if (editForm.vps_region !== env.vps_region)
+        updates.vps_region = editForm.vps_region || null;
+      if (editForm.monthly_vps_cost !== env.monthly_vps_cost)
+        updates.monthly_vps_cost = editForm.monthly_vps_cost;
+      if (editForm.monthly_backup_cost !== env.monthly_backup_cost)
+        updates.monthly_backup_cost = editForm.monthly_backup_cost;
+      if (editForm.monthly_support_cost !== env.monthly_support_cost)
+        updates.monthly_support_cost = editForm.monthly_support_cost;
+      if (editForm.status !== env.status) updates.status = editForm.status;
+
+      if (Object.keys(updates).length > 0) {
+        await environments.update(env.id, updates);
+        setEditMode(false);
+        if (onUpdate) onUpdate();
+      } else {
+        setEditMode(false);
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update environment",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditForm({
+      subdomain: env.subdomain || "",
+      custom_domain: env.custom_domain || "",
+      vps_type: env.vps_type || "",
+      vps_region: env.vps_region || "",
+      monthly_vps_cost: env.monthly_vps_cost || 0,
+      monthly_backup_cost: env.monthly_backup_cost || 0,
+      monthly_support_cost: env.monthly_support_cost || 0,
+      status: env.status || "",
+    });
+    setEditMode(false);
+    setError(null);
+  };
+
+  const handleChange = (
+    field: keyof typeof editForm,
+    value: string | number,
+  ) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-      <h3 className="mb-3 font-medium text-white">Environment Details</h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-medium text-white">Environment Details</h3>
+        <button
+          onClick={() => setEditMode(!editMode)}
+          className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-white hover:bg-gray-700"
+        >
+          {editMode ? "Cancel Edit" : "Edit"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-3 rounded-lg border border-red-800 bg-red-900/20 p-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3 lg:grid-cols-4">
         <DetailItem label="ID" value={env.id.slice(0, 8)} />
         <DetailItem label="Org ID" value={env.org_id.slice(0, 8)} />
         <DetailItem label="VPS ID" value={env.vps_id || "—"} />
         <DetailItem label="IP" value={env.vps_ip || "—"} />
-        <DetailItem label="Type" value={env.vps_type || "—"} />
+
+        {editMode ? (
+          <>
+            <div>
+              <p className="text-xs text-gray-500">Type</p>
+              <input
+                type="text"
+                value={editForm.vps_type}
+                onChange={(e) => handleChange("vps_type", e.target.value)}
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+                placeholder="e.g., cx32"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Region</p>
+              <input
+                type="text"
+                value={editForm.vps_region}
+                onChange={(e) => handleChange("vps_region", e.target.value)}
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+                placeholder="e.g., fsn1"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Subdomain</p>
+              <input
+                type="text"
+                value={editForm.subdomain}
+                onChange={(e) => handleChange("subdomain", e.target.value)}
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+                placeholder="e.g., customer.featuresignals.com"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Custom Domain</p>
+              <input
+                type="text"
+                value={editForm.custom_domain}
+                onChange={(e) => handleChange("custom_domain", e.target.value)}
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+                placeholder="e.g., app.customer.com"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">VPS Cost ($)</p>
+              <input
+                type="number"
+                step="0.01"
+                value={editForm.monthly_vps_cost}
+                onChange={(e) =>
+                  handleChange(
+                    "monthly_vps_cost",
+                    parseFloat(e.target.value) || 0,
+                  )
+                }
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Backup Cost ($)</p>
+              <input
+                type="number"
+                step="0.01"
+                value={editForm.monthly_backup_cost}
+                onChange={(e) =>
+                  handleChange(
+                    "monthly_backup_cost",
+                    parseFloat(e.target.value) || 0,
+                  )
+                }
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Support Cost ($)</p>
+              <input
+                type="number"
+                step="0.01"
+                value={editForm.monthly_support_cost}
+                onChange={(e) =>
+                  handleChange(
+                    "monthly_support_cost",
+                    parseFloat(e.target.value) || 0,
+                  )
+                }
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+              />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Status</p>
+              <select
+                value={editForm.status}
+                onChange={(e) => handleChange("status", e.target.value)}
+                className="mt-1 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1 text-gray-300"
+              >
+                <option value="provisioning">Provisioning</option>
+                <option value="active">Active</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="suspended">Suspended</option>
+                <option value="decommissioning">Decommissioning</option>
+                <option value="decommissioned">Decommissioned</option>
+              </select>
+            </div>
+          </>
+        ) : (
+          <>
+            <DetailItem label="Type" value={env.vps_type || "—"} />
+            <DetailItem label="Region" value={env.vps_region || "—"} />
+            <DetailItem label="Subdomain" value={env.subdomain || "—"} />
+            <DetailItem
+              label="Custom Domain"
+              value={env.custom_domain || "—"}
+            />
+            <DetailItem
+              label="VPS Cost"
+              value={formatCurrency(env.monthly_vps_cost)}
+            />
+            <DetailItem
+              label="Backup Cost"
+              value={formatCurrency(env.monthly_backup_cost)}
+            />
+            <DetailItem
+              label="Support Cost"
+              value={formatCurrency(env.monthly_support_cost)}
+            />
+            <div>
+              <p className="text-xs text-gray-500">Status</p>
+              <div className="mt-1">
+                {env.status === "provisioning" ? (
+                  <div className="flex items-center gap-2">
+                    <ProgressBar
+                      indeterminate={true}
+                      size="xs"
+                      variant="primary"
+                      showValue={false}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-gray-400">
+                      Provisioning...
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-gray-300">{env.status}</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
         <DetailItem
           label="CPU"
           value={env.vps_cpu_cores ? `${env.vps_cpu_cores} cores` : "—"}
@@ -395,16 +688,6 @@ function ExpandedDetail({ env }: { env: CustomerEnvironment }) {
         <DetailItem
           label="Disk"
           value={env.vps_disk_gb ? `${env.vps_disk_gb} GB` : "—"}
-        />
-        <DetailItem label="Subdomain" value={env.subdomain || "—"} />
-        <DetailItem label="Custom Domain" value={env.custom_domain || "—"} />
-        <DetailItem
-          label="VPS Cost"
-          value={formatCurrency(env.monthly_vps_cost)}
-        />
-        <DetailItem
-          label="Backup Cost"
-          value={formatCurrency(env.monthly_backup_cost)}
         />
         <DetailItem
           label="Provisioned"
@@ -432,6 +715,32 @@ function ExpandedDetail({ env }: { env: CustomerEnvironment }) {
         />
         <DetailItem label="Updated" value={timeAgo(env.updated_at)} />
       </div>
+
+      {editMode && (
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            onClick={handleCancel}
+            disabled={loading}
+            className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -454,6 +763,7 @@ function ProvisionModal({
 }) {
   const [form, setForm] = useState<ProvisionVPSRequest>({
     customer_name: "",
+    customer_email: "",
     org_id: "",
     vps_type: "cx32",
     region: "fsn1",
@@ -504,13 +814,29 @@ function ProvisionModal({
               onChange={(e) =>
                 setForm({ ...form, customer_name: e.target.value })
               }
-              placeholder="acmecorp"
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              placeholder="acme-inc"
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Will become acmecorp.featuresignals.com
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-300">
+              Customer Email
+            </label>
+            <input
+              type="email"
+              value={form.customer_email}
+              onChange={(e) =>
+                setForm({ ...form, customer_email: e.target.value })
+              }
+              className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              placeholder="admin@acme-inc.com"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Optional - for sending environment ready notification
             </p>
           </div>
+
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-300">
               Organization ID
@@ -520,7 +846,8 @@ function ProvisionModal({
               required
               value={form.org_id}
               onChange={(e) => setForm({ ...form, org_id: e.target.value })}
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              placeholder="org_123..."
             />
           </div>
           <div className="grid grid-cols-3 gap-3">

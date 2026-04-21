@@ -10,6 +10,8 @@ import (
 type CustomerEnvironment struct {
 	ID                   string     `json:"id"`
 	OrgID                string     `json:"org_id"`
+	OrgName              string     `json:"org_name,omitempty"`
+	CustomerEmail        string     `json:"customer_email,omitempty"`
 	DeploymentModel      string     `json:"deployment_model"`
 	VPSProvider          string     `json:"vps_provider,omitempty"`
 	VPSID                string     `json:"vps_id,omitempty"`

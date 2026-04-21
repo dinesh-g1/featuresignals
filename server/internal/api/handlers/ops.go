@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -25,12 +26,13 @@ type OpsStore interface {
 
 // OpsHandler handles all /api/v1/ops/* routes.
 type OpsHandler struct {
-	store OpsStore
+	store  OpsStore
+	mailer LifecycleSender
 }
 
 // NewOpsHandler creates a new ops handler.
-func NewOpsHandler(store OpsStore) *OpsHandler {
-	return &OpsHandler{store: store}
+func NewOpsHandler(store OpsStore, mailer LifecycleSender) *OpsHandler {
+	return &OpsHandler{store: store, mailer: mailer}
 }
 
 // ─── Environment Routes ───────────────────────────────────────────────
@@ -58,34 +60,7 @@ func (h *OpsHandler) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Batch-enrich with org names in a single query
-	if len(envs) > 0 {
-		type orgInfo struct {
-			ID   string
-			Name string
-		}
-		orgIDs := make([]string, 0, len(envs))
-		seen := make(map[string]bool, len(envs))
-		for _, e := range envs {
-			if !seen[e.OrgID] {
-				orgIDs = append(orgIDs, e.OrgID)
-				seen[e.OrgID] = true
-			}
-		}
-		orgMap := make(map[string]orgInfo, len(orgIDs))
-		for _, orgID := range orgIDs {
-			if org, err := h.store.GetOrganization(r.Context(), orgID); err == nil {
-				orgMap[orgID] = orgInfo{ID: org.ID, Name: org.Name}
-			} else {
-				log.Warn("failed to enrich org", "org_id", orgID, "error", err)
-			}
-		}
-		for i := range envs {
-			if info, ok := orgMap[envs[i].OrgID]; ok {
-				envs[i].OrgID = info.Name + "|" + info.ID
-			}
-		}
-	}
+
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"environments": envs,
@@ -108,13 +83,92 @@ func (h *OpsHandler) GetEnvironment(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, env)
 }
 
+func (h *OpsHandler) UpdateEnvironment(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID := middleware.GetUserID(r.Context())
+	log := httputil.LoggerFromContext(r.Context()).With("handler", "ops_update", "id", id, "user_id", userID)
+
+	var updates map[string]any
+	if err := httputil.DecodeJSON(r, &updates); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Validate allowed fields
+	allowed := map[string]bool{
+		"subdomain":        true,
+		"custom_domain":    true,
+		"vps_type":         true,
+		"vps_region":       true,
+		"monthly_vps_cost": true,
+		"monthly_backup_cost": true,
+		"monthly_support_cost": true,
+		"status":           true,
+	}
+
+	for key := range updates {
+		if !allowed[key] {
+			httputil.Error(w, http.StatusBadRequest, fmt.Sprintf("field %s cannot be updated via this endpoint", key))
+			return
+		}
+	}
+
+	if err := h.store.UpdateCustomerEnvironment(r.Context(), id, updates); err != nil {
+		if isNotFound(err) {
+			httputil.Error(w, http.StatusNotFound, "environment not found")
+			return
+		}
+		log.Error("failed to update environment", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to update environment")
+		return
+	}
+
+	env, err := h.store.GetCustomerEnvironment(r.Context(), id)
+	if err != nil {
+		log.Error("failed to fetch updated environment", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to fetch updated environment")
+		return
+	}
+
+	// Send welcome email if environment just became active and has customer email
+	if statusVal, ok := updates["status"]; ok && statusVal == "active" && env.CustomerEmail != "" && h.mailer != nil {
+		go func() {
+			ctx := context.Background()
+			msg := domain.EmailMessage{
+				To:        env.CustomerEmail,
+				ToName:    env.CustomerEmail, // Could use customer name if available
+				Template:  domain.TemplateEnvironmentReady,
+				Subject:   "Your FeatureSignals Environment is Ready",
+				Data: map[string]string{
+					"subdomain":   env.Subdomain,
+					"customer_email": env.CustomerEmail,
+					"login_url":   "https://" + env.Subdomain + "/login",
+					"dashboard_url": "https://" + env.Subdomain + "/dashboard",
+					"support_url": "https://featuresignals.com/support",
+				},
+			}
+			if err := h.mailer.Send(ctx, "", msg); err != nil {
+				log.Warn("failed to send environment ready email", "error", err, "customer_email", env.CustomerEmail)
+			} else {
+				log.Info("environment ready email sent", "customer_email", env.CustomerEmail)
+			}
+		}()
+	}
+
+	h.auditLog(r, userID, "update", "environment", id, updates)
+	log.Info("environment updated", "fields", len(updates))
+
+	httputil.JSON(w, http.StatusOK, env)
+}
+
 func (h *OpsHandler) ProvisionEnvironment(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		CustomerName string `json:"customer_name"`
-		OrgID        string `json:"org_id"`
-		VPSType      string `json:"vps_type"`
-		Region       string `json:"region"`
-		Plan         string `json:"plan"`
+		CustomerName  string `json:"customer_name"`
+		CustomerEmail string `json:"customer_email,omitempty"`
+		OrgID         string `json:"org_id"`
+		VPSType       string `json:"vps_type"`
+		Region        string `json:"region"`
+		Plan          string `json:"plan"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
@@ -129,6 +183,7 @@ func (h *OpsHandler) ProvisionEnvironment(w http.ResponseWriter, r *http.Request
 	// Create environment record in "provisioning" status
 	env := &domain.CustomerEnvironment{
 		OrgID:           req.OrgID,
+		CustomerEmail:   req.CustomerEmail,
 		DeploymentModel: "isolated",
 		VPSProvider:     "hetzner",
 		VPSType:         req.VPSType,
@@ -146,7 +201,7 @@ func (h *OpsHandler) ProvisionEnvironment(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	httputil.LoggerFromContext(r.Context()).Info("environment provisioned", "org_id", req.OrgID, "subdomain", env.Subdomain)
+	httputil.LoggerFromContext(r.Context()).Info("environment provisioned", "org_id", req.OrgID, "subdomain", env.Subdomain, "customer_email", req.CustomerEmail)
 	httputil.JSON(w, http.StatusAccepted, map[string]any{
 		"environment": env,
 		"message":     "Provisioning workflow triggered. This will take ~15 minutes.",

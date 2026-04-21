@@ -79,7 +79,7 @@ func (s *Store) ListCustomerEnvironments(ctx context.Context, status, deployment
 	}
 	defer rows.Close()
 
-	var envs []domain.CustomerEnvironment
+	envs := make([]domain.CustomerEnvironment, 0)
 	for rows.Next() {
 		var e domain.CustomerEnvironment
 		var orgName sql.NullString
@@ -106,7 +106,7 @@ func (s *Store) ListCustomerEnvironments(ctx context.Context, status, deployment
 			e.MaintenanceReason = maintReason.String
 		}
 		if orgName.Valid {
-			// Store org name in a field — we'd add this to the domain type
+			e.OrgName = orgName.String
 		}
 		// Handle null times
 		if provAt.Valid {
@@ -124,7 +124,7 @@ func (s *Store) ListCustomerEnvironments(ctx context.Context, status, deployment
 		envs = append(envs, e)
 	}
 
-	return envs, len(envs), nil
+	return envs, total, nil
 }
 
 func (s *Store) GetCustomerEnvironment(ctx context.Context, id string) (*domain.CustomerEnvironment, error) {
