@@ -1,0 +1,125 @@
+# =============================================================================
+# FeatureSignals — Staging Environment Overrides
+# =============================================================================
+# This file overrides values.yaml for the staging deployment.
+# Staging runs on the same k3s cluster but with reduced resources,
+# debug logging, and staging subdomain hostnames.
+# =============================================================================
+
+global:
+  environment: staging
+  dnsDomain: staging.featuresignals.com
+
+# ---------------------------------------------------------------------------
+# Server — reduced resources, debug logging
+# ---------------------------------------------------------------------------
+server:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
+
+  env:
+    LOG_LEVEL: debug
+    CORS_ORIGINS: "https://app.staging.featuresignals.com"
+    OTEL_EXPORTER_OTLP_ENDPOINT: signoz-otel-collector.signoz:4317
+    OTEL_SERVICE_NAME: featuresignals-api-staging
+    APP_BASE_URL: https://api.staging.featuresignals.com
+    DASHBOARD_URL: https://app.staging.featuresignals.com
+    AUDIT_RETENTION_DAYS: "7"
+
+  podAnnotations:
+    environment: staging
+
+# ---------------------------------------------------------------------------
+# Dashboard — single replica for staging
+# ---------------------------------------------------------------------------
+dashboard:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 192Mi
+
+  env:
+    NEXT_PUBLIC_API_URL: https://api.staging.featuresignals.com
+    HOSTNAME: "0.0.0.0"
+
+  podAnnotations:
+    environment: staging
+
+# ---------------------------------------------------------------------------
+# Ingress — staging subdomains
+# ---------------------------------------------------------------------------
+ingress:
+  api:
+    host: api.staging.featuresignals.com
+  dashboard:
+    host: app.staging.featuresignals.com
+  tls:
+    - secretName: featuresignals-api-staging-tls
+      hosts:
+        - api.staging.featuresignals.com
+    - secretName: featuresignals-dashboard-staging-tls
+      hosts:
+        - app.staging.featuresignals.com
+
+# ---------------------------------------------------------------------------
+# PostgreSQL — reuse same cluster, different database
+# ---------------------------------------------------------------------------
+postgresql:
+  database: featuresignals_staging
+  existingSecret: db-credentials-staging
+
+# ---------------------------------------------------------------------------
+# Migration
+# ---------------------------------------------------------------------------
+migration:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 300m
+      memory: 192Mi
+
+# ---------------------------------------------------------------------------
+# HPA — disabled for staging to save resources on CPX42
+# ---------------------------------------------------------------------------
+hpa:
+  server:
+    enabled: false
+  dashboard:
+    enabled: false
+
+# ---------------------------------------------------------------------------
+# Network Policies — relaxed in staging for easier debugging
+# ---------------------------------------------------------------------------
+networkPolicies:
+  enabled: false
+
+# ---------------------------------------------------------------------------
+# PDB — disabled for singe-replica services
+# ---------------------------------------------------------------------------
+pdb:
+  server:
+    enabled: false
+  dashboard:
+    enabled: false
+
+# ---------------------------------------------------------------------------
+# ServiceMonitor — enabled with lower scrape frequency
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  interval: 60s
+  scrapeTimeout: 15s

@@ -1,481 +1,149 @@
-name: "CI"
+# =============================================================================
+# FeatureSignals — Main CI/CD Pipeline
+# =============================================================================
+# This workflow delegates ALL build, test, and deploy operations to the Dagger
+# Go module in ci/. The self-hosted runner (on the same k3s cluster) executes
+# Dagger containers with no external runner minutes cost.
+#
+# Trigger matrix:
+#   pull_request   → Validate (server, dashboard)
+#   push to main   → FullTest → BuildImages → DeployStaging
+#   tags v*        → ClaimVerification
+#   workflow_dispatch → DeployProduction (manual)
+# =============================================================================
 
+name: CI
 on:
   pull_request:
+  push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
-      skip_sdk_tests:
-        description: "Skip SDK tests (faster feedback for server/dashboard-only changes)"
-        type: boolean
-        default: false
-      skip_security_scan:
-        description: "Skip dependency security scan"
-        type: boolean
-        default: false
-  workflow_call:
-    inputs:
-      skip_sdk_tests:
-        description: "Skip SDK tests"
-        type: boolean
-        default: false
-      skip_security_scan:
-        description: "Skip dependency security scan"
-        type: boolean
-        default: false
+      deploy_to:
+        description: "Deploy to environment"
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+# Only one production deploy at a time — staging and PR validations can run
+# concurrently. This prevents conflicting Helm upgrades.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && inputs.deploy_to || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
-  # -- Change Detection -----------------------------------------------------
-  detect-changes:
-    name: "Detect Changes"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      server: ${{ steps.filter.outputs.server }}
-      dashboard: ${{ steps.filter.outputs.dashboard }}
-      website: ${{ steps.filter.outputs.website }}
-      docs: ${{ steps.filter.outputs.docs }}
-      sdk-go: ${{ steps.filter.outputs.sdk-go }}
-      sdk-node: ${{ steps.filter.outputs.sdk-node }}
-      sdk-python: ${{ steps.filter.outputs.sdk-python }}
-      sdk-java: ${{ steps.filter.outputs.sdk-java }}
-      deploy: ${{ steps.filter.outputs.deploy }}
-      ops: ${{ steps.filter.outputs.ops }}
+  # =========================================================================
+  # Dagger — all pipeline steps execute via the Dagger Go module
+  # =========================================================================
+  dagger:
+    runs-on: [self-hosted, k3s]
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changed paths
-        id: filter
+      - name: Setup Dagger
+        uses: dagger/dagger-for-github@v6
+        with:
+          version: latest
+          workdir: ci/
+          # Dagger Cloud telemetry (optional, no cost)
+          # cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      # ---- Validate (PRs) ----
+      - name: Validate Server
+        if: github.event_name == 'pull_request'
+        run: dagger call validate --filter=server
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
-            # On manual dispatch or reusable workflow call, run everything
-            FILES="FULL"
-          else
-            # On pull_request, get changed files from PR
-            FILES=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
-              --paginate -q '.[].filename')
-          fi
+          DAGGER_LOG_FORMAT: plain
 
-          has_match() { [ "$FILES" = "FULL" ] && echo "true" || (echo "$FILES" | grep -qE "$1" && echo "true" || echo "false"); }
-
-          {
-            echo "server=$(has_match '^server/')"
-            echo "dashboard=$(has_match '^dashboard/')"
-            echo "website=$(has_match '^website/')"
-            echo "docs=$(has_match '^docs/')"
-            echo "sdk-go=$(has_match '^sdks/go/')"
-            echo "sdk-node=$(has_match '^sdks/node/')"
-            echo "sdk-python=$(has_match '^sdks/python/')"
-            echo "sdk-java=$(has_match '^sdks/java/')"
-            echo "deploy=$(has_match '^deploy/')"
-            echo "ops=$(has_match '^ops/')"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "### Detected Changes" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Area | Changed |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
-          for pair in "Server:$(has_match '^server/')" "Dashboard:$(has_match '^dashboard/')" "Website:$(has_match '^website/')" "Docs:$(has_match '^docs/')" \
-                      "SDK Go:$(has_match '^sdks/go/')" "SDK Node:$(has_match '^sdks/node/')" "SDK Python:$(has_match '^sdks/python/')" \
-                      "SDK Java:$(has_match '^sdks/java/')" "Deploy:$(has_match '^deploy/')" "Ops:$(has_match '^ops/')"; do
-            name="${pair%%:*}"
-            val="${pair##*:}"
-            echo "| $name | $val |" >> "$GITHUB_STEP_SUMMARY"
-          done
-
-  # -- Server -----------------------------------------------------------------
-  server-tests:
-    name: "Server: Test & Coverage"
-    needs: detect-changes
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || needs.detect-changes.outputs.server == 'true'
-      || needs.detect-changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
+      - name: Validate Dashboard
+        if: github.event_name == 'pull_request'
+        run: dagger call validate --filter=dashboard
         env:
-          POSTGRES_USER: fs
-          POSTGRES_PASSWORD: fsdev
-          POSTGRES_DB: featuresignals
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.25.9"
-          cache-dependency-path: server/go.sum
-      - name: Run migrations (test setup)
-        run: |
-          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-          migrate -path server/internal/migrate/migrations -database "postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable" up
-      - name: Run tests with coverage
-        working-directory: server
-        run: go test ./... -count=1 -timeout 120s -v -coverprofile=coverage.out -covermode=atomic
+          DAGGER_LOG_FORMAT: plain
+
+      # ---- Full Test (merge to main) ----
+      - name: Full Test Suite
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        run: dagger call full-test --source=..
         env:
-          TEST_DATABASE_URL: postgres://fs:fsdev@localhost:5432/featuresignals?sslmode=disable
-      - name: Print coverage summary
-        working-directory: server
-        run: |
-          echo "=== Server Test Coverage ==="
-          go tool cover -func=coverage.out | tail -1
+          DAGGER_LOG_FORMAT: plain
+          DAGGER_PROGRESS: plain
 
-  server-lint:
-    name: "Server: Lint & Vet"
-    needs: detect-changes
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || needs.detect-changes.outputs.server == 'true'
-      || needs.detect-changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.25.9"
-          cache-dependency-path: server/go.sum
-      - name: Vet
-        working-directory: server
-        run: go vet ./...
-      - name: Panic Check
-        working-directory: server
-        run: |
-          echo "Checking for panic() calls in production code..."
-          if grep -r "panic(" --include="*.go" --exclude="*_test.go" .; then
-            echo "::error::Found panic() calls in production code. Use proper error handling instead."
-            exit 1
-          fi
-          echo "✓ No panic() calls found."
-
-  # -- Dashboard --------------------------------------------------------------
-  dashboard-tests:
-    name: "Dashboard: Test & Build"
-    needs: detect-changes
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || needs.detect-changes.outputs.dashboard == 'true'
-      || needs.detect-changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-      - name: Install
-        working-directory: dashboard
-        run: npm ci
-      - name: TypeScript Quality Check
-        working-directory: dashboard
-        run: |
-          echo "Checking for console.log and any types in TypeScript code..."
-          # Check for console.log in committed code
-          if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
-            echo "::error::Found console.log in committed code. Use structured logging instead."
-            exit 1
-          fi
-          # Check for any types in TypeScript
-          if grep -r ": any\b" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
-            echo "::error::Found 'any' types in TypeScript code. Use proper interfaces or unknown with type guards."
-            exit 1
-          fi
-          echo "✓ No console.log or any types found."
-      - name: Test with coverage
-        working-directory: dashboard
-        run: npm run test:coverage
-      - name: Build
-        working-directory: dashboard
-        run: npm run build
+      # ---- Build & Push Images (merge to main) ----
+      - name: Build and Push Images
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        run: dagger call build-images --source=.. --version=sha-${GITHUB_SHA::8}
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
+          DAGGER_LOG_FORMAT: plain
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # -- Ops Portal -------------------------------------------------------------
-  ops-tests:
-    name: "Ops Portal: Test & Build"
-    needs: detect-changes
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || needs.detect-changes.outputs.ops == 'true'
-      || needs.detect-changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-      - name: Install
-        working-directory: ops
-        run: npm ci
-      - name: TypeScript Quality Check
-        working-directory: ops
-        run: |
-          echo "Checking for console.log and any types in TypeScript code..."
-          # Check for console.log in committed code
-          if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
-            echo "::error::Found console.log in committed code. Use structured logging instead."
-            exit 1
-          fi
-          # Check for any types in TypeScript
-          if grep -r ": any\b" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
-            echo "::error::Found 'any' types in TypeScript code. Use proper interfaces or unknown with type guards."
-            exit 1
-          fi
-          echo "✓ No console.log or any types found."
-      - name: Lint
-        working-directory: ops
-        run: npm run lint --if-present
-      - name: Build
-        working-directory: ops
-        run: npm run build
+      # ---- Deploy to Staging (merge to main, automatic) ----
+      - name: Deploy to Staging
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        run: dagger call deploy-promote --source=.. --version=sha-${GITHUB_SHA::8} --env=staging
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080
+          DAGGER_LOG_FORMAT: plain
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
 
-  # -- Documentation ----------------------------------------------------------
-  docs-build:
-    name: "Docs: Build Verification"
-    needs: detect-changes
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || needs.detect-changes.outputs.docs == 'true'
-      || needs.detect-changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-      - name: Install & Build
-        working-directory: docs
-        run: npm install && npm run build
+      # ---- Smoke Test Staging (after deploy) ----
+      - name: Smoke Test Staging
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        run: dagger call smoke-test --url=https://api.staging.featuresignals.com
+        env:
+          DAGGER_LOG_FORMAT: plain
 
-  # -- SDK Tests --------------------------------------------------------------
-  go-sdk-tests:
-    name: "SDK: Go Tests"
-    needs: detect-changes
-    if: >-
-      !inputs.skip_sdk_tests
-      && (
-        github.event_name == 'workflow_dispatch'
-        || needs.detect-changes.outputs.sdk-go == 'true'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.25.9"
-          cache-dependency-path: sdks/go/go.sum
-      - name: Test with coverage
-        working-directory: sdks/go
-        run: |
-          go test ./... -count=1 -v -coverprofile=coverage.out -covermode=atomic
-          echo "=== Go SDK Coverage ==="
-          go tool cover -func=coverage.out | tail -1
-      - name: Panic Check (SDK)
-        working-directory: sdks/go
-        run: |
-          echo "Checking for panic() calls in SDK production code..."
-          if grep -r "panic(" --include="*.go" --exclude="*_test.go" .; then
-            echo "::error::Found panic() calls in SDK production code. Use proper error handling instead."
-            exit 1
-          fi
-          echo "✓ No panic() calls found in SDK."
+      # ---- Claim Verification (tag push, e.g. v1.2.3) ----
+      - name: Claims Verification
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: dagger call claim-verification --source=..
+        env:
+          DAGGER_LOG_FORMAT: plain
 
-  node-sdk-tests:
-    name: "SDK: Node.js Tests"
-    needs: detect-changes
-    if: >-
-      !inputs.skip_sdk_tests
-      && (
-        github.event_name == 'workflow_dispatch'
-        || needs.detect-changes.outputs.sdk-node == 'true'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-      - name: Install & Test
-        working-directory: sdks/node
-        run: |
-          npm install
-          node --test --experimental-strip-types --experimental-test-coverage src/__tests__/client.test.ts
-      - name: TypeScript Quality Check (SDK)
-        working-directory: sdks/node
-        run: |
-          echo "Checking for console.log and any types in SDK TypeScript code..."
-          # Check for console.log in committed code
-          if grep -r "console\.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
-            echo "::error::Found console.log in committed SDK code. Use structured logging instead."
-            exit 1
-          fi
-          # Check for any types in TypeScript
-          if grep -r ": any\b" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=dist .; then
-            echo "::error::Found 'any' types in SDK TypeScript code. Use proper interfaces or unknown with type guards."
-            exit 1
-          fi
-          echo "✓ No console.log or any types found in SDK."
+      # ---- Deploy Production (manual workflow_dispatch) ----
+      - name: Deploy to Production
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy_to == 'production'
+        run: dagger call deploy-promote --source=.. --version=sha-${GITHUB_SHA::8} --env=production
+        env:
+          DAGGER_LOG_FORMAT: plain
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
 
-  python-sdk-tests:
-    name: "SDK: Python Tests"
-    needs: detect-changes
-    if: >-
-      !inputs.skip_sdk_tests
-      && (
-        github.event_name == 'workflow_dispatch'
-        || needs.detect-changes.outputs.sdk-python == 'true'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install & Test
-        working-directory: sdks/python
-        run: |
-          pip install -e ".[dev]" pytest-cov
-          python -m pytest tests/ -v --cov=featuresignals --cov-report=term-missing
+      # ---- Smoke Test Production (after deploy) ----
+      - name: Smoke Test Production
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy_to == 'production'
+        run: dagger call smoke-test --url=https://api.featuresignals.com
+        env:
+          DAGGER_LOG_FORMAT: plain
 
-  java-sdk-tests:
-    name: "SDK: Java Tests"
-    needs: detect-changes
-    if: >-
-      !inputs.skip_sdk_tests
-      && (
-        github.event_name == 'workflow_dispatch'
-        || needs.detect-changes.outputs.sdk-java == 'true'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
-        with:
-          distribution: "temurin"
-          java-version: "17"
-          cache: maven
-      - name: Test
-        working-directory: sdks/java
-        run: mvn -B test
-
-  # -- Security --------------------------------------------------------------
-  security-scan:
-    name: "Security: Dependency Vulnerability Scan"
-    needs: detect-changes
-    if: >-
-      !inputs.skip_security_scan
-      && (
-        github.event_name == 'workflow_dispatch'
-        || needs.detect-changes.outputs.server == 'true'
-        || needs.detect-changes.outputs.dashboard == 'true'
-        || needs.detect-changes.outputs.ops == 'true'
-        || needs.detect-changes.outputs.docs == 'true'
-        || needs.detect-changes.outputs.sdk-go == 'true'
-        || needs.detect-changes.outputs.sdk-node == 'true'
-        || needs.detect-changes.outputs.sdk-python == 'true'
-        || needs.detect-changes.outputs.sdk-java == 'true'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        if: >-
-          github.event_name == 'workflow_dispatch'
-          || needs.detect-changes.outputs.server == 'true'
-          || needs.detect-changes.outputs.sdk-go == 'true'
-        with:
-          go-version: "1.25.9"
-          cache-dependency-path: server/go.sum
-      - uses: actions/setup-node@v5
-        if: >-
-          github.event_name == 'workflow_dispatch'
-          || needs.detect-changes.outputs.dashboard == 'true'
-          || needs.detect-changes.outputs.ops == 'true'
-          || needs.detect-changes.outputs.docs == 'true'
-          || needs.detect-changes.outputs.sdk-node == 'true'
-        with:
-          node-version: "22"
-      - name: Go vulnerability check (server)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.server == 'true'
-        working-directory: server
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
-      - name: Go vulnerability check (Go SDK)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.sdk-go == 'true'
-        working-directory: sdks/go
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
-      - name: npm audit (dashboard)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.dashboard == 'true'
-        working-directory: dashboard
-        run: npm install && npm audit --audit-level=high
-      - name: npm audit (ops portal)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.ops == 'true'
-        working-directory: ops
-        run: npm install && npm audit --audit-level=high
-      - name: npm audit (docs)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.docs == 'true'
-        working-directory: docs
-        run: npm install && npm audit --audit-level=high
-      - name: npm audit (website)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.website == 'true'
-        working-directory: website
-        run: npm install && npm audit --audit-level=high
-      - name: npm audit (Node SDK)
-        if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.sdk-node == 'true'
-        working-directory: sdks/node
-        run: npm install && npm audit --audit-level=high
-
-  # -- CI Gate ----------------------------------------------------------------
-  ci-gate:
-    name: "CI Gate"
+  # =========================================================================
+  # Notifications & Summary
+  # =========================================================================
+  summary:
+    runs-on: [self-hosted, k3s]
+    needs: [dagger]
     if: always()
-    needs:
-      - server-tests
-      - server-lint
-      - dashboard-tests
-      - ops-tests
-      - docs-build
-      - go-sdk-tests
-      - node-sdk-tests
-      - python-sdk-tests
-      - java-sdk-tests
-      - security-scan
-    runs-on: ubuntu-latest
     steps:
-      - name: Evaluate results
+      - name: Build Summary
         run: |
-          echo "### CI Gate Results" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Job | Result |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Server: Test & Coverage | ${{ needs.server-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Server: Lint & Vet | ${{ needs.server-lint.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Dashboard: Test & Build | ${{ needs.dashboard-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Ops Portal: Test & Build | ${{ needs.ops-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Docs: Build | ${{ needs.docs-build.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| SDK: Go | ${{ needs.go-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| SDK: Node.js | ${{ needs.node-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| SDK: Python | ${{ needs.python-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| SDK: Java | ${{ needs.java-sdk-tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> "$GITHUB_STEP_SUMMARY"
-      - name: Fail on any failure or cancellation
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
-        run: |
-          echo "::error::One or more CI jobs failed or were cancelled"
-          exit 1
+          echo "## CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Event** | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Dagger status** | ${{ needs.dagger.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "| **Deploy target** | ${{ inputs.deploy_to }} |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY

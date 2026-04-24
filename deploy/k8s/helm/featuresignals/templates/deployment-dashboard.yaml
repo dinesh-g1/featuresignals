@@ -1,0 +1,97 @@
+{{- if .Values.dashboard.enabled | default true }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-dashboard
+  labels:
+    {{- include "featuresignals.dashboardLabels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.dashboard.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.dashboard.replicas }}
+  strategy:
+    {{- toYaml .Values.dashboard.strategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "featuresignals.dashboardSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "featuresignals.dashboardLabels" . | nindent 8 }}
+        {{- with .Values.dashboard.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- if .Values.dashboard.recreatePods | default false }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- end }}
+        {{- with .Values.dashboard.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.dashboard.serviceAccountName }}
+      serviceAccountName: {{ .Values.dashboard.serviceAccountName }}
+      {{- end }}
+      {{- if .Values.dashboard.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.dashboard.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.dashboard.securityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.dashboard.terminationGracePeriodSeconds }}
+      containers:
+        - name: dashboard
+          image: {{ include "featuresignals.image" (dict "registry" $.Values.global.imageRegistry "repository" .Values.dashboard.image.repository "tag" .Values.dashboard.image.tag) }}
+          imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            {{- include "featuresignals.dashboard.env" . | nindent 12 }}
+          envFrom:
+            {{- range .Values.dashboard.envSecrets }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.dashboard.probePath }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.dashboard.probePath }}
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+          volumeMounts:
+            {{- with .Values.dashboard.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- with .Values.dashboard.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.dashboard.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dashboard.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dashboard.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

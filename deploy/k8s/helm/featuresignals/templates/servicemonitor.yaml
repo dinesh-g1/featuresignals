@@ -1,0 +1,67 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- $monitor := .Values.serviceMonitor }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-server
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "featuresignals.serverLabels" . | nindent 4 }}
+    {{- with $monitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  jobLabel: {{ include "featuresignals.fullname" . }}-server
+  selector:
+    matchLabels:
+      {{- include "featuresignals.serverSelectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  endpoints:
+    - port: {{ $monitor.server.port | default "http" }}
+      interval: {{ $monitor.interval | default "30s" }}
+      scrapeTimeout: {{ $monitor.scrapeTimeout | default "10s" }}
+      path: {{ $monitor.server.path | default "/metrics" }}
+      {{- with $monitor.server.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $monitor.server.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-dashboard
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "featuresignals.dashboardLabels" . | nindent 4 }}
+    {{- with $monitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  jobLabel: {{ include "featuresignals.fullname" . }}-dashboard
+  selector:
+    matchLabels:
+      {{- include "featuresignals.dashboardSelectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  endpoints:
+    - port: {{ $monitor.dashboard.port | default "http" }}
+      interval: {{ $monitor.interval | default "30s" }}
+      scrapeTimeout: {{ $monitor.scrapeTimeout | default "10s" }}
+      path: {{ $monitor.dashboard.path | default "/api/health" }}
+      {{- with $monitor.dashboard.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $monitor.dashboard.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

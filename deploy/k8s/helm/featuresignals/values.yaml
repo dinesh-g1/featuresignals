@@ -1,0 +1,251 @@
+# =============================================================================
+# FeatureSignals Helm Chart — Global Values
+# =============================================================================
+# Default values for featuresignals.
+# This is a YAML-formatted file. Use `helm install -f values.yaml` to override.
+
+# ---------------------------------------------------------------------------
+# Global Settings
+# ---------------------------------------------------------------------------
+global:
+  environment: production
+  imageRegistry: ghcr.io/featuresignals
+  dnsDomain: featuresignals.com
+
+# ---------------------------------------------------------------------------
+# Server (Go API)
+# ---------------------------------------------------------------------------
+server:
+  image:
+    repository: server
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 2
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  env:
+    PORT: "8080"
+    DEPLOYMENT_MODE: cloud
+    LOG_LEVEL: info
+    CORS_ORIGINS: "https://app.featuresignals.com"
+    OTEL_ENABLED: "true"
+    OTEL_EXPORTER_OTLP_ENDPOINT: signoz-otel-collector.signoz:4317
+    OTEL_SERVICE_NAME: featuresignals-api
+    EMAIL_PROVIDER: none
+    APP_BASE_URL: https://api.featuresignals.com
+    DASHBOARD_URL: https://app.featuresignals.com
+    AUDIT_RETENTION_DAYS: "90"
+
+  envSecrets:
+    - db-credentials
+    - jwt-secret
+    - license-key
+
+  probePath: /health
+
+  # Pod-level security
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  terminationGracePeriodSeconds: 30
+
+# ---------------------------------------------------------------------------
+# Dashboard (Next.js)
+# ---------------------------------------------------------------------------
+dashboard:
+  image:
+    repository: dashboard
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+  env:
+    NEXT_PUBLIC_API_URL: https://api.featuresignals.com
+    HOSTNAME: "0.0.0.0"
+
+  probePath: /api/health
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  terminationGracePeriodSeconds: 20
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: caddy
+    caddy.ingress.kubernetes.io/allow-h2c: "true"
+
+  api:
+    host: api.featuresignals.com
+    path: /
+    pathType: Prefix
+
+  dashboard:
+    host: app.featuresignals.com
+    path: /
+    pathType: Prefix
+
+  tls:
+    - secretName: featuresignals-api-tls
+      hosts:
+        - api.featuresignals.com
+    - secretName: featuresignals-dashboard-tls
+      hosts:
+        - app.featuresignals.com
+
+# ---------------------------------------------------------------------------
+# PostgreSQL (external / Bitnami)
+# ---------------------------------------------------------------------------
+postgresql:
+  existingSecret: db-credentials
+  host: postgresql.featuresignals-system.svc.cluster.local
+  port: 5432
+  database: featuresignals
+  user: postgres
+  # Keys inside the existingSecret
+  secretKeys:
+    password: db-password
+    # If the secret has a connection string directly
+    dsn: dsn
+
+# ---------------------------------------------------------------------------
+# Database Migration Job
+# ---------------------------------------------------------------------------
+migration:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+# ---------------------------------------------------------------------------
+# Network Policies
+# ---------------------------------------------------------------------------
+networkPolicies:
+  enabled: true
+
+  ingressNamespace: ingress-nginx
+
+  # Additional namespaces allowed to reach the API (beyond ingress)
+  additionalApiClientNamespaces: []
+  #  - monitoring
+  #  - signoz
+
+  # Additional namespaces allowed to reach the dashboard
+  additionalDashboardClientNamespaces: []
+  #  - monitoring
+
+# ---------------------------------------------------------------------------
+# Horizontal Pod Autoscaler (HPA)
+# ---------------------------------------------------------------------------
+hpa:
+  server:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    cpuUtilization: 70
+    memoryUtilization: 85
+
+  dashboard:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 80
+
+# ---------------------------------------------------------------------------
+# PodDisruptionBudget
+# ---------------------------------------------------------------------------
+pdb:
+  server:
+    enabled: true
+    maxUnavailable: 1
+
+  dashboard:
+    enabled: false
+    maxUnavailable: 1
+
+# ---------------------------------------------------------------------------
+# Service Account
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  name: featuresignals
+  annotations: {}
+
+# ---------------------------------------------------------------------------
+# ServiceMonitor (Prometheus Operator)
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  labels:
+    release: kube-prometheus-stack
+  server:
+    port: http
+    path: /metrics
+  dashboard:
+    port: http
+    path: /api/health
+
+# ---------------------------------------------------------------------------
+# Service-level settings
+# ---------------------------------------------------------------------------
+service:
+  server:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    name: http
+
+  dashboard:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+    name: http

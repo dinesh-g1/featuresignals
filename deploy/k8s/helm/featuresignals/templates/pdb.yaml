@@ -1,0 +1,29 @@
+{{- if .Values.pdb.server.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-server-pdb
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "featuresignals.serverLabels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.pdb.server.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "featuresignals.serverSelectorLabels" . | nindent 6 }}
+{{- end }}
+{{- if .Values.pdb.dashboard.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-dashboard-pdb
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "featuresignals.dashboardLabels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.pdb.dashboard.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "featuresignals.dashboardSelectorLabels" . | nindent 6 }}
+{{- end }}

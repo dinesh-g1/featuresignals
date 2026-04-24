@@ -1,0 +1,51 @@
+# =============================================================================
+# FeatureSignals — MetalLB IP Pool Configuration
+# =============================================================================
+#
+# Configures MetalLB to use the VPS public IP address for LoadBalancer services.
+# Since this is a single-node k3s cluster, MetalLB advertises the VPS IP via
+# L2 (layer 2) mode, which uses ARP/NDP to respond to traffic for the IP.
+#
+# Requirements:
+#   - MetalLB must be installed in the metallb-system namespace
+#   - Replace ${VPS_IP} with your actual VPS public IP address
+#     (the bootstrap script auto-detects this, but for standalone deploys
+#      you must set it manually or via environment variable)
+#
+# Usage:
+#   export VPS_IP="$(curl -s https://api.ipify.org)"
+#   envsubst < deploy/k8s/infra/metallb/ip-pool.yaml | kubectl apply -f -
+#
+# =============================================================================
+
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: vps-pool
+  namespace: metallb-system
+  labels:
+    app.kubernetes.io/name: featuresignals
+    app.kubernetes.io/component: metallb
+spec:
+  addresses:
+    - ${VPS_IP}/32
+  autoAssign: true
+  # Avoid assigning this IP to services that don't need it
+  # by using service-level annotations when possible
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2-advert
+  namespace: metallb-system
+  labels:
+    app.kubernetes.io/name: featuresignals
+    app.kubernetes.io/component: metallb
+spec:
+  ipAddressPools:
+    - vps-pool
+  # Optionally restrict which nodes can advertise:
+  # nodeSelectors:
+  #   - matchLabels:
+  #       kubernetes.io/hostname: <your-node-name>

@@ -1,0 +1,26 @@
+
+{{- if .Values.dashboard.enabled | default true }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-dashboard
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "featuresignals.dashboardLabels" . | nindent 4 }}
+    {{- with .Values.service.dashboard.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- with .Values.service.dashboard.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.service.dashboard.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.service.dashboard.port | default 3000 }}
+      targetPort: {{ .Values.service.dashboard.targetPort | default 3000 }}
+      protocol: TCP
+      name: {{ .Values.service.dashboard.name | default "http" }}
+  selector:
+    {{- include "featuresignals.dashboardSelectorLabels" . | nindent 4 }}
+{{- end }}

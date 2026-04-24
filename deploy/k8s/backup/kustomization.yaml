@@ -1,0 +1,4123 @@
+# =============================================================================
+# FeatureSignals — Backup System Kustomization
+# =============================================================================
+#
+# Groups all backup-related resources for deployment as a single unit.
+# Apply with:
+#   kubectl apply -k deploy/k8s/backup/
+#
+# Or via kustomize:
+#   kustomize build deploy/k8s/backup/ | kubectl apply -f -
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: featuresignals-system
+
+namePrefix: fs-
+
+commonLabels:
+  app.kubernetes.io/name: fs-backup
+  app.kubernetes.io/component: backup
+  app.kubernetes.io/part-of: featuresignals
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - pvc-hourly.yaml
+  - cronjob-hourly.yaml
+  - cronjob-daily.yaml
+
+configMapGenerator:
+  - name: backup-scripts
+    files:
+      - scripts/backup.sh
+      - scripts/restore.sh
+      - scripts/verify-backup.sh
+    options:
+      labels:
+        app.kubernetes.io/name: backup-scripts
+        app.kubernetes.io/component: scripts
+
+configurations:
+  - nameReference:
+      - kind: ConfigMap
+        version: v1
+        fieldSpecs:
+          - path: spec/jobTemplate/spec/template/spec/containers/[]/env/[]/valueFrom/configMapKeyRef/name
+          - path: spec/jobTemplate/spec/template/spec/initContainers/[]/env/[]/valueFrom/configMapKeyRef/name
+```
+Now the PVC:```yaml
+# =============================================================================
+# FeatureSignals — Hourly Backup PersistentVolumeClaim
+# =============================================================================
+#
+# Provides 10 GiB of local storage for short-term hourly PostgreSQL backups.
+# Backups older than 24 hours are automatically pruned by the hourly CronJob.
+#
+# Storage class is determined by the cluster default. On k3s with local-path
+# provisioner, this creates a hostPath-backed PVC on the node's local disk.
+# =============================================================================
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hourly-backups
+  namespace: featuresignals-system
+  labels:
+    app.kubernetes.io/name: fs-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: featuresignals
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # No storageClassName specified — uses the cluster default.
+  # On k3s this is typically the local-path provisioner.
+  # For production with Hetzner CSI, specify: storageClassName: hcloud-volumes
+```
+Now the hourly CronJob:```yaml
+# =============================================================================
+# FeatureSignals — Hourly PostgreSQL Backup CronJob
+# =============================================================================
+#
+# Runs every hour at minute 0 to create a local pg_dump compressed backup.
+# Retains backups for 24 hours (1 day), auto-pruning anything older.
+#
+# Schedule: 0 * * * * (every hour)
+# Retention: 24 hours (local, via PVC)
+# Image:     bitnami/postgresql:16
+# Storage:   10 GiB PVC mounted at /backups/hourly
+# =============================================================================
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-hourly
+  namespace: featuresignals-system
+  labels:
+    app.kubernetes.io/name: fs-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: featuresignals
+    backup-type: hourly
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 2
+  successfulJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400  # Clean up completed jobs after 24h
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: fs-backup
+            backup-type: hourly
+          annotations:
+            backup.featuresignals.io/type: hourly
+            backup.featuresignals.io/retention: 24h
+        spec:
+          restartPolicy: Never
+          serviceAccountName: featuresignals
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: hourly-backups
+            - name: scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0555
+            - name: tmp
+              emptyDir: {}
+          containers:
+            - name: pg-dump
+              image: bitnami/postgresql:16
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  # Source the backup script from ConfigMap
+                  source /scripts/backup.sh hourly 1
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Hourly backup completed successfully."
+              env:
+                - name: DB_HOST
+                  value: "postgresql.featuresignals-system.svc.cluster.local"
+                - name: DB_USER
+                  value: "postgres"
+                - name: DB_DATABASE
+                  value: "featuresignals"
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-credentials
+                      key: db-password
+                - name: BACKUP_DIR
+                  value: "/backups/hourly"
+                - name: S3_ENDPOINT
+                  value: ""
+                - name: AWS_ACCESS_KEY_ID
+                  value: ""
+                - name: AWS_SECRET_ACCESS_KEY
+                  value: ""
+              envFrom:
+                - secretRef:
+                    name: storage-box-credentials
+                    optional: true
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+```
+Now the daily CronJob with init container pattern:```yaml
+# =============================================================================
+# FeatureSignals — Daily PostgreSQL Backup CronJob (S3/Storage Box)
+# =============================================================================
+#
+# Runs daily at 2 AM to create a compressed pg_dump and upload it to the
+# Hetzner Storage Box (S3-compatible). Uses a two-container pattern:
+#
+#   1. Init container (pg-dump): Creates the compressed SQL dump
+#   2. Main container (aws-cli):  Uploads to S3 and manages retention
+#
+# Retention policy:
+#   - Daily:   30 days
+#   - Weekly:  12 weeks (Sunday backups promoted)
+#   - Monthly: 12 months (1st-of-month backups promoted)
+#
+# Schedule: 0 2 * * * (2 AM daily)
+# Image:    bitnami/postgresql:16 (init) + amazon/aws-cli (main)
+# Storage:  emptyDir shared between init and main containers
+# Target:   s3://fs-backups/{type}/featuresignals-{timestamp}.sql.gz
+# =============================================================================
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-daily
+  namespace: featuresignals-system
+  labels:
+    app.kubernetes.io/name: fs-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: featuresignals
+    backup-type: daily
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 2
+  successfulJobsHistoryLimit: 3
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 604800  # Clean up completed jobs after 7 days
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: fs-backup
+            backup-type: daily
+          annotations:
+            backup.featuresignals.io/type: daily
+            backup.featuresignals.io/retention: "30d-12w-12m"
+        spec:
+          restartPolicy: Never
+          serviceAccountName: featuresignals
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          volumes:
+            - name: shared-data
+              emptyDir: {}
+            - name: scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0555
+            - name: tmp
+              emptyDir: {}
+
+          # --- Init Container: pg_dump → gzip ---
+          initContainers:
+            - name: pg-dump
+              image: bitnami/postgresql:16
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+                  FILENAME="featuresignals-${TIMESTAMP}.sql.gz"
+                  BACKUP_PATH="/shared/${FILENAME}"
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting pg_dump..."
+
+                  pg_dump \
+                    -h "${DB_HOST}" \
+                    -U "${DB_USER}" \
+                    -d "${DB_DATABASE}" \
+                    --no-owner \
+                    --no-privileges \
+                    --no-acl \
+                    --compress=9 \
+                    --file="${BACKUP_PATH}"
+
+                  # Verify the dump is valid
+                  if [ ! -s "${BACKUP_PATH}" ]; then
+                    echo "[ERROR] pg_dump produced an empty file"
+                    exit 1
+                  fi
+
+                  # Write metadata for the main container
+                  echo "${FILENAME}" > /shared/filename.txt
+                  echo "${BACKUP_PATH}" > /shared/backup-path.txt
+                  echo "$(stat -c%s "${BACKUP_PATH}")" > /shared/backup-size.txt
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] pg_dump complete: ${FILENAME} ($(numfmt --to=iec "$(cat /shared/backup-size.txt)"))"
+              env:
+                - name: DB_HOST
+                  value: "postgresql.featuresignals-system.svc.cluster.local"
+                - name: DB_USER
+                  value: "postgres"
+                - name: DB_DATABASE
+                  value: "featuresignals"
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-credentials
+                      key: db-password
+              volumeMounts:
+                - name: shared-data
+                  mountPath: /shared
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: 1000m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+
+          # --- Main Container: S3 Upload + Retention Management ---
+          containers:
+            - name: aws-upload
+              image: amazon/aws-cli:2.22
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  # Read metadata from init container
+                  FILENAME="$(cat /shared/filename.txt)"
+                  BACKUP_PATH="$(cat /shared/backup-path.txt)"
+                  BACKUP_SIZE="$(cat /shared/backup-size.txt)"
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Uploading ${FILENAME} to S3..."
+
+                  # Determine backup type based on date
+                  DAY_OF_WEEK="$(date -u +%u)"    # 1=Mon..7=Sun
+                  DAY_OF_MONTH="$(date -u +%d)"
+
+                  # Always upload to daily path
+                  S3_DAILY="s3://fs-backups/daily/${FILENAME}"
+                  aws s3 cp "${BACKUP_PATH}" "${S3_DAILY}" \
+                    --endpoint-url "${S3_ENDPOINT}" \
+                    --only-show-errors
+
+                  echo "[OK] Uploaded daily backup: ${S3_DAILY}"
+
+                  # Promote to weekly on Sundays
+                  if [ "${DAY_OF_WEEK}" -eq 7 ]; then
+                    S3_WEEKLY="s3://fs-backups/weekly/${FILENAME}"
+                    aws s3 cp "${BACKUP_PATH}" "${S3_WEEKLY}" \
+                      --endpoint-url "${S3_ENDPOINT}" \
+                      --only-show-errors
+                    echo "[OK] Promoted to weekly backup: ${S3_WEEKLY}"
+                  fi
+
+                  # Promote to monthly on 1st of month
+                  if [ "${DAY_OF_MONTH}" -eq 1 ]; then
+                    S3_MONTHLY="s3://fs-backups/monthly/${FILENAME}"
+                    aws s3 cp "${BACKUP_PATH}" "${S3_MONTHLY}" \
+                      --endpoint-url "${S3_ENDPOINT}" \
+                      --only-show-errors
+                    echo "[OK] Promoted to monthly backup: ${S3_MONTHLY}"
+                  fi
+
+                  # --- Verify backup was uploaded ---
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Verifying upload..."
+                  aws s3 ls "${S3_DAILY}" \
+                    --endpoint-url "${S3_ENDPOINT}" \
+                    --output text
+
+                  # --- Retention: Clean up old S3 backups ---
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running S3 retention cleanup..."
+
+                  # Daily retention: 30 days
+                  DAILY_CUTOFF="$(date -u -d '-30 days' +%Y-%m-%dT%H:%M:%SZ)"
+                  echo "[INFO] Removing daily backups older than ${DAILY_CUTOFF}..."
+                  aws s3 ls s3://fs-backups/daily/ \
+                    --endpoint-url "${S3_ENDPOINT}" \
+                    --output text \
+                    --query "Contents[?LastModified<'${DAILY_CUTOFF}'].[Key]" \
+                  | while read -r key; do
+                      if [ -n "${key}" ]; then
+                        aws s3 rm "s3://fs-backups/daily/${key}" \
+                          --endpoint-url "${S3_ENDPOINT}" \
+                          --only-show-errors
+                        echo "[DELETED] s3://fs-backups/daily/${key}"
+                      fi
+                    done
+
+                  # Weekly retention: 12 weeks
+                  WEEKLY_CUTOFF="$(date -u -d '-12 weeks' +%Y-%m-%dT%H:%M:%SZ)"
+                  echo "[INFO] Removing weekly backups older than ${WEEKLY_CUTOFF}..."
+                  aws s3 ls s3://fs-backups/weekly/ \
+                    --endpoint-url "${S3_ENDPOINT}" \
+                    --output text \
+                    --query "Contents[?LastModified<'${WEEKLY_CUTOFF}'].[Key]" \
+                  | while read -r key; do
+                      if [ -n "${key}" ]; then
+                        aws s3 rm "s3://fs-backups/weekly/${key}" \
+                          --endpoint-url "${S3_ENDPOINT}" \
+                          --only-show-errors
+                        echo "[DELETED] s3://fs-backups/weekly/${key}"
+                      fi
+                    done
+
+                  # Monthly retention: 12 months
+                  MONTHLY_CUTOFF="$(date -u -d '-12 months' +%Y-%m-%dT%H:%M:%SZ)"
+                  echo "[INFO] Removing monthly backups older than ${MONTHLY_CUTOFF}..."
+                  aws s3 ls s3://fs-backups/monthly/ \
+                    --endpoint-url "${S3_ENDPOINT}" \
+                    --output text \
+                    --query "Contents[?LastModified<'${MONTHLY_CUTOFF}'].[Key]" \
+                  | while read -r key; do
+                      if [ -n "${key}" ]; then
+                        aws s3 rm "s3://fs-backups/monthly/${key}" \
+                          --endpoint-url "${S3_ENDPOINT}" \
+                          --only-show-errors
+                        echo "[DELETED] s3://fs-backups/monthly/${key}"
+                      fi
+                    done
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Daily backup to Storage Box completed successfully."
+                  echo "[SUMMARY] File: ${FILENAME} | Size: $(numfmt --to=iec ${BACKUP_SIZE}) | Target: ${S3_DAILY}"
+              env:
+                - name: S3_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: storage-box-credentials
+                      key: endpoint
+                      optional: true
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: storage-box-credentials
+                      key: access-key-id
+                      optional: true
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: storage-box-credentials
+                      key: secret-access-key
+                      optional: true
+                - name: AWS_DEFAULT_REGION
+                  value: "eu-central-1"  # Hetzner Storage Box region
+              volumeMounts:
+                - name: shared-data
+                  mountPath: /shared
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+```
+Now the backup.sh script:```bash
+#!/usr/bin/env bash
+# =============================================================================
+# FeatureSignals — Unified Backup Script
+# =============================================================================
+#
+# Creates a compressed PostgreSQL dump and uploads it to S3-compatible storage
+# (Hetzner Storage Box). Handles retention cleanup for local and remote backups.
+#
+# Usage:
+#   backup.sh <type> [retention_days]
+#     type:          hourly|daily|weekly|monthly
+#     retention_days: Number of days to retain local backups (default: 30)
+#
+# Environment variables:
+#   DB_HOST          PostgreSQL host (default: postgresql)
+#   DB_USER          PostgreSQL user (default: postgres)
+#   DB_DATABASE      PostgreSQL database name (default: featuresignals)
+#   PGPASSWORD       PostgreSQL password (REQUIRED)
+#   BACKUP_DIR       Local backup root directory (default: /backups)
+#   S3_ENDPOINT      S3-compatible endpoint URL (optional, for S3 upload)
+#   AWS_ACCESS_KEY_ID     S3 access key (optional)
+#   AWS_SECRET_ACCESS_KEY S3 secret key (optional)
+#   S3_BUCKET        S3 bucket name (default: fs-backups)
+#
+# Examples:
+#   PGPASSWORD=secret backup.sh hourly 1
+#   PGPASSWORD=secret backup.sh daily 30
+#   PGPASSWORD=secret S3_ENDPOINT=https://fs-backup.your-storage-box.de \
+#     AWS_ACCESS_KEY_ID=xxx AWS_SECRET_ACCESS_KEY=yyy backup.sh daily 30
+# =============================================================================
+
+set -euo pipefail
+
+# ---- Constants --------------------------------------------------------------
+
+SCRIPT_NAME="$(basename "$0")"
+VERSION="1.0.0"
+LOG_PREFIX="[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${SCRIPT_NAME}]"
+
+# ---- Functions --------------------------------------------------------------
+
+log_info()  { echo "${LOG_PREFIX} [INFO]  $*"; }
+log_warn()  { echo "${LOG_PREFIX} [WARN]  $*" >&2; }
+log_error() { echo "${LOG_PREFIX} [ERROR] $*" >&2; }
+log_fatal() { log_error "$@"; exit 1; }
+
+# Cleanup handler for temporary files
+cleanup() {
+  local exit_code=$?
+  if [ -n "${TMP_BACKUP:-}" ] && [ -f "${TMP_BACKUP:-}" ]; then
+    rm -f "${TMP_BACKUP}"
+    log_info "Cleaned up temporary file: ${TMP_BACKUP}"
+  fi
+  if [ -n "${TMP_DIR:-}" ] && [ -d "${TMP_DIR:-}" ]; then
+    rm -rf "${TMP_DIR}"
+    log_info "Cleaned up temporary directory: ${TMP_DIR}"
+  fi
+  if [ "${exit_code}" -ne 0 ]; then
+    log_error "Backup failed with exit code ${exit_code}"
+  fi
+  exit "${exit_code}"
+}
+trap cleanup EXIT INT TERM
+
+# Validate that required environment variables are set
+validate_env() {
+  if [ -z "${PGPASSWORD:-}" ]; then
+    log_fatal "PGPASSWORD environment variable is required"
+  fi
+
+  # Validate DB connectivity before proceeding
+  if ! pg_isready -h "${DB_HOST}" -U "${DB_USER}" -q -t 5 2>/dev/null; then
+    log_fatal "Cannot connect to PostgreSQL at ${DB_HOST}. Is the database running?"
+  fi
+}
+
+# Create backup directory structure
+ensure_dirs() {
+  mkdir -p "${BACKUP_DIR}/${TYPE}" "${BACKUP_DIR}/tmp"
+  log_info "Backup directory: ${BACKUP_DIR}/${TYPE}"
+}
+
+# Perform pg_dump with compression
+create_backup() {
+  log_info "Starting pg_dump of database '${DB_DATABASE}' on '${DB_HOST}'..."
+
+  pg_dump \
+    -h "${DB_HOST}" \
+    -U "${DB_USER}" \
+    -d "${DB_DATABASE}" \
+    --no-owner \
+    --no-privileges \
+    --no-acl \
+    --compress=9 \
+    --file="${LOCAL_PATH}"
+
+  local file_size
+  file_size="$(stat -c%s "${LOCAL_PATH}" 2>/dev/null || stat -f%z "${LOCAL_PATH}" 2>/dev/null)"
+
+  if [ ! -s "${LOCAL_PATH}" ]; then
+    log_fatal "pg_dump produced an empty file at ${LOCAL_PATH}"
+  fi
+
+  # Validate the gzip file integrity
+  if ! gzip -t "${LOCAL_PATH}" 2>/dev/null; then
+    log_fatal "Gzip integrity check failed for ${LOCAL_PATH}"
+  fi
+
+  log_info "pg_dump complete: ${FILENAME} ($(numfmt --to=iec "${file_size}" 2>/dev/null || echo "${file_size} bytes"))"
+}
+
+# Upload to S3-compatible storage
+upload_to_s3() {
+  if [ -z "${S3_ENDPOINT:-}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+    log_warn "S3 credentials not fully configured — skipping S3 upload"
+    return 0
+  fi
+
+  local s3_key="${S3_BUCKET}/${TYPE}/${FILENAME}"
+  local s3_uri="s3://${s3_key}"
+
+  log_info "Uploading to S3: ${s3_uri} (endpoint: ${S3_ENDPOINT})"
+
+  if ! aws s3 cp "${LOCAL_PATH}" "${s3_uri}" \
+    --endpoint-url "${S3_ENDPOINT}" \
+    --only-show-errors; then
+    log_error "S3 upload failed for ${s3_uri}"
+    return 1
+  fi
+
+  # Verify the upload by checking the remote file exists and has matching size
+  local remote_size
+  remote_size="$(aws s3 ls "${s3_uri}" --endpoint-url "${S3_ENDPOINT}" --output text 2>/dev/null | awk '{print $3}')"
+  local local_size
+  local_size="$(stat -c%s "${LOCAL_PATH}" 2>/dev/null || stat -f%z "${LOCAL_PATH}" 2>/dev/null)"
+
+  if [ "${remote_size}" != "${local_size}" ]; then
+    log_error "S3 upload verification failed: local size ${local_size} != remote size ${remote_size}"
+    return 1
+  fi
+
+  log_info "S3 upload verified: ${s3_uri} (${remote_size} bytes)"
+  return 0
+}
+
+# Clean up old local backups beyond retention period
+cleanup_local() {
+  local cutoff_days="${RETENTION_DAYS}"
+  log_info "Cleaning local backups older than ${cutoff_days} days in ${BACKUP_DIR}/${TYPE}"
+
+  local deleted_count=0
+  while IFS= read -r -d '' file; do
+    rm -f "${file}"
+    deleted_count=$((deleted_count + 1))
+    log_info "Deleted local backup: ${file}"
+  done < <(find "${BACKUP_DIR}/${TYPE}" -name "*.sql.gz" -type f -mtime "+${cutoff_days}" -print0 2>/dev/null || true)
+
+  log_info "Local cleanup complete: removed ${deleted_count} file(s)"
+}
+
+# Clean up old S3 backups based on retention policy
+cleanup_s3() {
+  if [ -z "${S3_ENDPOINT:-}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+    return 0
+  fi
+
+  local cutoff_date
+  cutoff_date="$(date -u -d "-${RETENTION_DAYS} days" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || \
+                 date -u -v "-${RETENTION_DAYS}d" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || \
+                 echo "unknown")"
+
+  if [ "${cutoff_date}" = "unknown" ]; then
+    log_warn "Cannot compute cutoff date — skipping S3 cleanup"
+    return 0
+  fi
+
+  log_info "Cleaning S3 backups older than ${cutoff_date} in ${S3_BUCKET}/${TYPE}/"
+
+  # List old objects and delete them
+  aws s3 ls "s3://${S3_BUCKET}/${TYPE}/" \
+    --endpoint-url "${S3_ENDPOINT}" \
+    --output text \
+    --query "Contents[?LastModified<'${cutoff_date}'].[Key]" \
+    2>/dev/null \
+  | while read -r key; do
+      if [ -n "${key}" ]; then
+        aws s3 rm "s3://${S3_BUCKET}/${key}" \
+          --endpoint-url "${S3_ENDPOINT}" \
+          --only-show-errors 2>/dev/null && \
+        log_info "Deleted S3 backup: s3://${S3_BUCKET}/${key}"
+      fi
+    done
+
+  log_info "S3 cleanup complete"
+}
+
+# Print summary of the backup operation
+print_summary() {
+  local file_size
+  file_size="$(stat -c%s "${LOCAL_PATH}" 2>/dev/null || stat -f%z "${LOCAL_PATH}" 2>/dev/null)"
+  local human_size
+  human_size="$(numfmt --to=iec "${file_size}" 2>/dev/null || echo "${file_size} bytes")"
+
+  echo ""
+  echo "============================================================================="
+  echo "  BACKUP SUMMARY"
+  echo "============================================================================="
+  echo "  Type:      ${TYPE}"
+  echo "  Database:  ${DB_DATABASE} on ${DB_HOST}"
+  echo "  File:      ${FILENAME}"
+  echo "  Size:      ${human_size}"
+  echo "  Location:  ${LOCAL_PATH}"
+  if [ -n "${S3_ENDPOINT:-}" ]; then
+    echo "  S3 URI:    s3://${S3_BUCKET}/${TYPE}/${FILENAME}"
+  fi
+  echo "  Retention: ${RETENTION_DAYS} days"
+  echo "  Status:    SUCCESS"
+  echo "============================================================================="
+}
+
+# ---- Main -------------------------------------------------------------------
+
+main() {
+  # Parse arguments
+  TYPE="${1:-daily}"
+  RETENTION_DAYS="${2:-30}"
+
+  # Validate backup type
+  case "${TYPE}" in
+    hourly)   RETENTION_DAYS="${RETENTION_DAYS:-1}" ;;
+    daily)    RETENTION_DAYS="${RETENTION_DAYS:-30}" ;;
+    weekly)   RETENTION_DAYS="${RETENTION_DAYS:-84}" ;;   # 12 weeks
+    monthly)  RETENTION_DAYS="${RETENTION_DAYS:-365}" ;;  # 12 months
+    *)
+      log_fatal "Invalid backup type '${TYPE}'. Must be: hourly, daily, weekly, or monthly"
+      ;;
+  esac
+
+  # Configuration with defaults
+  DB_HOST="${DB_HOST:-postgresql}"
+  DB_USER="${DB_USER:-postgres}"
+  DB_DATABASE="${DB_DATABASE:-featuresignals}"
+  BACKUP_DIR="${BACKUP_DIR:-/backups}"
+  S3_ENDPOINT="${S3_ENDPOINT:-}"
+  S3_BUCKET="${S3_BUCKET:-fs-backups}"
+
+  # Derived values
+  TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
+  FILENAME="featuresignals-${TIMESTAMP}.sql.gz"
+  LOCAL_PATH="${BACKUP_DIR}/${TYPE}/${FILENAME}"
+  TMP_BACKUP=""
+
+  echo ""
+  echo "============================================================================="
+  echo "  FeatureSignals Backup v${VERSION}"
+  echo "============================================================================="
+  log_info "Starting ${TYPE} backup..."
+
+  # Pre-flight checks
+  validate_env
+  ensure_dirs
+
+  # Execute backup
+  create_backup
+
+  # Upload to S3 if configured
+  upload_to_s3
+
+  # Cleanup old backups
+  cleanup_local
+  cleanup_s3
+
+  # Summary
+  print_summary
+}
+
+# Run main
+main "$@"
+```
+Now the restore.sh script:```bash
+#!/usr/bin/env bash
+# =============================================================================
+# FeatureSignals — Database Restore Script
+# =============================================================================
+#
+# Restores a PostgreSQL database from a compressed backup file.
+# Supports both local files and S3 URLs (Hetzner Storage Box).
+#
+# Usage:
+#   restore.sh <backup_path_or_s3_url>
+#     backup_path_or_s3_url: Local path to .sql.gz file OR
+#                            s3://fs-backups/{type}/featuresignals-{timestamp}.sql.gz
+#
+# Environment variables:
+#   DB_HOST          PostgreSQL host (default: postgresql)
+#   DB_USER          PostgreSQL user (default: postgres)
+#   DB_DATABASE      PostgreSQL database name (default: featuresignals)
+#   PGPASSWORD       PostgreSQL password (REQUIRED)
+#   S3_ENDPOINT      S3-compatible endpoint URL (required for S3 restores)
+#   AWS_ACCESS_KEY_ID     S3 access key (required for S3 restores)
+#   AWS_SECRET_ACCESS_KEY S3 secret key (required for S3 restores)
+#
+# Examples:
+#   PGPASSWORD=secret ./restore.sh /backups/daily/featuresignals-20240101-020000.sql.gz
+#   PGPASSWORD=secret S3_ENDPOINT=https://fs.your-storage-box.de \
+#     AWS_ACCESS_KEY_ID=xxx AWS_SECRET_ACCESS_KEY=yyy \
+#     ./restore.sh s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+#
+# WARNING: This script DROPS and recreates the target database.
+# All existing data in the database will be lost.
+# =============================================================================
+
+set -euo pipefail
+
+# ---- Constants --------------------------------------------------------------
+
+SCRIPT_NAME="$(basename "$0")"
+VERSION="1.0.0"
+LOG_PREFIX="[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${SCRIPT_NAME}]"
+
+# ---- Colors for terminal output ---------------------------------------------
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# ---- Functions --------------------------------------------------------------
+
+log_info()  { echo -e "${LOG_PREFIX} ${GREEN}[INFO]${NC}  $*"; }
+log_warn()  { echo -e "${LOG_PREFIX} ${YELLOW}[WARN]${NC}  $*" >&2; }
+log_error() { echo -e "${LOG_PREFIX} ${RED}[ERROR]${NC} $*" >&2; }
+log_fatal() { log_error "$@"; exit 1; }
+log_step()  { echo -e "\n${CYAN}════════════════════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $*${NC}"; echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}\n"; }
+
+# Cleanup handler
+cleanup() {
+  local exit_code=$?
+  if [ -n "${TMP_DIR:-}" ] && [ -d "${TMP_DIR:-}" ]; then
+    rm -rf "${TMP_DIR}"
+    log_info "Cleaned up temporary directory: ${TMP_DIR}"
+  fi
+  # No need to terminate connections — they'll be dropped by the DROP DATABASE
+  if [ "${exit_code}" -ne 0 ]; then
+    log_error "Restore failed with exit code ${exit_code}"
+  fi
+  exit "${exit_code}"
+}
+trap cleanup EXIT INT TERM
+
+# Check required tools
+check_dependencies() {
+  local missing=0
+  for cmd in psql gunzip aws; do
+    if ! command -v "${cmd}" &>/dev/null; then
+      log_error "Required command not found: ${cmd}"
+      missing=1
+    fi
+  done
+  if [ "${missing}" -eq 1 ]; then
+    log_fatal "Missing required dependencies. Install: postgresql-client, aws-cli, gzip"
+  fi
+}
+
+# Validate environment
+validate_env() {
+  if [ -z "${PGPASSWORD:-}" ]; then
+    log_fatal "PGPASSWORD environment variable is required"
+  fi
+
+  # Test database connectivity
+  log_info "Testing database connectivity to ${DB_HOST}..."
+  if ! pg_isready -h "${DB_HOST}" -U "${DB_USER}" -q -t 10 2>/dev/null; then
+    log_fatal "Cannot connect to PostgreSQL at ${DB_HOST}:${DB_PORT}. Is the database running and reachable?"
+  fi
+  log_info "Database connection OK"
+}
+
+# Format bytes to human-readable
+format_bytes() {
+  local bytes=$1
+  if command -v numfmt &>/dev/null; then
+    numfmt --to=iec "${bytes}"
+  else
+    echo "${bytes} bytes"
+  fi
+}
+
+# Download backup from S3 or use local file
+acquire_backup() {
+  local source="$1"
+
+  if [[ "${source}" == s3://* ]]; then
+    log_info "Downloading backup from S3: ${source}"
+
+    if [ -z "${S3_ENDPOINT:-}" ]; then
+      log_fatal "S3_ENDPOINT environment variable is required for S3 restores"
+    fi
+    if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+      log_fatal "AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required for S3 restores"
+    fi
+
+    BACKUP_FILE="${TMP_DIR}/backup.sql.gz"
+
+    log_info "Downloading from S3 (this may take a while for large backups)..."
+    if ! aws s3 cp "${source}" "${BACKUP_FILE}" \
+      --endpoint-url "${S3_ENDPOINT}" \
+      --only-show-errors; then
+      log_fatal "Failed to download backup from S3: ${source}"
+    fi
+
+    local file_size
+    file_size="$(stat -c%s "${BACKUP_FILE}" 2>/dev/null || stat -f%z "${BACKUP_FILE}" 2>/dev/null)"
+    log_info "Downloaded: $(format_bytes "${file_size}")"
+  else
+    # Local file
+    if [ ! -f "${source}" ]; then
+      log_fatal "Backup file not found: ${source}"
+    fi
+    BACKUP_FILE="${source}"
+    local file_size
+    file_size="$(stat -c%s "${BACKUP_FILE}" 2>/dev/null || stat -f%z "${BACKUP_FILE}" 2>/dev/null)"
+    log_info "Using local backup file: ${source} ($(format_bytes "${file_size}"))"
+  fi
+
+  # Validate gzip integrity
+  log_info "Validating gzip integrity..."
+  if ! gzip -t "${BACKUP_FILE}" 2>/dev/null; then
+    log_fatal "Gzip integrity check failed. The backup file may be corrupted: ${BACKUP_FILE}"
+  fi
+  log_info "Gzip integrity check passed"
+}
+
+# Inspect backup contents (show database objects)
+inspect_backup() {
+  log_step "Inspecting Backup Contents"
+
+  log_info "Examining database objects in backup..."
+
+  # Extract CREATE statements and table names from the dump
+  echo ""
+  echo "  Tables in backup:"
+  gunzip -c "${BACKUP_FILE}" 2>/dev/null \
+    | grep -E "^COPY public\.|^CREATE TABLE public\." \
+    | sed 's/COPY public\.\([^ ]*\).*/  - \1/' \
+    | sed 's/CREATE TABLE public\.\([^ ]*\).*/  - \1/' \
+    | sort -u \
+    | head -50
+
+  # Estimate total size
+  local raw_size
+  raw_size="$(gunzip -c "${BACKUP_FILE}" 2>/dev/null | wc -c)"
+  echo ""
+  echo "  Raw SQL size: $(format_bytes "${raw_size}")"
+  echo ""
+}
+
+# Terminate all active connections to the target database (except our own)
+terminate_connections() {
+  log_step "Terminating Active Connections"
+
+  log_info "Terminating all connections to database '${DB_DATABASE}'..."
+  psql -h "${DB_HOST}" -U "${DB_USER}" -d postgres -q -t -c \
+    "SELECT pg_terminate_backend(pid)
+     FROM pg_stat_activity
+     WHERE datname = '${DB_DATABASE}'
+       AND pid <> pg_backend_pid();" 2>/dev/null || true
+  log_info "Active connections terminated"
+}
+
+# Drop and recreate the database
+recreate_database() {
+  log_step "Recreating Database"
+
+  log_warn "DROPPING database '${DB_DATABASE}' — ALL EXISTING DATA WILL BE LOST!"
+  log_warn "This action cannot be undone."
+
+  echo ""
+  echo -e "${YELLOW}Are you absolutely sure you want to proceed?${NC}"
+  echo -e "  Target database: ${CYAN}${DB_DATABASE}${NC}"
+  echo -e "  Target host:     ${CYAN}${DB_HOST}${NC}"
+  echo -e "  Backup file:     ${CYAN}${BACKUP_FILE}${NC}"
+  echo ""
+  echo -n "Type 'yes' to confirm: "
+  read -r confirm
+
+  if [ "${confirm}" != "yes" ]; then
+    log_info "Restore cancelled by user."
+    exit 0
+  fi
+
+  log_info "Dropping database '${DB_DATABASE}'..."
+  psql -h "${DB_HOST}" -U "${DB_USER}" -d postgres -q -c \
+    "DROP DATABASE IF EXISTS ${DB_DATABASE};"
+  log_info "Database dropped"
+
+  log_info "Creating database '${DB_DATABASE}'..."
+  psql -h "${DB_HOST}" -U "${DB_USER}" -d postgres -q -c \
+    "CREATE DATABASE ${DB_DATABASE};"
+  log_info "Database created"
+}
+
+# Restore the backup
+restore_backup() {
+  log_step "Restoring Backup"
+
+  log_info "Starting restore from: ${BACKUP_FILE}"
+  local start_time
+  start_time="$(date +%s)"
+
+  # Run the restore, capturing any errors
+  if ! gunzip -c "${BACKUP_FILE}" 2>/dev/null | \
+       psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_DATABASE}" -q \
+       --set ON_ERROR_STOP=on 2>&1; then
+    log_error "Restore failed during SQL execution"
+    return 1
+  fi
+
+  local end_time
+  end_time="$(date +%s)"
+  local duration=$((end_time - start_time))
+
+  log_info "Restore completed in ${duration} seconds"
+  return 0
+}
+
+# Verify the restored database
+verify_restore() {
+  log_step "Verifying Restored Database"
+
+  local errors=0
+
+  # Check table count
+  log_info "Checking table count..."
+  local table_count
+  table_count="$(psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_DATABASE}" -t -c \
+    "SELECT count(*) FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_type = 'BASE TABLE';" 2>/dev/null | tr -d ' ')"
+  log_info "Tables in restored database: ${table_count}"
+
+  if [ -z "${table_count}" ] || [ "${table_count}" -eq 0 ] 2>/dev/null; then
+    log_error "No tables found in restored database — restore may have failed"
+    errors=$((errors + 1))
+  fi
+
+  # Check key tables have data
+  for table in organizations users projects flags; do
+    local row_count
+    row_count="$(psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_DATABASE}" -t -c \
+      "SELECT count(*) FROM ${table};" 2>/dev/null | tr -d ' ')"
+    if [ -n "${row_count}" ] && [ "${row_count}" -ge 0 ] 2>/dev/null; then
+      log_info "  ${table}: ${row_count} rows"
+    else
+      log_warn "  ${table}: could not query (may not exist in this backup)"
+    fi
+  done
+
+  # Run VACUUM ANALYZE to update statistics
+  log_info "Running VACUUM ANALYZE..."
+  psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_DATABASE}" -q -c \
+    "VACUUM ANALYZE;" 2>/dev/null || log_warn "VACUUM ANALYZE failed (non-fatal)"
+  log_info "Statistics updated"
+
+  if [ "${errors}" -gt 0 ]; then
+    log_error "Verification found ${errors} issue(s)"
+    return 1
+  fi
+
+  log_info "Database verification passed"
+  return 0
+}
+
+# Print restore summary
+print_summary() {
+  echo ""
+  echo "============================================================================="
+  echo "  RESTORE SUMMARY"
+  echo "============================================================================="
+  echo "  Status:    ${GREEN}SUCCESS${NC}"
+  echo "  Database:  ${DB_DATABASE} on ${DB_HOST}"
+  echo "  Restored:  ${BACKUP_FILE}"
+  echo "  Verified:  Yes"
+  echo "============================================================================="
+}
+
+# ---- Main -------------------------------------------------------------------
+
+main() {
+  local BACKUP_URL="${1:-}"
+
+  # Display banner
+  echo ""
+  echo "============================================================================="
+  echo "  FeatureSignals Database Restore v${VERSION}"
+  echo "============================================================================="
+  echo ""
+
+  # Check arguments
+  if [ -z "${BACKUP_URL}" ]; then
+    log_error "No backup URL provided"
+    echo ""
+    echo "Usage: ${SCRIPT_NAME} <backup_path_or_s3_url>"
+    echo ""
+    echo "Examples:"
+    echo "  # Restore from local file:"
+    echo "  PGPASSWORD=secret ${SCRIPT_NAME} /backups/daily/featuresignals-20240101-020000.sql.gz"
+    echo ""
+    echo "  # Restore from S3 (Hetzner Storage Box):"
+    echo "  PGPASSWORD=secret S3_ENDPOINT=<url> AWS_ACCESS_KEY_ID=<key> AWS_SECRET_ACCESS_KEY=<secret> \\"
+    echo "    ${SCRIPT_NAME} s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz"
+    echo ""
+    echo "Available backups on S3:"
+    if [ -n "${S3_ENDPOINT:-}" ] && [ -n "${AWS_ACCESS_KEY_ID:-}" ]; then
+      echo "  Daily:"
+      aws s3 ls s3://fs-backups/daily/ --endpoint-url "${S3_ENDPOINT}" 2>/dev/null \
+        | head -10 || echo "  (no daily backups found or S3 not configured)"
+      echo ""
+      echo "  Weekly:"
+      aws s3 ls s3://fs-backups/weekly/ --endpoint-url "${S3_ENDPOINT}" 2>/dev/null \
+        | head -10 || echo "  (no weekly backups found or S3 not configured)"
+      echo ""
+      echo "  Monthly:"
+      aws s3 ls s3://fs-backups/monthly/ --endpoint-url "${S3_ENDPOINT}" 2>/dev/null \
+        | head -10 || echo "  (no monthly backups found or S3 not configured)"
+    else
+      echo "  (set S3_ENDPOINT and AWS credentials to list remote backups)"
+    fi
+    exit 1
+  fi
+
+  # Configuration with defaults
+  DB_HOST="${DB_HOST:-postgresql}"
+  DB_USER="${DB_USER:-postgres}"
+  DB_DATABASE="${DB_DATABASE:-featuresignals}"
+  DB_PORT="${DB_PORT:-5432}"
+
+  # Create temp directory
+  TMP_DIR="$(mktemp -d /tmp/fs-restore-XXXXXX)"
+  BACKUP_FILE=""
+
+  # Pre-flight checks
+  check_dependencies
+  validate_env
+
+  # Show warning banner
+  echo ""
+  echo -e "${RED}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${RED}║                          DESTRUCTIVE OPERATION                          ║${NC}"
+  echo -e "${RED}║                                                                          ║${NC}"
+  echo -e "${RED}║  This script will DROP and recreate the '${DB_DATABASE}' database.           ║${NC}"
+  echo -e "${RED}║  ALL EXISTING DATA will be permanently lost.                             ║${NC}"
+  echo -e "${RED}║                                                                          ║${NC}"
+  echo -e "${RED}║  Make sure you have a recent backup before proceeding.                   ║${NC}"
+  echo -e "${RED}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+  echo ""
+
+  # Acquire the backup
+  acquire_backup "${BACKUP_URL}"
+
+  # Inspect backup contents
+  inspect_backup
+
+  # Terminate connections, drop and recreate database, restore
+  terminate_connections
+  recreate_database
+  restore_backup
+
+  # Verify the restore
+  verify_restore
+
+  # Summary
+  print_summary
+}
+
+main "$@"
+```
+Now the verify-backup.sh script:```bash
+#!/usr/bin/env bash
+# =============================================================================
+# FeatureSignals — Backup Verification Script
+# =============================================================================
+#
+# Restores the latest backup to a temporary PostgreSQL instance, runs sanity
+# queries, and reports success/failure. Designed to run as a CronJob or manual
+# verification step.
+#
+# Verification steps:
+#   1. Start a temporary PostgreSQL container
+#   2. Restore the backup
+#   3. Count tables and rows
+#   4. Check for SQL errors
+#   5. Drop the temp database
+#   6. Report results
+#
+# Usage:
+#   ./verify-backup.sh [backup_file_or_s3_url]
+#     If no argument is given, uses the latest hourly backup from /backups/hourly/
+#
+#   ./verify-backup.sh s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+#     Verifies a specific backup from S3 (requires S3_ENDPOINT and AWS credentials)
+#
+# Exit codes:
+#   0 - Verification passed
+#   1 - Backup file not found
+#   2 - Gzip integrity check failed
+#   3 - PostgreSQL connection failed
+#   4 - Restore failed
+#   5 - Verification queries failed
+# =============================================================================
+
+set -euo pipefail
+
+# ---- Constants --------------------------------------------------------------
+
+SCRIPT_NAME="$(basename "$0")"
+VERSION="1.0.0"
+LOG_PREFIX="[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${SCRIPT_NAME}]"
+VERIFY_DB="fs_backup_verify"
+VERIFY_USER="fs_verify"
+VERIFY_PASS="$(openssl rand -base64 24 2>/dev/null || echo "verify_temp_pass_2024")"
+VERIFY_PORT=5432
+TMP_DIR=""
+
+# ---- Colors for terminal output ---------------------------------------------
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# ---- Functions --------------------------------------------------------------
+
+log_info()    { echo -e "${LOG_PREFIX} ${GREEN}[INFO]${NC}  $*"; }
+log_warn()    { echo -e "${LOG_PREFIX} ${YELLOW}[WARN]${NC}  $*" >&2; }
+log_error()   { echo -e "${LOG_PREFIX} ${RED}[ERROR]${NC} $*" >&2; }
+log_fatal()   { log_error "$@"; exit "$1"; }
+log_step()    { echo -e "\n${CYAN}════════════════════════════════════════════════════════════${NC}"; echo -e "${CYAN}  $*${NC}"; echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}\n"; }
+log_pass()    { echo -e "${LOG_PREFIX} ${GREEN}[PASS]${NC}  $*"; }
+log_fail()    { echo -e "${LOG_PREFIX} ${RED}[FAIL]${NC}  $*"; }
+
+# Format bytes to human-readable
+format_bytes() {
+  local bytes=$1
+  if command -v numfmt &>/dev/null; then
+    numfmt --to=iec "${bytes}"
+  else
+    echo "${bytes} bytes"
+  fi
+}
+
+# Cleanup handler — always runs on exit
+cleanup() {
+  local exit_code=$?
+  echo ""
+
+  # Kill and remove temp PostgreSQL container
+  if [ -n "${VERIFY_CONTAINER:-}" ]; then
+    log_info "Stopping verification PostgreSQL container: ${VERIFY_CONTAINER}"
+    docker rm -f "${VERIFY_CONTAINER}" 2>/dev/null || true
+  fi
+
+  # Remove temp directory
+  if [ -n "${TMP_DIR:-}" ] && [ -d "${TMP_DIR:-}" ]; then
+    rm -rf "${TMP_DIR}"
+    log_info "Cleaned up temporary directory"
+  fi
+
+  if [ "${exit_code}" -eq 0 ]; then
+    echo ""
+    echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║           BACKUP VERIFICATION PASSED                          ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+  else
+    echo ""
+    echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║           BACKUP VERIFICATION FAILED                           ║${NC}"
+    echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+  fi
+
+  exit "${exit_code}"
+}
+trap cleanup EXIT INT TERM
+
+# Check required dependencies
+check_dependencies() {
+  local missing=0
+
+  if ! command -v docker &>/dev/null; then
+    log_error "Docker is required but not found"
+    missing=1
+  fi
+  if ! command -v psql &>/dev/null; then
+    log_error "psql is required but not found (install postgresql-client)"
+    missing=1
+  fi
+  if ! command -v gunzip &>/dev/null; then
+    log_error "gunzip is required but not found"
+    missing=1
+  fi
+
+  if [ "${missing}" -eq 1 ]; then
+    log_fatal 3 "Missing required dependencies"
+  fi
+
+  log_info "All dependencies available"
+}
+
+# Acquire the backup file (local or S3)
+acquire_backup() {
+  local source="${1:-}"
+
+  # If no source provided, find the latest hourly backup
+  if [ -z "${source}" ]; then
+    local hourly_dir="${BACKUP_DIR:-/backups}/hourly"
+    if [ -d "${hourly_dir}" ]; then
+      source="$(find "${hourly_dir}" -name "*.sql.gz" -type f -printf '%T@ %p\n' 2>/dev/null \
+                | sort -rn \
+                | head -1 \
+                | awk '{print $2}')"
+    fi
+    # Try daily if no hourly found
+    if [ -z "${source}" ] || [ ! -f "${source}" ]; then
+      local daily_dir="${BACKUP_DIR:-/backups}/daily"
+      if [ -d "${daily_dir}" ]; then
+        source="$(find "${daily_dir}" -name "*.sql.gz" -type f -printf '%T@ %p\n' 2>/dev/null \
+                  | sort -rn \
+                  | head -1 \
+                  | awk '{print $2}')"
+      fi
+    fi
+  fi
+
+  if [ -z "${source}" ]; then
+    log_fatal 1 "No backup file found and no argument provided"
+  fi
+
+  # Handle S3 URLs
+  if [[ "${source}" == s3://* ]]; then
+    if [ -z "${S3_ENDPOINT:-}" ]; then
+      log_fatal 1 "S3_ENDPOINT environment variable required for S3 URLs"
+    fi
+
+    TMP_DIR="$(mktemp -d /tmp/fs-verify-XXXXXX)"
+    local dest="${TMP_DIR}/backup.sql.gz"
+
+    log_info "Downloading backup from S3: ${source}"
+    if ! aws s3 cp "${source}" "${dest}" \
+      --endpoint-url "${S3_ENDPOINT}" \
+      --only-show-errors; then
+      log_fatal 1 "Failed to download backup from S3"
+    fi
+    BACKUP_FILE="${dest}"
+  else
+    if [ ! -f "${source}" ]; then
+      log_fatal 1 "Backup file not found: ${source}"
+    fi
+    BACKUP_FILE="${source}"
+  fi
+
+  local file_size
+  file_size="$(stat -c%s "${BACKUP_FILE}" 2>/dev/null || stat -f%z "${BACKUP_FILE}" 2>/dev/null)"
+  log_info "Backup file: ${BACKUP_FILE} ($(format_bytes "${file_size}"))"
+}
+
+# Validate gzip integrity
+validate_gzip() {
+  log_step "Validating Gzip Integrity"
+
+  if gunzip -t "${BACKUP_FILE}" 2>/dev/null; then
+    log_pass "Gzip integrity check passed"
+  else
+    log_fatal 2 "Gzip integrity check FAILED — backup file may be corrupted"
+  fi
+}
+
+# Start temporary PostgreSQL container
+start_temp_postgres() {
+  log_step "Starting Temporary PostgreSQL Instance"
+
+  VERIFY_CONTAINER="fs-verify-$(date +%s)-$$"
+
+  log_info "Starting PostgreSQL container: ${VERIFY_CONTAINER}"
+
+  if ! docker run -d \
+    --name "${VERIFY_CONTAINER}" \
+    -e POSTGRES_USER="${VERIFY_USER}" \
+    -e POSTGRES_PASSWORD="${VERIFY_PASS}" \
+    -e POSTGRES_DB="${VERIFY_DB}" \
+    -p "0:${VERIFY_PORT}" \
+    --rm \
+    postgres:16-alpine \
+    -c "max_connections=20" \
+    -c "shared_buffers=32MB" \
+    -c "fsync=off" \
+    -c "full_page_writes=off" \
+    > /dev/null 2>&1; then
+    log_fatal 3 "Failed to start PostgreSQL container"
+  fi
+
+  # Get the container's IP address
+  local container_ip
+  container_ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${VERIFY_CONTAINER}")"
+  VERIFY_HOST="${container_ip}"
+
+  log_info "Container started at ${VERIFY_HOST}:${VERIFY_PORT} (DB: ${VERIFY_DB})"
+
+  # Wait for PostgreSQL to be ready
+  log_info "Waiting for PostgreSQL to accept connections..."
+  local max_attempts=30
+  local attempt=0
+  while [ "${attempt}" -lt "${max_attempts}" ]; do
+    if docker exec "${VERIFY_CONTAINER}" pg_isready -U "${VERIFY_USER}" -q 2>/dev/null; then
+      log_info "PostgreSQL ready after ${attempt}s"
+      break
+    fi
+    sleep 1
+    attempt=$((attempt + 1))
+  done
+
+  if [ "${attempt}" -eq "${max_attempts}" ]; then
+    log_fatal 3 "PostgreSQL failed to become ready within ${max_attempts}s"
+  fi
+}
+
+# Restore backup to temp database
+restore_backup() {
+  log_step "Restoring Backup to Verification Database"
+
+  log_info "Restoring backup, this may take a while..."
+
+  # Stream the restore through the docker exec to avoid network overhead
+  local start_time
+  start_time="$(date +%s)"
+
+  if ! gunzip -c "${BACKUP_FILE}" 2>/dev/null | \
+       docker exec -i "${VERIFY_CONTAINER}" \
+         psql -U "${VERIFY_USER}" -d "${VERIFY_DB}" -q \
+         --set ON_ERROR_STOP=on 2>&1; then
+    log_fail "Restore generated errors"
+    return 1
+  fi
+
+  local end_time
+  end_time="$(date +%s)"
+  local duration=$((end_time - start_time))
+
+  log_pass "Restore completed in ${duration}s"
+  return 0
+}
+
+# Run verification queries
+run_verification() {
+  log_step "Running Database Verification"
+
+  local errors=0
+  local warnings=0
+
+  # Helper function to run SQL and get output
+  run_sql() {
+    local sql="$1"
+    docker exec "${VERIFY_CONTAINER}" \
+      psql -U "${VERIFY_USER}" -d "${VERIFY_DB}" -t -A -c "${sql}" 2>/dev/null | tr -d ' '
+  }
+
+  # ---- Test 1: Table Count ----
+  log_info "Test: Table count..."
+  local table_count
+  table_count="$(run_sql \
+    "SELECT count(*) FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_type = 'BASE TABLE';")"
+
+  if [ -z "${table_count}" ] || [ "${table_count}" -eq 0 ] 2>/dev/null; then
+    log_fail "No tables found in restored database"
+    errors=$((errors + 1))
+  else
+    log_pass "Found ${table_count} tables"
+  fi
+
+  # ---- Test 2: List all tables and row counts ----
+  log_info "Test: Table row counts..."
+  local tables
+  tables="$(run_sql \
+    "SELECT tablename FROM pg_catalog.pg_tables
+     WHERE schemaname = 'public'
+     ORDER BY tablename;")"
+
+  if [ -n "${tables}" ]; then
+    echo ""
+    echo "  Table                       Rows"
+    echo "  ─────────────────────────────────────"
+    while IFS= read -r table; do
+      if [ -n "${table}" ]; then
+        local row_count
+        row_count="$(run_sql "SELECT count(*) FROM \"${table}\";")"
+        if [ -n "${row_count}" ]; then
+          printf "  %-27s %s\n" "${table}" "${row_count}"
+        fi
+      fi
+    done <<< "${tables}"
+    echo ""
+  fi
+
+  # ---- Test 3: Check for orphaned sequences ----
+  log_info "Test: Sequence consistency..."
+  local seq_issues
+  seq_issues="$(run_sql \
+    "SELECT count(*) FROM (
+       SELECT sequence_schema, sequence_name
+       FROM information_schema.sequences s
+       WHERE NOT EXISTS (
+         SELECT 1 FROM information_schema.columns c
+         WHERE c.column_default LIKE '%' || s.sequence_name || '%'
+       )
+       AND s.sequence_schema = 'public'
+     ) orphaned;")"
+
+  if [ -n "${seq_issues}" ] && [ "${seq_issues}" -gt 0 ] 2>/dev/null; then
+    log_warn "${seq_issues} orphaned sequence(s) found (may be expected)"
+    warnings=$((warnings + 1))
+  else
+    log_pass "All sequences have matching columns"
+  fi
+
+  # ---- Test 4: Check for invalid foreign keys ----
+  log_info "Test: Foreign key integrity..."
+  local fk_violations
+  fk_violations="$(run_sql \
+    "SELECT count(*) FROM (
+       SELECT 1 FROM information_schema.table_constraints tc
+       JOIN information_schema.key_column_usage kcu
+         ON tc.constraint_name = kcu.constraint_name
+       JOIN information_schema.constraint_column_usage ccu
+         ON ccu.constraint_name = tc.constraint_name
+       WHERE tc.constraint_type = 'FOREIGN KEY'
+         AND tc.table_schema = 'public'
+     ) fk_refs;")"
+
+  if [ -n "${fk_violations}" ] && [ "${fk_violations}" -gt 0 ] 2>/dev/null; then
+    log_pass "Foreign key constraints present (schema integrity OK)"
+  else
+    log_warn "No foreign key constraints found (may be expected for this schema)"
+  fi
+
+  # ---- Test 5: Database size ----
+  log_info "Test: Database size..."
+  local db_size
+  db_size="$(run_sql \
+    "SELECT pg_size_pretty(pg_database_size('${VERIFY_DB}'));")"
+
+  if [ -n "${db_size}" ]; then
+    log_pass "Database size: ${db_size}"
+  fi
+
+  # ---- Test 6: Run VACUUM ANALYZE ----
+  log_info "Test: VACUUM ANALYZE..."
+  if docker exec "${VERIFY_CONTAINER}" \
+    psql -U "${VERIFY_USER}" -d "${VERIFY_DB}" -q -c \
+    "VACUUM ANALYZE;" 2>/dev/null; then
+    log_pass "VACUUM ANALYZE completed"
+  else
+    log_warn "VACUUM ANALYZE had issues (non-fatal for verification)"
+  fi
+
+  echo ""
+  if [ "${errors}" -gt 0 ]; then
+    log_fail "${errors} verification test(s) FAILED"
+    return 1
+  fi
+  if [ "${warnings}" -gt 0 ]; then
+    log_warn "${warnings} warning(s) — review above"
+  fi
+  log_pass "All verification tests passed"
+  return 0
+}
+
+# Print detailed summary
+print_summary() {
+  local file_size
+  file_size="$(stat -c%s "${BACKUP_FILE}" 2>/dev/null || stat -f%z "${BACKUP_FILE}" 2>/dev/null)"
+  local table_count
+  table_count="$(docker exec "${VERIFY_CONTAINER}" \
+    psql -U "${VERIFY_USER}" -d "${VERIFY_DB}" -t -A -c \
+    "SELECT count(*) FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_type = 'BASE TABLE';" 2>/dev/null | tr -d ' ')"
+
+  echo ""
+  echo "============================================================================="
+  echo "  VERIFICATION REPORT"
+  echo "============================================================================="
+  echo "  Backup file:  ${BACKUP_FILE}"
+  echo "  File size:    $(format_bytes "${file_size}")"
+  echo "  Tables found: ${table_count:-0}"
+  echo "  Status:       ${GREEN}PASSED${NC}"
+  echo "============================================================================="
+}
+
+# ---- Main -------------------------------------------------------------------
+
+main() {
+  local backup_source="${1:-}"
+
+  echo ""
+  echo "============================================================================="
+  echo "  FeatureSignals Backup Verification v${VERSION}"
+  echo "============================================================================="
+  echo ""
+
+  # Print configuration
+  log_info "Starting backup verification..."
+  if [ -n "${backup_source}" ]; then
+    log_info "Verifying specified backup: ${backup_source}"
+  else
+    log_info "No backup specified — will use latest local backup"
+  fi
+
+  # Execute verification pipeline
+  check_dependencies
+  acquire_backup "${backup_source}"
+  validate_gzip
+  start_temp_postgres
+  restore_backup
+  run_verification
+  print_summary
+}
+
+main "$@"
+```
+Now the disaster recovery runbook:```markdown
+# Disaster Recovery Runbook — FeatureSignals
+
+> **Version:** 1.0.0
+> **Last Updated:** $(date -u +%Y-%m-%d)
+> **Owner:** Platform Engineering
+> **SLA:** 4-hour recovery time objective (RTO), 1-hour recovery point objective (RPO)
+
+---
+
+## Table of Contents
+
+1. [Full VPS Loss](#1-full-vps-loss)
+2. [Database Corruption](#2-database-corruption)
+3. [Accidental Data Deletion](#3-accidental-data-deletion)
+4. [Certificate Expiration](#4-certificate-expiration)
+5. [Pod Crash Loop](#5-pod-crash-loop)
+6. [Storage Box Failure](#6-storage-box-failure)
+7. [etcd / Control Plane Failure](#7-etcd--control-plane-failure)
+8. [Appendices](#8-appendices)
+
+---
+
+## 1. Full VPS Loss
+
+### Severity
+**CRITICAL** — P0 (complete service outage)
+
+### Trigger
+- VPS is unreachable via SSH
+- All services return connection timeouts
+- Hetzner Cloud Console shows the server as stopped or unreachable
+- Monitoring alerts: `HostDown`, `APIUnreachable`, `DashboardUnreachable`
+
+### Impact
+- Complete feature flag evaluation outage for all customers
+- Dashboard and management API completely unavailable
+- All SDK evaluation requests will fail (unless SDKs have local cache)
+- Data loss potential: up to 1 hour (RPO depends on last hourly backup)
+
+### Pre-requisites
+- Access to [Hetzner Cloud Console](https://console.hetzner.cloud)
+- Hetzner API token (stored in 1Password or Bitwarden)
+- SSH key pair for the VPS (stored securely)
+- Latest backup files accessible (local hourly + S3 daily)
+- This runbook printed or available offline
+- Hetzner Storage Box credentials (for S3 backups)
+
+### Recovery Steps
+
+#### Phase 1: Assessment (5 minutes)
+
+```bash
+# 1. Verify server status via Hetzner API
+curl -s -H "Authorization: Bearer ${HETZNER_API_TOKEN}" \
+  https://api.hetzner.cloud/v1/servers \
+  | jq '.servers[] | select(.name=="featuresignals-prod") | {name, status, public_net}'
+
+# 2. Check if the server is just stopped or completely gone
+#    If status is "stopped" → try restart first
+#    If server is missing → proceed with re-provisioning
+```
+
+If the server is **stopped** (not deleted):
+```bash
+# Try restarting
+curl -X POST -H "Authorization: Bearer ${HETZNER_API_TOKEN}" \
+  https://api.hetzner.cloud/v1/servers/${SERVER_ID}/actions/poweron
+
+# Wait 2 minutes, then check if services come back
+ssh deploy@<SERVER_IP> "kubectl get nodes && kubectl get pods --all-namespaces"
+```
+
+If the server is **deleted** or restart fails, proceed to Phase 2.
+
+#### Phase 2: Provision New VPS (15 minutes)
+
+```bash
+# 1. Create new CPX42 in same region
+curl -X POST -H "Authorization: Bearer ${HETZNER_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "featuresignals-prod",
+    "server_type": "cpx42",
+    "image": "ubuntu-24.04",
+    "location": "hel1",
+    "ssh_keys": ["your-ssh-key-name"],
+    "volumes": [],
+    "networks": [],
+    "automount": false
+  }' \
+  https://api.hetzner.cloud/v1/servers
+
+# 2. Note the new server's IP address
+# 3. Update DNS records (if IP changed)
+```
+
+**DNS Update (if IP changed):**
+```bash
+# Update A records for api.featuresignals.com and app.featuresignals.com
+# via Cloudflare API
+curl -X PUT "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records/${API_RECORD_ID}" \
+  -H "Authorization: Bearer ${CF_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{\"type\":\"A\",\"name\":\"api.featuresignals.com\",\"content\":\"${NEW_IP}\",\"ttl\":120,\"proxied\":true}"
+```
+
+#### Phase 3: Bootstrap k3s (10 minutes)
+
+```bash
+# 1. SSH into the new server
+ssh root@<NEW_IP>
+
+# 2. Run the k3s bootstrap
+cd /opt/featuresignals/deploy/k3s
+bash bootstrap.sh
+
+# 3. Verify cluster is operational
+kubectl get nodes
+kubectl get pods --all-namespaces
+```
+
+#### Phase 4: Restore Infrastructure (15 minutes)
+
+```bash
+# 1. Deploy infrastructure components
+cd /opt/featuresignals/deploy/k8s/infra
+bash install.sh
+
+# 2. Deploy PostgreSQL (Bitnami Helm chart)
+helm upgrade --install postgresql oci://registry-1.docker.io/bitnamicharts/postgresql \
+  --namespace featuresignals-system \
+  --create-namespace \
+  --version ~15.5.0 \
+  --values /opt/featuresignals/deploy/k8s/helm/featuresignals/values.yaml \
+  --set global.postgresql.auth.existingSecret=db-credentials \
+  --wait \
+  --timeout 10m
+
+# 3. Wait for PostgreSQL to be ready
+kubectl wait --namespace featuresignals-system \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/instance=postgresql \
+  --timeout=300s
+```
+
+#### Phase 5: Restore Database from Backup (varies by size, typically 5-30 minutes)
+
+```bash
+# 1. Identify the latest S3 backup
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${HETZNER_STORAGE_BOX_URL} \
+  --output text \
+  --query "reverse(sort_by(Contents, &LastModified))[0].[Key]" \
+  | awk '{print "s3://fs-backups/daily/"$1}'
+
+# 2. Get the database password
+export PGPASSWORD=$(kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d)
+
+# 3. Download and restore the backup
+aws s3 cp s3://fs-backups/daily/LATEST_BACKUP.sql.gz - \
+  --endpoint-url ${HETZNER_STORAGE_BOX_URL} \
+  | gunzip \
+  | kubectl exec -i -n featuresignals-system \
+    postgresql-0 -- \
+    psql -U postgres -d featuresignals
+```
+
+#### Phase 6: Deploy Application (10 minutes)
+
+```bash
+# 1. Deploy the main application
+cd /opt/featuresignals/deploy/k8s
+make app-deploy
+
+# 2. Verify all pods are running
+kubectl get pods --all-namespaces
+
+# 3. Run database migrations if needed
+kubectl create job --namespace featuresignals-system \
+  --from=cronjob/featuresignals-db-migrate \
+  db-migrate-manual-$(date +%s)
+
+# 4. Verify the health endpoint
+curl -s https://api.featuresignals.com/health | jq .
+```
+
+#### Phase 7: Restore Backup Infrastructure (10 minutes)
+
+```bash
+# 1. Deploy backup CronJobs
+kubectl apply -k /opt/featuresignals/deploy/k8s/backup/
+
+# 2. Test backup immediately
+kubectl create job --namespace featuresignals-system \
+  --from=cronjob/fs-backup-hourly \
+  backup-manual-verify-$(date +%s)
+
+# 3. Verify backup ran successfully
+kubectl logs --namespace featuresignals-system \
+  job/backup-manual-verify-$(date +%s)
+```
+
+### Verification
+```bash
+# 1. Check all pods are running
+kubectl get pods --all-namespaces --field-selector=status.phase!=Running
+
+# 2. Verify API health
+curl -s https://api.featuresignals.com/health
+# Expected: {"status":"ok","version":"x.y.z"}
+
+# 3. Verify dashboard loads
+curl -s -o /dev/null -w "%{http_code}" https://app.featuresignals.com
+# Expected: 200
+
+# 4. Verify database has data
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT count(*) FROM organizations;"
+
+# 5. Verify TLS certificate
+curl -sI https://api.featuresignals.com | grep -i "strict-transport-security"
+
+# 6. Run E2E smoke test
+./deploy/scripts/smoke-test.sh
+```
+
+### Rollback
+- If restore fails, try a different backup (hourly → weekly → monthly)
+- Keep the old VPS floating IP reassigned if possible
+- If database restore is corrupted, restore to a previous backup and accept data loss
+
+### Post-Recovery
+- [ ] Update DNS TTL back to normal (300s → 3600s after propagation)
+- [ ] Verify monitoring alerts are green
+- [ ] Notify customers of incident resolution
+- [ ] Run blameless post-mortem within 48 hours
+- [ ] Verify backup CronJobs are running on schedule
+- [ ] Update this runbook with lessons learned
+
+---
+
+## 2. Database Corruption
+
+### Severity
+**CRITICAL** — P0 (data integrity compromised)
+
+### Trigger
+- Application errors with SQL constraint violations
+- `ERROR: duplicate key value violates unique constraint`
+- `ERROR: missing chunk number` in PostgreSQL logs
+- Monitoring alert: `QueryErrorRate > 5%`
+- Users reporting data inconsistencies
+- Checksum verification failures
+
+### Impact
+- Partial or complete data unavailability
+- Incorrect feature flag evaluations
+- Potential for cascading corruption to dependent services
+- Customer trust erosion if data loss is visible
+
+### Pre-requisites
+- `kubectl` access to the cluster
+- Database credentials (from `db-credentials` secret)
+- S3 endpoint and credentials for backup access
+- At least one known-good backup identified
+
+### Recovery Steps
+
+#### Step 1: Assess Corruption Scope
+
+```bash
+# 1. Check PostgreSQL logs for corruption errors
+kubectl logs -n featuresignals-system postgresql-0 --tail=200 \
+  | grep -iE "corrupt|checksum|missing|invalid page|WARNING"
+
+# 2. Check application error rate
+kubectl logs -n featuresignals-system \
+  --selector=app.kubernetes.io/name=featuresignals \
+  --tail=100 | grep -iE "ERROR|PANIC|FATAL"
+
+# 3. Run pg_amcheck for physical corruption
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  pg_amcheck -U postgres -d featuresignals --verbose
+```
+
+#### Step 2: Isolate and Protect
+
+```bash
+# 1. Scale down the API to prevent further writes
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=0
+
+# 2. Create a pg_dump of corrupted database for forensic analysis
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  pg_dump -U postgres -d featuresignals \
+  --no-owner --compress=9 \
+  > /tmp/corrupted-dump-$(date +%Y%m%d).sql.gz
+```
+
+#### Step 3: Identify Good Backup
+
+```bash
+# 1. List available backups
+echo "=== DAILY BACKUPS ==="
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${HETZNER_STORAGE_BOX_URL} \
+  --output text --query "reverse(sort_by(Contents, &LastModified))[:10].[Key,LastModified,Size]"
+
+echo "=== WEEKLY BACKUPS ==="
+aws s3 ls s3://fs-backups/weekly/ \
+  --endpoint-url ${HETZNER_STORAGE_BOX_URL} \
+  --output text --query "reverse(sort_by(Contents, &LastModified))[:5].[Key,LastModified,Size]"
+
+echo "=== HOURLY BACKUPS (local) ==="
+ls -lh /mnt/data/backups/hourly/ | tail -25
+
+# 2. Verify a specific backup integrity
+./deploy/k8s/backup/scripts/verify-backup.sh \
+  s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+```
+
+#### Step 4: Restore from Clean Backup
+
+```bash
+# 1. Execute restore
+export PGPASSWORD=$(kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d)
+
+./deploy/k8s/backup/scripts/restore.sh \
+  s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+
+# 2. Verify data integrity after restore
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  pg_amcheck -U postgres -d featuresignals --verbose
+```
+
+#### Step 5: Restore Application
+
+```bash
+# 1. Scale the API back up
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=2
+
+# 2. Verify application health
+curl -s https://api.featuresignals.com/health | jq .
+```
+
+### Verification
+```bash
+# 1. Run pg_amcheck (should pass with zero errors)
+kubectl exec postgresql-0 -n featuresignals-system -- \
+  pg_amcheck -U postgres -d featuresignals
+
+# 2. Check table row counts match expected
+kubectl exec postgresql-0 -n featuresignals-system -- \
+  psql -U postgres -d featuresignals -c "
+  SELECT schemaname, tablename, n_live_tup
+  FROM pg_stat_user_tables
+  ORDER BY n_live_tup DESC;"
+
+# 3. Verify API responses are correct
+curl -s https://api.featuresignals.com/v1/flags | jq '.data | length'
+```
+
+### Rollback
+- If the restored database has issues, restore from an earlier backup
+- If corruption is limited to specific tables, consider table-level restore instead of full database restore
+- Keep the corrupted dump for post-mortem analysis
+
+### Post-Recovery
+- [ ] Run full backup verification against the restored database
+- [ ] Schedule emergency maintenance window if needed
+- [ ] Investigate root cause of corruption
+- [ ] Add additional monitoring for corruption detection
+- [ ] Consider enabling `data_checksums` on PostgreSQL (requires restart)
+
+---
+
+## 3. Accidental Data Deletion
+
+### Severity
+**HIGH** — P1 (data loss, service partially affected)
+
+### Trigger
+- User reports missing flags, segments, or projects
+- `DELETE` query was run accidentally
+- Application logs show unexpected deletions
+- Audit log shows user action that was not intended
+
+### Impact
+- Loss of customer feature flag configuration
+- Feature flag evaluations may return incorrect results
+- Depending on scope: individual flag loss up to full project loss
+- No customer-facing outage unless critical flags are deleted
+
+### Pre-requisites
+- Database credentials
+- Audit log access (if available)
+- Recent backup identified
+- Knowledge of what data was deleted and when
+
+### Recovery Steps
+
+#### Step 1: Assess the Damage
+
+```bash
+# 1. Check audit logs for deletion events
+kubectl logs -n featuresignals-system \
+  --selector=app.kubernetes.io/name=featuresignals \
+  --since=2h | grep -iE "DELETE|delete|removed"
+
+# 2. Determine scope of deletion
+#    - What tables were affected?
+#    - Which organization/project?
+#    - What time did it happen?
+
+# 3. Check PostgreSQL for recent transactions
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c "
+  SELECT xact_start, query_start, query
+  FROM pg_stat_activity
+  WHERE state != 'idle'
+    AND query ILIKE '%DELETE%'
+  ORDER BY query_start DESC
+  LIMIT 10;"
+```
+
+#### Step 2: Decide Recovery Strategy
+
+**Option A: Table-Level Restore (if table-level backup exists)**
+```bash
+# Restore specific tables from a backup
+gunzip -c /mnt/data/backups/daily/featuresignals-20240101-020000.sql.gz \
+  | grep -E "COPY public\.(flags|segments)" \
+  | kubectl exec -i -n featuresignals-system postgresql-0 -- \
+    psql -U postgres -d featuresignals
+```
+
+**Option B: Point-in-Time Recovery (if WAL archiving is enabled)**
+```bash
+# Use pg_restore with --data-only for specific tables
+```
+
+**Option C: Full Database Restore (if multiple tables affected)**
+```bash
+# Follow the database restore runbook
+# Then export the specific data and import into the current database
+export PGPASSWORD=$(kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d)
+
+# Restore to a temporary database and extract the needed data
+./deploy/k8s/backup/scripts/restore.sh \
+  /mnt/data/backups/daily/featuresignals-20240101-020000.sql.gz
+
+# After restore, export the specific tables
+pg_dump -h restored-host -U postgres -d featuresignals \
+  --table=flags --table=flag_rules --data-only \
+  > recovered_flags.sql
+
+# Import into production
+psql -h postgresql.featuresignals-system -U postgres -d featuresignals \
+  < recovered_flags.sql
+```
+
+#### Step 3: Apply Fixes
+
+```bash
+# 1. Import the recovered data
+kubectl exec -i -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals < recovered_flags.sql
+
+# 2. Verify the data is restored
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT key, name, enabled FROM flags WHERE deleted_at IS NULL;"
+```
+
+### Verification
+```bash
+# 1. Check that deleted records are restored
+kubectl exec postgresql-0 -n featuresignals-system -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT count(*) FROM flags WHERE key = 'restored-flag-key';"
+
+# 2. Verify via the API
+curl -s https://api.featuresignals.com/v1/flags | jq '.data[] | select(.key=="restored-flag-key")'
+
+# 3. Check dashboard displays restored data
+```
+
+### Rollback
+- If restore introduces conflicts, revert to the previous state by restoring from pre-restore backup
+- If point-in-time recovery is needed and data is still within retention window, use WAL archive
+
+### Post-Recovery
+- [ ] Implement soft-delete (`deleted_at`) if not already in place
+- [ ] Add confirmation dialog for destructive actions in the dashboard
+- [ ] Audit user permissions — was this user authorized?
+- [ ] Consider adding a "recycle bin" feature
+- [ ] Increase backup frequency if recovery time was too long
+
+---
+
+## 4. Certificate Expiration
+
+### Severity
+**HIGH** — P1 (TLS handshake failures)
+
+### Trigger
+- Monitoring alerts: `CertificateExpiring`, `TLSHandshakeFailure`
+- Browser shows "Your connection is not private" warning
+- `curl` returns `SSL certificate problem: certificate has expired`
+- cert-manager logs show renewal failures
+- Let's Encrypt expiry emails received
+
+### Impact
+- All HTTPS traffic to API and dashboard will fail
+- SDKs will fail to connect (unless configured with HTTP)
+- Full service disruption for external clients
+- Internal cluster communication may still work (internal TLS uses different certs)
+
+### Pre-requisites
+- `kubectl` access to the cluster
+- cert-manager installed and running
+- ClusterIssuer configured (`letsencrypt-prod`)
+- DNS records pointing to the cluster (A records for domains)
+
+### Recovery Steps
+
+#### Step 1: Diagnose Certificate Status
+
+```bash
+# 1. Check all certificate resources
+kubectl get certificates --all-namespaces
+
+# 2. Check certificate details
+kubectl describe certificate -n featuresignals-system featuresignals-api-tls
+kubectl describe certificate -n featuresignals-saas featuresignals-dashboard-tls
+
+# 3. Check cert-manager logs for errors
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager --tail=50
+
+# 4. Check certificate expiry dates
+kubectl get certificates --all-namespaces -o jsonpath='{range .items[*]}{.metadata.namespace}{"/"}{.metadata.name}{" expires: "}{.status.notAfter}{"\n"}{end}'
+
+# 5. Check the actual certificate on the endpoint
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+```
+
+#### Step 2: Verify DNS Resolution
+
+```bash
+# 1. Verify DNS records resolve to the cluster IP
+dig +short api.featuresignals.com
+dig +short app.featuresignals.com
+
+# 2. Check ingress status
+kubectl get ingress --all-namespaces
+kubectl describe ingress -n featuresignals-system featuresignals-api
+```
+
+#### Step 3: Force Certificate Renewal
+
+```bash
+# 1. Delete the certificate secret to force re-issuance
+kubectl delete secret -n featuresignals-system featuresignals-api-tls
+
+# 2. Delete the certificate resource
+kubectl delete certificate -n featuresignals-system featuresignals-api-tls
+
+# 3. Verify the Ingress triggers re-creation
+kubectl describe ingress -n featuresignals-system featuresignals-api
+
+# 4. Watch the renewal process
+kubectl get certificates --all-namespaces --watch
+
+# 5. Check cert-manager logs for the renewal
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager --tail=50
+```
+
+#### Step 4: Verify New Certificate
+
+```bash
+# 1. Wait for the certificate to be ready (typically 30-60 seconds)
+kubectl wait --namespace featuresignals-system \
+  --for=condition=Ready certificate featuresignals-api-tls \
+  --timeout=300s
+
+# 2. Check the new certificate expiry
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+
+# 3. Verify TLS handshake works
+curl -sI https://api.featuresignals.com/health
+
+# 4. Check the full certificate chain
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -text | grep -E "Subject:|Issuer:|Not Before|Not After"
+```
+
+### Common Issues and Fixes
+
+**Issue: cert-manager not installed**
+```bash
+kubectl get pods -n cert-manager
+# If empty, install cert-manager:
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml
+```
+
+**Issue: ClusterIssuer not configured**
+```bash
+kubectl get clusterissuer
+# If missing, apply the ClusterIssuer:
+export ACME_EMAIL="admin@featuresignals.com"
+envsubst < deploy/k8s/infra/cert-manager/cluster-issuer.yaml | kubectl apply -f -
+```
+
+**Issue: Let's Encrypt rate limiting**
+```bash
+# Check for rate limit errors in cert-manager logs
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager \
+  | grep -i "rate limit"
+
+# Solution: Use the staging issuer temporarily, then switch back
+kubectl edit ingress -n featuresignals-system featuresignals-api
+# Change annotation: cert-manager.io/cluster-issuer: letsencrypt-staging
+```
+
+**Issue: ACME challenge fails (HTTP-01)**
+```bash
+# Verify ingress is accessible from the internet
+curl -s http://api.featuresignals.com/.well-known/acme-challenge/test
+
+# Check Caddy ingress controller
+kubectl logs -n caddy-system -l app.kubernetes.io/name=caddy --tail=50
+```
+
+### Verification
+```bash
+# 1. HTTPS works for both domains
+curl -sI https://api.featuresignals.com/health
+curl -sI https://app.featuresignals.com
+
+# 2. Certificate is valid for at least 80 days (Let's Encrypt issues 90-day certs)
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+
+# 3. All certificate resources show Ready=True
+kubectl get certificates --all-namespaces
+```
+
+### Rollback
+- Restore the previous certificate secret from backup if available
+- Switch to the staging issuer temporarily while debugging production issuer issues
+- If DNS is the problem, switch to HTTP-01 challenge if DNS-01 is configured
+
+### Post-Recovery
+- [ ] Set up certificate expiry monitoring alerts at 30, 15, and 7 days before expiry
+- [ ] Verify cert-manager auto-renewal is working
+- [ ] Document any manual intervention steps in this runbook
+- [ ] Consider setting up a dedicated certificate renewal CronJob as backup
+
+---
+
+## 5. Pod Crash Loop
+
+### Severity
+**MEDIUM** — P2 (partial service degradation)
+
+### Trigger
+- Pod shows `CrashLoopBackOff` status
+- Monitoring alert: `PodRestarting`, `HighRestartRate`
+- Service partially available (e.g., API works but dashboard doesn't)
+
+### Impact
+- Degraded service for affected component
+- If API pod crashes: evaluation requests may fail or slow down
+- If dashboard pod crashes: management UI unavailable
+- If database pod crashes: complete service outage (escalate to P0)
+
+### Pre-requisites
+- `kubectl` access to the cluster
+- Knowledge of which pod(s) are crashing
+
+### Recovery Steps
+
+#### Step 1: Identify the Crashing Pod
+
+```bash
+# 1. Find crashing pods
+kubectl get pods --all-namespaces | grep -E "CrashLoop|Error|Init:Error"
+
+# 2. Check restart count
+kubectl get pods --all-namespaces -o wide | awk '$5 > 3 {print $0}'
+
+# 3. Get detailed pod status
+kubectl describe pod -n featuresignals-system <crashing-pod>
+```
+
+#### Step 2: Get Logs and Diagnosis
+
+```bash
+# 1. View pod logs (add --previous for last crash's logs)
+kubectl logs -n featuresignals-system <crashing-pod> --previous --tail=100
+
+# 2. Check pod events
+kubectl get events -n featuresignals-system --sort-by=.lastTimestamp \
+  | grep <crashing-pod>
+
+# 3. Check resource constraints
+kubectl describe pod -n featuresignals-system <crashing-pod> \
+  | grep -A5 "Limits\|Requests"
+
+# 4. Check for OOM kills
+kubectl describe pod -n featuresignals-system <crashing-pod> \
+  | grep -i "OOMKilled\|Exit Code: 137"
+```
+
+#### Step 3: Apply Fix Based on Root Cause
+
+**Issue: OOMKilled (Exit Code 137)**
+```bash
+# Increase memory limits
+kubectl set resources deployment -n featuresignals-system \
+  featuresignals-server --limits=memory=1Gi
+
+# Or edit the deployment directly
+kubectl edit deployment -n featuresignals-system featuresignals-server
+```
+
+**Issue: Configuration Error**
+```bash
+# Check ConfigMap
+kubectl describe configmap -n featuresignals-system featuresignals-config
+
+# Check Secrets (verify keys exist)
+kubectl get secret db-credentials -n featuresignals-system -o yaml
+
+# Check if environment variable references are correct
+kubectl describe pod -n featuresignals-system <crashing-pod> \
+  | grep -A20 "Environment"
+```
+
+**Issue: Liveness/Readiness Probe Failure**
+```bash
+# Test the probe manually
+kubectl exec -n featuresignals-system <any-running-pod> -- \
+  curl -s http://localhost:8080/health
+
+# Update probe configuration
+kubectl edit deployment -n featuresignals-system featuresignals-server
+# Adjust initialDelaySeconds, periodSeconds, failureThreshold
+```
+
+**Issue: Database Connectivity**
+```bash
+# Test database connection from a pod
+kubectl exec -n featuresignals-system <pod> -- \
+  pg_isready -h postgresql.featuresignals-system.svc.cluster.local -U postgres
+
+# Check if database service exists
+kubectl get svc -n featuresignals-system postgresql
+```
+
+**Issue: Image Pull Failure**
+```bash
+# Check image pull errors
+kubectl describe pod -n featuresignals-system <crashing-pod> \
+  | grep -i "pull"
+
+# Fix: Update image tag or check registry credentials
+kubectl edit deployment -n featuresignals-system featuresignals-server
+# Set imagePullPolicy: Always or correct the image tag
+```
+
+#### Step 4: Restart the Pod
+
+```bash
+# Option 1: Delete the pod (Deployment will recreate it)
+kubectl delete pod -n featuresignals-system <crashing-pod>
+
+# Option 2: Rollout restart (zero-downtime for Deployments)
+kubectl rollout restart deployment -n featuresignals-system featuresignals-server
+
+# Option 3: Scale down and up
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=0
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=2
+```
+
+#### Step 5: Verify Recovery
+
+```bash
+# 1. Watch pod status
+kubectl get pods -n featuresignals-system --watch
+
+# 2. Check rollout status
+kubectl rollout status deployment -n featuresignals-system featuresignals-server
+
+# 3. Verify application health
+curl -s https://api.featuresignals.com/health | jq .
+```
+
+### Verification
+```bash
+# 1. All pods are Running and ready
+kubectl get pods --all-namespaces --field-selector=status.phase!=Running
+
+# 2. No recent restarts
+kubectl get pods --all-namespaces | awk '$5 > 0 {print $0}'
+
+# 3. Services respond correctly
+curl -s https://api.featuresignals.com/health
+```
+
+### Rollback
+- If a recent change caused the crash loop, roll it back:
+  ```bash
+  kubectl rollout undo deployment -n featuresignals-system featuresignals-server
+  ```
+- If the issue persists, check if the deployment matches a known-good configuration
+
+### Post-Recovery
+- [ ] Increase resource limits if OOM was the cause
+- [ ] Add readiness probe if not configured
+- [ ] Check for memory leaks in the application
+- [ ] Review recent deployments for problematic changes
+
+---
+
+## 6. Storage Box Failure
+
+### Severity
+**MEDIUM** — P2 (offsite backup unavailable)
+
+### Trigger
+- `aws s3 ls` commands fail with connection errors
+- Hetzner Storage Box web interface shows maintenance or errors
+- Backup CronJob logs show S3 upload failures
+- Monitoring alert: `BackupUploadFailed`
+
+### Impact
+- Offsite backups (daily/weekly/monthly) are not being created
+- Local hourly backups are unaffected
+- 3-2-1 backup strategy is degraded (missing the offsite copy)
+- Data is still protected for recent changes (hourly local), but not for disaster scenarios
+
+### Pre-requisites
+- Hetzner Cloud Console access
+- Storage Box credentials
+- Alternative storage credentials (if available)
+
+### Recovery Steps
+
+#### Step 1: Diagnose the Issue
+
+```bash
+# 1. Check recent backup job logs
+kubectl logs -n featuresignals-system \
+  --selector=backup-type=daily --tail=100
+
+# 2. Test S3 connectivity from a pod
+kubectl run -it --rm --restart=Never \
+  --image=amazon/aws-cli:2.22 \
+  s3-test -- \
+  aws s3 ls s3://fs-backups/ \
+  --endpoint-url ${HETZNER_STORAGE_BOX_URL}
+
+# 3. Check if the Storage Box is reachable
+kubectl run -it --rm --restart=Never \
+  --image=busybox \
+  net-test -- \
+  wget -q -O- ${HETZNER_STORAGE_BOX_URL} --timeout=10
+```
+
+#### Step 2: Common Issues and Fixes
+
+**Issue: Network connectivity to Storage Box**
+```bash
+# Check if Storage Box is accessible from outside the cluster
+curl -s -o /dev/null -w "%{http_code}" ${HETZNER_STORAGE_BOX_URL}
+
+# If unreachable, check Hetzner status page: https://status.hetzner.com
+```
+
+**Issue: Expired credentials**
+```bash
+# Regenerate Storage Box credentials in Hetzner Robot
+# https://robot.hetzner.com/storage
+
+# Update the Kubernetes secret
+kubectl delete secret -n featuresignals-system storage-box-credentials
+kubectl create secret generic -n featuresignals-system storage-box-credentials \
+  --from-literal=endpoint=${HETZNER_STORAGE_BOX_URL} \
+  --from-literal=access-key-id=${NEW_ACCESS_KEY} \
+  --from-literal=secret-access-key=${NEW_SECRET_KEY}
+```
+
+**Issue: Storage Box full**
+```bash
+# Check Storage Box usage via Hetzner Robot
+# Or use S3 command:
+aws s3 ls s3://fs-backups/ --recursive \
+  --endpoint-url ${HETZNER_STORAGE_BOX_URL} \
+  --summarize | tail -5
+
+# If full:
+# 1. Reduce retention period
+# 2. Manually delete old backups
+# 3. Upgrade Storage Box size
+```
+
+#### Step 3: Mitigation While Storage Box is Down
+
+```bash
+# 1. Increase local backup retention temporarily
+# Edit the hourly CronJob to retain more backups
+kubectl edit cronjob -n featuresignals-system fs-backup-hourly
+# Change retention to keep backups for 72 hours instead of 24
+
+# 2. Create an additional backup to a different location if available
+# (e.g., another S3-compatible provider)
+
+# 3. Manually copy the latest backup off-site
+scp deploy@featuresignals-prod:/mnt/data/backups/hourly/latest.sql.gz \
+  ~/offline-backups/
+```
+
+### Verification
+```bash
+# 1. Test S3 upload
+kubectl run -it --rm --restart=Never \
+  --image=amazon/aws-cli:2.22 \
+  s3-verify -- \
+  bash -c "echo test | aws s3 cp - s3://fs-backups/health-check.txt \
+    --endpoint-url ${HETZNER_STORAGE_BOX_URL}"
+
+# 2. Verify backup CronJobs are running
+kubectl get cronjobs -n featuresignals-system
+```
+
+### Rollback
+- Restore previous credentials if rotation caused the issue
+- If using a different Storage Box, update the `S3_ENDPOINT` in the secret
+
+### Post-Recovery
+- [ ] File a support ticket with Hetzner if it's an infrastructure issue
+- [ ] Consider adding a secondary offsite backup destination
+- [ ] Review and adjust retention policy if Storage Box is filling up
+- [ ] Set up monitoring for backup size trends
+
+---
+
+## 7. etcd / Control Plane Failure
+
+### Severity
+**CRITICAL** — P0 (cluster management unavailable)
+
+### Trigger
+- `kubectl` commands fail with connection refused
+- k3s service is not running
+- `journalctl -u k3s` shows etcd errors
+- Node is unreachable via SSH
+
+### Impact
+- Complete loss of cluster management capability
+- Running workloads may continue but cannot be managed
+- If etcd data is corrupted, all cluster state is lost
+- This is a full rebuild scenario
+
+### Recovery Steps
+
+#### Step 1: Attempt to Restart k3s
+
+```bash
+# SSH into the node
+ssh root@<SERVER_IP>
+
+# Check k3s service status
+systemctl status k3s
+
+# Try restarting
+systemctl restart k3s
+
+# Check logs
+journalctl -u k3s --tail=100 -n 50
+
+# Check if the data directory exists
+ls -la /var/lib/rancher/k3s/server/db/
+```
+
+#### Step 2: If k3s Cannot Start
+
+If k3s cannot be restarted and etcd data is corrupted, the cluster must be rebuilt from scratch. Follow the [Full VPS Loss](#1-full-vps-loss) recovery procedure.
+
+The key consideration is that **application data (PostgreSQL) is separate from cluster state (etcd)**. Since PostgreSQL runs as a Helm chart with persistent volumes, the PV data may still be intact even if etcd is lost.
+
+#### Step 3: Preserve PV Data
+
+```bash
+# Check if PV data still exists on disk
+ls -la /var/lib/rancher/k3s/storage/
+
+# These are the PostgreSQL data files
+# They can be mounted in a new cluster
+```
+
+### Verification
+```bash
+# After rebuilding, verify:
+kubectl get nodes
+kubectl get pods --all-namespaces
+```
+
+### Rollback
+- If a k3s version upgrade caused the issue, downgrade k3s
+- Restore etcd from backup if available (`/var/lib/rancher/k3s/server/db/etcd/`)
+
+### Post-Recovery
+- [ ] Schedule regular etcd backups
+- [ ] Ensure k3s version is stable and tested
+- [ ] Document the rebuild process
+
+---
+
+## 8. Appendices
+
+### A. Emergency Contacts
+
+| Role | Name | Contact |
+|------|------|---------|
+| On-call Engineer | — | via PagerDuty/OpsGenie |
+| Platform Lead | — | slack/@platform-lead |
+| Security Lead | — | slack/@security-lead |
+| Hetzner Support | — | https://console.hetzner.cloud/support |
+
+### B. Quick Reference Commands
+
+```bash
+# Check cluster health
+kubectl get nodes -o wide
+kubectl get pods --all-namespaces | grep -v Running
+kubectl get events --all-namespaces --sort-by=.lastTimestamp | tail -20
+
+# Check PostgreSQL status
+kubectl exec -n featuresignals-system postgresql-0 -- pg_isready -U postgres
+
+# List backups
+aws s3 ls s3://fs-backups/daily/ --endpoint-url ${S3_ENDPOINT} | tail -10
+
+# Trigger manual backup
+kubectl create job --namespace featuresignals-system \
+  --from=cronjob/fs-backup-hourly backup-manual-$(date +%s)
+
+# Get database password
+kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d
+```
+
+### C. Backup Locations and Retention
+
+| Backup Type | Location | Retention | RPO | RTO |
+|------------|----------|-----------|-----|-----|
+| Hourly | Local PVC (10Gi) | 24 hours | 1 hour | 30 min |
+| Daily | Hetzner Storage Box | 30 days | 24 hours | 1 hour |
+| Weekly | Hetzner Storage Box | 12 weeks | 7 days | 1 hour |
+| Monthly | Hetzner Storage Box | 12 months | 30 days | 1 hour |
+
+### D. Monitoring Alert Thresholds
+
+| Alert | Threshold | Severity | Response Time |
+|-------|-----------|----------|---------------|
+| HostDown | Node unreachable > 1 min | P0 | 15 min |
+| APIUnreachable | Health check fails > 1 min | P0 | 15 min |
+| HighErrorRate | 5xx > 5% for 5 min | P1 | 30 min |
+| PodCrashLoop | Pod restart > 3 in 10 min | P2 | 1 hour |
+| BackupFailed | Backup job fails > 2 consecutive | P2 | 1 hour |
+| CertificateExpiring | Cert expires < 30 days | P2 | 1 week |
+| DiskUsage | Disk > 85% | P3 | 1 day |
+| CertExpiryCritical | Cert expires < 7 days | P1 | 4 hours |
+
+### E. Post-Incident Checklist
+
+- [ ] Service fully restored and verified
+- [ ] All monitoring alerts green
+- [ ] Root cause identified
+- [ ] Blameless post-mortem written
+- [ ] Action items created and assigned
+- [ ] Runbook updated with lessons learned
+- [ ] Customer communication sent (if applicable)
+- [ ] Security implications reviewed (if applicable)
+- [ ] Backup integrity re-verified
+
+---
+
+> **Document Maintainer:** Platform Engineering
+> **Review Cadence:** Quarterly or after any incident
+> **Testing:** Full DR drill every 6 months
+```
+Now the database restore runbook:```markdown
+# Database Restore Runbook — FeatureSignals
+
+> **Version:** 1.0.0
+> **Last Updated:** $(date -u +%Y-%m-%d)
+> **Owner:** Platform Engineering
+> **RTO:** 1 hour (from decision to restore)
+> **RPO:** Varies by backup type (1 hour hourly, 24 hours daily)
+
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Prerequisites](#2-prerequisites)
+3. [Listing Available Backups](#3-listing-available-backups)
+4. [Restoring from Backup](#4-restoring-from-backup)
+5. [Point-in-Time Recovery (PITR)](#5-point-in-time-recovery-pitr)
+6. [Table-Level Restore](#6-table-level-restore)
+7. [Verifying Data Integrity](#7-verifying-data-integrity)
+8. [Rolling Back a Failed Restore](#8-rolling-back-a-failed-restore)
+9. [Appendix](#9-appendix)
+
+---
+
+## 1. Overview
+
+This runbook covers all database restore scenarios for the FeatureSignals PostgreSQL database. The backup system follows a 3-2-1 strategy:
+
+- **3 copies:** 1 local hourly + 1 Storage Box (S3) + 1 promoted (weekly/monthly)
+- **2 media:** Local NVMe disk + Hetzner Storage Box
+- **1 offsite:** Hetzner Storage Box (different datacenter)
+
+### Backup Hierarchy
+
+```
+Backup Type    Frequency    Retention    RPO     Use Case
+─────────────  ───────────  ───────────  ──────  ──────────────────────────
+Hourly         Every hour   24 hours     1 hour  Recent data loss, quick restore
+Daily          2 AM daily   30 days      24 hrs  Standard restore point
+Weekly         Sundays      12 weeks     7 days  Longer-term recovery
+Monthly        1st of month 12 months    30 days  Compliance / legal hold
+```
+
+**Key Decision Tree:**
+
+| Scenario | Recommended Backup Source |
+|----------|--------------------------|
+| Accidental deletion within last hour | Hourly local backup |
+| Database corruption discovered today | Latest daily S3 backup |
+| Data loss > 24 hours ago | Weekly or monthly S3 backup |
+| Compliance/legal request | Monthly S3 backup (search by date) |
+| Specific table restore | Daily S3 backup (table-level extraction) |
+| Point-in-time recovery | WAL archive (if configured) |
+
+---
+
+## 2. Prerequisites
+
+### Required Access
+
+- [ ] `kubectl` configured for the k3s cluster
+- [ ] Database password (from `db-credentials` secret)
+- [ ] S3 endpoint URL and credentials for Storage Box
+- [ ] SSH access to the VPS (for local backups)
+
+### Required Tools
+
+All tools are available in the restore container image (`bitnami/postgresql:16` + `amazon/aws-cli`):
+
+| Tool | Purpose | Container |
+|------|---------|-----------|
+| `psql` | Run SQL queries | bitnami/postgresql:16 |
+| `pg_dump`/`pg_restore` | Export/import | bitnami/postgresql:16 |
+| `gunzip` | Decompress backups | bitnami/postgresql:16 |
+| `aws` CLI | Access S3 backups | amazon/aws-cli:2.22 |
+
+### Configuration Values
+
+```bash
+# Database configuration
+DB_HOST="postgresql.featuresignals-system.svc.cluster.local"
+DB_USER="postgres"
+DB_NAME="featuresignals"
+
+# Get the database password
+export PGPASSWORD=$(kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d)
+
+# S3 configuration (for Storage Box backups)
+S3_ENDPOINT="https://fs-backup.your-storage-box.hetzner.com"  # Replace with actual
+export AWS_ACCESS_KEY_ID=<from-storage-box-credentials>
+export AWS_SECRET_ACCESS_KEY=<from-storage-box-credentials>
+export AWS_DEFAULT_REGION="eu-central-1"
+```
+
+---
+
+## 3. Listing Available Backups
+
+### 3.1 List Local Hourly Backups
+
+```bash
+# SSH into the VPS and check local PVC
+ssh root@<server-ip>
+ls -lh /var/lib/rancher/k3s/storage/fs-hourly-backups/hourly/ | tail -25
+
+# Or check via a pod
+kubectl run -it --rm --restart=Never --image=busybox \
+  --namespace featuresignals-system \
+  --volume-mounts="backup-storage:/backups" \
+  list-backups -- \
+  ls -lh /backups/hourly/
+```
+
+### 3.2 List S3 Backups
+
+```bash
+# List daily backups (last 30)
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --output text \
+  --query "reverse(sort_by(Contents, &LastModified))[:30].[Key,LastModified,Size]"
+
+# List weekly backups
+aws s3 ls s3://fs-backups/weekly/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --output text \
+  --query "reverse(sort_by(Contents, &LastModified))[:12].[Key,LastModified,Size]"
+
+# List monthly backups
+aws s3 ls s3://fs-backups/monthly/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --output text \
+  --query "reverse(sort_by(Contents, &LastModified))[:12].[Key,LastModified,Size]"
+
+# List all backups (all tiers)
+aws s3 ls s3://fs-backups/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --recursive \
+  --summarize
+```
+
+### 3.3 Search for a Specific Date
+
+```bash
+# Find backups from a specific date
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --recursive \
+  | grep "20240101"  # Replace with target date YYYYMMDD
+
+# Find the latest backup before a specific timestamp
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --output text \
+  --query "Contents[?LastModified<='2024-01-01T12:00:00Z'] | sort_by(@, &LastModified)[-1].[Key,LastModified,Size]"
+```
+
+### 3.4 Check Backup Size and Verify Integrity
+
+```bash
+# Get backup file size
+aws s3 ls s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz \
+  --endpoint-url ${S3_ENDPOINT}
+
+# Run full integrity verification (recommended before restore)
+./deploy/k8s/backup/scripts/verify-backup.sh \
+  s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+```
+
+---
+
+## 4. Restoring from Backup
+
+### 4.1 Quick Restore (Automated Script)
+
+```bash
+# Step 1: Set environment
+export PGPASSWORD=<db-password>
+export S3_ENDPOINT=<storage-box-url>
+export AWS_ACCESS_KEY_ID=<access-key>
+export AWS_SECRET_ACCESS_KEY=<secret-key>
+
+# Step 2: Run the restore script
+# The script handles: download → decompress → terminate connections → drop DB → restore → verify
+deploy/k8s/backup/scripts/restore.sh \
+  s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+```
+
+### 4.2 Manual Restore (Step-by-Step)
+
+#### Phase 1: Prepare
+
+```bash
+# 1. SSH into the VPS
+ssh root@<server-ip>
+
+# 2. Get database password
+export PGPASSWORD=$(kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d)
+
+# 3. Create a temporary directory
+TMP_DIR=$(mktemp -d /tmp/db-restore-XXXXXX)
+cd ${TMP_DIR}
+```
+
+#### Phase 2: Download Backup
+
+```bash
+# Option A: Download from S3
+aws s3 cp s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz \
+  ./backup.sql.gz \
+  --endpoint-url ${S3_ENDPOINT}
+
+# Option B: Use local backup
+cp /var/lib/rancher/k3s/storage/hourly-backups/hourly/latest.sql.gz \
+  ./backup.sql.gz
+
+# Verify gzip integrity
+gunzip -t backup.sql.gz && echo "INTEGRITY CHECK PASSED" || echo "INTEGRITY CHECK FAILED"
+```
+
+#### Phase 3: Inspect Backup
+
+```bash
+# Count tables in backup
+gunzip -c backup.sql.gz \
+  | grep -c "CREATE TABLE"
+
+# List tables
+gunzip -c backup.sql.gz \
+  | grep "CREATE TABLE\|COPY " \
+  | head -30
+
+# Check for any specific data
+gunzip -c backup.sql.gz \
+  | grep "COPY public.organizations" -A2 | head -10
+```
+
+#### Phase 4: Restore
+
+```bash
+# 1. Terminate active connections to the target database
+#    (This prevents "database is being accessed by other users" errors)
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d postgres -c \
+  "SELECT pg_terminate_backend(pid)
+   FROM pg_stat_activity
+   WHERE datname = 'featuresignals'
+     AND pid <> pg_backend_pid();"
+
+# 2. Drop and recreate the database
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS featuresignals;"
+
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d postgres -c "CREATE DATABASE featuresignals;"
+
+# 3. Restore the backup
+gunzip -c backup.sql.gz | \
+  kubectl exec -i -n featuresignals-system postgresql-0 -- \
+    psql -U postgres -d featuresignals -q --set ON_ERROR_STOP=on
+
+echo "RESTORE COMPLETED: $(date -u)"
+```
+
+#### Phase 5: Verify
+
+```bash
+# 1. Check table count
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -t -c \
+  "SELECT count(*) FROM information_schema.tables
+   WHERE table_schema = 'public'
+     AND table_type = 'BASE TABLE';"
+
+# 2. Check key tables have data
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT 'organizations' as table_name, count(*) as rows FROM organizations
+   UNION ALL
+   SELECT 'users', count(*) FROM users
+   UNION ALL
+   SELECT 'projects', count(*) FROM projects
+   UNION ALL
+   SELECT 'flags', count(*) FROM flags
+   UNION ALL
+   SELECT 'segments', count(*) FROM segments;"
+
+# 3. Run VACUUM ANALYZE to update statistics
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c "VACUUM ANALYZE;"
+```
+
+#### Phase 6: Restart Application
+
+```bash
+# Scale API back up if it was scaled down
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=2
+
+# Verify application health
+curl -s https://api.featuresignals.com/health | jq .
+```
+
+---
+
+## 5. Point-in-Time Recovery (PITR)
+
+> **Note:** PITR requires PostgreSQL WAL archiving to be configured. If WAL archiving is not enabled, skip to standard backup restore.
+
+### 5.1 Prerequisites
+
+```bash
+# Check if WAL archiving is configured
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -c "SHOW archive_mode;"
+# Expected: on
+
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -c "SHOW archive_command;"
+# Expected: cp %p /wal-archive/%f
+
+# Check available WAL files
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  ls -la /wal-archive/ | tail -20
+```
+
+### 5.2 Perform PITR
+
+```bash
+# 1. Identify the target recovery time
+#    Format: '2024-01-01 14:30:00 UTC'
+TARGET_TIME="2024-01-01 14:30:00 UTC"
+
+# 2. Find the base backup closest to (but before) the target time
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --output text \
+  --query "Contents[?LastModified<='${TARGET_TIME}'] | sort_by(@, &LastModified)[-1].[Key,LastModified]"
+
+# 3. Restore with PITR recovery.conf
+#    Create a recovery.conf in the PostgreSQL data directory:
+cat > /tmp/recovery.conf << EOF
+restore_command = 'cp /wal-archive/%f %p'
+recovery_target_time = '${TARGET_TIME}'
+recovery_target_timeline = 'latest'
+EOF
+
+# 4. Copy configuration and restart PostgreSQL
+kubectl cp /tmp/recovery.conf featuresignals-system/postgresql-0:/tmp/recovery.conf
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  bash -c "cp /tmp/recovery.conf /var/lib/postgresql/data/recovery.conf"
+
+# 5. Restart PostgreSQL in recovery mode
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -c "SELECT pg_wal_replay_pause();"
+kubectl delete pod -n featuresignals-system postgresql-0
+
+# 6. Wait for recovery to complete, then promote
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -c "SELECT pg_is_in_recovery();"
+# If true, recovery is still running
+
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -c "SELECT pg_wal_replay_resume();"
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -c "SELECT pg_promote();"
+```
+
+### 5.3 When PITR Is Not Available
+
+If WAL archiving is not configured, use the standard backup restore procedure (Section 4). The closest available backup before the target time will be the restore point, and any data between the backup time and the target time will be lost.
+
+---
+
+## 6. Table-Level Restore
+
+For restoring specific tables (e.g., when only one project's data was accidentally deleted):
+
+### 6.1 Extract Specific Tables from Backup
+
+```bash
+# 1. Download the backup
+aws s3 cp s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz \
+  ./backup.sql.gz \
+  --endpoint-url ${S3_ENDPOINT}
+
+# 2. Extract specific table data
+TABLES="flags flag_rules segments"
+
+for table in ${TABLES}; do
+  echo "Extracting table: ${table}"
+  gunzip -c backup.sql.gz \
+    | grep -E "COPY public\.${table} |CREATE TABLE public\.${table}" \
+    > ./${table}_restore.sql
+  echo "  Extracted $(wc -l < ./${table}_restore.sql) lines"
+done
+```
+
+### 6.2 Import Extracted Tables
+
+```bash
+# 1. Truncate existing data (be careful!)
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c \
+  "TRUNCATE TABLE flags CASCADE;"
+
+# 2. Import the extracted data
+for table in ${TABLES}; do
+  kubectl exec -i -n featuresignals-system postgresql-0 -- \
+    psql -U postgres -d featuresignals < ./${table}_restore.sql
+  echo "Imported: ${table}"
+done
+```
+
+### 6.3 Reset Sequences
+
+```bash
+# After table-level restore, sequences may be out of sync.
+# Reset all sequences to the current max value:
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -t -c \
+  "SELECT 'SELECT setval(''' || sequence_name || ''', COALESCE((SELECT MAX(''' ||
+   REPLACE(sequence_name, '_id_seq', '_id') || ''') FROM ' ||
+   REPLACE(sequence_name, '_id_seq', '') || '), 1));'
+   FROM information_schema.sequences
+   WHERE sequence_schema = 'public';" \
+  | kubectl exec -i -n featuresignals-system postgresql-0 -- \
+    psql -U postgres -d featuresignals -q
+```
+
+---
+
+## 7. Verifying Data Integrity
+
+### 7.1 Automated Verification
+
+```bash
+# Run the verify-backup script (tests a backup against a temp PostgreSQL instance)
+./deploy/k8s/backup/scripts/verify-backup.sh \
+  s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+```
+
+### 7.2 Manual Verification Queries
+
+```bash
+# 1. Check for data consistency
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c "
+  -- Check for orphaned records
+  SELECT 'flags with missing projects' as check_name, count(*)
+  FROM flags f LEFT JOIN projects p ON f.project_id = p.id
+  WHERE p.id IS NULL
+  UNION ALL
+  SELECT 'segments with missing flags', count(*)
+  FROM segments s LEFT JOIN flags f ON s.flag_id = f.id
+  WHERE f.id IS NULL;"
+
+# 2. Check for constraint violations
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c "
+  -- Check for duplicate primary keys (should be 0)
+  SELECT schemaname, tablename, 'has issues' as status
+  FROM pg_catalog.pg_tables
+  WHERE schemaname = 'public'
+    AND tablename IN (
+      SELECT relname FROM pg_class
+      WHERE relkind = 'r' AND relhasindex = false
+    );"
+
+# 3. Check for negative values in numeric columns
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c "
+  -- Check for negative IDs (should be 0)
+  SELECT 'negative IDs found' as issue, count(*) FROM organizations WHERE id < 0;"
+
+# 4. Run pg_amcheck (PostgreSQL 16 native corruption check)
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  pg_amcheck -U postgres -d featuresignals --verbose
+```
+
+### 7.3 Verify Row Counts vs Expected
+
+```bash
+# Compare against known-good row counts
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c "
+  SELECT schemaname, tablename, n_live_tup as estimated_row_count
+  FROM pg_stat_user_tables
+  ORDER BY n_live_tup DESC;"
+```
+
+### 7.4 Application-Level Verification
+
+```bash
+# 1. Test API health
+curl -s https://api.featuresignals.com/health | jq .
+
+# 2. List flags via API
+curl -s https://api.featuresignals.com/v1/flags | jq '. | length'
+
+# 3. Run a test evaluation
+curl -s -X POST https://api.featuresignals.com/v1/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"flag_key": "test-flag", "entity_id": "test-user", "context": {}}' | jq .
+
+# 4. Check dashboard loads without errors
+curl -s -o /dev/null -w "%{http_code}" https://app.featuresignals.com
+# Expected: 200
+```
+
+---
+
+## 8. Rolling Back a Failed Restore
+
+### 8.1 Recognizing a Failed Restore
+
+Signs of a failed restore:
+
+| Symptom | Likely Cause |
+|---------|-------------|
+| `ERROR: relation "xyz" already exists` | Restore was run twice |
+| `ERROR: duplicate key value violates unique constraint` | Data conflict |
+| `ERROR: invalid input syntax for type uuid` | Corrupted backup |
+| Zero rows in all tables | Backup was empty or restore failed silently |
+| Application starts but shows old/wrong data | Restore targeted wrong database |
+| `PANIC: could not read block` | Corrupted backup file |
+| PostgreSQL won't start | Corrupted system catalogs |
+
+### 8.2 Immediate Rollback Steps
+
+```bash
+# 1. STOP the application to prevent further writes
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=0
+
+# 2. Identify a known-good backup
+#    (a previous backup that you know was verified)
+aws s3 ls s3://fs-backups/daily/ \
+  --endpoint-url ${S3_ENDPOINT} \
+  --output text \
+  --query "reverse(sort_by(Contents, &LastModified))[:5].[Key,LastModified]"
+
+# 3. Restore from the known-good backup
+export PGPASSWORD=$(kubectl get secret db-credentials -n featuresignals-system \
+  -o jsonpath='{.data.db-password}' | base64 -d)
+
+deploy/k8s/backup/scripts/restore.sh \
+  s3://fs-backups/daily/previous-good-backup.sql.gz
+```
+
+### 8.3 Preserving the Failed State for Investigation
+
+```bash
+# Before rolling back, save the failed state for root cause analysis
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  pg_dump -U postgres -d featuresignals \
+  --no-owner \
+  --compress=9 \
+  > /tmp/failed-state-$(date +%Y%m%d-%H%M%S).sql.gz
+
+# Move to persistent storage
+mv /tmp/failed-state-*.sql.gz /mnt/data/backups/forensics/
+```
+
+### 8.4 If PostgreSQL Wont Start After Restore
+
+```bash
+# 1. Check PostgreSQL logs
+kubectl logs -n featuresignals-system postgresql-0 --tail=100
+
+# 2. Try starting with recovery mode
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  bash -c "echo 'recovery = on' >> /var/lib/postgresql/data/postgresql.auto.conf"
+kubectl delete pod -n featuresignals-system postgresql-0
+
+# If still failing, restore the original PV data from snapshot
+# (This requires PV snapshots to be configured)
+```
+
+### 8.5 Full Rollback Procedure
+
+```bash
+# 1. Scale down application
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=0
+kubectl scale deployment -n featuresignals-saas \
+  featuresignals-dashboard --replicas=0
+
+# 2. Note which backup was last known good
+echo "Rolling back to: s3://fs-backups/daily/GOOD-BACKUP.sql.gz"
+
+# 3. Drop and recreate database
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d postgres -c \
+  "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'featuresignals' AND pid <> pg_backend_pid();"
+
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS featuresignals;"
+
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d postgres -c "CREATE DATABASE featuresignals;"
+
+# 4. Restore from good backup
+aws s3 cp s3://fs-backups/daily/GOOD-BACKUP.sql.gz - \
+  --endpoint-url ${S3_ENDPOINT} \
+  | gunzip \
+  | kubectl exec -i -n featuresignals-system postgresql-0 -- \
+    psql -U postgres -d featuresignals -q --set ON_ERROR_STOP=on
+
+# 5. Verify
+kubectl exec -n featuresignals-system postgresql-0 -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';"
+
+# 6. Scale up application
+kubectl scale deployment -n featuresignals-system \
+  featuresignals-server --replicas=2
+
+# 7. Final verification
+curl -s https://api.featuresignals.com/health | jq .
+```
+
+---
+
+## 9. Appendix
+
+### A. Restore Time Estimates
+
+| Database Size | Download (S3) | Restore | Total |
+|--------------|--------------|---------|-------|
+| < 100 MB | < 5s | < 10s | < 30s |
+| 100 MB - 1 GB | 5-30s | 10-60s | 1-2 min |
+| 1 GB - 10 GB | 30s-3 min | 1-10 min | 2-15 min |
+| 10 GB+ | 3-15 min | 10-30 min | 15-45 min |
+
+### B. Quick Command Reference
+
+```bash
+# ─── Listing Backups ─────────────────────────────────────────────────────────
+
+# List local hourly backups
+ls -lh /mnt/data/backups/hourly/
+
+# List S3 daily backups (last 10)
+aws s3 ls s3://fs-backups/daily/ --endpoint-url ${S3_ENDPOINT} | tail -10
+
+# List S3 weekly backups
+aws s3 ls s3://fs-backups/weekly/ --endpoint-url ${S3_ENDPOINT} | tail -12
+
+# List S3 monthly backups
+aws s3 ls s3://fs-backups/monthly/ --endpoint-url ${S3_ENDPOINT} | tail -12
+
+# ─── Verification ────────────────────────────────────────────────────────────
+
+# Verify backup integrity
+gunzip -t backup.sql.gz
+./verify-backup.sh s3://fs-backups/daily/BACKUP.sql.gz
+
+# ─── Restore ─────────────────────────────────────────────────────────────────
+
+# Restore from local
+deploy/k8s/backup/scripts/restore.sh /backups/hourly/featuresignals-20240101-120000.sql.gz
+
+# Restore from S3
+deploy/k8s/backup/scripts/restore.sh s3://fs-backups/daily/featuresignals-20240101-020000.sql.gz
+
+# Manual restore via pg_dump pipe
+aws s3 cp s3://fs-backups/daily/BACKUP.sql.gz - --endpoint-url ${S3_ENDPOINT} \
+  | gunzip \
+  | kubectl exec -i -n featuresignals-system postgresql-0 -- \
+    psql -U postgres -d featuresignals -q --set ON_ERROR_STOP=on
+
+# ─── Diagnostics ─────────────────────────────────────────────────────────────
+
+# Check database size
+kubectl exec postgresql-0 -n featuresignals-system -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT pg_size_pretty(pg_database_size('featuresignals'));"
+
+# Check table sizes
+kubectl exec postgresql-0 -n featuresignals-system -- \
+  psql -U postgres -d featuresignals -c \
+  "SELECT relname, pg_size_pretty(pg_total_relation_size(relid))
+   FROM pg_catalog.pg_statio_user_tables
+   ORDER BY pg_total_relation_size(relid) DESC;"
+```
+
+### C. Common Errors and Solutions
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `database "featuresignals" does not exist` | Database was not recreated | Run `CREATE DATABASE featuresignals;` |
+| `pg_terminate_backend` fails | Insufficient permissions | Use `postgres` superuser |
+| `ERROR: role "postgres" does not exist` | Wrong user | Use correct DB_USER |
+| `aws: error: connect Failed to connect` | S3 endpoint wrong | Verify S3_ENDPOINT |
+| `gunzip: invalid compressed data` | Corrupted backup | Download again or use different backup |
+| `psql: error: connection to server failed` | PostgreSQL not running | Check pod status |
+| `ERROR: permission denied` | Missing schema ownership | Use --no-owner flag in pg_dump |
+
+### D. Restore Decision Flowchart
+
+```
+Data loss detected
+        │
+        ▼
+  Was it within last hour?
+        │
+    ┌───┴───┐
+   YES      NO
+    │        │
+    ▼        ▼
+Use hourly  Was it within last 24h?
+backup       │
+        ┌───┴───┐
+       YES      NO
+        │        │
+        ▼        ▼
+    Use daily  Was it within last 12 weeks?
+    backup      │
+           ┌───┴───┐
+          YES      NO
+           │        │
+           ▼        ▼
+       Use weekly  Use monthly
+       backup      backup
+```
+
+### E. Post-Restore Checklist
+
+- [ ] All tables present and have expected row counts
+- [ ] Foreign key constraints are valid
+- [ ] Sequences are up to date
+- [ ] Application connects successfully
+- [ ] API health endpoint returns 200
+- [ ] Dashboard loads without errors
+- [ ] Feature flag evaluations return correct results
+- [ ] Backup CronJobs are still running
+- [ ] A fresh backup has been taken of the restored database
+- [ ] Monitoring alerts are green
+- [ ] Root cause documented and action items created
+
+---
+
+> **Document Maintainer:** Platform Engineering
+> **Review Cadence:** Quarterly or after any restore operation
+> **Drill Schedule:** Table-top restore exercise every 3 months, full restore drill every 6 months
+```
+And finally the certificate renewal runbook:```markdown
+# Certificate Renewal Runbook — FeatureSignals
+
+> **Version:** 1.0.0
+> **Last Updated:** $(date -u +%Y-%m-%d)
+> **Owner:** Platform Engineering
+> **Certificate Authority:** Let's Encrypt (via cert-manager)
+> **Certificate Validity:** 90 days (auto-renewed at 30 days remaining)
+
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Checking Certificate Status](#2-checking-certificate-status)
+3. [Certificate Renewal](#3-certificate-renewal)
+4. [Debugging Certificate Issues](#4-debugging-certificate-issues)
+5. [Manual Certificate Operations](#5-manual-certificate-operations)
+6. [Appendix](#6-appendix)
+
+---
+
+## 1. Overview
+
+FeatureSignals uses **cert-manager** with **Let's Encrypt** as the certificate authority (CA) for all TLS endpoints. Certificates are automatically renewed by cert-manager when they are within 30 days of expiry.
+
+### Certificate Inventory
+
+| Domain | Certificate Secret | Issuer | Purpose |
+|--------|-------------------|--------|---------|
+| `api.featuresignals.com` | `featuresignals-api-tls` | `letsencrypt-prod` | API server HTTPS |
+| `app.featuresignals.com` | `featuresignals-dashboard-tls` | `letsencrypt-prod` | Dashboard HTTPS |
+
+### How Auto-Renewal Works
+
+1. cert-manager monitors Certificate resources for expiry
+2. At 30 days before expiry, cert-manager begins renewal process
+3. ACME HTTP-01 challenge is issued (Let's Encrypt verifies domain ownership)
+4. Caddy ingress routes the challenge to cert-manager's solver pod
+5. On success: new certificate is issued and stored in the Secret
+6. Caddy ingress detects the updated Secret and reloads automatically
+7. On failure: cert-manager retries with exponential backoff (up to 5 retries)
+
+### Key Components
+
+| Component | Namespace | Purpose |
+|-----------|-----------|---------|
+| cert-manager | `cert-manager` | Certificate lifecycle management |
+| ClusterIssuer `letsencrypt-prod` | Cluster-wide | ACME account and challenge configuration |
+| ClusterIssuer `letsencrypt-staging` | Cluster-wide | Testing issuer (untrusted certs, no rate limits) |
+| Certificate resources | Per-namespace | Per-domain certificate definitions |
+| Caddy Ingress Controller | `caddy-system` | Routes ACME challenges to cert-manager |
+
+---
+
+## 2. Checking Certificate Status
+
+### 2.1 Quick Status Check
+
+```bash
+# Check all certificates and their expiry
+kubectl get certificates --all-namespaces
+
+# Show only expiry dates
+kubectl get certificates --all-namespaces \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}{"/"}{.metadata.name}{"\t"}{.status.notAfter}{"\n"}{end}'
+
+# Check certificate conditions
+kubectl get certificates --all-namespaces \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}{"/"}{.metadata.name}{"\t"}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}'
+```
+
+### 2.2 Detailed Certificate Inspection
+
+```bash
+# Examine API certificate details
+kubectl describe certificate -n featuresignals-system featuresignals-api-tls
+
+# Examine Dashboard certificate details
+kubectl describe certificate -n featuresignals-saas featuresignals-dashboard-tls
+
+# Check the actual x509 certificate from the Secret
+kubectl get secret -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{.data.tls\.crt}' \
+  | base64 -d \
+  | openssl x509 -noout -text \
+  | grep -E "Subject:|Not Before|Not After|Issuer:|DNS:"
+```
+
+### 2.3 Check via OpenSSL (External)
+
+```bash
+# Check the actual TLS certificate presented by the server
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -text \
+  | grep -E "Subject:|Not Before|Not After|Issuer:|DNS:"
+
+# Dates only
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+
+# Check the full chain
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -issuer -subject -dates
+```
+
+### 2.4 Monitoring Certificate Expiry
+
+```bash
+# Calculate days until expiry
+EXPIRY_DATE=$(echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -enddate \
+  | cut -d= -f2)
+
+echo "Certificate expires: ${EXPIRY_DATE}"
+
+# On macOS:
+DAYS_LEFT=$(( ($(date -j -f "%b %d %H:%M:%S %Y %Z" "${EXPIRY_DATE}" +%s) - $(date +%s)) / 86400 ))
+echo "Days until expiry: ${DAYS_LEFT}"
+
+# On Linux:
+DAYS_LEFT=$(( ($(date -d "${EXPIRY_DATE}" +%s) - $(date +%s)) / 86400 ))
+echo "Days until expiry: ${DAYS_LEFT}"
+```
+
+### 2.5 Check cert-manager Component Health
+
+```bash
+# Check cert-manager pods
+kubectl get pods -n cert-manager
+
+# Check cert-manager logs
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager --tail=50
+
+# Check the ACME account status
+kubectl describe clusterissuer letsencrypt-prod
+
+# Check for recent certificate events
+kubectl get events -n featuresignals-system --sort-by=.lastTimestamp \
+  | grep -E "certificate|Certificate|tls"
+```
+
+---
+
+## 3. Certificate Renewal
+
+### 3.1 Normal Auto-Renewal (Expected Behavior)
+
+Under normal circumstances, no action is needed. cert-manager automatically renews certificates when they reach 30 days before expiry. You can verify auto-renewal is working:
+
+```bash
+# 1. Check that the Certificate has the auto-renewal annotation
+kubectl get certificate -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{.spec.renewBefore}'
+# Expected output: 720h (30 days)
+
+# 2. Verify the last renewal time
+kubectl get certificate -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{.status.lastFailureTime}'
+# Should be empty if no failures
+
+kubectl get certificate -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{.status.renewalTime}'
+# Shows when the certificate was last renewed
+
+# 3. Check renewal conditions
+kubectl get certificate -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{range .status.conditions[*]}{.type}{"\t"}{.status}{"\t"}{.reason}{"\t"}{.message}{"\n"}{end}'
+```
+
+### 3.2 Forced Renewal (Manual Trigger)
+
+Use this when:
+- A certificate is expiring soon and auto-renewal hasn't triggered
+- A certificate configuration has changed (e.g., new SANs)
+- You want to rotate certificates immediately
+
+```bash
+# Method 1: Delete the Certificate resource (recreated by Ingress controller)
+# WARNING: This will cause a brief TLS interruption while the new cert is issued
+
+kubectl delete certificate -n featuresignals-system featuresignals-api-tls
+
+# Wait for cert-manager to re-issue
+kubectl get certificates -n featuresignals-system --watch
+
+# Method 2: Delete only the Secret (preserves Certificate resource)
+# The Certificate controller will detect the missing Secret and re-issue
+
+kubectl delete secret -n featuresignals-system featuresignals-api-tls
+
+# Watch the re-issuance
+kubectl get certificates -n featuresignals-system --watch
+kubectl get events -n featuresignals-system --watch
+
+# Method 3: Update the renewal time annotation
+# This tells cert-manager to treat the cert as if it's expiring
+
+kubectl annotate certificate -n featuresignals-system featuresignals-api-tls \
+  cert-manager.io/issue-temporary-certificate="true" \
+  --overwrite
+
+# Watch the renewal
+kubectl get certificates -n featuresignals-system -w
+```
+
+### 3.3 Using the Makefile Shortcut
+
+```bash
+# From the deploy/k8s directory
+cd deploy/k8s
+make cert-renew
+
+# This triggers renewal for all certificates in the cluster
+# by deleting Certificate resources and letting them be recreated
+```
+
+### 3.4 Verify Renewal Succeeded
+
+```bash
+# 1. Wait for the new certificate to be ready
+kubectl wait --namespace featuresignals-system \
+  --for=condition=Ready certificate featuresignals-api-tls \
+  --timeout=300s
+
+# 2. Verify the new certificate dates
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+
+# 3. Confirm the certificate is trusted
+curl -sI https://api.featuresignals.com/health | head -5
+
+# 4. Check for any errors in cert-manager logs
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager --tail=20
+```
+
+---
+
+## 4. Debugging Certificate Issues
+
+### 4.1 Certificate Not Being Issued
+
+**Symptom:** Certificate remains in a pending state:
+```
+NAME                      READY   SECRET                    AGE
+featuresignals-api-tls    False   featuresignals-api-tls     10m
+```
+
+**Diagnosis steps:**
+
+```bash
+# 1. Check the Certificate status conditions
+kubectl describe certificate -n featuresignals-system featuresignals-api-tls
+
+# Look for conditions like:
+#   Type: Ready, Status: False, Reason: DoesNotExist
+#   Type: Issuing, Status: True
+
+# 2. Check certificate request resources
+kubectl get certificaterequest --all-namespaces
+
+# 3. Describe the failed request
+kubectl describe certificaterequest -n featuresignals-system \
+  <certificate-request-name>
+
+# 4. Check order and challenge resources
+kubectl get orders --all-namespaces
+kubectl describe order -n featuresignals-system <order-name>
+
+kubectl get challenges --all-namespaces
+kubectl describe challenge -n featuresignals-system <challenge-name>
+```
+
+**Common issues and fixes:**
+
+| Issue | Check | Fix |
+|-------|-------|-----|
+| **DNS not resolving** | `dig api.featuresignals.com` returns wrong IP | Update DNS A record |
+| **HTTP-01 challenge not reachable** | `curl http://api.featuresignals.com/.well-known/acme-challenge/test` returns 404 | Check ingress routing for `.well-known` path |
+| **Rate limited** | cert-manager logs show `urn:ietf:params:acme:error:rateLimited` | Use staging issuer temporarily |
+| **Ingress class mismatch** | `kubectl get ingress -A` shows wrong class | Set annotation `kubernetes.io/ingress.class: caddy` |
+| **ACME account key invalid** | `kubectl describe clusterissuer letsencrypt-prod` shows account error | Delete the account key secret, cert-manager recreates |
+| **DNS-01 challenge fails** | ClusterIssuer uses DNS-01 but DNS provider not configured | Switch to HTTP-01 challenge |
+
+### 4.2 Certificate Expired
+
+**Symptom:** Browser shows "Your connection is not private", `curl` returns SSL errors
+
+**Emergency fix:**
+
+```bash
+# 1. Force immediate re-issuance
+kubectl delete secret -n featuresignals-system featuresignals-api-tls
+
+# 2. Trigger the renewal
+kubectl annotate certificate -n featuresignals-system featuresignals-api-tls \
+  cert-manager.io/issue-temporary-certificate="true" \
+  --overwrite
+
+# 3. Watch for the new certificate
+kubectl get certificates -n featuresignals-system --watch
+
+# 4. Once Ready=True, verify
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+```
+
+### 4.3 cert-manager Pod Not Running
+
+**Symptom:** No pods in `cert-manager` namespace, certificates not being issued
+
+```bash
+# 1. Check cert-manager namespace
+kubectl get pods -n cert-manager
+
+# If empty, cert-manager was never installed or was deleted:
+
+# 2. Reinstall cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml
+
+# 3. Wait for all pods to be ready
+kubectl wait --namespace cert-manager \
+  --for=condition=Ready pod \
+  --selector=app.kubernetes.io/name=cert-manager \
+  --timeout=120s
+
+# 4. Reapply the ClusterIssuer
+export ACME_EMAIL="admin@featuresignals.com"
+envsubst < deploy/k8s/infra/cert-manager/cluster-issuer.yaml \
+  | kubectl apply -f -
+
+# 5. Verify ClusterIssuer status
+kubectl get clusterissuer letsencrypt-prod
+# Should show: READY=True
+```
+
+### 4.4 Let's Encrypt Rate Limiting
+
+Let's Encrypt has the following rate limits:
+- **50 certificates per domain per week**
+- **5 certificates per domain per week** (same set of hostnames)
+- **300 orders per account per 3 hours**
+
+**If rate limited:**
+
+```bash
+# 1. Switch to staging issuer to verify the challenge works
+kubectl annotate ingress -n featuresignals-system featuresignals-api \
+  cert-manager.io/cluster-issuer=letsencrypt-staging \
+  --overwrite
+
+# 2. Wait for staging certificate (will be untrusted)
+kubectl get certificates -n featuresignals-system --watch
+
+# 3. Verify the staging cert was issued (ignore browser warning)
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -issuer
+# Should show: CN = (STAGING) Let's Encrypt
+
+# 4. Switch back to production issuer
+kubectl annotate ingress -n featuresignals-system featuresignals-api \
+  cert-manager.io/cluster-issuer=letsencrypt-prod \
+  --overwrite
+
+# 5. Wait for production certificate
+kubectl get certificates -n featuresignals-system --watch
+```
+
+### 4.5 Caddy Not Picking Up New Certificate
+
+**Symptom:** Certificate Secret is updated but old cert is still served
+
+```bash
+# 1. Check Caddy logs
+kubectl logs -n caddy-system -l app.kubernetes.io/name=caddy --tail=50
+
+# 2. Force Caddy to reload its configuration
+kubectl delete pod -n caddy-system -l app.kubernetes.io/name=caddy
+
+# 3. Wait for Caddy to restart and verify
+kubectl get pods -n caddy-system --watch
+
+# 4. Check the new certificate is being served
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -dates
+```
+
+---
+
+## 5. Manual Certificate Operations
+
+### 5.1 Creating a Self-Signed Certificate (Emergency/Dev)
+
+For development or emergency situations where Let's Encrypt is unavailable:
+
+```bash
+# Generate a self-signed certificate valid for 1 year
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /tmp/tls.key \
+  -out /tmp/tls.crt \
+  -subj "/CN=api.featuresignals.com" \
+  -addext "subjectAltName=DNS:api.featuresignals.com,DNS:app.featuresignals.com"
+
+# Create the Kubernetes secret
+kubectl create secret tls -n featuresignals-system featuresignals-api-tls \
+  --cert=/tmp/tls.crt \
+  --key=/tmp/tls.key \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Clean up
+rm /tmp/tls.key /tmp/tls.crt
+```
+
+### 5.2 Exporting Certificates for External Use
+
+```bash
+# Export the full certificate chain
+kubectl get secret -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{.data.tls\.crt}' \
+  | base64 -d > /tmp/featuresignals-fullchain.pem
+
+# Export the private key (handle with care!)
+kubectl get secret -n featuresignals-system featuresignals-api-tls \
+  -o jsonpath='{.data.tls\.key}' \
+  | base64 -d > /tmp/featuresignals-key.pem
+
+# Export in PFX format (for Windows/IIS)
+openssl pkcs12 -export \
+  -in /tmp/featuresignals-fullchain.pem \
+  -inkey /tmp/featuresignals-key.pem \
+  -out /tmp/featuresignals.pfx \
+  -passout pass:
+```
+
+### 5.3 Testing with Staging Issuer
+
+Always test certificate changes with the staging issuer first:
+
+```bash
+# 1. Create or update the ingress to use staging
+kubectl annotate ingress -n featuresignals-system featuresignals-api \
+  cert-manager.io/cluster-issuer=letsencrypt-staging \
+  --overwrite
+
+# 2. Delete the existing certificate to force re-issuance
+kubectl delete certificate -n featuresignals-system featuresignals-api-tls
+
+# 3. Wait for staging certificate
+kubectl get certificates -n featuresignals-system --watch
+
+# 4. Verify the staging certificate
+echo | openssl s_client -servername api.featuresignals.com \
+  -connect api.featuresignals.com:443 2>/dev/null \
+  | openssl x509 -noout -issuer
+# Expected: (STAGING) Let's Encrypt
+
+# 5. Switch back to production
+kubectl annotate ingress -n featuresignals-system featuresignals-api \
+  cert-manager.io/cluster-issuer=letsencrypt-prod \
+  --overwrite
+
+# 6. Delete the staging certificate
+kubectl delete certificate -n featuresignals-system featuresignals-api-tls
+
+# 7. Wait for production certificate
+kubectl get certificates -n featuresignals-system --watch
+```
+
+### 5.4 Rotating All Certificates at Once
+
+Useful after a security incident or as part of regular rotation:
+
+```bash
+#!/usr/bin/env bash
+# Full certificate rotation script
+set -euo pipefail
+
+echo "[$(date -u)] Starting certificate rotation..."
+
+# Delete all Certificate secrets
+for secret in $(kubectl get secrets --all-namespaces \
+  -o jsonpath='{range .items[?(@.type=="kubernetes.io/tls")]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}'); do
+  ns=$(echo ${secret} | awk '{print $1}')
+  name=$(echo ${secret} | awk '{print $2}')
+  echo "Deleting secret ${ns}/${name}..."
+  kubectl delete secret -n "${ns}" "${name}"
+done
+
+# Delete Certificate resources
+for cert in $(kubectl get certificates --all-namespaces \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}'); do
+  ns=$(echo ${cert} | awk '{print $1}')
+  name=$(echo ${cert} | awk '{print $2}')
+  echo "Deleting certificate ${ns}/${name}..."
+  kubectl delete certificate -n "${ns}" "${name}"
+done
+
+# Wait for certificates to be re-issued
+echo "[$(date -u)] Waiting for certificates to be re-issued..."
+sleep 10
+
+for cert in $(kubectl get certificates --all-namespaces \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}'); do
+  ns=$(echo ${cert} | awk '{print $1}')
+  name=$(echo ${cert} | awk '{print $2}')
+  echo "Waiting for certificate ${ns}/${name}..."
+  kubectl wait --namespace "${ns}" \
+    --for=condition=Ready "certificate/${name}" \
+    --timeout=300s
+done
+
+echo "[$(date -u)] Certificate rotation complete."
+
+# Verify
+for domain in "api.featuresignals.com" "app.featuresignals.com"; do
+  echo ""
+  echo "=== ${domain} ==="
+  echo | openssl s_client -servername "${domain}" \
+    -connect "${domain}:443" 2>/dev/null \
+    | openssl x509 -noout -issuer -subject -dates
+done
+```
+
+---
+
+## 6. Appendix
+
+### A. Key Commands Quick Reference
+
+```bash
+# ─── Status Checks ─────────────────────────────────────────────────────────
+kubectl get certificates --all-namespaces                          # All certificates
+kubectl describe certificate -n featuresignals-system featuresignals-api-tls  # Detailed
+echo | openssl s_client -connect api.featuresignals.com:443 2>/dev/null | openssl x509 -noout -dates  # External check
+
+# ─── Renewal ──────────────────────────────────────────────────────────────
+kubectl delete secret -n featuresignals-system featuresignals-api-tls  # Force re-issue
+kubectl get certificates -n featuresignals-system --watch               # Monitor issuance
+
+# ─── Debugging ────────────────────────────────────────────────────────────
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager     # cert-manager logs
+kubectl describe clusterissuer letsencrypt-prod                          # ClusterIssuer status
+kubectl get orders --all-namespaces                                      # ACME orders
+kubectl get challenges --all-namespaces                                  # ACME challenges
+
+# ─── Issuer Management ────────────────────────────────────────────────────
+kubectl annotate ingress -n featuresignals-system featuresignals-api \
+  cert-manager.io/cluster-issuer=letsencrypt-staging --overwrite         # Switch to staging
+kubectl annotate ingress -n featuresignals-system featuresignals-api \
+  cert-manager.io/cluster-issuer=letsencrypt-prod --overwrite            # Switch to prod
+```
+
+### B. Expected Certificate Timeline
+
+```
+Day 0:   Certificate issued (valid for 90 days)
+Day 60:  cert-manager begins renewal attempts (30 days before expiry)
+Day 60-90: Renewal retries with exponential backoff if needed
+Day 90:  Certificate expires — TLS handshakes will fail
+```
+
+### C. Common Error Messages and Solutions
+
+| Error Message | Cause | Solution |
+|--------------|-------|----------|
+| `Failed to determine a timeout` | Challenge solver pod not ready | Check ingress controller is running |
+| `context deadline exceeded` | ACME server timeout | Check internet connectivity from cluster |
+| `invalid contact URI` | Bad email in ClusterIssuer | Update `email` field in ClusterIssuer |
+| `urn:ietf:params:acme:error:rateLimited` | Rate limit exceeded | Use staging issuer, wait a week |
+| `urn:ietf:params:acme:error:unauthorized` | Challenge validation failed | Check DNS and ingress routing |
+| `failed to find an Ingress` | No matching ingress for domain | Verify ingress exists and has correct annotations |
+| `Failed to create Order` | ACME server error | Retry, check Let's Encrypt status |
+| `x509: certificate has expired` | Certificate expired | Force immediate renewal |
+
+### D. DNS Record Verification
+
+```bash
+# Verify DNS A records point to the correct IP
+dig +short api.featuresignals.com
+dig +short app.featuresignals.com
+
+# Verify the domain resolves from different locations
+# (useful for geo-distributed setups)
+dig @8.8.8.8 api.featuresignals.com +short      # Google DNS
+dig @1.1.1.1 api.featuresignals.com +short      # Cloudflare DNS
+dig @9.9.9.9 api.featuresignals.com +short      # Quad9 DNS
+
+# Check CAA records (Certificate Authority Authorization)
+dig +short CAA featuresignals.com
+# Expected: 0 issue "letsencrypt.org"
+```
+
+### E. Monitoring Alert Configuration
+
+Configure the following alerts in your monitoring system:
+
+| Alert Name | Condition | Severity | Response |
+|-----------|-----------|----------|----------|
+| `CertificateExpiringSoon` | Cert expires < 30 days | Warning | Verify auto-renewal |
+| `CertificateExpiring` | Cert expires < 14 days | P2 | Check cert-manager logs |
+| `CertificateExpiryCritical` | Cert expires < 7 days | P1 | Force renewal |
+| `CertificateExpired` | Cert is expired | P0 | Emergency renewal |
+| `CertManagerPodDown` | cert-manager pod not running | P1 | Restart cert-manager |
+| `ClusterIssuerNotReady` | ClusterIssuer False/Unknown | P1 | Check ACME account |
+
+### F. Incident Response Procedure
+
+**If a certificate has already expired:**
+
+```
+1.  ACKNOWLEDGE  — Confirm via monitoring alert or customer report
+                  Check using: echo | openssl s_client -connect api.featuresignals.com:443
+
+2.  ASSESS       — Is cert-manager running?
+                  Has the staging issuer worked before?
+                  Is this a Let's Encrypt outage?
+
+3.  MITIGATE     — Force immediate renewal (Section 3.2)
+                  OR generate a self-signed cert (Section 5.1)
+                  Target: restore TLS within 15 minutes
+
+4.  VERIFY       — HTTPS works again
+                  New certificate has correct dates and domains
+                  Auto-renewal is functioning
+
+5.  POST-MORTEM  — Why did auto-renewal fail?
+                  Was monitoring alert received?
+                  Update this runbook
+```
+
+---
+
+> **Document Maintainer:** Platform Engineering
+> **Review Cadence:** Quarterly
+> **External Dependencies:** Let's Encrypt status at https://letsencrypt.status.io
+```
+Now let me verify everything was created properly:Now let me verify all files were created correctly:

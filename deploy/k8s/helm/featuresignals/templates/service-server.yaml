@@ -1,0 +1,32 @@
+
+{{- if .Values.service.server }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "featuresignals.fullname" . }}-server
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "featuresignals.serverLabels" . | nindent 4 }}
+    {{- with .Values.service.server.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.service.server.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.server.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.service.server.port | default 8080 }}
+      targetPort: {{ .Values.service.server.targetPort | default 8080 }}
+      protocol: TCP
+      name: {{ .Values.service.server.name | default "http" }}
+    {{- if .Values.service.server.metricsPort }}
+    - port: {{ .Values.service.server.metricsPort }}
+      targetPort: {{ .Values.service.server.metricsPort }}
+      protocol: TCP
+      name: metrics
+    {{- end }}
+  selector:
+    {{- include "featuresignals.serverSelectorLabels" . | nindent 4 }}
+{{- end }}

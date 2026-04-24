@@ -3,7 +3,9 @@
 	schema-snapshot status help setup dev dev-stop test test-server test-dash lint \
 	migrate-new migrate-up migrate-down migrate-status migrate-down-all \
 	deploy-staging deploy-prod release \
-	dev-server dev-dash dev-website dev-docs dev-migrate dev-seed dev-db-create dev-stalescan
+	dev-server dev-dash dev-website dev-docs dev-migrate dev-seed dev-db-create dev-stalescan \
+	k3s-install infra-deploy app-deploy app-deploy-staging app-deploy-production \
+	db-migrate backup-now cert-renew k8s-status
 
 # ─── One-Time Setup ──────────────────────────────────────────────────────────
 
@@ -348,6 +350,47 @@ release: ## Create a new release (usage: make release V=1.2.3)
 	git tag -a "v$(V)" -m "Release v$(V)"
 	git push origin "v$(V)"
 	@echo "Release v$(V) created. CI will build and publish images."
+
+# ─── k3s / k8s Deploy (single-node cluster) ──────────────────────────────────
+#
+# All commands delegate to deploy/k8s/Makefile which manages the k3s cluster
+# on a Hetzner CPX42 (8 vCPU, 16 GB RAM, 160 GB NVMe). Run from the project root
+# or directly from deploy/k8s/.
+#
+# Usage:
+#   make k3s-install         — Bootstrap k3s on a fresh VPS (ssh & sudo)
+#   make infra-deploy        — Deploy cert-manager, MetalLB, Caddy, PostgreSQL
+#   make app-deploy          — Deploy the FeatureSignals application
+#   make k8s-status          — Show cluster status
+
+K8S_MAKEFILE := deploy/k8s/Makefile
+
+k3s-install: ## Bootstrap k3s single-node cluster on a fresh VPS
+	$(MAKE) -C deploy/k8s k3s-install
+
+infra-deploy: ## Deploy all k8s infrastructure components
+	$(MAKE) -C deploy/k8s infra-deploy
+
+app-deploy: ## Deploy/upgrade the FeatureSignals application via Helm
+	$(MAKE) -C deploy/k8s app-deploy
+
+app-deploy-staging: ## Deploy staging environment
+	$(MAKE) -C deploy/k8s app-deploy-staging
+
+app-deploy-production: ## Deploy production environment
+	$(MAKE) -C deploy/k8s app-deploy-production
+
+db-migrate: ## Run database migration job
+	$(MAKE) -C deploy/k8s db-migrate
+
+backup-now: ## Trigger immediate database backup
+	$(MAKE) -C deploy/k8s backup-now
+
+cert-renew: ## Force certificate renewal via cert-manager
+	$(MAKE) -C deploy/k8s cert-renew
+
+k8s-status: ## Show k3s cluster status overview
+	$(MAKE) -C deploy/k8s status
 
 # ─── Status ───────────────────────────────────────────────────────────────────
 
