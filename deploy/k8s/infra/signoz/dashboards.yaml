@@ -1,0 +1,980 @@
+# =============================================================================
+# FeatureSignals — SigNoz Dashboard Configurations
+# =============================================================================
+#
+# These dashboard configurations are designed to be imported into the SigNoz
+# UI (dashboard JSON export/import) for monitoring the FeatureSignals platform.
+#
+# Hardware Target: Hetzner CPX42 (8 vCPU, 16 GB RAM)
+# Budget: 10Gi ClickHouse storage, 7-day trace retention, 30-day metric retention
+#
+# How to import:
+#   1. Access SigNoz dashboard (port-forward or Ingress)
+#   2. Navigate to Dashboards → Import Dashboard
+#   3. Paste the relevant section below
+#   4. Select the time window and hit Save
+#
+# Dashboard Index:
+#   Dashboard 1: API Performance — request rate, latency, error rate, slowest endpoints
+#   Dashboard 2: Evaluation Hot Path — evaluations/sec, cache hit rate, latency, flags
+#   Dashboard 3: Database — connections, query latency, table sizes, cache hit ratio
+#   Dashboard 4: Business Metrics — active tenants, API key usage, flags, evaluations
+# =============================================================================
+---
+# =============================================================================
+# Dashboard 1: API Performance
+# =============================================================================
+# Visualizes the health and performance of the FeatureSignals HTTP API.
+# Key metrics: request rate, P50/P95/P99 latency, error rate, slowest endpoints.
+# =============================================================================
+apiVersion: v1
+kind: Dashboard
+metadata:
+  name: API Performance
+  description: "Request rate, latency, error rate, and slowest endpoints for the FeatureSignals API"
+  tags:
+    - featuresignals
+    - api
+    - performance
+spec:
+  # Refresh the dashboard every 30 seconds
+  refreshInterval: 30s
+  # Default time range
+  time: "1h"
+  # Layout: grid of panels
+  panels:
+    # --- Row 1: Request Rate & Error Rate ---
+    - title: "Request Rate (RPS)"
+      description: "Requests per second broken down by HTTP endpoint"
+      panelType: timeseries
+      unit: "req/s"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          service.name AS service,
+          attributes["http.route"] AS route,
+          attributes["http.method"] AS method,
+          count() / 15 AS rps
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t, service, route, method
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 0
+        width: 6
+        height: 4
+
+    - title: "Error Rate (5xx / Total)"
+      description: "Percentage of requests returning 5xx status codes"
+      panelType: timeseries
+      unit: "%"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          service.name AS service,
+          attributes["http.route"] AS route,
+          (countIf(attributes["http.status_code"] >= '500') * 100.0) / count() AS error_pct
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t, service, route
+        ORDER BY t ASC
+      thresholds:
+        - value: 5
+          color: "#FF0000"
+          label: "Critical (>5%)"
+        - value: 1
+          color: "#FFA500"
+          label: "Warning (>1%)"
+      position:
+        x: 6
+        y: 0
+        width: 6
+        height: 4
+
+    # --- Row 2: Latency Percentiles ---
+    - title: "P50 Latency by Endpoint"
+      description: "Median request latency across all endpoints"
+      panelType: timeseries
+      unit: "ms"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          attributes["http.route"] AS route,
+          quantile(0.50)(durationNano / 1000000) AS p50_ms
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t, route
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 4
+        width: 4
+        height: 4
+
+    - title: "P95 Latency by Endpoint"
+      description: "95th percentile request latency"
+      panelType: timeseries
+      unit: "ms"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          attributes["http.route"] AS route,
+          quantile(0.95)(durationNano / 1000000) AS p95_ms
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t, route
+        ORDER BY t ASC
+      thresholds:
+        - value: 500
+          color: "#FFA500"
+          label: "Warning (>500ms)"
+        - value: 1000
+          color: "#FF0000"
+          label: "Critical (>1s)"
+      position:
+        x: 4
+        y: 4
+        width: 4
+        height: 4
+
+    - title: "P99 Latency by Endpoint"
+      description: "99th percentile request latency (tail latency)"
+      panelType: timeseries
+      unit: "ms"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          attributes["http.route"] AS route,
+          quantile(0.99)(durationNano / 1000000) AS p99_ms
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t, route
+        ORDER BY t ASC
+      thresholds:
+        - value: 1000
+          color: "#FFA500"
+          label: "Warning (>1s)"
+        - value: 3000
+          color: "#FF0000"
+          label: "Critical (>3s)"
+      position:
+        x: 8
+        y: 4
+        width: 4
+        height: 4
+
+    # --- Row 3: Slowest Endpoints ---
+    - title: "Top 5 Slowest Endpoints (P99)"
+      description: "Endpoints with the highest 99th percentile latency over the last 5 minutes"
+      panelType: table
+      query: |
+        SELECT
+          attributes["http.route"] AS route,
+          attributes["http.method"] AS method,
+          count() AS requests,
+          round(quantile(0.50)(durationNano / 1000000), 2) AS p50_ms,
+          round(quantile(0.95)(durationNano / 1000000), 2) AS p95_ms,
+          round(quantile(0.99)(durationNano / 1000000), 2) AS p99_ms,
+          round(avg(durationNano / 1000000), 2) AS avg_ms,
+          countIf(attributes["http.status_code"] >= '500') AS errors
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 5 MINUTE
+        GROUP BY route, method
+        ORDER BY p99_ms DESC
+        LIMIT 5
+      position:
+        x: 0
+        y: 8
+        width: 12
+        height: 4
+
+    # --- Row 4: HTTP Status Code Distribution ---
+    - title: "HTTP Status Code Distribution"
+      description: "Breakdown of response status codes over time"
+      panelType: timeseries
+      unit: "count"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          substring(attributes["http.status_code"], 1, 1) AS status_class,
+          count() AS count
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t, status_class
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 12
+        width: 12
+        height: 4
+
+---
+# =============================================================================
+# Dashboard 2: Evaluation Hot Path
+# =============================================================================
+# Monitors the flag evaluation pipeline — the most performance-critical path
+# in the FeatureSignals platform. Target: < 1ms p99 evaluation latency.
+# =============================================================================
+apiVersion: v1
+kind: Dashboard
+metadata:
+  name: Evaluation Hot Path
+  description: "Flag evaluation engine performance — evaluations/sec, cache hit rate, latency, flag distribution"
+  tags:
+    - featuresignals
+    - evaluation
+    - performance
+spec:
+  refreshInterval: 15s  # Faster refresh for the hot path
+  time: "30m"
+  panels:
+    # --- Row 1: Throughput & Cache ---
+    - title: "Evaluations Per Second"
+      description: "Flag evaluation throughput across all tenants"
+      panelType: timeseries
+      unit: "eval/s"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 10 SECOND) AS t,
+          count() / 10 AS evals_per_sec
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 0
+        width: 4
+        height: 4
+
+    - title: "Cache Hit Rate"
+      description: "In-memory ruleset cache effectiveness. Target: > 99%"
+      panelType: timeseries
+      unit: "%"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          (sum(value * on(metric) group_left()) WHERE metric = 'fs_eval_cache_hits')
+          / (sum(value) WHERE metric IN ('fs_eval_cache_hits', 'fs_eval_cache_misses'))
+          * 100 AS cache_hit_pct
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric IN ('fs_eval_cache_hits', 'fs_eval_cache_misses')
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+        GROUP BY t
+        ORDER BY t ASC
+      thresholds:
+        - value: 99
+          color: "#00FF00"
+          label: "Good (>99%)"
+        - value: 95
+          color: "#FFA500"
+          label: "Warning (<95%)"
+        - value: 90
+          color: "#FF0000"
+          label: "Critical (<90%)"
+      position:
+        x: 4
+        y: 0
+        width: 4
+        height: 4
+
+    - title: "Cache Size"
+      description: "Number of entries in the in-memory evaluation ruleset cache"
+      panelType: timeseries
+      unit: "entries"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          avg(value) AS cache_entries
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_eval_cache_entries'
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 8
+        y: 0
+        width: 4
+        height: 4
+
+    # --- Row 2: Evaluation Latency ---
+    - title: "Evaluation Latency — P50"
+      description: "Median flag evaluation time (should be < 100µs for cached)"
+      panelType: timeseries
+      unit: "µs"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          quantile(0.50)(durationNano / 1000) AS p50_us
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 4
+        width: 4
+        height: 4
+
+    - title: "Evaluation Latency — P99"
+      description: "99th percentile flag evaluation time. Target: < 1ms"
+      panelType: timeseries
+      unit: "µs"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          quantile(0.99)(durationNano / 1000) AS p99_us
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+        ORDER BY t ASC
+      thresholds:
+        - value: 1000
+          color: "#FFA500"
+          label: "Warning (>1ms)"
+        - value: 5000
+          color: "#FF0000"
+          label: "Critical (>5ms)"
+      position:
+        x: 4
+        y: 4
+        width: 4
+        height: 4
+
+    - title: "Evaluation Duration (Mean)"
+      description: "Average evaluation time, broken down by cached vs. uncached"
+      panelType: timeseries
+      unit: "µs"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          attributes["eval_cache_hit"] AS cache_hit,
+          avg(durationNano / 1000) AS avg_us
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+          AND attributes["eval_cache_hit"] IS NOT NULL
+        GROUP BY t, cache_hit
+        ORDER BY t ASC
+      position:
+        x: 8
+        y: 4
+        width: 4
+        height: 4
+
+    # --- Row 3: Flag Distribution ---
+    - title: "Evaluations by Flag"
+      description: "Evaluation volume per flag key (top 10)"
+      panelType: table
+      query: |
+        SELECT
+          attributes["flag_key"] AS flag_key,
+          attributes["environment_id"] AS env_id,
+          count() AS evaluations,
+          countIf(attributes["eval_result"] = 'true') AS true_count,
+          countIf(attributes["eval_result"] = 'false') AS false_count,
+          round(countIf(attributes["eval_result"] = 'true') * 100.0 / count(), 1) AS true_pct
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+          AND attributes["flag_key"] IS NOT NULL
+        GROUP BY flag_key, env_id
+        ORDER BY evaluations DESC
+        LIMIT 10
+      position:
+        x: 0
+        y: 8
+        width: 6
+        height: 4
+
+    - title: "Evaluation Errors"
+      description: "Flag evaluation errors (rules parsing, type mismatches, missing flags)"
+      panelType: timeseries
+      unit: "count"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          attributes["eval_error"] AS error_type,
+          count() AS errors
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 30 MINUTE
+          AND attributes["eval_error"] IS NOT NULL
+        GROUP BY t, error_type
+        ORDER BY t ASC
+      position:
+        x: 6
+        y: 8
+        width: 6
+        height: 4
+
+    # --- Row 4: Tenant Distribution ---
+    - title: "Evaluations by Tenant (Top 5)"
+      description: "Evaluation volume per tenant organization (top 5)"
+      panelType: bar
+      unit: "count"
+      query: |
+        SELECT
+          attributes["org_id"] AS org_id,
+          count() AS evaluations
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 1 HOUR
+          AND attributes["org_id"] IS NOT NULL
+        GROUP BY org_id
+        ORDER BY evaluations DESC
+        LIMIT 5
+      position:
+        x: 0
+        y: 12
+        width: 12
+        height: 4
+
+---
+# =============================================================================
+# Dashboard 3: Database
+# =============================================================================
+# Monitors PostgreSQL health and performance. Covers connections, query latency,
+# table sizes, and cache hit ratio for the shared database (evaluation + management).
+# =============================================================================
+apiVersion: v1
+kind: Dashboard
+metadata:
+  name: Database
+  description: "PostgreSQL health — active connections, query latency, table sizes, cache hit ratio"
+  tags:
+    - featuresignals
+    - database
+    - postgresql
+spec:
+  refreshInterval: 1m
+  time: "1h"
+  panels:
+    # --- Row 1: Connections ---
+    - title: "Active Connections"
+      description: "Number of active PostgreSQL connections"
+      panelType: timeseries
+      unit: "connections"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          avg(value) AS active_conns
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_connections_active'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      thresholds:
+        - value: 50
+          color: "#FFA500"
+          label: "Warning (>50)"
+        - value: 80
+          color: "#FF0000"
+          label: "Critical (>80)"
+      position:
+        x: 0
+        y: 0
+        width: 4
+        height: 4
+
+    - title: "Total Connections"
+      description: "Total PostgreSQL connections including idle"
+      panelType: timeseries
+      unit: "connections"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          avg(value) AS total_conns
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_connections_total'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 4
+        y: 0
+        width: 4
+        height: 4
+
+    - title: "Max Connections Used"
+      description: "Peak connection usage relative to max_connections"
+      panelType: timeseries
+      unit: "%"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          (avg(value) * 100.0 / 100) AS pct_used
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_connections_active'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      thresholds:
+        - value: 70
+          color: "#FFA500"
+          label: "Warning (>70%)"
+        - value: 90
+          color: "#FF0000"
+          label: "Critical (>90%)"
+      position:
+        x: 8
+        y: 0
+        width: 4
+        height: 4
+
+    # --- Row 2: Query Latency ---
+    - title: "Query Latency — P50"
+      description: "Median database query execution time"
+      panelType: timeseries
+      unit: "ms"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          quantile(0.50)(durationNano / 1000000) AS p50_ms
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["db.system"] = 'postgresql'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 4
+        width: 4
+        height: 4
+
+    - title: "Query Latency — P99"
+      description: "99th percentile query execution time"
+      panelType: timeseries
+      unit: "ms"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          quantile(0.99)(durationNano / 1000000) AS p99_ms
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["db.system"] = 'postgresql'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      thresholds:
+        - value: 100
+          color: "#FFA500"
+          label: "Warning (>100ms)"
+        - value: 500
+          color: "#FF0000"
+          label: "Critical (>500ms)"
+      position:
+        x: 4
+        y: 4
+        width: 4
+        height: 4
+
+    - title: "Slow Queries (>200ms)"
+      description: "Count of queries exceeding 200ms execution time"
+      panelType: timeseries
+      unit: "count"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          count() AS slow_queries
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["db.system"] = 'postgresql'
+          AND durationNano / 1000000 > 200
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 8
+        y: 4
+        width: 4
+        height: 4
+
+    # --- Row 3: Table Sizes ---
+    - title: "Table Sizes (Top 10)"
+      description: "Largest tables in the featuresignals database by estimated row count"
+      panelType: table
+      query: |
+        SELECT
+          attributes["db.table"] AS table_name,
+          avg(value) AS row_count,
+          avg(value * 200) AS estimated_bytes
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_table_rows'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY table_name
+        ORDER BY row_count DESC
+        LIMIT 10
+      position:
+        x: 0
+        y: 8
+        width: 6
+        height: 4
+
+    - title: "Table Growth Rate"
+      description: "Growth rate of the largest tables (rows per hour)"
+      panelType: timeseries
+      unit: "rows/h"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 HOUR) AS t,
+          attributes["db.table"] AS table_name,
+          avg(value) AS rows
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_table_rows'
+          AND timestamp >= now() - INTERVAL 24 HOUR
+        GROUP BY t, table_name
+        ORDER BY t ASC
+      position:
+        x: 6
+        y: 8
+        width: 6
+        height: 4
+
+    # --- Row 4: Cache & Health ---
+    - title: "PostgreSQL Cache Hit Ratio"
+      description: "Buffer cache hit ratio — measures how often data is found in memory vs. reading from disk"
+      panelType: timeseries
+      unit: "%"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          avg(value) AS cache_hit_pct
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_cache_hit_ratio'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      thresholds:
+        - value: 99
+          color: "#00FF00"
+          label: "Good (>99%)"
+        - value: 95
+          color: "#FFA500"
+          label: "Warning (<95%)"
+      position:
+        x: 0
+        y: 12
+        width: 4
+        height: 4
+
+    - title: "Transaction Rate"
+      description: "Database transactions per second"
+      panelType: timeseries
+      unit: "txn/s"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 15 SECOND) AS t,
+          avg(value) AS txn_rate
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_txns_per_sec'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 4
+        y: 12
+        width: 4
+        height: 4
+
+    - title: "Replication Lag"
+      description: "Replication lag in bytes (0 if no replicas configured)"
+      panelType: timeseries
+      unit: "bytes"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 MINUTE) AS t,
+          avg(value) AS lag_bytes
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_db_replication_lag'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY t
+        ORDER BY t ASC
+      thresholds:
+        - value: 10485760
+          color: "#FFA500"
+          label: "Warning (>10MB)"
+        - value: 104857600
+          color: "#FF0000"
+          label: "Critical (>100MB)"
+      position:
+        x: 8
+        y: 12
+        width: 4
+        height: 4
+
+---
+# =============================================================================
+# Dashboard 4: Business Metrics
+# =============================================================================
+# Tracks business-level KPIs: active tenants, API key usage, flag counts,
+# and evaluation volume — broken down by tenant for billing and capacity planning.
+# =============================================================================
+apiVersion: v1
+kind: Dashboard
+metadata:
+  name: Business Metrics
+  description: "Active tenants, API key usage, flag count per tenant, evaluation volume per tenant"
+  tags:
+    - featuresignals
+    - business
+    - tenants
+spec:
+  refreshInterval: 5m
+  time: "24h"
+  panels:
+    # --- Row 1: Top-level KPIs ---
+    - title: "Active Tenants (24h)"
+      description: "Number of organizations with at least one evaluation in the last 24 hours"
+      panelType: stat
+      unit: "tenants"
+      query: |
+        SELECT
+          count(DISTINCT attributes["org_id"]) AS active_tenants
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 24 HOUR
+          AND attributes["org_id"] IS NOT NULL
+      position:
+        x: 0
+        y: 0
+        width: 3
+        height: 3
+
+    - title: "Total API Keys Active"
+      description: "Number of unique API keys used for evaluation in the last 24 hours"
+      panelType: stat
+      unit: "keys"
+      query: |
+        SELECT
+          count(DISTINCT attributes["api_key_prefix"]) AS active_keys
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 24 HOUR
+          AND attributes["api_key_prefix"] IS NOT NULL
+      position:
+        x: 3
+        y: 0
+        width: 3
+        height: 3
+
+    - title: "Total Flags (All Tenants)"
+      description: "Total number of feature flags across all organizations"
+      panelType: stat
+      unit: "flags"
+      query: |
+        SELECT
+          avg(value) AS total_flags
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_flags_total'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+      position:
+        x: 6
+        y: 0
+        width: 3
+        height: 3
+
+    - title: "Total Evaluations (24h)"
+      description: "Total flag evaluations across all tenants in the last 24 hours"
+      panelType: stat
+      unit: "evaluations"
+      query: |
+        SELECT
+          count() AS total_evaluations
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 24 HOUR
+      position:
+        x: 9
+        y: 0
+        width: 3
+        height: 3
+
+    # --- Row 2: Tenant Ranking ---
+    - title: "Evaluation Volume by Tenant (Top 10)"
+      description: "Evaluation volume per tenant over the last 24 hours"
+      panelType: bar
+      unit: "evaluations"
+      query: |
+        SELECT
+          attributes["org_id"] AS org_id,
+          count() AS evaluations
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 24 HOUR
+          AND attributes["org_id"] IS NOT NULL
+        GROUP BY org_id
+        ORDER BY evaluations DESC
+        LIMIT 10
+      position:
+        x: 0
+        y: 3
+        width: 6
+        height: 5
+
+    - title: "Flags per Tenant (Top 10)"
+      description: "Feature flag count per tenant"
+      panelType: bar
+      unit: "flags"
+      query: |
+        SELECT
+          attributes["org_id"] AS org_id,
+          avg(value) AS flag_count
+        FROM signoz_metrics.distributed_samples_v2
+        WHERE
+          metric = 'fs_flags_per_tenant'
+          AND timestamp >= now() - INTERVAL 1 HOUR
+        GROUP BY org_id
+        ORDER BY flag_count DESC
+        LIMIT 10
+      position:
+        x: 6
+        y: 3
+        width: 6
+        height: 5
+
+    # --- Row 3: API Key Usage ---
+    - title: "API Key Usage (Top 10)"
+      description: "API keys with the highest evaluation volume"
+      panelType: table
+      query: |
+        SELECT
+          attributes["api_key_prefix"] AS api_key_prefix,
+          attributes["org_id"] AS org_id,
+          count() AS evaluations,
+          count(DISTINCT attributes["flag_key"]) AS unique_flags,
+          countIf(attributes["eval_result"] = 'true') AS true_count,
+          round(countIf(attributes["eval_result"] = 'true') * 100.0 / count(), 1) AS true_pct
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 24 HOUR
+          AND attributes["api_key_prefix"] IS NOT NULL
+        GROUP BY api_key_prefix, org_id
+        ORDER BY evaluations DESC
+        LIMIT 10
+      position:
+        x: 0
+        y: 8
+        width: 6
+        height: 4
+
+    - title: "Daily Active Users (API)"
+      description: "Unique API keys active per day over the last 14 days"
+      panelType: timeseries
+      unit: "keys"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 DAY) AS t,
+          count(DISTINCT attributes["api_key_prefix"]) AS active_keys
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 14 DAY
+          AND attributes["api_key_prefix"] IS NOT NULL
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 6
+        y: 8
+        width: 6
+        height: 4
+
+    # --- Row 4: Growth Trends ---
+    - title: "New Tenants (30 days)"
+      description: "Organizations created per day over the last 30 days"
+      panelType: timeseries
+      unit: "tenants"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 DAY) AS t,
+          count() AS new_tenants
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] = '/v1/organizations'
+          AND attributes["http.method"] = 'POST'
+          AND attributes["http.status_code"] = '201'
+          AND timestamp >= now() - INTERVAL 30 DAY
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 0
+        y: 12
+        width: 6
+        height: 4
+
+    - title: "30-Day Evaluation Trend"
+      description: "Total daily evaluation volume over the last 30 days"
+      panelType: timeseries
+      unit: "evaluations"
+      query: |
+        SELECT
+          toStartOfInterval(timestamp, INTERVAL 1 DAY) AS t,
+          count() AS daily_evaluations
+        FROM signoz_traces.signoz_index_v2
+        WHERE
+          service.name IN ('featuresignals-api', 'featuresignals-api-staging')
+          AND attributes["http.route"] IN ('/v1/evaluate', '/v1/client/{envKey}/flags')
+          AND timestamp >= now() - INTERVAL 30 DAY
+        GROUP BY t
+        ORDER BY t ASC
+      position:
+        x: 6
+        y: 12
+        width: 6
+        height: 4

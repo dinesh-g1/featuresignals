@@ -1,0 +1,263 @@
+# =============================================================================
+# FeatureSignals — Preview Environment Helm Values
+# =============================================================================
+#
+# Minimal resource profile for ephemeral preview environments on a shared
+# CPX42 instance. Each preview gets its own k3s namespace with an ephemeral
+# PostgreSQL database (no persistence).
+#
+# Applied dynamically by the Dagger PreviewCreate pipeline and the
+# deploy/k8s/previews/install.sh script.
+#
+# Resource Budget per Preview:
+#   Server:     50m CPU / 128Mi RAM (req) → 200m CPU / 256Mi RAM (lim)
+#   Dashboard:  25m CPU /  64Mi RAM (req) → 100m CPU / 128Mi RAM (lim)
+#   PostgreSQL: 50m CPU / 128Mi RAM (req) → 200m CPU / 256Mi RAM (lim)
+#   Total:     125m CPU / 320Mi RAM (req) → 500m CPU / 640Mi RAM (lim)
+#
+# Max simultaneous previews: 5 (CPX42 constraint)
+#   → 5 × 125m CPU = 625m (of 8 vCPU)
+#   → 5 × 320Mi RAM = 1.6 GB (of 16 GB)
+# =============================================================================
+
+# -- Global settings shared across all components
+global:
+  environment: preview
+  imageRegistry: ghcr.io/featuresignals
+  dnsDomain: preview.featuresignals.com
+
+# =============================================================================
+# Server (Go API)
+# =============================================================================
+server:
+  image:
+    repository: server
+    # Tag is dynamically replaced by the Dagger pipeline or install script
+    tag: pr-${PR_NUMBER}
+  # Single replica — horizontal scaling is unnecessary for previews
+  replicas: 1
+  # Strategy: immediately replace on update (fast rollouts)
+  strategy:
+    type: Recreate
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  env:
+    PORT: "8080"
+    DEPLOYMENT_MODE: preview
+    LOG_LEVEL: debug
+    CORS_ORIGINS: "*"
+    OTEL_ENABLED: "false"
+    EMAIL_PROVIDER: none
+    # DATABASE_URL is injected dynamically by the deploy script
+    # JWT_SECRET is injected dynamically by the deploy script
+  # Readiness probe tuned for cold-start with migration
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  # No security context restrictions for preview (simplicity over isolation)
+  securityContext: {}
+  # Node selector: prefer the control-plane node (only node in single-node k3s)
+  nodeSelector:
+    kubernetes.io/hostname: ""
+
+# =============================================================================
+# Dashboard (Next.js)
+# =============================================================================
+dashboard:
+  image:
+    repository: dashboard
+    tag: pr-${PR_NUMBER}
+  replicas: 1
+  strategy:
+    type: Recreate
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  env:
+    HOSTNAME: "0.0.0.0"
+    NEXT_PUBLIC_API_URL: "https://api.preview-${PR_NUMBER}.preview.featuresignals.com"
+    NEXT_PUBLIC_APP_URL: "https://app.preview-${PR_NUMBER}.preview.featuresignals.com"
+  # Next.js needs a readiness probe on port 3000
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  securityContext: {}
+  nodeSelector:
+    kubernetes.io/hostname: ""
+
+# =============================================================================
+# PostgreSQL (Ephemeral — Bitnami chart)
+# =============================================================================
+postgresql:
+  enabled: true
+  # Use the Bitnami PostgreSQL chart directly
+  chart: oci://registry-1.docker.io/bitnamicharts/postgresql
+  # Database credentials — injected dynamically
+  auth:
+    database: featuresignals
+    username: fs
+    password: ""  # Set by installer
+  persistence:
+    enabled: false  # Ephemeral — ALL DATA LOST on pod restart
+  # Single instance, no replicas for previews
+  architecture: standalone
+  primary:
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 50m
+      limits:
+        memory: 256Mi
+        cpu: 200m
+    # No persistent volumes
+    persistence:
+      enabled: false
+    # Tuned for quick startup
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 5
+      failureThreshold: 5
+  # Disable metrics collection for previews
+  metrics:
+    enabled: false
+  # No backup jobs for previews
+  backup:
+    enabled: false
+  # Disable network policies for the DB
+  networkPolicy:
+    enabled: false
+
+# =============================================================================
+# Ingress (Caddy-compatible)
+# =============================================================================
+ingress:
+  enabled: true
+  # Caddy ingress class
+  className: caddy
+  # TLS via cert-manager (Let's Encrypt)
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Force TLS — no HTTP-only access
+    caddy-ingress-controller.io/tls: "true"
+  api:
+    host: api.preview-${PR_NUMBER}.preview.featuresignals.com
+    path: /
+    pathType: Prefix
+  dashboard:
+    host: app.preview-${PR_NUMBER}.preview.featuresignals.com
+    path: /
+    pathType: Prefix
+  # TLS configuration
+  tls:
+    - hosts:
+        - api.preview-${PR_NUMBER}.preview.featuresignals.com
+        - app.preview-${PR_NUMBER}.preview.featuresignals.com
+      secretName: preview-${PR_NUMBER}-tls
+
+# =============================================================================
+# Horizontal Pod Autoscaler — Disabled for previews
+# =============================================================================
+hpa:
+  enabled: false
+
+# =============================================================================
+# Pod Disruption Budget — Not needed for single-replica previews
+# =============================================================================
+pdb:
+  enabled: false
+
+# =============================================================================
+# Network Policies — Disabled for preview simplicity
+# =============================================================================
+networkPolicies:
+  enabled: false
+
+# =============================================================================
+# Monitoring — Disabled for previews
+# =============================================================================
+serviceMonitor:
+  enabled: false
+
+# =============================================================================
+# Database Migration Job
+# =============================================================================
+migration:
+  enabled: true
+  # Run migrations on install/upgrade
+  hook: post-upgrade,post-install
+  # Migration job resources
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  # Timeout for migration completion
+  backoffLimit: 3
+  activeDeadlineSeconds: 180
+
+# =============================================================================
+# Service Accounts — Minimal for previews
+# =============================================================================
+serviceAccount:
+  create: true
+  name: ""
+
+# =============================================================================
+# Pod Annotations — Preview metadata
+# =============================================================================
+podAnnotations:
+  preview.featuresignals.com/created-by: "preview-manager"
+  preview.featuresignals.com/pr-number: "${PR_NUMBER}"
+  preview.featuresignals.com/ttl: "24h"
+
+# =============================================================================
+# Labels
+# =============================================================================
+commonLabels:
+  app.kubernetes.io/component: preview
+  app.kubernetes.io/environment: preview
+  app.kubernetes.io/part-of: featuresignals
+  preview.featuresignals.com/pr-number: "${PR_NUMBER}"

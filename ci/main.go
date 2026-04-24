@@ -372,12 +372,14 @@ func (m *Ci) DeployPromote(ctx context.Context, source *dagger.Directory, versio
 
 	helmArgs := []string{
 		"helm", "upgrade", "--install", "featuresignals",
-		"./deploy/helm/featuresignals",
+		"./deploy/k8s/helm/featuresignals",
 		"--namespace", namespace,
 		"--create-namespace",
 		"--values", valuesFile,
-		"--set", fmt.Sprintf("image.tag=%s", version),
-		"--set", "image.repository=ghcr.io/featuresignals/server",
+		"--set", fmt.Sprintf("server.image.tag=%s", version),
+		"--set", "server.image.repository=ghcr.io/featuresignals/server",
+		"--set", fmt.Sprintf("dashboard.image.tag=%s", version),
+		"--set", "dashboard.image.repository=ghcr.io/featuresignals/dashboard",
 		"--wait",
 		"--timeout", "5m",
 	}
@@ -530,25 +532,27 @@ postgresql:
   enabled: false
 `, prNumber)
 
-	_, err = helm.
+	helmCtr := helm.
 		WithNewFile("/tmp/preview-values.yaml", dagger.ContainerWithNewFileOpts{
 			Contents:    helmValues,
 			Permissions: 0644,
-		}).
-		WithExec([]string{
-			"helm", "upgrade", "--install",
-			fmt.Sprintf("fs-%s", prNumber),
-			"./deploy/helm/featuresignals",
-			"--namespace", namespace,
-			"--values", "/tmp/preview-values.yaml",
-			"--set", fmt.Sprintf("image.tag=%s", imageTag),
-			"--set", "image.repository=ghcr.io/featuresignals/server",
-			"--set", fmt.Sprintf("env.DATABASE_URL=postgres://fs:%s@postgres-%s:5432/featuresignals?sslmode=disable", dbPassword, prNumber),
-			"--set", fmt.Sprintf("env.JWT_SECRET=preview-%s-jwt-secret-change-me", prNumber),
-			"--wait",
-			"--timeout", "5m",
-		}).
-		Sync(ctx)
+		})
+
+	_, err = helmCtr.WithExec([]string{
+		"helm", "upgrade", "--install",
+		fmt.Sprintf("fs-%s", prNumber),
+		"./deploy/k8s/helm/featuresignals",
+		"--namespace", namespace,
+		"--values", "/tmp/preview-values.yaml",
+		"--set", fmt.Sprintf("server.image.tag=%s", imageTag),
+		"--set", "server.image.repository=ghcr.io/featuresignals/server",
+		"--set", fmt.Sprintf("dashboard.image.tag=%s", imageTag),
+		"--set", "dashboard.image.repository=ghcr.io/featuresignals/dashboard",
+		"--set", fmt.Sprintf("server.env.DATABASE_URL=postgres://fs:%s@postgres-%s:5432/featuresignals?sslmode=disable", dbPassword, prNumber),
+		"--set", fmt.Sprintf("server.env.JWT_SECRET=preview-%s-jwt-secret-change-me", prNumber),
+		"--wait",
+		"--timeout", "5m",
+	}).Sync(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to deploy preview stack: %w", err)
 	}

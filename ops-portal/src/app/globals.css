@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0f1117;
+  --color-bg-secondary: #1a1d27;
+  --color-bg-tertiary: #242736;
+  --color-bg-elevated: #2d3045;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #9aa0a6;
+  --color-text-muted: #5f6368;
+  --color-border-default: #333645;
+  --color-border-hover: #444759;
+  --color-accent-primary: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-accent-success: #22c55e;
+  --color-accent-warning: #f59e0b;
+  --color-accent-danger: #ef4444;
+  --color-accent-info: #3b82f6;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-default);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-hover);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-accent-primary);
+  color: var(--color-text-primary);
+}

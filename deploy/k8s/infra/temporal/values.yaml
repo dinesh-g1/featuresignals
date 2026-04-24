@@ -1,0 +1,259 @@
+# =============================================================================
+# FeatureSignals — Temporal Helm Values
+# =============================================================================
+#
+# Budget-optimized Temporal deployment for single-node k3s on Hetzner CPX42
+# (8 vCPU, 16 GB RAM). Uses the existing shared Bitnami PostgreSQL — NOT
+# Cassandra — keeping the resource footprint minimal.
+#
+# This configuration:
+#   - Disables the bundled Cassandra (we use PostgreSQL for everything)
+#   - Disables the bundled PostgreSQL (we use the existing Bitnami one)
+#   - Connects to PostgreSQL in the featuresignals-system namespace
+#   - Disables Elasticsearch (visibility uses PostgreSQL instead)
+#   - Disables the Temporal Web UI (saves ~128 MiB RAM)
+#   - Disables metrics exporting (SigNoz covers this separately)
+#
+# Hardware Target: Hetzner CPX42 (8 vCPU, 16 GB RAM, 160 GB NVMe)
+# =============================================================================
+
+# -- Global settings
+global:
+  # -- Image registry (default: Docker Hub)
+  imageRegistry: ""
+  # -- Image pull policy
+  imagePullPolicy: IfNotPresent
+  # -- Image pull secrets
+  imagePullSecrets: []
+
+# =============================================================================
+# Temporal Server
+# =============================================================================
+server:
+  # -- Single replica is sufficient for MVP. Scale to 3 for HA in production.
+  replicaCount: 1
+
+  # -- Container image configuration
+  image:
+    registry: ""
+    repository: temporalio/server
+    tag: "1.25.2"                     # Stable, well-tested release
+    pullPolicy: IfNotPresent
+
+  # -- Resource limits and requests (CPX42 budget-conscious sizing)
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 300m
+
+  # -- Additional environment variables for the server container
+  extraEnv: []
+  #  - name: TEMPORAL_LOG_LEVEL
+  #    value: "warn"
+
+  # -- Pod-level security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001                    # temporal user
+    runAsGroup: 1001
+    fsGroup: 1001
+
+  # -- Container-level security context
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+
+  # -- Pod anti-affinity (not meaningful on single-node, placeholder)
+  podAntiAffinity: {}
+  # -- Node selector (allow scheduling on control-plane node)
+  nodeSelector:
+    kubernetes.io/os: linux
+  # -- Tolerations for control-plane scheduling
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  # -- Graceful shutdown
+  terminationGracePeriodSeconds: 60
+
+  # -- Liveness probe
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    httpGet:
+      path: /health
+      port: 7233
+
+  # -- Readiness probe
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    httpGet:
+      path: /health
+      port: 7233
+
+  # -- Persistence for Temporal server data (queue state, etc.)
+  persistence:
+    enabled: true
+    size: 5Gi                          # 5 GiB is ample for queue state
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+# =============================================================================
+# Cassandra (DISABLED)
+# =============================================================================
+# Temporal uses PostgreSQL as its default store. Cassandra is not needed
+# and would consume ~2 GiB RAM — prohibitive on this budget.
+cassandra:
+  enabled: false
+
+# =============================================================================
+# PostgreSQL (DISABLED — using existing Bitnami PostgreSQL)
+# =============================================================================
+# We don't deploy the bundled PostgreSQL. Instead we connect to the existing
+# Bitnami PostgreSQL deployed in the featuresignals-system namespace.
+postgresql:
+  enabled: false
+
+# =============================================================================
+# External PostgreSQL Configuration
+# =============================================================================
+# Connection details for the shared Bitnami PostgreSQL instance.
+# The database 'temporal' must be created before Temporal starts (the install
+# script handles this).
+externalPostgresql:
+  host: postgresql.featuresignals-system.svc.cluster.local
+  port: 5432
+  database: temporal
+  user: postgres
+  # Secret containing the PostgreSQL password.
+  # The Bitnami chart creates: featuresignals-db-postgresql with key 'postgres-password'
+  # The project also maintains: db-credentials with key 'db-password'
+  # We use the Bitnami-created secret for direct compatibility.
+  existingSecret: featuresignals-db-postgresql
+  existingSecretKey: postgres-password
+
+# =============================================================================
+# Elasticsearch (DISABLED)
+# =============================================================================
+# Elasticsearch adds ~1.5 GiB RAM overhead. Temporal's advanced visibility
+# features work with PostgreSQL for the MVP phase. Enable ES when advanced
+# search predicates are needed at scale.
+elasticsearch:
+  enabled: false
+
+# =============================================================================
+# Visibility Store
+# =============================================================================
+# PostgreSQL-backed visibility store. This is sufficient for MVP use cases
+# such as listing workflows by status, type, and time range.
+visibilityStore:
+  type: postgresql
+
+# =============================================================================
+# Metrics (DISABLED)
+# =============================================================================
+# Temporal metrics are collected by SigNoz via OTLP. The built-in Prometheus
+# endpoint and Grafana dashboards are not needed.
+metrics:
+  enabled: false
+
+# =============================================================================
+# Temporal Web UI (DISABLED)
+# =============================================================================
+# The Temporal Web UI is disabled for MVP to save ~128 MiB RAM. Use the
+# Temporal CLI (tctl) or the go.temporal.io/sdk/client for management.
+# Enable when the team needs visual workflow inspection.
+web:
+  enabled: false
+  # -- If enabled, use these resource constraints:
+  # resources:
+  #   requests:
+  #     memory: 64Mi
+  #     cpu: 50m
+  #   limits:
+  #     memory: 128Mi
+  #     cpu: 200m
+
+# =============================================================================
+# Admin-Tools (DISABLED)
+# =============================================================================
+# The admin-tools pod includes tctl, temporal-admin, and other utilities.
+# For the MVP, we run tctl as a one-off job when needed.
+admintools:
+  enabled: false
+
+# =============================================================================
+# Schema
+# =============================================================================
+# Schema setup is managed by the install script, not the Helm chart's job.
+schema:
+  setup:
+    enabled: false
+  update:
+    enabled: false
+
+# =============================================================================
+# Service & Networking
+# =============================================================================
+service:
+  type: ClusterIP
+  port: 7233
+  annotations: {}
+
+# -- Headless service for peer-to-peer discovery (internal gRPC)
+headless:
+  enabled: true
+  annotations: {}
+
+# -- Name overrides for internal DNS
+nameOverride: ""
+fullnameOverride: ""
+
+# -- Ingress (disabled — Temporal is internal-only)
+ingress:
+  enabled: false
+
+# =============================================================================
+# TLS (DISABLED for internal cluster communication)
+# =============================================================================
+# Temporal components communicate over the internal k3s cluster network.
+# TLS is not required for pod-to-pod communication. Enable for multi-cluster
+# or external access.
+tls:
+  enabled: false
+
+# =============================================================================
+# RBAC
+# =============================================================================
+rbac:
+  create: true
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+
+# =============================================================================
+# Labels & Annotations
+# =============================================================================
+commonLabels:
+  app.kubernetes.io/name: temporal
+  app.kubernetes.io/component: workflow-engine
+  app.kubernetes.io/part-of: featuresignals
+  app.kubernetes.io/managed-by: helm
+
+commonAnnotations:
+  featuresignals.io/description: "Temporal workflow orchestration engine"
+  featuresignals.io/cost-tier: "essential"
