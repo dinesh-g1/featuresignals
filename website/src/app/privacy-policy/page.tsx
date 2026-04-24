@@ -1,179 +1,184 @@
 import type { Metadata } from "next";
-import { LegalArticle } from "@/components/legal-article";
-import { SectionReveal } from "@/components/section-reveal";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How FeatureSignals collects, uses, and protects personal data. Aligned with common practices for Indian B2B SaaS and global customers.",
+    "How FeatureSignals collects, uses, and protects your personal data. Our commitment to your privacy and data protection rights.",
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalArticle title="Privacy Policy">
-      <SectionReveal>
+    <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+      <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 mb-2">
+        Privacy Policy
+      </h1>
+      <p className="text-sm text-stone-400 mb-8">Last updated: January 15, 2026</p>
+
+      <div className="prose prose-stone max-w-none space-y-6 text-sm text-stone-600 leading-relaxed">
+        <h2 className="text-lg font-semibold text-stone-800">1. Introduction</h2>
         <p>
-          This Privacy Policy describes how <strong>FeatureSignals</strong>{" "}
-          (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), a product of{" "}
-          <strong>Vivekananda Technology Labs</strong>, handles personal
-          information when you visit{" "}
-          <a href="https://featuresignals.com">featuresignals.com</a>, use our
-          hosted service at{" "}
-          <a href="https://app.featuresignals.com">app.featuresignals.com</a>{" "}(or regional equivalent),
-          or otherwise interact with our websites and software. We follow
-          conventions typical of Indian and international B2B SaaS providers:
-          we collect only what we need to run the service, we use processors
-          under contract, and we give you clear ways to reach us about privacy
-          questions.
+          Vivekananda Technology Labs (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;)
+          operates FeatureSignals. This Privacy Policy explains how we collect, use, disclose, and
+          safeguard your information when you use our service. By using FeatureSignals, you consent
+          to the practices described in this policy.
         </p>
 
-        <h2>1. Who we are</h2>
-        <p>
-          FeatureSignals is a product of{" "}
-          <strong>Vivekananda Technology Labs</strong>, providing feature
-          management and related <strong>IT services</strong> (cloud-hosted
-          software, APIs, and support).
-        </p>
-        <p>
-          <strong>Registered Address:</strong> Flat no 308, L5-Block, LIG,
-          Chitrapuri Colony, Manikonda, Hyderabad, Telangana - 500089, India.
-        </p>
-        <p>
-          For privacy enquiries, contact us at{" "}
-          <a href="mailto:support@featuresignals.com">support@featuresignals.com</a>
-          .
-        </p>
-
-        <h2>2. Scope</h2>
-        <p>
-          This policy applies to personal data we process as a{" "}
-          <strong>controller</strong> for our own business (for example, account
-          registration, billing contacts, and website analytics). When you
-          configure FeatureSignals to evaluate flags for your end users, you are
-          typically the controller of your users&apos; data and we act as a{" "}
-          <strong>processor</strong> under your instructions; how you use the
-          product should be covered by your own privacy notice and, where
-          required, a data processing agreement with us.
-        </p>
-
-        <h2>3. Information we collect</h2>
-        <ul>
+        <h2 className="text-lg font-semibold text-stone-800">2. Information We Collect</h2>
+        <p>We collect the following types of information:</p>
+        <ul className="list-disc pl-6 space-y-1">
           <li>
-            <strong>Account and profile:</strong> name, email, organization,
-            authentication identifiers, and preferences you provide when you sign
-            up or use the dashboard.
+            <strong>Account Information:</strong> Name, email address, company name, and billing
+            information when you create an account or make a purchase.
           </li>
           <li>
-            <strong>Billing:</strong> billing contact details and payment-related
-            information processed by our payment partners (we do not store full
-            card numbers on our servers).
+            <strong>Usage Data:</strong> Information about how you use the Service, including flag
+            evaluation metrics, page views, API requests, and feature interactions.
           </li>
           <li>
-            <strong>Service and technical data:</strong> API usage, logs, device
-            and browser metadata, IP address, timestamps, and diagnostic data
-            needed to secure and operate the service.
+            <strong>Flag Configuration Data:</strong> The feature flag definitions, targeting rules,
+            environment configurations, and segment definitions you create within the Service.
           </li>
           <li>
-            <strong>Support:</strong> information you send when you contact
-            support or participate in surveys.
+            <strong>Git Repository Data:</strong> When you connect a Git provider for the AI Janitor
+            feature, we access repository metadata and file contents solely for the purpose of
+            scanning stale flag references.
           </li>
           <li>
-            <strong>Marketing (optional):</strong> if you subscribe to updates,
-            we process your contact details to send those communications; you
-            can opt out anytime.
+            <strong>Device Information:</strong> IP address, browser type, operating system, and
+            device identifiers for security and analytics purposes.
+          </li>
+          <li>
+            <strong>Cookies:</strong> We use essential cookies for authentication and session
+            management, and optional analytics cookies for product improvement.
           </li>
         </ul>
 
-        <h2>4. How we use information</h2>
-        <p>We use personal data to:</p>
-        <ul>
+        <h2 className="text-lg font-semibold text-stone-800">3. How We Use Your Information</h2>
+        <p>We use collected information for the following purposes:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Providing, maintaining, and improving the FeatureSignals service</li>
+          <li>Processing transactions and managing subscriptions</li>
+          <li>Detecting, preventing, and addressing security incidents and abuse</li>
+          <li>Communicating with you about service updates, support requests, and promotional offers (with opt-out)</li>
+          <li>Complying with legal obligations and enforcement of our Terms of Service</li>
+          <li>Generating aggregated, anonymized analytics about platform usage</li>
+        </ul>
+
+        <h2 className="text-lg font-semibold text-stone-800">4. Data Processing for Feature Flags</h2>
+        <p>
+          FeatureSignals processes evaluation context data (user IDs, attributes, custom properties)
+          solely for the purpose of evaluating flag targeting rules. This data is:
+        </p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Processed in memory during flag evaluation and not persistently stored by default</li>
+          <li>Used only for flag targeting decisions and impression tracking when explicitly enabled</li>
+          <li>Never sold, rented, or shared with third parties for marketing purposes</li>
+          <li>Isolated per organization with strict tenant boundaries</li>
+        </ul>
+
+        <h2 className="text-lg font-semibold text-stone-800">5. Data Sharing &amp; Disclosure</h2>
+        <p>We may share your information in the following circumstances:</p>
+        <ul className="list-disc pl-6 space-y-1">
           <li>
-            Provide, maintain, and improve the FeatureSignals service and
-            documentation;
+            <strong>Service Providers:</strong> With third-party vendors who assist in operating the
+            Service (cloud infrastructure, payment processing, email delivery). These providers are
+            contractually bound to protect your data.
           </li>
-          <li>Authenticate users, prevent abuse, and protect security;</li>
           <li>
-            Process subscriptions and communicate about billing, service
-            changes, or incidents;
+            <strong>Legal Requirements:</strong> If required by law, regulation, or legal process,
+            or to protect our rights, property, or safety.
           </li>
-          <li>Comply with law, enforce our terms, and defend our rights;</li>
           <li>
-            Analyze aggregated or de-identified usage to improve the product (not
-            to sell personal data).
+            <strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale
+            of assets, with notice to users.
+          </li>
+          <li>
+            <strong>With Consent:</strong> With your explicit consent for specific purposes.
           </li>
         </ul>
 
-        <h2>5. Legal bases (where applicable)</h2>
+        <h2 className="text-lg font-semibold text-stone-800">6. Data Security</h2>
         <p>
-          Depending on jurisdiction, we rely on{" "}
-          <strong>performance of a contract</strong>,{" "}
-          <strong>legitimate interests</strong> (such as securing our systems
-          and understanding product usage in aggregate),{" "}
-          <strong>legal obligation</strong>, and, where required,{" "}
-          <strong>consent</strong> (for example, non-essential cookies or certain
-          marketing).
+          We implement industry-standard security measures to protect your data:
+        </p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Encryption at rest using AES-256 and in transit using TLS 1.3</li>
+          <li>SOC 2 Type II compliant infrastructure and processes</li>
+          <li>Regular security audits, penetration testing, and vulnerability assessments</li>
+          <li>Strict access controls with multi-factor authentication for infrastructure access</li>
+          <li>Automated threat detection and incident response procedures</li>
+        </ul>
+
+        <h2 className="text-lg font-semibold text-stone-800">7. Data Retention</h2>
+        <p>
+          We retain your data for as long as your account is active or as needed to provide the
+          Service. Upon account termination, we provide a 30-day grace period for data export before
+          permanent deletion. Aggregated, anonymized data may be retained for analytics purposes.
+          Evaluation logs are retained according to your plan tier (7 days Free, 90 days Pro,
+          custom for Enterprise).
         </p>
 
-        <h2>6. Sharing and subprocessors</h2>
+        <h2 className="text-lg font-semibold text-stone-800">8. Your Rights</h2>
+        <p>Depending on your jurisdiction, you may have the following rights:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li><strong>Access:</strong> Request a copy of the personal data we hold about you</li>
+          <li><strong>Correction:</strong> Request correction of inaccurate or incomplete data</li>
+          <li><strong>Deletion:</strong> Request deletion of your personal data (subject to legal retention requirements)</li>
+          <li><strong>Portability:</strong> Request a machine-readable export of your data</li>
+          <li><strong>Objection:</strong> Object to processing of your data for certain purposes</li>
+          <li><strong>Withdrawal of Consent:</strong> Withdraw consent at any time where processing is based on consent</li>
+        </ul>
         <p>
-          We share personal data with a limited set of{" "}
-          <strong>service providers</strong> who help us host infrastructure,
-          process payments, send email, or monitor reliability. They may
-          process data in India or other countries where they operate, subject
-          to appropriate safeguards and contractual terms. We do not sell
-          personal information.
+          To exercise any of these rights, contact us at{" "}
+          <a href="mailto:privacy@featuresignals.com" className="text-accent hover:underline">
+            privacy@featuresignals.com
+          </a>.
         </p>
 
-        <h2>7. Retention</h2>
+        <h2 className="text-lg font-semibold text-stone-800">9. International Data Transfers</h2>
         <p>
-          We retain personal data only as long as needed for the purposes above,
-          including legal, tax, and accounting requirements. You may request
-          deletion of your account subject to any overriding retention
-          obligation.
+          Your data may be processed in data centers located in multiple regions. We ensure
+          appropriate safeguards are in place for international data transfers, including Standard
+          Contractual Clauses where required. Enterprise customers can choose their preferred data
+          region during onboarding.
         </p>
 
-        <h2>8. Security</h2>
+        <h2 className="text-lg font-semibold text-stone-800">10. Cookies &amp; Tracking</h2>
         <p>
-          We implement administrative, technical, and organizational measures
-          appropriate to the nature of the service. No method of transmission
-          over the Internet is completely secure; we work to reduce risk and to
-          respond promptly to credible threats.
+          We use essential cookies for authentication, session management, and security. These
+          cannot be disabled. We also use optional analytics cookies to understand how the Service
+          is used. You can manage cookie preferences through your browser settings. We do not use
+          third-party tracking cookies for advertising purposes.
         </p>
 
-        <h2>9. Your rights</h2>
+        <h2 className="text-lg font-semibold text-stone-800">11. Children&apos;s Privacy</h2>
         <p>
-          Depending on where you live, you may have rights to access, correct,
-          delete, or restrict certain processing of your personal data, and to
-          object to some uses or to lodge a complaint with a supervisory
-          authority. Indian users may also have rights under applicable law
-          including the Digital Personal Data Protection Act, 2023, where it
-          applies. To exercise rights, email{" "}
-          <a href="mailto:support@featuresignals.com">support@featuresignals.com</a>
-          . We may need to verify your identity before fulfilling a request.
+          The Service is not intended for individuals under 18 years of age. We do not knowingly
+          collect personal information from children. If we become aware that a child has provided
+          us with personal data, we will take steps to delete such information.
         </p>
 
-        <h2>10. Cookies and similar technologies</h2>
+        <h2 className="text-lg font-semibold text-stone-800">12. Changes to This Policy</h2>
         <p>
-          We use cookies and similar technologies for session management,
-          security, preferences, and (where enabled) analytics. You can control
-          many cookies through your browser settings.
+          We may update this Privacy Policy periodically. Material changes will be notified via
+          email or in-app notification. We encourage you to review this policy regularly. Your
+          continued use of the Service after changes constitutes acceptance.
         </p>
 
-        <h2>11. Children</h2>
+        <h2 className="text-lg font-semibold text-stone-800">13. Contact Information</h2>
         <p>
-          Our service is intended for businesses and professionals. We do not
-          knowingly collect personal information from children under 16 (or the
-          age required in your jurisdiction).
+          For questions, concerns, or data subject requests, please contact us:
         </p>
-
-        <h2>12. Changes</h2>
         <p>
-          We may update this Privacy Policy from time to time. We will post the
-          revised version on this page and update the &quot;Last updated&quot;
-          date. Material changes may be communicated by email or an in-product
-          notice where appropriate.
+          <strong>Email:</strong>{" "}
+          <a href="mailto:privacy@featuresignals.com" className="text-accent hover:underline">
+            privacy@featuresignals.com
+          </a>
+          <br />
+          <strong>Address:</strong> Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
+          Hyderabad, Telangana - 500089, India
         </p>
-      </SectionReveal>
-    </LegalArticle>
+      </div>
+    </div>
   );
 }

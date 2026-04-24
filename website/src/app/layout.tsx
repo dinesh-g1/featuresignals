@@ -7,17 +7,18 @@ import { Footer } from "@/components/footer";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://featuresignals.com"),
   title: {
     template: "%s | FeatureSignals",
-    default: "FeatureSignals | Open-Source Feature Flag Management",
+    default:
+      "FeatureSignals | Mission-Critical Feature Flags — Zero Vendor Lock-In",
   },
   description:
-    "Open-source feature flag management platform. Self-hosted, Apache-2.0 licensed, with A/B experimentation, real-time updates, and SDKs for every stack.",
+    "The control plane for software delivery. Sub-millisecond latency. Automated tech-debt cleanup. OpenFeature native, Terraform-integrated. Flat pricing — never per MAU.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     type: "website",
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "FeatureSignals — Open-Source Feature Flag Management",
+        alt: "FeatureSignals — Enterprise Feature Flag Platform",
       },
     ],
   },
@@ -39,9 +40,14 @@ export const metadata: Metadata = {
     "feature flag management",
     "feature toggles",
     "A/B testing",
+    "LaunchDarkly alternative",
     "open source",
     "self-hosted",
-    "SDKs",
+    "enterprise feature flags",
+    "flag rot",
+    "AI janitor",
+    "GitOps",
+    "OpenFeature",
   ],
 };
 
@@ -56,7 +62,7 @@ export default function RootLayout({
       className={`${inter.variable} scroll-smooth`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-screen flex flex-col bg-white text-slate-900 font-sans antialiased">
+      <body className="min-h-screen flex flex-col bg-stone-50 text-stone-900 font-sans antialiased selection:bg-accent selection:text-white">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

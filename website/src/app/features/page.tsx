@@ -1,564 +1,396 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { appUrl } from "@/lib/urls";
+import type { Metadata } from "next";
 import {
-  ArrowRight,
   Flag,
-  Layers,
-  AlertTriangle,
+  Target,
+  GitBranch,
   FlaskConical,
-  ArrowLeftRight,
-  BarChart3,
+  ShieldOff,
+  Code,
+  Check,
+  Zap,
+  ArrowRight,
   Users,
-  Search,
-  Tag,
+  Globe,
+  BarChart3,
+  Activity,
+  ShieldCheck,
+  Brain,
+  Webhook,
 } from "lucide-react";
-import { FeatureCard } from "@/components/feature-card";
 import { SectionReveal } from "@/components/section-reveal";
 
 export const metadata: Metadata = {
-  title: "Core Features — Feature Flag Engine | FeatureSignals",
+  title: "Core Features",
   description:
-    "Feature flags with targeted rollouts, kill switches, A/B testing, and real-time updates. The core engine that powers safe deployments.",
+    "Feature flags, targeting rules, percentage rollouts, A/B testing, kill switches, GitOps — everything you need to ship with confidence.",
 };
 
-const featureGroups: {
-  id: string;
-  label: string;
-  tagline: string;
-  features: {
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    features: string[];
-    code?: { lang: string; label: string; code: string };
-  }[];
-}[] = [
+const coreFeatures = [
   {
-    id: "flag-engine",
-    label: "Flag Engine",
-    tagline: "Multi-type flags with precise targeting",
-    features: [
-      {
-        title: "5 Flag Types",
-        description:
-          "Boolean, string, number, JSON, and A/B flags. Each type supports rich targeting rules, percentage rollouts, and environment-specific configurations.",
-        icon: <Flag className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-        features: [
-          "Boolean, string, number, JSON, A/B types",
-          "13 targeting operators (eq, neq, contains, in, regex...)",
-          "AND/OR logic for complex rules",
-          "Environment-specific configurations",
-        ],
-        code: {
-          lang: "go",
-          label: "Go SDK",
-          code: `import fs "github.com/featuresignals/sdk-go"
-
-client := fs.NewClient("YOUR_API_KEY")
-defer client.Close()
-
-enabled := client.IsEnabled("checkout-redesign",
-    fs.User{Key: "user-42", Attributes: map[string]any{
-        "plan": "pro", "country": "IN",
-    }})
-
-if enabled {
-    renderNewCheckout()
-}`,
-        },
-      },
-      {
-        title: "Percentage Rollouts",
-        description:
-          "Consistent hashing via MurmurHash3 ensures the same user always sees the same variant. Roll out to 0.01% granularity, safely scale to 100%.",
-        icon: <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-        features: [
-          "MurmurHash3 consistent hashing",
-          "0.01% granularity",
-          "Same user always gets same variant",
-          "Safe incremental rollouts",
-        ],
-        code: {
-          lang: "curl",
-          label: "API",
-          code: `# Set 10% rollout in production
-curl -X PUT https://api.featuresignals.com/v1/projects/proj-1/flags/new-checkout/environments/env-prod \\
-  -H "Authorization: Bearer <token>" \\
-  -d '{
-    "enabled": true,
-    "rollout_percentage": 10
-  }'
-
-# Increase when confident
-curl -X PUT .../flags/new-checkout/environments/env-prod \\
-  -H "Authorization: Bearer <token>" \\
-  -d '{ "enabled": true, "rollout_percentage": 100 }'`,
-        },
-      },
+    Icon: Flag,
+    title: "Feature Flags (5 Types)",
+    description:
+      "Boolean, string, number, JSON, and A/B experiment flags. Every type supports per-environment overrides, targeting rules, percentage rollouts, and scheduled rotations. Set default values for safe fallbacks.",
+    capabilities: [
+      "Boolean toggles for simple feature gating",
+      "String flags for multi-variant experiments",
+      "Number flags for gradual rollout percentages",
+      "JSON flags for complex configuration objects",
+      "A/B experiment flags with consistent hashing",
     ],
   },
   {
-    id: "environments",
-    label: "Multi-Environment",
-    tagline: "Dev, staging, production — isolated and organized",
-    features: [
-      {
-        title: "Environment Isolation & Promotion",
-        description:
-          "Per-environment flag states, targeting rules, and API keys. Changes in dev never affect production. Promote configurations between environments with full audit trail.",
-        icon: <Layers className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-        features: [
-          "Isolated flag states per environment",
-          "Per-environment API keys",
-          "Promote between environments",
-          "Full audit trail on promotion",
-        ],
-        code: {
-          lang: "curl",
-          label: "Promote",
-          code: `# Promote flag config from staging to production
-curl -X POST https://api.featuresignals.com/v1/projects/proj-1/flags/new-feature/promote \\
-  -H "Authorization: Bearer <token>" \\
-  -d '{
-    "source_env_id": "env-staging",
-    "target_env_id": "env-production"
-  }'`,
-        },
-      },
-      {
-        title: "Environment Comparison",
-        description:
-          "Compare flag states across environments side-by-side. Spot configuration drift instantly. Bulk-sync selected flags from one environment to another.",
-        icon: (
-          <ArrowLeftRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />
-        ),
-        features: [
-          "Side-by-side comparison",
-          "Configuration drift detection",
-          "Bulk-sync between environments",
-          "Visual diff highlighting",
-        ],
-        code: {
-          lang: "curl",
-          label: "Compare",
-          code: `curl "https://api.featuresignals.com/v1/projects/proj-1/flags/compare-environments?source_env_id=env-staging&target_env_id=env-production" \\
-  -H "Authorization: Bearer <token>"
-
-# Returns: flag_key, state, targeting diff`,
-        },
-      },
+    Icon: Target,
+    title: "Precision Targeting",
+    description:
+      "Target individual users, groups, or percentages with rule-based flag evaluation. Use custom attributes, segments, and mutual exclusion groups for sophisticated experimentation.",
+    capabilities: [
+      "User-level targeting by ID, email, or custom key",
+      "Group segmentation with AND/OR rule combinators",
+      "Percentage rollouts with consistent hashing",
+      "Environment-specific targeting rules",
+      "Mutual exclusion groups for clean experiments",
     ],
   },
   {
-    id: "experimentation",
-    label: "A/B Experimentation",
-    tagline: "Data-driven decisions, not guesses",
-    features: [
-      {
-        title: "Variant Assignment",
-        description:
-          "Weighted splits (50/50, 90/10, custom). Consistent hashing ensures stable user assignment. Impression tracking API for analytics integration.",
-        icon: (
-          <FlaskConical className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />
-        ),
-        features: [
-          "Weighted splits (50/50, 90/10, custom)",
-          "Consistent hashing for stable assignment",
-          "Impression tracking API",
-          "Analytics integration ready",
-        ],
-        code: {
-          lang: "react",
-          label: "React SDK",
-          code: `import { useStringFlagDetails } from "@featuresignals/react";
-
-function PricingPage() {
-  const { value, reason } = useStringFlagDetails(
-    "pricing-experiment", "control"
-  );
-
-  useEffect(() => {
-    analytics.track("pricing_impression", { variant: value });
-  }, [value]);
-
-  return value === "treatment-a"
-    ? <NewPricing />
-    : <CurrentPricing />;
-}`,
-        },
-      },
-      {
-        title: "Mutual Exclusion Groups",
-        description:
-          "Prevent experiment interference. Flags in the same group never activate simultaneously for the same user. Deterministic winner selection via consistent hashing.",
-        icon: (
-          <ArrowLeftRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />
-        ),
-        features: [
-          "Prevent overlapping experiments",
-          "Deterministic user assignment",
-          "Consistent hashing",
-          "Automatic exclusion enforcement",
-        ],
-        code: {
-          lang: "json",
-          label: "API Response",
-          code: `// Only ONE will return "on" for any given user
-{
-  "key": "banner-experiment",
-  "value": true,
-  "reason": "SPLIT"
-}
-{
-  "key": "pricing-experiment",
-  "value": false,
-  "reason": "MUTUAL_EXCLUSION"
-}`,
-        },
-      },
+    Icon: GitBranch,
+    title: "Gradual Rollouts",
+    description:
+      "Roll out features incrementally with percentage-based traffic splits. Increase rollout percentages automatically with scheduled rotations. Roll back instantly with one click.",
+    capabilities: [
+      "Percentage-based traffic splitting (1%–100%)",
+      "Scheduled rollout increases (e.g., 10% → 25% → 50% → 100%)",
+      "Instant kill switch for emergency rollback",
+      "Canary deployments with targeted user segments",
+      "Automated rollback on error threshold breaches",
     ],
   },
   {
-    id: "control",
-    label: "Kill Switch & Scheduling",
-    tagline: "Emergency controls for production safety",
-    features: [
-      {
-        title: "Kill Switch",
-        description:
-          "Emergency disable any flag with one click. Propagates to all connected SDKs in seconds via SSE. Full audit trail on every action.",
-        icon: (
-          <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />
-        ),
-        features: [
-          "One-click emergency disable",
-          "Propagates via SSE in seconds",
-          "Full audit trail",
-          "Per-environment kill",
-        ],
-        code: {
-          lang: "curl",
-          label: "Kill Switch",
-          code: `# Emergency disable — propagates to all SDKs in seconds
-curl -X POST https://api.featuresignals.com/v1/projects/proj-1/flags/risky-feature/kill \\
-  -H "Authorization: Bearer <token>" \\
-  -d '{ "env_id": "env-production" }'
-
-# Response: { "status": "killed", "flag_key": "risky-feature" }`,
-        },
-      },
-      {
-        title: "Scheduled Flags",
-        description:
-          "Auto-enable or auto-disable flags at specific times. Background scheduler checks every 30 seconds. Perfect for timed launches and maintenance windows.",
-        icon: <Flag className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-        features: [
-          "Auto-enable at scheduled time",
-          "Auto-disable at scheduled time",
-          "30-second scheduler check",
-          "Audit trail on scheduled actions",
-        ],
-        code: {
-          lang: "json",
-          label: "Scheduled Flag",
-          code: `{
-  "enabled": true,
-  "schedule": {
-    "enable_at": "2025-03-01T09:00:00Z",
-    "disable_at": "2025-03-15T23:59:59Z"
-  }
-}
-// Flag auto-enables on March 1 and auto-disables on March 15`,
-        },
-      },
+    Icon: FlaskConical,
+    title: "A/B Experimentation",
+    description:
+      "Run experiments with confidence. Built-in statistical engine evaluates results with significance testing. Immutable flag states preserve experiment integrity.",
+    capabilities: [
+      "Weighted variant assignment with consistent hashing",
+      "Mutual exclusion groups for non-interfering experiments",
+      "Impression tracking for analytics integration",
+      "Statistical significance calculation",
+      "Immutable experiment states for audit compliance",
     ],
   },
   {
-    id: "lifecycle",
-    label: "Flag Lifecycle",
-    tagline: "Categorize, track, and clean up flags systematically",
-    features: [
-      {
-        title: "Toggle Categories",
-        description:
-          "Classify flags as release, experiment, ops, or permission. Each category has tailored staleness thresholds (14d, 30d, 90d, never) and management guidance.",
-        icon: <Tag className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-        features: [
-          "Release: 14-day staleness",
-          "Experiment: 30-day staleness",
-          "Ops: 90-day staleness",
-          "Permission: never stale",
-        ],
-        code: {
-          lang: "json",
-          label: "Categories",
-          code: `// Four categories with different lifecycles:
-//
-// RELEASE    → 14-day staleness threshold
-// EXPERIMENT → 30-day staleness threshold
-// OPS        → 90-day staleness threshold
-// PERMISSION → 90-day staleness threshold
-
-{
-  "key": "circuit-breaker-payments",
-  "category": "ops",
-  "status": "active"
-}`,
-        },
-      },
-      {
-        title: "Stale Flag Scanner",
-        description:
-          "CLI tool scans your codebase for flag references and reports stale flags. CI/CD mode exits with code 1 when stale flags found. JSON and table output.",
-        icon: <Search className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-        features: [
-          "Codebase scanning",
-          "Staleness detection",
-          "CI/CD mode (fails build)",
-          "JSON and table output",
-        ],
-        code: {
-          lang: "cli",
-          label: "CLI",
-          code: `# Scan for stale flags
-featuresignals scan --dir ./src --api-key $FS_API_KEY
-
-# CI mode — fails the build if stale flags exist
-featuresignals scan --dir ./src --ci --api-key $FS_API_KEY
-
-# Output:
-# ⚠  old-banner: STALE (last eval: 45 days ago)
-# ✓ new-checkout: ACTIVE (last eval: 2 hours ago)`,
-        },
-      },
+    Icon: ShieldOff,
+    title: "Kill Switches",
+    description:
+      "Emergency disable any feature across all environments with a single click. The kill switch bypasses all targeting rules and immediately serves the default value.",
+    capabilities: [
+      "Global kill switch disables across all environments",
+      "Environment-specific kill switch for targeted rollback",
+      "Audit-logged kill switch activations with timestamp",
+      "Automated kill on anomaly detection (AI-powered)",
+      "One-click re-enable after incident resolution",
     ],
   },
+  {
+    Icon: Code,
+    title: "GitOps Workflows",
+    description:
+      "Manage flags as code with Terraform provider and Git-sync capabilities. Flag changes go through your existing PR review process, with plan/apply validation.",
+    capabilities: [
+      "Terraform provider for infrastructure-as-code flag management",
+      "Git-sync for flag definitions alongside application code",
+      "PR-based flag changes with review and approval workflow",
+      "Plan/apply diff preview before flag changes take effect",
+      "Audit trail linking flag changes to Git commits",
+    ],
+  },
+];
+
+const additionalCapabilities = [
+  {
+    title: "Flag Dependencies",
+    description:
+      "Define parent-child flag relationships. When a parent flag is disabled, all dependent flags are automatically disabled too.",
+    icon: GitBranch,
+  },
+  {
+    title: "Scheduled Rotations",
+    description:
+      "Schedule flag state changes in advance. Automate rollout progressions, maintenance windows, and experimentation timeframes.",
+    icon: Activity,
+  },
+  {
+    title: "Realtime SSE Streaming",
+    description:
+      "Flag changes propagate to SDKs in real-time via Server-Sent Events. No polling needed. Sub-second propagation globally.",
+    icon: Zap,
+  },
+  {
+    title: "Environment Overrides",
+    description:
+      "Per-environment flag configuration with inheritance. Development, staging, production — each environment gets its own targeting rules.",
+    icon: Globe,
+  },
+  {
+    title: "Usage Analytics",
+    description:
+      "Track flag evaluation counts, active users per flag, and adoption rates. Identify unused flags and optimization opportunities.",
+    icon: BarChart3,
+  },
+  {
+    title: "Role-Based Access",
+    description:
+      "Granular permissions per environment and flag. Read-only access for developers, full control for admins, approval gates for production changes.",
+    icon: Users,
+  },
+];
+
+const flagTypes = [
+  { type: "Boolean", example: "show-new-checkout", use: "Simple on/off toggles" },
+  { type: "String", example: "checkout-variant", use: "Multi-variant experiments (A/B/C)" },
+  { type: "Number", example: "discount-percentage", use: "Graduated rollouts and numeric config" },
+  { type: "JSON", example: "checkout-config", use: "Complex configuration objects" },
+  { type: "A/B Experiment", example: "pricing-page-test", use: "Statistical experiments with immutable variants" },
 ];
 
 export default function FeaturesPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 py-12 text-center sm:px-6 sm:py-20">
-        <SectionReveal>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100 sm:text-sm">
-            <Flag className="h-3.5 w-3.5" />
-            Core Feature Flag Engine
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
-            Ship features safely with{" "}
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              precise control
-            </span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Multi-type flags, percentage rollouts, A/B experimentation, and
-            emergency kill switches. The core engine that powers safe,
-            data-driven deployments.
-          </p>
-        </SectionReveal>
-
-        {/* Quick nav */}
-        <SectionReveal>
-          <nav
-            className="mt-10 flex flex-wrap justify-center gap-2"
-            aria-label="Feature categories"
-          >
-            {featureGroups.map((group) => (
-              <a
-                key={group.label}
-                href={`#${group.id}`}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 sm:px-4 sm:text-sm"
-              >
-                {group.label}
-              </a>
-            ))}
-          </nav>
-        </SectionReveal>
-      </section>
-
-      {/* Flag Engine & Environments */}
-      {featureGroups
-        .filter((g) => g.id === "flag-engine" || g.id === "environments")
-        .map((group) => (
-          <section
-            key={group.id}
-            id={group.id}
-            className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-16 scroll-mt-20"
-          >
-            <SectionReveal>
-              <div className="mb-8 border-l-4 border-indigo-600 pl-4">
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                  {group.label}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">{group.tagline}</p>
-              </div>
-            </SectionReveal>
-
-            <div className="space-y-6 sm:space-y-8">
-              {group.features.map((feature) => (
-                <SectionReveal key={feature.title}>
-                  <FeatureCard
-                    icon={feature.icon}
-                    title={feature.title}
-                    description={feature.description}
-                    features={feature.features}
-                    code={feature.code}
-                  />
-                </SectionReveal>
-              ))}
-            </div>
-          </section>
-        ))}
-
-      {/* Mid-page CTA */}
+      {/* Hero Section */}
       <SectionReveal>
-        <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-10 text-center sm:px-10 sm:py-12">
-            <h2 className="text-xl font-bold text-white sm:text-2xl">
-              Ready to deploy features safely?
-            </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-indigo-100 sm:text-base">
-              Start free with full Pro features for 14 days, or self-host in
-              under 5 minutes.
+        <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
+          <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#292524_1px,transparent_1px)] [background-size:20px_20px]" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
+
+          <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent">
+              <Flag className="h-4 w-4" />
+              Enterprise Feature Flag Platform
+            </div>
+            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-stone-900 leading-[1.1]">
+              Ship with confidence.<br />
+              <span className="text-accent">Control everything.</span>
+            </h1>
+            <p className="text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
+              FeatureSignals gives you complete control over feature delivery —
+              from simple boolean toggles to sophisticated multi-variant
+              experiments, all with sub-millisecond evaluation latency.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <a
+                href="https://app.featuresignals.com/register"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-md bg-accent text-white font-semibold shadow-md hover:bg-accent-dark transition-all"
               >
                 Start Free
-              </Link>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </a>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-lg border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-md bg-white text-stone-800 font-semibold border border-stone-200 shadow-sm hover:bg-stone-100 transition-all"
               >
-                View Pricing
+                See Pricing
               </Link>
             </div>
           </div>
         </section>
       </SectionReveal>
 
-      {/* Experimentation, Control & Lifecycle */}
-      {featureGroups
-        .filter(
-          (g) =>
-            g.id === "experimentation" ||
-            g.id === "control" ||
-            g.id === "lifecycle",
-        )
-        .map((group) => (
-          <section
-            key={group.id}
-            id={group.id}
-            className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-16 scroll-mt-20"
-          >
-            <SectionReveal>
-              <div className="mb-8 border-l-4 border-indigo-600 pl-4">
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                  {group.label}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">{group.tagline}</p>
-              </div>
-            </SectionReveal>
+      {/* Flag Types Section */}
+      <SectionReveal>
+        <section className="py-20 sm:py-24 px-6 border-b border-stone-100 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
+                Five flag types for every use case
+              </h2>
+              <p className="text-lg text-stone-600">
+                From simple toggles to complex configuration objects —
+                FeatureSignals supports every flag type your team needs.
+              </p>
+            </div>
 
-            <div className="space-y-6 sm:space-y-8">
-              {group.features.map((feature) => (
-                <SectionReveal key={feature.title}>
-                  <FeatureCard
-                    icon={feature.icon}
-                    title={feature.title}
-                    description={feature.description}
-                    features={feature.features}
-                    code={feature.code}
-                  />
-                </SectionReveal>
+            <div className="overflow-hidden rounded-2xl border border-stone-200 shadow-sm">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-stone-50 border-b border-stone-200">
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">Flag Type</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">Example</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">Best For</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {flagTypes.map((ft) => (
+                    <tr key={ft.type} className="bg-white hover:bg-stone-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center rounded-full bg-accent/10 text-accent px-3 py-1 text-sm font-semibold">
+                          {ft.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-sm text-stone-700">
+                        {ft.example}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-stone-600">
+                        {ft.use}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-center text-sm text-stone-500 mt-6">
+              All flag types support per-environment overrides, targeting rules, percentage rollouts, and real-time SSE streaming.
+            </p>
+          </div>
+        </section>
+      </SectionReveal>
+
+      {/* Core Features Grid */}
+      <SectionReveal>
+        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
+          <div className="max-w-7xl mx-auto space-y-16">
+            <div className="text-center max-w-3xl mx-auto space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
+                Everything you need to ship safely
+              </h2>
+              <p className="text-lg text-stone-600">
+                FeatureSignals combines battle-tested feature flag primitives with
+                modern automation to give your team superpowers.
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2">
+              {coreFeatures.map(({ Icon, title, description, capabilities }) => (
+                <div
+                  key={title}
+                  className="group rounded-2xl border border-stone-200 bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
+                      <Icon className="h-6 w-6" strokeWidth={1.5} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-bold text-stone-900">
+                        {title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                        {description}
+                      </p>
+                    </div>
+                  </div>
+                  <ul className="mt-6 space-y-2.5 border-t border-stone-100 pt-6">
+                    {capabilities.map((cap) => (
+                      <li
+                        key={cap}
+                        className="flex items-start gap-2 text-sm text-stone-600"
+                      >
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                        {cap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
             </div>
-          </section>
-        ))}
+          </div>
+        </section>
+      </SectionReveal>
 
-      {/* Related features */}
-      <section className="border-t border-slate-100 bg-slate-50 py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
-          <SectionReveal>
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-              Explore more capabilities
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-slate-500 sm:text-base">
-              The core engine is just the beginning. Discover AI-powered
-              cleanup, enterprise security, and 50+ integrations.
-            </p>
-          </SectionReveal>
+      {/* Additional Capabilities */}
+      <SectionReveal>
+        <section className="py-20 sm:py-24 px-6 border-b border-stone-100 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
+                More capabilities
+              </h2>
+              <p className="text-lg text-stone-600">
+                Beyond the core primitives, FeatureSignals includes everything
+                your team needs to operate at scale.
+              </p>
+            </div>
 
-          <SectionReveal>
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {(
-                [
-                  {
-                    title: "AI Capabilities",
-                    description:
-                      "AI flag cleanup, anomaly detection, and incident response",
-                    href: "/features/ai",
-                  },
-                  {
-                    title: "Security & Governance",
-                    description:
-                      "RBAC, audit logs, SSO, approvals, and compliance",
-                    href: "/features/security",
-                  },
-                  {
-                    title: "Integrations",
-                    description: "Slack, GitHub, Jira, Datadog, and more",
-                    href: "/features/integrations",
-                  },
-                ] as const
-              ).map(({ title, description, href }) => (
-                <Link
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {additionalCapabilities.map(({ title, description, icon: Icon }) => (
+                <div
                   key={title}
-                  href={href}
-                  className="group rounded-xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
+                  className="group rounded-2xl border border-stone-200 bg-stone-50 p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-md"
                 >
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent ring-1 ring-accent/20">
+                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-stone-900">
                     {title}
                   </h3>
-                  <p className="mt-1 text-sm text-slate-600">{description}</p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600">
-                    Learn more
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                    {description}
+                  </p>
+                </div>
               ))}
             </div>
-          </SectionReveal>
-        </div>
-      </section>
+          </div>
+        </section>
+      </SectionReveal>
 
-      {/* Final CTA */}
+      {/* Related Features CTA */}
       <SectionReveal>
-        <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-10 text-center sm:px-10 sm:py-12">
-            <h2 className="text-xl font-bold text-white sm:text-2xl">
-              See the engine in action
-            </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-indigo-100 sm:text-base">
-              Start free with full Pro features for 14 days, or self-host in
-              under 5 minutes.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <section className="py-20 sm:py-24 px-6 bg-stone-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid gap-6 md:grid-cols-3">
               <Link
-                href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
+                href="/features/ai"
+                className="group rounded-2xl border border-stone-200 bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
               >
-                Start Free
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
+                  <Brain className="h-6 w-6" strokeWidth={1.5} />
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-stone-900">
+                  AI Janitor
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                  Autonomous stale flag detection and cleanup PR generation.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
+                  Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </Link>
+
               <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center rounded-lg border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                href="/features/security"
+                className="group rounded-2xl border border-stone-200 bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
               >
-                View Pricing
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
+                  <ShieldCheck className="h-6 w-6" strokeWidth={1.5} />
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-stone-900">
+                  Security & Governance
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                  RBAC, audit logs, SSO, compliance, and approval workflows.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
+                  Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+
+              <Link
+                href="/features/integrations"
+                className="group rounded-2xl border border-stone-200 bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
+                  <Webhook className="h-6 w-6" strokeWidth={1.5} />
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-stone-900">
+                  Integrations
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                  Terraform, Slack, GitHub, Jira, Datadog, and webhooks.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
+                  Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </Link>
             </div>
           </div>

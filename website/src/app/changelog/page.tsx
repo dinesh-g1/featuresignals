@@ -1,352 +1,236 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { SectionReveal } from "@/components/section-reveal";
+import type { Metadata } from "next";
+import { Sparkles, ArrowRight, Rocket, Bug, Zap, Shield, Star, GitBranch } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description: "Product updates, new features, and improvements.",
+  description:
+    "Release history and feature announcements for FeatureSignals. Track new features, improvements, and bug fixes.",
 };
+
+const releases = [
+  {
+    version: "1.5.0",
+    date: "January 15, 2026",
+    type: "major",
+    title: "Multi-IaC Provider Support + AI Janitor GA",
+    changes: [
+      { type: "feature", text: "Terraform provider: new resources for projects, environments, segments, webhooks, and API keys" },
+      { type: "feature", text: "Pulumi provider: TypeScript-based infrastructure-as-code for FeatureSignals resources" },
+      { type: "feature", text: "Ansible collection: manage feature flags via playbooks and roles" },
+      { type: "feature", text: "Crossplane provider: Kubernetes-native feature flag management (alpha)" },
+      { type: "feature", text: "AI Janitor now generally available: automated stale flag detection and cleanup PR generation" },
+      { type: "feature", text: "Git provider support: GitHub, GitLab, Bitbucket, and Azure DevOps for Janitor PR generation" },
+      { type: "feature", text: "Migration system: import from Unleash and Flagsmith (in addition to LaunchDarkly)" },
+      { type: "improvement", text: "Migration wizard revamped with 4-step guided flow and IaC export options" },
+      { type: "improvement", text: "Dashboard color scheme updated to teal/accent design system" },
+      { type: "improvement", text: "Sidebar icons updated to Lucide icon set for consistent premium look" },
+    ],
+  },
+  {
+    version: "1.4.0",
+    date: "December 20, 2025",
+    type: "minor",
+    title: "Approval Workflows & SSO",
+    changes: [
+      { type: "feature", text: "Custom Approval Board (CAB) workflows for production flag changes" },
+      { type: "feature", text: "Single Sign-On support: SAML 2.0 and OIDC providers" },
+      { type: "feature", text: "Multi-factor authentication (TOTP) for enhanced account security" },
+      { type: "feature", text: "SCIM provisioning for automated user management" },
+    ],
+  },
+  {
+    version: "1.3.0",
+    date: "December 1, 2025",
+    type: "minor",
+    title: "A/B Experimentation & Analytics",
+    changes: [
+      { type: "feature", text: "Built-in A/B experimentation engine with statistical significance" },
+      { type: "feature", text: "Flag-level analytics dashboard with evaluation metrics" },
+      { type: "feature", text: "Impression tracking for experiment event collection" },
+      { type: "feature", text: "Usage insights with flag evaluation patterns and trends" },
+    ],
+  },
+  {
+    version: "1.2.0",
+    date: "November 15, 2025",
+    type: "minor",
+    title: "Environment Comparison & Target Inspector",
+    changes: [
+      { type: "feature", text: "Environment comparison tool: side-by-side flag state views" },
+      { type: "feature", text: "Target inspector: simulate flag evaluation for specific users" },
+      { type: "feature", text: "Flag history viewer with change timeline" },
+      { type: "feature", text: "Segment rules editor with real-time preview" },
+    ],
+  },
+  {
+    version: "1.1.0",
+    date: "October 20, 2025",
+    type: "minor",
+    title: "OpenFeature SDK & Webhook Enhancements",
+    changes: [
+      { type: "feature", text: "OpenFeature provider SDK for provider-agnostic flag evaluation" },
+      { type: "feature", text: "Webhook delivery logs with retry history" },
+      { type: "feature", text: "Custom roles API for fine-grained access control" },
+      { type: "feature", text: "Data export: JSON/CSV export of flag configurations" },
+    ],
+  },
+  {
+    version: "1.0.0",
+    date: "October 1, 2025",
+    type: "major",
+    title: "First Public Release",
+    changes: [
+      { type: "feature", text: "Feature flag management with boolean, string, number, and JSON types" },
+      { type: "feature", text: "Multi-environment support (development, staging, production)" },
+      { type: "feature", text: "User segmentation with AND/OR targeting rules" },
+      { type: "feature", text: "Percentage-based rollouts with consistent hashing" },
+      { type: "feature", text: "LaunchDarkly migration importer" },
+      { type: "feature", text: "REST API with OpenAPI documentation" },
+      { type: "feature", text: "8 language SDKs (JavaScript, Go, Python, Ruby, Java, .NET, PHP, Rust)" },
+      { type: "feature", text: "Teams and role-based access control (Admin, Developer, Viewer)" },
+      { type: "feature", text: "Audit log with 90-day retention" },
+      { type: "feature", text: "Webhook integrations with Slack, Datadog, and custom endpoints" },
+      { type: "feature", text: "Terraform provider (flag resource)" },
+    ],
+  },
+];
+
+const typeConfig = {
+  feature: { label: "New Feature", icon: Sparkles, color: "text-accent bg-accent/10" },
+  improvement: { label: "Improvement", icon: Zap, color: "text-blue-600 bg-blue-100" },
+  bugfix: { label: "Bug Fix", icon: Bug, color: "text-amber-600 bg-amber-100" },
+  security: { label: "Security", icon: Shield, color: "text-emerald-600 bg-emerald-100" },
+};
+
+function ChangeBadge({ type }: { type: string }) {
+  const config = typeConfig[type as keyof typeof typeConfig] || typeConfig.improvement;
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${config.color}`}>
+      <Icon className="h-3 w-3" strokeWidth={2.5} />
+      {config.label}
+    </span>
+  );
+}
 
 export default function ChangelogPage() {
   return (
-    <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
-      <SectionReveal>
-        <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">Changelog</h1>
-        <p className="mt-4 text-base text-slate-500 leading-relaxed sm:text-lg">
-          Product updates, new features, and improvements.
-        </p>
-      </SectionReveal>
-
-      <div className="mt-12 space-y-12">
-        <SectionReveal delay={0.05}>
-          <article>
-            <div className="flex items-center gap-3">
-              <time className="text-sm font-medium text-indigo-600">
-                April 2026
-              </time>
-              <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
-                Latest
-              </span>
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
+              <Rocket className="h-3.5 w-3.5 text-accent" />
+              Release history
             </div>
-            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
-              Flag Engine & Toggle Categories
-            </h2>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
-              <li>
-                <strong>Dashboard renamed to Flag Engine</strong> — The
-                management UI is now called the Flag Engine across all pages,
-                docs, and navigation
-              </li>
-              <li>
-                <strong>Toggle Categories</strong> — Classify flags as release,
-                experiment, ops, or permission with category-aware staleness
-                thresholds (14d, 30d, 90d, 90d)
-              </li>
-              <li>
-                <strong>Flag Lifecycle Status</strong> — Track flags through
-                active → rolled_out → deprecated → archived
-              </li>
-              <li>
-                <strong>Environment Comparison</strong> — Compare and bulk-sync
-                flag states across environments
-              </li>
-              <li>
-                <strong>Target Inspector</strong> — See exactly what a specific
-                user experiences across all flags
-              </li>
-              <li>
-                <strong>Target Comparison</strong> — Compare flag evaluations
-                for two users side-by-side
-              </li>
-              <li>
-                <strong>Usage Insights</strong> — View value distribution
-                percentages (true/false) per flag per environment
-              </li>
-              <li>
-                <strong>SOLID Architecture</strong> — Core engine refactored
-                with interface-driven design, evaluation middleware chain,
-                operator registry, and domain error hierarchy
-              </li>
-            </ul>
-          </article>
-        </SectionReveal>
-
-        <SectionReveal delay={0.08}>
-          <article>
-            <div className="flex items-center gap-3">
-              <time className="text-sm font-medium text-indigo-600">
-                April 2026
-              </time>
-            </div>
-            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
-              API Security Hardening
-            </h2>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
-              <li>
-                <strong>Broken Object Level Authorization fix</strong> — API key
-                revocation now verifies org ownership to prevent cross-tenant
-                access
-              </li>
-              <li>
-                <strong>JWT token type enforcement</strong> — Refresh tokens can
-                no longer be used as access tokens (issuer claim validation)
-              </li>
-              <li>
-                <strong>User data minimization</strong> — Login and register
-                responses no longer expose sensitive fields like password hash
-                or internal flags
-              </li>
-              <li>
-                <strong>API key expiration</strong> — Optional{" "}
-                <code>expires_in_days</code> parameter on key creation; expired
-                keys rejected at evaluation time
-              </li>
-              <li>
-                <strong>Rate limit headers</strong> —{" "}
-                <code>X-RateLimit-Limit</code>,{" "}
-                <code>X-RateLimit-Remaining</code>, and{" "}
-                <code>X-RateLimit-Reset</code> on all rate-limited responses
-              </li>
-              <li>
-                <strong>Content-Type enforcement</strong> — POST/PUT/PATCH
-                requests must use <code>application/json</code> (415 otherwise)
-              </li>
-              <li>
-                <strong>Content-Security-Policy header</strong> — Added{" "}
-                <code>{`default-src 'none'; frame-ancestors 'none'`}</code> to
-                all responses
-              </li>
-              <li>
-                <strong>SSRF protection</strong> — Webhook URLs block private
-                IPs, localhost, and internal hostnames
-              </li>
-              <li>
-                <strong>Bulk evaluation limit</strong> — <code>flag_keys</code>{" "}
-                array capped at 100 items
-              </li>
-              <li>
-                <strong>PII masking in logs</strong> — Emails, tokens, and phone
-                numbers are masked in server logs
-              </li>
-              <li>
-                <strong>Security audit logging</strong> —{" "}
-                <code>api_key.created</code>, <code>api_key.revoked</code>{" "}
-                actions tracked in audit trail
-              </li>
-              <li>
-                <strong>JWT secret startup check</strong> — Server refuses to
-                start with default secret in non-debug environments
-              </li>
-              <li>
-                <strong>Database SSL enforcement</strong> — Default connection
-                string now requires <code>sslmode=require</code>
-              </li>
-              <li>
-                <strong>SSE CORS fix</strong> — Removed hardcoded{" "}
-                <code>Access-Control-Allow-Origin: *</code> from SSE server
-              </li>
-              <li>
-                <strong>Request ID in errors</strong> — Error responses include{" "}
-                <code>request_id</code> for correlation
-              </li>
-              <li>
-                <strong>Comprehensive test suite</strong> — 50+ new tests
-                covering auth flows, middleware, org isolation, and security
-                boundaries
-              </li>
-            </ul>
-          </article>
-        </SectionReveal>
-
-        <SectionReveal delay={0.1}>
-          <article>
-            <div className="flex items-center gap-3">
-              <time className="text-sm font-medium text-indigo-600">
-                Phase 3 — April 2026
-              </time>
-            </div>
-            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
-              Scale & Differentiation
-            </h2>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
-              <li>
-                <strong>A/B Experimentation</strong> — New <code>ab</code> flag
-                type with weighted variants, consistent hashing assignment, and
-                impression tracking API
-              </li>
-              <li>
-                <strong>Relay Proxy</strong> — Lightweight Go binary for edge
-                caching with SSE or polling sync
-              </li>
-              <li>
-                <strong>Mutual Exclusion Groups</strong> — Prevent experiment
-                interference with deterministic winner selection
-              </li>
-              <li>
-                <strong>Evaluation Metrics</strong> — In-memory counters, Flag
-                Engine visualization with top-flags chart and reason breakdown
-              </li>
-              <li>
-                <strong>Eval Metrics page</strong> — Per-environment counts,
-                reason distribution, top evaluated flags
-              </li>
-              <li>
-                <strong>Mutex group editor</strong> — Inline editor in flag
-                detail with group member count
-              </li>
-              <li>
-                <strong>Stale Flag Scanner</strong> — CLI tool to find unused
-                flag references in code, CI mode with exit code
-              </li>
-              <li>
-                <strong>Documentation Site</strong> — 35+ page Docusaurus site
-                covering getting started, concepts, SDKs, API reference, and
-                deployment
-              </li>
-            </ul>
-          </article>
-        </SectionReveal>
-
-        <SectionReveal delay={0.12}>
-          <article>
-            <div className="flex items-center gap-3">
-              <time className="text-sm font-medium text-indigo-600">
-                Phase 2 — March 2026
-              </time>
-            </div>
-            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
-              Enterprise Readiness
-            </h2>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
-              <li>
-                <strong>Python SDK</strong> — Client with polling/SSE,
-                OpenFeature provider
-              </li>
-              <li>
-                <strong>Java SDK</strong> — Maven project with polling/SSE,
-                OpenFeature provider, JUnit 5 tests
-              </li>
-              <li>
-                <strong>Approval Workflows</strong> — Request-review flow for
-                production changes with automatic application
-              </li>
-              <li>
-                <strong>Webhook Dispatch</strong> — Background dispatcher with
-                HMAC-SHA256 signatures, exponential retry, delivery logging
-              </li>
-              <li>
-                <strong>Flag Scheduling</strong> — Auto-enable/disable at
-                specified times with 30-second granularity
-              </li>
-              <li>
-                <strong>Kill Switch</strong> — Emergency flag disable with
-                one-click Flag Engine button
-              </li>
-              <li>
-                <strong>Flag Promotion</strong> — Copy flag configuration
-                between environments
-              </li>
-              <li>
-                <strong>Flag Health</strong> — Health scores, stale flags,
-                expiring flags, missing descriptions
-              </li>
-              <li>
-                <strong>Prerequisite Flags</strong> — Recursive dependency
-                evaluation
-              </li>
-              <li>
-                <strong>RBAC</strong> — Owner/admin/developer/viewer roles with
-                per-environment permissions
-              </li>
-              <li>
-                <strong>Audit Logging</strong> — Tamper-evident log with
-                before/after state diffs
-              </li>
-              <li>
-                <strong>CI/CD Pipeline</strong> — GitHub Actions for all SDK
-                tests, server tests, Flag Engine build, Docker build
-              </li>
-            </ul>
-          </article>
-        </SectionReveal>
-
-        <SectionReveal delay={0.14}>
-          <article>
-            <div className="flex items-center gap-3">
-              <time className="text-sm font-medium text-indigo-600">
-                Phase 1 — February 2026
-              </time>
-            </div>
-            <h2 className="mt-3 text-lg font-semibold text-slate-900 sm:text-xl">
-              Core Platform (MVP)
-            </h2>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc list-inside">
-              <li>
-                <strong>Evaluation Engine</strong> — Targeting rules, segments,
-                percentage rollout with MurmurHash3
-              </li>
-              <li>
-                <strong>Management API</strong> — Full CRUD for projects,
-                environments, flags, segments, API keys
-              </li>
-              <li>
-                <strong>SSE Streaming</strong> — Real-time flag updates via
-                PostgreSQL LISTEN/NOTIFY
-              </li>
-              <li>
-                <strong>Go SDK</strong> — Polling, SSE, local eval, OpenFeature
-                provider
-              </li>
-              <li>
-                <strong>Node.js SDK</strong> — Polling, SSE, local eval,
-                OpenFeature provider
-              </li>
-              <li>
-                <strong>React SDK</strong> — Provider component, hooks (useFlag,
-                useFlags, useReady, useError)
-              </li>
-              <li>
-                <strong>Flag Engine</strong> — Next.js with flag management,
-                targeting editor, segments, environments
-              </li>
-              <li>
-                <strong>Docker Compose</strong> — One-command local development
-                setup
-              </li>
-            </ul>
-          </article>
-        </SectionReveal>
-      </div>
-
-      <SectionReveal delay={0.16}>
-        <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 px-6 py-8 text-center sm:px-10">
-            <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-              Stay in the loop
-            </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-              Get product updates, feature announcements, and engineering
-              insights. No spam, unsubscribe anytime.
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-6">
+              What&apos;s new in{" "}
+              <span className="text-accent">FeatureSignals</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
+              Track every release, feature, improvement, and bug fix. We ship
+              regularly and transparently.
             </p>
-            <div
-              className="mx-auto mt-5 flex max-w-sm flex-col gap-2 sm:flex-row"
-            >
-              <input
-                type="email"
-                placeholder="you@company.com"
-                
-                className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-              <button
-                
-                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+          </div>
+        </div>
+      </section>
+
+      {/* Releases */}
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
+          <div className="space-y-12">
+            {releases.map((release) => (
+              <div key={release.version} className="relative pl-8 border-l-2 border-stone-200">
+                {/* Version dot */}
+                <div className={`absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 ${
+                  release.type === "major"
+                    ? "border-accent bg-accent"
+                    : "border-stone-300 bg-white"
+                }`} />
+
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h2 className="text-xl font-bold text-stone-900">
+                      v{release.version}
+                    </h2>
+                    <span className={`text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      release.type === "major"
+                        ? "bg-accent/10 text-accent"
+                        : "bg-stone-100 text-stone-500"
+                    }`}>
+                      {release.type === "major" ? "Major Release" : "Update"}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-stone-700 mb-1">
+                    {release.title}
+                  </h3>
+                  <p className="text-sm text-stone-400">{release.date}</p>
+                </div>
+
+                <ul className="space-y-3">
+                  {release.changes.map((change, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <ChangeBadge type={change.type} />
+                      <span className="text-sm text-stone-600 leading-relaxed pt-0.5">
+                        {change.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* RSS Feed */}
+          <div className="mt-16 text-center">
+            <p className="text-sm text-stone-500 mb-4">
+              Subscribe to our changelog via RSS or follow us on GitHub for real-time updates.
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <a
+                href="/changelog/rss.xml"
+                className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-5 py-2.5 text-sm font-semibold text-stone-700 hover:border-accent hover:text-accent transition-colors"
               >
-                Subscribe
-              </button>
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6.18 15.64a2.18 2.18 0 010 4.36 2.18 2.18 0 010-4.36M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93v-2.83z" />
+                </svg>
+                RSS Feed
+              </a>
+              <a
+                href="https://github.com/dinesh-g1/featuresignals/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-5 py-2.5 text-sm font-semibold text-stone-700 hover:border-accent hover:text-accent transition-colors"
+              >
+                <GitBranch className="h-4 w-4" />
+                GitHub Releases
+              </a>
             </div>
           </div>
-        </section>
-      </SectionReveal>
-    </section>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-stone-900">
+        <div className="mx-auto max-w-7xl px-6 py-16 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Try the latest release
+          </h2>
+          <p className="text-stone-400 max-w-xl mx-auto mb-8">
+            Start free, no credit card required. Full Pro features for 14 days.
+          </p>
+          <Link
+            href="https://app.featuresignals.com/signup"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-lg"
+          >
+            <Sparkles className="h-4 w-4" />
+            Start Free Trial
+            <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }

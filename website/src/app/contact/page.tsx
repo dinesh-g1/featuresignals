@@ -1,294 +1,250 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { SectionReveal } from "@/components/section-reveal";
-import {
-  Building2,
-  Mail,
-  MessageSquare,
-  Users,
-  Check,
-  Loader2,
-  Shield,
-  Globe,
-  AlertCircle,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
+import type { Metadata } from "next";
+import { Mail, MessageSquare, ExternalLink, ArrowRight, Sparkles, MapPin, Clock } from "lucide-react";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.featuresignals.com";
-const TEAM_SIZES = ["1-10", "11-50", "51-200", "201-1000", "1000+"];
+export const metadata: Metadata = {
+  title: "Contact Sales",
+  description:
+    "Get in touch with the FeatureSignals team. Sales inquiries, support requests, partnership opportunities — we're here to help.",
+};
+
+const contactMethods = [
+  {
+    title: "Sales Inquiries",
+    description: "Questions about pricing, enterprise plans, or self-hosted deployments?",
+    email: "sales@featuresignals.com",
+    responseTime: "Response within 4 hours",
+    icon: MessageSquare,
+  },
+  {
+    title: "Technical Support",
+    description: "Need help with setup, integration, or troubleshooting?",
+    email: "support@featuresignals.com",
+    responseTime: "Response within 1 hour (Pro/Enterprise)",
+    icon: Mail,
+  },
+  {
+    title: "Partnerships",
+    description: "Interested in partnering with FeatureSignals?",
+    email: "partners@featuresignals.com",
+    responseTime: "Response within 2 business days",
+    icon: ExternalLink,
+  },
+];
 
 export default function ContactPage() {
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-
-    const form = e.currentTarget;
-    const data = {
-      contact_name: (form.elements.namedItem("name") as HTMLInputElement).value,
-      email: (form.elements.namedItem("email") as HTMLInputElement).value,
-      company: (form.elements.namedItem("company") as HTMLInputElement).value,
-      team_size: (form.elements.namedItem("team-size") as HTMLSelectElement)
-        .value,
-      message: (form.elements.namedItem("message") as HTMLTextAreaElement)
-        .value,
-    };
-
-    try {
-      const res = await fetch(`${API_BASE}/v1/sales/inquiry`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(
-          body?.error || "Something went wrong. Please try again.",
-        );
-      }
-      setSubmitted(true);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Network error. Please try again.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (submitted) {
-    return (
-      <section className="mx-auto max-w-lg px-6 py-20 text-center">
-        <SectionReveal>
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-            <Check className="h-8 w-8 text-emerald-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Message Received
-          </h1>
-          <p className="mt-3 text-slate-600">
-            Thank you for your interest. Our team will get back to you within
-            one business day.
-          </p>
-          <Link
-            href="/"
-            className="mt-6 inline-block rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-          >
-            Back to Home
-          </Link>
-        </SectionReveal>
-      </section>
-    );
-  }
-
   return (
-    <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
-      <SectionReveal>
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            Talk to our team
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-slate-500">
-            Get a personalized demo, discuss enterprise requirements, or start a
-            proof-of-concept.
-          </p>
-        </div>
-      </SectionReveal>
-
-      <div className="mt-12 grid gap-8 md:grid-cols-5">
-        <SectionReveal delay={0.05} className="md:col-span-2">
-          <div className="space-y-6">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 space-y-4">
-              <h2 className="font-semibold text-slate-900">
-                Why teams choose FeatureSignals
-              </h2>
-              <div className="space-y-3">
-                {[
-                  { icon: Shield, text: "SOC 2, GDPR, HIPAA compliant" },
-                  { icon: Globe, text: "US, EU, and IN data regions" },
-                  { icon: Building2, text: "Self-hosted or managed cloud" },
-                  { icon: Users, text: "Unlimited seats on all plans" },
-                ].map(({ icon: Icon, text }) => (
-                  <div
-                    key={text}
-                    className="flex items-center gap-2.5 text-sm text-slate-600"
-                  >
-                    <Icon className="h-4 w-4 shrink-0 text-indigo-500" />
-                    {text}
-                  </div>
-                ))}
-              </div>
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+              We're here to help
             </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <h3 className="text-sm font-semibold text-slate-900">
-                Prefer email?
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Reach us directly at{" "}
-                <a
-                  href="mailto:enterprise@featuresignals.com"
-                  className="font-medium text-indigo-600 hover:text-indigo-700"
-                >
-                  enterprise@featuresignals.com
-                </a>
-              </p>
-            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-6">
+              Get in{" "}
+              <span className="text-accent">touch</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
+              Have a question about FeatureSignals? Want a demo? Need help with
+              deployment? Reach out — we respond to every inquiry personally.
+            </p>
           </div>
-        </SectionReveal>
+        </div>
+      </section>
 
-        <SectionReveal delay={0.1} className="md:col-span-3">
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-xl border border-slate-200 bg-white p-6 space-y-4"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-slate-700"
+      {/* Contact Methods */}
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {contactMethods.map((method) => {
+              const Icon = method.icon;
+              return (
+                <div
+                  key={method.title}
+                  className="rounded-xl border border-stone-200 bg-white p-8 transition-all hover:shadow-md hover:border-accent/20"
                 >
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
-                  placeholder="Jane Doe"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-slate-700"
-                >
-                  Work Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
-                  placeholder="jane@company.com"
-                />
-              </div>
-            </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent mb-4">
+                    <Icon className="h-6 w-6" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-lg font-bold text-stone-900 mb-2">
+                    {method.title}
+                  </h3>
+                  <p className="text-sm text-stone-600 mb-4 leading-relaxed">
+                    {method.description}
+                  </p>
+                  <a
+                    href={`mailto:${method.email}`}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent-dark transition-colors"
+                  >
+                    {method.email}
+                    <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+                  </a>
+                  <p className="mt-3 text-xs text-stone-400">
+                    {method.responseTime}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="company"
-                  className="block text-sm font-medium text-slate-700"
-                >
-                  Company
-                </label>
-                <input
-                  id="company"
-                  type="text"
-                  required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
-                  placeholder="Acme Inc."
-                />
+      {/* Contact Form */}
+      <section className="border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-8">
+              Send us a message
+            </h2>
+            <form
+              action="mailto:sales@featuresignals.com"
+              method="post"
+              encType="text/plain"
+              className="rounded-xl border border-stone-200 bg-white p-8 space-y-6"
+            >
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-semibold text-stone-700 mb-1.5"
+                  >
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    className="w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-semibold text-stone-700 mb-1.5"
+                  >
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    className="w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                    placeholder="you@company.com"
+                  />
+                </div>
               </div>
               <div>
                 <label
-                  htmlFor="team-size"
-                  className="block text-sm font-medium text-slate-700"
+                  htmlFor="subject"
+                  className="block text-sm font-semibold text-stone-700 mb-1.5"
                 >
-                  Team Size
+                  Subject
                 </label>
                 <select
-                  id="team-size"
-                  required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
+                  id="subject"
+                  name="subject"
+                  className="w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm text-stone-900 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
                 >
-                  <option value="">Select...</option>
-                  {TEAM_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size} developers
-                    </option>
-                  ))}
+                  <option value="">Select a topic...</option>
+                  <option value="sales">Sales Inquiry</option>
+                  <option value="support">Technical Support</option>
+                  <option value="partnership">Partnership Opportunity</option>
+                  <option value="demo">Request a Demo</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="message"
-                className="block text-sm font-medium text-slate-700"
-              >
-                How can we help?
-              </label>
-              <textarea
-                id="message"
-                rows={4}
-                required
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-200"
-                placeholder="Tell us about your use case, deployment requirements, or questions..."
-              />
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
+              <div>
+                <label
+                  htmlFor="message"
+                  className="block text-sm font-semibold text-stone-700 mb-1.5"
+                >
+                  Message
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={6}
+                  required
+                  className="w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors resize-y"
+                  placeholder="How can we help you?"
+                />
               </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60 sm:w-auto"
-            >
-              {submitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <MessageSquare className="h-4 w-4" />
-              )}
-              {submitting ? "Sending..." : "Send Message"}
-            </button>
-
-            <p className="text-center text-xs text-slate-400">
-              We typically respond within one business day.
-            </p>
-          </form>
-        </SectionReveal>
-      </div>
-
-      <SectionReveal>
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {(
-            [
-              { icon: Clock, label: "Response within 24 hours" },
-              { icon: Shield, label: "No spam, ever" },
-              { icon: ArrowRight, label: "Free migration assistance" },
-              { icon: Building2, label: "Enterprise support available" },
-            ] as const
-          ).map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-3"
-            >
-              <Icon
-                className="h-4 w-4 shrink-0 text-indigo-600"
-                strokeWidth={1.5}
-              />
-              <span className="text-xs font-medium text-slate-600">
-                {label}
-              </span>
-            </div>
-          ))}
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-xl bg-accent px-8 py-3 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-md"
+              >
+                Send Message
+                <ArrowRight className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </form>
+          </div>
         </div>
-      </SectionReveal>
-    </section>
+      </section>
+
+      {/* Office Info */}
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-4xl">
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <MapPin className="h-5 w-5" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-stone-900 mb-1">Office</h3>
+                  <p className="text-sm text-stone-500 leading-relaxed">
+                    Flat no 308, L5-Block, LIG<br />
+                    Chitrapuri Colony, Manikonda<br />
+                    Hyderabad, Telangana - 500089<br />
+                    India
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <Clock className="h-5 w-5" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-stone-900 mb-1">
+                    Business Hours
+                  </h3>
+                  <p className="text-sm text-stone-500 leading-relaxed">
+                    Monday — Friday: 9:00 AM — 6:00 PM IST<br />
+                    Emergency support: 24/7 (Enterprise)
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-stone-900">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+            Prefer to try first?
+          </h2>
+          <p className="text-stone-400 max-w-xl mx-auto mb-8">
+            Start free, no credit card required. You can explore all Pro
+            features for 14 days.
+          </p>
+          <Link
+            href="https://app.featuresignals.com/signup"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-lg"
+          >
+            <Sparkles className="h-4 w-4" />
+            Start Free Trial
+            <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }

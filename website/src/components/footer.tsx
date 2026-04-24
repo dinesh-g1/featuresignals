@@ -1,13 +1,11 @@
 import Link from "next/link";
-import { appUrl } from "@/lib/urls";
-import { ComplianceBadges } from "./compliance-badges";
 
 const footerSections = [
   {
     title: "Product",
     links: [
       { label: "Core Features", href: "/features" },
-      { label: "AI Capabilities", href: "/features/ai" },
+      { label: "AI Janitor", href: "/features/ai" },
       { label: "Security & Governance", href: "/features/security" },
       { label: "Integrations", href: "/features/integrations" },
       { label: "Use Cases", href: "/use-cases" },
@@ -17,22 +15,45 @@ const footerSections = [
   {
     title: "Get Started",
     links: [
-      { label: "Start Free Trial", href: appUrl.register, highlight: true },
-      { label: "Request Demo", href: "/contact" },
-      { label: "Log in", href: appUrl.login },
-      { label: "Flag Engine", href: appUrl.home },
+      {
+        label: "Deploy in 3 Minutes",
+        href: "https://docs.featuresignals.com/getting-started/quickstart",
+        external: true,
+      },
+      { label: "Migrate from LaunchDarkly", href: "#migration" },
+      { label: "Migrate from Unleash", href: "#migration" },
+      { label: "Migrate from Flagsmith", href: "#migration" },
+      { label: "Log in", href: "https://app.featuresignals.com/login" },
     ],
   },
   {
     title: "Developers",
     links: [
-      { label: "Documentation", href: "https://docs.featuresignals.com" },
+      {
+        label: "Documentation",
+        href: "https://docs.featuresignals.com",
+        external: true,
+      },
       {
         label: "API Playground",
         href: "https://docs.featuresignals.com/api-playground",
+        external: true,
       },
-      { label: "SDKs", href: "https://docs.featuresignals.com/sdks/overview" },
-      { label: "GitHub", href: "https://github.com/dinesh-g1/featuresignals" },
+      {
+        label: "SDKs (8 Languages)",
+        href: "https://docs.featuresignals.com/sdks/overview",
+        external: true,
+      },
+      {
+        label: "Terraform Registry",
+        href: "https://registry.terraform.io/providers/featuresignals",
+        external: true,
+      },
+      {
+        label: "GitHub",
+        href: "https://github.com/dinesh-g1/featuresignals",
+        external: true,
+      },
     ],
   },
   {
@@ -40,12 +61,8 @@ const footerSections = [
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Changelog", href: "/changelog" },
-      {
-        label: "Quickstart Guide",
-        href: "https://docs.featuresignals.com/getting-started/quickstart",
-      },
+      { label: "System Status", href: "/status" },
       { label: "About", href: "/about" },
-      { label: "Status", href: "/status" },
       { label: "Contact Sales", href: "/contact" },
     ],
   },
@@ -60,10 +77,6 @@ const footerSections = [
     ],
   },
 ];
-
-function isExternal(href: string) {
-  return href.startsWith("http") || href.startsWith("mailto:");
-}
 
 function GitHubIcon() {
   return (
@@ -89,38 +102,114 @@ function XIcon() {
   );
 }
 
+function DiscordIcon() {
+  return (
+    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z" />
+    </svg>
+  );
+}
+
 export function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-        <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-6">
-          <div className="col-span-2 grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-5 lg:col-span-4">
+    <footer className="border-t border-stone-200 bg-stone-900">
+      <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
+        {/* Top section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-10 mb-12">
+          {/* Brand */}
+          <div className="max-w-xs">
+            <div className="flex items-center space-x-2 mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 32 32"
+                fill="none"
+                className="h-6 w-6"
+              >
+                <rect width="32" height="32" rx="7" fill="#0d9488" />
+                <path
+                  d="M7 3
+                     C7 3, 7 18, 7 29
+                     C7 18, 23 8, 17 14
+                     C13 18, 25 22, 25 29"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <circle cx="24.5" cy="26" r="1.8" fill="white" opacity="0.85" />
+              </svg>
+              <span className="font-bold tracking-tight text-white text-lg">
+                FeatureSignals
+              </span>
+            </div>
+            <p className="text-stone-400 text-sm leading-relaxed mb-6">
+              The control plane for software delivery. Sub-millisecond latency.
+              Automated tech-debt cleanup. OpenFeature native.
+            </p>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/dinesh-g1/featuresignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-stone-400 hover:text-white transition-colors"
+                aria-label="GitHub"
+              >
+                <GitHubIcon />
+              </a>
+              <a
+                href="https://linkedin.com/company/featuresignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-stone-400 hover:text-white transition-colors"
+                aria-label="LinkedIn"
+              >
+                <LinkedInIcon />
+              </a>
+              <a
+                href="https://x.com/featuresignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-stone-400 hover:text-white transition-colors"
+                aria-label="X (Twitter)"
+              >
+                <XIcon />
+              </a>
+              <a
+                href="https://discord.gg/featuresignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-stone-400 hover:text-white transition-colors"
+                aria-label="Discord"
+              >
+                <DiscordIcon />
+              </a>
+            </div>
+          </div>
+
+          {/* Links grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 lg:gap-12 flex-1">
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">
                   {section.title}
                 </h3>
-                <ul className="mt-3 space-y-2 text-sm text-slate-500">
+                <ul className="space-y-3">
                   {section.links.map((link) => (
                     <li key={link.label}>
-                      {isExternal(link.href) ? (
+                      {link.external ? (
                         <a
                           href={link.href}
-                          className={
-                            "highlight" in link && link.highlight
-                              ? "font-medium text-indigo-600 transition-colors hover:text-indigo-700"
-                              : "transition-colors hover:text-slate-900"
-                          }
-                          {...(link.href.startsWith("http")
-                            ? { target: "_blank", rel: "noopener noreferrer" }
-                            : {})}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-stone-400 hover:text-white transition-colors"
                         >
                           {link.label}
                         </a>
                       ) : (
                         <Link
                           href={link.href}
-                          className="transition-colors hover:text-slate-900"
+                          className="text-sm text-stone-400 hover:text-white transition-colors"
                         >
                           {link.label}
                         </Link>
@@ -131,69 +220,49 @@ export function Footer() {
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="col-span-2 flex flex-col items-start gap-5 border-t border-slate-200 pt-6 lg:col-span-2 lg:items-end lg:border-t-0 lg:pt-0">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-lg font-bold tracking-tight text-indigo-600 transition-colors hover:text-indigo-700"
+        {/* Operational status bar */}
+        <div className="border-t border-stone-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center space-x-3">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            </span>
+            <span className="font-mono text-sm font-medium text-stone-400">
+              All Edge Nodes Operational
+            </span>
+          </div>
+
+          <div className="flex gap-6 text-sm text-stone-500">
+            <a
+              href="#"
+              className="hover:text-stone-300 transition-colors font-mono text-xs"
             >
-              <img src="/favicon.svg" alt="" className="h-6 w-6" aria-hidden />
-              FeatureSignals
-            </Link>
-
+              SOC 2 Type II
+            </a>
+            <a
+              href="#"
+              className="hover:text-stone-300 transition-colors font-mono text-xs"
+            >
+              OpenFeature Native
+            </a>
             <Link
               href="/status"
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+              className="hover:text-stone-300 transition-colors font-mono text-xs"
             >
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              </span>
-              System Status
+              Uptime 99.95%
             </Link>
-
-            <div className="flex items-center gap-3">
-              <a
-                href="https://github.com/dinesh-g1/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-400 transition-colors hover:text-slate-700"
-                aria-label="GitHub"
-              >
-                <GitHubIcon />
-              </a>
-              <a
-                href="https://linkedin.com/company/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-400 transition-colors hover:text-slate-700"
-                aria-label="LinkedIn"
-              >
-                <LinkedInIcon />
-              </a>
-              <a
-                href="https://x.com/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-400 transition-colors hover:text-slate-700"
-                aria-label="X (Twitter)"
-              >
-                <XIcon />
-              </a>
-            </div>
-
-            <ComplianceBadges />
           </div>
         </div>
 
-        <div className="mt-8 border-t border-slate-200 pt-8 text-center text-xs text-slate-400">
-          <p className="font-medium text-slate-500">
-            Proudly built in Bharat, engineered for the world.
-          </p>
-          <p className="mt-2">
+        {/* Bottom bar */}
+        <div className="mt-6 pt-6 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-600">
+          <p>
             &copy; {new Date().getFullYear()} Vivekananda Technology Labs,
             trading as FeatureSignals. Apache-2.0 License.
           </p>
-          <p className="mt-1">
+          <p>
             Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,
             Telangana - 500089, India
           </p>

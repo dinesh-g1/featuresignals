@@ -1,129 +1,88 @@
 import type { Metadata } from "next";
-import { LegalArticle } from "@/components/legal-article";
-import { SectionReveal } from "@/components/section-reveal";
 
 export const metadata: Metadata = {
-  title: "Return & Refund Policy",
+  title: "Refund Policy",
   description:
-    "Refund and cancellation terms for FeatureSignals subscriptions and paid IT services.",
+    "FeatureSignals refund policy. Details on eligibility, processing time, and exceptions for subscription refunds.",
 };
 
 export default function RefundPolicyPage() {
   return (
-    <LegalArticle title="Return & Refund Policy">
-      <SectionReveal>
+    <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+      <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 mb-2">
+        Refund Policy
+      </h1>
+      <p className="text-sm text-stone-400 mb-8">Last updated: January 15, 2026</p>
+
+      <div className="prose prose-stone max-w-none space-y-6 text-sm text-stone-600 leading-relaxed">
+        <h2 className="text-lg font-semibold text-stone-800">1. Subscription Refunds</h2>
         <p>
-          This Refund Policy applies to paid subscriptions and fees for{" "}
-          <strong>FeatureSignals</strong>, a product of{" "}
-          <strong>Vivekananda Technology Labs</strong>. It covers our hosted
-          SaaS offering and is written in line with common practices for Indian
-          and international software companies.
+          For monthly Pro subscriptions, you may request a full refund within 14 days of your
+          initial payment. After 14 days, no refunds are issued for the current billing period,
+          but your subscription will remain active until the end of the paid period.
+        </p>
+        <p>
+          For annual Pro subscriptions, you may request a prorated refund for the unused portion
+          of your subscription term within the first 30 days. After 30 days, refunds are not
+          available for annual plans.
         </p>
 
-        <h2>1. Nature of the product</h2>
+        <h2 className="text-lg font-semibold text-stone-800">2. Enterprise Plans</h2>
         <p>
-          FeatureSignals provides <strong>digital IT services</strong> (access
-          to software hosted by us). Fees cover ongoing access, support tiers as
-          described in your plan, and related infrastructure — not physical
-          goods. Since this is a digital service, traditional &quot;return&quot;
-          of a physical product does not apply.
+          Enterprise plan refunds are governed by the terms of your signed Enterprise Agreement.
+          Please refer to your contract for specific refund provisions. Contact your account
+          manager for assistance.
         </p>
 
-        <h2>2. Refund duration and mode</h2>
+        <h2 className="text-lg font-semibold text-stone-800">3. Free Tier</h2>
         <p>
-          If you believe you were charged incorrectly or experience a billing
-          error, you may request a refund within <strong>14 days</strong> of the
-          charge date. Approved refunds will be credited back to the{" "}
-          <strong>original payment method</strong> used at the time of purchase.
-          Refunds are typically processed within{" "}
-          <strong>5–10 business days</strong> after approval, depending on your
-          bank or payment provider.
+          The Free tier has no associated fees and therefore no refunds are applicable. You may
+          cancel your account at any time.
         </p>
 
-        <h2>3. Free trial</h2>
+        <h2 className="text-lg font-semibold text-stone-800">4. Service Downtime Credits</h2>
         <p>
-          Where we offer a free trial, you can use the service for the stated
-          trial period without charge unless you add a payment method and
-          explicitly upgrade to a paid plan. If you do not subscribe before the
-          trial ends, access to paid features may end automatically.
+          If the Service fails to meet our SLA commitments (99.9% for Pro, 99.95% for Enterprise),
+          you may be eligible for service credits as outlined in your plan agreement. SLA credits
+          are calculated as a percentage of your monthly fee based on the actual uptime achieved.
         </p>
 
-        <h2>4. Subscription fees</h2>
+        <h2 className="text-lg font-semibold text-stone-800">5. How to Request a Refund</h2>
         <p>
-          Paid plans are generally billed in advance on a recurring basis (for
-          example, monthly or annually) as shown at checkout or in your account.
-          By subscribing, you authorize us and our payment partners to charge
-          the applicable fees using your chosen payment method.
+          To request a refund, contact us at{" "}
+          <a href="mailto:billing@featuresignals.com" className="text-accent hover:underline">
+            billing@featuresignals.com
+          </a>{" "}
+          with your account email and reason for the request. We will process your request within
+          5-7 business days. Refunds are issued to the original payment method.
         </p>
 
-        <h2>5. Refund eligibility</h2>
-        <ul>
-          <li>
-            <strong>Billing errors:</strong> If you believe you were charged
-            incorrectly, contact us within <strong>14 days</strong> of the
-            charge. After we verify an error attributable to us or our payment
-            processor, we will correct the charge or issue a refund to the{" "}
-            <strong>original payment method</strong>.
-          </li>
-          <li>
-            <strong>Duplicate charges:</strong> Accidental duplicate payments will
-            be refunded to the <strong>original payment method</strong> after
-            verification.
-          </li>
-          <li>
-            <strong>General policy:</strong> Except as above or as required by
-            applicable law, subscription fees are <strong>non-refundable</strong>{" "}
-            once the billing period has started, because the service is delivered
-            continuously during that period. We do not provide partial refunds for
-            unused time when you cancel mid-cycle unless we agree otherwise in
-            writing or the law in your jurisdiction requires it.
-          </li>
-          <li>
-            <strong>Statutory rights:</strong> Nothing in this policy limits
-            mandatory consumer rights that cannot be waived under the laws of
-            India or your country of residence.
-          </li>
+        <h2 className="text-lg font-semibold text-stone-800">6. Exceptions</h2>
+        <p>
+          No refunds are provided for:
+        </p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Add-on services or one-time purchases</li>
+          <li>Accounts terminated for Terms of Service violations</li>
+          <li>Periods where the service was used and then discontinued</li>
+          <li>Third-party integrations or services purchased through our platform</li>
         </ul>
 
-        <h2>6. Downgrades and plan changes</h2>
+        <h2 className="text-lg font-semibold text-stone-800">7. Chargebacks</h2>
         <p>
-          If you move to a lower tier or reduce seats, pricing adjustments will
-          apply from the next billing cycle unless we specify otherwise at the
-          time of the change.
+          If you initiate a chargeback without first requesting a refund, your account may be
+          suspended. We encourage you to contact us first so we can resolve any billing issues
+          directly.
         </p>
 
-        <h2>7. How to request a refund</h2>
+        <h2 className="text-lg font-semibold text-stone-800">8. Contact</h2>
         <p>
-          Email{" "}
-          <a href="mailto:support@featuresignals.com">support@featuresignals.com</a>{" "}
-          with your account email, invoice or transaction reference, and a
-          description of the issue. We will review your request and respond within{" "}
-          <strong>3 business days</strong>.
+          For billing inquiries and refund requests, contact us at{" "}
+          <a href="mailto:billing@featuresignals.com" className="text-accent hover:underline">
+            billing@featuresignals.com
+          </a>
         </p>
-
-        <h2>8. Chargebacks and disputes</h2>
-        <p>
-          Please contact us before initiating a chargeback so we can resolve the
-          issue. Unresolved chargebacks may result in suspension of access until
-          the dispute is cleared.
-        </p>
-
-        <h2>9. Open-source self-hosting</h2>
-        <p>
-          The FeatureSignals software is available under the Apache-2.0 license
-          for self-hosting. This Refund Policy applies to{" "}
-          <strong>paid hosted services from us</strong>, not to third-party
-          infrastructure or support you purchase elsewhere.
-        </p>
-
-        <h2>10. Contact</h2>
-        <p>
-          For refund and billing questions, email{" "}
-          <a href="mailto:support@featuresignals.com">support@featuresignals.com</a>{" "}
-          with your account email and invoice or transaction reference if
-          available.
-        </p>
-      </SectionReveal>
-    </LegalArticle>
+      </div>
+    </div>
   );
 }

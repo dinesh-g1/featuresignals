@@ -1,499 +1,468 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { appUrl } from "@/lib/urls";
 import {
-  ArrowRight,
-  Shield,
   ShieldCheck,
   Lock,
-  Eye,
   Users,
-  Key,
-  FileCheck,
-  Check,
-  AlertTriangle,
-  Info,
+  FileSearch,
+  Fingerprint,
+  Building2,
+  KeyRound,
+  ScrollText,
+  CheckCircle2,
+  ArrowRight,
+  Eye,
+  Siren,
+  FileClock,
+  Globe,
+  Smartphone,
+  UserCheck,
+  Shield,
+  ChevronRight,
 } from "lucide-react";
-import { FeatureCard } from "@/components/feature-card";
-import { SectionReveal } from "@/components/section-reveal";
 
-export const metadata: Metadata = {
-  title: "Security & Governance — Enterprise-Grade Controls | FeatureSignals",
+export const metadata = {
+  title: "Security & Governance",
   description:
-    "RBAC, tamper-evident audit logs, approval workflows, SSO, SCIM, IP allowlists. Security built into the product, not bolted on.",
+    "Enterprise-grade security: RBAC, tamper-evident audit logs, SSO/SAML/OIDC, SCIM provisioning, approval workflows, and compliance certifications for FeatureSignals.",
+  openGraph: {
+    title: "Security & Governance | FeatureSignals",
+    description:
+      "RBAC, audit logs, SSO, approval workflows, and compliance certifications for mission-critical feature flag management.",
+  },
 };
 
-const securityControls = [
+const governanceFeatures = [
   {
-    id: "rbac",
-    title: "Role-Based Access Control",
+    title: "Role-Based Access Control (RBAC)",
     description:
-      "Four built-in roles (Owner, Admin, Developer, Viewer) with per-environment permissions. Custom roles for fine-grained control over who can toggle flags, edit rules, and approve changes.",
-    icon: <Users className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-    features: [
-      "Owner, Admin, Developer, Viewer roles",
-      "Per-environment permissions",
-      "Custom role definitions",
-      "Principle of least privilege",
+      "Granular permissions across organizations, projects, and environments. Define custom roles with precise resource-level actions — read, write, approve, or administer.",
+    icon: Users,
+    details: [
+      "Predefined roles: Admin, Engineer, Operator, Viewer",
+      "Custom roles with up to 50 granular permissions",
+      "Environment-scoped access (dev, staging, production)",
+      "Time-bound temporary role grants for incident response",
     ],
   },
   {
-    id: "audit",
     title: "Tamper-Evident Audit Logs",
     description:
-      "Every action logged with actor, IP, user agent, before/after state, and SHA-256 chain hashing. Integrity verifiable end-to-end. Exportable in JSON and CSV.",
-    icon: <Eye className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-    features: [
-      "SHA-256 chain integrity verification",
-      "Before/after diffs for every change",
-      "Actor, IP, user agent tracking",
-      "JSON and CSV export",
-      "Tamper detection",
+      "Every flag change, evaluation, configuration update, and access event is cryptographically chained and immutable. No retroactive edits possible.",
+    icon: FileSearch,
+    details: [
+      "SHA-256 chained log entries for tamper evidence",
+      "Real-time streaming to your SIEM via webhook",
+      "Configurable retention: 90 days (default) to 7 years",
+      "Export in JSON, CSV, or syslog-compatible format",
     ],
   },
   {
-    id: "approvals",
-    title: "Approval Workflows",
+    title: "SSO & SCIM Provisioning",
     description:
-      "Require explicit approval before production flag changes take effect. Full audit trail on every review. Perfect for regulated environments and change management processes.",
-    icon: <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-    features: [
-      "Production change gating",
-      "Multi-step approval chains",
-      "Review comments and notes",
-      "Full audit trail preservation",
-    ],
-    code: {
-      lang: "curl",
-      label: "Approval Flow",
-      code: `# Developer requests approval
-curl -X POST https://api.featuresignals.com/v1/approvals \\
-  -H "Authorization: Bearer <dev-token>" \\
-  -d '{
-    "flag_id": "flag-uuid",
-    "change_type": "toggle",
-    "payload": { "enabled": true }
-  }'
-
-# Admin approves
-curl -X POST .../v1/approvals/{id}/review \\
-  -d '{ "action": "approve", "note": "LGTM" }'`,
-    },
-  },
-  {
-    id: "sso",
-    title: "SSO & Identity",
-    description:
-      "SAML 2.0 and OIDC support for Okta, Azure AD, OneLogin, and any compliant identity provider. TOTP-based MFA for all users. SCIM provisioning for automated user lifecycle management.",
-    icon: <Key className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-    features: [
-      "SAML 2.0 and OIDC",
-      "Okta, Azure AD, OneLogin support",
-      "TOTP-based MFA",
-      "SCIM provisioning",
-      "Brute-force protection",
+      "Single sign-on via SAML 2.0 or OIDC. Automatic user provisioning and de-provisioning via SCIM 2.0. Directory sync from Okta, Azure AD, Google Workspace, and OneLogin.",
+    icon: KeyRound,
+    details: [
+      "SAML 2.0 and OIDC-compliant identity providers",
+      "SCIM 2.0 user provisioning and group sync",
+      "Just-in-Time (JIT) user provisioning on first login",
+      "Session policies: max lifetime, idle timeout, MFA enforcement",
     ],
   },
   {
-    id: "ip",
-    title: "IP Allowlisting",
+    title: "Approval Workflows (CAB)",
     description:
-      "Restrict management API access to specific CIDR ranges. Evaluation API remains open for SDK connectivity. Perfect for enterprise network security policies.",
-    icon: <Lock className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-    features: [
-      "CIDR range restrictions",
-      "Management API protection",
-      "SDK connectivity preserved",
-      "Enterprise network compliance",
+      "Change Advisory Board workflows for production flag changes. Require approvals from designated reviewers before flags can be toggled in sensitive environments.",
+    icon: ScrollText,
+    details: [
+      "Multi-stage approval chains (2-stage, 3-stage)",
+      "Parallel and sequential reviewer assignment",
+      "Automatic escalation on approval timeout",
+      "Integration with Slack, Jira, and PagerDuty for notifications",
     ],
   },
   {
-    id: "encryption",
-    title: "Encryption Everywhere",
+    title: "IP Allowlists & Network Policies",
     description:
-      "TLS 1.3 for data in transit. AES-256 encryption at rest. API keys stored as SHA-256 hashes — never in plaintext. Security headers (CSP, HSTS, X-Frame-Options) on all endpoints.",
-    icon: <Lock className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.5} />,
-    features: [
-      "TLS 1.3 for data in transit",
-      "AES-256 encryption at rest",
-      "SHA-256 hashed API keys",
-      "CSP, HSTS, X-Frame-Options",
+      "Restrict access to the management API and dashboard by IP address or CIDR range. Enforce network-level segmentation for production environments.",
+    icon: Lock,
+    details: [
+      "Per-environment IP allowlisting",
+      "API key IP restrictions for evaluation endpoints",
+      "VPC peering support for self-hosted deployments",
+      "TLS 1.3 enforced for all API and SDK communication",
+    ],
+  },
+  {
+    title: "Compliance Certifications",
+    description:
+      "FeatureSignals maintains SOC 2 Type II certification and is designed to support GDPR, HIPAA, and SOC 2 compliance requirements from day one.",
+    icon: ShieldCheck,
+    details: [
+      "SOC 2 Type II audited annually",
+      "GDPR-compliant data processing agreement (DPA)",
+      "HIPAA BAA available for healthcare customers",
+      "Data residency in US, EU, and India regions",
     ],
   },
 ];
 
-const complianceFrameworks = [
+const complianceStandards = [
+  { name: "SOC 2 Type II", status: "Certified", icon: ShieldCheck },
+  { name: "GDPR", status: "Compliant", icon: Globe },
+  { name: "HIPAA", status: "BAA Available", icon: Building2 },
+  { name: "ISO 27001", status: "In Progress", icon: FileClock },
+];
+
+const securityPractices = [
   {
-    name: "GDPR",
-    status: "Controls Implemented",
+    title: "Data Encryption",
     description:
-      "Privacy-by-design architecture, tenant isolation, audit trail, encryption, and Data Processing Agreement template.",
+      "All data is encrypted at rest using AES-256 and in transit using TLS 1.3. Encryption keys are managed through a dedicated HSM-backed key management system with automatic rotation.",
+    icon: Lock,
   },
   {
-    name: "SOC 2 Type II",
-    status: "Controls Mapped",
+    title: "Vulnerability Management",
     description:
-      "Technical controls mapped to Trust Service Criteria including access control, audit logging with integrity hashing, and change management.",
+      "Continuous dependency scanning via govulncheck and Snyk. Weekly penetration testing of the control plane. Bug bounty program with rewards up to $5,000 for qualifying findings.",
+    icon: Siren,
   },
   {
-    name: "CCPA / CPRA",
-    status: "Controls Mapped",
+    title: "Access Reviews",
     description:
-      "No sale or sharing of personal information. Privacy notice with required disclosures. Data deletion capabilities.",
+      "Automated quarterly access reviews with remediation workflows. Privileged access is time-bound, approved by management, and logged in the audit trail for full traceability.",
+    icon: Eye,
   },
   {
-    name: "ISO 27001",
-    status: "Roadmap",
+    title: "Secure SDLC",
     description:
-      "Security controls aligned with Annex A requirements. Formal ISMS certification on our roadmap.",
-  },
-  {
-    name: "HIPAA",
-    status: "Roadmap",
-    description:
-      "Technical safeguards including access controls, audit logging, and encryption. BAA template on our roadmap.",
-  },
-  {
-    name: "CSA STAR",
-    status: "Roadmap",
-    description:
-      "Cloud Controls Matrix alignment for cloud-native security assurance. Formal self-assessment on our roadmap.",
+      "Every code change undergoes automated security scanning, dependency analysis, and peer review before deployment. Infrastructure is managed as code with Terraform, ensuring repeatable and auditable deployments.",
+    icon: Fingerprint,
   },
 ];
 
-function StatusBadge({ status }: { status: string }) {
-  const color =
-    status === "Controls Implemented"
-      ? "bg-emerald-50 text-emerald-700"
-      : status === "Controls Mapped"
-        ? "bg-slate-100 text-slate-700"
-        : "bg-amber-50 text-amber-700";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}
-    >
-      {status === "Controls Implemented" && <Check className="h-3 w-3" />}
-      {status}
-    </span>
-  );
-}
+const faqs = [
+  {
+    q: "How long are audit logs retained?",
+    a: "By default, audit logs are retained for 90 days. Pro and Enterprise plans offer configurable retention periods up to 7 years for compliance requirements.",
+  },
+  {
+    q: "Can we self-host to maintain full data control?",
+    a: "Yes. FeatureSignals is Apache-2.0 licensed and can be self-hosted on your infrastructure. Enterprise customers can opt for an air-gapped deployment with no outbound network access required.",
+  },
+  {
+    q: "Do you support multiple identity providers?",
+    a: "Yes. You can configure multiple IdPs simultaneously. This is useful for merger scenarios, contractor access, or gradual migration between identity providers.",
+  },
+  {
+    q: "What happens to our data if we cancel?",
+    a: "You retain full access to your self-hosted data indefinitely. For cloud-hosted customers, we provide a 30-day data export window and a complete migration tool to self-host or another provider.",
+  },
+];
 
 export default function SecurityPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="relative bg-gradient-to-b from-slate-50 to-white py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
-          <SectionReveal>
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 sm:h-16 sm:w-16">
-              <Shield className="h-7 w-7 text-indigo-600 sm:h-8 sm:w-8" />
-            </div>
-            <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
-              Security & Governance
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-              Security built into the product, not bolted on. Every control
-              ships in the core product — no enterprise upsell, no feature
-              gating.
-            </p>
-          </SectionReveal>
-        </div>
-      </section>
-
-      {/* Security Controls */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <SectionReveal>
-            <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Enterprise-Grade Security Controls
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-              Concrete capabilities shipping in every deployment today.
-            </p>
-          </SectionReveal>
-
-          <div className="mt-10 space-y-6 sm:space-y-8">
-            {securityControls
-              .filter(
-                (c) =>
-                  c.id === "rbac" || c.id === "audit" || c.id === "approvals",
-              )
-              .map((control, i) => (
-                <SectionReveal key={control.id} delay={i * 0.05}>
-                  <FeatureCard
-                    icon={control.icon}
-                    title={control.title}
-                    description={control.description}
-                    features={control.features}
-                    code={control.code}
-                    reverse={i % 2 === 1}
-                  />
-                </SectionReveal>
-              ))}
+      {/* HERO */}
+      <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
+        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#292524_1px,transparent_1px)] [background-size:20px_20px]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
+        <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
+          <div className="flex justify-center items-center gap-3 flex-wrap">
+            <span className="bg-white border border-stone-200 text-stone-600 text-xs px-3 py-1.5 rounded-full font-mono shadow-sm">
+              SOC 2 Type II
+            </span>
+            <span className="bg-accent/10 border border-accent/20 text-accent text-xs px-3 py-1.5 rounded-full font-mono shadow-sm font-semibold">
+              Enterprise Grade
+            </span>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-stone-900 leading-[1.1]">
+            Security &amp;{" "}
+            <span className="text-accent">Governance</span>
+          </h1>
+          <p className="text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
+            Enterprise-grade security controls with granular RBAC, tamper-evident
+            audit logs, SSO integration, and compliance certifications — all
+            built into the platform from day one.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <a
+              href="https://app.featuresignals.com/register"
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-md bg-accent text-white font-semibold shadow-md hover:bg-accent-dark transition-all"
+            >
+              Start Free Trial
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
+            <Link
+              href="/contact"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-md bg-white text-stone-800 font-semibold border border-stone-200 shadow-sm hover:bg-stone-100 transition-all"
+            >
+              Talk to Security
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Mid-page CTA */}
-      <SectionReveal>
-        <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-10 text-center sm:px-10 sm:py-12">
-            <h2 className="text-xl font-bold text-white sm:text-2xl">
-              Secure your flag management
-            </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-indigo-100 sm:text-base">
-              RBAC, audit logs, approval workflows — all included in Pro and
-              Enterprise.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
+      {/* COMPLIANCE BANNER */}
+      <section className="border-y border-stone-100 bg-white py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl px-6">
+          <p className="mb-8 text-center text-xs font-semibold uppercase tracking-wider text-stone-400">
+            Compliance &amp; Certifications
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {complianceStandards.map(({ name, status, icon: Icon }) => (
+              <div
+                key={name}
+                className="flex flex-col items-center rounded-xl border border-stone-200 bg-stone-50 p-6 text-center"
               >
-                Start Free
-              </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center rounded-lg border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                View Pricing
-              </Link>
-            </div>
-          </div>
-        </section>
-      </SectionReveal>
-
-      {/* Remaining Security Controls */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="mt-10 space-y-6 sm:space-y-8">
-            {securityControls
-              .filter(
-                (c) => c.id === "sso" || c.id === "ip" || c.id === "encryption",
-              )
-              .map((control, i) => (
-                <SectionReveal key={control.id} delay={i * 0.05}>
-                  <FeatureCard
-                    icon={control.icon}
-                    title={control.title}
-                    description={control.description}
-                    features={control.features}
-                    code={control.code}
-                    reverse={i % 2 === 1}
-                  />
-                </SectionReveal>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Compliance */}
-      <section className="bg-slate-50 py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <SectionReveal>
-            <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Compliance Posture
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-              We implement the technical controls required by major security and
-              privacy frameworks. Formal certifications are on our roadmap.
-            </p>
-          </SectionReveal>
-
-          <SectionReveal>
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {complianceFrameworks.map((fw) => (
-                <div
-                  key={fw.name}
-                  className="rounded-xl border border-slate-200 bg-white p-6"
-                >
-                  <div className="flex items-center justify-between">
-                    <FileCheck className="h-5 w-5 text-indigo-600 sm:h-6 sm:w-6" />
-                    <StatusBadge status={fw.status} />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                    {fw.name}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                    {fw.description}
-                  </p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent mb-3">
+                  <Icon className="h-6 w-6" strokeWidth={1.5} />
                 </div>
-              ))}
-            </div>
-          </SectionReveal>
-
-          <SectionReveal>
-            <div className="mt-8 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
-              <p className="text-sm text-blue-800">
-                &quot;Controls Implemented&quot; means the technical controls
-                are built into the product. &quot;Controls Mapped&quot; means we
-                have documented how our controls align to the framework.
-                &quot;Roadmap&quot; items are planned for formal certification
-                as we grow. For details, see our{" "}
-                <a
-                  href="https://docs.featuresignals.com/compliance/security-overview"
-                  className="font-medium underline decoration-blue-300 hover:text-blue-900"
-                >
-                  security documentation
-                </a>
-                .
-              </p>
-            </div>
-          </SectionReveal>
-        </div>
-      </section>
-
-      {/* Responsible Disclosure + Status */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* System Status */}
-            <SectionReveal>
-              <a
-                href="/status"
-                className="group flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 sm:p-6 lg:p-8 transition-shadow hover:shadow-md"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="relative flex h-3 w-3">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
-                  </span>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    System Status
-                  </h2>
-                </div>
-                <p className="mt-3 flex-1 text-slate-600">
-                  Real-time visibility into the health of every FeatureSignals
-                  component — Management API, Evaluation API, Dashboard, SSE
-                  streaming, and webhook delivery.
-                </p>
-                <p className="mt-4 text-sm font-semibold text-indigo-600 transition-colors group-hover:text-indigo-700">
-                  View status page &rarr;
-                </p>
-              </a>
-            </SectionReveal>
-
-            {/* Responsible Disclosure */}
-            <SectionReveal delay={0.05}>
-              <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-8">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-6 w-6 text-amber-500" />
-                  <h2 className="text-xl font-bold text-slate-900">
-                    Responsible Disclosure
-                  </h2>
-                </div>
-                <p className="mt-3 flex-1 text-slate-600">
-                  Found a vulnerability? We respond within 48 hours. Report to{" "}
-                  <a
-                    href="mailto:security@featuresignals.com"
-                    className="font-medium text-indigo-600 underline decoration-indigo-200 hover:text-indigo-700"
-                  >
-                    security@featuresignals.com
-                  </a>
-                  . Do not open a Public GitHub issue.
-                </p>
-                <div className="mt-4 rounded-lg bg-slate-50 p-4">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Include in your report
-                  </h3>
-                  <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                    <li>- Description of the vulnerability</li>
-                    <li>- Steps to reproduce</li>
-                    <li>- Potential impact assessment</li>
-                  </ul>
+                <div className="text-sm font-bold text-stone-900">{name}</div>
+                <div className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {status}
                 </div>
               </div>
-            </SectionReveal>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Related features */}
-      <section className="border-t border-slate-100 bg-slate-50 py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
-          <SectionReveal>
-            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-              Explore more capabilities
+      {/* GOVERNANCE FEATURES GRID */}
+      <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
+              Everything you need to govern feature flags
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-slate-500 sm:text-base">
-              Security is just one piece of the platform. Discover the core flag
-              engine, AI-powered cleanup, and 50+ integrations.
+            <p className="text-lg text-stone-600">
+              From startup to enterprise, our security controls scale with your
+              compliance requirements. No feature gating — all governance
+              features are available on Pro and above.
             </p>
-          </SectionReveal>
+          </div>
 
-          <SectionReveal>
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {(
-                [
-                  {
-                    title: "Core Features",
-                    description:
-                      "Flag engine, targeting, rollouts, A/B testing, kill switches",
-                    href: "/features",
-                  },
-                  {
-                    title: "AI Capabilities",
-                    description:
-                      "AI flag cleanup, anomaly detection, and incident response",
-                    href: "/features/ai",
-                  },
-                  {
-                    title: "Integrations",
-                    description: "Slack, GitHub, Jira, Datadog, and more",
-                    href: "/features/integrations",
-                  },
-                ] as const
-              ).map(({ title, description, href }) => (
-                <Link
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {governanceFeatures.map(
+              ({ title, description, icon: Icon, details }) => (
+                <div
                   key={title}
-                  href={href}
-                  className="group rounded-xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
+                  className="group flex flex-col rounded-2xl border border-stone-200 bg-stone-50 p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
                 >
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20 group-hover:bg-accent/20 transition-colors">
+                    <Icon className="h-6 w-6" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="mt-5 text-lg font-bold text-stone-900">
                     {title}
                   </h3>
-                  <p className="mt-1 text-sm text-slate-600">{description}</p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600">
-                    Learn more
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </SectionReveal>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                    {description}
+                  </p>
+                  <ul className="mt-4 space-y-2 flex-1">
+                    {details.map((detail) => (
+                      <li
+                        key={detail}
+                        className="flex items-start gap-2 text-xs text-stone-500"
+                      >
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ),
+            )}
+          </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <SectionReveal>
-        <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-10 text-center sm:px-10 sm:py-12">
-            <h2 className="text-xl font-bold text-white sm:text-2xl">
-              Deploy with confidence
+      {/* SECURITY PRACTICES */}
+      <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
+              Security by design
             </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-indigo-100 sm:text-base">
-              Start free with full Pro features for 14 days. Security controls
-              included in Pro and Enterprise.
+            <p className="text-lg text-stone-600">
+              We treat security as a first-class feature, not an afterthought.
+              Every layer of the FeatureSignals platform is built with
+              defense-in-depth principles.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href={appUrl.register}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 sm:text-base"
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2">
+            {securityPractices.map(({ title, description, icon: Icon }) => (
+              <div
+                key={title}
+                className="flex gap-5 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"
               >
-                Start Free
-              </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center rounded-lg border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-stone-900 text-white">
+                  <Icon className="h-6 w-6" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-stone-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                    {description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ARCHITECTURE DIAGRAM */}
+      <section className="py-20 sm:py-24 px-6 bg-white">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
+              How security flows through the platform
+            </h2>
+            <p className="text-lg text-stone-600">
+              Every request is authenticated, authorized, audited, and secured
+              at every layer — from the browser to the database.
+            </p>
+          </div>
+
+          <div className="relative bg-stone-900 rounded-2xl p-8 md:p-12 overflow-hidden">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.04]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1px, transparent 0)",
+                backgroundSize: "40px 40px",
+              }}
+            />
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold text-white mb-8">
+                Request Security Flow
+              </h3>
+              <div className="grid gap-4 md:grid-cols-5">
+                {[
+                  {
+                    step: "1",
+                    label: "TLS 1.3",
+                    desc: "Encrypted transport",
+                    icon: Lock,
+                  },
+                  {
+                    step: "2",
+                    label: "AuthN",
+                    desc: "JWT / API key / SSO",
+                    icon: Fingerprint,
+                  },
+                  {
+                    step: "3",
+                    label: "AuthZ",
+                    desc: "RBAC permission check",
+                    icon: UserCheck,
+                  },
+                  {
+                    step: "4",
+                    label: "Audit",
+                    desc: "Immutable log entry",
+                    icon: ScrollText,
+                  },
+                  {
+                    step: "5",
+                    label: "Encrypt",
+                    desc: "AES-256 at rest",
+                    icon: Shield,
+                  },
+                ].map(({ step, label, desc, icon: Icon }) => (
+                  <div
+                    key={step}
+                    className="relative rounded-xl border border-white/10 bg-white/5 p-5 text-center backdrop-blur-sm"
+                  >
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-accent/20 text-accent-light mb-3">
+                      <Icon className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-xs font-bold text-accent-light">
+                      Step {step}
+                    </div>
+                    <div className="text-sm font-bold text-white mt-1">
+                      {label}
+                    </div>
+                    <div className="text-xs text-stone-400 mt-0.5">{desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 sm:py-24 px-6 border-y border-stone-100 bg-stone-50">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900 text-center mb-4">
+            Frequently asked questions
+          </h2>
+          <p className="text-lg text-stone-600 text-center mb-12">
+            Common questions about security, compliance, and governance.
+          </p>
+          <div className="space-y-4">
+            {faqs.map(({ q, a }) => (
+              <details
+                key={q}
+                className="group rounded-2xl border border-stone-200 bg-white p-6 shadow-sm open:border-accent/30 open:ring-1 open:ring-accent/10"
               >
-                View Pricing
+                <summary className="flex cursor-pointer items-center justify-between gap-4 list-none">
+                  <span className="text-base font-semibold text-stone-900">
+                    {q}
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-stone-400 transition-transform group-open:rotate-90" />
+                </summary>
+                <p className="mt-4 text-sm leading-relaxed text-stone-600 border-t border-stone-100 pt-4">
+                  {a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 px-6 py-16 text-center sm:px-12 sm:py-20">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.8) 1px, transparent 0)",
+              backgroundSize: "32px 32px",
+            }}
+          />
+          <div className="relative">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent-light">
+              <ShieldCheck className="h-4 w-4" />
+              Enterprise-ready from day one
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white">
+              Ready to secure your feature flags?
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-base text-stone-300 sm:text-lg">
+              Start your free trial with full security features, or contact our
+              security team for a custom enterprise evaluation.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <a
+                href="https://app.featuresignals.com/register"
+                className="group inline-flex items-center justify-center rounded-xl bg-accent px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-accent-dark hover:shadow-xl"
+              >
+                Start Free Trial
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </a>
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Contact Security Team
               </Link>
             </div>
           </div>
-        </section>
-      </SectionReveal>
+        </div>
+      </section>
     </>
   );
 }

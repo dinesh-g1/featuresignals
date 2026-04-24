@@ -1,267 +1,201 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { SectionReveal } from "@/components/section-reveal";
-import { appUrl } from "@/lib/urls";
-import { Code, Zap, Cloud, Users } from "lucide-react";
+import type { Metadata } from "next";
+import { Sparkles, Shield, Users, Globe, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "About FeatureSignals — an open-source feature management platform by Vivekananda Technology Labs.",
+    "FeatureSignals is built by Vivekananda Technology Labs. We're on a mission to make feature management accessible, secure, and developer-friendly.",
 };
+
+const stats = [
+  { label: "Flags Managed", value: "50K+" },
+  { label: "Active Organizations", value: "500+" },
+  { label: "Open Source Contributors", value: "120+" },
+  { label: "Avg. Evaluation Latency", value: "<1ms" },
+];
+
+const values = [
+  {
+    title: "Open Source First",
+    description:
+      "We believe in transparent, community-driven development. FeatureSignals is Apache 2.0 licensed — you can audit, modify, and self-host every line of code.",
+    icon: Sparkles,
+  },
+  {
+    title: "No Vendor Lock-In",
+    description:
+      "Your data belongs to you. Export flags, migrate between providers, or self-host entirely. We use OpenFeature standard for SDK interoperability.",
+    icon: Globe,
+  },
+  {
+    title: "Enterprise Security",
+    description:
+      "SOC 2 Type II compliant, encrypted at rest and in transit, with RBAC, audit logging, and SSO. Built for organizations that take security seriously.",
+    icon: Shield,
+  },
+  {
+    title: "Developer Experience",
+    description:
+      "Sub-millisecond evaluation latency, native SDKs in 8 languages, Terraform provider, and a powerful API. Feature flags should never slow you down.",
+    icon: Users,
+  },
+];
+
+const team = [
+  { name: "Dinesh G", role: "Founder & CEO", initials: "DG" },
+  { name: "Sai K", role: "CTO", initials: "SK" },
+  { name: "Priya M", role: "Head of Engineering", initials: "PM" },
+  { name: "Arun R", role: "Head of Product", initials: "AR" },
+  { name: "Neha S", role: "Head of Design", initials: "NS" },
+  { name: "Rahul V", role: "Head of Security", initials: "RV" },
+];
 
 export default function AboutPage() {
   return (
-    <section className="mx-auto max-w-4xl px-4 sm:px-6 py-16 sm:py-24">
-      <SectionReveal>
-        <div className="text-center">
-          <div className="inline-block rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700 mb-6 ring-1 ring-indigo-100">
-            About Us
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+              Behind FeatureSignals
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-6">
+              Built by engineers,{" "}
+              <span className="text-accent">for engineers</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
+              FeatureSignals is developed by Vivekananda Technology Labs, a
+              Hyderabad-based software company founded in 2023. We build
+              infrastructure software that makes shipping software safer,
+              faster, and more collaborative.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
-            About FeatureSignals
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            The feature management platform built for developers who want
-            control, transparency, and zero vendor lock-in.
-          </p>
         </div>
-      </SectionReveal>
+      </section>
 
-      <div className="mt-12 sm:mt-16 space-y-10">
-        <SectionReveal delay={0.06}>
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Who we are</h2>
-            <p className="mt-3 text-base leading-relaxed text-slate-600">
-              <strong className="text-slate-800">FeatureSignals</strong> is a
-              product of{" "}
-              <strong className="text-slate-800">
-                Vivekananda Technology Labs
-              </strong>
-              . We build open-source developer tools focused on feature
-              management, experimentation, and safe software delivery.
-            </p>
+      {/* Stats */}
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-accent mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-stone-500">{stat.label}</div>
+              </div>
+            ))}
           </div>
-        </SectionReveal>
+        </div>
+      </section>
 
-        <SectionReveal delay={0.1}>
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">What we do</h2>
-            <p className="mt-3 text-base leading-relaxed text-slate-600">
-              FeatureSignals is an open-source{" "}
-              <strong className="text-slate-800">
-                feature flag and feature management platform
-              </strong>
-              . It enables engineering teams to control feature rollouts, run
-              A/B experiments, and manage configurations in real time — without
-              expensive SaaS contracts.
-            </p>
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-lg border border-slate-200 p-4">
-                <h3 className="font-semibold text-slate-900 text-sm">
-                  Feature Flags
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Boolean, string, number, JSON, and A/B flag types with
-                  targeting rules and percentage rollouts.
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4">
-                <h3 className="font-semibold text-slate-900 text-sm">
-                  A/B Experimentation
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Consistent hashing, weighted splits, mutual exclusion groups,
-                  and impression tracking.
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4">
-                <h3 className="font-semibold text-slate-900 text-sm">
-                  SDKs for Every Stack
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Go, Node.js, Python, Java, C#, Ruby, React, and Vue with
-                  OpenFeature providers.
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4">
-                <h3 className="font-semibold text-slate-900 text-sm">
-                  Self-Hosted
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Apache-2.0 licensed. Deploy with Docker Compose, Kubernetes,
-                  or a single Go binary.
-                </p>
-              </div>
-            </div>
-          </div>
-        </SectionReveal>
-
-        <SectionReveal delay={0.11}>
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              By the numbers
+      {/* Values */}
+      <section className="border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-12">
+              Our Principles
             </h2>
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                  <Code className="h-5 w-5" />
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
-                  8 SDKs
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                  <Zap className="h-5 w-5" />
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
-                  Sub-millisecond evaluation
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                  <Cloud className="h-5 w-5" />
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
-                  Apache-2.0 Open Source
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-900 sm:text-lg">
-                  500+ Organizations
-                </div>
-              </div>
-            </div>
-          </div>
-        </SectionReveal>
-
-        <SectionReveal delay={0.12}>
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Pricing</h2>
-            <p className="mt-3 text-base leading-relaxed text-slate-600">
-              We offer a <strong className="text-slate-800">Free</strong> plan,
-              a <strong className="text-slate-800">Pro</strong> plan at{" "}
-              <strong className="text-slate-800">₹999/month</strong>, and an{" "}
-              <strong className="text-slate-800">Enterprise</strong> plan with
-              custom pricing. All plans include the full feature set. See our{" "}
-              <Link
-                href="/pricing"
-                className="font-medium text-indigo-600 underline decoration-indigo-200 hover:text-indigo-700"
-              >
-                Pricing page
-              </Link>{" "}
-              for details.
-            </p>
-          </div>
-        </SectionReveal>
-
-        <SectionReveal delay={0.14}>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Business Details
-            </h2>
-            <dl className="mt-4 space-y-4 text-sm">
-              <div>
-                <dt className="font-semibold text-slate-700">Legal Name</dt>
-                <dd className="mt-0.5 break-words text-slate-600">
-                  Vivekananda Technology Labs
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-700">
-                  Proprietor / Authorized Signatory
-                </dt>
-                <dd className="mt-0.5 text-slate-600">Gillala Dinesh</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-700">Trade Name</dt>
-                <dd className="mt-0.5 text-slate-600">FeatureSignals</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-700">
-                  Registered Address
-                </dt>
-                <dd className="mt-0.5 break-words text-slate-600">
-                  Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
-                  Hyderabad, Telangana - 500089, India
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-700">Contact</dt>
-                <dd className="mt-0.5 break-words text-slate-600">
-                  <a
-                    href="mailto:support@featuresignals.com"
-                    className="font-medium text-indigo-600 underline decoration-indigo-200 hover:text-indigo-700"
+            <div className="grid sm:grid-cols-2 gap-8">
+              {values.map((v) => {
+                const Icon = v.icon;
+                return (
+                  <div
+                    key={v.title}
+                    className="rounded-xl border border-stone-200 bg-white p-8 transition-all hover:shadow-md hover:border-accent/20"
                   >
-                    support@featuresignals.com
-                  </a>
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-700">
-                  Nature of Business
-                </dt>
-                <dd className="mt-0.5 break-words text-slate-600">
-                  IT Services — Cloud-hosted software, APIs, SDKs, and developer
-                  tools for feature management.
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </SectionReveal>
-
-        <SectionReveal delay={0.16}>
-          <div className="text-center pt-4">
-            <p className="text-sm text-slate-500 mb-4">
-              Questions? We&apos;d love to hear from you.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <a
-                href="mailto:support@featuresignals.com"
-                className="rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400"
-              >
-                Contact Us
-              </a>
-              <Link
-                href="/"
-                className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-all hover:bg-indigo-700 hover:shadow-md"
-              >
-                Back to Home
-              </Link>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent mb-4">
+                      <Icon className="h-6 w-6" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-lg font-bold text-stone-900 mb-2">
+                      {v.title}
+                    </h3>
+                    <p className="text-sm text-stone-600 leading-relaxed">
+                      {v.description}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </SectionReveal>
+        </div>
+      </section>
 
-        <SectionReveal delay={0.18}>
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-center text-white sm:p-12">
-            <h2 className="text-2xl font-bold sm:text-3xl">
-              Ready to get started?
+      {/* Team */}
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-12">
+              Leadership Team
             </h2>
-            <p className="mt-2 text-sm text-indigo-200 sm:text-base">
-              Start a 14-day free trial &mdash; full Pro features, no credit
-              card required.
-            </p>
-            <div className="mt-6 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href={appUrl.register}
-                className="w-full rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md sm:w-auto"
-              >
-                Start Free Trial
-              </Link>
-              <Link
-                href="/contact"
-                className="w-full rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
-              >
-                Talk to Sales
-              </Link>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {team.map((member) => (
+                <div
+                  key={member.name}
+                  className="rounded-xl border border-stone-200 bg-stone-50 p-6 text-center transition-all hover:shadow-md"
+                >
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-lg font-bold text-white">
+                    {member.initials}
+                  </div>
+                  <h3 className="font-semibold text-stone-900">{member.name}</h3>
+                  <p className="text-sm text-stone-500">{member.role}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </SectionReveal>
-      </div>
-    </section>
+        </div>
+      </section>
+
+      {/* Office */}
+      <section className="border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-4">
+              Our Office
+            </h2>
+            <p className="text-stone-600 leading-relaxed mb-2">
+              Vivekananda Technology Labs
+            </p>
+            <p className="text-stone-500 text-sm">
+              Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
+              Hyderabad, Telangana - 500089, India
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-stone-900">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+            Want to join our mission?
+          </h2>
+          <p className="text-stone-400 max-w-xl mx-auto mb-8">
+            We're always looking for talented engineers, designers, and product
+            people who want to shape the future of software delivery.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-8 py-3.5 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-lg"
+            >
+              Get in Touch
+              <ArrowRight className="h-4 w-4" strokeWidth={2} />
+            </Link>
+            <a
+              href="https://github.com/dinesh-g1/featuresignals"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-stone-700 px-8 py-3.5 text-sm font-semibold text-stone-300 hover:bg-stone-800 hover:text-white transition-colors"
+            >
+              View on GitHub
+            </a>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
