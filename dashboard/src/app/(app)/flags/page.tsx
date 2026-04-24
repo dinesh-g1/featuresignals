@@ -24,10 +24,19 @@ import {
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
-import { Flag, Search, ChevronRight, Trash2, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Flag,
+  Search,
+  ChevronRight,
+  Trash2,
+  Loader2,
+  SlidersHorizontal,
+} from "lucide-react";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { DOCS_LINKS } from "@/components/docs-link";
+import { FlagSlideOver } from "@/components/flag-slide-over";
 import {
   useFlags,
   useEnvironments,
@@ -50,6 +59,7 @@ import {
 import type {
   FlagState,
   Flag as FlagType,
+  TargetingRule,
   Environment as EnvironmentType,
 } from "@/lib/types";
 
@@ -167,6 +177,7 @@ export default function FlagsPage() {
   }>({});
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [selectedFlagKey, setSelectedFlagKey] = useState<string | null>(null);
 
   // Initialize filters from URL search params on mount
   useEffect(() => {
@@ -407,35 +418,82 @@ export default function FlagsPage() {
   }
 
   return (
-    <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
-      <FlagsWithData
-        search={search}
-        searchInput={searchInput}
-        setSearchInput={setSearchInput}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        tagFilter={tagFilter}
-        setTagFilter={setTagFilter}
-        showCreate={showCreate}
-        setShowCreate={setShowCreate}
-        newFlag={newFlag}
-        setNewFlag={setNewFlag}
-        fieldErrors={fieldErrors}
-        setFieldErrors={setFieldErrors}
-        deleting={deleting}
-        setDeleting={setDeleting}
-        toggling={toggling}
-        setToggling={setToggling}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        sortDir={sortDir}
-        setSortDir={setSortDir}
+    <>
+      <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
+        <FlagsWithData
+          search={search}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          tagFilter={tagFilter}
+          setTagFilter={setTagFilter}
+          showCreate={showCreate}
+          setShowCreate={setShowCreate}
+          newFlag={newFlag}
+          setNewFlag={setNewFlag}
+          fieldErrors={fieldErrors}
+          setFieldErrors={setFieldErrors}
+          deleting={deleting}
+          setDeleting={setDeleting}
+          toggling={toggling}
+          setToggling={setToggling}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortDir={sortDir}
+          setSortDir={setSortDir}
+          selectedFlagKey={selectedFlagKey}
+          setSelectedFlagKey={setSelectedFlagKey}
+        />
+      </PrerequisiteGate>
+
+      <FlagSlideOver
+        isOpen={!!selectedFlagKey}
+        onClose={() => setSelectedFlagKey(null)}
+        flag={
+          selectedFlagKey && flags
+            ? flags.find((f) => f.key === selectedFlagKey)
+            : undefined
+        }
+        flagState={selectedFlagKey ? stateMap.get(selectedFlagKey) : undefined}
+        onToggle={async (enabled) => {
+          if (!token || !projectId || !currentEnvId || !selectedFlagKey) return;
+          try {
+            await api.updateFlagState(
+              token,
+              projectId,
+              selectedFlagKey,
+              currentEnvId,
+              { enabled },
+            );
+            refetchFlags();
+          } catch (err) {
+            console.error("Toggle failed", err);
+          }
+        }}
+        onSaveRules={async (rules) => {
+          if (!token || !projectId || !currentEnvId || !selectedFlagKey) return;
+          try {
+            await api.updateFlagState(
+              token,
+              projectId,
+              selectedFlagKey,
+              currentEnvId,
+              {
+                rules,
+              },
+            );
+            refetchFlags();
+          } catch (err) {
+            console.error("Save rules failed", err);
+          }
+        }}
       />
-    </PrerequisiteGate>
+    </>
   );
 }
 
@@ -469,6 +527,8 @@ function FlagsWithData({
   setSortBy,
   sortDir,
   setSortDir,
+  selectedFlagKey,
+  setSelectedFlagKey,
 }: {
   search: string;
   searchInput: string;
@@ -502,6 +562,8 @@ function FlagsWithData({
   setSortBy: (v: SortKey) => void;
   sortDir: "asc" | "desc";
   setSortDir: (v: "asc" | "desc") => void;
+  selectedFlagKey: string | null;
+  setSelectedFlagKey: (v: string | null) => void;
 }) {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
@@ -762,6 +824,7 @@ function FlagsWithData({
       deleteFlag={deleteFlag}
       filtered={filtered}
       refetchFlags={refetchFlags}
+      onFlagClick={(key) => setSelectedFlagKey(key)}
     />
   );
 }
@@ -808,6 +871,7 @@ function FlagsContent({
   deleteFlag,
   filtered,
   refetchFlags,
+  onFlagClick,
 }: {
   flags: FlagType[] | undefined;
   envs: EnvironmentType[] | undefined;
@@ -847,21 +911,21 @@ function FlagsContent({
   deleteFlag: MutationResult<string, unknown>;
   filtered: FlagType[];
   refetchFlags: () => void;
+  onFlagClick: (key: string) => void;
 }) {
   const currentEnvId = useAppStore((s) => s.currentEnvId);
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
-        title="Feature Flags"
-        description={`${(flags ?? []).length} flags in this project`}
-        docsUrl={DOCS_LINKS.flags}
-        actions={
-          <Button onClick={() => setShowCreate(!showCreate)}>
-            Create Flag
-          </Button>
-        }
-      />
+        title="⚑ Feature Flags"
+        description={`${(flags ?? []).length} flags in this project — Manage, toggle, and govern your feature rollout`}
+      >
+        <Button onClick={() => setShowCreate(!showCreate)}>
+          <Flag className="h-4 w-4" strokeWidth={1.5} />
+          Create Flag
+        </Button>
+      </PageHeader>
 
       <ContextualHint hint={HINTS.flagsFirstVisit} />
       <UpgradeNudge context="projects" />
@@ -870,7 +934,7 @@ function FlagsContent({
         <form
           onSubmit={handleCreate}
           noValidate
-          className="rounded-xl border border-indigo-200/60 bg-white p-4 space-y-4 shadow-md shadow-indigo-100/30 ring-1 ring-indigo-100/60 sm:p-6"
+          className="rounded-xl border border-accent/20 bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -889,7 +953,7 @@ function FlagsContent({
                 className="mt-1"
               />
               {fieldErrors.key && (
-                <p id="key-error" className="mt-1 text-sm text-red-600">
+                <p id="key-error" className="mt-1 text-xs text-red-500">
                   {fieldErrors.key}
                 </p>
               )}
@@ -1036,14 +1100,18 @@ function FlagsContent({
               />
             )}
             {fieldErrors.default_value && (
-              <p id="default_value-error" className="mt-1 text-sm text-red-600">
+              <p id="default_value-error" className="mt-1 text-xs text-red-500">
                 {fieldErrors.default_value}
               </p>
             )}
           </div>
           <div className="flex gap-2">
-            <Button type="submit" disabled={createFlag.loading}>
-              {createFlag.loading ? "Creating..." : "Create"}
+            <Button
+              type="submit"
+              disabled={createFlag.loading}
+              loading={createFlag.loading}
+            >
+              {createFlag.loading ? "Creating..." : "Create Flag"}
             </Button>
             <Button
               type="button"
@@ -1057,10 +1125,10 @@ function FlagsContent({
       )}
 
       {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white/60 p-3 ring-1 ring-slate-100/80 backdrop-blur-sm sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200/60 bg-white/80 p-3 shadow-sm sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:w-auto">
           <Search
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
             aria-hidden="true"
           />
           <Input
@@ -1109,14 +1177,14 @@ function FlagsContent({
       </div>
 
       {/* Sort controls */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
         <span>Sort by:</span>
         {(["key", "name", "created_at", "updated_at"] as SortKey[]).map(
           (key) => (
             <button
               key={key}
               onClick={() => handleSort(key)}
-              className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-indigo-50 text-indigo-700 font-medium shadow-sm ring-1 ring-indigo-100/60" : "hover:bg-slate-100"}`}
+              className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-accent/10 text-accent-dark font-medium shadow-sm ring-1 ring-accent/20" : "hover:bg-stone-100 text-stone-500"}`}
             >
               {key.replace(/_/g, " ")}
               {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
@@ -1126,10 +1194,11 @@ function FlagsContent({
       </div>
 
       <Card>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-stone-100">
           {filtered.length === 0 ? (
             <EmptyState
               icon={Flag}
+              emoji="⚑"
               title="No flags yet"
               description="Flags let you control which features your users see. Create your first flag to start shipping safely."
               docsUrl={DOCS_LINKS.flags}
@@ -1141,15 +1210,13 @@ function FlagsContent({
               return (
                 <div
                   key={flag.id}
-                  className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-indigo-50/40 sm:px-6 sm:py-4"
+                  className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-accent/5 cursor-pointer sm:px-6 sm:py-4"
+                  onClick={() => onFlagClick(flag.key)}
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <Link
-                      href={`/flags/${flag.key}`}
-                      className="min-w-0 flex-1"
-                    >
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-mono text-sm font-medium text-slate-900">
+                        <p className="font-mono text-sm font-medium text-stone-900 group-hover/row:text-accent-dark transition-colors">
                           {flag.key}
                         </p>
                         <Badge>
@@ -1162,10 +1229,10 @@ function FlagsContent({
                           <StatusBadge status={flag.status} />
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-stone-500">
                         {flag.name}
                       </p>
-                    </Link>
+                    </div>
                     <div className="flex items-center gap-2 sm:gap-3">
                       {flag.tags?.map((tag: string) => (
                         <Badge key={tag}>{tag}</Badge>
@@ -1176,7 +1243,9 @@ function FlagsContent({
                           <Switch
                             size="sm"
                             checked={st?.enabled ?? false}
-                            onCheckedChange={() => handleQuickToggle(flag.key)}
+                            onCheckedChange={(checked) => {
+                              handleQuickToggle(flag.key);
+                            }}
                             disabled={toggling === flag.key}
                             aria-label={`Toggle in ${currentEnvName || "current env"}`}
                             className={
@@ -1184,12 +1253,12 @@ function FlagsContent({
                             }
                           />
                           {toggling === flag.key && (
-                            <Loader2 className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin text-slate-500" />
+                            <Loader2 className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin text-stone-500" />
                           )}
                         </span>
                       )}
 
-                      <span className="hidden text-xs text-slate-400 sm:inline">
+                      <span className="hidden text-xs text-stone-400 sm:inline">
                         {new Date(flag.created_at).toLocaleDateString()}
                       </span>
                       {deleting === flag.key ? (
@@ -1197,14 +1266,20 @@ function FlagsContent({
                           <Button
                             size="sm"
                             variant="destructive-ghost"
-                            onClick={() => handleDelete(flag.key)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(flag.key);
+                            }}
                           >
                             Confirm
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => setDeleting(null)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleting(null);
+                            }}
                           >
                             Cancel
                           </Button>
@@ -1214,24 +1289,19 @@ function FlagsContent({
                           size="icon-sm"
                           variant="ghost"
                           onClick={(e) => {
-                            e.preventDefault();
+                            e.stopPropagation();
                             setDeleting(flag.key);
                           }}
                           title="Delete flag"
-                          className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          className="text-stone-400 hover:text-red-500 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
-                      <Link
-                        href={`/flags/${flag.key}`}
-                        aria-label={`Open flag ${flag.key}`}
-                      >
-                        <ChevronRight
-                          className="h-4 w-4 text-slate-400"
-                          aria-hidden="true"
-                        />
-                      </Link>
+                      <ChevronRight
+                        className="h-4 w-4 text-stone-300 group-hover/row:text-accent transition-colors shrink-0"
+                        strokeWidth={1.5}
+                      />
                     </div>
                   </div>
                 </div>

@@ -24,6 +24,7 @@ vi.mock("@/stores/app-store", () => ({
       user: { name: "Test User", email: "test@example.com" },
       organization: { plan: "free" },
       logout: mockLogout,
+      requestTour: vi.fn(),
     };
     return selector(state);
   },
@@ -34,6 +35,7 @@ vi.mock("@/stores/sidebar-store", () => ({
     const state = {
       isOpen: true,
       close: mockClose,
+      open: vi.fn(),
     };
     return selector(state);
   },
@@ -44,11 +46,11 @@ describe("Sidebar", () => {
     vi.clearAllMocks();
   });
 
-  it("renders navigation links", () => {
-    // Arrange & Act
+  it("renders main navigation links with text labels", () => {
+    // Arrange & Act — behaviour: user sees nav item labels
     render(<Sidebar />);
 
-    // Assert
+    // Assert — text labels are present irrespective of emoji icons or CSS
     expect(screen.getAllByText("Overview").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Flags").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Segments").length).toBeGreaterThan(0);
@@ -56,10 +58,10 @@ describe("Sidebar", () => {
   });
 
   it("shows 'Upgrade to Pro' when organization plan is free", () => {
-    // Arrange & Act
+    // Arrange & Act — behaviour: free-tier users see an upgrade prompt
     render(<Sidebar />);
 
-    // Assert
+    // Assert — the upgrade CTA text is visible
     expect(screen.getAllByText("Upgrade to Pro").length).toBeGreaterThan(0);
   });
 
@@ -67,19 +69,29 @@ describe("Sidebar", () => {
     // Arrange
     render(<Sidebar />);
 
-    // Act
-     const logoutButtons = screen.getAllByLabelText("Sign out");
+    // Act — user clicks the sign-out action
+    const logoutButtons = screen.getAllByLabelText("Sign out");
     fireEvent.click(logoutButtons[0]);
 
-    // Assert
+    // Assert — logout was triggered
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 
-  it("renders brand name 'FeatureSignals'", () => {
-    // Arrange & Act
+  it("renders Insights and Governance navigation sections", () => {
+    // Arrange & Act — behaviour: user sees grouped nav areas
     render(<Sidebar />);
 
-    // Assert
-    expect(screen.getAllByText("FeatureSignals").length).toBeGreaterThan(0);
+    // Assert — nav section labels appear (collapsible group headers)
+    expect(screen.getAllByText("Insights").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Governance").length).toBeGreaterThan(0);
+  });
+
+  it("shows user profile section", () => {
+    // Arrange & Act — behaviour: user sees their profile info
+    render(<Sidebar />);
+
+    // Assert — user details rendered
+    expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("test@example.com").length).toBeGreaterThan(0);
   });
 });

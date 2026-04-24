@@ -18,8 +18,7 @@ export {
 } from "./badge";
 export { EmptyState } from "./empty-state";
 export { LoadingSpinner } from "./loading-spinner";
-export { PageHeader } from "./page-header";
-export { StatCard } from "./stat-card";
+export { PageHeader, PageHeaderTabs, StatCard } from "./page-header";
 export { Label } from "./label";
 export { Textarea } from "./textarea";
 export { ErrorDisplay, type ErrorDisplayProps } from "./error-display";

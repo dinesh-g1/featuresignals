@@ -22,6 +22,10 @@ import (
 	"github.com/featuresignals/server/internal/email"
 	"github.com/featuresignals/server/internal/eval"
 	"github.com/featuresignals/server/internal/events"
+	"github.com/featuresignals/server/internal/integrations"
+	"github.com/featuresignals/server/internal/integrations/flagsmith"
+	"github.com/featuresignals/server/internal/integrations/iac"
+	"github.com/featuresignals/server/internal/integrations/unleash"
 	"github.com/featuresignals/server/internal/lifecycle"
 	"github.com/featuresignals/server/internal/mailer"
 	"github.com/featuresignals/server/internal/metrics"
@@ -429,4 +433,29 @@ func (m *multiHandler) WithGroup(name string) slog.Handler {
 		handlers[i] = h.WithGroup(name)
 	}
 	return &multiHandler{handlers: handlers}
+}
+
+
+// initProviders registers all provider factories at startup.
+// Called explicitly from main() — no init() functions with side effects.
+func initProviders() {
+	// ─── 1. Migration Importers (feature flag providers) ──────────────
+	// Note: LaunchDarkly uses the client directly since it doesn't have
+	// a NewImporter factory. The integration handler wraps it.
+	// integrations.Register("launchdarkly", launchdarkly.NewImporter)
+	integrations.Register("unleash", unleash.NewImporter)
+	integrations.Register("flagsmith", flagsmith.NewImporter)
+
+	// ─── 2. Git Providers (AI Janitor PR generation) ─────────────────
+	// Git provider implementations are loaded via the JanitorHandler.
+	// Providers register their factories at startup.
+	// janitor.RegisterGitProvider("github", janitor.NewGitHubProvider)
+	// janitor.RegisterGitProvider("gitlab", janitor.NewGitLabProvider)
+	// janitor.RegisterGitProvider("bitbucket", janitor.NewBitbucketProvider)
+	// janitor.RegisterGitProvider("azure-devops", janitor.NewAzureDevOpsProvider)
+
+	// ─── 3. IaC Generators (config export to any format) ────────────
+	iac.RegisterGenerator("terraform", func() iac.Generator { return iac.NewTerraformGenerator() })
+	iac.RegisterGenerator("pulumi", func() iac.Generator { return iac.NewPulumiGenerator() })
+	iac.RegisterGenerator("ansible", func() iac.Generator { return iac.NewAnsibleGenerator() })
 }

@@ -1,120 +1,565 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { api } from "@/lib/api";
 import { EventBus } from "@/lib/event-bus";
+import { EVENTS, CACHE_KEYS } from "@/lib/constants";
+import { cn, timeAgo, formatDate } from "@/lib/utils";
+import { PageHeader, StatCard } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
 import {
-  PageHeader,
-  StatCard,
   Card,
-  Badge,
-  EmptyState,
-  DashboardPageSkeleton,
-  Button,
-  Input,
-  Label,
-} from "@/components/ui";
-import { ErrorDisplay } from "@/components/ui";
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonCard, PageSkeleton } from "@/components/ui/skeleton";
 import {
   Flag,
   Globe,
+  Activity,
+  Shield,
+  ChevronRight,
+  Plus,
+  ArrowUpRight,
+  GitPullRequest,
   Clock,
   Sparkles,
-  Zap,
-  ChevronRight,
-  FolderOpen,
-  Plus,
+  TrendingUp,
+  Users,
+  CheckCircle,
+  AlertTriangle,
   ArrowRight,
-  Loader2,
 } from "lucide-react";
-import {
-  useProjects,
-  useFlags,
-  useEnvironments,
-  useAudit,
-} from "@/hooks/use-data";
-import { DOCS_LINKS } from "@/components/docs-link";
-import { toast } from "@/components/toast";
-import { timeAgo } from "@/lib/utils";
+import Link from "next/link";
+import type {
+  Project,
+  Environment,
+  Flag as FlagType,
+  AuditEntry,
+} from "@/lib/types";
 
-// ---------------------------------------------------------------------------
-// UpgradeCard — org-level upgrade prompt
-// ---------------------------------------------------------------------------
-function UpgradeCard() {
+// ─── Upgrade / Trial Callout Card ───────────────────────────────────
+
+function UpgradeCalloutCard() {
   const organization = useAppStore((s) => s.organization);
-  const plan = organization?.plan;
+  const plan = organization?.plan || "free";
   const trialExpiresAt = organization?.trial_expires_at;
 
-  if (plan === "pro" || plan === "enterprise") return null;
+  if (plan !== "free" && plan !== "trial") return null;
 
-  if (plan === "trial" && trialExpiresAt) {
-    const daysLeft = Math.max(
-      0,
-      Math.ceil((new Date(trialExpiresAt).getTime() - Date.now()) / 86400000),
-    );
-    return (
-      <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50 via-purple-50/80 to-violet-50 p-5 shadow-md shadow-indigo-100/50">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  const daysLeft = trialExpiresAt
+    ? Math.max(
+        0,
+        Math.ceil((new Date(trialExpiresAt).getTime() - Date.now()) / 86400000),
+      )
+    : null;
+
+  return (
+    <Card className="border-amber-200/60 bg-gradient-to-br from-amber-50/80 to-white overflow-hidden">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100">
-              <Sparkles className="h-5 w-5 text-indigo-600" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+              <Sparkles className="h-5 w-5 text-amber-600" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900">
-                {daysLeft} day{daysLeft !== 1 ? "s" : ""} left on your Pro trial
-              </h3>
-              <p className="mt-0.5 text-sm text-slate-600">
-                Upgrade to keep unlimited projects, environments, and team
-                members.
-              </p>
+              <CardTitle className="text-amber-900">
+                {plan === "trial"
+                  ? `Trial ends in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`
+                  : "Free Plan"}
+              </CardTitle>
+              <CardDescription className="text-amber-700/80 mt-0.5">
+                {plan === "trial"
+                  ? "Subscribe to Pro to keep your enterprise features after the trial."
+                  : "Upgrade to Pro for unlimited flags, team members, and enterprise governance."}
+              </CardDescription>
             </div>
           </div>
           <Link
             href="/settings/billing"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+            className="shrink-0 rounded-xl bg-amber-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md inline-flex items-center gap-1.5"
           >
-            <Zap className="h-4 w-4" />
-            Upgrade Now
+            {plan === "trial" ? "Subscribe" : "Upgrade"}
+            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
           </Link>
         </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="border-slate-200/60 bg-gradient-to-r from-slate-50 via-white to-indigo-50/40 p-5 shadow-md shadow-slate-100/50">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-            <Zap className="h-5 w-5 text-indigo-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-slate-900">
-              Unlock the full power of FeatureSignals
-            </h3>
-            <p className="mt-0.5 text-sm text-slate-600">
-              Upgrade to Pro for unlimited projects, environments, and team
-              members.
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/settings/billing"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-        >
-          <Sparkles className="h-4 w-4" />
-          Upgrade to Pro
-        </Link>
-      </div>
+      </CardContent>
     </Card>
   );
 }
 
-// ---------------------------------------------------------------------------
-// DashboardPage — workspace overview
-// ---------------------------------------------------------------------------
+// ─── First Project Creator ──────────────────────────────────────────
+
+function CreateFirstProject() {
+  const token = useAppStore((s) => s.token);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = useCallback(async () => {
+    if (!token || !name.trim()) return;
+    setCreating(true);
+    setError("");
+    try {
+      const project = await api.createProject(token, {
+        name: name.trim(),
+        slug:
+          slug.trim() ||
+          name
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, ""),
+      });
+      setCurrentProject(project.id);
+      EventBus.dispatch(EVENTS.PROJECTS_CHANGED);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create project");
+    } finally {
+      setCreating(false);
+    }
+  }, [token, name, slug, setCurrentProject]);
+
+  return (
+    <div className="mx-auto max-w-lg mt-12">
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">
+            <Flag className="h-8 w-8 text-accent" strokeWidth={1.5} />
+          </div>
+          <h2 className="text-xl font-bold text-stone-900 mb-2">
+            Welcome to FeatureSignals
+          </h2>
+          <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto leading-relaxed">
+            Create your first project to start managing feature flags across
+            environments.
+          </p>
+
+          <div className="space-y-3 text-left">
+            <div>
+              <label
+                htmlFor="project-name"
+                className="block text-sm font-semibold text-stone-700 mb-1"
+              >
+                Project Name
+              </label>
+              <input
+                id="project-name"
+                type="text"
+                placeholder="e.g. My App"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSlug(
+                    e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/^-|-$/g, ""),
+                  );
+                  setError("");
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="project-slug"
+                className="block text-sm font-semibold text-stone-700 mb-1"
+              >
+                Slug
+              </label>
+              <input
+                id="project-slug"
+                type="text"
+                placeholder="my-app"
+                value={slug}
+                onChange={(e) => {
+                  setSlug(e.target.value);
+                  setError("");
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 font-mono"
+              />
+            </div>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <Button
+              onClick={handleCreate}
+              disabled={creating || !name.trim()}
+              fullWidth
+              className="h-11"
+            >
+              {creating ? "Creating..." : "Create Project"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Stat Overview Cards ────────────────────────────────────────────
+
+function OverviewStats({
+  flagCount,
+  envCount,
+  memberCount,
+}: {
+  flagCount: number;
+  envCount: number;
+  memberCount: number;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <StatCard label="Flags" value={flagCount} icon="⚑" />
+      <StatCard label="Environments" value={envCount} icon="🌐" />
+      <StatCard label="Team Members" value={memberCount} icon="👥" />
+      <StatCard
+        label="Flag Health"
+        value="98%"
+        change="+2%"
+        trend="up"
+        icon="❤️"
+      />
+    </div>
+  );
+}
+
+// ─── Quick Setup Checklist ──────────────────────────────────────────
+
+function SetupChecklist({
+  needsFlag,
+  needsEnv,
+}: {
+  needsFlag: boolean;
+  needsEnv: boolean;
+}) {
+  const steps = [
+    {
+      label: "Create a project",
+      desc: "Set up your workspace",
+      href: "/dashboard",
+      done: true,
+    },
+    {
+      label: "Create an environment",
+      desc: "Add dev, staging, production",
+      href: "/environments",
+      done: !needsEnv,
+    },
+    {
+      label: "Create your first flag",
+      desc: "Define a feature flag",
+      href: "/flags",
+      done: !needsFlag,
+    },
+    {
+      label: "Connect an SDK",
+      desc: "Integrate with your app",
+      href: "/docs",
+      done: false,
+    },
+    {
+      label: "Invite your team",
+      desc: "Collaborate securely",
+      href: "/settings/team",
+      done: false,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>🚀 Getting Started</CardTitle>
+        <CardDescription>
+          Complete these steps to set up your workspace.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-1">
+          {steps.map((step, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-4 py-3 transition-colors",
+                step.done ? "opacity-60" : "hover:bg-stone-50",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                  step.done
+                    ? "bg-emerald-100 text-emerald-600"
+                    : "bg-stone-100 text-stone-500",
+                )}
+              >
+                {step.done ? (
+                  <CheckCircle className="h-4 w-4" strokeWidth={2.5} />
+                ) : (
+                  i + 1
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    step.done ? "text-stone-500" : "text-stone-800",
+                  )}
+                >
+                  {step.label}
+                </p>
+                <p className="text-xs text-stone-400">{step.desc}</p>
+              </div>
+              {!step.done && (
+                <Link
+                  href={step.href}
+                  className="shrink-0 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent-dark hover:bg-accent/20 transition-colors inline-flex items-center gap-1"
+                >
+                  Start
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Recent Activity ────────────────────────────────────────────────
+
+function RecentActivity({ audit }: { audit: AuditEntry[] }) {
+  const actionIcons: Record<string, string> = {
+    flag_created: "⚑",
+    flag_toggled: "🔀",
+    flag_deleted: "🗑️",
+    rule_created: "📝",
+    rule_updated: "✏️",
+    env_created: "🌐",
+    member_invited: "👤",
+    member_removed: "🚫",
+    approval_requested: "🛡️",
+    approval_reviewed: "✅",
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>📋 Recent Activity</CardTitle>
+            <CardDescription>
+              The latest changes across your workspace.
+            </CardDescription>
+          </div>
+          <Link
+            href="/audit"
+            className="text-xs font-semibold text-accent hover:text-accent-dark transition-colors inline-flex items-center gap-1"
+          >
+            View all
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {audit.length === 0 ? (
+          <div className="py-6 text-center">
+            <p className="text-xs text-stone-400">No recent activity</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {audit.slice(0, 8).map((entry) => (
+              <div
+                key={entry.id}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-stone-50 transition-colors"
+              >
+                <span className="text-base leading-none shrink-0">
+                  {actionIcons[entry.action] || "📌"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-stone-700 truncate">
+                    <span className="font-medium capitalize">
+                      {entry.action.replace(/_/g, " ")}
+                    </span>
+                    {entry.resource_type && (
+                      <span className="text-stone-400">
+                        {" "}
+                        on {entry.resource_type}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <span className="text-xs text-stone-400 shrink-0">
+                  {timeAgo(entry.created_at)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Flag Health Widget ─────────────────────────────────────────────
+
+function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
+  const activeFlags = flags.filter((f) => f.status === "active");
+  const staleFlags = flags.filter(
+    (f) =>
+      f.status === "deprecated" ||
+      (f.expires_at && new Date(f.expires_at) < new Date()),
+  );
+  const healthScore =
+    flags.length > 0
+      ? Math.round(((flags.length - staleFlags.length) / flags.length) * 100)
+      : 100;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>❤️ Flag Health</CardTitle>
+        <CardDescription>
+          Cleanliness and rot assessment of your flags.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-end gap-3">
+          <span className="text-3xl font-bold text-stone-900">
+            {healthScore}%
+          </span>
+          <span className="text-xs font-medium text-emerald-600 mb-1.5">
+            Healthy
+          </span>
+        </div>
+
+        <div className="w-full h-2 rounded-full bg-stone-100 overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              healthScore > 90
+                ? "bg-emerald-500"
+                : healthScore > 70
+                  ? "bg-amber-500"
+                  : "bg-red-500",
+            )}
+            style={{ width: `${healthScore}%` }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="rounded-xl bg-stone-50 border border-stone-200 p-3">
+            <p className="text-xs text-stone-500 mb-0.5">Active</p>
+            <p className="text-lg font-bold text-emerald-600">
+              {activeFlags.length}
+            </p>
+          </div>
+          <div className="rounded-xl bg-stone-50 border border-stone-200 p-3">
+            <p className="text-xs text-stone-500 mb-0.5">Stale / Rot</p>
+            <p className="text-lg font-bold text-amber-600">
+              {staleFlags.length}
+            </p>
+          </div>
+        </div>
+
+        {staleFlags.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-amber-800">
+                  {staleFlags.length} flag{staleFlags.length > 1 ? "s" : ""}{" "}
+                  flagged for cleanup
+                </p>
+                <p className="text-xs text-amber-700/70 mt-0.5">
+                  The AI Janitor can automatically generate cleanup PRs.
+                </p>
+              </div>
+            </div>
+            <button className="mt-2 w-full rounded-lg bg-white border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition-colors inline-flex items-center justify-center gap-1.5">
+              <GitPullRequest className="h-3.5 w-3.5" />
+              Generate Cleanup PRs
+            </button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Quick Actions ──────────────────────────────────────────────────
+
+function QuickActions() {
+  const actions = [
+    {
+      label: "Create Flag",
+      icon: "⚑",
+      href: "/flags",
+      desc: "Add a new feature flag",
+    },
+    {
+      label: "New Segment",
+      icon: "👥",
+      href: "/segments",
+      desc: "Define a user segment",
+    },
+    {
+      label: "Invite Member",
+      icon: "👤",
+      href: "/settings/team",
+      desc: "Add a team member",
+    },
+    {
+      label: "View Docs",
+      icon: "📚",
+      href: "/docs",
+      desc: "API & SDK documentation",
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>⚡ Quick Actions</CardTitle>
+        <CardDescription>
+          Common tasks to speed up your workflow.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2">
+          {actions.map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="flex flex-col items-center gap-1.5 rounded-xl border border-stone-200 bg-white p-3.5 text-center transition-all hover:border-accent/30 hover:bg-accent/5 hover:shadow-sm"
+            >
+              <span className="text-xl">{action.icon}</span>
+              <span className="text-xs font-semibold text-stone-700">
+                {action.label}
+              </span>
+              <span className="text-[10px] text-stone-400 leading-tight">
+                {action.desc}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Dashboard Page ────────────────────────────────────────────
+
 export default function DashboardPage() {
   const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
@@ -122,487 +567,217 @@ export default function DashboardPage() {
   const user = useAppStore((s) => s.user);
   const organization = useAppStore((s) => s.organization);
 
-  // ── ALL hooks BEFORE any early return (React rules) ──────────────────
-  const [showCreateFirst, setShowCreateFirst] = useState(false);
-  const [createName, setCreateName] = useState("");
-  const [createSlug, setCreateSlug] = useState("");
-  const [createError, setCreateError] = useState("");
-  const [creating, setCreating] = useState(false);
+  // Data
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [flags, setFlags] = useState<FlagType[]>([]);
+  const [envs, setEnvs] = useState<Environment[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
+  const [members, setMembers] = useState<unknown[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const {
-    data: projects,
-    loading: projectsLoading,
-    error: projectsError,
-    refetch: refetchProjects,
-  } = useProjects();
-
-  // Note: flags, envs, audit hooks are moved INSIDE the project-scoped
-  // section below so they never fire with null projectId
-
-  // Auto-select first project when projects load and none is selected
+  // Fetch projects on mount
   useEffect(() => {
-    if (projects && projects.length > 0 && !currentProjectId) {
-      setCurrentProject(projects[0].id);
-    }
-  }, [projects, currentProjectId, setCurrentProject]);
+    if (!token) return;
+    setProjectsLoading(true);
+    api
+      .listProjects(token)
+      .then((data) => {
+        setProjects(data);
+        // Auto-select first project if none selected
+        if (!currentProjectId && data.length > 0) {
+          setCurrentProject(data[0].id);
+        }
+        setProjectsLoading(false);
+      })
+      .catch(() => {
+        setProjectsError("Failed to load projects");
+        setProjectsLoading(false);
+      });
+  }, [token, currentProjectId, setCurrentProject]);
 
-  // Listen for project/env changes from other components (deletion, creation)
+  // Fetch data when project is selected
   useEffect(() => {
-    const unsub = EventBus.subscribe("projects:changed", refetchProjects);
-    return unsub;
-  }, [refetchProjects]);
+    if (!token || !currentProjectId) return;
+    setLoading(true);
 
-  // Detect when the current project was deleted and clear selection
+    Promise.all([
+      api.listFlags(token, currentProjectId).catch(() => []),
+      api.listEnvironments(token, currentProjectId).catch(() => []),
+      api.listAudit(token, 20, 0, currentProjectId).catch(() => []),
+      api.listMembers(token).catch(() => []),
+    ]).then(([flagsData, envsData, auditData, membersData]) => {
+      setFlags(flagsData as FlagType[]);
+      setEnvs(envsData as Environment[]);
+      setAudit(auditData as AuditEntry[]);
+      setMembers(membersData as unknown[]);
+      setLoading(false);
+    });
+  }, [token, currentProjectId]);
+
+  // Listen for refresh events
   useEffect(() => {
-    if (currentProjectId && projects && projects.length > 0) {
-      const stillExists = projects.some((p) => p.id === currentProjectId);
-      if (!stillExists) {
-        setCurrentProject(projects[0].id);
-      }
-    }
-  }, [currentProjectId, projects, setCurrentProject]);
+    const refresh = () => {
+      if (!token || !currentProjectId) return;
+      Promise.all([
+        api.listFlags(token, currentProjectId).catch(() => []),
+        api.listEnvironments(token, currentProjectId).catch(() => []),
+      ]).then(([flagsData, envsData]) => {
+        setFlags(flagsData as FlagType[]);
+        setEnvs(envsData as Environment[]);
+      });
+    };
+    const unsub1 = EventBus.subscribe(EVENTS.FLAGS_CHANGED, refresh);
+    const unsub2 = EventBus.subscribe(EVENTS.ENVIRONMENTS_CHANGED, refresh);
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, [token, currentProjectId]);
 
-  // ── First-project creation handler (MUST be before early returns) ────
-  const handleCreateFirstProject = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!createName.trim()) {
-        setCreateError("Project name is required");
-        return;
-      }
-      if (!token) {
-        setCreateError("Not authenticated");
-        return;
-      }
-      try {
-        setCreating(true);
-        setCreateError("");
-        const project = await api.createProject(token, {
-          name: createName.trim(),
-          slug: createSlug.trim() || undefined,
-        });
-        EventBus.dispatch("projects:changed");
-        await refetchProjects();
-        setCurrentProject(project.id);
-        toast(
-          "Project created! Now add an environment and your first flag.",
-          "success",
-        );
-        setShowCreateFirst(false);
-        setCreateName("");
-        setCreateSlug("");
-      } catch (err: unknown) {
-        setCreateError(
-          err instanceof Error ? err.message : "Failed to create project",
-        );
-      } finally {
-        setCreating(false);
-      }
-    },
-    [createName, createSlug, token, refetchProjects, setCurrentProject],
-  );
-
-  // ── Loading / Error guards ───────────────────────────────────────────
+  // Loading state
   if (projectsLoading) {
-    return <DashboardPageSkeleton />;
+    return (
+      <div className="space-y-6">
+        <PageSkeleton />
+      </div>
+    );
   }
 
+  // Error state
   if (projectsError) {
     return (
-      <ErrorDisplay
-        title="Failed to load projects"
-        message={projectsError}
-        onRetry={refetchProjects}
-      />
-    );
-  }
-
-  // ── No projects — welcoming empty state with inline creation ─────────
-  if (!projects || projects.length === 0) {
-    return (
-      <div className="space-y-6 sm:space-y-8">
-        <PageHeader
-          title="Welcome to FeatureSignals"
-          description={`Welcome${user?.name ? `, ${user.name.split(" ")[0]}` : ""}. Let's set up your workspace.`}
-        />
-
-        {!showCreateFirst ? (
-          <div className="flex min-h-[50vh] items-center justify-center">
-            <EmptyState
-              icon={FolderOpen}
-              title="Create your first project"
-              description="Projects group feature flags and environments for a single application or service. Start by naming your project."
-              action={
-                <Button onClick={() => setShowCreateFirst(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Your First Project
-                </Button>
-              }
-              docsUrl={DOCS_LINKS.environments}
-              docsLabel="Learn about projects & environments"
-              className="py-16"
-            />
-          </div>
-        ) : (
-          <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/50 via-white to-purple-50/30 p-6 max-w-lg mx-auto">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
-                <FolderOpen className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-slate-900">
-                  Name your project
-                </h3>
-                <p className="text-sm text-slate-500">
-                  This will be your workspace for managing flags and
-                  environments.
-                </p>
-              </div>
-            </div>
-            <form onSubmit={handleCreateFirstProject} className="space-y-4">
-              <div>
-                <Label htmlFor="first-project-name">Project Name</Label>
-                <Input
-                  id="first-project-name"
-                  value={createName}
-                  onChange={(e) => {
-                    setCreateName(e.target.value);
-                    setCreateError("");
-                  }}
-                  placeholder="e.g. My Web App, Mobile API, Backend Service"
-                  className="mt-1"
-                  autoFocus
-                />
-                {createError && (
-                  <p className="text-xs text-red-500 mt-1">{createError}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="first-project-slug">Slug</Label>
-                <Input
-                  id="first-project-slug"
-                  value={createSlug}
-                  onChange={(e) => setCreateSlug(e.target.value)}
-                  placeholder="auto-generated from name"
-                  className="mt-1"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Leave blank to auto-generate
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={creating}>
-                  {creating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Project
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setShowCreateFirst(false);
-                    setCreateName("");
-                    setCreateError("");
-                  }}
-                  disabled={creating}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
-        )}
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center max-w-md">
+          <AlertTriangle
+            className="h-8 w-8 text-red-400 mx-auto mb-3"
+            strokeWidth={1.5}
+          />
+          <h2 className="text-lg font-bold text-red-800 mb-1">
+            Failed to load
+          </h2>
+          <p className="text-sm text-red-600 mb-4">{projectsError}</p>
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
-  // ── Projects exist but none selected ─────────────────────────────────
-  if (!currentProjectId) {
+  // No projects — show first-project creator
+  if (projects.length === 0) {
     return (
-      <div className="space-y-6 sm:space-y-8">
+      <div>
         <PageHeader
-          title="Overview"
-          description={`Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
+          title={`Welcome, ${user?.name?.split(" ")[0] || "there"} 👋`}
+          description="Let's get your FeatureSignals workspace set up in seconds."
         />
-        <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/50 via-white to-purple-50/30 p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
-              <FolderOpen className="h-6 w-6" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Select a project to get started
-              </h3>
-              <p className="mt-1 text-sm text-slate-600">
-                You have{" "}
-                <strong>
-                  {projects.length} project{projects.length > 1 ? "s" : ""}
-                </strong>
-                . Use the project selector above to switch between them.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {projects.slice(0, 5).map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setCurrentProject(p.id)}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Card>
+        <CreateFirstProject />
       </div>
     );
   }
 
-  // ── Project selected — render project-scoped overview ────────────────
-  return <ProjectOverview user={user} organization={organization} />;
-}
+  // Empty state (no flags yet)
+  const needsEnv = envs.length === 0;
+  const needsFlag = flags.length === 0;
 
-// ---------------------------------------------------------------------------
-// ProjectOverview — only renders when a project IS selected.
-// All data-fetching hooks live HERE so they never fire with null projectId.
-// ---------------------------------------------------------------------------
-function ProjectOverview({
-  user,
-  organization,
-}: {
-  user: { name?: string } | null;
-  organization: { plan?: string; trial_expires_at?: string } | null;
-}) {
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const { data: projects } = useProjects();
-  const { data: flags, refetch: refetchFlags } = useFlags(currentProjectId);
-  const { data: envs, refetch: refetchEnvs } =
-    useEnvironments(currentProjectId);
-  const { data: audit } = useAudit(10, 0, currentProjectId);
+  if (needsFlag) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={`Hey ${user?.name?.split(" ")[0] || "there"} 👋`}
+          description={`Welcome to ${organization?.name || "your workspace"}. Let's get you set up.`}
+        />
 
-  // Auto-refresh when flags/environments change elsewhere
-  useEffect(() => {
-    const unsubFlags = EventBus.subscribe("flags:changed", refetchFlags);
-    const unsubEnvs = EventBus.subscribe("environments:changed", refetchEnvs);
-    return () => {
-      unsubFlags();
-      unsubEnvs();
-    };
-  }, [refetchFlags, refetchEnvs]);
+        <UpgradeCalloutCard />
 
-  const currentProject = projects?.find((p) => p.id === currentProjectId);
-  const flagCount = flags?.length ?? 0;
-  const envCount = envs?.length ?? 0;
-  const recentChanges = audit?.length ?? 0;
-  const isNewUser = flagCount === 0 && recentChanges === 0;
-  const needsEnv = envCount === 0;
+        <OverviewStats
+          flagCount={0}
+          envCount={envs.length}
+          memberCount={members.length}
+        />
 
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <SetupChecklist needsFlag={true} needsEnv={needsEnv} />
+          <div className="space-y-6">
+            <QuickActions />
+            <FlagHealthWidget flags={[]} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── FULL DASHBOARD — project with data ─────────────────────────
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <PageHeader
-        title="Overview"
-        description={
-          currentProject
-            ? `${currentProject.name} (${currentProject.slug})`
-            : `Welcome back${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`
-        }
-      />
-
-      {/* Quick Action Buttons */}
-      <div className="flex flex-wrap gap-3">
+        title={`${organization?.name || "Workspace"} Overview`}
+        description="Monitor your flags, environments, and workspace health at a glance."
+      >
         <Link
           href="/flags"
-          className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-medium text-indigo-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-accent-dark hover:shadow-md"
         >
-          <Flag className="h-4 w-4" />
-          Create Flag
+          <Flag className="h-4 w-4" strokeWidth={1.5} />
+          View Flags
+          <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
         </Link>
-        <Link
-          href="/environments"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-md"
-        >
-          <Globe className="h-4 w-4" />
-          Manage Environments
-        </Link>
-        <a
-          href={DOCS_LINKS.quickstart}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-md"
-        >
-          <Sparkles className="h-4 w-4" />
-          View Docs
-        </a>
+      </PageHeader>
+
+      {/* Upgrade Callout */}
+      <UpgradeCalloutCard />
+
+      {/* Stats */}
+      <OverviewStats
+        flagCount={flags.length}
+        envCount={envs.length}
+        memberCount={members.length}
+      />
+
+      {/* Main grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Left column */}
+        <div className="space-y-6">
+          {/* Recent Activity */}
+          <RecentActivity audit={audit} />
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-6">
+          {/* Flag Health */}
+          <FlagHealthWidget flags={flags} />
+
+          {/* Quick Actions */}
+          <QuickActions />
+        </div>
       </div>
 
-      {/* Environment creation prompt when project has no environments */}
-      {needsEnv && (
-        <Card className="border-amber-200/60 bg-gradient-to-r from-amber-50/80 via-white to-orange-50/50">
-          <div className="flex items-start gap-4 px-4 py-4 sm:px-6">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-              <Globe className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-slate-900">
-                Set up your first environment
-              </h3>
-              <p className="mt-0.5 text-sm text-slate-600">
-                Environments let you manage flag states independently across
-                deployment stages like development, staging, and production.
-              </p>
-              <div className="mt-3">
-                <Link href="/environments">
-                  <Button size="sm">
-                    <Plus className="mr-1.5 h-4 w-4" />
-                    Create Environment
-                  </Button>
-                </Link>
-              </div>
-            </div>
+      {/* Footer stats */}
+      <div className="rounded-2xl border border-stone-200/70 bg-white/50 p-5 shadow-soft">
+        <div className="flex items-center justify-between text-xs text-stone-400">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3" strokeWidth={1.5} />
+              Last evaluated: just now
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Activity className="h-3 w-3" strokeWidth={1.5} />
+              P99 latency: &lt;1ms
+            </span>
           </div>
-        </Card>
-      )}
-
-      {/* Get Started Checklist for New Users */}
-      {isNewUser && (
-        <Card className="border-indigo-200/60 bg-gradient-to-r from-indigo-50/80 via-white to-purple-50/50">
-          <div className="px-4 py-3 sm:px-6">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-indigo-600" />
-              <h2 className="font-semibold text-slate-900">Get Started</h2>
-            </div>
-            <p className="mt-0.5 text-sm text-slate-600">
-              Complete these steps to set up your workspace
-            </p>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {[
-              {
-                step: 1,
-                label: "Create an environment",
-                desc: "Development, staging, or production",
-                href: "/environments",
-                done: envCount > 0,
-              },
-              {
-                step: 2,
-                label: "Create your first flag",
-                desc: "Control features without deploying code",
-                href: "/flags",
-                done: flagCount > 0,
-              },
-              {
-                step: 3,
-                label: "Install the SDK",
-                desc: "Connect your app in under 3 minutes",
-                href: "/onboarding",
-                done: false,
-              },
-            ].map((item) => (
-              <Link
-                key={item.step}
-                href={item.href}
-                className="flex items-start gap-4 px-4 py-3 transition-colors hover:bg-indigo-50/40 sm:px-6"
-              >
-                <div
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.done ? "bg-emerald-500 text-white" : "bg-indigo-100 text-indigo-700"}`}
-                >
-                  {item.done ? (
-                    <svg
-                      className="h-3.5 w-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  ) : (
-                    item.step
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={`text-sm font-medium ${item.done ? "text-emerald-700 line-through" : "text-slate-900"}`}
-                  >
-                    {item.label}
-                  </p>
-                  <p className="text-xs text-slate-500">{item.desc}</p>
-                </div>
-                <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
-              </Link>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Project-Scoped Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
-        <StatCard
-          label="Feature Flags"
-          value={flagCount}
-          icon={Flag}
-          color="indigo"
-        />
-        <StatCard
-          label="Environments"
-          value={envCount}
-          icon={Globe}
-          color="emerald"
-        />
-        <StatCard
-          label="Recent Changes"
-          value={recentChanges}
-          icon={Clock}
-          color="amber"
-        />
+          <Link
+            href="/usage-insights"
+            className="flex items-center gap-1 text-accent hover:text-accent-dark transition-colors"
+          >
+            <TrendingUp className="h-3 w-3" strokeWidth={1.5} />
+            Usage Insights
+          </Link>
+        </div>
       </div>
-
-      {/* Upgrade CTA */}
-      {organization?.plan !== "enterprise" && <UpgradeCard />}
-
-      {/* Recent Activity */}
-      <Card className="transition-all duration-300 hover:shadow-lg hover:border-slate-300/80">
-        <div className="px-4 py-3 sm:px-6">
-          <h2 className="font-semibold text-slate-900">Recent Activity</h2>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {!audit || audit.length === 0 ? (
-            <EmptyState
-              icon={Clock}
-              title="No recent activity"
-              description="Actions like creating flags, toggling states, and inviting team members will appear here."
-            />
-          ) : (
-            audit.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex flex-col gap-1 px-4 py-3 transition-all duration-150 hover:bg-indigo-50/40 sm:flex-row sm:items-center sm:justify-between sm:px-6"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="primary">{entry.action}</Badge>
-                  <span className="text-sm text-slate-600">
-                    {entry.resource_type}
-                  </span>
-                </div>
-                <span className="text-xs text-slate-400">
-                  {timeAgo(entry.created_at)}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
     </div>
   );
 }

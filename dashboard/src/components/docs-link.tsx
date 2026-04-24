@@ -23,6 +23,25 @@ export const DOCS_LINKS = {
   openFeature: `${DOCS_BASE}/sdks/openfeature`,
   sso: `${DOCS_BASE}/api-reference/sso`,
   deployment: `${DOCS_BASE}/deployment/self-hosting`,
+  migration: `${DOCS_BASE}/getting-started/migration-overview`,
+  migrationLaunchDarkly: `${DOCS_BASE}/getting-started/migrate-from-launchdarkly`,
+  migrationUnleash: `${DOCS_BASE}/getting-started/migrate-from-unleash`,
+  migrationFlagsmith: `${DOCS_BASE}/getting-started/migrate-from-flagsmith`,
+  migrationTroubleshooting: `${DOCS_BASE}/getting-started/migration-troubleshooting`,
+  migrationIacExport: `${DOCS_BASE}/getting-started/migration-iac-export`,
+  janitor: `${DOCS_BASE}/advanced/ai-janitor`,
+  janitorQuickstart: `${DOCS_BASE}/advanced/ai-janitor-quickstart`,
+  janitorGitProviders: `${DOCS_BASE}/advanced/ai-janitor-git-providers`,
+  janitorConfiguration: `${DOCS_BASE}/advanced/ai-janitor-configuration`,
+  janitorPRWorkflow: `${DOCS_BASE}/advanced/ai-janitor-pr-workflow`,
+  janitorTroubleshooting: `${DOCS_BASE}/advanced/ai-janitor-troubleshooting`,
+  iac: `${DOCS_BASE}/iac/overview`,
+  iacTerraform: `${DOCS_BASE}/iac/terraform`,
+  iacPulumi: `${DOCS_BASE}/iac/pulumi`,
+  iacAnsible: `${DOCS_BASE}/iac/ansible`,
+  iacCrossplane: `${DOCS_BASE}/iac/crossplane`,
+  iacCdktf: `${DOCS_BASE}/iac/cdk`,
+  iacExport: `${DOCS_BASE}/iac/migration-export`,
 } as const;
 
 interface DocsLinkProps {
@@ -38,7 +57,7 @@ export function DocsLink({ href, label = "Docs", className }: DocsLinkProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-indigo-600",
+        "inline-flex items-center gap-1 text-xs text-stone-400 transition-colors hover:text-accent",
         className,
       )}
     >

@@ -8,6 +8,22 @@
 // Usage:
 //
 //	relay -api-key <key> -env-key <env> -upstream https://api.featuresignals.com -port 8090
+//
+// Redis integration:
+//
+//	relay -api-key <key> -env-key <env> -redis-url redis://localhost:6379/0
+//
+// When -redis-url is provided, the relay subscribes to the ruleset:updates
+// channel for real-time flag invalidation from all server instances. When
+// Redis is not configured, it falls back to polling or SSE.
+//
+// To build with a real Redis driver:
+//
+//	go get github.com/redis/go-redis/v9
+//	go build -tags redis ./cmd/relay
+//
+// Without the redis build tag, all Redis operations are no-ops (logged at
+// debug level and discarded).
 package main
 
 import (
@@ -25,6 +41,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/featuresignals/server/internal/events"
 )
 
 func main() {
@@ -33,8 +51,9 @@ func main() {
 		envKey   = flag.String("env-key", os.Getenv("FS_ENV_KEY"), "Environment slug (e.g. production)")
 		upstream = flag.String("upstream", envOr("FS_UPSTREAM", "https://api.featuresignals.com"), "Upstream API URL")
 		port     = flag.Int("port", 8090, "Port to listen on")
-		poll     = flag.Duration("poll", 30*time.Second, "Polling interval")
-		sse      = flag.Bool("sse", true, "Use SSE streaming for real-time updates")
+		poll     = flag.Duration("poll", 30*time.Second, "Polling interval (used when SSE and Redis are disabled)")
+		sse      = flag.Bool("sse", true, "Use SSE streaming for real-time updates (fallback when Redis not configured)")
+		redisURL = flag.String("redis-url", os.Getenv("FS_REDIS_URL"), "Redis URL for Pub/Sub cross-instance communication (e.g. redis://localhost:6379/0)")
 	)
 	flag.Parse()
 
@@ -58,18 +77,73 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Initial sync — populate the local flag cache before serving requests.
 	if err := proxy.Sync(ctx); err != nil {
 		logger.Error("initial sync failed", "error", err)
 		os.Exit(1)
 	}
 	logger.Info("initial sync complete", "flags", proxy.FlagCount())
 
-	if *sse {
-		go proxy.StreamLoop(ctx)
+	// ── Redis subscription ────────────────────────────────────────────────
+	// If a Redis URL is configured, subscribe to ruleset:updates for
+	// cross-instance flag cache invalidation. Otherwise fall back to the
+	// traditional polling or SSE mechanism.
+	redisClient := connectRedis(*redisURL, logger)
+
+	// Wrap the RedisClient in a subscriber. The subscriber handles
+	// reconnection with exponential backoff internally.
+	subscriber := events.NewRedisSubscriber(
+		func() (events.RedisClient, error) {
+			// On reconnection we return a fresh client. The actual reconnection
+			// logic depends on the underlying driver; for the no-op client this
+			// is a trivial no-op.
+			return connectRedis(*redisURL, logger), nil
+		},
+		events.RulesetChannel,
+		logger,
+	)
+
+	// Start Redis listener in a goroutine. Each received RulesetEvent triggers
+	// a full sync of that environment's flags.
+	go func() {
+		logger.Info("starting Redis subscriber", "channel", events.RulesetChannel)
+		if err := subscriber.Listen(ctx, func(event events.RulesetEvent) {
+			logger.Info("received ruleset update via Redis, re-syncing",
+				"org_id", event.OrgID,
+				"project_id", event.ProjectID,
+				"env_id", event.EnvID,
+				"type", event.Type,
+				"flag_key", event.FlagKey,
+			)
+			// Re-sync the full flag set. In a more advanced implementation we
+			// could sync only the affected environment, but a full sync is
+			// inexpensive given the expected data volume.
+			if err := proxy.Sync(ctx); err != nil {
+				logger.Error("sync after Redis event failed", "error", err)
+			}
+		}); err != nil && ctx.Err() == nil {
+			logger.Error("Redis subscriber exited unexpectedly", "error", err)
+		}
+	}()
+
+	// ── Fallback update mechanisms ───────────────────────────────────────
+	// These run only when Redis is not configured. When Redis IS configured,
+	// the subscriber above handles all real-time updates and these loops
+	// log a debug message and do nothing.
+	if *redisURL == "" {
+		if *sse {
+			go proxy.StreamLoop(ctx)
+		} else {
+			go proxy.PollLoop(ctx)
+		}
 	} else {
+		logger.Info("redis configured, disabling poll/SSE fallback")
+		// Still start poll as a safety net in case Redis subscription drops
+		// and the subscriber reconnection takes longer than expected.
 		go proxy.PollLoop(ctx)
 	}
 
+	// ── HTTP server ──────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/client/{envKey}/flags", proxy.HandleFlags)
 	mux.HandleFunc("GET /health", proxy.HandleHealth)
@@ -85,19 +159,49 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		logger.Info("relay proxy starting", "port", *port, "upstream", *upstream)
+		logger.Info("relay proxy starting",
+			"port", *port,
+			"upstream", *upstream,
+			"redis", *redisURL != "",
+		)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server error", "error", err)
 			os.Exit(1)
 		}
 	}()
 
+	// ── Graceful shutdown ────────────────────────────────────────────────
 	<-done
 	logger.Info("shutting down...")
+
+	// Shutdown the subscriber first to stop processing new events.
+	subscriber.Close()
+	redisClient.Close()
+
 	shutCtx, shutCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutCancel()
 	srv.Shutdown(shutCtx)
 }
+
+// ─── Redis client wiring ──────────────────────────────────────────────────────
+
+// connectRedis returns a RedisClient for the given URL. If the URL is empty,
+// it returns a no-op client. If the URL is non-empty but no real Redis driver
+// has been compiled in (via the "redis" build tag), it logs a warning and
+// returns a no-op client.
+//
+// To enable real Redis support, build with:
+//
+//	go build -tags redis ./cmd/relay
+//
+// and ensure github.com/redis/go-redis/v9 is in go.mod.
+// connectRedis returns a RedisClient for the given URL. It is set by an init
+// function in one of the rediswire_*.go files — the default is a no-op client
+// that logs and discards everything; building with -tags redis wires in a real
+// Redis driver.
+var connectRedis func(url string, logger *slog.Logger) events.RedisClient
+
+// ─── RelayProxy ──────────────────────────────────────────────────────────────
 
 // RelayProxy caches flags from the upstream FeatureSignals API.
 type RelayProxy struct {

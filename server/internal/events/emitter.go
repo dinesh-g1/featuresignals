@@ -19,6 +19,8 @@ const (
 	flushRetryCap      = 5 * time.Second
 )
 
+
+
 // AsyncEmitter buffers product events in a channel and flushes them to the
 // underlying EventStore in batches. It never blocks the caller — if the
 // buffer is full the event is dropped and a warning is logged.
@@ -87,6 +89,46 @@ func (e *AsyncEmitter) Emit(_ context.Context, event domain.ProductEvent) {
 			"org_id", event.OrgID,
 		)
 	}
+}
+
+// ─── Ruleset emitter ──────────────────────────────────────────────────────────
+
+// RulesetEmitter wraps a RedisPublisher to emit ruleset change events. It
+// provides a typed convenience method for broadcasting ruleset updates to
+// all relay proxy instances via Redis Pub/Sub.
+//
+// If the underlying RedisPublisher uses a no-op client, events are logged
+// and discarded — the caller does not need to check for Redis availability.
+type RulesetEmitter struct {
+	publisher *RedisPublisher
+	logger    *slog.Logger
+}
+
+// NewRulesetEmitter creates a RulesetEmitter backed by the given RedisPublisher.
+// If publisher is nil, a no-op publisher is used and all emits are logged.
+func NewRulesetEmitter(publisher *RedisPublisher, logger *slog.Logger) *RulesetEmitter {
+	return &RulesetEmitter{
+		publisher: publisher,
+		logger:    logger.With("component", "ruleset_emitter"),
+	}
+}
+
+// EmitRulesetUpdated publishes a ruleset update event to all relay instances.
+func (e *RulesetEmitter) EmitRulesetUpdated(ctx context.Context, orgID, projectID, envID string, updatedAt time.Time, eventType RulesetEventType, flagKey string) error {
+	event := RulesetEvent{
+		OrgID:     orgID,
+		ProjectID: projectID,
+		EnvID:     envID,
+		UpdatedAt: updatedAt.Unix(),
+		Type:      eventType,
+		FlagKey:   flagKey,
+	}
+	return e.publisher.PublishRulesetUpdate(ctx, event)
+}
+
+// Close closes the underlying publisher.
+func (e *RulesetEmitter) Close() error {
+	return e.publisher.Close()
 }
 
 // Close drains pending events and stops the background goroutine. It blocks

@@ -85,8 +85,8 @@ The expected cleanup urgency depends on the flag's [category](/core-concepts/tog
 |----------|--------------------------|
 | Release | Days to weeks after full rollout |
 | Experiment | After experiment concludes and winner is declared |
-| Ops | Rarely — ops toggles are often long-lived |
-| Permission | Rarely — permission toggles may be permanent |
+| Ops | Rarely — ops flags are often long-lived |
+| Permission | Rarely — permission flags may be permanent |
 
 ## Flag Expiration
 

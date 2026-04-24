@@ -5,15 +5,44 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
-  title: "FeatureSignals Flag Engine",
-  description: "Feature flag management platform",
+  metadataBase: new URL("https://app.featuresignals.com"),
+  title: {
+    template: "%s | FeatureSignals",
+    default: "FeatureSignals | Enterprise Feature Flag Control Plane",
+  },
+  description:
+    "The enterprise control plane for mission-critical feature flags. Sub-millisecond evaluation, automated tech-debt cleanup, OpenFeature native, Terraform-integrated.",
   icons: {
     icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
+  openGraph: {
+    type: "website",
+    siteName: "FeatureSignals",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "FeatureSignals — Enterprise Feature Flag Platform",
+      },
+    ],
+  },
+  twitter: { card: "summary_large_image" },
+  keywords: [
+    "feature flags",
+    "feature flag management",
+    "enterprise feature flags",
+    "LaunchDarkly alternative",
+    "flag rot",
+    "GitOps",
+    "OpenFeature",
+  ],
 };
 
 export default function RootLayout({
@@ -23,7 +52,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full scroll-smooth`}>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">{children}</body>
+      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900 font-sans antialiased selection:bg-accent selection:text-white">
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,71 +1,452 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ContextHierarchy } from "@/components/context-hierarchy";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { CommandPaletteButton } from "@/components/command-palette";
-import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
+import { usePathname } from "next/navigation";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { useAppStore } from "@/stores/app-store";
+import { EventBus } from "@/lib/event-bus";
+import { api } from "@/lib/api";
+import { EVENTS } from "@/lib/constants";
+import { Logo } from "@/components/logo";
+import { cn } from "@/lib/utils";
+import { Search, ChevronDown, Plus, Check } from "lucide-react";
+import { useEffect, useRef } from "react";
+import type { Project, Environment } from "@/lib/types";
+
+// ─── Project Dropdown ───────────────────────────────────────────────
+
+function ProjectDropdown() {
+  const token = useAppStore((s) => s.token);
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
+
+  const [open, setOpen] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selected = projects.find((p) => p.id === currentProjectId);
+
+  // Fetch projects
+  useEffect(() => {
+    if (!token) return;
+    api
+      .listProjects(token)
+      .then(setProjects)
+      .catch(() => {});
+    const unsub = EventBus.subscribe(EVENTS.PROJECTS_CHANGED, () => {
+      api
+        .listProjects(token)
+        .then(setProjects)
+        .catch(() => {});
+    });
+    return () => unsub();
+  }, [token]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const filtered = projects.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.slug.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  async function handleCreate() {
+    if (!token || !name.trim()) return;
+    setCreating(true);
+    try {
+      const project = await api.createProject(token, {
+        name: name.trim(),
+        slug: name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, ""),
+      });
+      setCurrentProject(project.id);
+      EventBus.dispatch(EVENTS.PROJECTS_CHANGED);
+      setOpen(false);
+      setName("");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all",
+          open
+            ? "bg-accent/10 text-accent-dark border border-accent/20"
+            : "bg-stone-50 text-stone-700 border border-stone-200 hover:bg-stone-100 hover:border-stone-300",
+        )}
+      >
+        <span>{selected?.name || "Select Project"}</span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 transition-transform duration-200",
+            open && "rotate-180",
+            open ? "text-accent" : "text-stone-400",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1.5 w-64 z-50 animate-slide-up">
+          <div className="rounded-xl border border-stone-200 bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
+            {/* Search */}
+            <div className="relative mb-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400" />
+              <input
+                type="text"
+                placeholder="Search projects..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-stone-200 bg-stone-50 pl-8 pr-3 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
+              />
+            </div>
+
+            <div className="max-h-48 overflow-y-auto space-y-0.5">
+              {filtered.length === 0 && !search && (
+                <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                  No projects yet. Create one below.
+                </p>
+              )}
+              {filtered.length === 0 && search && (
+                <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                  No projects match "{search}"
+                </p>
+              )}
+              {filtered.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setCurrentProject(p.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                    p.id === currentProjectId
+                      ? "bg-accent/10 text-accent-dark font-medium"
+                      : "text-stone-600 hover:bg-stone-50",
+                  )}
+                >
+                  <span className="truncate">{p.name}</span>
+                  {p.id === currentProjectId && (
+                    <Check className="h-3.5 w-3.5 text-accent shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-1.5 pt-1.5 border-t border-stone-100">
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  placeholder="New project name..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreate();
+                  }}
+                  className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
+                />
+                <button
+                  onClick={handleCreate}
+                  disabled={creating || !name.trim()}
+                  className="shrink-0 rounded-lg bg-accent px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark transition-colors disabled:opacity-50"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Environment Dropdown ───────────────────────────────────────────
+
+function EnvironmentDropdown() {
+  const token = useAppStore((s) => s.token);
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
+
+  const [open, setOpen] = useState(false);
+  const [envs, setEnvs] = useState<Environment[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selected = envs.find((e) => e.id === currentEnvId);
+
+  // Fetch environments
+  useEffect(() => {
+    if (!token || !currentProjectId) {
+      setEnvs([]);
+      return;
+    }
+    api
+      .listEnvironments(token, currentProjectId)
+      .then(setEnvs)
+      .catch(() => {});
+    const unsub = EventBus.subscribe(EVENTS.ENVIRONMENTS_CHANGED, () => {
+      api
+        .listEnvironments(token, currentProjectId)
+        .then(setEnvs)
+        .catch(() => {});
+    });
+    return () => unsub();
+  }, [token, currentProjectId]);
+
+  // Auto-select first env if none selected
+  useEffect(() => {
+    if (envs.length > 0 && !currentEnvId) {
+      setCurrentEnv(envs[0].id);
+    }
+  }, [envs, currentEnvId, setCurrentEnv]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const envColors: Record<string, string> = {
+    production: "bg-emerald-500",
+    staging: "bg-amber-500",
+    development: "bg-blue-500",
+    test: "bg-purple-500",
+    qa: "bg-teal-500",
+    default: "bg-stone-400",
+  };
+
+  async function handleCreate() {
+    if (!token || !currentProjectId || !name.trim()) return;
+    setCreating(true);
+    try {
+      const env = await api.createEnvironment(token, currentProjectId, {
+        name: name.trim(),
+        slug: name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, ""),
+        color: "#14b8a6",
+      });
+      setCurrentEnv(env.id);
+      EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
+      setOpen(false);
+      setName("");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  if (!currentProjectId) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all",
+          open
+            ? "bg-accent/10 text-accent-dark border border-accent/20"
+            : "bg-stone-50 text-stone-700 border border-stone-200 hover:bg-stone-100 hover:border-stone-300",
+        )}
+      >
+        {selected && (
+          <span
+            className={cn(
+              "h-2 w-2 rounded-full",
+              envColors[selected.slug] || envColors.default,
+            )}
+          />
+        )}
+        <span>{selected?.name || "Select Environment"}</span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 transition-transform duration-200",
+            open && "rotate-180",
+            open ? "text-accent" : "text-stone-400",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1.5 w-56 z-50 animate-slide-up">
+          <div className="rounded-xl border border-stone-200 bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
+            <div className="max-h-48 overflow-y-auto space-y-0.5">
+              {envs.length === 0 && (
+                <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                  No environments yet.
+                </p>
+              )}
+              {envs.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => {
+                    setCurrentEnv(e.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                    e.id === currentEnvId
+                      ? "bg-accent/10 text-accent-dark font-medium"
+                      : "text-stone-600 hover:bg-stone-50",
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full shrink-0",
+                        envColors[e.slug] || envColors.default,
+                      )}
+                    />
+                    <span className="truncate">{e.name}</span>
+                  </div>
+                  {e.id === currentEnvId && (
+                    <Check className="h-3.5 w-3.5 text-accent shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-1.5 pt-1.5 border-t border-stone-100">
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  placeholder="New env name..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreate();
+                  }}
+                  className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
+                />
+                <button
+                  onClick={handleCreate}
+                  disabled={creating || !name.trim()}
+                  className="shrink-0 rounded-lg bg-accent px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark transition-colors disabled:opacity-50"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Omni-Search Button ─────────────────────────────────────────────
+
+function OmniSearchButton() {
+  return (
+    <button className="flex items-center gap-2 bg-stone-50 border border-stone-200 text-stone-400 hover:text-stone-600 hover:border-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg text-sm transition-all w-56">
+      <Search className="h-3.5 w-3.5 shrink-0" />
+      <span className="flex-1 text-left text-xs">
+        Search flags, segments...
+      </span>
+      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded text-stone-400">
+        <span className="text-[9px]">⌘</span>K
+      </kbd>
+    </button>
+  );
+}
+
+// ─── Profile Avatar ─────────────────────────────────────────────────
+
+function ProfileAvatar() {
+  const user = useAppStore((s) => s.user);
+  const initials = (user?.name || "U")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div
+      className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold shadow-sm shrink-0"
+      title={user?.name || "User"}
+    >
+      {initials}
+    </div>
+  );
+}
+
+// ─── ContextBar (Main Export) ───────────────────────────────────────
 
 export function ContextBar() {
   const pathname = usePathname();
-  const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const { organization } = useWorkspace();
 
-  const [showProjectDialog, setShowProjectDialog] = useState(false);
-  const [showEnvDialog, setShowEnvDialog] = useState(false);
-
-  // Hide context selectors on org-level pages
-  const isOrgPage =
-    pathname?.startsWith("/settings/billing") ||
-    pathname?.startsWith("/settings/sso") ||
+  // Hide project/env selectors on org-level pages
+  const isSettingsPage =
+    pathname?.startsWith("/settings") ||
     pathname?.startsWith("/audit") ||
     pathname?.startsWith("/approvals");
 
   return (
-    <div className="shrink-0 border-b border-slate-200/40 bg-white/80 backdrop-blur-xl relative z-[50]">
-      {/* Hierarchical Context Indicator */}
-      {!isOrgPage && (
-        <ContextHierarchy
-          onCreateProject={() => setShowProjectDialog(true)}
-          onCreateEnvironment={() => setShowEnvDialog(true)}
-        />
-      )}
+    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
+      {/* Left: Breadcrumb-style hierarchy */}
+      <div className="flex items-center gap-2 text-sm min-w-0">
+        {/* Org name */}
+        <span className="text-stone-400 font-medium hidden sm:block truncate max-w-[120px]">
+          {organization?.name || "Workspace"}
+        </span>
 
-      {/* Breadcrumb + Actions Row */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 sm:px-5 lg:px-6">
-        {/* Breadcrumb */}
-        <Breadcrumb />
+        {!isSettingsPage && (
+          <>
+            <span className="text-stone-300 hidden sm:block">/</span>
 
-        {/* Command palette trigger */}
-        <div className="ml-auto shrink-0">
-          <CommandPaletteButton />
-        </div>
+            {/* Project selector */}
+            <ProjectDropdown />
+
+            <span className="text-stone-300">/</span>
+
+            {/* Environment selector */}
+            <EnvironmentDropdown />
+          </>
+        )}
+
+        {isSettingsPage && (
+          <>
+            <span className="text-stone-300">/</span>
+            <span className="text-stone-600 font-medium text-sm capitalize">
+              {pathname?.split("/").pop()?.replace(/-/g, " ") || "Settings"}
+            </span>
+          </>
+        )}
       </div>
 
-      {/* Create Project Dialog */}
-      {token && (
-        <CreateProjectDialog
-          open={showProjectDialog}
-          onOpenChange={setShowProjectDialog}
-          onCreated={() => {
-            // ContextHierarchy will auto-refresh via store update
-          }}
-        />
-      )}
-
-      {/* Create Environment Dialog */}
-      {token && currentProjectId && (
-        <CreateEnvironmentDialog
-          open={showEnvDialog}
-          onOpenChange={setShowEnvDialog}
-          onCreated={() => {
-            // ContextHierarchy will auto-refresh via store update
-          }}
-        />
-      )}
-    </div>
+      {/* Right: Omni-Search & Profile */}
+      <div className="flex items-center gap-3">
+        <OmniSearchButton />
+        <ProfileAvatar />
+      </div>
+    </header>
   );
 }

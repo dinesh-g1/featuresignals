@@ -20,6 +20,7 @@ const settingsTabs: SettingsTab[] = [
   { href: "/settings/api-keys", label: "API Keys" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/webhooks", label: "Webhooks", gatedFeature: "webhooks" },
+  { href: "/settings/integrations", label: "Integrations" },
   { href: "/settings/notifications", label: "Notifications" },
 ];
 
@@ -40,11 +41,13 @@ export default function SettingsLayout({
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Settings</h1>
+    <div className="space-y-6 animate-fade-in">
+      <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+        Settings
+      </h1>
 
       <nav className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="flex gap-1 border-b border-slate-200 min-w-max">
+        <div className="flex gap-1 border-b border-stone-200 min-w-max">
           {settingsTabs.map((tab) => {
             const active = pathname === tab.href || pathname === tab.href + "/";
             const locked = tab.gatedFeature
@@ -63,12 +66,12 @@ export default function SettingsLayout({
                     : undefined
                 }
                 className={cn(
-                  "flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors sm:px-4",
+                  "flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors sm:px-4 border-b-2 -mb-px",
                   locked
-                    ? "text-slate-400 hover:text-amber-600"
+                    ? "text-stone-400 hover:text-amber-600 border-transparent"
                     : active
-                      ? "border-b-2 border-indigo-600 text-indigo-600"
-                      : "text-slate-500 hover:text-slate-700",
+                      ? "border-accent text-accent"
+                      : "border-transparent text-stone-500 hover:text-stone-800 hover:border-stone-300",
                 )}
               >
                 {tab.label}

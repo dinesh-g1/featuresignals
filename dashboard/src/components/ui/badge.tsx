@@ -6,14 +6,14 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-slate-50 to-slate-100/80 text-slate-600 ring-slate-200/80",
-        primary: "bg-gradient-to-r from-indigo-50 to-indigo-100/50 text-indigo-700 ring-indigo-200/60",
-        success: "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-700 ring-emerald-200/60",
-        warning: "bg-gradient-to-r from-amber-50 to-amber-100/50 text-amber-700 ring-amber-200/60",
-        danger: "bg-gradient-to-r from-red-50 to-red-100/50 text-red-700 ring-red-200/60",
-        info: "bg-gradient-to-r from-blue-50 to-blue-100/50 text-blue-700 ring-blue-200/60",
-        purple: "bg-gradient-to-r from-purple-50 to-purple-100/50 text-purple-700 ring-purple-200/60",
-        orange: "bg-gradient-to-r from-orange-50 to-orange-100/50 text-orange-700 ring-orange-200/60",
+        default: "bg-stone-50 text-stone-600 ring-stone-200/80",
+        primary: "bg-teal-50 text-teal-700 ring-teal-200/60",
+        success: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
+        warning: "bg-amber-50 text-amber-700 ring-amber-200/60",
+        danger: "bg-red-50 text-red-700 ring-red-200/60",
+        info: "bg-blue-50 text-blue-700 ring-blue-200/60",
+        purple: "bg-purple-50 text-purple-700 ring-purple-200/60",
+        orange: "bg-orange-50 text-orange-700 ring-orange-200/60",
       },
     },
     defaultVariants: {
@@ -23,7 +23,8 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
+  extends
+    React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, ...props }: BadgeProps) {

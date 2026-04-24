@@ -8,7 +8,8 @@ const WEBSITE_URL = "https://featuresignals.com";
 
 const config: Config = {
   title: "FeatureSignals",
-  tagline: "AI-powered, open-source feature flag management for modern teams",
+  tagline:
+    "The control plane for software delivery. Sub-millisecond latency. AI-driven cleanup.",
   favicon: "img/logo.svg",
 
   future: {
@@ -161,7 +162,8 @@ const config: Config = {
             { label: "Features", href: `${WEBSITE_URL}/features` },
             { label: "Pricing", href: `${WEBSITE_URL}/pricing` },
             { label: "Blog", href: `${WEBSITE_URL}/blog` },
-            { label: "Contact", href: `${WEBSITE_URL}/contact` },
+            { label: "Docs Home", href: DOCS_SITE_URL },
+            { label: "System Status", href: `${WEBSITE_URL}/status` },
           ],
         },
         {
@@ -192,7 +194,10 @@ const config: Config = {
             { label: "GDPR", to: "/compliance/privacy-policy" },
             { label: "SOC 2", to: "/compliance/soc2/controls-matrix" },
             { label: "HIPAA", to: "/compliance/hipaa" },
-            { label: "System Status", href: `${WEBSITE_URL}/status` },
+            {
+              label: "Changelog",
+              href: "https://github.com/dinesh-g1/featuresignals/releases",
+            },
           ],
         },
         {

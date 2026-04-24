@@ -17,6 +17,9 @@ import { SuperMode } from "@/components/super-mode";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Menu } from "lucide-react";
+import { Logo } from "@/components/logo";
+
+// ─── Upgrade Required Event Listener ─────────────────────────────────
 
 function UpgradeRequiredListener() {
   const router = useRouter();
@@ -27,28 +30,31 @@ function UpgradeRequiredListener() {
       router.push("/settings/billing");
     }
     window.addEventListener("fs:upgrade-required", handleUpgradeRequired);
-    return () => window.removeEventListener("fs:upgrade-required", handleUpgradeRequired);
+    return () =>
+      window.removeEventListener("fs:upgrade-required", handleUpgradeRequired);
   }, [router]);
   return null;
 }
 
+// ─── Mobile Header ──────────────────────────────────────────────────
+
 function MobileHeader() {
   const open = useSidebarStore((s) => s.open);
   return (
-    <div className="flex h-14 items-center border-b border-slate-200/50 bg-white/80 backdrop-blur-md px-4 md:hidden">
+    <div className="flex h-14 items-center border-b border-stone-200/60 bg-white/90 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
       <button
         onClick={open}
-        className="rounded-md p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+        className="rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
         aria-label="Open sidebar"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-5 w-5" strokeWidth={1.5} />
       </button>
-      <span className="ml-3 bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-lg font-bold tracking-tight text-transparent">
-        FeatureSignals
-      </span>
+      <Logo size="sm" variant="minimal" className="ml-2" />
     </div>
   );
 }
+
+// ─── Product Tour Gate ──────────────────────────────────────────────
 
 function TourGate() {
   const tourCompleted = useAppStore((s) => s.tourCompleted);
@@ -78,29 +84,49 @@ function TourGate() {
   return <ProductTour onComplete={() => setShow(false)} />;
 }
 
+// ─── Main App Layout ────────────────────────────────────────────────
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
+      {/* Global Banners */}
       <TrialBanner />
       <UpgradeBanner />
       <VerificationBanner />
-      <div className="flex h-screen flex-col bg-gradient-to-br from-slate-50 via-white to-slate-50 md:flex-row">
+
+      {/* Main shell: sidebar + content */}
+      <div className="flex h-screen flex-col md:flex-row bg-stone-50">
+        {/* Sidebar */}
         <Sidebar />
+
+        {/* Right panel: context bar + main content + footer */}
         <div className="flex min-h-0 flex-1 flex-col">
+          {/* Mobile header (visible below md) */}
           <MobileHeader />
+
+          {/* Context bar with Project/Env selectors + OmniSearch */}
           <ContextBar />
-          <main data-tour="main-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+
+          {/* Main scrollable content area */}
+          <main
+            data-tour="main-content"
+            className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6"
+          >
             {children}
           </main>
+
+          {/* Footer */}
           <DashboardFooter />
         </div>
-        <CommandPalette />
-        <ToastContainer />
-        <UpgradeRequiredListener />
-        <TourGate />
-        <FeedbackWidget />
-        <SuperMode />
       </div>
+
+      {/* Global overlays */}
+      <CommandPalette />
+      <ToastContainer />
+      <UpgradeRequiredListener />
+      <TourGate />
+      <FeedbackWidget />
+      <SuperMode />
     </AuthGuard>
   );
 }

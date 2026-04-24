@@ -1,0 +1,35 @@
+# Compiled binary
+terraform-provider-featuresignals
+
+# Dependency directories
+.terraform/
+
+# Local .terraformrc
+.terraformrc
+
+# Environment files
+.env
+.env.local
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test output
+*.test
+*.out
+coverage.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# Terraform provider cache
+terraform.d/

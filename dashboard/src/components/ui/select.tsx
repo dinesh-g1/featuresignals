@@ -18,7 +18,8 @@ export interface SelectProps {
   icon?: React.ReactNode;
   disabled?: boolean;
   className?: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
+  error?: boolean;
 }
 
 function Select({
@@ -30,6 +31,7 @@ function Select({
   disabled = false,
   className,
   size = "md",
+  error,
 }: SelectProps) {
   return (
     <SelectPrimitive.Root
@@ -39,56 +41,65 @@ function Select({
     >
       <SelectPrimitive.Trigger
         className={cn(
-          "group inline-flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm transition-all",
-          "hover:border-slate-300 hover:shadow-md",
-          "focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20",
+          "group inline-flex w-full items-center justify-between gap-2 rounded-lg border bg-white text-sm font-medium shadow-sm transition-all",
+          "text-stone-700",
+          error
+            ? "border-red-300 focus:border-red-400 focus:ring-red-200"
+            : "border-stone-200 hover:border-stone-300",
+          "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "data-[placeholder]:text-slate-400",
-          size === "sm" ? "h-8 px-2.5 text-xs" : "h-9 px-3",
+          "data-[placeholder]:text-stone-400",
+          size === "sm" && "h-8 px-2.5 text-xs",
+          size === "md" && "h-9 px-3",
+          size === "lg" && "h-10 px-3.5",
           className,
         )}
       >
         <span className="flex items-center gap-2 truncate">
-          {icon && (
-            <span className="shrink-0 text-slate-400">{icon}</span>
-          )}
+          {icon && <span className="shrink-0 text-stone-400">{icon}</span>}
           <SelectPrimitive.Value placeholder={placeholder} />
         </span>
         <SelectPrimitive.Icon asChild>
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-stone-400 transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
 
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
           className={cn(
-            "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-xl border border-slate-200/60 bg-white/95 shadow-xl shadow-slate-200/50 backdrop-blur-lg ring-1 ring-slate-100/50",
+            "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-xl border border-stone-200/60 bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg",
             "animate-scale-in",
-            "data-[state=open]:animate-scale-in",
           )}
           position="popper"
           sideOffset={4}
           align="start"
         >
           <SelectPrimitive.Viewport className="p-1">
-            {options.filter((opt) => opt.value !== "").map((opt) => (
-              <SelectPrimitive.Item
-                key={opt.value}
-                value={opt.value}
-                className={cn(
-                  "relative flex cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-slate-700 outline-none transition-colors",
-                  "data-[highlighted]:bg-indigo-50 data-[highlighted]:text-indigo-700",
-                  "data-[state=checked]:font-medium",
-                )}
-              >
-                <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
-                  <SelectPrimitive.ItemIndicator>
-                    <Check className="h-3.5 w-3.5 text-indigo-600" strokeWidth={2.5} />
-                  </SelectPrimitive.ItemIndicator>
-                </span>
-                <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
-              </SelectPrimitive.Item>
-            ))}
+            {options
+              .filter((opt) => opt.value !== "")
+              .map((opt) => (
+                <SelectPrimitive.Item
+                  key={opt.value}
+                  value={opt.value}
+                  className={cn(
+                    "relative flex cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-stone-700 outline-none transition-colors",
+                    "data-[highlighted]:bg-accent/10 data-[highlighted]:text-accent-dark",
+                    "data-[state=checked]:font-medium",
+                  )}
+                >
+                  <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
+                    <SelectPrimitive.ItemIndicator>
+                      <Check
+                        className="h-3.5 w-3.5 text-accent"
+                        strokeWidth={2.5}
+                      />
+                    </SelectPrimitive.ItemIndicator>
+                  </span>
+                  <SelectPrimitive.ItemText>
+                    {opt.label}
+                  </SelectPrimitive.ItemText>
+                </SelectPrimitive.Item>
+              ))}
           </SelectPrimitive.Viewport>
         </SelectPrimitive.Content>
       </SelectPrimitive.Portal>
