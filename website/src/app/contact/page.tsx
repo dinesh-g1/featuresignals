@@ -1,6 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Mail, MessageSquare, ExternalLink, ArrowRight, Sparkles, MapPin, Clock } from "lucide-react";
+import {
+  Mail,
+  MessageSquare,
+  ExternalLink,
+  ArrowRight,
+  Sparkles,
+  MapPin,
+  Clock,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Contact Sales",
@@ -11,7 +19,8 @@ export const metadata: Metadata = {
 const contactMethods = [
   {
     title: "Sales Inquiries",
-    description: "Questions about pricing, enterprise plans, or self-hosted deployments?",
+    description:
+      "Questions about pricing, enterprise plans, or self-hosted deployments?",
     email: "sales@featuresignals.com",
     responseTime: "Response within 4 hours",
     icon: MessageSquare,
@@ -35,17 +44,40 @@ const contactMethods = [
 export default function ContactPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Contact",
+                item: "https://featuresignals.com/contact",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
               We're here to help
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-6">
-              Get in{" "}
-              <span className="text-accent">touch</span>
+              Get in <span className="text-accent">touch</span>
             </h1>
             <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
               Have a question about FeatureSignals? Want a demo? Need help with
@@ -57,7 +89,7 @@ export default function ContactPage() {
 
       {/* Contact Methods */}
       <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {contactMethods.map((method) => {
               const Icon = method.icon;
@@ -94,7 +126,7 @@ export default function ContactPage() {
 
       {/* Contact Form */}
       <section className="border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-3xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-8">
               Send us a message
@@ -189,7 +221,7 @@ export default function ContactPage() {
 
       {/* Office Info */}
       <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-4xl">
             <div className="grid sm:grid-cols-2 gap-8">
               <div className="flex items-start gap-4">
@@ -199,9 +231,12 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold text-stone-900 mb-1">Office</h3>
                   <p className="text-sm text-stone-500 leading-relaxed">
-                    Flat no 308, L5-Block, LIG<br />
-                    Chitrapuri Colony, Manikonda<br />
-                    Hyderabad, Telangana - 500089<br />
+                    Plot no 308, L5-Block, LIG
+                    <br />
+                    Chitrapuri Colony, Manikonda
+                    <br />
+                    Hyderabad, Telangana - 500089
+                    <br />
                     India
                   </p>
                 </div>
@@ -215,7 +250,8 @@ export default function ContactPage() {
                     Business Hours
                   </h3>
                   <p className="text-sm text-stone-500 leading-relaxed">
-                    Monday — Friday: 9:00 AM — 6:00 PM IST<br />
+                    Monday — Friday: 9:00 AM — 6:00 PM IST
+                    <br />
                     Emergency support: 24/7 (Enterprise)
                   </p>
                 </div>
@@ -227,7 +263,7 @@ export default function ContactPage() {
 
       {/* CTA */}
       <section className="bg-stone-900">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Prefer to try first?
           </h2>

@@ -122,7 +122,8 @@ const integrationCategories = [
   },
   {
     title: "CI/CD & Version Control",
-    description: "Embed feature flag management into your development pipeline.",
+    description:
+      "Embed feature flag management into your development pipeline.",
     integrations: [
       {
         name: "GitHub",
@@ -184,7 +185,8 @@ const integrationCategories = [
   },
   {
     title: "Monitoring & Observability",
-    description: "Correlate flag changes with application performance and errors.",
+    description:
+      "Correlate flag changes with application performance and errors.",
     integrations: [
       {
         name: "Datadog",
@@ -345,6 +347,30 @@ const integrationCategories = [
 export default function IntegrationsPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Integrations",
+                item: "https://featuresignals.com/features/integrations",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero */}
       <SectionReveal>
         <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
@@ -547,8 +573,8 @@ export default function IntegrationsPage() {
                 Ready to connect your toolchain?
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-base text-stone-300">
-                Start a free trial with full Pro features for 14 days.
-                Self-host or use our cloud. No credit card required.
+                Start a free trial with full Pro features for 14 days. Self-host
+                or use our cloud. No credit card required.
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <a

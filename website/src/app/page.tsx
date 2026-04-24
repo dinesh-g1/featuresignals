@@ -52,16 +52,16 @@ export default function HomePage() {
     <>
       {/* ==================== HERO SECTION ==================== */}
       <SectionReveal>
-        <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
+        <section className="relative overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20 px-6 border-b border-stone-200 bg-stone-50">
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#292524_1px,transparent_1px)] [background-size:20px_20px]" />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
 
-          <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
+          <div className="max-w-6xl mx-auto text-center space-y-6 relative z-10">
             {/* Top badges */}
             <div className="flex justify-center items-center gap-3 flex-wrap">
-              <span className="bg-white border border-stone-200 text-stone-600 text-xs px-3 py-1.5 rounded-full font-mono shadow-sm">
-                SOC 2 Type II
+              <span className="bg-amber-50 border border-amber-200 text-amber-700 text-xs px-3 py-1.5 rounded-full font-mono shadow-sm">
+                SOC 2 Type II (Audit in Progress)
               </span>
               <span className="bg-white border border-stone-200 text-stone-600 text-xs px-3 py-1.5 rounded-full font-mono shadow-sm">
                 OpenFeature Native
@@ -72,18 +72,22 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-stone-900 leading-[1.1]">
-              Mission-critical flags.<br />
+              Mission-critical flags.
+              <br />
               <span className="text-accent">Zero vendor lock-in.</span>
             </h1>
 
             <p className="text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
               The control plane for software delivery. Sub-millisecond latency.
               Automated tech-debt cleanup. We integrate natively with Terraform
-              and charge for infrastructure — <strong className="text-stone-900">never by Monthly Active Users.</strong>
+              and charge for infrastructure —{" "}
+              <strong className="text-stone-900">
+                never by Monthly Active Users.
+              </strong>
             </p>
 
             {/* Dual CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <a
                 href="https://app.featuresignals.com/register"
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-md bg-accent text-white font-semibold shadow-md hover:bg-accent-dark transition-all"
@@ -110,9 +114,9 @@ export default function HomePage() {
 
       {/* ==================== TRUSTED BY + METRICS ==================== */}
       <SectionReveal>
-        <section className="border-y border-stone-100 bg-white py-8 sm:py-10">
+        <section className="border-y border-stone-100 bg-white py-6 sm:py-8">
           <div className="mx-auto max-w-6xl px-6">
-            <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-stone-400">
+            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-stone-400">
               Trusted by engineering teams at
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-12">
@@ -131,7 +135,7 @@ export default function HomePage() {
 
       {/* Metrics row */}
       <SectionReveal>
-        <section className="border-y border-stone-100 bg-stone-50 py-10 sm:py-14">
+        <section className="border-y border-stone-100 bg-stone-50 py-8 sm:py-12">
           <div className="mx-auto max-w-6xl px-6">
             <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
               {(
@@ -158,7 +162,7 @@ export default function HomePage() {
 
       {/* ==================== PROBLEM → SOLUTION ==================== */}
       <SectionReveal>
-        <section className="mx-auto max-w-6xl px-6 py-16 text-center sm:py-24">
+        <section className="mx-auto max-w-6xl px-6 py-12 text-center sm:py-20">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
             Feature flags should solve problems, not create them
           </h2>
@@ -167,7 +171,7 @@ export default function HomePage() {
             vendor lock-in. FeatureSignals was built to fix all three.
           </p>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
             {(
               [
                 {
@@ -208,8 +212,8 @@ export default function HomePage() {
 
       {/* ==================== ARCHITECTURE (Dark Contrast Card) ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white">
-          <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-white">
+          <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent">
                 <Zap className="h-4 w-4" />
@@ -245,10 +249,10 @@ export default function HomePage() {
                 The Hybrid-Edge Architecture
               </h3>
               <p className="text-stone-300 text-base leading-relaxed mb-8 relative z-10">
-                To win enterprise and startup alike, the control plane (UI, RBAC,
-                Audit) is managed SaaS, while the data plane runs at the edge
-                (Cloudflare Workers / Fastly) or entirely within your VPC via a
-                lightweight binary sidecar.
+                To win enterprise and startup alike, the control plane (UI,
+                RBAC, Audit) is managed SaaS, while the data plane runs at the
+                edge (Cloudflare Workers / Fastly) or entirely within your VPC
+                via a lightweight binary sidecar.
               </p>
               <div className="flex flex-wrap gap-4 relative z-10">
                 <div className="border border-stone-700 bg-stone-800 text-stone-200 font-mono text-sm px-4 py-2 rounded-md">
@@ -285,7 +289,7 @@ export default function HomePage() {
 
       {/* ==================== WHY FEATURESIGNALS (6 cards) ==================== */}
       <SectionReveal>
-        <section className="mx-auto max-w-6xl px-6 py-16 text-center sm:py-24">
+        <section className="mx-auto max-w-6xl px-6 py-12 text-center sm:py-20">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
             Why engineering teams choose FeatureSignals
           </h2>
@@ -294,7 +298,7 @@ export default function HomePage() {
             vendor lock-in. No surprise bills.
           </p>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {(
               [
                 {
@@ -381,9 +385,9 @@ export default function HomePage() {
       <SectionReveal>
         <section
           id="flag-rot"
-          className="py-20 sm:py-24 px-6 border-y border-stone-200 bg-stone-50"
+          className="py-14 sm:py-20 px-6 border-y border-stone-200 bg-stone-50"
         >
-          <div className="max-w-7xl mx-auto space-y-16">
+          <div className="max-w-7xl mx-auto space-y-12">
             <div className="text-center max-w-3xl mx-auto space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-medium text-amber-800">
                 <Brain className="h-4 w-4" />
@@ -440,7 +444,10 @@ export default function HomePage() {
                         Annual Financial Hemorrhage
                       </div>
                       <div className="text-4xl sm:text-5xl font-extrabold text-stone-900 tracking-tight">
-                        $<span className="text-accent">{calculateRot(teamSize)}</span>
+                        $
+                        <span className="text-accent">
+                          {calculateRot(teamSize)}
+                        </span>
                       </div>
                       <p className="text-xs text-stone-400 mt-2">
                         Based on $75/hr blended cost × 1.5 hrs/week wasted per
@@ -547,7 +554,7 @@ export default function HomePage() {
 
       {/* ==================== HOW IT WORKS ==================== */}
       <SectionReveal>
-        <section className="border-y border-stone-100 bg-white py-16 sm:py-24">
+        <section className="border-y border-stone-100 bg-white py-12 sm:py-20">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               Up and running in 3 minutes
@@ -556,7 +563,7 @@ export default function HomePage() {
               Three steps from zero to shipping features safely.
             </p>
 
-            <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            <div className="mt-8 grid gap-5 sm:grid-cols-3">
               {(
                 [
                   {
@@ -610,7 +617,7 @@ export default function HomePage() {
 
       {/* ==================== AI CAPABILITIES SPOTLIGHT ==================== */}
       <SectionReveal>
-        <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 py-16 text-white sm:py-24">
+        <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 py-12 text-white sm:py-20">
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.04]"
             style={{
@@ -636,7 +643,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            <div className="mt-8 grid gap-5 sm:grid-cols-3">
               {(
                 [
                   {
@@ -674,7 +681,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div className="mt-10 text-center">
+            <div className="mt-6 text-center">
               <Link
                 href="/features/ai"
                 className="group inline-flex items-center gap-2 rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold transition-colors hover:bg-white/10"
@@ -689,14 +696,14 @@ export default function HomePage() {
 
       {/* ==================== TESTIMONIALS ==================== */}
       <SectionReveal>
-        <section className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
+        <section className="mx-auto max-w-6xl px-6 py-12 sm:py-20">
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               What engineering teams are saying
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {trustedBy.map(({ quote, name, title, company }) => (
               <blockquote
                 key={name}
@@ -726,7 +733,7 @@ export default function HomePage() {
 
       {/* ==================== VS LAUNCHDARKLY (KILL SHOT) ==================== */}
       <SectionReveal>
-        <section className="border-y border-stone-100 bg-stone-50 py-16 sm:py-24">
+        <section className="border-y border-stone-100 bg-stone-50 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl px-6">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
@@ -791,7 +798,7 @@ export default function HomePage() {
             </div>
 
             {/* Kill-shot callout */}
-            <div className="mt-8">
+            <div className="mt-6">
               <div className="mx-auto max-w-xl rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-center">
                 <p className="text-sm text-amber-800">
                   <span className="font-semibold">Here&apos;s the thing:</span>{" "}
@@ -822,10 +829,10 @@ export default function HomePage() {
       <SectionReveal>
         <section
           id="migration"
-          className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white"
+          className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-white"
         >
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent">
                 <Download className="h-4 w-4" />
                 The Escape Hatch
@@ -839,7 +846,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-6">
               {(
                 [
                   {
@@ -892,17 +899,33 @@ export default function HomePage() {
             </div>
 
             {/* Migration steps */}
-            <div className="mt-16 max-w-4xl mx-auto">
-              <h3 className="text-xl font-bold text-stone-900 text-center mb-8">
+            <div className="mt-12 max-w-4xl mx-auto">
+              <h3 className="text-xl font-bold text-stone-900 text-center mb-6">
                 How the migration works
               </h3>
-              <div className="grid sm:grid-cols-4 gap-6">
+              <div className="grid sm:grid-cols-4 gap-4">
                 {(
                   [
-                    { step: "1", label: "Connect", desc: "Provide your provider API key" },
-                    { step: "2", label: "Map", desc: "We map environments, flags, and rules" },
-                    { step: "3", label: "Validate", desc: "Preview evaluation results side-by-side" },
-                    { step: "4", label: "Switch", desc: "Update SDK endpoint. Done." },
+                    {
+                      step: "1",
+                      label: "Connect",
+                      desc: "Provide your provider API key",
+                    },
+                    {
+                      step: "2",
+                      label: "Map",
+                      desc: "We map environments, flags, and rules",
+                    },
+                    {
+                      step: "3",
+                      label: "Validate",
+                      desc: "Preview evaluation results side-by-side",
+                    },
+                    {
+                      step: "4",
+                      label: "Switch",
+                      desc: "Update SDK endpoint. Done.",
+                    },
                   ] as const
                 ).map(({ step, label, desc }) => (
                   <div key={step} className="text-center">
@@ -923,7 +946,7 @@ export default function HomePage() {
 
       {/* ==================== DEPLOY ANYWHERE ==================== */}
       <SectionReveal>
-        <section className="mx-auto max-w-6xl px-6 py-16 sm:py-24">
+        <section className="mx-auto max-w-6xl px-6 py-12 sm:py-20 text-center">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               Deploy your way
@@ -934,7 +957,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          <div className="mt-8 grid gap-5 sm:grid-cols-3">
             {(
               [
                 {
@@ -964,48 +987,60 @@ export default function HomePage() {
                   external: true as const,
                 },
               ] as const
-            ).map(({ title, description, icon: Icon, link, linkLabel, ...rest }) => (
-              <div
-                key={title}
-                className="group flex flex-col rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-stone-300 hover:shadow-lg"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
-                  <Icon className="h-6 w-6" strokeWidth={1.5} />
-                </div>
-                <h3 className="mt-5 text-lg font-bold text-stone-900">
-                  {title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600 flex-1">
-                  {description}
-                </p>
-                <Link
-                  href={link}
-                  {...("external" in rest
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
-                  className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-dark"
+            ).map(
+              ({
+                title,
+                description,
+                icon: Icon,
+                link,
+                linkLabel,
+                ...rest
+              }) => (
+                <div
+                  key={title}
+                  className="group flex flex-col rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-stone-300 hover:shadow-lg"
                 >
-                  {linkLabel}
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            ))}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
+                    <Icon className="h-6 w-6" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="mt-5 text-lg font-bold text-stone-900">
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600 flex-1">
+                    {description}
+                  </p>
+                  <Link
+                    href={link}
+                    {...("external" in rest
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                    className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-accent-dark"
+                  >
+                    {linkLabel}
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
+              ),
+            )}
           </div>
         </section>
       </SectionReveal>
 
       {/* ==================== PRICING ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-y border-stone-100 bg-stone-50">
-          <div className="max-w-7xl mx-auto space-y-16">
+        <section className="py-14 sm:py-20 px-6 border-y border-stone-100 bg-stone-50">
+          <div className="max-w-7xl mx-auto space-y-12">
             <div className="text-center max-w-3xl mx-auto space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
                 Pay for infrastructure. Not your success.
               </h2>
               <p className="text-lg text-stone-600">
-                Legacy tools tax your growth by charging per Monthly Active User.
-                We charge a flat rate.
-                <strong className="text-stone-900"> Unlimited MAUs. Unlimited seats.</strong>
+                Legacy tools tax your growth by charging per Monthly Active
+                User. We charge a flat rate.
+                <strong className="text-stone-900">
+                  {" "}
+                  Unlimited MAUs. Unlimited seats.
+                </strong>
               </p>
             </div>
 
@@ -1016,7 +1051,10 @@ export default function HomePage() {
                   Developer
                 </h3>
                 <div className="text-4xl font-extrabold text-stone-900 mb-8">
-                  Free<span className="text-lg font-medium text-stone-500">/mo</span>
+                  Free
+                  <span className="text-lg font-medium text-stone-500">
+                    /mo
+                  </span>
                 </div>
                 <ul className="space-y-4 text-sm text-stone-600 flex-1 font-medium">
                   <li className="flex items-center gap-2">
@@ -1057,20 +1095,23 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-bold text-accent mb-2">Pro</h3>
                 <div className="text-4xl font-extrabold text-stone-900 mb-8">
-                  ₹999<span className="text-lg font-medium text-stone-500">/mo</span>
+                  ₹999
+                  <span className="text-lg font-medium text-stone-500">
+                    /mo
+                  </span>
                 </div>
                 <ul className="space-y-4 text-sm text-stone-600 flex-1 font-medium">
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-accent shrink-0" /> Everything
-                    in Developer
+                    <Check className="h-4 w-4 text-accent shrink-0" />{" "}
+                    Everything in Developer
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-accent shrink-0" /> Unlimited
                     Team Seats
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-accent shrink-0" /> AI Janitor
-                    (Automated PRs)
+                    <Check className="h-4 w-4 text-accent shrink-0" /> AI
+                    Janitor (Automated PRs)
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-accent shrink-0" /> A/B
@@ -1107,24 +1148,24 @@ export default function HomePage() {
                 </div>
                 <ul className="space-y-4 text-sm text-stone-600 flex-1 font-medium">
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-accent shrink-0" /> Everything
-                    in Pro
+                    <Check className="h-4 w-4 text-accent shrink-0" />{" "}
+                    Everything in Pro
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-accent shrink-0" /> Dedicated
                     VPS / Air-Gapped
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-accent shrink-0" /> Multi-stage
-                    Approvals
+                    <Check className="h-4 w-4 text-accent shrink-0" />{" "}
+                    Multi-stage Approvals
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-accent shrink-0" /> SAML SSO
                     & SCIM
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-accent shrink-0" /> 4h Support
-                    SLA
+                    <Check className="h-4 w-4 text-accent shrink-0" /> 4h
+                    Support SLA
                   </li>
                 </ul>
                 <a

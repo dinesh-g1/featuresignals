@@ -31,7 +31,7 @@ const values = [
   {
     title: "Enterprise Security",
     description:
-      "SOC 2 Type II compliant, encrypted at rest and in transit, with RBAC, audit logging, and SSO. Built for organizations that take security seriously.",
+      "SOC 2 Type II audit in progress, encrypted at rest and in transit, with RBAC, audit logging, and SSO. Built for organizations that take security seriously.",
     icon: Shield,
   },
   {
@@ -54,9 +54,33 @@ const team = [
 export default function AboutPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "About",
+                item: "https://featuresignals.com/about",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
@@ -94,7 +118,7 @@ export default function AboutPage() {
 
       {/* Values */}
       <section className="border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-5xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-12">
               Our Principles
@@ -126,7 +150,7 @@ export default function AboutPage() {
 
       {/* Team */}
       <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-5xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-12">
               Leadership Team
@@ -140,7 +164,9 @@ export default function AboutPage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-lg font-bold text-white">
                     {member.initials}
                   </div>
-                  <h3 className="font-semibold text-stone-900">{member.name}</h3>
+                  <h3 className="font-semibold text-stone-900">
+                    {member.name}
+                  </h3>
                   <p className="text-sm text-stone-500">{member.role}</p>
                 </div>
               ))}
@@ -151,7 +177,7 @@ export default function AboutPage() {
 
       {/* Office */}
       <section className="border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-4">
               Our Office
@@ -160,7 +186,7 @@ export default function AboutPage() {
               Vivekananda Technology Labs
             </p>
             <p className="text-stone-500 text-sm">
-              Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
+              Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda,
               Hyderabad, Telangana - 500089, India
             </p>
           </div>
@@ -169,7 +195,7 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section className="bg-stone-900">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Want to join our mission?
           </h2>

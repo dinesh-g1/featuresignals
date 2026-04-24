@@ -147,16 +147,60 @@ const additionalCapabilities = [
 ];
 
 const flagTypes = [
-  { type: "Boolean", example: "show-new-checkout", use: "Simple on/off toggles" },
-  { type: "String", example: "checkout-variant", use: "Multi-variant experiments (A/B/C)" },
-  { type: "Number", example: "discount-percentage", use: "Graduated rollouts and numeric config" },
-  { type: "JSON", example: "checkout-config", use: "Complex configuration objects" },
-  { type: "A/B Experiment", example: "pricing-page-test", use: "Statistical experiments with immutable variants" },
+  {
+    type: "Boolean",
+    example: "show-new-checkout",
+    use: "Simple on/off toggles",
+  },
+  {
+    type: "String",
+    example: "checkout-variant",
+    use: "Multi-variant experiments (A/B/C)",
+  },
+  {
+    type: "Number",
+    example: "discount-percentage",
+    use: "Graduated rollouts and numeric config",
+  },
+  {
+    type: "JSON",
+    example: "checkout-config",
+    use: "Complex configuration objects",
+  },
+  {
+    type: "A/B Experiment",
+    example: "pricing-page-test",
+    use: "Statistical experiments with immutable variants",
+  },
 ];
 
 export default function FeaturesPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Features",
+                item: "https://featuresignals.com/features",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero Section */}
       <SectionReveal>
         <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
@@ -169,7 +213,8 @@ export default function FeaturesPage() {
               Enterprise Feature Flag Platform
             </div>
             <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-stone-900 leading-[1.1]">
-              Ship with confidence.<br />
+              Ship with confidence.
+              <br />
               <span className="text-accent">Control everything.</span>
             </h1>
             <p className="text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
@@ -199,9 +244,9 @@ export default function FeaturesPage() {
 
       {/* Flag Types Section */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-100 bg-white">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-100 bg-white">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
                 Five flag types for every use case
               </h2>
@@ -215,14 +260,23 @@ export default function FeaturesPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200">
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">Flag Type</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">Example</th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">Best For</th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                      Flag Type
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                      Example
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                      Best For
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {flagTypes.map((ft) => (
-                    <tr key={ft.type} className="bg-white hover:bg-stone-50 transition-colors">
+                    <tr
+                      key={ft.type}
+                      className="bg-white hover:bg-stone-50 transition-colors"
+                    >
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center rounded-full bg-accent/10 text-accent px-3 py-1 text-sm font-semibold">
                           {ft.type}
@@ -241,7 +295,8 @@ export default function FeaturesPage() {
             </div>
 
             <p className="text-center text-sm text-stone-500 mt-6">
-              All flag types support per-environment overrides, targeting rules, percentage rollouts, and real-time SSE streaming.
+              All flag types support per-environment overrides, targeting rules,
+              percentage rollouts, and real-time SSE streaming.
             </p>
           </div>
         </section>
@@ -249,50 +304,52 @@ export default function FeaturesPage() {
 
       {/* Core Features Grid */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-stone-50">
           <div className="max-w-7xl mx-auto space-y-16">
             <div className="text-center max-w-3xl mx-auto space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
                 Everything you need to ship safely
               </h2>
               <p className="text-lg text-stone-600">
-                FeatureSignals combines battle-tested feature flag primitives with
-                modern automation to give your team superpowers.
+                FeatureSignals combines battle-tested feature flag primitives
+                with modern automation to give your team superpowers.
               </p>
             </div>
 
             <div className="grid gap-8 md:grid-cols-2">
-              {coreFeatures.map(({ Icon, title, description, capabilities }) => (
-                <div
-                  key={title}
-                  className="group rounded-2xl border border-stone-200 bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
-                      <Icon className="h-6 w-6" strokeWidth={1.5} />
+              {coreFeatures.map(
+                ({ Icon, title, description, capabilities }) => (
+                  <div
+                    key={title}
+                    className="group rounded-2xl border border-stone-200 bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
+                        <Icon className="h-6 w-6" strokeWidth={1.5} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xl font-bold text-stone-900">
+                          {title}
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                          {description}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-xl font-bold text-stone-900">
-                        {title}
-                      </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-stone-600">
-                        {description}
-                      </p>
-                    </div>
+                    <ul className="mt-6 space-y-2.5 border-t border-stone-100 pt-6">
+                      {capabilities.map((cap) => (
+                        <li
+                          key={cap}
+                          className="flex items-start gap-2 text-sm text-stone-600"
+                        >
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                          {cap}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="mt-6 space-y-2.5 border-t border-stone-100 pt-6">
-                    {capabilities.map((cap) => (
-                      <li
-                        key={cap}
-                        className="flex items-start gap-2 text-sm text-stone-600"
-                      >
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                        {cap}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -300,9 +357,9 @@ export default function FeaturesPage() {
 
       {/* Additional Capabilities */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-100 bg-white">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-100 bg-white">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
                 More capabilities
               </h2>
@@ -313,22 +370,24 @@ export default function FeaturesPage() {
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {additionalCapabilities.map(({ title, description, icon: Icon }) => (
-                <div
-                  key={title}
-                  className="group rounded-2xl border border-stone-200 bg-stone-50 p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-md"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent ring-1 ring-accent/20">
-                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+              {additionalCapabilities.map(
+                ({ title, description, icon: Icon }) => (
+                  <div
+                    key={title}
+                    className="group rounded-2xl border border-stone-200 bg-stone-50 p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-md"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent ring-1 ring-accent/20">
+                      <Icon className="h-5 w-5" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="mt-4 text-lg font-bold text-stone-900">
+                      {title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                      {description}
+                    </p>
                   </div>
-                  <h3 className="mt-4 text-lg font-bold text-stone-900">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-stone-600">
-                    {description}
-                  </p>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -336,7 +395,7 @@ export default function FeaturesPage() {
 
       {/* Related Features CTA */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 bg-stone-50">
+        <section className="py-14 sm:py-20 px-6 bg-stone-50">
           <div className="max-w-7xl mx-auto">
             <div className="grid gap-6 md:grid-cols-3">
               <Link
@@ -353,7 +412,8 @@ export default function FeaturesPage() {
                   Autonomous stale flag detection and cleanup PR generation.
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
-                  Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  Learn more{" "}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </span>
               </Link>
 
@@ -371,7 +431,8 @@ export default function FeaturesPage() {
                   RBAC, audit logs, SSO, compliance, and approval workflows.
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
-                  Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  Learn more{" "}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </span>
               </Link>
 
@@ -389,7 +450,8 @@ export default function FeaturesPage() {
                   Terraform, Slack, GitHub, Jira, Datadog, and webhooks.
                 </p>
                 <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
-                  Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  Learn more{" "}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </span>
               </Link>
             </div>

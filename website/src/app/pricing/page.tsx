@@ -1,6 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Check, ArrowRight, Zap, Shield, Building2, Sparkles } from "lucide-react";
+import {
+  Check,
+  ArrowRight,
+  Zap,
+  Shield,
+  Building2,
+  Sparkles,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -53,7 +60,8 @@ const tiers = [
     name: "Enterprise",
     id: "enterprise",
     price: "Custom",
-    description: "For organizations that need dedicated infrastructure and control.",
+    description:
+      "For organizations that need dedicated infrastructure and control.",
     features: [
       "Everything in Pro, plus:",
       "Unlimited team members & projects",
@@ -176,15 +184,141 @@ const faqs = [
 ];
 
 function CheckIcon() {
-  return <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" strokeWidth={2.5} />;
+  return (
+    <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" strokeWidth={2.5} />
+  );
 }
 
 export default function PricingPage() {
   return (
     <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Home",
+                    item: "https://featuresignals.com",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Pricing",
+                    item: "https://featuresignals.com/pricing",
+                  },
+                ],
+              },
+              {
+                "@type": "Product",
+                name: "FeatureSignals Pro",
+                description:
+                  "Feature flag platform for growing teams. Unlimited flags, environments, team members. AI Janitor, A/B testing, advanced targeting.",
+                brand: {
+                  "@type": "Brand",
+                  name: "FeatureSignals",
+                },
+                offers: [
+                  {
+                    "@type": "Offer",
+                    name: "Free",
+                    price: "0",
+                    priceCurrency: "USD",
+                    priceValidUntil: "2027-12-31",
+                    availability: "https://schema.org/InStock",
+                    description:
+                      "Perfect for side projects and small teams getting started.",
+                  },
+                  {
+                    "@type": "Offer",
+                    name: "Pro",
+                    price: "99",
+                    priceCurrency: "USD",
+                    priceValidUntil: "2027-12-31",
+                    availability: "https://schema.org/InStock",
+                    description:
+                      "For growing teams that need advanced flag management.",
+                  },
+                  {
+                    "@type": "Offer",
+                    name: "Enterprise",
+                    price: "0",
+                    priceCurrency: "USD",
+                    priceValidUntil: "2027-12-31",
+                    availability: "https://schema.org/InStock",
+                    description:
+                      "For organizations that need dedicated infrastructure and control.",
+                  },
+                ],
+              },
+              {
+                "@type": "FAQPage",
+                mainEntity: [
+                  {
+                    "@type": "Question",
+                    name: "How is pricing calculated?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "We charge a flat monthly fee per workspace — never per seat, never per MAU (monthly active users). This means your bill stays predictable as your user base grows. The Free tier is and always will be free with no time limit.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Can I self-host FeatureSignals?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. Enterprise plans include self-hosted deployment via Docker Compose or Kubernetes. Community Edition is also available under Apache 2.0 license for self-hosting with basic features.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Is there a free trial for Pro?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes! You get a 14-day free trial of Pro with no credit card required. Full access to all Pro features including the AI Janitor, A/B experimentation, and advanced targeting.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "What happens when I exceed the Free tier limits?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "You'll receive in-app notifications and can upgrade to Pro at any time. No data is lost during the transition — your flags, segments, and configurations are preserved.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Do you offer academic or open-source discounts?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. We offer a 50% discount for verified academic institutions and free Pro access for qualified open-source projects. Contact our sales team for details.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Can I cancel anytime?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Absolutely. No long-term contracts. Cancel anytime and your subscription remains active until the end of the current billing period. Your data is exportable at any time.",
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
+
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
@@ -195,8 +329,8 @@ export default function PricingPage() {
               <span className="text-accent">your team</span>
             </h1>
             <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
-              No per-MAU fees. No hidden costs. Flat-rate pricing for every
-              team size — from indie devs to Fortune 500 enterprises.
+              No per-MAU fees. No hidden costs. Flat-rate pricing for every team
+              size — from indie devs to Fortune 500 enterprises.
             </p>
           </div>
         </div>
@@ -204,7 +338,7 @@ export default function PricingPage() {
 
       {/* Pricing Tiers */}
       <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {tiers.map((tier) => (
               <div
@@ -239,7 +373,10 @@ export default function PricingPage() {
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
                   {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-stone-600">
+                    <li
+                      key={f}
+                      className="flex items-start gap-3 text-sm text-stone-600"
+                    >
                       <CheckIcon />
                       <span>{f}</span>
                     </li>
@@ -264,7 +401,7 @@ export default function PricingPage() {
 
       {/* Comparison Table */}
       <section className="border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-4xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-8">
               Compare plans in detail
@@ -273,19 +410,42 @@ export default function PricingPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-stone-200 bg-stone-50">
-                    <th className="text-left px-6 py-4 font-semibold text-stone-700">Feature</th>
-                    <th className="text-center px-6 py-4 font-semibold text-stone-700">Free</th>
-                    <th className="text-center px-6 py-4 font-semibold text-accent">Pro</th>
-                    <th className="text-center px-6 py-4 font-semibold text-stone-700">Enterprise</th>
+                    <th className="text-left px-6 py-4 font-semibold text-stone-700">
+                      Feature
+                    </th>
+                    <th className="text-center px-6 py-4 font-semibold text-stone-700">
+                      Free
+                    </th>
+                    <th className="text-center px-6 py-4 font-semibold text-accent">
+                      Pro
+                    </th>
+                    <th className="text-center px-6 py-4 font-semibold text-stone-700">
+                      Enterprise
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {comparisons.map((row, i) => (
-                    <tr key={row.feature} className={i < comparisons.length - 1 ? "border-b border-stone-100" : ""}>
-                      <td className="px-6 py-3.5 text-stone-700 font-medium">{row.feature}</td>
-                      <td className="px-6 py-3.5 text-center text-stone-500">{row.free}</td>
-                      <td className="px-6 py-3.5 text-center text-accent font-medium">{row.pro}</td>
-                      <td className="px-6 py-3.5 text-center text-stone-700">{row.enterprise}</td>
+                    <tr
+                      key={row.feature}
+                      className={
+                        i < comparisons.length - 1
+                          ? "border-b border-stone-100"
+                          : ""
+                      }
+                    >
+                      <td className="px-6 py-3.5 text-stone-700 font-medium">
+                        {row.feature}
+                      </td>
+                      <td className="px-6 py-3.5 text-center text-stone-500">
+                        {row.free}
+                      </td>
+                      <td className="px-6 py-3.5 text-center text-accent font-medium">
+                        {row.pro}
+                      </td>
+                      <td className="px-6 py-3.5 text-center text-stone-700">
+                        {row.enterprise}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -297,7 +457,7 @@ export default function PricingPage() {
 
       {/* FAQ */}
       <section className="border-b border-stone-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="mx-auto max-w-3xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 text-center mb-12">
               Frequently asked questions
@@ -317,7 +477,11 @@ export default function PricingPage() {
                       stroke="currentColor"
                       strokeWidth={2}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </summary>
                   <div className="px-6 pb-4 text-sm text-stone-600 leading-relaxed">
@@ -332,7 +496,7 @@ export default function PricingPage() {
 
       {/* CTA */}
       <section className="bg-stone-900">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Ready to get started?
           </h2>

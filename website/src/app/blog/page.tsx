@@ -102,17 +102,40 @@ const categories = [
 export default function BlogPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Blog",
+                item: "https://featuresignals.com/blog",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
               Engineering insights &amp; product updates
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-6">
-              The{" "}
-              <span className="text-accent">FeatureSignals</span> Blog
+              The <span className="text-accent">FeatureSignals</span> Blog
             </h1>
             <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
               Engineering insights, product updates, and best practices for
@@ -144,7 +167,7 @@ export default function BlogPage() {
 
       {/* Blog Posts */}
       <section className="border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {posts.map((post) => (
               <article
@@ -191,7 +214,7 @@ export default function BlogPage() {
 
       {/* Newsletter */}
       <section className="bg-stone-900">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Stay updated
           </h2>

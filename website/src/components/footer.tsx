@@ -263,7 +263,7 @@ export function Footer() {
             trading as FeatureSignals. Apache-2.0 License.
           </p>
           <p>
-            Flat no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,
+            Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,
             Telangana - 500089, India
           </p>
         </div>

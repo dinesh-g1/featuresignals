@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>FeatureSignals Blog</title>
+    <link>https://featuresignals.com/blog</link>
+    <description>Engineering insights, product updates, and best practices for feature flag management. Written by the FeatureSignals team.</description>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 25 Apr 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://featuresignals.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <ttl>60</ttl>
+
+    <item>
+      <title>Introducing the AI Janitor: Automated Stale Flag Cleanup</title>
+      <link>https://featuresignals.com/blog/introducing-ai-janitor</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/introducing-ai-janitor</guid>
+      <pubDate>Thu, 15 Jan 2026 00:00:00 +0000</pubDate>
+      <dc:creator>Dinesh G</dc:creator>
+      <category>Product</category>
+      <description>Feature flag rot is one of the biggest sources of technical debt in modern software delivery. The AI Janitor automatically detects stale flags, scans your codebase for references, and generates cleanup PRs.</description>
+      <content:encoded><![CDATA[
+        <p>Every feature flag that was created for a launch, an A/B test, or a gradual rollout has a lifecycle. When that lifecycle ends, the flag should be removed. In practice, it rarely is. Studies show that 30-50% of feature flags in production are stale.</p>
+        <p>The AI Janitor is FeatureSignals' solution to this problem. It continuously monitors your flag definitions, scans your repositories for usage references, identifies flags that are safe to remove, and generates pull requests with the cleanup code.</p>
+        <p>It operates in four stages: Detection, Codebase Scanning, PR Generation, and Review &amp; Merge. A team at a mid-stage fintech company saved over 300 hours per quarter using the AI Janitor.</p>
+        <p>Available in Pro and Enterprise plans. Connect your Git provider, configure thresholds, and let it run.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>Migrating from LaunchDarkly: A Complete Guide</title>
+      <link>https://featuresignals.com/blog/migrating-from-launchdarkly-guide</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/migrating-from-launchdarkly-guide</guid>
+      <pubDate>Sat, 10 Jan 2026 00:00:00 +0000</pubDate>
+      <dc:creator>Sai K</dc:creator>
+      <category>Engineering</category>
+      <description>Thinking about migrating away from LaunchDarkly? We walk through the entire process from API key setup to targeting rule translation and validation.</description>
+      <content:encoded><![CDATA[
+        <p>In our experience helping teams migrate from LaunchDarkly to FeatureSignals, the process typically takes under an hour for most organizations.</p>
+        <p>Common reasons teams cite for leaving LaunchDarkly include pricing (per-MAU costs that grow unpredictably), vendor lock-in (proprietary SDKs), feature limitations (no native GitOps), and self-hosting constraints.</p>
+        <p>The migration has five phases: Export and Map, Validate Side-by-Side, Cut Over, and Clean Up. Because FeatureSignals supports the OpenFeature standard, you can switch providers with a single line of code change.</p>
+        <p>Migration assistance available for all Enterprise plans including dedicated Slack support during cutover.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>How We Achieve Sub-Millisecond Flag Evaluation</title>
+      <link>https://featuresignals.com/blog/sub-millisecond-flag-evaluation</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/sub-millisecond-flag-evaluation</guid>
+      <pubDate>Mon, 05 Jan 2026 00:00:00 +0000</pubDate>
+      <dc:creator>Priya M</dc:creator>
+      <category>Engineering</category>
+      <description>Feature flag evaluation sits on every request path. Here's how we optimized our evaluation engine for sub-millisecond p99 latency.</description>
+      <content:encoded><![CDATA[
+        <p>Every feature flag evaluation sits on the critical path of a user request. Our target was sub-millisecond p99 latency for a single flag evaluation.</p>
+        <p>The evaluation engine uses a layered architecture with three tiers: Local SDK Cache (copy-on-write data structure), Edge Cache Layer (deployed at CDN edge nodes globally), and Core Evaluation Service.</p>
+        <p>The evaluation path uses no locks or mutexes on the critical path. Benchmark results: p50 latency 12 microseconds, p99 latency 127 microseconds. The engine sustains over 80,000 evaluations per second on a single core.</p>
+        <p>WASM-based evaluation for edge compute environments is in development, targeting single-digit microsecond evaluations.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>Multi-IaC Provider Support: Terraform, Pulumi, and Ansible</title>
+      <link>https://featuresignals.com/blog/multi-iac-provider-support</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/multi-iac-provider-support</guid>
+      <pubDate>Sun, 28 Dec 2025 00:00:00 +0000</pubDate>
+      <dc:creator>Arun R</dc:creator>
+      <category>Product</category>
+      <description>FeatureSignals now supports Terraform, Pulumi, and Ansible for managing feature flags as infrastructure code.</description>
+      <content:encoded><![CDATA[
+        <p>FeatureSignals now provides first-class providers for Terraform, Pulumi, and Ansible, enabling teams to manage flags alongside their infrastructure.</p>
+        <p>Managing flags through IaC brings version-controlled flags, code reviews for flag changes, automated CI/CD pipelines, and disaster recovery with reproducible flag configurations from source control.</p>
+        <p>The Terraform provider supports the full flag lifecycle including flags, segments, environments, projects, and targeting rules. The Pulumi provider is available in TypeScript, Python, Go, and C#. The Ansible collection enables flag management as part of playbook-based automation.</p>
+        <p>All three providers are open source under Apache 2.0 license.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>OpenFeature Standard: Why Interoperability Matters</title>
+      <link>https://featuresignals.com/blog/openfeature-interoperability</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/openfeature-interoperability</guid>
+      <pubDate>Sat, 20 Dec 2025 00:00:00 +0000</pubDate>
+      <dc:creator>Neha S</dc:creator>
+      <category>Engineering</category>
+      <description>The OpenFeature standard is transforming the feature flag ecosystem. FeatureSignals is a proud native OpenFeature provider.</description>
+      <content:encoded><![CDATA[
+        <p>OpenFeature is an open standard for feature flag management, hosted by the CNCF. It defines a provider-agnostic API that decouples your application code from any specific feature flag vendor.</p>
+        <p>Before OpenFeature, every vendor had its own SDK with its own API surface, creating vendor lock-in at the code level. FeatureSignals is a native OpenFeature provider, implementing the specification directly.</p>
+        <p>Benefits include zero vendor lock-in, multi-provider support, and standardized APIs across 8 languages. Each SDK is tested against the OpenFeature compliance suite.</p>
+        <p>By standardizing on OpenFeature, your codebase benefits as the ecosystem evolves with hooks for observability, transaction context propagation, and evaluation metadata.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>Building a SOC 2 Compliant Feature Flag Platform</title>
+      <link>https://featuresignals.com/blog/soc2-compliant-feature-flags</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/soc2-compliant-feature-flags</guid>
+      <pubDate>Mon, 15 Dec 2025 00:00:00 +0000</pubDate>
+      <dc:creator>Rahul V</dc:creator>
+      <category>Security</category>
+      <description>Our journey to SOC 2 Type II certification and what it means for our customers' security and compliance.</description>
+      <content:encoded><![CDATA[
+        <p>SOC 2 Type II certification validates that an organization's controls are not only well-designed but operated effectively over time. For FeatureSignals, achieving SOC 2 Type II was a foundational investment.</p>
+        <p>Key controls implemented include RBAC with MFA enforcement, AES-256 encryption at rest with TLS 1.3 in transit, tamper-evident audit trails, code-reviewed infrastructure changes, documented incident response plan with PagerDuty integration, and vendor management with security reviews for all sub-processors.</p>
+        <p>Our SOC 2 Type II audit is currently in progress. The report will be available to customers under NDA upon completion.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>The Cost of Flag Rot: Quantifying Technical Debt</title>
+      <link>https://featuresignals.com/blog/cost-of-flag-rot</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/cost-of-flag-rot</guid>
+      <pubDate>Wed, 10 Dec 2025 00:00:00 +0000</pubDate>
+      <dc:creator>Dinesh G</dc:creator>
+      <category>Best Practices</category>
+      <description>Every stale feature flag carries a cost. Our calculator quantifies this debt and predicts cleanup ROI.</description>
+      <content:encoded><![CDATA[
+        <p>Every stale flag imposes five categories of cost: Cognitive Load (slower onboarding, more context to hold), Code Complexity (N flags create 2^N possible paths), Testing Overhead (most flag states go untested), Deployment Risk (dead code paths can cause incidents), and Performance Overhead (microseconds per evaluation add up).</p>
+        <p>For a team of 50 engineers with 400 flags, the estimated annual cost exceeds $2.9M in engineering hours. The AI Janitor reduces this ongoing cost by an estimated 80-90% through automated detection and cleanup.</p>
+        <p>Our Flag Rot Calculator on the FeatureSignals homepage estimates your annual cost based on team size and flag inventory.</p>
+      ]]></content:encoded>
+    </item>
+
+    <item>
+      <title>Progressive Delivery: Beyond Feature Flags</title>
+      <link>https://featuresignals.com/blog/progressive-delivery-beyond-flags</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/progressive-delivery-beyond-flags</guid>
+      <pubDate>Fri, 05 Dec 2025 00:00:00 +0000</pubDate>
+      <dc:creator>Sai K</dc:creator>
+      <category>Best Practices</category>
+      <description>Progressive delivery combines flags with targeted rollouts, automated canary analysis, and observability for safer releases.</description>
+      <content:encoded><![CDATA[
+        <p>Progressive delivery combines feature flags, canary releases, targeted rollouts, automated analysis, and observability into a unified workflow that minimizes risk while maximizing deployment velocity.</p>
+        <p>The five pillars are: Feature Flags (every change is wrapped in a flag), Canary Releases (route a percentage of traffic), Automated Analysis (define success criteria), Observability (every flag evaluation is logged), and Kill Switches (instant disable across all users).</p>
+        <p>A typical progressive delivery pipeline with FeatureSignals runs through 7 stages: build behind disabled flag, validate, dogfood, verify metrics, expand to 1%-5%-25%-100%, analysis between steps, and harden at 100%. This approach reduces deployment-related incidents by an estimated 80%.</p>
+      ]]></content:encoded>
+    </item>
+
+  </channel>
+</rss>

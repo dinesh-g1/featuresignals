@@ -95,21 +95,21 @@ const governanceFeatures = [
   {
     title: "Compliance Certifications",
     description:
-      "FeatureSignals maintains SOC 2 Type II certification and is designed to support GDPR, HIPAA, and SOC 2 compliance requirements from day one.",
+      "FeatureSignals is actively pursuing SOC 2 Type II certification and is designed to support GDPR, HIPAA, and SOC 2 compliance requirements from day one.",
     icon: ShieldCheck,
     details: [
-      "SOC 2 Type II audited annually",
+      "SOC 2 Type II audit in progress",
       "GDPR-compliant data processing agreement (DPA)",
-      "HIPAA BAA available for healthcare customers",
+      "HIPAA compliance roadmap in development",
       "Data residency in US, EU, and India regions",
     ],
   },
 ];
 
 const complianceStandards = [
-  { name: "SOC 2 Type II", status: "Certified", icon: ShieldCheck },
+  { name: "SOC 2 Type II", status: "Audit in Progress", icon: ShieldCheck },
   { name: "GDPR", status: "Compliant", icon: Globe },
-  { name: "HIPAA", status: "BAA Available", icon: Building2 },
+  { name: "HIPAA", status: "Planned", icon: Building2 },
   { name: "ISO 27001", status: "In Progress", icon: FileClock },
 ];
 
@@ -162,6 +162,30 @@ const faqs = [
 export default function SecurityPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Security",
+                item: "https://featuresignals.com/features/security",
+              },
+            ],
+          }),
+        }}
+      />
       {/* HERO */}
       <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
         <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#292524_1px,transparent_1px)] [background-size:20px_20px]" />
@@ -176,13 +200,12 @@ export default function SecurityPage() {
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-stone-900 leading-[1.1]">
-            Security &amp;{" "}
-            <span className="text-accent">Governance</span>
+            Security &amp; <span className="text-accent">Governance</span>
           </h1>
           <p className="text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
-            Enterprise-grade security controls with granular RBAC, tamper-evident
-            audit logs, SSO integration, and compliance certifications — all
-            built into the platform from day one.
+            Enterprise-grade security controls with granular RBAC,
+            tamper-evident audit logs, SSO integration, and compliance
+            certifications — all built into the platform from day one.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <a
@@ -229,9 +252,9 @@ export default function SecurityPage() {
       </section>
 
       {/* GOVERNANCE FEATURES GRID */}
-      <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white">
+      <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-white">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+          <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               Everything you need to govern feature flags
             </h2>
@@ -277,9 +300,9 @@ export default function SecurityPage() {
       </section>
 
       {/* SECURITY PRACTICES */}
-      <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
+      <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-stone-50">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+          <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               Security by design
             </h2>
@@ -312,9 +335,9 @@ export default function SecurityPage() {
       </section>
 
       {/* ARCHITECTURE DIAGRAM */}
-      <section className="py-20 sm:py-24 px-6 bg-white">
+      <section className="py-14 sm:py-20 px-6 bg-white">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+          <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900">
               How security flows through the platform
             </h2>
@@ -393,7 +416,7 @@ export default function SecurityPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 sm:py-24 px-6 border-y border-stone-100 bg-stone-50">
+      <section className="py-14 sm:py-20 px-6 border-y border-stone-100 bg-stone-50">
         <div className="mx-auto max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900 text-center mb-4">
             Frequently asked questions

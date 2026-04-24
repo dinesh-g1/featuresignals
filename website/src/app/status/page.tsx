@@ -1,6 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Sparkles, ArrowRight, CheckCircle, AlertTriangle, Clock, Activity, Shield } from "lucide-react";
+import {
+  Sparkles,
+  ArrowRight,
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  Activity,
+  Shield,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "System Status",
@@ -14,28 +22,32 @@ const services = [
     status: "operational",
     uptime: "99.99%",
     latency: "<50ms",
-    description: "REST API for flag management, team administration, and configuration",
+    description:
+      "REST API for flag management, team administration, and configuration",
   },
   {
     name: "Evaluation Engine",
     status: "operational",
     uptime: "99.99%",
     latency: "<1ms",
-    description: "Real-time flag evaluation at the edge with sub-millisecond p99 latency",
+    description:
+      "Real-time flag evaluation at the edge with sub-millisecond p99 latency",
   },
   {
     name: "Streaming API (SSE)",
     status: "operational",
     uptime: "99.95%",
     latency: "<100ms",
-    description: "Server-sent events for real-time flag state updates and live streams",
+    description:
+      "Server-sent events for real-time flag state updates and live streams",
   },
   {
     name: "Webhook Delivery",
     status: "operational",
     uptime: "99.95%",
     latency: "<500ms",
-    description: "Asynchronous webhook dispatch with retry logic and delivery logging",
+    description:
+      "Asynchronous webhook dispatch with retry logic and delivery logging",
   },
   {
     name: "Dashboard",
@@ -56,24 +68,56 @@ const services = [
     status: "operational",
     uptime: "99.90%",
     latency: "<2s",
-    description: "Stale flag detection, codebase scanning, and PR generation pipeline",
+    description:
+      "Stale flag detection, codebase scanning, and PR generation pipeline",
   },
   {
     name: "SDK Distribution (CDN)",
     status: "operational",
     uptime: "99.99%",
     latency: "<50ms",
-    description: "Global CDN distribution for client-side SDKs and flag configurations",
+    description:
+      "Global CDN distribution for client-side SDKs and flag configurations",
   },
 ];
 
 const regions = [
-  { name: "US East (Virginia)", code: "us-east-1", status: "operational", latency: "<1ms" },
-  { name: "US West (Oregon)", code: "us-west-2", status: "operational", latency: "<2ms" },
-  { name: "Europe (Frankfurt)", code: "eu-central-1", status: "operational", latency: "<3ms" },
-  { name: "Asia Pacific (Mumbai)", code: "ap-south-1", status: "operational", latency: "<5ms" },
-  { name: "Asia Pacific (Singapore)", code: "ap-southeast-1", status: "operational", latency: "<4ms" },
-  { name: "South America (São Paulo)", code: "sa-east-1", status: "operational", latency: "<8ms" },
+  {
+    name: "US East (Virginia)",
+    code: "us-east-1",
+    status: "operational",
+    latency: "<1ms",
+  },
+  {
+    name: "US West (Oregon)",
+    code: "us-west-2",
+    status: "operational",
+    latency: "<2ms",
+  },
+  {
+    name: "Europe (Frankfurt)",
+    code: "eu-central-1",
+    status: "operational",
+    latency: "<3ms",
+  },
+  {
+    name: "Asia Pacific (Mumbai)",
+    code: "ap-south-1",
+    status: "operational",
+    latency: "<5ms",
+  },
+  {
+    name: "Asia Pacific (Singapore)",
+    code: "ap-southeast-1",
+    status: "operational",
+    latency: "<4ms",
+  },
+  {
+    name: "South America (São Paulo)",
+    code: "sa-east-1",
+    status: "operational",
+    latency: "<8ms",
+  },
 ];
 
 const incidents = [
@@ -104,17 +148,42 @@ const incidents = [
 ];
 
 function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
-    operational: { label: "Operational", color: "text-emerald-600 bg-emerald-50 border-emerald-200", icon: CheckCircle },
-    degraded: { label: "Degraded", color: "text-amber-600 bg-amber-50 border-amber-200", icon: AlertTriangle },
-    outage: { label: "Outage", color: "text-red-600 bg-red-50 border-red-200", icon: AlertTriangle },
-    maintenance: { label: "Maintenance", color: "text-blue-600 bg-blue-50 border-blue-200", icon: Clock },
-    resolved: { label: "Resolved", color: "text-stone-600 bg-stone-50 border-stone-200", icon: CheckCircle },
+  const config: Record<
+    string,
+    { label: string; color: string; icon: typeof CheckCircle }
+  > = {
+    operational: {
+      label: "Operational",
+      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+      icon: CheckCircle,
+    },
+    degraded: {
+      label: "Degraded",
+      color: "text-amber-600 bg-amber-50 border-amber-200",
+      icon: AlertTriangle,
+    },
+    outage: {
+      label: "Outage",
+      color: "text-red-600 bg-red-50 border-red-200",
+      icon: AlertTriangle,
+    },
+    maintenance: {
+      label: "Maintenance",
+      color: "text-blue-600 bg-blue-50 border-blue-200",
+      icon: Clock,
+    },
+    resolved: {
+      label: "Resolved",
+      color: "text-stone-600 bg-stone-50 border-stone-200",
+      icon: CheckCircle,
+    },
   };
   const c = config[status] || config.operational;
   const Icon = c.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${c.color}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${c.color}`}
+    >
       <Icon className="h-3 w-3" strokeWidth={2.5} />
       {c.label}
     </span>
@@ -131,8 +200,12 @@ function StatusDot({ status }: { status: string }) {
   };
   return (
     <span className="relative flex h-3 w-3 shrink-0">
-      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${status === "operational" ? "bg-emerald-400" : ""} opacity-75`}></span>
-      <span className={`relative inline-flex h-3 w-3 rounded-full ${colors[status] || "bg-stone-400"}`}></span>
+      <span
+        className={`animate-ping absolute inline-flex h-full w-full rounded-full ${status === "operational" ? "bg-emerald-400" : ""} opacity-75`}
+      ></span>
+      <span
+        className={`relative inline-flex h-3 w-3 rounded-full ${colors[status] || "bg-stone-400"}`}
+      ></span>
     </span>
   );
 }
@@ -140,27 +213,53 @@ function StatusDot({ status }: { status: string }) {
 export default function StatusPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Status",
+                item: "https://featuresignals.com/status",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
               <Activity className="h-3.5 w-3.5 text-accent" />
               Real-time service status
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-6">
-              FeatureSignals{" "}
-              <span className="text-accent">Status</span>
+              FeatureSignals <span className="text-accent">Status</span>
             </h1>
             <div className="inline-flex items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 px-6 py-3 mb-6">
               <StatusDot status="operational" />
               <span className="text-sm font-semibold text-emerald-800">
                 All Systems Operational
               </span>
-              <span className="text-xs text-emerald-600">Updated 2 minutes ago</span>
+              <span className="text-xs text-emerald-600">
+                Updated 2 minutes ago
+              </span>
             </div>
             <p className="text-sm text-stone-500">
-              Current uptime: <strong className="text-stone-700">99.98%</strong> over the last 90 days
+              Current uptime: <strong className="text-stone-700">99.98%</strong>{" "}
+              over the last 90 days
             </p>
           </div>
         </div>
@@ -172,22 +271,33 @@ export default function StatusPage() {
           <h2 className="text-xl font-bold text-stone-900 mb-6">Services</h2>
           <div className="space-y-3">
             {services.map((svc) => (
-              <div key={svc.name} className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 p-5">
+              <div
+                key={svc.name}
+                className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 p-5"
+              >
                 <div className="flex items-center gap-4 min-w-0">
                   <StatusDot status={svc.status} />
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-stone-900 text-sm">{svc.name}</h3>
-                    <p className="text-xs text-stone-500 truncate">{svc.description}</p>
+                    <h3 className="font-semibold text-stone-900 text-sm">
+                      {svc.name}
+                    </h3>
+                    <p className="text-xs text-stone-500 truncate">
+                      {svc.description}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6 shrink-0">
                   <div className="text-right">
                     <div className="text-xs text-stone-400">Uptime</div>
-                    <div className="text-sm font-semibold text-stone-700">{svc.uptime}</div>
+                    <div className="text-sm font-semibold text-stone-700">
+                      {svc.uptime}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-stone-400">Latency</div>
-                    <div className="text-sm font-semibold text-stone-700">{svc.latency}</div>
+                    <div className="text-sm font-semibold text-stone-700">
+                      {svc.latency}
+                    </div>
                   </div>
                   <StatusBadge status={svc.status} />
                 </div>
@@ -200,19 +310,31 @@ export default function StatusPage() {
       {/* Regions */}
       <section className="border-b border-stone-200 bg-stone-50">
         <div className="mx-auto max-w-5xl px-6 py-16">
-          <h2 className="text-xl font-bold text-stone-900 mb-6">Edge Regions</h2>
+          <h2 className="text-xl font-bold text-stone-900 mb-6">
+            Edge Regions
+          </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {regions.map((region) => (
-              <div key={region.code} className="flex items-center justify-between rounded-xl border border-stone-200 bg-white p-4">
+              <div
+                key={region.code}
+                className="flex items-center justify-between rounded-xl border border-stone-200 bg-white p-4"
+              >
                 <div className="flex items-center gap-3">
                   <StatusDot status={region.status} />
                   <div>
-                    <h3 className="text-sm font-semibold text-stone-900">{region.name}</h3>
-                    <p className="text-xs text-stone-400 font-mono">{region.code}</p>
+                    <h3 className="text-sm font-semibold text-stone-900">
+                      {region.name}
+                    </h3>
+                    <p className="text-xs text-stone-400 font-mono">
+                      {region.code}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right text-xs text-stone-500">
-                  <span className="font-semibold text-stone-700">{region.latency}</span> p99
+                  <span className="font-semibold text-stone-700">
+                    {region.latency}
+                  </span>{" "}
+                  p99
                 </div>
               </div>
             ))}
@@ -229,11 +351,14 @@ export default function StatusPage() {
                 <Shield className="h-6 w-6" strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-stone-900 mb-2">Service Level Agreement</h2>
+                <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  Service Level Agreement
+                </h2>
                 <p className="text-sm text-stone-600 leading-relaxed mb-4">
-                  FeatureSignals Enterprise plans include a 99.95% uptime SLA guarantee across
-                  all services. Pro plans include 99.9% uptime. SLA credits are automatically
-                  applied to your next billing cycle in the event of a breach.
+                  FeatureSignals Enterprise plans include a 99.95% uptime SLA
+                  guarantee across all services. Pro plans include 99.9% uptime.
+                  SLA credits are automatically applied to your next billing
+                  cycle in the event of a breach.
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <div className="rounded-lg bg-white border border-stone-200 px-4 py-2 text-center">
@@ -241,11 +366,15 @@ export default function StatusPage() {
                     <div className="text-xs text-stone-500">Enterprise SLA</div>
                   </div>
                   <div className="rounded-lg bg-white border border-stone-200 px-4 py-2 text-center">
-                    <div className="text-lg font-bold text-stone-700">99.9%</div>
+                    <div className="text-lg font-bold text-stone-700">
+                      99.9%
+                    </div>
                     <div className="text-xs text-stone-500">Pro SLA</div>
                   </div>
                   <div className="rounded-lg bg-white border border-stone-200 px-4 py-2 text-center">
-                    <div className="text-lg font-bold text-stone-700">99.98%</div>
+                    <div className="text-lg font-bold text-stone-700">
+                      99.98%
+                    </div>
                     <div className="text-xs text-stone-500">Actual (90d)</div>
                   </div>
                 </div>
@@ -258,27 +387,45 @@ export default function StatusPage() {
       {/* Incident History */}
       <section className="border-b border-stone-200 bg-stone-50">
         <div className="mx-auto max-w-5xl px-6 py-16">
-          <h2 className="text-xl font-bold text-stone-900 mb-6">Recent Incidents</h2>
+          <h2 className="text-xl font-bold text-stone-900 mb-6">
+            Recent Incidents
+          </h2>
           {incidents.length > 0 ? (
             <div className="space-y-4">
               {incidents.map((incident) => (
-                <div key={incident.title} className="rounded-xl border border-stone-200 bg-white p-5">
+                <div
+                  key={incident.title}
+                  className="rounded-xl border border-stone-200 bg-white p-5"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-stone-900 text-sm">{incident.title}</h3>
-                      <p className="text-xs text-stone-400 mt-0.5">{incident.date} · {incident.duration}</p>
+                      <h3 className="font-semibold text-stone-900 text-sm">
+                        {incident.title}
+                      </h3>
+                      <p className="text-xs text-stone-400 mt-0.5">
+                        {incident.date} · {incident.duration}
+                      </p>
                     </div>
                     <StatusBadge status={incident.status} />
                   </div>
-                  <p className="text-sm text-stone-600 leading-relaxed">{incident.description}</p>
+                  <p className="text-sm text-stone-600 leading-relaxed">
+                    {incident.description}
+                  </p>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-12 rounded-xl border border-dashed border-stone-200 bg-white">
-              <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-sm font-semibold text-stone-700">No recent incidents</p>
-              <p className="text-xs text-stone-500 mt-1">All services have been operating normally.</p>
+              <CheckCircle
+                className="h-10 w-10 text-emerald-500 mx-auto mb-3"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm font-semibold text-stone-700">
+                No recent incidents
+              </p>
+              <p className="text-xs text-stone-500 mt-1">
+                All services have been operating normally.
+              </p>
             </div>
           )}
         </div>
@@ -291,8 +438,8 @@ export default function StatusPage() {
             Get status notifications
           </h2>
           <p className="text-stone-400 max-w-xl mx-auto mb-8 text-sm">
-            Subscribe to receive notifications about incidents and scheduled maintenance.
-            We'll notify you via email or Slack.
+            Subscribe to receive notifications about incidents and scheduled
+            maintenance. We'll notify you via email or Slack.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
             <input
@@ -310,7 +457,10 @@ export default function StatusPage() {
           </div>
           <p className="text-xs text-stone-600 mt-4">
             Or visit{" "}
-            <a href="https://status.featuresignals.com" className="text-accent hover:underline">
+            <a
+              href="https://status.featuresignals.com"
+              className="text-accent hover:underline"
+            >
               status.featuresignals.com
             </a>{" "}
             for real-time status updates.

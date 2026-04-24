@@ -35,11 +35,17 @@ const useCases = [
     ],
     example: (
       <div className="rounded-lg bg-stone-900 p-4 font-mono text-xs text-stone-300 overflow-x-auto">
-        <div className="text-stone-500 mb-2"># deploy new checkout flow behind a flag</div>
+        <div className="text-stone-500 mb-2">
+          # deploy new checkout flow behind a flag
+        </div>
         <div>git push origin feature/new-checkout</div>
         <div># PR reviewed, merged, deployed to production (flag OFF)</div>
-        <div className="text-accent"># QA verifies in production — flag ON for internal team</div>
-        <div className="text-emerald-400"># Rollout to 10%, then 50%, then 100%</div>
+        <div className="text-accent">
+          # QA verifies in production — flag ON for internal team
+        </div>
+        <div className="text-emerald-400">
+          # Rollout to 10%, then 50%, then 100%
+        </div>
       </div>
     ),
   },
@@ -58,16 +64,18 @@ const useCases = [
     ],
     example: (
       <div className="rounded-lg bg-stone-900 p-4 font-mono text-xs text-stone-300 overflow-x-auto">
-        <div className="text-stone-500 mb-2"># Progressive rollout strategy</div>
-        <div>{'{'}</div>
-        <div>  "flag": "new-recommendations",</div>
-        <div>  "rollout": [</div>
-        <div>    {"{ \"pct\": 1, \"hold\": \"30m\", \"action\": \"monitor\" }"},</div>
-        <div>    {"{ \"pct\": 10, \"hold\": \"1h\", \"action\": \"monitor\" }"},</div>
-        <div>    {"{ \"pct\": 50, \"hold\": \"2h\", \"action\": \"monitor\" }"},</div>
-        <div>    {"{ \"pct\": 100, \"action\": \"complete\" }"}</div>
-        <div>  ]</div>
-        <div>{'}'}</div>
+        <div className="text-stone-500 mb-2">
+          # Progressive rollout strategy
+        </div>
+        <div>{"{"}</div>
+        <div> "flag": "new-recommendations",</div>
+        <div> "rollout": [</div>
+        <div> {'{ "pct": 1, "hold": "30m", "action": "monitor" }'},</div>
+        <div> {'{ "pct": 10, "hold": "1h", "action": "monitor" }'},</div>
+        <div> {'{ "pct": 50, "hold": "2h", "action": "monitor" }'},</div>
+        <div> {'{ "pct": 100, "action": "complete" }'}</div>
+        <div> ]</div>
+        <div>{"}"}</div>
       </div>
     ),
   },
@@ -86,10 +94,18 @@ const useCases = [
     ],
     example: (
       <div className="rounded-lg bg-stone-900 p-4 font-mono text-xs text-stone-300 overflow-x-auto">
-        <div className="text-stone-500 mb-2"># Kill switch activated during incident</div>
-        <div className="text-red-400">POST /api/v1/flags/payment-v3/toggle OFF</div>
-        <div className="text-stone-500"># All traffic instantly falls back to payment-v2</div>
-        <div className="text-stone-500"># No deploy. No revert. No cache invalidation.</div>
+        <div className="text-stone-500 mb-2">
+          # Kill switch activated during incident
+        </div>
+        <div className="text-red-400">
+          POST /api/v1/flags/payment-v3/toggle OFF
+        </div>
+        <div className="text-stone-500">
+          # All traffic instantly falls back to payment-v2
+        </div>
+        <div className="text-stone-500">
+          # No deploy. No revert. No cache invalidation.
+        </div>
       </div>
     ),
   },
@@ -108,17 +124,19 @@ const useCases = [
     ],
     example: (
       <div className="rounded-lg bg-stone-900 p-4 font-mono text-xs text-stone-300 overflow-x-auto">
-        <div className="text-stone-500 mb-2"># A/B experiment configuration</div>
-        <div>{'{'}</div>
-        <div>  "flag": "checkout-redesign",</div>
-        <div>  "type": "ab_experiment",</div>
-        <div>  "variations": [</div>
-        <div>    {"{ \"name\": \"Control\", \"weight\": 50 }"},</div>
-        <div>    {"{ \"name\": \"Variant A\", \"weight\": 30 }"},</div>
-        <div>    {"{ \"name\": \"Variant B\", \"weight\": 20 }"}</div>
-        <div>  ],</div>
-        <div>  "metrics": ["conversion_rate", "revenue_per_user"]</div>
-        <div>{'}'}</div>
+        <div className="text-stone-500 mb-2">
+          # A/B experiment configuration
+        </div>
+        <div>{"{"}</div>
+        <div> "flag": "checkout-redesign",</div>
+        <div> "type": "ab_experiment",</div>
+        <div> "variations": [</div>
+        <div> {'{ "name": "Control", "weight": 50 }'},</div>
+        <div> {'{ "name": "Variant A", "weight": 30 }'},</div>
+        <div> {'{ "name": "Variant B", "weight": 20 }'}</div>
+        <div> ],</div>
+        <div> "metrics": ["conversion_rate", "revenue_per_user"]</div>
+        <div>{"}"}</div>
       </div>
     ),
   },
@@ -137,14 +155,16 @@ const useCases = [
     ],
     example: (
       <div className="rounded-lg bg-stone-900 p-4 font-mono text-xs text-stone-300 overflow-x-auto">
-        <div className="text-stone-500 mb-2"># Terraform: Feature flags as code</div>
-        <div>resource "featuresignals_flag" "dark_mode" {'{'}</div>
-        <div>  project_slug  = "my-app"</div>
-        <div>  key          = "dark-mode"</div>
-        <div>  name         = "Dark Mode"</div>
-        <div>  flag_type    = "boolean"</div>
-        <div>  default_value = "false"</div>
-        <div>{'}'}</div>
+        <div className="text-stone-500 mb-2">
+          # Terraform: Feature flags as code
+        </div>
+        <div>resource "featuresignals_flag" "dark_mode" {"{"}</div>
+        <div> project_slug = "my-app"</div>
+        <div> key = "dark-mode"</div>
+        <div> name = "Dark Mode"</div>
+        <div> flag_type = "boolean"</div>
+        <div> default_value = "false"</div>
+        <div>{"}"}</div>
       </div>
     ),
   },
@@ -163,11 +183,21 @@ const useCases = [
     ],
     example: (
       <div className="rounded-lg bg-stone-900 p-4 font-mono text-xs text-stone-300 overflow-x-auto">
-        <div className="text-stone-500 mb-2"># Approval workflow for production</div>
-        <div className="text-stone-500"># 1. Developer enables flag in staging</div>
-        <div className="text-stone-500"># 2. PR created to enable in production</div>
-        <div className="text-stone-500"># 3. CAB approves via Slack + audit trail</div>
-        <div className="text-accent"># 4. Flag automatically enabled in production</div>
+        <div className="text-stone-500 mb-2">
+          # Approval workflow for production
+        </div>
+        <div className="text-stone-500">
+          # 1. Developer enables flag in staging
+        </div>
+        <div className="text-stone-500">
+          # 2. PR created to enable in production
+        </div>
+        <div className="text-stone-500">
+          # 3. CAB approves via Slack + audit trail
+        </div>
+        <div className="text-accent">
+          # 4. Flag automatically enabled in production
+        </div>
       </div>
     ),
   },
@@ -176,9 +206,33 @@ const useCases = [
 export default function UseCasesPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Use Cases",
+                item: "https://featuresignals.com/use-cases",
+              },
+            ],
+          }),
+        }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-semibold text-stone-500 mb-6">
               <Zap className="h-3.5 w-3.5 text-accent" />
@@ -206,7 +260,7 @@ export default function UseCasesPage() {
               i % 2 === 0 ? "bg-white" : "bg-stone-50"
             }`}
           >
-            <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+            <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
               <div className="mx-auto max-w-5xl">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                   <div>
@@ -231,9 +285,7 @@ export default function UseCasesPage() {
                       ))}
                     </ul>
                   </div>
-                  <div className="hidden lg:block">
-                    {useCase.example}
-                  </div>
+                  <div className="hidden lg:block">{useCase.example}</div>
                 </div>
               </div>
             </div>
@@ -247,7 +299,9 @@ export default function UseCasesPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-accent mb-1">&lt;1ms</div>
-              <div className="text-sm text-stone-400">p99 evaluation latency</div>
+              <div className="text-sm text-stone-400">
+                p99 evaluation latency
+              </div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-accent mb-1">99.95%</div>
@@ -267,7 +321,7 @@ export default function UseCasesPage() {
 
       {/* CTA */}
       <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 text-center">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-4">
             Ready to ship with confidence?
           </h2>

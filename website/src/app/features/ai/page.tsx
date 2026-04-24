@@ -33,6 +33,30 @@ export const metadata: Metadata = {
 export default function AIPage() {
   return (
     <>
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://featuresignals.com",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "AI Janitor",
+                item: "https://featuresignals.com/features/ai",
+              },
+            ],
+          }),
+        }}
+      />
       {/* ==================== HERO ==================== */}
       <SectionReveal>
         <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24 px-6 border-b border-stone-200 bg-stone-50">
@@ -79,9 +103,9 @@ export default function AIPage() {
 
       {/* ==================== THE PROBLEM ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-white">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-medium text-amber-800">
                 <AlertCircle className="h-4 w-4" />
                 The Hidden Tax
@@ -97,23 +121,25 @@ export default function AIPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              {([
-                {
-                  metric: "75%",
-                  label: "of flags are never cleaned up",
-                  desc: "Research across 500+ engineering orgs shows most flags remain in codebases long after rollout is complete.",
-                },
-                {
-                  metric: "200+",
-                  label: "average stale flags per enterprise",
-                  desc: "The average mid-to-large engineering organization carries hundreds of dead code paths from abandoned feature flags.",
-                },
-                {
-                  metric: "40%",
-                  label: "faster cleanup with AI Janitor",
-                  desc: "Teams using automated detection and PR generation reclaim 40% of flag-related technical debt in the first month.",
-                },
-              ] as const).map(({ metric, label, desc }) => (
+              {(
+                [
+                  {
+                    metric: "75%",
+                    label: "of flags are never cleaned up",
+                    desc: "Research across 500+ engineering orgs shows most flags remain in codebases long after rollout is complete.",
+                  },
+                  {
+                    metric: "200+",
+                    label: "average stale flags per enterprise",
+                    desc: "The average mid-to-large engineering organization carries hundreds of dead code paths from abandoned feature flags.",
+                  },
+                  {
+                    metric: "40%",
+                    label: "faster cleanup with AI Janitor",
+                    desc: "Teams using automated detection and PR generation reclaim 40% of flag-related technical debt in the first month.",
+                  },
+                ] as const
+              ).map(({ metric, label, desc }) => (
                 <div
                   key={label}
                   className="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-center shadow-sm"
@@ -134,9 +160,9 @@ export default function AIPage() {
 
       {/* ==================== HOW IT WORKS ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-stone-50">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
                 How the AI Janitor works
               </h2>
@@ -147,32 +173,34 @@ export default function AIPage() {
             </div>
 
             <div className="grid md:grid-cols-4 gap-6">
-              {([
-                {
-                  step: "01",
-                  title: "Detect",
-                  icon: Search,
-                  desc: "AI scans your connected Git repositories for all flag references in code.",
-                },
-                {
-                  step: "02",
-                  title: "Analyze",
-                  icon: BarChart3,
-                  desc: "Cross-references code references with evaluation data to identify stale flags.",
-                },
-                {
-                  step: "03",
-                  title: "Generate PR",
-                  icon: GitBranch,
-                  desc: "Creates a pull request that removes the dead code, flag checks, and conditions.",
-                },
-                {
-                  step: "04",
-                  title: "Merge",
-                  icon: Check,
-                  desc: "You review and merge. Or configure auto-merge for low-risk flags after approval.",
-                },
-              ] as const).map(({ step, title, icon: Icon, desc }) => (
+              {(
+                [
+                  {
+                    step: "01",
+                    title: "Detect",
+                    icon: Search,
+                    desc: "AI scans your connected Git repositories for all flag references in code.",
+                  },
+                  {
+                    step: "02",
+                    title: "Analyze",
+                    icon: BarChart3,
+                    desc: "Cross-references code references with evaluation data to identify stale flags.",
+                  },
+                  {
+                    step: "03",
+                    title: "Generate PR",
+                    icon: GitBranch,
+                    desc: "Creates a pull request that removes the dead code, flag checks, and conditions.",
+                  },
+                  {
+                    step: "04",
+                    title: "Merge",
+                    icon: Check,
+                    desc: "You review and merge. Or configure auto-merge for low-risk flags after approval.",
+                  },
+                ] as const
+              ).map(({ step, title, icon: Icon, desc }) => (
                 <div
                   key={step}
                   className="group relative rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
@@ -201,9 +229,9 @@ export default function AIPage() {
 
       {/* ==================== CAPABILITIES ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-white">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
                 AI capabilities, not gimmicks
               </h2>
@@ -215,38 +243,40 @@ export default function AIPage() {
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {([
-                {
-                  icon: Search,
-                  title: "Deep Codebase Scanning",
-                  desc: "Parses your entire repository to find all flag references, conditionals, and evaluation calls across every file.",
-                },
-                {
-                  icon: BarChart3,
-                  title: "Usage Analytics",
-                  desc: "Tracks evaluation patterns over time to determine which flags are genuinely in use versus orphaned.",
-                },
-                {
-                  icon: GitBranch,
-                  title: "Autonomous PR Generation",
-                  desc: "Generates well-structured pull requests that remove dead code, with clear descriptions and change summaries.",
-                },
-                {
-                  icon: Activity,
-                  title: "Anomaly Detection",
-                  desc: "Monitors evaluation patterns and alerts when a flag behaves unexpectedly — before it causes an incident.",
-                },
-                {
-                  icon: Bell,
-                  title: "Smart Notifications",
-                  desc: "Notifies you via Slack, email, or webhook when a flag is ready for cleanup or when anomalous behavior is detected.",
-                },
-                {
-                  icon: ShieldCheck,
-                  title: "Human-in-the-Loop",
-                  desc: "All AI actions require human approval by default. Configurable auto-merge policies for low-risk cleanups.",
-                },
-              ] as const).map(({ icon: Icon, title, desc }) => (
+              {(
+                [
+                  {
+                    icon: Search,
+                    title: "Deep Codebase Scanning",
+                    desc: "Parses your entire repository to find all flag references, conditionals, and evaluation calls across every file.",
+                  },
+                  {
+                    icon: BarChart3,
+                    title: "Usage Analytics",
+                    desc: "Tracks evaluation patterns over time to determine which flags are genuinely in use versus orphaned.",
+                  },
+                  {
+                    icon: GitBranch,
+                    title: "Autonomous PR Generation",
+                    desc: "Generates well-structured pull requests that remove dead code, with clear descriptions and change summaries.",
+                  },
+                  {
+                    icon: Activity,
+                    title: "Anomaly Detection",
+                    desc: "Monitors evaluation patterns and alerts when a flag behaves unexpectedly — before it causes an incident.",
+                  },
+                  {
+                    icon: Bell,
+                    title: "Smart Notifications",
+                    desc: "Notifies you via Slack, email, or webhook when a flag is ready for cleanup or when anomalous behavior is detected.",
+                  },
+                  {
+                    icon: ShieldCheck,
+                    title: "Human-in-the-Loop",
+                    desc: "All AI actions require human approval by default. Configurable auto-merge policies for low-risk cleanups.",
+                  },
+                ] as const
+              ).map(({ icon: Icon, title, desc }) => (
                 <div
                   key={title}
                   className="group flex flex-col rounded-2xl border border-stone-200 bg-stone-50 p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
@@ -269,9 +299,9 @@ export default function AIPage() {
 
       {/* ==================== PR PREVIEW ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-stone-50">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent">
                 <GitBranch className="h-4 w-4" />
                 AI-Generated PR
@@ -293,7 +323,8 @@ export default function AIPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-semibold text-sm truncate">
-                    [AI Janitor] Remove stale flag &ldquo;new-checkout-flow&rdquo;
+                    [AI Janitor] Remove stale flag
+                    &ldquo;new-checkout-flow&rdquo;
                   </div>
                   <div className="text-stone-400 text-xs">
                     #342 &middot; opened by fs-ai[bot] &middot; 2 minutes ago
@@ -308,17 +339,14 @@ export default function AIPage() {
               <div className="px-6 py-4 space-y-4">
                 <div className="text-stone-300 text-sm space-y-2">
                   <p>
-                    <span className="text-accent-light font-bold">
-                      Reason:
-                    </span>{" "}
-                    Flag <code className="text-emerald-400">new-checkout-flow</code> has been
-                    100% rolled out for 45 days with zero targeting rules
-                    configured.
+                    <span className="text-accent-light font-bold">Reason:</span>{" "}
+                    Flag{" "}
+                    <code className="text-emerald-400">new-checkout-flow</code>{" "}
+                    has been 100% rolled out for 45 days with zero targeting
+                    rules configured.
                   </p>
                   <p>
-                    <span className="text-accent-light font-bold">
-                      Impact:
-                    </span>{" "}
+                    <span className="text-accent-light font-bold">Impact:</span>{" "}
                     3 files changed, 142 lines removed, 0 lines added.
                   </p>
                 </div>
@@ -333,23 +361,21 @@ export default function AIPage() {
                       &nbsp; &nbsp;const CheckoutFlow = () =&gt; &#123;
                     </div>
                     <div className="text-red-400/80">
-                      - &nbsp; if (flags.variation(&ldquo;new-checkout-flow&rdquo;, &#123; key: user.id &#125;)) &#123;
+                      - &nbsp; if
+                      (flags.variation(&ldquo;new-checkout-flow&rdquo;, &#123;
+                      key: user.id &#125;)) &#123;
                     </div>
                     <div className="text-stone-300 ml-4">
                       &nbsp; &nbsp; &nbsp;return &lt;EnhancedCheckout /&gt;;
                     </div>
-                    <div className="text-red-400/80">
-                      - &nbsp; &#125;
-                    </div>
+                    <div className="text-red-400/80">- &nbsp; &#125;</div>
                     <div className="text-red-400/80">
                       - &nbsp; return &lt;LegacyCheckout /&gt;;
                     </div>
                     <div className="text-emerald-400">
                       + &nbsp; return &lt;EnhancedCheckout /&gt;;
                     </div>
-                    <div className="text-stone-500">
-                      &nbsp; &#125;;
-                    </div>
+                    <div className="text-stone-500">&nbsp; &#125;;</div>
                   </div>
                 </div>
 
@@ -369,9 +395,9 @@ export default function AIPage() {
 
       {/* ==================== CONFIGURATION OPTIONS ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-white">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-white">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+            <div className="max-w-3xl mx-auto text-center space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
                 Configure cleanup to your standards
               </h2>
@@ -382,29 +408,31 @@ export default function AIPage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {([
-                {
-                  icon: Clock,
-                  title: "Rollout Threshold",
-                  desc: "Configure how long a flag must be at 100% rollout before the AI flags it for cleanup. Default: 30 days.",
-                },
-                {
-                  icon: ShieldCheck,
-                  title: "Approval Policy",
-                  desc: "Require human approval for all PRs, or enable auto-merge for low-risk flags with safety scores above 95.",
-                },
-                {
-                  icon: Bell,
-                  title: "Notification Channels",
-                  desc: "Get notified via Slack, email, Discord, or webhook when cleanup PRs are generated or require attention.",
-                },
-                {
-                  icon: Terminal,
-  AlertCircle,
-                  title: "Exclusion Rules",
-                  desc: "Exclude specific files, directories, or flag patterns from AI scanning. Fine-grained control over what the AI touches.",
-                },
-              ] as const).map(({ icon: Icon, title, desc }) => (
+              {(
+                [
+                  {
+                    icon: Clock,
+                    title: "Rollout Threshold",
+                    desc: "Configure how long a flag must be at 100% rollout before the AI flags it for cleanup. Default: 30 days.",
+                  },
+                  {
+                    icon: ShieldCheck,
+                    title: "Approval Policy",
+                    desc: "Require human approval for all PRs, or enable auto-merge for low-risk flags with safety scores above 95.",
+                  },
+                  {
+                    icon: Bell,
+                    title: "Notification Channels",
+                    desc: "Get notified via Slack, email, Discord, or webhook when cleanup PRs are generated or require attention.",
+                  },
+                  {
+                    icon: Terminal,
+                    AlertCircle,
+                    title: "Exclusion Rules",
+                    desc: "Exclude specific files, directories, or flag patterns from AI scanning. Fine-grained control over what the AI touches.",
+                  },
+                ] as const
+              ).map(({ icon: Icon, title, desc }) => (
                 <div
                   key={title}
                   className="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-left shadow-sm"
@@ -425,8 +453,8 @@ export default function AIPage() {
 
       {/* ==================== SECURITY + COMPLIANCE ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 border-b border-stone-200 bg-stone-50">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+        <section className="py-14 sm:py-20 px-6 border-b border-stone-200 bg-stone-50">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent">
                 <ShieldCheck className="h-4 w-4" />
@@ -442,13 +470,15 @@ export default function AIPage() {
                 explicit approval — unless you configure auto-merge.
               </p>
               <ul className="space-y-3">
-                {([
-                  "All PRs are human-reviewed by default",
-                  "Tamper-evident audit trail for every AI action",
-                  "Configurable auto-merge with safety score thresholds",
-                  "Zero code is sent to third-party AI providers",
-                  "On-premise AI inference for air-gapped deployments",
-                ] as const).map((item) => (
+                {(
+                  [
+                    "All PRs are human-reviewed by default",
+                    "Tamper-evident audit trail for every AI action",
+                    "Configurable auto-merge with safety score thresholds",
+                    "Zero code is sent to third-party AI providers",
+                    "On-premise AI inference for air-gapped deployments",
+                  ] as const
+                ).map((item) => (
                   <li
                     key={item}
                     className="flex items-start gap-2 text-sm text-stone-700"
@@ -465,13 +495,35 @@ export default function AIPage() {
                 AI Governance Dashboard
               </h3>
               <div className="space-y-4">
-                {([
-                  { label: "Total Cleanup PRs Generated", value: "47", color: "text-accent-light" },
-                  { label: "PRs Merged", value: "42", color: "text-emerald-400" },
-                  { label: "PRs Rejected", value: "5", color: "text-amber-400" },
-                  { label: "Lines of Dead Code Removed", value: "12,847", color: "text-accent-light" },
-                  { label: "Avg. Safety Score", value: "96.2/100", color: "text-emerald-400" },
-                ] as const).map(({ label, value, color }) => (
+                {(
+                  [
+                    {
+                      label: "Total Cleanup PRs Generated",
+                      value: "47",
+                      color: "text-accent-light",
+                    },
+                    {
+                      label: "PRs Merged",
+                      value: "42",
+                      color: "text-emerald-400",
+                    },
+                    {
+                      label: "PRs Rejected",
+                      value: "5",
+                      color: "text-amber-400",
+                    },
+                    {
+                      label: "Lines of Dead Code Removed",
+                      value: "12,847",
+                      color: "text-accent-light",
+                    },
+                    {
+                      label: "Avg. Safety Score",
+                      value: "96.2/100",
+                      color: "text-emerald-400",
+                    },
+                  ] as const
+                ).map(({ label, value, color }) => (
                   <div
                     key={label}
                     className="flex items-center justify-between border-b border-stone-800 pb-3 last:border-0"
@@ -490,39 +542,41 @@ export default function AIPage() {
 
       {/* ==================== FAQ ==================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-24 px-6 bg-white">
+        <section className="py-14 sm:py-20 px-6 bg-white">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-stone-900 tracking-tight text-center mb-12">
               Frequently asked questions
             </h2>
 
             <div className="space-y-6">
-              {([
-                {
-                  q: "How does the AI Janitor detect stale flags?",
-                  a: "The AI scans your connected Git repositories to find all flag references. It cross-references these with the evaluation data from your FeatureSignals account — if a flag has been 100% rolled out for a configurable threshold (default 30 days) and has no targeting rules, it's marked as stale.",
-                },
-                {
-                  q: "Does the AI Janitor have write access to my repositories?",
-                  a: "By default, the AI generates PRs that require human review and merge. You can optionally configure auto-merge for flags with high safety scores. All AI actions are logged in the audit trail.",
-                },
-                {
-                  q: "Can I use AI Janitor with self-hosted FeatureSignals?",
-                  a: "Yes. The AI Janitor runs as part of the FeatureSignals server. For air-gapped deployments, AI inference happens entirely within your VPC — no data leaves your infrastructure.",
-                },
-                {
-                  q: "Which Git providers are supported?",
-                  a: "GitHub, GitLab, and Bitbucket are supported. The AI connects via your existing OAuth integration or a dedicated deploy key with read access to your repositories.",
-                },
-                {
-                  q: "Can I exclude certain files or directories from scanning?",
-                  a: "Absolutely. You can configure exclusion rules at the project level to skip specific files, directories, or flag patterns. The AI respects your .gitignore rules by default.",
-                },
-                {
-                  q: "Does the AI Janitor work with flags created before I started using FeatureSignals?",
-                  a: "Yes. During your migration or initial setup, the AI can scan your entire history to identify pre-existing stale flags. It will generate cleanup PRs for all of them.",
-                },
-              ] as const).map(({ q, a }) => (
+              {(
+                [
+                  {
+                    q: "How does the AI Janitor detect stale flags?",
+                    a: "The AI scans your connected Git repositories to find all flag references. It cross-references these with the evaluation data from your FeatureSignals account — if a flag has been 100% rolled out for a configurable threshold (default 30 days) and has no targeting rules, it's marked as stale.",
+                  },
+                  {
+                    q: "Does the AI Janitor have write access to my repositories?",
+                    a: "By default, the AI generates PRs that require human review and merge. You can optionally configure auto-merge for flags with high safety scores. All AI actions are logged in the audit trail.",
+                  },
+                  {
+                    q: "Can I use AI Janitor with self-hosted FeatureSignals?",
+                    a: "Yes. The AI Janitor runs as part of the FeatureSignals server. For air-gapped deployments, AI inference happens entirely within your VPC — no data leaves your infrastructure.",
+                  },
+                  {
+                    q: "Which Git providers are supported?",
+                    a: "GitHub, GitLab, and Bitbucket are supported. The AI connects via your existing OAuth integration or a dedicated deploy key with read access to your repositories.",
+                  },
+                  {
+                    q: "Can I exclude certain files or directories from scanning?",
+                    a: "Absolutely. You can configure exclusion rules at the project level to skip specific files, directories, or flag patterns. The AI respects your .gitignore rules by default.",
+                  },
+                  {
+                    q: "Does the AI Janitor work with flags created before I started using FeatureSignals?",
+                    a: "Yes. During your migration or initial setup, the AI can scan your entire history to identify pre-existing stale flags. It will generate cleanup PRs for all of them.",
+                  },
+                ] as const
+              ).map(({ q, a }) => (
                 <details
                   key={q}
                   className="group rounded-2xl border border-stone-200 bg-stone-50 p-6 shadow-sm open:border-accent/30 open:ring-1 open:ring-accent/20 transition-all"
