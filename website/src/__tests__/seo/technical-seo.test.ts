@@ -142,7 +142,7 @@ describe("SEO: sitemap.xml", () => {
   it("has correct priority for the homepage", () => {
     const content = fs.readFileSync(sitemapPath, "utf-8");
     const homeEntry = content.match(
-      /<url>\s*<loc>https:\/\/featuresignals\.com<\/loc>.*?<priority>(.*?)<\/priority>/s,
+      /<url>[\s\S]*?<loc>https:\/\/featuresignals\.com<\/loc>[\s\S]*?<priority>(.*?)<\/priority>/,
     );
     expect(homeEntry).not.toBeNull();
     expect(homeEntry![1]).toBe("1.0");
