@@ -138,7 +138,7 @@ const columns = [
 // ─── Tier Options ─────────────────────────────────────────────────────────
 
 const tierOptions: SelectOption[] = [
-  { value: "", label: "All Tiers" },
+  { value: "__all__", label: "All Tiers" },
   { value: "free", label: "Free" },
   { value: "starter", label: "Starter" },
   { value: "pro", label: "Pro" },
@@ -213,7 +213,7 @@ export function TenantTable({
     (value: string) => {
       onFiltersChange({
         ...filters,
-        tier: value === "" ? undefined : (value as Tenant["tier"]),
+        tier: value === "__all__" ? undefined : (value as Tenant["tier"]),
         offset: 0,
       });
     },
@@ -278,7 +278,7 @@ export function TenantTable({
         </div>
         <div className="w-full sm:w-44">
           <Select
-            value={filters.tier ?? ""}
+            value={filters.tier ?? "__all__"}
             onValueChange={handleTierChange}
             options={tierOptions}
             placeholder="All Tiers"

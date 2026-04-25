@@ -98,7 +98,7 @@ export default function EnvVarsPage() {
 
   // ─── State ────────────────────────────────────────────────────────────
 
-  const [selectedCellId, setSelectedCellId] = useState<string>("");
+  const [selectedCellId, setSelectedCellId] = useState<string>("__all__");
   const [showEditModal, setShowEditModal] = useState(false);
   const [editKey, setEditKey] = useState("");
   const [editValue, setEditValue] = useState("");
@@ -119,7 +119,7 @@ export default function EnvVarsPage() {
     isLoading,
     error,
     refetch,
-  } = useEnvVars(selectedCellId || undefined);
+  } = useEnvVars(selectedCellId === "__all__" ? undefined : selectedCellId);
 
   const { data: cells } = useCells();
   const updateMutation = useUpdateEnvVar();
@@ -132,7 +132,7 @@ export default function EnvVarsPage() {
       label: `${cell.name} (${cell.region})`,
       disabled: false,
     }));
-    return [{ value: "", label: "All Cells (Global View)" }, ...options];
+    return [{ value: "__all__", label: "All Cells (Global View)" }, ...options];
   }, [cells]);
 
   const envVars: EnvVar[] = useMemo(
@@ -140,7 +140,7 @@ export default function EnvVarsPage() {
     [envVarList],
   );
 
-  const hasCellFilter = selectedCellId.length > 0;
+  const hasCellFilter = selectedCellId !== "__all__";
 
   // ─── Handlers ─────────────────────────────────────────────────────────
 
@@ -177,7 +177,7 @@ export default function EnvVarsPage() {
   }, [editingVar, editKey, editValue, setConfirmOpen]);
 
   const handleConfirmApply = useCallback(async () => {
-    if (!editingVar || !selectedCellId) return;
+    if (!editingVar || selectedCellId === "__all__") return;
 
     try {
       await updateMutation.mutateAsync({

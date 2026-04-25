@@ -476,7 +476,11 @@ export default function BillingPage() {
             <StatCard
               icon={TrendingUp}
               label="Churn Rate"
-              value={mrrData ? `${mrrData.churnRate.toFixed(1)}%` : "0.0%"}
+              value={
+                mrrData?.churnRate != null
+                  ? `${mrrData.churnRate.toFixed(1)}%`
+                  : "0.0%"
+              }
               sublabel="Monthly basis"
               trend={
                 mrrData?.churnRate && mrrData.churnRate > 5
