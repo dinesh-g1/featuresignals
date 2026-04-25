@@ -22,7 +22,9 @@ import (
 	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/pricing"
+	"github.com/featuresignals/server/internal/provision"
 	"github.com/featuresignals/server/internal/provision/hetzner"
+	"github.com/featuresignals/server/internal/queue"
 	"github.com/featuresignals/server/internal/service"
 	"github.com/featuresignals/server/internal/status"
 )
@@ -60,6 +62,8 @@ func NewRouter(
 	internalChecker dto.InternalChecker,
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
+	queueClient *queue.Client,
+	eventBus *provision.EventBus,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -497,7 +501,7 @@ func NewRouter(
 			SSHKeyID:  cfg.HetznerSSHKeyID,
 			NetworkID: cfg.HetznerNetworkID,
 		}
-		hetznerProvisioner := hetzner.NewProvisioner(hetznerCfg, logger)
+		hetznerProvisioner := hetzner.NewHetznerProvisioner(hetznerCfg, logger)
 		provisionSvc = service.NewProvisionService(hetznerProvisioner, store, logger)
 		logger.Info("Hetzner provisioner initialized",
 			"region", cfg.HetznerDefaultRegion,
@@ -507,7 +511,7 @@ func NewRouter(
 	} else {
 		logger.Warn("HETZNER_API_TOKEN not set — cell provisioning will be unavailable")
 	}
-	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, logger)
+	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, queueClient, eventBus, logger)
 	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
 	opsSystemH := handlers.NewOpsSystemHandler(store, logger)
 	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
@@ -548,6 +552,7 @@ func NewRouter(
 		r.Delete("/cells/{id}", opsCellsH.Delete)
 		r.Get("/cells/{id}/metrics", opsCellsH.Metrics)
 		r.Get("/cells/{id}/metrics/current", opsCellsH.MetricsCurrent)
+		r.Get("/cells/{id}/provision-status", opsCellsH.ProvisionStatus)
 		r.Post("/cells/{id}/scale", opsCellsH.Scale)
 		r.Post("/cells/{id}/drain", opsCellsH.Drain)
 		r.Post("/cells/{id}/migrate", opsCellsH.MigrateTenants)

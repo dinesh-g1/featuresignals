@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"math"
 	"math/rand"
@@ -11,9 +12,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
+	"github.com/featuresignals/server/internal/provision"
+	"github.com/featuresignals/server/internal/queue"
 	"github.com/featuresignals/server/internal/service"
 )
 
@@ -65,14 +69,18 @@ type ProvisionCellRequest struct {
 type OpsCellsHandler struct {
 	store            domain.Store
 	provisionService *service.ProvisionService
+	queueClient      *queue.Client
+	eventBus         *provision.EventBus
 	logger           *slog.Logger
 }
 
 // NewOpsCellsHandler creates a new ops cells handler.
-func NewOpsCellsHandler(store domain.Store, provisionService *service.ProvisionService, logger *slog.Logger) *OpsCellsHandler {
+func NewOpsCellsHandler(store domain.Store, provisionService *service.ProvisionService, queueClient *queue.Client, eventBus *provision.EventBus, logger *slog.Logger) *OpsCellsHandler {
 	return &OpsCellsHandler{
 		store:            store,
 		provisionService: provisionService,
+		queueClient:      queueClient,
+		eventBus:         eventBus,
 		logger:           logger,
 	}
 }
@@ -143,22 +151,134 @@ func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Location = "fsn1"
 	}
 
+	// If queue client is available, use async provisioning
+	if h.queueClient != nil {
+		// Create cell record in pending status
+		cellID := uuid.New().String()
+		now := time.Now().UTC()
+		cell := &domain.Cell{
+			ID:        cellID,
+			Name:      req.Name,
+			Provider:  domain.CellProviderHetzner,
+			Region:    req.Location,
+			Status:    "pending",
+			Version:   "0.1.0",
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		if err := h.store.CreateCell(r.Context(), cell); err != nil {
+			log.Error("failed to create cell record", "error", err)
+			httputil.Error(w, http.StatusInternalServerError, "failed to create cell")
+			return
+		}
+
+		// Enqueue async provisioning task
+		taskID, err := h.queueClient.EnqueueProvisionCell(r.Context(), queue.ProvisionCellPayload{
+			CellID:     cellID,
+			Name:       req.Name,
+			Provider:   "hetzner",
+			ServerType: req.ServerType,
+			Region:     req.Location,
+			UserData:   req.UserData,
+		})
+		if err != nil {
+			log.Error("failed to enqueue provisioning", "error", err)
+			httputil.Error(w, http.StatusInternalServerError, "failed to enqueue provisioning")
+			return
+		}
+
+		log.Info("cell provisioning enqueued", "cell_id", cellID, "task_id", taskID)
+		httputil.JSON(w, http.StatusAccepted, map[string]any{
+			"cell":    domainCellToView(cell),
+			"task_id": taskID,
+			"message": "Provisioning started. Stream status at GET /cells/{id}/provision-status",
+		})
+		return
+	}
+
+	// Fallback to synchronous provisioning if no queue
 	provReq := service.ProvisionCellRequest{
 		Name:       req.Name,
 		ServerType: req.ServerType,
 		Location:   req.Location,
 		UserData:   req.UserData,
 	}
-
 	cell, err := h.provisionService.ProvisionCell(r.Context(), provReq)
 	if err != nil {
 		log.Error("failed to provision cell", "error", err, "name", req.Name)
 		httputil.Error(w, http.StatusInternalServerError, "failed to provision cell: "+err.Error())
 		return
 	}
-
-	log.Info("cell provisioned", "cell_id", cell.ID, "name", cell.Name)
+	log.Info("cell provisioned synchronously", "cell_id", cell.ID, "name", cell.Name)
 	httputil.JSON(w, http.StatusCreated, domainCellToView(cell))
+}
+
+// ProvisionStatus streams provisioning events via SSE.
+// GET /cells/{id}/provision-status
+func (h *OpsCellsHandler) ProvisionStatus(w http.ResponseWriter, r *http.Request) {
+	cellID := chi.URLParam(r, "id")
+	log := h.logger.With("handler", "provision_status", "cell_id", cellID)
+
+	if h.eventBus == nil {
+		log.Warn("event bus not configured, cannot stream provision status")
+		httputil.Error(w, http.StatusNotImplemented, "provisioning event streaming is not configured")
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		httputil.Error(w, http.StatusInternalServerError, "streaming not supported")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	// Send initial connection event
+	fmt.Fprintf(w, "event: connected\ndata: {\"status\":\"connected\",\"cell_id\":\"%s\"}\n\n", cellID)
+	flusher.Flush()
+
+	// Create channel for live events
+	eventCh := make(chan *domain.ProvisionEvent, 100)
+	unsubscribe := h.eventBus.Subscribe(cellID, eventCh)
+	defer unsubscribe()
+
+	// Send existing events first (from the past 24 hours)
+	since := time.Now().UTC().Add(-24 * time.Hour)
+	existingEvents, err := h.store.ListProvisionEvents(r.Context(), cellID, since)
+	if err == nil {
+		for _, evt := range existingEvents {
+			writeSSEEvent(w, evt)
+		}
+		flusher.Flush()
+	}
+
+	// Stream new events in real-time
+	ctx := r.Context()
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case evt := <-eventCh:
+			writeSSEEvent(w, evt)
+			flusher.Flush()
+		case <-ctx.Done():
+			log.Info("client disconnected from provision status stream", "event_count", len(eventCh))
+			return
+		case <-ticker.C:
+			// Keep-alive heartbeat
+			fmt.Fprintf(w, ": keepalive\n\n")
+			flusher.Flush()
+		}
+	}
+}
+
+func writeSSEEvent(w io.Writer, evt *domain.ProvisionEvent) {
+	data, _ := json.Marshal(evt)
+	fmt.Fprintf(w, "id: %s\nevent: %s\ndata: %s\n\n", evt.ID, evt.EventType, string(data))
 }
 
 // Delete handles DELETE /api/v1/ops/cells/{id}

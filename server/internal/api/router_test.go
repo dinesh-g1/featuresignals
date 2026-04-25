@@ -358,6 +358,8 @@ func (noopStore) ListCells(_ context.Context, _ domain.CellFilter) ([]*domain.Ce
 func (noopStore) CreateCell(_ context.Context, _ *domain.Cell) error { return nil }
 func (noopStore) UpdateCell(_ context.Context, _ *domain.Cell) error { return nil }
 func (noopStore) DeleteCell(_ context.Context, _ string) error { return nil }
+func (noopStore) CreateProvisionEvent(_ context.Context, _ *domain.ProvisionEvent) error { return nil }
+func (noopStore) ListProvisionEvents(_ context.Context, _ string, _ time.Time) ([]*domain.ProvisionEvent, error) { return nil, nil }
 
 type noopOTPEmail struct{}
 
@@ -416,6 +418,8 @@ func newTestRouter(t *testing.T) http.Handler {
 		nil,
 		nil,
 		"",
+		nil,
+		nil,
 	)
 }
 

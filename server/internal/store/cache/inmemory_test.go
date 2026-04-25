@@ -706,3 +706,6 @@ func (m *mockStore) ListCells(_ context.Context, _ domain.CellFilter) ([]*domain
 func (m *mockStore) CreateCell(_ context.Context, _ *domain.Cell) error { return nil }
 func (m *mockStore) UpdateCell(_ context.Context, _ *domain.Cell) error { return nil }
 func (m *mockStore) DeleteCell(_ context.Context, _ string) error { return nil }
+func (m *mockStore) CreateProvisionEvent(_ context.Context, _ *domain.ProvisionEvent) error { return nil }
+func (m *mockStore) ListProvisionEvents(_ context.Context, _ string, _ time.Time) ([]*domain.ProvisionEvent, error) { return nil, nil }
+

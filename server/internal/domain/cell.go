@@ -12,18 +12,21 @@ import (
 // Each cell is a single-node k3s cluster with embedded SQLite for MVP, but the
 // abstraction supports multi-cloud deployments (Hetzner, AWS, Azure).
 type Cell struct {
-	ID          string        `json:"id"`
-	Name        string        `json:"name"`
-	Provider    string        `json:"provider"`     // "hetzner", "aws", "azure"
-	Region      string        `json:"region"`       // "eu-falkenstein", "us-ashburn"
-	Status      string        `json:"status"`       // "provisioning", "running", "degraded", "down", "draining"
-	Version     string        `json:"version"`
-	TenantCount int           `json:"tenant_count"`
-	CPU         ResourceUsage `json:"cpu"`
-	Memory      ResourceUsage `json:"memory"`
-	Disk        ResourceUsage `json:"disk"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
+	ID                string        `json:"id"`
+	Name              string        `json:"name"`
+	Provider          string        `json:"provider"`     // "hetzner", "aws", "azure"
+	Region            string        `json:"region"`       // "eu-falkenstein", "us-ashburn"
+	Status            string        `json:"status"`       // "provisioning", "running", "degraded", "down", "draining"
+	Version           string        `json:"version"`
+	TenantCount       int           `json:"tenant_count"`
+	ProviderServerID  string        `json:"provider_server_id,omitempty"`
+	PublicIP          string        `json:"public_ip,omitempty"`
+	PrivateIP         string        `json:"private_ip,omitempty"`
+	CPU               ResourceUsage `json:"cpu"`
+	Memory            ResourceUsage `json:"memory"`
+	Disk              ResourceUsage `json:"disk"`
+	CreatedAt         time.Time     `json:"created_at"`
+	UpdatedAt         time.Time     `json:"updated_at"`
 }
 
 // ResourceUsage tracks the capacity and consumption of a compute resource.
@@ -60,6 +63,16 @@ type CellMetrics struct {
 	RequestRate float64   `json:"request_rate"`
 	ErrorRate   float64   `json:"error_rate"`
 	CollectedAt time.Time `json:"collected_at"`
+}
+
+// ProvisionEvent captures a state transition or progress update during
+// cell provisioning, enabling real-time status streaming to the ops portal.
+type ProvisionEvent struct {
+	ID        string            `json:"id"`
+	CellID    string            `json:"cell_id"`
+	EventType string            `json:"event_type"`
+	Metadata  map[string]string `json:"metadata"`
+	CreatedAt time.Time         `json:"created_at"`
 }
 
 // CellFilter specifies search and pagination for cell listing.
@@ -151,11 +164,19 @@ type CellWriter interface {
 	DeleteCell(ctx context.Context, cellID string) error
 }
 
-// CellStore is the full CRUD interface for cell persistence.
-// Composes the narrow reader and writer interfaces.
+// CellStore is the full CRUD interface for cell persistence and provisioning events.
+// Composes the narrow reader, writer, and provision event interfaces.
 type CellStore interface {
 	CellReader
 	CellWriter
+	ProvisionEventStore
+}
+
+// ProvisionEventStore provides operations for recording and querying
+// provisioning events for cells.
+type ProvisionEventStore interface {
+	CreateProvisionEvent(ctx context.Context, event *ProvisionEvent) error
+	ListProvisionEvents(ctx context.Context, cellID string, since time.Time) ([]*ProvisionEvent, error)
 }
 
 // UpdateCellResourceParams specifies resource fields to update on a cell.

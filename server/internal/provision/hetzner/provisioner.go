@@ -1,18 +1,24 @@
-// Package hetzner provides a provisioner for Hetzner Cloud servers.
-// It wraps the hcloud-go SDK to provision, deprovision, and query
-// cloud servers used as FeatureSignals tenant cells.
+// Package hetzner provides a Hetzner Cloud adapter implementing the
+// provision.Provisioner interface. It wraps the hcloud-go SDK to provision,
+// deprovision, and query cloud servers used as FeatureSignals tenant cells.
+//
+// This package acts as an adapter from the hcloud SDK types to the
+// cloud-agnostic provision.Provisioner interface and shared types.
 package hetzner
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
+	"strconv"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+
+	"github.com/featuresignals/server/internal/provision"
 )
 
 // Config holds the Hetzner Cloud API configuration.
+// This is provider-specific and not part of the shared provision types.
 type Config struct {
 	APIToken  string // Hetzner Cloud API token
 	Region    string // Default region, e.g., "fsn1" (Falkenstein)
@@ -20,41 +26,21 @@ type Config struct {
 	NetworkID int64  // Private network ID
 }
 
-// ProvisionRequest specifies the parameters for provisioning a new server.
-type ProvisionRequest struct {
-	Name       string            // Server hostname
-	ServerType string            // e.g., "cx22", "cx32", "cx52"
-	Location   string            // e.g., "fsn1", "nbg1", "hel1"
-	Image      string            // OS image, e.g., "ubuntu-24.04"
-	Labels     map[string]string // Tags for identification
-	UserData   string            // Cloud-init script
-}
-
-// ServerInfo contains the details of a Hetzner cloud server.
-type ServerInfo struct {
-	ID         int64
-	Name       string
-	Status     string // "running", "starting", "stopping", "off"
-	PublicIP   string
-	PrivateIP  string
-	Location   string
-	ServerType string
-	CreatedAt  time.Time
-}
-
-// Provisioner manages Hetzner Cloud server lifecycle.
-type Provisioner struct {
+// HetznerProvisioner manages Hetzner Cloud server lifecycle.
+// It implements provision.Provisioner by adapting hcloud-go SDK types
+// to the cloud-agnostic provision package types.
+type HetznerProvisioner struct {
 	client *hcloud.Client
 	config Config
 	logger *slog.Logger
 }
 
-// NewProvisioner creates a new Hetzner provisioner with the given config.
-func NewProvisioner(config Config, logger *slog.Logger) *Provisioner {
+// NewHetznerProvisioner creates a new Hetzner provisioner with the given config.
+func NewHetznerProvisioner(config Config, logger *slog.Logger) *HetznerProvisioner {
 	client := hcloud.NewClient(
 		hcloud.WithToken(config.APIToken),
 	)
-	return &Provisioner{
+	return &HetznerProvisioner{
 		client: client,
 		config: config,
 		logger: logger.With("provisioner", "hetzner"),
@@ -62,15 +48,15 @@ func NewProvisioner(config Config, logger *slog.Logger) *Provisioner {
 }
 
 // ProvisionServer creates a new Hetzner cloud server for a tenant cell.
-// Returns the server details including IP, ID, and status.
-func (p *Provisioner) ProvisionServer(ctx context.Context, req ProvisionRequest) (*ServerInfo, error) {
-	logger := p.logger.With("server_name", req.Name, "location", req.Location, "server_type", req.ServerType)
+// Implements provision.Provisioner.ProvisionServer.
+func (p *HetznerProvisioner) ProvisionServer(ctx context.Context, req provision.ProvisionRequest) (*provision.ServerInfo, error) {
+	logger := p.logger.With("server_name", req.Name, "region", req.Region, "server_type", req.ServerType)
 
 	// Build server create request
 	createReq := hcloud.ServerCreateOpts{
 		Name:       req.Name,
 		ServerType: &hcloud.ServerType{Name: req.ServerType},
-		Location:   &hcloud.Location{Name: req.Location},
+		Location:   &hcloud.Location{Name: req.Region},
 		Image:      &hcloud.Image{Name: req.Image},
 		Labels:     req.Labels,
 		UserData:   req.UserData,
@@ -113,16 +99,22 @@ func (p *Provisioner) ProvisionServer(ctx context.Context, req ProvisionRequest)
 	return info, nil
 }
 
-// DeprovisionServer deletes a Hetzner server by ID.
-func (p *Provisioner) DeprovisionServer(ctx context.Context, serverID int64) error {
-	logger := p.logger.With("server_id", serverID)
+// DeprovisionServer deletes a Hetzner server by its cloud-agnostic string ID.
+// Implements provision.Provisioner.DeprovisionServer.
+func (p *HetznerProvisioner) DeprovisionServer(ctx context.Context, serverID string) error {
+	id, err := strconv.ParseInt(serverID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("parse server ID %q: %w", serverID, err)
+	}
 
-	server, _, err := p.client.Server.GetByID(ctx, serverID)
+	logger := p.logger.With("server_id", id)
+
+	server, _, err := p.client.Server.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("get server for deprovision: %w", err)
 	}
 	if server == nil {
-		return fmt.Errorf("server %d not found", serverID)
+		return fmt.Errorf("server %d not found", id)
 	}
 
 	result, _, err := p.client.Server.DeleteWithResult(ctx, server)
@@ -140,27 +132,34 @@ func (p *Provisioner) DeprovisionServer(ctx context.Context, serverID int64) err
 	return nil
 }
 
-// GetServerStatus returns current status of a Hetzner server.
-func (p *Provisioner) GetServerStatus(ctx context.Context, serverID int64) (*ServerInfo, error) {
-	server, _, err := p.client.Server.GetByID(ctx, serverID)
+// GetServerStatus returns current status of a Hetzner server by its
+// cloud-agnostic string ID. Implements provision.Provisioner.GetServerStatus.
+func (p *HetznerProvisioner) GetServerStatus(ctx context.Context, serverID string) (*provision.ServerInfo, error) {
+	id, err := strconv.ParseInt(serverID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("parse server ID %q: %w", serverID, err)
+	}
+
+	server, _, err := p.client.Server.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("get server: %w", err)
 	}
 	if server == nil {
-		return nil, fmt.Errorf("server %d not found", serverID)
+		return nil, fmt.Errorf("server %d not found", id)
 	}
 
 	return p.toServerInfo(server), nil
 }
 
 // ListServers returns all Hetzner servers tagged for FeatureSignals.
-func (p *Provisioner) ListServers(ctx context.Context) ([]ServerInfo, error) {
+// Implements provision.Provisioner.ListServers.
+func (p *HetznerProvisioner) ListServers(ctx context.Context) ([]provision.ServerInfo, error) {
 	servers, err := p.client.Server.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list servers: %w", err)
 	}
 
-	infos := make([]ServerInfo, 0, len(servers))
+	infos := make([]provision.ServerInfo, 0, len(servers))
 	for _, s := range servers {
 		if s.Labels != nil && s.Labels["featuresignals.com/managed-by"] == "ops-portal" {
 			infos = append(infos, *p.toServerInfo(s))
@@ -169,15 +168,17 @@ func (p *Provisioner) ListServers(ctx context.Context) ([]ServerInfo, error) {
 	return infos, nil
 }
 
-// toServerInfo converts a hcloud.Server to a ServerInfo value object.
-func (p *Provisioner) toServerInfo(server *hcloud.Server) *ServerInfo {
-	info := &ServerInfo{
-		ID:         server.ID,
+// toServerInfo converts a hcloud.Server to a cloud-agnostic provision.ServerInfo.
+// The Hetzner numeric server ID is converted to a string for provider abstraction.
+func (p *HetznerProvisioner) toServerInfo(server *hcloud.Server) *provision.ServerInfo {
+	info := &provision.ServerInfo{
+		ID:         fmt.Sprintf("%d", server.ID),
 		Name:       server.Name,
 		Status:     string(server.Status),
-		Location:   server.Datacenter.Location.Name,
+		Region:     server.Datacenter.Location.Name,
 		ServerType: server.ServerType.Name,
 		CreatedAt:  server.Created,
+		Provider:   "hetzner",
 	}
 
 	// Primary public IPv4

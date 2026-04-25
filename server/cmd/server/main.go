@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/exaring/otelpgx"
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -34,6 +35,9 @@ import (
 	"github.com/featuresignals/server/internal/payment"
 	payupkg "github.com/featuresignals/server/internal/payment/payu"
 	stripepkg "github.com/featuresignals/server/internal/payment/stripe"
+	"github.com/featuresignals/server/internal/provision"
+	"github.com/featuresignals/server/internal/provision/hetzner"
+	"github.com/featuresignals/server/internal/queue"
 	"github.com/featuresignals/server/internal/scheduler"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
@@ -325,11 +329,55 @@ func main() {
 	defer cancelRouter()
 	regionsEnabled := !cfg.IsOnPrem()
 
+	// ── Provisioning Queue (async cell provisioning) ──────────────
+	var queueClient *queue.Client
+	var eventBus *provision.EventBus
+	var provisioner provision.Provisioner
+	var provWorker *asynq.Server
+	var provWorkerMux *asynq.ServeMux
+
+	if cfg.RedisAddr != "" && cfg.HetznerAPIToken != "" {
+		eventBus = provision.NewEventBus()
+		queueClient = queue.NewClient(cfg.RedisAddr)
+		defer queueClient.Close()
+
+		hetznerCfg := hetzner.Config{
+			APIToken:  cfg.HetznerAPIToken,
+			Region:    cfg.HetznerDefaultRegion,
+			SSHKeyID:  cfg.HetznerSSHKeyID,
+			NetworkID: cfg.HetznerNetworkID,
+		}
+		provisioner = hetzner.NewHetznerProvisioner(hetznerCfg, logger)
+
+		queueHandler := queue.NewHandler(store, provisioner, eventBus, logger)
+		provWorker = asynq.NewServer(
+			asynq.RedisClientOpt{Addr: cfg.RedisAddr},
+			asynq.Config{Concurrency: cfg.ProvisionQueueConcurrency},
+		)
+		provWorkerMux = asynq.NewServeMux()
+		provWorkerMux.HandleFunc(queue.TypeProvisionCell, queueHandler.HandleProvisionCell)
+		provWorkerMux.HandleFunc(queue.TypeDeprovisionCell, queueHandler.HandleDeprovisionCell)
+
+		go func() {
+			if err := provWorker.Run(provWorkerMux); err != nil {
+				logger.Error("asynq provision worker error", "error", err)
+			}
+		}()
+		defer provWorker.Stop()
+
+		logger.Info("async provisioning queue initialized",
+			"redis_addr", cfg.RedisAddr,
+			"concurrency", cfg.ProvisionQueueConcurrency,
+		)
+	} else {
+		logger.Warn("REDIS_ADDR or HETZNER_API_TOKEN not set — async provisioning disabled")
+	}
+
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, queueClient, eventBus)
 
 	// Server
 	srv := &http.Server{

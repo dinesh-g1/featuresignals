@@ -109,6 +109,12 @@ type Config struct {
 	OTELLogsEnabled    bool
 	OTELLogLevel       string
 	OTELSampleRate     float64
+
+	// Redis (async provisioning queue)
+	RedisAddr string
+
+	// Provisioning
+	ProvisionQueueConcurrency int
 }
 
 func Load() *Config {
@@ -176,6 +182,9 @@ func Load() *Config {
 		OTELLogsEnabled:    getEnvBool("OTEL_LOGS_ENABLED", false),
 		OTELLogLevel:       getEnv("OTEL_LOG_LEVEL", "warn"),
 		OTELSampleRate:     getEnvFloat("OTEL_TRACE_SAMPLE_RATE", 0.1),
+
+		RedisAddr:                  getEnv("REDIS_ADDR", ""),
+		ProvisionQueueConcurrency:  getEnvInt("PROVISION_QUEUE_CONCURRENCY", 10),
 	}
 }
 

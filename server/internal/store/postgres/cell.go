@@ -3,6 +3,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -18,12 +19,14 @@ func (s *Store) GetCell(ctx context.Context, cellID string) (*domain.Cell, error
 
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, name, provider, region, status, version, tenant_count,
+		        provider_server_id, public_ip, private_ip,
 		        cpu_total, cpu_used, mem_total, mem_used, disk_total, disk_used,
 		        created_at, updated_at
 		 FROM public.cells WHERE id = $1`, cellID,
 	).Scan(
 		&cell.ID, &cell.Name, &cell.Provider, &cell.Region,
 		&cell.Status, &cell.Version, &cell.TenantCount,
+		&cell.ProviderServerID, &cell.PublicIP, &cell.PrivateIP,
 		&cpuTotal, &cpuUsed, &memTotal, &memUsed, &diskTotal, &diskUsed,
 		&cell.CreatedAt, &cell.UpdatedAt,
 	)
@@ -92,6 +95,7 @@ func (s *Store) ListCells(ctx context.Context, filter domain.CellFilter) ([]*dom
 	args = append(args, limit, offset)
 	query := fmt.Sprintf(
 		`SELECT id, name, provider, region, status, version, tenant_count,
+		        provider_server_id, public_ip, private_ip,
 		        cpu_total, cpu_used, mem_total, mem_used, disk_total, disk_used,
 		        created_at, updated_at
 		 FROM public.cells %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
@@ -111,6 +115,7 @@ func (s *Store) ListCells(ctx context.Context, filter domain.CellFilter) ([]*dom
 		if err := rows.Scan(
 			&c.ID, &c.Name, &c.Provider, &c.Region,
 			&c.Status, &c.Version, &c.TenantCount,
+			&c.ProviderServerID, &c.PublicIP, &c.PrivateIP,
 			&cpuTotal, &cpuUsed, &memTotal, &memUsed, &diskTotal, &diskUsed,
 			&c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
@@ -152,12 +157,14 @@ func (s *Store) CreateCell(ctx context.Context, cell *domain.Cell) error {
 	err := s.pool.QueryRow(ctx,
 		`INSERT INTO public.cells
 		 (id, name, provider, region, status, version, tenant_count,
+		  provider_server_id, public_ip, private_ip,
 		  cpu_total, cpu_used, mem_total, mem_used, disk_total, disk_used,
 		  created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		 RETURNING created_at, updated_at`,
 		cell.ID, cell.Name, cell.Provider, cell.Region, cell.Status,
 		cell.Version, cell.TenantCount,
+		cell.ProviderServerID, cell.PublicIP, cell.PrivateIP,
 		cell.CPU.Total, cell.CPU.Used,
 		cell.Memory.Total, cell.Memory.Used,
 		cell.Disk.Total, cell.Disk.Used,
@@ -177,13 +184,15 @@ func (s *Store) UpdateCell(ctx context.Context, cell *domain.Cell) error {
 		`UPDATE public.cells SET
 		 name = $1, provider = $2, region = $3, status = $4, version = $5,
 		 tenant_count = $6,
-		 cpu_total = $7, cpu_used = $8,
-		 mem_total = $9, mem_used = $10,
-		 disk_total = $11, disk_used = $12,
-		 updated_at = $13
-		 WHERE id = $14`,
+		 provider_server_id = $7, public_ip = $8, private_ip = $9,
+		 cpu_total = $10, cpu_used = $11,
+		 mem_total = $12, mem_used = $13,
+		 disk_total = $14, disk_used = $15,
+		 updated_at = $16
+		 WHERE id = $17`,
 		cell.Name, cell.Provider, cell.Region, cell.Status, cell.Version,
 		cell.TenantCount,
+		cell.ProviderServerID, cell.PublicIP, cell.PrivateIP,
 		cell.CPU.Total, cell.CPU.Used,
 		cell.Memory.Total, cell.Memory.Used,
 		cell.Disk.Total, cell.Disk.Used,
@@ -212,6 +221,72 @@ func (s *Store) DeleteCell(ctx context.Context, cellID string) error {
 		return domain.WrapNotFound("cell")
 	}
 	return nil
+}
+
+// ─── ProvisionEventStore (ISP) ─────────────────────────────────────────
+
+// CreateProvisionEvent inserts a new provision event record into
+// public.provision_events. Returns an error on duplicate or constraint
+// violation (domain.ErrConflict).
+func (s *Store) CreateProvisionEvent(ctx context.Context, event *domain.ProvisionEvent) error {
+	now := time.Now().UTC()
+	metadata, err := json.Marshal(event.Metadata)
+	if err != nil {
+		return fmt.Errorf("marshal provision event metadata: %w", err)
+	}
+
+	err = s.pool.QueryRow(ctx,
+		`INSERT INTO public.provision_events
+		 (cell_id, event_type, metadata, created_at)
+		 VALUES ($1, $2, $3, $4)
+		 RETURNING id, created_at`,
+		event.CellID, event.EventType, metadata, now,
+	).Scan(&event.ID, &event.CreatedAt)
+	if err != nil {
+		return wrapConflict(fmt.Errorf("create provision event: %w", err), "provision event")
+	}
+	return nil
+}
+
+// ListProvisionEvents returns provision events for a given cell since the
+// specified time, ordered by created_at ascending (oldest first). Used by
+// the ops portal to stream real-time provisioning status.
+func (s *Store) ListProvisionEvents(ctx context.Context, cellID string, since time.Time) ([]*domain.ProvisionEvent, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, cell_id, event_type, metadata, created_at
+		 FROM public.provision_events
+		 WHERE cell_id = $1 AND created_at >= $2
+		 ORDER BY created_at ASC`,
+		cellID, since,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list provision events: %w", err)
+	}
+	defer rows.Close()
+
+	events := make([]*domain.ProvisionEvent, 0)
+	for rows.Next() {
+		e := &domain.ProvisionEvent{}
+		var rawMetadata []byte
+		if err := rows.Scan(
+			&e.ID, &e.CellID, &e.EventType, &rawMetadata, &e.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan provision event: %w", err)
+		}
+		e.Metadata = make(map[string]string)
+		if len(rawMetadata) > 0 {
+			if err := json.Unmarshal(rawMetadata, &e.Metadata); err != nil {
+				// Non-critical: log and return with empty metadata
+				e.Metadata = make(map[string]string)
+			}
+		}
+		events = append(events, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate provision events: %w", err)
+	}
+
+	return events, nil
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────

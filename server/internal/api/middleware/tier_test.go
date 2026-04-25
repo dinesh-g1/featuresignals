@@ -649,3 +649,6 @@ func (s *tierMockStore) ListCells(_ context.Context, _ domain.CellFilter) ([]*do
 func (s *tierMockStore) CreateCell(_ context.Context, _ *domain.Cell) error { return nil }
 func (s *tierMockStore) UpdateCell(_ context.Context, _ *domain.Cell) error { return nil }
 func (s *tierMockStore) DeleteCell(_ context.Context, _ string) error { return nil }
+func (s *tierMockStore) CreateProvisionEvent(_ context.Context, _ *domain.ProvisionEvent) error { return nil }
+func (s *tierMockStore) ListProvisionEvents(_ context.Context, _ string, _ time.Time) ([]*domain.ProvisionEvent, error) { return nil, nil }
+

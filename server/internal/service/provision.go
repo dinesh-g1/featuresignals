@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/featuresignals/server/internal/domain"
-	"github.com/featuresignals/server/internal/provision/hetzner"
+	"github.com/featuresignals/server/internal/provision"
 )
 
 // ─── ProvisionService ───────────────────────────────────────────────────────
@@ -17,21 +18,21 @@ import (
 // ProvisionService orchestrates the lifecycle of cells by coordinating
 // between the Hetzner provisioner and the cell metadata store.
 type ProvisionService struct {
-	hetznerProvisioner *hetzner.Provisioner
-	store              domain.CellStore
-	logger             *slog.Logger
+	provisioner provision.Provisioner
+	store       domain.CellStore
+	logger      *slog.Logger
 }
 
 // NewProvisionService creates a new ProvisionService.
 func NewProvisionService(
-	hetznerProvisioner *hetzner.Provisioner,
+	provisioner provision.Provisioner,
 	store domain.CellStore,
 	logger *slog.Logger,
 ) *ProvisionService {
 	return &ProvisionService{
-		hetznerProvisioner: hetznerProvisioner,
-		store:              store,
-		logger:             logger.With("service", "provision"),
+		provisioner: provisioner,
+		store:       store,
+		logger:      logger.With("service", "provision"),
 	}
 }
 
@@ -92,16 +93,16 @@ func (s *ProvisionService) ProvisionCell(ctx context.Context, req ProvisionCellR
 	labels["featuresignals.com/cell-id"] = cellID
 	labels["featuresignals.com/managed-by"] = "ops-portal"
 
-	hetznerReq := hetzner.ProvisionRequest{
+	provReq := provision.ProvisionRequest{
 		Name:       req.Name,
 		ServerType: req.ServerType,
-		Location:   req.Location,
+		Region:     req.Location,
 		Image:      "ubuntu-24.04",
 		Labels:     labels,
 		UserData:   req.UserData,
 	}
 
-	serverInfo, err := s.hetznerProvisioner.ProvisionServer(ctx, hetznerReq)
+	serverInfo, err := s.provisioner.ProvisionServer(ctx, provReq)
 	if err != nil {
 		// Mark the cell as failed so it can be inspected.
 		cell.Status = "failed"
@@ -121,7 +122,9 @@ func (s *ProvisionService) ProvisionCell(ctx context.Context, req ProvisionCellR
 	// Step 3: Update the cell record with server details.
 	cell.Status = domain.CellStatusRunning
 	cell.Version = serverInfo.ServerType
-	cell.Region = fmt.Sprintf("%s (server %d)", req.Location, serverInfo.ID)
+	cell.ProviderServerID = serverInfo.ID
+	cell.PublicIP = serverInfo.PublicIP
+	cell.Region = serverInfo.Region
 	cell.CPU = domain.ResourceUsage{Total: 4, Used: 0, Available: 4, Percent: 0}
 	cell.Memory = domain.ResourceUsage{Total: 8, Used: 0, Available: 8, Percent: 0}
 	cell.Disk = domain.ResourceUsage{Total: 80, Used: 0, Available: 80, Percent: 0}
@@ -154,18 +157,15 @@ func (s *ProvisionService) DeprovisionCell(ctx context.Context, cellID string) e
 		logger.Warn("failed to update cell status to deprovisioning", "error", err)
 	}
 
-	// Find and delete the Hetzner server matching this cell.
-	servers, err := s.hetznerProvisioner.ListServers(ctx)
-	if err != nil {
-		logger.Warn("failed to list hetzner servers, skipping server deletion", "error", err)
-	} else {
-		for _, server := range servers {
-			if server.Name == cell.Name {
-				logger.Info("deprovisioning hetzner server", "server_id", server.ID)
-				if err := s.hetznerProvisioner.DeprovisionServer(ctx, server.ID); err != nil {
-					return fmt.Errorf("deprovision hetzner server %d: %w", server.ID, err)
-				}
-				break
+	// Deprovision using the stored provider server ID (label-based matching).
+	if cell.ProviderServerID != "" {
+		serverID, err := strconv.ParseInt(cell.ProviderServerID, 10, 64)
+		if err != nil {
+			logger.Warn("invalid provider_server_id, falling back to name-based lookup", "provider_server_id", cell.ProviderServerID, "error", err)
+		} else {
+			logger.Info("deprovisioning hetzner server by ID", "server_id", serverID)
+			if err := s.provisioner.DeprovisionServer(ctx, cell.ProviderServerID); err != nil {
+				return fmt.Errorf("deprovision server %s: %w", cell.ProviderServerID, err)
 			}
 		}
 	}
