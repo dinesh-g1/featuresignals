@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/favicon.svg",
+        url: "/og-image.svg",
         width: 1200,
         height: 630,
         alt: "FeatureSignals — Open-Source Feature Flag Platform",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     ],
   },
   twitter: { card: "summary_large_image" },
-  alternates: { canonical: "./" },
+  alternates: { canonical: "https://featuresignals.com" },
   keywords: [
     "feature flags",
     "feature flag management",

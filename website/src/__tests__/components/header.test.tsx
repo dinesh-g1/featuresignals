@@ -51,9 +51,11 @@ describe("Header", () => {
   it("applies accent theme classes to interactive elements", () => {
     render(<Header />);
 
-    // The flag icon should have text-accent class
-    const flagIcon = screen.getByText("⚑");
-    expect(flagIcon.className).toContain("text-accent");
+    // The brand link SVG should have text-accent class
+    const brandLink = screen.getByRole("link", { name: /featuresignals/i });
+    const svg = brandLink.querySelector("svg");
+    expect(svg).toBeInTheDocument();
+    expect(svg!.getAttribute("class")).toContain("text-accent");
 
     // The Start Free button should have bg-accent class
     const startFree = screen.getByRole("link", { name: /start free/i });

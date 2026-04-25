@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1c1917;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#292524;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f766e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#0d9488;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" rx="0" />
+
+  <!-- Subtle glow -->
+  <circle cx="900" cy="200" r="350" fill="url(#glow)" />
+  <circle cx="300" cy="450" r="250" fill="url(#glow)" />
+
+  <!-- Accent bar -->
+  <rect x="0" y="0" width="8" height="630" fill="url(#accent)" />
+
+  <!-- Logo mark -->
+  <g transform="translate(80, 60)">
+    <rect width="48" height="48" rx="10" fill="#0d9488" />
+    <path d="M10.5 4.5C10.5 4.5 10.5 27 10.5 43.5C10.5 27 34.5 12 25.5 21C19.5 27 37.5 33 37.5 43.5"
+          stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <circle cx="36.75" cy="39" r="2.7" fill="white" opacity="0.85" />
+  </g>
+
+  <!-- Company name -->
+  <text x="148" y="96" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" fill="#ffffff" letter-spacing="-0.5">
+    FeatureSignals
+  </text>
+
+  <!-- Tagline -->
+  <text x="80" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#a8a29e" letter-spacing="-0.2">
+    Mission-Critical Feature Flags — Zero Vendor Lock-In
+  </text>
+
+  <!-- Main headline -->
+  <text x="80" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" fill="#ffffff" letter-spacing="-1">
+    Ship faster.
+  </text>
+  <text x="80" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" fill="#ffffff" letter-spacing="-1">
+    <tspan fill="#0d9488">Control everything.</tspan>
+  </text>
+  <text x="80" y="400" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" fill="#ffffff" letter-spacing="-1">
+    Never lock in.
+  </text>
+
+  <!-- Description -->
+  <text x="80" y="470" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#d6d3d1" letter-spacing="-0.1" opacity="0.8">
+    Open-source feature flag platform with sub-millisecond evaluation,
+  </text>
+  <text x="80" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#d6d3d1" letter-spacing="-0.1" opacity="0.8">
+    AI-powered stale flag cleanup, and flat-rate pricing.
+  </text>
+
+  <!-- Feature badges -->
+  <g transform="translate(80, 555)">
+    <rect x="0" y="0" width="130" height="36" rx="18" fill="#0d9488" opacity="0.9" />
+    <text x="65" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">
+      OpenFeature
+    </text>
+
+    <rect x="145" y="0" width="120" height="36" rx="18" fill="#0d9488" opacity="0.7" />
+    <text x="205" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">
+      SOC 2 ✓
+    </text>
+
+    <rect x="280" y="0" width="110" height="36" rx="18" fill="#0d9488" opacity="0.5" />
+    <text x="335" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">
+      Apache 2.0
+    </text>
+  </g>
+
+  <!-- Decorative grid dots -->
+  <g opacity="0.05" fill="#ffffff">
+    <circle cx="1050" cy="150" r="3" />
+    <circle cx="1050" cy="200" r="3" />
+    <circle cx="1050" cy="250" r="3" />
+    <circle cx="1100" cy="175" r="3" />
+    <circle cx="1100" cy="225" r="3" />
+    <circle cx="1150" cy="150" r="3" />
+    <circle cx="1150" cy="200" r="3" />
+    <circle cx="1150" cy="250" r="3" />
+    <circle cx="1050" cy="350" r="2" />
+    <circle cx="1100" cy="350" r="2" />
+    <circle cx="1150" cy="350" r="2" />
+  </g>
+
+  <!-- Signal wave graphic -->
+  <g transform="translate(740, 140)" opacity="0.12" fill="none" stroke="#ffffff" stroke-width="2">
+    <polyline points="0,80 20,70 40,75 60,50 80,60 100,30 120,40 140,10" />
+  </g>
+</svg>

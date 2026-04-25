@@ -96,73 +96,91 @@ const PAGES_REQUIRING_METADATA = [
 // ─── 1. robots.txt (static) ────────────────────────────────────────────────
 
 describe("SEO: robots.txt", () => {
-  const robotsTxtPath = path.join(publicDir, "robots.txt");
+  const robotsPath = path.join(publicDir, "robots.txt");
 
-  it("exists in the app directory", () => {
-    expect(fs.existsSync(robotsTxtPath)).toBe(true);
+  it("exists in the public directory", () => {
+    expect(fs.existsSync(robotsPath)).toBe(true);
   });
 
   it("allows all user agents", () => {
-    const content = fs.readFileSync(robotsTxtPath, "utf-8");
-    expect(content).toContain('userAgent: "*"');
-    expect(content).toContain('allow: "/"');
+    const content = fs.readFileSync(robotsPath, "utf-8");
+    expect(content).toContain("User-agent: *");
+    expect(content).toContain("Allow: /");
+  });
+
+  it("disallows API routes", () => {
+    const content = fs.readFileSync(robotsPath, "utf-8");
+    expect(content).toContain("Disallow: /api/");
   });
 
   it("points to the sitemap", () => {
-    const content = fs.readFileSync(robotsTxtPath, "utf-8");
+    const content = fs.readFileSync(robotsPath, "utf-8");
     expect(content).toContain(
-      'sitemap: "https://featuresignals.com/sitemap.xml"',
+      "Sitemap: https://featuresignals.com/sitemap.xml",
     );
   });
 
-  it("exports a default function", () => {
-    const content = fs.readFileSync(robotsTxtPath, "utf-8");
-    expect(content).toContain("export default function robots");
+  it("blocks GPTBot and CCBot crawlers", () => {
+    const content = fs.readFileSync(robotsPath, "utf-8");
+    expect(content).toContain("User-agent: GPTBot");
+    expect(content).toContain("User-agent: CCBot");
+    expect(content).toContain("Disallow: /");
   });
 });
 
-// ─── 2. sitemap.xml (static) ──────────────────────────────────────────────
+// ─── 2. sitemap.xml (static) ───────────────────────────────────────────────
 
 describe("SEO: sitemap.xml", () => {
-  const sitemapXmlPath = path.join(publicDir, "sitemap.xml");
+  const sitemapPath = path.join(publicDir, "sitemap.xml");
 
-  it("exists in the app directory", () => {
-    expect(fs.existsSync(sitemapXmlPath)).toBe(true);
+  it("exists in the public directory", () => {
+    expect(fs.existsSync(sitemapPath)).toBe(true);
   });
 
-  it("exports a default function returning Sitemap array", () => {
-    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
-    expect(content).toContain("export default function sitemap()");
-    expect(content).toContain("MetadataRoute.Sitemap");
+  it("is valid XML with urlset namespace", () => {
+    const content = fs.readFileSync(sitemapPath, "utf-8");
+    expect(content).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(content).toContain(
+      'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+    );
+    expect(content).toContain("<urlset");
+    expect(content).toContain("</urlset>");
   });
 
   it("covers all expected pages with correct base URL", () => {
-    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
+    const content = fs.readFileSync(sitemapPath, "utf-8");
     for (const page of EXPECTED_PAGES) {
-      const fullUrl = `\${baseUrl}${page.path}`;
-      // The sitemap.ts uses template literals for the base URL
-      // Each page entry uses: url: `${baseUrl}/path`
-      expect(content).toContain(
-        page.path === "" ? "baseUrl" : `\${baseUrl}${page.path}`,
-      );
+      const fullUrl = `https://featuresignals.com${page.path}`;
+      expect(content).toContain(fullUrl);
     }
   });
 
   it("uses featuresignals.com domain (not localhost)", () => {
-    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
+    const content = fs.readFileSync(sitemapPath, "utf-8");
     expect(content).toContain("https://featuresignals.com");
     expect(content).not.toContain("localhost");
   });
 
   it("has correct priority for the homepage (1.0)", () => {
-    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
-    expect(content).toContain("priority: 1.0");
+    const content = fs.readFileSync(sitemapPath, "utf-8");
+    expect(content).toContain("<priority>1.0</priority>");
   });
 
-  it("imports blog posts from data source for dynamic blog entries", () => {
-    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
-    expect(content).toContain("posts.map");
-    expect(content).toContain("blog/${post.slug}");
+  it("includes all 8 blog posts", () => {
+    const content = fs.readFileSync(sitemapPath, "utf-8");
+    const blogSlugs = [
+      "introducing-ai-janitor",
+      "migrating-from-launchdarkly-guide",
+      "sub-millisecond-flag-evaluation",
+      "multi-iac-provider-support",
+      "openfeature-interoperability",
+      "soc2-compliant-feature-flags",
+      "cost-of-flag-rot",
+      "progressive-delivery-beyond-flags",
+    ];
+    for (const slug of blogSlugs) {
+      expect(content).toContain(`blog/${slug}`);
+    }
   });
 });
 
