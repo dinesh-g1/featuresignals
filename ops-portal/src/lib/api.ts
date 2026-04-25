@@ -470,6 +470,39 @@ export async function updateEnvVars(
   });
 }
 
+// ─── Multi-Scope Env Var Update ────────────────────────────────────────────
+
+export type EnvVarScope = "global" | "cloud" | "region" | "cell" | "tenant";
+
+/** Build the correct API path for a given scope and scope ID. */
+function buildEnvVarScopePath(scope: EnvVarScope, scopeId: string): string {
+  switch (scope) {
+    case "global":
+      return "/env-vars/global";
+    case "cloud":
+      return `/env-vars/cloud/${scopeId}`;
+    case "region":
+      return `/env-vars/region/${scopeId}`;
+    case "cell":
+      return `/env-vars/${scopeId}`;
+    case "tenant":
+      return `/env-vars/tenant/${scopeId}`;
+  }
+}
+
+/** Update environment variables at any scope level. */
+export async function updateEnvVarsAtScope(
+  scope: EnvVarScope,
+  scopeId: string,
+  req: EnvVarUpdateRequest,
+): Promise<EnvVarUpdateResponse> {
+  const path = buildEnvVarScopePath(scope, scopeId);
+  return request<EnvVarUpdateResponse>(path, {
+    method: "PUT",
+    body: JSON.stringify(req),
+  });
+}
+
 // ─── Backup Endpoints ───────────────────────────────────────────────────────
 
 export async function listBackups(

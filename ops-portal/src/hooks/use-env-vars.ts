@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as api from '@/lib/api';
-import type { EnvVar, EnvVarList, EnvVarUpdateRequest } from '@/types/env-var';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as api from "@/lib/api";
+import type {
+  EnvVar,
+  EnvVarList,
+  EnvVarUpdateRequest,
+  EnvVarUpdateResponse,
+} from "@/types/env-var";
+import type { EnvVarScope } from "@/lib/api";
 
 // ─── List Environment Variables ───────────────────────────────────────────
 
 export function useEnvVars(cellId?: string) {
-  const queryKey = cellId ? ['env-vars', 'effective', cellId] : ['env-vars'];
+  const queryKey = cellId ? ["env-vars", "effective", cellId] : ["env-vars"];
 
   return useQuery({
     queryKey,
@@ -19,7 +25,7 @@ export function useEnvVars(cellId?: string) {
       const result: EnvVarList = {
         envVars: vars,
         effective: true,
-        cellId: '',
+        cellId: "",
       };
       return result;
     },
@@ -30,24 +36,29 @@ export function useEnvVars(cellId?: string) {
   });
 }
 
-// ─── Create / Update Environment Variable Override ────────────────────────
+// ─── Update Environment Variable Override (Multi-Scope) ───────────────────
+
+export interface UpdateEnvVarParams {
+  scope: EnvVarScope;
+  scopeId: string;
+  req: EnvVarUpdateRequest;
+}
 
 export function useUpdateEnvVar() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({
-      cellId,
-      req,
-    }: {
-      cellId: string;
-      req: EnvVarUpdateRequest;
-    }) => api.updateEnvVars(cellId, req),
+  return useMutation<EnvVarUpdateResponse, Error, UpdateEnvVarParams>({
+    mutationFn: ({ scope, scopeId, req }: UpdateEnvVarParams) =>
+      api.updateEnvVarsAtScope(scope, scopeId, req),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['env-vars'] });
-      queryClient.invalidateQueries({
-        queryKey: ['env-vars', 'effective', variables.cellId],
-      });
+      // Invalidate all env-vars queries to refresh the UI.
+      queryClient.invalidateQueries({ queryKey: ["env-vars"] });
+      // Also invalidate the effective env vars for the cell, if applicable.
+      if (variables.scope === "cell" && variables.scopeId) {
+        queryClient.invalidateQueries({
+          queryKey: ["env-vars", "effective", variables.scopeId],
+        });
+      }
     },
   });
 }

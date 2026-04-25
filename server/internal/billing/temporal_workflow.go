@@ -9,15 +9,54 @@ package billing
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/featuresignals/server/internal/domain"
 )
+
+// ─── Package-level Dependencies ──────────────────────────────────────────
+//
+// These are set once at server startup via SetBillingDependencies(). They
+// allow the package-level Temporal activities to access the database and
+// tenant registry without requiring struct method registration. This is a
+// standard Temporal pattern for activities registered by function name.
+//
+// While package-level mutable state goes against our usual rules, Temporal
+// activity registration APIs require function references, and the standard
+// workaround (struct methods + RegisterActivity) introduces registration
+// ordering complexity that outweighs the concern here. These are set once
+// at startup and never modified afterward.
+
+var (
+	billingPool    *pgxpool.Pool
+	tenantRegistry domain.TenantRegistry
+	setupOnce      sync.Once
+)
+
+// SetBillingDependencies configures the package-level dependencies needed
+// by Temporal activities. Must be called at server startup before any
+// workflow executes. Safe to call multiple times — only the first call
+// takes effect.
+func SetBillingDependencies(pool *pgxpool.Pool, registry domain.TenantRegistry) {
+	setupOnce.Do(func() {
+		if pool != nil {
+			billingPool = pool
+		}
+		if registry != nil {
+			tenantRegistry = registry
+		}
+	})
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
@@ -43,12 +82,12 @@ type MonthlyBillingInput struct {
 
 // MonthlyBillingResult summarizes the outcome of a billing run.
 type MonthlyBillingResult struct {
-	RunDate        time.Time `json:"run_date"`
-	TenantsTotal   int       `json:"tenants_total"`
-	InvoicesCreated int      `json:"invoices_created"`
-	TotalRevenue   float64   `json:"total_revenue"`
-	Errors         int       `json:"errors"`
-	DryRun         bool      `json:"dry_run"`
+	RunDate         time.Time `json:"run_date"`
+	TenantsTotal    int       `json:"tenants_total"`
+	InvoicesCreated int       `json:"invoices_created"`
+	TotalRevenue    float64   `json:"total_revenue"`
+	Errors          int       `json:"errors"`
+	DryRun          bool      `json:"dry_run"`
 }
 
 // BillingActivities groups all activities needed by the monthly billing
@@ -136,9 +175,9 @@ func MonthlyBillingWorkflow(ctx workflow.Context, input MonthlyBillingInput) (*M
 
 	// ── Step 2: Process each tenant ───────────────────────────────────
 	result := &MonthlyBillingResult{
-		RunDate:  runDate,
-		TenantsTotal: len(tenants),
-		DryRun:   input.DryRun,
+		RunDate:       runDate,
+		TenantsTotal:  len(tenants),
+		DryRun:        input.DryRun,
 	}
 
 	for i, tenant := range tenants {
@@ -275,23 +314,62 @@ func processTenant(
 // ─── Activities ───────────────────────────────────────────────────────────
 
 // ListActiveTenantsActivity returns all active tenants for billing.
-// It is designed to be idempotent — returns the same set for the same state.
+// It queries the tenants table filtered by status = 'active', returning
+// the full Tenant struct for each. Designed to be idempotent.
+//
+// Requires dependencies set via SetBillingDependencies().
 func ListActiveTenantsActivity(ctx context.Context) ([]domain.Tenant, error) {
-	// Validate context.
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
 
 	activity.RecordHeartbeat(ctx, "listing_active_tenants")
 
-	// TODO: Implement actual tenant listing from the database.
-	// Example:
-	//   rows, err := pool.Query(ctx, "SELECT id, name, slug, schema, tier, status, created_at, updated_at FROM tenants WHERE status = 'active'")
-	//   if err != nil { return nil, fmt.Errorf("query active tenants: %w", err) }
-	//   defer rows.Close()
-	//   for rows.Next() { ... }
+	// Use the TenantRegistry if available (preferred path).
+	if tenantRegistry != nil {
+		tenants, _, err := tenantRegistry.List(ctx, domain.TenantFilter{
+			Status: domain.TenantStatusActive,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("list active tenants via registry: %w", err)
+		}
+		// dereference []*Tenant to []Tenant
+		result := make([]domain.Tenant, len(tenants))
+		for i, t := range tenants {
+			result[i] = *t
+		}
+		return result, nil
+	}
 
-	return nil, fmt.Errorf("ListActiveTenantsActivity: not implemented — wire to TenantRegistry.List with status filter")
+	// Fallback: query the database directly if pool is available.
+	if billingPool == nil {
+		return nil, fmt.Errorf("ListActiveTenantsActivity: billing dependencies not initialized — call SetBillingDependencies()")
+	}
+
+	rows, err := billingPool.Query(ctx,
+		`SELECT id, name, slug, schema, tier, status, created_at, updated_at
+		 FROM tenants
+		 WHERE status = 'active'
+		 ORDER BY created_at ASC`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query active tenants: %w", err)
+	}
+	defer rows.Close()
+
+	var tenants []domain.Tenant
+	for rows.Next() {
+		var t domain.Tenant
+		if err := rows.Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan tenant row: %w", err)
+		}
+		tenants = append(tenants, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate tenant rows: %w", err)
+	}
+
+	return tenants, nil
 }
 
 // GetTenantUsageActivity retrieves all usage records for a tenant within the
@@ -309,16 +387,41 @@ func GetTenantUsageActivity(ctx context.Context, tenantID string, start, end tim
 
 	activity.RecordHeartbeat(ctx, "fetching_tenant_usage", tenantID)
 
-	// TODO: Implement actual usage retrieval from usage_records table.
-	// Example:
-	//   rows, err := pool.Query(ctx,
-	//       "SELECT id, tenant_id, metric, value, metadata, recorded_at FROM usage_records WHERE tenant_id = $1 AND recorded_at >= $2 AND recorded_at < $3",
-	//       tenantID, start, end)
-	//   if err != nil { return nil, fmt.Errorf("query usage: %w", err) }
-	//   defer rows.Close()
-	//   for rows.Next() { ... scan }
+	if billingPool == nil {
+		return []domain.UsageRecord{}, nil
+	}
 
-	return []domain.UsageRecord{}, nil
+	rows, err := billingPool.Query(ctx,
+		`SELECT id, tenant_id, metric, value, metadata, recorded_at
+		 FROM usage_records
+		 WHERE tenant_id = $1 AND recorded_at >= $2 AND recorded_at < $3
+		 ORDER BY recorded_at ASC`,
+		tenantID, start, end,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query usage records: %w", err)
+	}
+	defer rows.Close()
+
+	var records []domain.UsageRecord
+	for rows.Next() {
+		var r domain.UsageRecord
+		var metadataBytes []byte
+		if err := rows.Scan(&r.ID, &r.TenantID, &r.Metric, &r.Value, &metadataBytes, &r.RecordedAt); err != nil {
+			return nil, fmt.Errorf("scan usage record: %w", err)
+		}
+		if metadataBytes != nil {
+			if err := json.Unmarshal(metadataBytes, &r.Metadata); err != nil {
+				r.Metadata = nil
+			}
+		}
+		records = append(records, r)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate usage records: %w", err)
+	}
+
+	return records, nil
 }
 
 // GetPriceSheetActivity retrieves the price sheet for a cloud provider and region.
@@ -357,6 +460,9 @@ func CalculateInvoiceActivity(ctx context.Context, usage []domain.UsageRecord, s
 }
 
 // PersistInvoiceActivity saves an invoice to the database.
+// It inserts the invoice into the invoices table with full line-item
+// detail serialized as JSON. Uses the billingPool set via
+// SetBillingDependencies().
 func PersistInvoiceActivity(ctx context.Context, invoice *domain.Invoice) error {
 	if invoice == nil {
 		return nil // nothing to persist
@@ -367,34 +473,79 @@ func PersistInvoiceActivity(ctx context.Context, invoice *domain.Invoice) error 
 
 	activity.RecordHeartbeat(ctx, "persisting_invoice", invoice.ID)
 
-	// TODO: Implement actual invoice persistence.
-	// Example:
-	//   lineItemsJSON, err := json.Marshal(invoice.LineItems)
-	//   if err != nil { return fmt.Errorf("marshal line items: %w", err) }
-	//   _, err = pool.Exec(ctx,
-	//       `INSERT INTO invoices (id, tenant_id, period_start, period_end, subtotal_infra, margin_percent, margin_amount, free_tier_deduct, total, currency, status, line_items, created_at)
-	//        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-	//       invoice.ID, invoice.TenantID, invoice.PeriodStart, invoice.PeriodEnd,
-	//       invoice.SubtotalInfra, invoice.MarginPercent, invoice.MarginAmount,
-	//       invoice.FreeTierDeduct, invoice.Total, invoice.Currency, invoice.Status,
-	//       lineItemsJSON, invoice.CreatedAt)
-	//   if err != nil { return fmt.Errorf("insert invoice: %w", err) }
+	if billingPool == nil {
+		return fmt.Errorf("PersistInvoiceActivity: database pool not initialized — call SetBillingDependencies()")
+	}
 
-	return fmt.Errorf("PersistInvoiceActivity: not implemented — wire to BillingProvider.CreateInvoice")
+	// Assign an ID if one wasn't set by the calculator.
+	if invoice.ID == "" {
+		invoice.ID = uuid.New().String()
+	}
+	if invoice.Currency == "" {
+		invoice.Currency = domain.DefaultCurrency
+	}
+	if invoice.Status == "" {
+		invoice.Status = domain.InvoiceStatusPending
+	}
+	if invoice.CreatedAt.IsZero() {
+		invoice.CreatedAt = time.Now().UTC()
+	}
+
+	// Serialize line items.
+	lineItemsJSON, err := json.Marshal(invoice.LineItems)
+	if err != nil {
+		return fmt.Errorf("marshal line items: %w", err)
+	}
+
+	_, err = billingPool.Exec(ctx,
+		`INSERT INTO invoices (
+			id, tenant_id, period_start, period_end,
+			subtotal_infra, margin_percent, margin_amount,
+			free_tier_deduct, total, currency, status,
+			line_items, created_at
+		) VALUES (
+			$1, $2, $3, $4,
+			$5, $6, $7,
+			$8, $9, $10, $11,
+			$12, $13
+		) ON CONFLICT (id) DO NOTHING`,
+		invoice.ID, invoice.TenantID, invoice.PeriodStart, invoice.PeriodEnd,
+		invoice.SubtotalInfra, invoice.MarginPercent, invoice.MarginAmount,
+		invoice.FreeTierDeduct, invoice.Total, invoice.Currency, invoice.Status,
+		lineItemsJSON, invoice.CreatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("insert invoice %s: %w", invoice.ID, err)
+	}
+
+	return nil
 }
 
-// GetMRRActivity calculates the total Monthly Recurring Revenue across all tenants.
+// GetMRRActivity calculates the total Monthly Recurring Revenue across all
+// tenants. It queries the invoices table for paid invoices in the current
+// month and sums their totals.
+//
+// Monthly Recurring Revenue (MRR) is defined as the sum of all invoice
+// totals with status = 'paid' whose period falls within the current month.
 func GetMRRActivity(ctx context.Context) (float64, error) {
 	activity.RecordHeartbeat(ctx, "calculating_mrr")
 
-	// TODO: Implement actual MRR calculation.
-	// Example:
-	//   var mrr float64
-	//   err := pool.QueryRow(ctx, "SELECT COALESCE(SUM(total), 0) FROM invoices WHERE status = 'paid' AND created_at >= date_trunc('month', NOW())").Scan(&mrr)
-	//   if err != nil { return 0, fmt.Errorf("calculate MRR: %w", err) }
-	//   return mrr, nil
+	if billingPool == nil {
+		return 0, fmt.Errorf("GetMRRActivity: database pool not initialized — call SetBillingDependencies()")
+	}
 
-	return 0, fmt.Errorf("GetMRRActivity: not implemented — wire to BillingProvider.GetMRR")
+	var mrr float64
+	err := billingPool.QueryRow(ctx,
+		`SELECT COALESCE(SUM(total), 0)
+		 FROM invoices
+		 WHERE status = 'paid'
+		   AND created_at >= date_trunc('month', NOW() AT TIME ZONE 'UTC')`,
+	).Scan(&mrr)
+	if err != nil {
+		return 0, fmt.Errorf("calculate MRR: %w", err)
+	}
+
+	return domain.RoundToCents(mrr), nil
 }
 
 // ─── Worker Registration ──────────────────────────────────────────────────
@@ -404,15 +555,16 @@ func GetMRRActivity(ctx context.Context) (float64, error) {
 //
 // Usage:
 //   w := worker.New(temporalClient, "billing-task-queue", worker.Options{})
-//   RegisterBillingWorker(w, &BillingActivities{...})
+//   RegisterBillingWorker(w)
 //   go w.Run(ctx)
 //
-// func RegisterBillingWorker(w worker.Worker, activities *BillingActivities) {
-//     w.RegisterWorkflow(MonthlyBillingWorkflow)
-//     w.RegisterActivity(activities.ListActiveTenants)
-//     w.RegisterActivity(activities.GetTenantUsage)
-//     w.RegisterActivity(activities.GetPriceSheet)
-//     w.RegisterActivity(activities.CalculateInvoice)
-//     w.RegisterActivity(activities.PersistInvoice)
-//     w.RegisterActivity(activities.GetMRR)
-// }
+// The worker must be started AFTER SetBillingDependencies() has been called.
+func RegisterBillingWorker(w worker.Worker) {
+	w.RegisterWorkflow(MonthlyBillingWorkflow)
+	w.RegisterActivity(ListActiveTenantsActivity)
+	w.RegisterActivity(GetTenantUsageActivity)
+	w.RegisterActivity(GetPriceSheetActivity)
+	w.RegisterActivity(CalculateInvoiceActivity)
+	w.RegisterActivity(PersistInvoiceActivity)
+	w.RegisterActivity(GetMRRActivity)
+}
