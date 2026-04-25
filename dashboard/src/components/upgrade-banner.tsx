@@ -65,7 +65,7 @@ export function UpgradeBanner() {
       <div className="flex items-center gap-3">
         <Link
           href="/settings/billing"
-          className="rounded-md bg-indigo-500 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-400"
+          className="rounded-md bg-accent px-3 py-1 text-xs font-semibold text-white hover:bg-accent-dark"
         >
           Upgrade to Pro
         </Link>

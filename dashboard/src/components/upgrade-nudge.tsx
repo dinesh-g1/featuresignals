@@ -25,7 +25,7 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
         "relative rounded-lg border p-4",
         isUrgent
           ? "border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50"
-          : "border-indigo-100 bg-gradient-to-r from-indigo-50/60 to-purple-50/60",
+          : "border-accent/10 bg-gradient-to-r from-accent/5 to-purple-50/60",
         className,
       )}
     >
@@ -40,13 +40,13 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
         <div
           className={cn(
             "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-            isUrgent ? "bg-amber-100" : "bg-indigo-100",
+            isUrgent ? "bg-amber-100" : "bg-accent/10",
           )}
         >
           {isUrgent ? (
             <AlertTriangle className="h-4 w-4 text-amber-600" />
           ) : (
-            <Sparkles className="h-4 w-4 text-indigo-600" />
+            <Sparkles className="h-4 w-4 text-accent" />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -59,7 +59,7 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    isUrgent ? "bg-amber-500" : "bg-indigo-500",
+                    isUrgent ? "bg-amber-500" : "bg-accent",
                     `w-[${Math.min(100, (nudge.current / nudge.limit) * 100)}%]`,
                   )}
                 />
@@ -76,7 +76,7 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
               "mt-3 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
               isUrgent
                 ? "bg-amber-600 text-white hover:bg-amber-700"
-                : "bg-indigo-600 text-white hover:bg-indigo-700",
+                : "bg-accent text-white hover:bg-accent-dark",
             )}
           >
             Upgrade to Pro
@@ -106,8 +106,8 @@ export function FeatureLockedNudge({
         className,
       )}
     >
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-        <Sparkles className="h-5 w-5 text-indigo-600" />
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
+        <Sparkles className="h-5 w-5 text-accent" />
       </div>
       <h3 className="text-sm font-semibold text-slate-800">
         {feature} requires {requiredPlan}
@@ -118,7 +118,7 @@ export function FeatureLockedNudge({
       </p>
       <Link
         href="/settings/billing"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
       >
         View Plans
         <ArrowRight className="h-3.5 w-3.5" />

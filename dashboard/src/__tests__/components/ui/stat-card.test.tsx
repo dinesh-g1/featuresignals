@@ -11,12 +11,12 @@ describe("StatCard", () => {
     expect(screen.getByText("1234")).toBeInTheDocument();
   });
 
-  it("renders with default indigo color", () => {
+  it("renders with default accent color", () => {
     const { container } = render(
       <StatCard icon={Activity} label="Count" value={42} />,
     );
 
-    const iconWrapper = container.querySelector(".from-indigo-500");
+    const iconWrapper = container.querySelector(".from-accent");
 
     expect(iconWrapper).toBeInTheDocument();
   });

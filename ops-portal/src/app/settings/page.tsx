@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 import {
   Users,
   Plus,
@@ -13,54 +13,66 @@ import {
   Moon,
   UserCircle,
   Mail,
-} from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
-import { ErrorState } from '@/components/ui/error-state';
-import { Modal } from '@/components/ui/modal';
-import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useToast } from '@/components/ui/toast';
-import { useUIStore } from '@/lib/store';
-import type { OpsUser, OpsUserRole } from '@/types/api';
-import type { SelectOption } from '@/components/ui/select';
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as api from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { Modal } from "@/components/ui/modal";
+import {
+  ConfirmDialog,
+  useConfirmDialog,
+} from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
+import { useUIStore } from "@/lib/store";
+import type { OpsUser, OpsUserRole } from "@/types/api";
+import type { SelectOption } from "@/components/ui/select";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const ROLE_OPTIONS: SelectOption[] = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'support', label: 'Support' },
-  { value: 'billing', label: 'Billing' },
-  { value: 'read-only', label: 'Read Only' },
+  { value: "admin", label: "Admin" },
+  { value: "support", label: "Support" },
+  { value: "billing", label: "Billing" },
+  { value: "read-only", label: "Read Only" },
 ];
 
 const TIMEZONE_OPTIONS: SelectOption[] = [
-  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-  { value: 'America/New_York', label: 'America/New_York (Eastern Time)' },
-  { value: 'America/Chicago', label: 'America/Chicago (Central Time)' },
-  { value: 'America/Denver', label: 'America/Denver (Mountain Time)' },
-  { value: 'America/Los_Angeles', label: 'America/Los_Angeles (Pacific Time)' },
-  { value: 'Europe/London', label: 'Europe/London (BST)' },
-  { value: 'Europe/Paris', label: 'Europe/Paris (CET/CEST)' },
-  { value: 'Europe/Berlin', label: 'Europe/Berlin (CET/CEST)' },
-  { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)' },
-  { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST)' },
-  { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST)' },
-  { value: 'Australia/Sydney', label: 'Australia/Sydney (AEST/AEDT)' },
-  { value: 'Pacific/Auckland', label: 'Pacific/Auckland (NZST/NZDT)' },
+  { value: "UTC", label: "UTC (Coordinated Universal Time)" },
+  { value: "America/New_York", label: "America/New_York (Eastern Time)" },
+  { value: "America/Chicago", label: "America/Chicago (Central Time)" },
+  { value: "America/Denver", label: "America/Denver (Mountain Time)" },
+  { value: "America/Los_Angeles", label: "America/Los_Angeles (Pacific Time)" },
+  { value: "Europe/London", label: "Europe/London (BST)" },
+  { value: "Europe/Paris", label: "Europe/Paris (CET/CEST)" },
+  { value: "Europe/Berlin", label: "Europe/Berlin (CET/CEST)" },
+  { value: "Asia/Tokyo", label: "Asia/Tokyo (JST)" },
+  { value: "Asia/Shanghai", label: "Asia/Shanghai (CST)" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata (IST)" },
+  { value: "Australia/Sydney", label: "Australia/Sydney (AEST/AEDT)" },
+  { value: "Pacific/Auckland", label: "Pacific/Auckland (NZST/NZDT)" },
 ];
 
-const ROLE_BADGE_VARIANT: Record<OpsUserRole, 'primary' | 'info' | 'success' | 'default'> = {
-  admin: 'primary',
-  support: 'info',
-  billing: 'success',
-  'read-only': 'default',
+const ROLE_BADGE_VARIANT: Record<
+  OpsUserRole,
+  "primary" | "info" | "success" | "default"
+> = {
+  admin: "primary",
+  support: "info",
+  billing: "success",
+  "read-only": "default",
 };
 
 // ─── Role Badge ─────────────────────────────────────────────────────────────
@@ -68,7 +80,7 @@ const ROLE_BADGE_VARIANT: Record<OpsUserRole, 'primary' | 'info' | 'success' | '
 function RoleBadge({ role }: { role: OpsUserRole }) {
   return (
     <Badge variant={ROLE_BADGE_VARIANT[role]} size="sm" className="capitalize">
-      {role === 'read-only' ? 'Read Only' : role}
+      {role === "read-only" ? "Read Only" : role}
     </Badge>
   );
 }
@@ -139,22 +151,22 @@ export default function SettingsPage() {
   // ─── Local state ──────────────────────────────────────────────────────
 
   const [timezone, setTimezone] = useState(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC',
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC",
   );
 
-  const apiEndpoint = process.env.NEXT_PUBLIC_OPS_API_URL || '/api/v1/ops';
+  const apiEndpoint = process.env.NEXT_PUBLIC_OPS_API_URL || "/api/v1/ops";
 
   // ─── Add user modal state ─────────────────────────────────────────────
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addName, setAddName] = useState('');
-  const [addEmail, setAddEmail] = useState('');
-  const [addRole, setAddRole] = useState<OpsUserRole>('support');
+  const [addName, setAddName] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addRole, setAddRole] = useState<OpsUserRole>("support");
 
   // ─── Edit user modal state ────────────────────────────────────────────
 
   const [editingUser, setEditingUser] = useState<OpsUser | null>(null);
-  const [editRole, setEditRole] = useState<OpsUserRole>('support');
+  const [editRole, setEditRole] = useState<OpsUserRole>("support");
 
   // ─── Remove user confirm dialog ───────────────────────────────────────
 
@@ -173,7 +185,7 @@ export default function SettingsPage() {
     error: usersError,
     refetch: refetchUsers,
   } = useQuery<OpsUser[]>({
-    queryKey: ['ops-users'],
+    queryKey: ["ops-users"],
     queryFn: () => api.listOpsUsers(),
     staleTime: 30_000,
     gcTime: 60_000,
@@ -186,13 +198,13 @@ export default function SettingsPage() {
     mutationFn: (data: { email: string; name: string; role: string }) =>
       api.addOpsUser(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-users'] });
+      queryClient.invalidateQueries({ queryKey: ["ops-users"] });
       setShowAddModal(false);
       resetAddForm();
-      toast.success('User added', 'The user has been invited successfully.');
+      toast.success("User added", "The user has been invited successfully.");
     },
     onError: (err: Error) => {
-      toast.error('Failed to add user', err.message);
+      toast.error("Failed to add user", err.message);
     },
   });
 
@@ -200,43 +212,46 @@ export default function SettingsPage() {
     mutationFn: ({ id, role }: { id: string; role: string }) =>
       api.updateOpsUser(id, { role }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-users'] });
+      queryClient.invalidateQueries({ queryKey: ["ops-users"] });
       setEditingUser(null);
-      toast.success('User updated', 'The user role has been updated.');
+      toast.success("User updated", "The user role has been updated.");
     },
     onError: (err: Error) => {
-      toast.error('Failed to update user', err.message);
+      toast.error("Failed to update user", err.message);
     },
   });
 
   const removeUserMutation = useMutation({
     mutationFn: (id: string) => api.removeOpsUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-users'] });
+      queryClient.invalidateQueries({ queryKey: ["ops-users"] });
       setRemovingUser(null);
       setRemoveDialogOpen(false);
-      toast.success('User removed', 'The user has been removed from the ops team.');
+      toast.success(
+        "User removed",
+        "The user has been removed from the ops team.",
+      );
     },
     onError: (err: Error) => {
-      toast.error('Failed to remove user', err.message);
+      toast.error("Failed to remove user", err.message);
     },
   });
 
   // ─── Form helpers ─────────────────────────────────────────────────────
 
   const resetAddForm = useCallback(() => {
-    setAddName('');
-    setAddEmail('');
-    setAddRole('support');
+    setAddName("");
+    setAddEmail("");
+    setAddRole("support");
   }, []);
 
   const handleAddUser = useCallback(() => {
     if (!addName.trim()) {
-      toast.error('Validation Error', 'Name is required.');
+      toast.error("Validation Error", "Name is required.");
       return;
     }
     if (!addEmail.trim()) {
-      toast.error('Validation Error', 'Email is required.');
+      toast.error("Validation Error", "Email is required.");
       return;
     }
     addUserMutation.mutate({
@@ -270,14 +285,16 @@ export default function SettingsPage() {
   }, [removingUser, removeUserMutation]);
 
   const handleThemeToggle = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
 
-  const handleCopyEndpoint = useCallback(() => {
-    navigator.clipboard.writeText(apiEndpoint).then(
-      () => toast.success('Copied', 'API endpoint copied to clipboard.'),
-      () => toast.error('Copy failed', 'Could not copy to clipboard.'),
-    );
+  const handleCopyEndpoint = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(apiEndpoint);
+      toast.success("Copied", "API endpoint copied to clipboard.");
+    } catch {
+      toast.error("Copy failed", "Could not copy to clipboard.");
+    }
   }, [apiEndpoint, toast]);
 
   const handleCloseAddModal = useCallback(
@@ -310,14 +327,21 @@ export default function SettingsPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
               <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4 text-accent-primary" aria-hidden="true" />
+                <Users
+                  className="h-4 w-4 text-accent-primary"
+                  aria-hidden="true"
+                />
                 Ops Users
               </CardTitle>
               <CardDescription>
                 Team members with access to the operations portal
               </CardDescription>
             </div>
-            <Button variant="primary" size="sm" onClick={() => setShowAddModal(true)}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+            >
               <Plus className="h-4 w-4" aria-hidden="true" />
               Add User
             </Button>
@@ -350,7 +374,7 @@ export default function SettingsPage() {
                   title="No ops users"
                   description="Add team members to manage access to the operations portal."
                   action={{
-                    label: 'Add User',
+                    label: "Add User",
                     onClick: () => setShowAddModal(true),
                   }}
                 />
@@ -411,14 +435,21 @@ export default function SettingsPage() {
                                   className="h-8 w-8 rounded-full object-cover"
                                 />
                               ) : (
-                                <UserCircle className="h-5 w-5 text-text-muted" aria-hidden="true" />
+                                <UserCircle
+                                  className="h-5 w-5 text-text-muted"
+                                  aria-hidden="true"
+                                />
                               )}
                             </div>
-                            <span className="font-medium text-text-primary">{user.name}</span>
+                            <span className="font-medium text-text-primary">
+                              {user.name}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-text-secondary">{user.email}</span>
+                          <span className="text-text-secondary">
+                            {user.email}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <RoleBadge role={user.role} />
@@ -441,7 +472,10 @@ export default function SettingsPage() {
                               onClick={() => handleEditClick(user)}
                               aria-label={`Edit role for ${user.name}`}
                             >
-                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                              <Pencil
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             </Button>
                             <Button
                               variant="ghost"
@@ -450,7 +484,10 @@ export default function SettingsPage() {
                               onClick={() => handleRemoveClick(user)}
                               aria-label={`Remove ${user.name}`}
                             >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                              <Trash2
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             </Button>
                           </div>
                         </td>
@@ -469,7 +506,10 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Palette className="h-4 w-4 text-accent-primary" aria-hidden="true" />
+              <Palette
+                className="h-4 w-4 text-accent-primary"
+                aria-hidden="true"
+              />
               Portal Preferences
             </CardTitle>
             <CardDescription>
@@ -482,16 +522,24 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between rounded-lg border border-border-default bg-bg-tertiary/30 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg-tertiary">
-                    {theme === 'dark' ? (
-                      <Moon className="h-4 w-4 text-accent-primary" aria-hidden="true" />
+                    {theme === "dark" ? (
+                      <Moon
+                        className="h-4 w-4 text-accent-primary"
+                        aria-hidden="true"
+                      />
                     ) : (
-                      <Sun className="h-4 w-4 text-accent-warning" aria-hidden="true" />
+                      <Sun
+                        className="h-4 w-4 text-accent-warning"
+                        aria-hidden="true"
+                      />
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-text-primary">Theme</p>
+                    <p className="text-sm font-medium text-text-primary">
+                      Theme
+                    </p>
                     <p className="text-xs text-text-muted mt-0.5">
-                      Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                      Current: {theme === "dark" ? "Dark Mode" : "Light Mode"}
                     </p>
                   </div>
                 </div>
@@ -499,9 +547,9 @@ export default function SettingsPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleThemeToggle}
-                  aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                  aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                 >
-                  {theme === 'dark' ? (
+                  {theme === "dark" ? (
                     <>
                       <Sun className="h-3.5 w-3.5" aria-hidden="true" />
                       Light Mode
@@ -519,10 +567,15 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between rounded-lg border border-border-default bg-bg-tertiary/30 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg-tertiary">
-                    <Globe className="h-4 w-4 text-accent-info" aria-hidden="true" />
+                    <Globe
+                      className="h-4 w-4 text-accent-info"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-text-primary">Timezone</p>
+                    <p className="text-sm font-medium text-text-primary">
+                      Timezone
+                    </p>
                     <p className="text-xs text-text-muted mt-0.5">
                       Display times in your local timezone
                     </p>
@@ -544,10 +597,15 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between rounded-lg border border-border-default bg-bg-tertiary/30 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg-tertiary">
-                    <Code className="h-4 w-4 text-accent-primary" aria-hidden="true" />
+                    <Code
+                      className="h-4 w-4 text-accent-primary"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-text-primary">API Endpoint</p>
+                    <p className="text-sm font-medium text-text-primary">
+                      API Endpoint
+                    </p>
                     <p className="text-xs text-text-muted mt-0.5">
                       The base URL for the Ops API
                     </p>
@@ -579,7 +637,7 @@ export default function SettingsPage() {
         onOpenChange={handleCloseAddModal}
         title="Add Ops User"
         description="Invite a new team member to the operations portal."
-        confirmLabel={addUserMutation.isPending ? 'Adding...' : 'Add User'}
+        confirmLabel={addUserMutation.isPending ? "Adding..." : "Add User"}
         onConfirm={handleAddUser}
         loading={addUserMutation.isPending}
         confirmDisabled={!addName.trim() || !addEmail.trim()}
@@ -617,9 +675,9 @@ export default function SettingsPage() {
       <Modal
         open={editingUser !== null}
         onOpenChange={handleCloseEditModal}
-        title={editingUser ? `Edit Role — ${editingUser.name}` : 'Edit Role'}
+        title={editingUser ? `Edit Role — ${editingUser.name}` : "Edit Role"}
         description="Change the role permissions for this user."
-        confirmLabel={updateUserMutation.isPending ? 'Saving...' : 'Save'}
+        confirmLabel={updateUserMutation.isPending ? "Saving..." : "Save"}
         onConfirm={handleSaveRole}
         loading={updateUserMutation.isPending}
         size="sm"
@@ -635,14 +693,19 @@ export default function SettingsPage() {
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <UserCircle className="h-5 w-5 text-text-muted" aria-hidden="true" />
+                  <UserCircle
+                    className="h-5 w-5 text-text-muted"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-text-primary truncate">
                   {editingUser.name}
                 </p>
-                <p className="text-xs text-text-muted truncate">{editingUser.email}</p>
+                <p className="text-xs text-text-muted truncate">
+                  {editingUser.email}
+                </p>
               </div>
             </div>
           )}

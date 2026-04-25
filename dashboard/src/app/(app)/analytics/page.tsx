@@ -5,7 +5,8 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { PageHeader, Card, CardHeader, StatCard } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
-import { BarChart3, Users, Building2, TrendingUp, Loader2 } from "lucide-react";
+import { BarChart3, Users, Building2, TrendingUp } from "lucide-react";
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import type { AnalyticsOverview } from "@/lib/types";
 
 const PERIODS = [
@@ -83,8 +84,17 @@ export default function AnalyticsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-48 w-full rounded-xl" />
+          </div>
         </div>
       ) : data ? (
         <>

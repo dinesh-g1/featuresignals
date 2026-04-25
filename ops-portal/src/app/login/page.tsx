@@ -1,41 +1,76 @@
-'use client';
+"use client";
 
-import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { login as apiLogin } from '@/lib/auth';
+import { useState, useEffect, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Mail,
+  ArrowLeft,
+  CheckCircle2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { login as apiLogin, forgotPassword } from "@/lib/auth";
 
-type LoginState = 'idle' | 'loading' | 'error' | 'locked';
+// ─── Types ────────────────────────────────────────────────────────────────
+
+type LoginState = "idle" | "loading" | "error" | "locked";
+
+type ForgotPasswordState =
+  | { phase: "idle" }
+  | { phase: "loading" }
+  | { phase: "error"; error: string }
+  | { phase: "success" };
+
+// ─── Component ────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // ─── Login state ─────────────────────────────────────────────────────
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [state, setState] = useState<LoginState>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [state, setState] = useState<LoginState>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [lockTimer, setLockTimer] = useState<number | null>(null);
 
-  const isLocked = state === 'locked' && lockTimer !== null && lockTimer > 0;
-  const isLoading = state === 'loading';
+  const isLocked = state === "locked" && lockTimer !== null && lockTimer > 0;
+  const isLoading = state === "loading";
 
-  // ─── Countdown for lockout ───────────────────────────────────────────────
+  // ─── Forgot password state ───────────────────────────────────────────
 
-  if (isLocked && lockTimer !== null) {
-    setTimeout(() => {
-      setLockTimer((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotState, setForgotState] = useState<ForgotPasswordState>({
+    phase: "idle",
+  });
+
+  // ─── Countdown for lockout ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isLocked || lockTimer === null) return;
+
+    const timer = setTimeout(() => {
+      if (lockTimer <= 1) {
+        setLockTimer(null);
+        setState("idle");
+        setAttempts(0);
+      } else {
+        setLockTimer(lockTimer - 1);
+      }
     }, 1000);
-    if (lockTimer === 0) {
-      setState('idle');
-      setAttempts(0);
-    }
-  }
 
-  // ─── Handle form submission ──────────────────────────────────────────────
+    return () => clearTimeout(timer);
+  }, [isLocked, lockTimer]);
+
+  // ─── Handle login submission ─────────────────────────────────────────
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -44,48 +79,97 @@ export default function LoginPage() {
 
     // Basic client-side validation
     if (!email.trim()) {
-      setState('error');
-      setErrorMessage('Email is required.');
+      setState("error");
+      setErrorMessage("Email is required.");
       return;
     }
     if (!password) {
-      setState('error');
-      setErrorMessage('Password is required.');
+      setState("error");
+      setErrorMessage("Password is required.");
       return;
     }
 
-    setState('loading');
-    setErrorMessage('');
+    setState("loading");
+    setErrorMessage("");
 
     try {
       const result = await apiLogin(email, password);
 
       if (result.success) {
-        setState('idle');
+        setState("idle");
         setAttempts(0);
-        router.push('/dashboard');
+        router.push("/dashboard");
       } else {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
 
         if (newAttempts >= 5) {
-          setState('locked');
+          setState("locked");
           setLockTimer(60);
-          setErrorMessage('Too many login attempts. Please wait 60 seconds.');
+          setErrorMessage("Too many login attempts. Please wait 60 seconds.");
         } else {
-          setState('error');
-          setErrorMessage(
-            result.error ?? 'Invalid email or password.',
-          );
+          setState("error");
+          setErrorMessage(result.error ?? "Invalid email or password.");
         }
       }
     } catch {
-      setState('error');
-      setErrorMessage('A network error occurred. Please check your connection.');
+      setState("error");
+      setErrorMessage(
+        "A network error occurred. Please check your connection.",
+      );
     }
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────
+  // ─── Handle forgot password submission ───────────────────────────────
+
+  async function handleForgotSubmit() {
+    if (!forgotEmail.trim()) {
+      setForgotState({
+        phase: "error",
+        error: "Please enter your email address.",
+      });
+      return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail.trim())) {
+      setForgotState({
+        phase: "error",
+        error: "Please enter a valid email address.",
+      });
+      return;
+    }
+
+    setForgotState({ phase: "loading" });
+
+    const result = await forgotPassword(forgotEmail.trim());
+
+    if (result.success) {
+      setForgotState({ phase: "success" });
+    } else {
+      setForgotState({
+        phase: "error",
+        error: result.error ?? "Unable to process request. Please try again.",
+      });
+    }
+  }
+
+  // ─── Handle modal close / back to login ──────────────────────────────
+
+  function handleForgotBack() {
+    setForgotEmail("");
+    setForgotState({ phase: "idle" });
+    setForgotOpen(false);
+  }
+
+  function handleForgotOpenChange(open: boolean) {
+    if (!open && forgotState.phase !== "loading") {
+      handleForgotBack();
+    }
+  }
+
+  // ─── Render ──────────────────────────────────────────────────────────
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-bg-primary px-4">
@@ -106,12 +190,15 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} noValidate aria-label="Login form">
             <div className="space-y-4">
               {/* Error banner */}
-              {state === 'error' && errorMessage && (
+              {state === "error" && errorMessage && (
                 <div
                   role="alert"
                   className="flex items-start gap-2.5 rounded-lg border border-accent-danger/20 bg-accent-danger/5 p-3"
                 >
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-accent-danger" aria-hidden="true" />
+                  <AlertCircle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-accent-danger"
+                    aria-hidden="true"
+                  />
                   <p className="text-sm text-accent-danger">{errorMessage}</p>
                 </div>
               )}
@@ -122,11 +209,17 @@ export default function LoginPage() {
                   role="alert"
                   className="flex items-start gap-2.5 rounded-lg border border-accent-warning/20 bg-accent-warning/5 p-3"
                 >
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-accent-warning" aria-hidden="true" />
+                  <AlertCircle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-accent-warning"
+                    aria-hidden="true"
+                  />
                   <div>
-                    <p className="text-sm font-medium text-accent-warning">Account Locked</p>
-                    <p className="text-xs text-accent-warning/80 mt-0.5">
-                      Try again in {lockTimer} second{lockTimer !== 1 ? 's' : ''}
+                    <p className="text-sm font-medium text-accent-warning">
+                      Account Locked
+                    </p>
+                    <p className="mt-0.5 text-xs text-accent-warning/80">
+                      Try again in {lockTimer} second
+                      {lockTimer !== 1 ? "s" : ""}
                     </p>
                   </div>
                 </div>
@@ -141,7 +234,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (state === 'error') setState('idle');
+                  if (state === "error") setState("idle");
                 }}
                 disabled={isLoading || isLocked}
                 autoComplete="email"
@@ -153,13 +246,13 @@ export default function LoginPage() {
               <div className="relative">
                 <Input
                   id="login-password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   label="Password"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    if (state === 'error') setState('idle');
+                    if (state === "error") setState("idle");
                   }}
                   disabled={isLoading || isLocked}
                   autoComplete="current-password"
@@ -169,7 +262,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-[38px] text-text-muted hover:text-text-secondary transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -189,23 +282,25 @@ export default function LoginPage() {
                 loading={isLoading}
                 disabled={isLocked}
               >
-                {isLoading ? 'Signing in…' : 'Sign In'}
+                {isLoading ? "Signing in\u2026" : "Sign In"}
               </Button>
             </div>
           </form>
 
           {/* Forgot password */}
           <p className="mt-4 text-center text-sm text-text-muted">
-            <a
-              href="#"
-              className="text-accent-primary hover:text-accent-hover transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded-sm"
-              onClick={(e) => {
-                e.preventDefault();
-                // TODO: Implement forgot password flow
+            <button
+              type="button"
+              onClick={() => {
+                // Pre-fill the forgot password email from the login form
+                if (email.trim()) setForgotEmail(email.trim());
+                setForgotState({ phase: "idle" });
+                setForgotOpen(true);
               }}
+              className="text-accent-primary hover:text-accent-hover transition-colors underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded-sm"
             >
               Forgot password?
-            </a>
+            </button>
           </p>
         </div>
 
@@ -214,6 +309,110 @@ export default function LoginPage() {
           &copy; {new Date().getFullYear()} FeatureSignals. All rights reserved.
         </p>
       </div>
+
+      {/* ────────────────────────────────────────────────
+           Forgot Password Modal
+           ──────────────────────────────────────────────── */}
+      <Modal
+        open={forgotOpen}
+        onOpenChange={handleForgotOpenChange}
+        title="Reset your password"
+        description="Enter your email address and we'll send you a link to reset your password."
+        hideFooter
+        size="sm"
+      >
+        {forgotState.phase === "success" ? (
+          /* ─── Success State ─────────────────────────── */
+          <div className="flex flex-col items-center py-4 text-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-success/10">
+              <CheckCircle2
+                className="h-6 w-6 text-accent-success"
+                aria-hidden="true"
+              />
+            </div>
+            <h3 className="text-lg font-semibold text-text-primary">
+              Check your email
+            </h3>
+            <p className="mt-2 text-sm text-text-secondary leading-relaxed">
+              If an account with that email exists, a password reset link has
+              been sent.
+            </p>
+            <Button
+              variant="secondary"
+              size="md"
+              className="mt-6"
+              onClick={handleForgotBack}
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to login
+            </Button>
+          </div>
+        ) : (
+          /* ─── Idle / Loading / Error State ──────────── */
+          <div className="space-y-4">
+            {/* Error banner */}
+            {forgotState.phase === "error" && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-lg border border-accent-danger/20 bg-accent-danger/5 p-3"
+              >
+                <AlertCircle
+                  className="mt-0.5 h-4 w-4 shrink-0 text-accent-danger"
+                  aria-hidden="true"
+                />
+                <p className="text-sm text-accent-danger">
+                  {forgotState.error}
+                </p>
+              </div>
+            )}
+
+            {/* Email input */}
+            <Input
+              id="forgot-email"
+              type="email"
+              label="Email address"
+              placeholder="you@example.com"
+              icon={<Mail className="h-4 w-4" />}
+              value={forgotEmail}
+              onChange={(e) => {
+                setForgotEmail(e.target.value);
+                if (forgotState.phase === "error") {
+                  setForgotState({ phase: "idle" });
+                }
+              }}
+              disabled={forgotState.phase === "loading"}
+              autoComplete="email"
+              autoFocus
+              required
+            />
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full"
+                loading={forgotState.phase === "loading"}
+                onClick={handleForgotSubmit}
+              >
+                {forgotState.phase === "loading"
+                  ? "Sending\u2026"
+                  : "Send Reset Link"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="md"
+                className="w-full"
+                disabled={forgotState.phase === "loading"}
+                onClick={handleForgotBack}
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to login
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </main>
   );
 }

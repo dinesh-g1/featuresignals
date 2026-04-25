@@ -85,14 +85,16 @@ function ValueInput({
         type="number"
         value={typeof value === "number" ? value : 0}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        className="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+        className="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
       />
     );
   }
   if (flagType === "json") {
     return (
       <textarea
-        value={typeof value === "string" ? value : JSON.stringify(value, null, 2)}
+        value={
+          typeof value === "string" ? value : JSON.stringify(value, null, 2)
+        }
         onChange={(e) => {
           try {
             onChange(JSON.parse(e.target.value));
@@ -101,7 +103,7 @@ function ValueInput({
           }
         }}
         rows={2}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         placeholder='{"key": "value"}'
       />
     );
@@ -111,13 +113,18 @@ function ValueInput({
       type="text"
       value={String(value ?? "")}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
       placeholder="Value when rule matches"
     />
   );
 }
 
-export function TargetingRulesEditor({ rules: initialRules, segments, flagType, onSave }: Props) {
+export function TargetingRulesEditor({
+  rules: initialRules,
+  segments,
+  flagType,
+  onSave,
+}: Props) {
   const [rules, setRules] = useState<TargetingRule[]>(
     initialRules.length > 0 ? initialRules : [],
   );
@@ -146,17 +153,28 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
   function addCondition(ruleId: string) {
     setRules((prev) =>
       prev.map((r) =>
-        r.id === ruleId ? { ...r, conditions: [...r.conditions, emptyCondition()] } : r,
+        r.id === ruleId
+          ? { ...r, conditions: [...r.conditions, emptyCondition()] }
+          : r,
       ),
     );
     setDirty(true);
   }
 
-  function updateCondition(ruleId: string, idx: number, patch: Partial<Condition>) {
+  function updateCondition(
+    ruleId: string,
+    idx: number,
+    patch: Partial<Condition>,
+  ) {
     setRules((prev) =>
       prev.map((r) =>
         r.id === ruleId
-          ? { ...r, conditions: r.conditions.map((c, i) => (i === idx ? { ...c, ...patch } : c)) }
+          ? {
+              ...r,
+              conditions: r.conditions.map((c, i) =>
+                i === idx ? { ...c, ...patch } : c,
+              ),
+            }
           : r,
       ),
     );
@@ -166,7 +184,9 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
   function removeCondition(ruleId: string, idx: number) {
     setRules((prev) =>
       prev.map((r) =>
-        r.id === ruleId ? { ...r, conditions: r.conditions.filter((_, i) => i !== idx) } : r,
+        r.id === ruleId
+          ? { ...r, conditions: r.conditions.filter((_, i) => i !== idx) }
+          : r,
       ),
     );
     setDirty(true);
@@ -205,7 +225,7 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
         <div className="flex gap-2">
           <button
             onClick={addRule}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 shadow-sm transition-all duration-150 hover:bg-indigo-100 hover:shadow-md"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/5 px-3 py-1.5 text-sm font-medium text-accent-dark shadow-sm transition-all duration-150 hover:bg-accent/10 hover:shadow-md"
           >
             <Plus className="h-4 w-4" />
             Add Rule
@@ -214,7 +234,7 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-indigo-700 hover:shadow-md disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-all duration-150 hover:bg-accent-dark hover:shadow-md disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Rules"}
             </button>
@@ -227,7 +247,9 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 ring-1 ring-slate-100">
             <Plus className="h-5 w-5 text-slate-400" />
           </div>
-          <p className="mt-2 text-sm text-slate-500">No targeting rules configured.</p>
+          <p className="mt-2 text-sm text-slate-500">
+            No targeting rules configured.
+          </p>
           <p className="mt-1 text-xs text-slate-400">
             Click &ldquo;Add Rule&rdquo; to target specific users or segments.
           </p>
@@ -243,7 +265,9 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                   key={rule.id}
                   className={cn(
                     "rounded-xl border bg-white transition-all duration-200",
-                    isExpanded ? "border-indigo-300 ring-2 ring-indigo-100 shadow-md" : "border-slate-200 hover:border-slate-300 hover:shadow-sm",
+                    isExpanded
+                      ? "border-accent/30 ring-2 ring-accent/10 shadow-md"
+                      : "border-slate-200 hover:border-slate-300 hover:shadow-sm",
                   )}
                 >
                   <div
@@ -251,15 +275,17 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                     onClick={() => setExpandedRule(isExpanded ? null : rule.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600 ring-1 ring-indigo-100">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/5 text-xs font-bold text-accent ring-1 ring-accent/10">
                         {rule.priority}
                       </span>
                       <span className="text-sm font-medium text-slate-700">
                         {rule.description || "Unnamed rule"}
                       </span>
                       <span className="text-xs text-slate-400">
-                        {rule.conditions.length} condition{rule.conditions.length !== 1 ? "s" : ""}
-                        {(rule.segment_keys?.length ?? 0) > 0 && ` · ${rule.segment_keys!.length} segment${rule.segment_keys!.length !== 1 ? "s" : ""}`}
+                        {rule.conditions.length} condition
+                        {rule.conditions.length !== 1 ? "s" : ""}
+                        {(rule.segment_keys?.length ?? 0) > 0 &&
+                          ` · ${rule.segment_keys!.length} segment${rule.segment_keys!.length !== 1 ? "s" : ""}`}
                         {` · ${(rule.percentage / 100).toFixed(0)}%`}
                       </span>
                     </div>
@@ -274,7 +300,12 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                      <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform duration-200", isExpanded && "rotate-180")} />
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 text-slate-400 transition-transform duration-200",
+                          isExpanded && "rotate-180",
+                        )}
+                      />
                     </div>
                   </div>
 
@@ -282,23 +313,35 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                     <div className="border-t border-slate-100 px-5 py-4 space-y-5 animate-fade-in">
                       <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Priority</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">
+                            Priority
+                          </label>
                           <input
                             type="number"
                             min={0}
                             value={rule.priority}
-                            onChange={(e) => updateRule(rule.id, { priority: parseInt(e.target.value) || 0 })}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                            onChange={(e) =>
+                              updateRule(rule.id, {
+                                priority: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                           />
                         </div>
                         <div className="col-span-2">
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">
+                            Description
+                          </label>
                           <input
                             type="text"
                             value={rule.description}
-                            onChange={(e) => updateRule(rule.id, { description: e.target.value })}
+                            onChange={(e) =>
+                              updateRule(rule.id, {
+                                description: e.target.value,
+                              })
+                            }
                             placeholder="e.g. Beta testers, Premium users"
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                           />
                         </div>
                       </div>
@@ -306,37 +349,54 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium text-slate-500">Conditions</label>
+                            <label className="text-xs font-medium text-slate-500">
+                              Conditions
+                            </label>
                             <Select
                               value={rule.match_type || "all"}
-                              onValueChange={(val) => updateRule(rule.id, { match_type: val })}
+                              onValueChange={(val) =>
+                                updateRule(rule.id, { match_type: val })
+                              }
                               options={MATCH_TYPE_OPTIONS}
                               size="sm"
                             />
                           </div>
                           <button
                             onClick={() => addCondition(rule.id)}
-                            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                            className="text-xs font-medium text-accent hover:text-accent-dark"
                           >
                             + Add Condition
                           </button>
                         </div>
                         {rule.conditions.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">No conditions — rule matches all users.</p>
+                          <p className="text-xs text-slate-400 italic">
+                            No conditions — rule matches all users.
+                          </p>
                         ) : (
                           <div className="space-y-2">
                             {rule.conditions.map((cond, ci) => (
-                              <div key={ci} className="flex items-center gap-2 rounded-lg bg-slate-50 p-2 ring-1 ring-slate-100">
+                              <div
+                                key={ci}
+                                className="flex items-center gap-2 rounded-lg bg-slate-50 p-2 ring-1 ring-slate-100"
+                              >
                                 <input
                                   type="text"
                                   value={cond.attribute}
-                                  onChange={(e) => updateCondition(rule.id, ci, { attribute: e.target.value })}
+                                  onChange={(e) =>
+                                    updateCondition(rule.id, ci, {
+                                      attribute: e.target.value,
+                                    })
+                                  }
                                   placeholder="attribute (e.g. plan)"
-                                  className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                                  className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                 />
                                 <Select
                                   value={cond.operator}
-                                  onValueChange={(val) => updateCondition(rule.id, ci, { operator: val })}
+                                  onValueChange={(val) =>
+                                    updateCondition(rule.id, ci, {
+                                      operator: val,
+                                    })
+                                  }
                                   options={OPERATORS}
                                   size="sm"
                                 />
@@ -345,11 +405,13 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                                   value={cond.values.join(", ")}
                                   onChange={(e) =>
                                     updateCondition(rule.id, ci, {
-                                      values: e.target.value.split(",").map((v) => v.trim()),
+                                      values: e.target.value
+                                        .split(",")
+                                        .map((v) => v.trim()),
                                     })
                                   }
                                   placeholder="value(s), comma-separated"
-                                  className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                                  className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                 />
                                 <button
                                   onClick={() => removeCondition(rule.id, ci)}
@@ -365,18 +427,24 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
 
                       {segments.length > 0 && (
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-2">Target Segments</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-2">
+                            Target Segments
+                          </label>
                           <div className="flex flex-wrap gap-2">
                             {segments.map((seg) => {
-                              const active = (rule.segment_keys ?? []).includes(seg.key);
+                              const active = (rule.segment_keys ?? []).includes(
+                                seg.key,
+                              );
                               return (
                                 <button
                                   key={seg.key}
-                                  onClick={() => toggleSegment(rule.id, seg.key)}
+                                  onClick={() =>
+                                    toggleSegment(rule.id, seg.key)
+                                  }
                                   className={cn(
                                     "rounded-full px-3 py-1 text-xs font-medium transition-all duration-150",
                                     active
-                                      ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300 shadow-sm"
+                                      ? "bg-accent/10 text-accent-dark ring-1 ring-accent/30 shadow-sm"
                                       : "bg-slate-100 text-slate-500 hover:bg-slate-200",
                                   )}
                                 >
@@ -390,7 +458,9 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Rollout %</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">
+                            Rollout %
+                          </label>
                           <div className="flex items-center gap-3">
                             <input
                               type="range"
@@ -398,16 +468,22 @@ export function TargetingRulesEditor({ rules: initialRules, segments, flagType, 
                               max={10000}
                               step={100}
                               value={rule.percentage}
-                              onChange={(e) => updateRule(rule.id, { percentage: parseInt(e.target.value) })}
-                              className="flex-1 accent-indigo-600"
+                              onChange={(e) =>
+                                updateRule(rule.id, {
+                                  percentage: parseInt(e.target.value),
+                                })
+                              }
+                              className="flex-1 accent-accent"
                             />
-                            <span className="rounded-lg bg-indigo-50 px-2 py-0.5 text-xs font-mono font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                            <span className="rounded-lg bg-accent/5 px-2 py-0.5 text-xs font-mono font-semibold text-accent-dark ring-1 ring-accent/10">
                               {(rule.percentage / 100).toFixed(0)}%
                             </span>
                           </div>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Value when matched</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">
+                            Value when matched
+                          </label>
                           <ValueInput
                             flagType={flagType}
                             value={rule.value}

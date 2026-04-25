@@ -184,11 +184,11 @@ function OTPInput({
             onFocus={() => setFocusedIdx(i)}
             className={cn(
               "w-10 h-12 sm:w-12 sm:h-14 rounded-lg border-2 text-center text-lg sm:text-2xl font-bold text-slate-800 transition-all select-none bg-white",
-              "focus:outline-none focus:ring-[3px] focus:ring-indigo-100",
+              "focus:outline-none focus:ring-[3px] focus:ring-accent/10",
               isFocused && !isFilled
-                ? "border-indigo-500 shadow-[0_0_0_3px_rgba(99,102,241,0.15)]"
+                ? "border-accent shadow-[0_0_0_3px_rgba(13,148,136,0.15)]"
                 : isFilled
-                  ? "border-indigo-300 bg-indigo-50"
+                  ? "border-accent/30 bg-accent/5"
                   : "border-slate-300 shadow-sm",
             )}
             aria-label={`Digit ${i + 1}`}
@@ -234,7 +234,7 @@ function ResendCooldown({
     <div className="flex flex-col items-center gap-2">
       <div className="h-1 w-32 overflow-hidden rounded-full bg-slate-100">
         <div
-          className={`h-full rounded-full bg-indigo-500 transition-all duration-1000 w-[${progress}%]`}
+          className={`h-full rounded-full bg-accent transition-all duration-1000 w-[${progress}%]`}
         />
       </div>
       <p className="text-xs text-slate-400">Resend code in {countdown}s</p>
@@ -264,7 +264,7 @@ export default function RegisterPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
         </div>
       }
     >
@@ -510,7 +510,7 @@ function RegisterForm() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
       <Card className="w-full max-w-2xl space-y-6 p-6 sm:p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-indigo-600">
+          <h1 className="text-2xl font-bold tracking-tight text-accent">
             FeatureSignals
           </h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -519,8 +519,8 @@ function RegisterForm() {
         </div>
 
         {planIntent === "pro" && step === "form" && (
-          <div className="rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-center">
-            <p className="text-sm font-medium text-indigo-800">
+          <div className="rounded-lg bg-accent/5 border border-accent/20 px-4 py-3 text-center">
+            <p className="text-sm font-medium text-accent-dark">
               Start your <span className="font-bold">14-day Pro trial</span> —
               subscribe anytime during or after
             </p>
@@ -540,7 +540,7 @@ function RegisterForm() {
                     className={cn(
                       "h-0.5 w-12 sm:w-16",
                       isCompleted || isCurrent
-                        ? "bg-indigo-400"
+                        ? "bg-accent/60"
                         : "bg-slate-200",
                     )}
                   />
@@ -552,7 +552,7 @@ function RegisterForm() {
                       isCompleted
                         ? "bg-emerald-500 text-white"
                         : isCurrent
-                          ? "bg-indigo-600 text-white ring-4 ring-indigo-100"
+                          ? "bg-accent text-white ring-4 ring-accent/10"
                           : "bg-slate-200 text-slate-500",
                     )}
                   >
@@ -562,7 +562,7 @@ function RegisterForm() {
                     className={cn(
                       "text-xs font-medium",
                       isCurrent
-                        ? "text-indigo-600"
+                        ? "text-accent"
                         : isCompleted
                           ? "text-emerald-600"
                           : "text-slate-400",
@@ -755,7 +755,7 @@ function RegisterForm() {
                     className={cn(
                       "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all",
                       form.data_region === region.code
-                        ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                        ? "border-accent bg-accent/5 shadow-sm"
                         : "border-slate-200 hover:border-slate-300",
                     )}
                   >
@@ -779,7 +779,7 @@ function RegisterForm() {
                       className={cn(
                         "text-xs font-medium",
                         form.data_region === region.code
-                          ? "text-indigo-700"
+                          ? "text-accent-dark"
                           : "text-slate-600",
                       )}
                     >
@@ -810,7 +810,7 @@ function RegisterForm() {
               </p>
               <p className="mt-1 text-xs text-slate-400">
                 You will start with a{" "}
-                <span className="font-semibold text-indigo-600">
+                <span className="font-semibold text-accent">
                   14-day free trial
                 </span>{" "}
                 with full Pro features.
@@ -823,8 +823,8 @@ function RegisterForm() {
         {step === "otp" && (
           <div className="space-y-5">
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
-                <Mail className="h-7 w-7 text-indigo-600" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
+                <Mail className="h-7 w-7 text-accent" />
               </div>
               <p className="mt-4 text-sm text-slate-500">
                 We sent a 6-digit verification code to
@@ -834,7 +834,7 @@ function RegisterForm() {
               {/* Wrong email? Go back — preserves form data */}
               <button
                 onClick={handleBackToForm}
-                className="mt-1 inline-flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-indigo-600"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-accent-dark"
                 type="button"
               >
                 <ArrowLeft className="h-3 w-3" />
@@ -878,7 +878,7 @@ function RegisterForm() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+              className="font-medium text-accent transition-colors hover:text-accent-dark"
             >
               Sign in
             </Link>

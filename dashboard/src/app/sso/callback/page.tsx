@@ -9,7 +9,9 @@ function parseJWTPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const payload = JSON.parse(
+      atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
+    );
     return payload;
   } catch {
     return null;
@@ -51,7 +53,7 @@ export default function SSOCallbackPage() {
           <p className="text-sm text-red-600">{error}</p>
           <a
             href="/login"
-            className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="mt-4 inline-block text-sm font-medium text-accent hover:text-accent-dark"
           >
             Back to login
           </a>
@@ -63,7 +65,7 @@ export default function SSOCallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
         <p className="text-sm text-slate-500">Completing SSO login...</p>
       </div>
     </div>

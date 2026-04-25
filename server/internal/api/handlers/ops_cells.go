@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
-
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -11,22 +10,23 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
-	"github.com/go-chi/chi/v5"
+	"github.com/featuresignals/server/internal/service"
 )
 
 // ─── View Models ──────────────────────────────────────────────────────
 
 // Cell represents a deployment cell (region/zone) in the infrastructure.
 // Each cell runs a full FeatureSignals stack serving a set of tenants.
-// This is a local view model — not persisted in the database.
 type Cell struct {
 	ID            string    `json:"id"`
 	Name          string    `json:"name"`
 	Region        string    `json:"region"`
 	Provider      string    `json:"provider"`
-	Status        string    `json:"status"` // healthy, degraded, down
+	Status        string    `json:"status"`
 	Version       string    `json:"version,omitempty"`
 	TenantCount   int       `json:"tenant_count"`
 	HealthyEnvs   int       `json:"healthy_envs"`
@@ -51,49 +51,52 @@ type CellMetrics struct {
 	CollectedAt time.Time `json:"collected_at"`
 }
 
-// cellStaticData is the single cell definition for MVP.
-var cellStaticData = Cell{
-	ID:            "eu-fsn",
-	Name:          "Frankfurt (Main)",
-	Region:        "eu-central-1",
-	Provider:      "Hetzner",
-	Status:        "healthy",
-	Version:       "5.0.0",
-	TenantCount:   0,
-	HealthyEnvs:   0,
-	TotalEnvs:     0,
-	CPUUsage:      23.5,
-	MemoryUsage:   41.2,
-	DiskUsage:     17.8,
-	LastHeartbeat: time.Now().UTC(),
-	CreatedAt:     time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC),
+// ProvisionCellRequest is the request body for creating a new cell.
+type ProvisionCellRequest struct {
+	Name       string `json:"name"`
+	ServerType string `json:"server_type"`
+	Location   string `json:"location"`
+	UserData   string `json:"user_data,omitempty"`
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────
 
 // OpsCellsHandler serves cell management endpoints for the ops portal.
 type OpsCellsHandler struct {
-	store  domain.Store
-	logger *slog.Logger
+	store            domain.Store
+	provisionService *service.ProvisionService
+	logger           *slog.Logger
 }
 
 // NewOpsCellsHandler creates a new ops cells handler.
-func NewOpsCellsHandler(store domain.Store, logger *slog.Logger) *OpsCellsHandler {
-	return &OpsCellsHandler{store: store, logger: logger}
+func NewOpsCellsHandler(store domain.Store, provisionService *service.ProvisionService, logger *slog.Logger) *OpsCellsHandler {
+	return &OpsCellsHandler{
+		store:            store,
+		provisionService: provisionService,
+		logger:           logger,
+	}
 }
 
 // List handles GET /api/v1/ops/cells
 func (h *OpsCellsHandler) List(w http.ResponseWriter, r *http.Request) {
-	_ = h.logger.With("handler", "ops_cells_list")
+	log := h.logger.With("handler", "ops_cells_list")
 
-	// For MVP, return a single static cell.
-	// In production, cells would be discovered from infrastructure metadata.
-	cell := refreshCellStats(r.Context(), h.store, cellStaticData)
-	cells := []Cell{cell}
+	cells, err := h.provisionService.ListCells(r.Context(), domain.CellFilter{})
+	if err != nil {
+		log.Error("failed to list cells", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list cells")
+		return
+	}
 
+	viewCells := make([]Cell, 0, len(cells))
+	for _, c := range cells {
+		viewCells = append(viewCells, domainCellToView(c))
+	}
+
+	// If no cells exist yet, return an empty list (no mock data).
 	httputil.JSON(w, http.StatusOK, map[string]any{
-		"cells": cells,
-		"total": len(cells),
+		"cells": viewCells,
+		"total": len(viewCells),
 	})
 }
 
@@ -102,15 +105,80 @@ func (h *OpsCellsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log := h.logger.With("handler", "ops_cells_get")
 	id := chi.URLParam(r, "id")
 
-	// For MVP, only one cell exists.
-	if id != "eu-fsn" {
-		log.Warn("cell not found", "cell_id", id)
-		httputil.Error(w, http.StatusNotFound, "cell not found")
+	cell, err := h.provisionService.GetCell(r.Context(), id)
+	if err != nil {
+		if isCellNotFound(err) {
+			log.Warn("cell not found", "cell_id", id)
+			httputil.Error(w, http.StatusNotFound, "cell not found")
+			return
+		}
+		log.Error("failed to get cell", "error", err, "cell_id", id)
+		httputil.Error(w, http.StatusInternalServerError, "failed to get cell")
 		return
 	}
 
-	cell := refreshCellStats(r.Context(), h.store, cellStaticData)
-	httputil.JSON(w, http.StatusOK, cell)
+	viewCell := domainCellToView(cell)
+	viewCell.LastHeartbeat = time.Now().UTC()
+	httputil.JSON(w, http.StatusOK, viewCell)
+}
+
+// Create handles POST /api/v1/ops/cells
+func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_cells_create")
+
+	var req ProvisionCellRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Name == "" {
+		httputil.Error(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if req.ServerType == "" {
+		req.ServerType = "cx22"
+	}
+	if req.Location == "" {
+		req.Location = "fsn1"
+	}
+
+	provReq := service.ProvisionCellRequest{
+		Name:       req.Name,
+		ServerType: req.ServerType,
+		Location:   req.Location,
+		UserData:   req.UserData,
+	}
+
+	cell, err := h.provisionService.ProvisionCell(r.Context(), provReq)
+	if err != nil {
+		log.Error("failed to provision cell", "error", err, "name", req.Name)
+		httputil.Error(w, http.StatusInternalServerError, "failed to provision cell: "+err.Error())
+		return
+	}
+
+	log.Info("cell provisioned", "cell_id", cell.ID, "name", cell.Name)
+	httputil.JSON(w, http.StatusCreated, domainCellToView(cell))
+}
+
+// Delete handles DELETE /api/v1/ops/cells/{id}
+func (h *OpsCellsHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_cells_delete")
+	id := chi.URLParam(r, "id")
+
+	if err := h.provisionService.DeprovisionCell(r.Context(), id); err != nil {
+		if isCellNotFound(err) {
+			log.Warn("cell not found for deletion", "cell_id", id)
+			httputil.Error(w, http.StatusNotFound, "cell not found")
+			return
+		}
+		log.Error("failed to deprovision cell", "error", err, "cell_id", id)
+		httputil.Error(w, http.StatusInternalServerError, "failed to deprovision cell")
+		return
+	}
+
+	log.Info("cell deprovisioned", "cell_id", id)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Metrics handles GET /api/v1/ops/cells/{id}/metrics — SSE streaming endpoint.
@@ -120,8 +188,14 @@ func (h *OpsCellsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	// Verify the cell exists before starting the stream.
-	if id != "eu-fsn" {
-		httputil.Error(w, http.StatusNotFound, "cell not found")
+	cell, err := h.provisionService.GetCell(r.Context(), id)
+	if err != nil {
+		if isCellNotFound(err) {
+			httputil.Error(w, http.StatusNotFound, "cell not found")
+			return
+		}
+		log.Error("failed to get cell for metrics", "error", err, "cell_id", id)
+		httputil.Error(w, http.StatusInternalServerError, "failed to get cell")
 		return
 	}
 
@@ -139,10 +213,10 @@ func (h *OpsCellsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send initial event with the cell info
-	cell := refreshCellStats(r.Context(), h.store, cellStaticData)
+	viewCell := domainCellToView(cell)
 	initialData, _ := json.Marshal(map[string]any{
 		"event": "cell_info",
-		"data":  cell,
+		"data":  viewCell,
 	})
 	fmt.Fprintf(w, "data: %s\n\n", initialData)
 	flusher.Flush()
@@ -153,9 +227,18 @@ func (h *OpsCellsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 
 	// Seed a local random source for isolated metric simulation.
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	baseCPU := 23.5
-	baseMem := 41.2
-	baseDisk := 17.8
+	baseCPU := cell.CPU.Percent
+	if baseCPU == 0 {
+		baseCPU = 23.5
+	}
+	baseMem := cell.Memory.Percent
+	if baseMem == 0 {
+		baseMem = 41.2
+	}
+	baseDisk := cell.Disk.Percent
+	if baseDisk == 0 {
+		baseDisk = 17.8
+	}
 	baseLatency := 0.8
 	baseReqs := 1200.0
 	baseErrs := 0.5
@@ -189,25 +272,52 @@ func (h *OpsCellsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// refreshCellStats populates the tenant/environment counts from the store.
-func refreshCellStats(ctx context.Context, store domain.Store, base Cell) Cell {
-	if store == nil {
-		return base
-	}
-	cell := base
+// ─── Helpers ──────────────────────────────────────────────────────────
 
-	// Try to get live tenant count via TenantRegistry if available.
-	if registry, ok := store.(domain.TenantRegistry); ok {
-		tenants, total, err := registry.List(ctx, domain.TenantFilter{Limit: 1})
-		if err == nil {
-			_ = tenants
-			cell.TenantCount = total
-		}
+// domainCellToView converts a domain.Cell to the handler's Cell view model.
+func domainCellToView(c *domain.Cell) Cell {
+	return Cell{
+		ID:          c.ID,
+		Name:        c.Name,
+		Region:      c.Region,
+		Provider:    c.Provider,
+		Status:      cellStatusToView(c.Status),
+		Version:     c.Version,
+		TenantCount: c.TenantCount,
+		CPUUsage:    c.CPU.Percent,
+		MemoryUsage: c.Memory.Percent,
+		DiskUsage:   c.Disk.Percent,
+		CreatedAt:   c.CreatedAt,
 	}
-
-	cell.LastHeartbeat = time.Now().UTC()
-	return cell
 }
+
+// cellStatusToView maps domain cell status constants to the view model status.
+func cellStatusToView(status string) string {
+	switch status {
+	case domain.CellStatusProvisioning:
+		return "provisioning"
+	case domain.CellStatusRunning:
+		return "healthy"
+	case domain.CellStatusDegraded:
+		return "degraded"
+	case domain.CellStatusDown:
+		return "down"
+	case domain.CellStatusDraining:
+		return "draining"
+	case "failed":
+		return "failed"
+	case "deprovisioning":
+		return "deprovisioning"
+	default:
+		return "unknown"
+	}
+}
+
+// isCellNotFound returns true if the error wraps domain.ErrNotFound.
+func isCellNotFound(err error) bool {
+	return errors.Is(err, domain.ErrNotFound)
+}
+
 
 // generateMetrics creates a metrics snapshot with small random variations.
 func generateMetrics(rng *rand.Rand, iter int, cellID string, baseCPU, baseMem, baseDisk, baseLatency, baseReqs, baseErrs float64, baseConns int) CellMetrics {
@@ -239,3 +349,4 @@ func clamp(v, min, max float64) float64 {
 	}
 	return v
 }
+

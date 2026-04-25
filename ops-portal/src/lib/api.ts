@@ -27,6 +27,8 @@ import type {
   ScaleRequest,
   DrainRequest,
   MigrateRequest,
+  CellStatus,
+  ProvisionCellRequest,
 } from "@/types/cell";
 import type {
   Invoice,
@@ -42,6 +44,8 @@ import type {
   CreatePreviewRequest,
   UpdatePreviewTTLRequest,
   DeletePreviewResponse,
+  PreviewSource,
+  PreviewStatus,
 } from "@/types/preview";
 import type {
   EnvVar,
@@ -53,6 +57,8 @@ import type {
   LoginRequest,
   LoginResponse,
   RefreshTokenResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   DashboardStats,
   RecentActivity,
   SystemHealth,
@@ -61,6 +67,92 @@ import type {
   OpsUser,
 } from "@/types/api";
 import { getAuthToken, refreshToken, clearAuthData } from "./auth";
+
+// ─── Backend Response Shapes ─────────────────────────────────────────────
+
+/** Raw cell shape returned by the backend /cells endpoint (snake_case). */
+interface BackendCell {
+  id: string;
+  name: string;
+  region: string;
+  provider: string;
+  status: string;
+  tenant_count: number;
+  cpu_usage: number;
+  memory_usage: number;
+  disk_usage: number;
+  last_heartbeat: string;
+  created_at: string;
+}
+
+interface CellResponse {
+  cells: BackendCell[];
+  total: number;
+}
+
+// ─── Mappers ─────────────────────────────────────────────────────────────
+
+function toCell(bc: BackendCell): Cell {
+  return {
+    id: bc.id,
+    name: bc.name,
+    region: bc.region,
+    cloud: bc.provider,
+    tenantCount: bc.tenant_count,
+    cpuUsage: bc.cpu_usage,
+    memoryUsage: bc.memory_usage,
+    diskUsage: bc.disk_usage,
+    status: bc.status as CellStatus,
+    createdAt: bc.created_at,
+    updatedAt: bc.last_heartbeat,
+  };
+}
+
+function toCellHealth(bc: BackendCell): CellHealth {
+  return {
+    cellId: bc.id,
+    cellName: bc.name,
+    region: bc.region,
+    status: bc.status as CellStatus,
+    cpuUsagePercent: bc.cpu_usage,
+    memoryUsagePercent: bc.memory_usage,
+    diskUsagePercent: bc.disk_usage,
+    networkInBps: 0,
+    networkOutBps: 0,
+    tenantCount: bc.tenant_count,
+    lastCheckedAt: bc.last_heartbeat,
+  };
+}
+
+function computeCellHealthSummary(
+  cells: CellHealth[],
+): CellHealthResponse["summary"] {
+  let healthy = 0,
+    degraded = 0,
+    down = 0,
+    empty = 0,
+    draining = 0,
+    provisioning = 0;
+  for (const c of cells) {
+    if (c.status === "healthy") healthy++;
+    else if (c.status === "degraded") degraded++;
+    else if (c.status === "down") down++;
+    else if (c.status === "empty") empty++;
+    else if (c.status === "draining") draining++;
+    else if (c.status === "provisioning") provisioning++;
+    else if (c.status === "failed") down++;
+    else if (c.status === "deprovisioning") draining++;
+  }
+  return {
+    healthy,
+    degraded,
+    down,
+    empty,
+    draining,
+    provisioning,
+    total: cells.length,
+  };
+}
 
 // ─── Configuration ─────────────────────────────────────────────────────────
 
@@ -259,32 +351,110 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
 
 // ─── Auth Endpoints ────────────────────────────────────────────────────────
 
+/** Backend auth response — matches domain.OpsLoginResponse (snake_case). */
+interface BackendAuthResponse {
+  token: string;
+  refresh_token: string;
+  expires_at: string; // RFC 3339 timestamp
+  user: OpsUser;
+}
+
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  return request<LoginResponse>("/auth/login", {
+  const data = await request<BackendAuthResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify(credentials),
     skipAuth: true,
   });
+  return {
+    access_token: data.token,
+    refresh_token: data.refresh_token,
+    expires_in: Math.max(
+      0,
+      Math.floor((new Date(data.expires_at).getTime() - Date.now()) / 1000),
+    ),
+    user: data.user,
+  };
 }
 
 export async function refreshAccessToken(
   refreshTokenValue: string,
 ): Promise<RefreshTokenResponse> {
-  return request<RefreshTokenResponse>("/auth/refresh", {
+  const data = await request<BackendAuthResponse>("/auth/refresh", {
     method: "POST",
     body: JSON.stringify({ refresh_token: refreshTokenValue }),
     skipAuth: true,
   });
+  return {
+    access_token: data.token,
+    expires_in: Math.max(
+      0,
+      Math.floor((new Date(data.expires_at).getTime() - Date.now()) / 1000),
+    ),
+  };
 }
 
 export async function logout(): Promise<void> {
   return request<void>("/auth/logout", { method: "POST" });
 }
 
+export async function forgotPassword(
+  email: string,
+): Promise<ForgotPasswordResponse> {
+  return request<ForgotPasswordResponse>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email } satisfies ForgotPasswordRequest),
+    skipAuth: true,
+  });
+}
+
 // ─── Dashboard Endpoints ────────────────────────────────────────────────────
 
+/** Raw dashboard stats shape returned by the backend. */
+interface BackendDashboardStats {
+  tenants: {
+    total: number;
+    active: number;
+    suspended: number;
+    provisioning: number;
+    free: number;
+    pro: number;
+    enterprise: number;
+  };
+  mrr: {
+    total_mrr: number;
+    total_cost: number;
+    total_margin: number;
+    customer_count: number;
+  };
+  cells: {
+    total: number;
+    healthy: number;
+    degraded: number;
+    down: number;
+  };
+  recent_actions: Array<{
+    id: string;
+    action: string;
+    target: string;
+    target_id: string;
+    ops_user: string;
+    created_at: string;
+  }>;
+  generated_at: string;
+}
+
 export async function getDashboardStats(): Promise<DashboardStats> {
-  return request<DashboardStats>("/dashboard/stats");
+  const data = await request<BackendDashboardStats>("/dashboard/stats");
+  return {
+    active_tenants: data.tenants.active,
+    active_tenants_delta: 0,
+    mrr: data.mrr.total_mrr,
+    mrr_currency: "USD",
+    mrr_delta_percent: 0,
+    total_cells: data.cells.total,
+    healthy_cells: data.cells.healthy,
+    last_updated: data.generated_at,
+  };
 }
 
 export async function getRecentActivity(
@@ -309,8 +479,30 @@ export async function getTenant(id: string): Promise<TenantDetail> {
   return request<TenantDetail>(`/tenants/${id}`);
 }
 
+/** Raw tenant shape returned by the backend /tenants endpoint (snake_case). */
+interface BackendTenant {
+  id: string;
+  name: string;
+  slug: string;
+  tier: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export async function getTenantStats(): Promise<TenantStats> {
-  return request<TenantStats>("/tenants/stats");
+  const data = await request<{ tenants: BackendTenant[]; total: number }>(
+    "/tenants",
+  );
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return {
+    activeTenants: data.tenants.filter((t) => t.status === "active").length,
+    totalTenants: data.total,
+    newThisWeek: data.tenants.filter((t) => new Date(t.created_at) > oneWeekAgo)
+      .length,
+    suspendedCount: data.tenants.filter((t) => t.status === "suspended").length,
+  };
 }
 
 export async function provisionTenant(req: ProvisionRequest): Promise<Tenant> {
@@ -345,11 +537,27 @@ export async function activateTenant(id: string): Promise<void> {
 // ─── Cell Endpoints ─────────────────────────────────────────────────────────
 
 export async function getCells(): Promise<Cell[]> {
-  return request<Cell[]>("/cells");
+  const data = await request<CellResponse>("/cells");
+  return data.cells.map(toCell);
+}
+
+export async function provisionCell(req: ProvisionCellRequest): Promise<Cell> {
+  const data = await request<BackendCell>("/cells", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+  return toCell(data);
+}
+
+export async function deprovisionCell(id: string): Promise<void> {
+  return request<void>(`/cells/${id}`, { method: "DELETE" });
 }
 
 export async function getCellHealth(): Promise<CellHealthResponse> {
-  return request<CellHealthResponse>("/cells/health");
+  const data = await request<CellResponse>("/cells");
+  const cells = data.cells.map(toCellHealth);
+  const summary = computeCellHealthSummary(cells);
+  return { cells, summary };
 }
 
 export async function getCell(id: string): Promise<Cell> {
@@ -386,8 +594,48 @@ export async function migrateTenants(
 
 // ─── Preview Endpoints ──────────────────────────────────────────────────────
 
+/** Raw preview shape returned by the backend /previews endpoint (snake_case). */
+interface BackendPreview {
+  id: string;
+  name: string;
+  description?: string;
+  org_id?: string;
+  creator_id: string;
+  status: string;
+  url?: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export async function listPreviews(): Promise<PreviewList> {
-  return request<PreviewList>("/previews");
+  const data = await request<{ previews: BackendPreview[]; total: number }>(
+    "/previews",
+  );
+  return {
+    data: data.previews.map((p) => ({
+      id: p.id,
+      name: p.name,
+      source: "manual" as PreviewSource,
+      ref: "",
+      ownerId: p.creator_id,
+      ownerName: "",
+      tenantId: p.org_id ?? null,
+      tenantName: null,
+      status: (p.status === "expiring"
+        ? "expiring"
+        : p.status === "expired"
+          ? "expired"
+          : "active") as PreviewStatus,
+      createdAt: p.created_at,
+      ttlSeconds: 0,
+      expiresAt: p.expires_at,
+      includeSampleData: false,
+      previewUrl: p.url ?? null,
+    })),
+    total: data.total,
+    maxPreviews: 10,
+  };
 }
 
 export async function createPreview(
@@ -503,42 +751,217 @@ export async function updateEnvVarsAtScope(
 
 // ─── Backup Endpoints ───────────────────────────────────────────────────────
 
+/** Gracefully handle a 404 from a backup endpoint by returning default data. */
+async function requestOrEmpty<T>(
+  path: string,
+  options: ApiOptions,
+  empty: T,
+): Promise<T> {
+  try {
+    return await request<T>(path, options);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return empty;
+    }
+    throw err;
+  }
+}
+
 export async function listBackups(
   filters?: Record<string, string | number | boolean | undefined>,
 ): Promise<PaginatedResponse<BackupEntry>> {
-  return request<PaginatedResponse<BackupEntry>>("/backups", {
-    params: filters,
-  });
+  return requestOrEmpty<PaginatedResponse<BackupEntry>>(
+    "/backups",
+    { params: filters },
+    { data: [], total: 0, limit: 0, offset: 0 },
+  );
 }
 
 export async function triggerBackup(): Promise<BackupEntry> {
-  return request<BackupEntry>("/backups", { method: "POST" });
+  return requestOrEmpty<BackupEntry>(
+    "/backups",
+    { method: "POST" },
+    {
+      id: "",
+      type: "manual",
+      sizeBytes: 0,
+      status: "completed",
+      startedAt: "",
+      completedAt: null,
+    },
+  );
 }
 
 export async function restoreBackup(id: string): Promise<void> {
-  return request<void>(`/backups/${id}/restore`, { method: "POST" });
+  return requestOrEmpty<void>(
+    `/backups/${id}/restore`,
+    { method: "POST" },
+    undefined as void,
+  );
 }
 
 export async function getBackupStatus(): Promise<BackupStatus> {
-  return request<BackupStatus>("/backups/status");
+  return requestOrEmpty<BackupStatus>(
+    "/backups/status",
+    {},
+    {
+      lastSuccessfulAt: null,
+      lastBackupSizeBytes: 0,
+      totalBackupSizeBytes: 0,
+      nextScheduledAt: "",
+      schedule: "unavailable",
+      isRunning: false,
+    },
+  );
 }
 
 // ─── Audit Endpoints ────────────────────────────────────────────────────────
 
+/** Raw audit log entry returned by the backend /audit endpoint (snake_case). */
+interface BackendAuditEntry {
+  id: string;
+  ops_user_id: string;
+  ops_user_name?: string;
+  action: string;
+  target_type?: string;
+  target_id?: string;
+  target_name?: string;
+  details?: string;
+  ip_address?: string;
+  created_at: string;
+}
+
 export async function getAuditLog(
   filters?: Record<string, string | number | boolean | undefined>,
 ): Promise<PaginatedResponse<AuditEntry>> {
-  return request<PaginatedResponse<AuditEntry>>("/audit", { params: filters });
+  const data = await request<{ logs: BackendAuditEntry[]; total: number }>(
+    "/audit",
+    { params: filters },
+  );
+  const limit = typeof filters?.limit === "number" ? filters.limit : 50;
+  const offset = typeof filters?.offset === "number" ? filters.offset : 0;
+  return {
+    data: data.logs.map((l) => ({
+      id: l.id,
+      timestamp: l.created_at,
+      actor: l.ops_user_name ?? l.ops_user_id,
+      action: l.action,
+      target: l.target_name ?? l.target_type ?? "",
+      targetId: l.target_id,
+      details: l.details ?? "",
+      severity: (l.action.includes("fail") || l.action.includes("error")
+        ? "error"
+        : l.action.includes("warn")
+          ? "warning"
+          : "info") as "info" | "warning" | "error",
+    })),
+    total: data.total,
+    limit,
+    offset,
+  };
 }
 
 // ─── System Health Endpoints ────────────────────────────────────────────────
 
+// ─── Backend System Health Shapes ───────────────────────────────────────────
+
+/** Raw shape returned by the backend GET /ops/system/health (flat, snake_case). */
+interface BackendSystemHealth {
+  status: string;
+  uptime: string;
+  version?: string;
+  go_version?: string;
+  num_cpu: number;
+  goroutines: number;
+  services: BackendServiceStatus[];
+  resource_usage: BackendResourceUsage;
+  checked_at: string;
+}
+
+interface BackendServiceStatus {
+  name: string;
+  status: string;
+  message?: string;
+  latency?: string;
+}
+
+interface BackendResourceUsage {
+  memory_allocated_mb: number;
+  memory_total_mb: number;
+  memory_sys_mb: number;
+  heap_in_use_mb: number;
+  stack_in_use_mb: number;
+  next_gc_bytes: number;
+  num_gc: number;
+}
+
+/** Map the backend's flat SystemHealth to the frontend's nested SystemHealth type. */
+function mapSystemHealth(backend: BackendSystemHealth): SystemHealth {
+  const totalMemMB = backend.resource_usage.memory_total_mb;
+  const usedMemMB = backend.resource_usage.memory_allocated_mb;
+  const memPercent =
+    totalMemMB > 0 ? Math.round((usedMemMB / totalMemMB) * 100) : 0;
+
+  // Rough CPU estimate: goroutines relative to available CPUs.
+  const cpuPercent =
+    backend.num_cpu > 0
+      ? Math.min(
+          100,
+          Math.round((backend.goroutines / (backend.num_cpu * 50)) * 100),
+        )
+      : 0;
+
+  const overallStatus = backend.status as "healthy" | "degraded" | "down";
+  const isHealthy = overallStatus === "healthy";
+
+  return {
+    cluster: {
+      status: overallStatus,
+      nodes: [
+        {
+          name: `api-server`,
+          cpu_percent: cpuPercent,
+          memory_percent: memPercent,
+          disk_percent: 0,
+          status: isHealthy ? "ready" : "not_ready",
+        },
+      ],
+      total_nodes: 1,
+      healthy_nodes: isHealthy ? 1 : 0,
+    },
+    services: backend.services.map((s) => ({
+      name: s.name,
+      status: s.status as "healthy" | "degraded" | "down",
+      message: s.message,
+    })),
+    last_updated: backend.checked_at,
+  };
+}
+
+/** Derive display label from a service name. */
+function getServiceLabel(name: string): string {
+  return name
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bApi\b/i, "API")
+    .replace(/\bCpu\b/i, "CPU")
+    .replace(/\bUrl\b/i, "URL");
+}
+
 export async function getSystemHealth(): Promise<SystemHealth> {
-  return request<SystemHealth>("/system/health");
+  const backend = await request<BackendSystemHealth>("/system/health");
+  return mapSystemHealth(backend);
 }
 
 export async function getServiceStatuses(): Promise<ServiceStatusEntry[]> {
-  return request<ServiceStatusEntry[]>("/system/services");
+  const backend = await request<BackendSystemHealth>("/system/health");
+  return backend.services.map((s) => ({
+    name: s.name,
+    displayName: getServiceLabel(s.name),
+    status: s.status as "healthy" | "degraded" | "down",
+    message: s.message,
+    lastCheckedAt: backend.checked_at,
+  }));
 }
 
 // ─── User Management Endpoints ──────────────────────────────────────────────

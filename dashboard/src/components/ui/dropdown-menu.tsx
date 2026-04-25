@@ -38,7 +38,7 @@ const DropdownMenuItem = React.forwardRef<
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       variant === "destructive"
         ? "text-red-600 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700"
-        : "text-slate-700 data-[highlighted]:bg-indigo-50 data-[highlighted]:text-indigo-700",
+        : "text-slate-700 data-[highlighted]:bg-accent/5 data-[highlighted]:text-accent-dark",
       className,
     )}
     {...props}
@@ -64,7 +64,10 @@ const DropdownMenuLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
-    className={cn("px-3 py-1.5 text-xs font-semibold text-slate-400", className)}
+    className={cn(
+      "px-3 py-1.5 text-xs font-semibold text-slate-400",
+      className,
+    )}
     {...props}
   />
 ));

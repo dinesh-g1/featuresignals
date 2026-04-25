@@ -48,6 +48,12 @@ type Config struct {
 	StripePriceID       string
 	StripeMode          string
 
+	// Hetzner Cloud
+	HetznerAPIToken     string
+	HetznerDefaultRegion string
+	HetznerSSHKeyID     int64
+	HetznerNetworkID    int64
+
 	// Deployment mode: "cloud" or "onprem"
 	DeploymentMode string
 
@@ -125,6 +131,11 @@ func Load() *Config {
 		StripePriceID:       os.Getenv("STRIPE_PRICE_ID"),
 		StripeMode:          getEnv("STRIPE_MODE", "test"),
 
+		HetznerAPIToken:      os.Getenv("HETZNER_API_TOKEN"),
+		HetznerDefaultRegion: getEnv("HETZNER_DEFAULT_REGION", "fsn1"),
+		HetznerSSHKeyID:      getEnvInt64("HETZNER_SSH_KEY_ID", 0),
+		HetznerNetworkID:     getEnvInt64("HETZNER_NETWORK_ID", 0),
+
 		DeploymentMode: getEnv("DEPLOYMENT_MODE", "cloud"),
 		EmailProvider:  getEnv("EMAIL_PROVIDER", "zeptomail"),
 
@@ -186,6 +197,15 @@ func getEnv(key, fallback string) string {
 func getEnvInt(key string, fallback int) int {
 	if v := os.Getenv(key); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+	}
+	return fallback
+}
+
+func getEnvInt64(key string, fallback int64) int64 {
+	if v := os.Getenv(key); v != "" {
+		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
 			return i
 		}
 	}

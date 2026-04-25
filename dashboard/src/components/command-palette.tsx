@@ -580,7 +580,7 @@ export function CommandPalette() {
                       onMouseEnter={() => setSelected(idx)}
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
                         selected === idx
-                          ? "bg-indigo-50 text-indigo-900"
+                          ? "bg-accent/5 text-accent-dark"
                           : "text-slate-700 hover:bg-slate-50"
                       }`}
                     >
@@ -603,7 +603,7 @@ export function CommandPalette() {
                         </span>
                       )}
                       {selected === idx && (
-                        <kbd className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
+                        <kbd className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
                           &crarr;
                         </kbd>
                       )}
@@ -651,11 +651,11 @@ export function CommandPaletteButton() {
       aria-label="Open command palette"
       title="Quick actions — navigate, create, search docs"
     >
-      <Command className="h-3.5 w-3.5 transition-colors group-hover:text-indigo-500" />
-      <span className="hidden xl:inline transition-colors group-hover:text-indigo-600">
+      <Command className="h-3.5 w-3.5 transition-colors group-hover:text-accent" />
+      <span className="hidden xl:inline transition-colors group-hover:text-accent-dark">
         Quick actions
       </span>
-      <span className="hidden lg:inline xl:hidden transition-colors group-hover:text-indigo-600">
+      <span className="hidden lg:inline xl:hidden transition-colors group-hover:text-accent-dark">
         Actions
       </span>
       <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">

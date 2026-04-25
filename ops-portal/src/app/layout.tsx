@@ -1,15 +1,17 @@
-import type { Metadata } from 'next';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Topbar } from '@/components/layout/topbar';
-import { Providers } from './providers';
-import './globals.css';
+import type { Metadata } from "next";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Topbar } from "@/components/layout/topbar";
+import { ToastContainer } from "@/components/ui/toast";
+import { Providers } from "./providers";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Ops Portal — FeatureSignals',
-    default: 'Ops Portal — FeatureSignals',
+    template: "%s | Ops Portal — FeatureSignals",
+    default: "Ops Portal — FeatureSignals",
   },
-  description: 'FeatureSignals operations portal for managing tenants, cells, billing, and infrastructure.',
+  description:
+    "FeatureSignals operations portal for managing tenants, cells, billing, and infrastructure.",
 };
 
 export default function RootLayout({
@@ -21,6 +23,7 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-bg-primary antialiased">
         <Providers>
+          <ToastContainer />
           <div className="flex h-screen overflow-hidden">
             {/* Sidebar — hidden on mobile, visible on desktop */}
             <div className="hidden lg:flex">

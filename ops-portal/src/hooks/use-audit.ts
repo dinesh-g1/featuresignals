@@ -8,11 +8,13 @@ import * as api from "@/lib/api";
 export interface UseAuditLogOptions {
   filters?: Record<string, string | number | boolean | undefined>;
   enabled?: boolean;
+  refetchInterval?: number;
 }
 
 export function useAuditLog({
   filters,
   enabled = true,
+  refetchInterval,
 }: UseAuditLogOptions = {}) {
   return useQuery({
     queryKey: ["audit", filters],
@@ -25,5 +27,6 @@ export function useAuditLog({
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
     enabled,
+    refetchInterval,
   });
 }

@@ -11,7 +11,7 @@
  * - Auto-refresh: attempts refresh 5 minutes before expiry
  */
 
-import type { LoginRequest, LoginResponse, OpsUser } from "@/types/api";
+import type { LoginRequest, OpsUser } from "@/types/api";
 
 // ─── Constants ───────────────────────────────────────────────────────────
 
@@ -27,9 +27,18 @@ const AUTH_API = {
   REFRESH: "/auth/refresh",
   LOGOUT: "/auth/logout",
   ME: "/auth/me",
+  FORGOT_PASSWORD: "/auth/forgot-password",
 } as const;
 
 const REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Backend login response shape — matches domain.OpsLoginResponse. */
+interface BackendLoginResponse {
+  token: string;
+  refresh_token: string;
+  expires_at: string; // RFC 3339 timestamp from Go time.Time
+  user: OpsUser;
+}
 
 // ─── Token Helpers (Client-side) ─────────────────────────────────────────
 
@@ -71,15 +80,15 @@ export function getStoredUser(): OpsUser | null {
 }
 
 /** Store auth tokens and user data. */
-export function storeAuthData(response: LoginResponse): void {
+export function storeAuthData(response: BackendLoginResponse): void {
   if (typeof window === "undefined") return;
 
-  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.access_token);
+  localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.token);
   localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh_token);
   localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
   localStorage.setItem(
     STORAGE_KEYS.TOKEN_EXPIRY,
-    String(Date.now() + response.expires_in * 1000),
+    String(new Date(response.expires_at).getTime()),
   );
 }
 
@@ -146,7 +155,7 @@ export async function login(
       };
     }
 
-    const data: LoginResponse = await response.json();
+    const data: BackendLoginResponse = await response.json();
     storeAuthData(data);
 
     return { success: true, user: data.user };
@@ -156,6 +165,51 @@ export async function login(
         ? error.message
         : "Network error. Please check your connection.";
     return { success: false, error: message };
+  }
+}
+
+export interface ForgotPasswordResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Request a password reset link for the given email.
+ * Always returns a success message regardless of whether the email exists
+ * (prevents email enumeration).
+ */
+export async function forgotPassword(
+  email: string,
+): Promise<ForgotPasswordResult> {
+  try {
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}${AUTH_API.FORGOT_PASSWORD}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      // Rate-limited
+      if (response.status === 429) {
+        return {
+          success: false,
+          error: "Too many requests. Please wait before trying again.",
+        };
+      }
+      // All other errors return the same generic message to prevent enumeration
+      return {
+        success: false,
+        error: "Unable to process request. Please try again later.",
+      };
+    }
+
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      error: "A network error occurred. Please check your connection.",
+    };
   }
 }
 
@@ -180,12 +234,16 @@ export async function refreshToken(): Promise<boolean> {
       return false;
     }
 
-    const data = await response.json();
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
+    const data: BackendLoginResponse = await response.json();
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.token);
     localStorage.setItem(
       STORAGE_KEYS.TOKEN_EXPIRY,
-      String(Date.now() + data.expires_in * 1000),
+      String(new Date(data.expires_at).getTime()),
     );
+    // Keep refresh token in sync in case it was rotated
+    if (data.refresh_token) {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refresh_token);
+    }
 
     return true;
   } catch {

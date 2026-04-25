@@ -58,11 +58,11 @@ function ProjectDropdown({
         className={cn(
           "flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200",
           open
-            ? "border-indigo-300 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-400/20"
-            : "border-slate-200 bg-white hover:border-indigo-200 hover:shadow-md",
+            ? "border-accent/30 bg-accent/5 shadow-sm ring-2 ring-accent/20"
+            : "border-slate-200 bg-white hover:border-accent/20 hover:shadow-md",
         )}
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-violet-600 text-white shadow-sm">
           <FolderOpen className="h-4 w-4" />
         </div>
         <div className="min-w-0 text-left">
@@ -96,7 +96,7 @@ function ProjectDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search projects..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-accent/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20"
                 autoFocus
               />
             </div>
@@ -119,7 +119,7 @@ function ProjectDropdown({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                       selectedProject?.id === project.id
-                        ? "bg-indigo-50 text-indigo-700"
+                        ? "bg-accent/5 text-accent-dark"
                         : "hover:bg-slate-50",
                     )}
                   >
@@ -135,7 +135,7 @@ function ProjectDropdown({
                       </p>
                     </div>
                     {selectedProject?.id === project.id && (
-                      <Check className="h-4 w-4 shrink-0 text-indigo-600" />
+                      <Check className="h-4 w-4 shrink-0 text-accent" />
                     )}
                   </button>
                 ))
@@ -149,7 +149,7 @@ function ProjectDropdown({
                   onCreateNew();
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
               >
                 <Plus className="h-4 w-4" />
                 Create new project
@@ -222,8 +222,8 @@ function EnvironmentDropdown({
         className={cn(
           "flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200",
           open
-            ? "border-indigo-300 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-400/20"
-            : "border-slate-200 bg-white hover:border-indigo-200 hover:shadow-md",
+            ? "border-accent/30 bg-accent/5 shadow-sm ring-2 ring-accent/20"
+            : "border-slate-200 bg-white hover:border-accent/20 hover:shadow-md",
         )}
       >
         <div
@@ -267,7 +267,7 @@ function EnvironmentDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search environments..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-accent/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20"
                 autoFocus
               />
             </div>
@@ -283,7 +283,7 @@ function EnvironmentDropdown({
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                   !selectedEnv
-                    ? "bg-indigo-50 text-indigo-700"
+                    ? "bg-accent/5 text-accent-dark"
                     : "hover:bg-slate-50",
                 )}
               >
@@ -299,7 +299,7 @@ function EnvironmentDropdown({
                   </p>
                 </div>
                 {!selectedEnv && (
-                  <Check className="h-4 w-4 shrink-0 text-indigo-600" />
+                  <Check className="h-4 w-4 shrink-0 text-accent" />
                 )}
               </button>
             </div>
@@ -322,7 +322,7 @@ function EnvironmentDropdown({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                       selectedEnv?.id === env.id
-                        ? "bg-indigo-50 text-indigo-700"
+                        ? "bg-accent/5 text-accent-dark"
                         : "hover:bg-slate-50",
                     )}
                   >
@@ -343,7 +343,7 @@ function EnvironmentDropdown({
                       </p>
                     </div>
                     {selectedEnv?.id === env.id && (
-                      <Check className="h-4 w-4 shrink-0 text-indigo-600" />
+                      <Check className="h-4 w-4 shrink-0 text-accent" />
                     )}
                   </button>
                 ))
@@ -357,7 +357,7 @@ function EnvironmentDropdown({
                   onCreateNew();
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
               >
                 <Plus className="h-4 w-4" />
                 Create new environment

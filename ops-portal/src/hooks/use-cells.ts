@@ -1,14 +1,19 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as api from '@/lib/api';
-import type { ScaleRequest, DrainRequest, MigrateRequest } from '@/types/cell';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as api from "@/lib/api";
+import type {
+  ScaleRequest,
+  DrainRequest,
+  MigrateRequest,
+  ProvisionCellRequest,
+} from "@/types/cell";
 
 // ─── List Cells ────────────────────────────────────────────────────────────
 
 export function useCells() {
   return useQuery({
-    queryKey: ['cells'],
+    queryKey: ["cells"],
     queryFn: () => api.getCells(),
     staleTime: 15_000,
     gcTime: 60_000,
@@ -21,7 +26,7 @@ export function useCells() {
 
 export function useCellHealth() {
   return useQuery({
-    queryKey: ['cells', 'health'],
+    queryKey: ["cells", "health"],
     queryFn: () => api.getCellHealth(),
     staleTime: 10_000,
     gcTime: 30_000,
@@ -35,7 +40,7 @@ export function useCellHealth() {
 
 export function useCell(id: string | undefined) {
   return useQuery({
-    queryKey: ['cell', id],
+    queryKey: ["cell", id],
     queryFn: () => api.getCell(id!),
     enabled: !!id,
     staleTime: 10_000,
@@ -48,7 +53,7 @@ export function useCell(id: string | undefined) {
 
 export function useCellMetrics(id: string | undefined) {
   return useQuery({
-    queryKey: ['cell', id, 'metrics'],
+    queryKey: ["cell", id, "metrics"],
     queryFn: () => api.getCellMetrics(id!),
     enabled: !!id,
     staleTime: 5_000,
@@ -67,9 +72,9 @@ export function useScaleCell() {
     mutationFn: ({ id, req }: { id: string; req: ScaleRequest }) =>
       api.scaleCell(id, req),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cell', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['cells'] });
-      queryClient.invalidateQueries({ queryKey: ['cells', 'health'] });
+      queryClient.invalidateQueries({ queryKey: ["cell", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["cells"] });
+      queryClient.invalidateQueries({ queryKey: ["cells", "health"] });
     },
   });
 }
@@ -83,9 +88,9 @@ export function useDrainCell() {
     mutationFn: ({ id, req }: { id: string; req: DrainRequest }) =>
       api.drainCell(id, req),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cell', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['cells'] });
-      queryClient.invalidateQueries({ queryKey: ['cells', 'health'] });
+      queryClient.invalidateQueries({ queryKey: ["cell", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["cells"] });
+      queryClient.invalidateQueries({ queryKey: ["cells", "health"] });
     },
   });
 }
@@ -99,9 +104,37 @@ export function useMigrateTenants() {
     mutationFn: ({ id, req }: { id: string; req: MigrateRequest }) =>
       api.migrateTenants(id, req),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cells'] });
-      queryClient.invalidateQueries({ queryKey: ['cells', 'health'] });
-      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ["cells"] });
+      queryClient.invalidateQueries({ queryKey: ["cells", "health"] });
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+    },
+  });
+}
+
+// ─── Provision Cell ─────────────────────────────────────────────────────────
+
+export function useProvisionCell() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (req: ProvisionCellRequest) => api.provisionCell(req),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cells"] });
+      queryClient.invalidateQueries({ queryKey: ["cells", "health"] });
+    },
+  });
+}
+
+// ─── Deprovision Cell ──────────────────────────────────────────────────────
+
+export function useDeprovisionCell() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.deprovisionCell(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cells"] });
+      queryClient.invalidateQueries({ queryKey: ["cells", "health"] });
     },
   });
 }

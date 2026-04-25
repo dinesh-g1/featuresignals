@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useLayoutEffect } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 
@@ -201,7 +207,7 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
       {/* Spotlight border */}
       {hasTarget && (
         <div
-          className="pointer-events-none absolute rounded-lg ring-2 ring-indigo-400 ring-offset-2 transition-all duration-300"
+          className="pointer-events-none absolute rounded-lg ring-2 ring-accent ring-offset-2 transition-all duration-300"
           style={{
             top: targetRect.top,
             left: targetRect.left,
@@ -222,9 +228,7 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
         style={hasTarget ? tooltipPos : undefined}
       >
         <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900">
-            {step.title}
-          </h3>
+          <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
           <span className="text-xs text-slate-400">
             {currentStep + 1} of {TOUR_STEPS.length}
           </span>
@@ -240,9 +244,9 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
               key={i}
               className={`h-1.5 rounded-full transition-all ${
                 i === currentStep
-                  ? "w-6 bg-indigo-600"
+                  ? "w-6 bg-accent"
                   : i < currentStep
-                    ? "w-1.5 bg-indigo-300"
+                    ? "w-1.5 bg-accent/40"
                     : "w-1.5 bg-slate-200"
               }`}
             />
@@ -267,7 +271,7 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
             )}
             <button
               onClick={handleNext}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-indigo-700"
+              className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-accent-dark"
             >
               {isLast ? "Finish" : "Next"}
             </button>

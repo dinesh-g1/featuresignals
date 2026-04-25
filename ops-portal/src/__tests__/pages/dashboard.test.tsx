@@ -24,19 +24,19 @@ describe('Dashboard Page', () => {
 
   it('renders stat cards with correct values', async () => {
     (getDashboardStats as any).mockResolvedValueOnce({
-      tenants: { total: 42, active: 40, new_this_week: 3 },
-      cells: { total: 3, healthy: 3, degraded: 0, down: 0 },
+      active_tenants: 42,
+      active_tenants_delta: 3,
+      mrr: 1847,
+      mrr_currency: 'USD',
+      mrr_delta_percent: 2.5,
+      total_cells: 3,
+      healthy_cells: 3,
+      last_updated: new Date().toISOString(),
     });
     (getMRR as any).mockResolvedValueOnce({ total_mrr: 1847, avg_revenue: 44, churn_rate: 2.4 });
     (getCellHealth as any).mockResolvedValueOnce({
-      total: 3,
-      healthy: 3,
-      degraded: 0,
-      down: 0,
-      services: [
-        { name: 'API Server', status: 'healthy' },
-        { name: 'PostgreSQL', status: 'healthy' },
-      ],
+      cells: [],
+      summary: { healthy: 3, degraded: 0, down: 0, empty: 0, draining: 0, total: 3 },
     });
 
     render(<DashboardPage />);
@@ -44,17 +44,25 @@ describe('Dashboard Page', () => {
     await waitFor(() => {
       expect(screen.getByText(/42/)).toBeDefined();
     });
-    expect(screen.getByText(/40 active/i)).toBeDefined();
+    // Delta value for active tenants should be rendered
+    expect(screen.getByText(/3/)).toBeDefined();
   });
 
   it('shows MRR value', async () => {
     (getDashboardStats as any).mockResolvedValueOnce({
-      tenants: { total: 10, active: 9, new_this_week: 1 },
-      cells: { total: 1, healthy: 1, degraded: 0, down: 0 },
+      active_tenants: 9,
+      active_tenants_delta: 1,
+      mrr: 1847,
+      mrr_currency: 'USD',
+      mrr_delta_percent: 0,
+      total_cells: 1,
+      healthy_cells: 1,
+      last_updated: new Date().toISOString(),
     });
     (getMRR as any).mockResolvedValueOnce({ total_mrr: 1847, avg_revenue: 44, churn_rate: 2.4 });
     (getCellHealth as any).mockResolvedValueOnce({
-      total: 1, healthy: 1, degraded: 0, down: 0, services: [],
+      cells: [],
+      summary: { healthy: 1, degraded: 0, down: 0, empty: 0, draining: 0, total: 1 },
     });
 
     render(<DashboardPage />);
@@ -90,12 +98,19 @@ describe('Dashboard Page', () => {
 
   it('displays partial data when some APIs fail', async () => {
     (getDashboardStats as any).mockResolvedValueOnce({
-      tenants: { total: 42, active: 40, new_this_week: 3 },
-      cells: { total: 3, healthy: 3, degraded: 0, down: 0 },
+      active_tenants: 42,
+      active_tenants_delta: 3,
+      mrr: 1847,
+      mrr_currency: 'USD',
+      mrr_delta_percent: 0,
+      total_cells: 3,
+      healthy_cells: 3,
+      last_updated: new Date().toISOString(),
     });
     (getMRR as any).mockRejectedValueOnce(new Error('Billing down'));
     (getCellHealth as any).mockResolvedValueOnce({
-      total: 3, healthy: 3, degraded: 0, down: 0, services: [],
+      cells: [],
+      summary: { healthy: 3, degraded: 0, down: 0, empty: 0, draining: 0, total: 3 },
     });
 
     render(<DashboardPage />);
@@ -119,4 +134,4 @@ describe('Dashboard Page', () => {
       expect(retryButtons.length).toBeGreaterThan(0);
     });
   });
-}
+});

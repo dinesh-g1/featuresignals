@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const spinnerVariants = cva(
-  "animate-spin rounded-full border-2 border-indigo-600 border-t-transparent",
+  "animate-spin rounded-full border-2 border-accent/20 border-t-accent",
   {
     variants: {
       size: {
@@ -28,7 +28,11 @@ export function LoadingSpinner({
   fullPage = false,
 }: LoadingSpinnerProps) {
   const spinner = (
-    <div role="status" aria-label="Loading" className={cn(spinnerVariants({ size }), className)} />
+    <div
+      role="status"
+      aria-label="Loading"
+      className={cn(spinnerVariants({ size }), className)}
+    />
   );
 
   if (fullPage) {

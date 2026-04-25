@@ -353,6 +353,11 @@ func (noopStore) InsertStatusChecks(context.Context, []domain.StatusCheck) error
 func (noopStore) GetComponentHistory(context.Context, int) ([]domain.DailyComponentStatus, error) {
 	return nil, nil
 }
+func (noopStore) GetCell(_ context.Context, _ string) (*domain.Cell, error) { return nil, nil }
+func (noopStore) ListCells(_ context.Context, _ domain.CellFilter) ([]*domain.Cell, error) { return nil, nil }
+func (noopStore) CreateCell(_ context.Context, _ *domain.Cell) error { return nil }
+func (noopStore) UpdateCell(_ context.Context, _ *domain.Cell) error { return nil }
+func (noopStore) DeleteCell(_ context.Context, _ string) error { return nil }
 
 type noopOTPEmail struct{}
 

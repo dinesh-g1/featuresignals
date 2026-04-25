@@ -57,6 +57,16 @@ export interface RefreshTokenResponse {
   expires_in: number;
 }
 
+// ─── Forgot Password ──────────────────────────────────────────────────────
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export type ForgotPasswordResponse = {
+  message: string;
+};
+
 export interface OpsUser {
   id: string;
   email: string;
@@ -66,7 +76,7 @@ export interface OpsUser {
   created_at: string;
 }
 
-export type OpsUserRole = 'admin' | 'support' | 'billing' | 'read-only';
+export type OpsUserRole = "admin" | "support" | "billing" | "read-only";
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
 
@@ -83,9 +93,14 @@ export interface DashboardStats {
 
 export interface RecentActivity {
   id: string;
-  type: 'cell.provisioned' | 'preview.created' | 'billing.failed' | 'backup.complete' | 'preview.expired';
+  type:
+    | "cell.provisioned"
+    | "preview.created"
+    | "billing.failed"
+    | "backup.complete"
+    | "preview.expired";
   summary: string;
-  severity: 'info' | 'success' | 'warning' | 'error';
+  severity: "info" | "success" | "warning" | "error";
   timestamp: string;
   metadata?: Record<string, unknown>;
 }
@@ -96,7 +111,7 @@ export type ActivityResponse = RecentActivity[];
 
 export interface SystemHealth {
   cluster: {
-    status: 'healthy' | 'degraded' | 'down';
+    status: "healthy" | "degraded" | "down";
     nodes: NodeStatus[];
     total_nodes: number;
     healthy_nodes: number;
@@ -110,12 +125,12 @@ export interface NodeStatus {
   cpu_percent: number;
   memory_percent: number;
   disk_percent: number;
-  status: 'ready' | 'not_ready' | 'unknown';
+  status: "ready" | "not_ready" | "unknown";
 }
 
 export interface ServiceStatus {
   name: string;
-  status: 'healthy' | 'degraded' | 'down';
+  status: "healthy" | "degraded" | "down";
   message?: string;
 }
 
@@ -129,7 +144,7 @@ export interface TenantFilters {
   page?: number;
   limit?: number;
   sort_by?: string;
-  sort_order?: 'asc' | 'desc';
+  sort_order?: "asc" | "desc";
 }
 
 export interface AuditFilters {
@@ -152,7 +167,12 @@ export interface BackupFilters {
 // ─── WebSocket / SSE ──────────────────────────────────────────────────────
 
 export interface SSEMessage {
-  type: 'cell.health' | 'preview.created' | 'preview.deleted' | 'backup.complete' | 'billing.failed';
+  type:
+    | "cell.health"
+    | "preview.created"
+    | "preview.deleted"
+    | "backup.complete"
+    | "billing.failed";
   payload: Record<string, unknown>;
   timestamp: string;
 }
@@ -161,12 +181,12 @@ export interface SSEMessage {
 
 export interface SortConfig {
   key: string;
-  direction: 'asc' | 'desc';
+  direction: "asc" | "desc";
 }
 
 // ─── Health Status ────────────────────────────────────────────────────────
 
-export type HealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
+export type HealthStatus = "healthy" | "degraded" | "down" | "unknown";
 
 export interface HealthSummary {
   status: HealthStatus;

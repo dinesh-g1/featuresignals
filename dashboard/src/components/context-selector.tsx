@@ -276,7 +276,7 @@ function Combobox({
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
                       item.value === value
-                        ? "bg-indigo-50 text-indigo-700"
+                        ? "bg-accent/5 text-accent-dark"
                         : "text-slate-700 hover:bg-slate-50",
                     )}
                     role="option"
@@ -285,7 +285,7 @@ function Combobox({
                     <Clock className="h-3 w-3 shrink-0 text-slate-400" />
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.value === value && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                     )}
                   </button>
                 ))}
@@ -316,7 +316,7 @@ function Combobox({
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
                       highlighted === globalIdx
-                        ? "bg-indigo-50 text-indigo-700"
+                        ? "bg-accent/5 text-accent-dark"
                         : item.value === value
                           ? "bg-slate-50 text-slate-900"
                           : "text-slate-700 hover:bg-slate-50",
@@ -326,7 +326,7 @@ function Combobox({
                   >
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.value === value && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                     )}
                   </button>
                 );
@@ -468,7 +468,7 @@ export function ContextSelector() {
           {projects.length === 0 ? (
             <button
               onClick={() => setProjectDialogOpen(true)}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
             >
               <Plus className="h-4 w-4" />
               Create Project
@@ -497,7 +497,7 @@ export function ContextSelector() {
             {envs.length === 0 ? (
               <button
                 onClick={() => setEnvDialogOpen(true)}
-                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
               >
                 <Plus className="h-4 w-4" />
                 Create Environment

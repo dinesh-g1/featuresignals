@@ -341,5 +341,7 @@ type Store interface {
 	OpsStore
 	IntegrationStore
 	OpsPortalStore
+	CellStore
+
 
 }

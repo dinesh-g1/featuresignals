@@ -12,7 +12,15 @@ export interface Cell {
   updatedAt: string;
 }
 
-export type CellStatus = "healthy" | "degraded" | "down" | "empty" | "draining";
+export type CellStatus =
+  | "healthy"
+  | "degraded"
+  | "down"
+  | "empty"
+  | "draining"
+  | "provisioning"
+  | "failed"
+  | "deprovisioning";
 
 export interface CellHealth {
   cellId: string;
@@ -74,6 +82,7 @@ export interface CellHealthResponse {
     down: number;
     empty: number;
     draining: number;
+    provisioning: number;
     total: number;
   };
 }
@@ -94,4 +103,30 @@ export interface MigrateRequest {
   tenantIds: string[];
   targetCellId: string;
   reason: string;
+}
+
+// ─── Provisioning Types ────────────────────────────────────────────────────
+
+export interface ProvisionCellRequest {
+  name: string;
+  server_type: string;
+  location: string;
+  user_data?: string;
+}
+
+export interface ProvisionCellResponse {
+  id: string;
+  name: string;
+  region: string;
+  provider: string;
+  status: CellStatus;
+  version: string;
+  tenant_count: number;
+  healthy_envs: number;
+  total_envs: number;
+  cpu_usage: number;
+  memory_usage: number;
+  disk_usage: number;
+  last_heartbeat: string;
+  created_at: string;
 }

@@ -12,11 +12,9 @@ import {
   Button,
   Input,
   Label,
-  Badge,
   CategoryBadge,
   StatusBadge,
-  EmptyState,
-  LoadingSpinner,
+  Skeleton,
   Textarea,
   Switch,
   Tabs,
@@ -26,13 +24,12 @@ import {
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { toast } from "@/components/toast";
-import { ArrowLeft, Clock, X } from "lucide-react";
+import { ArrowLeft, AlertTriangle, X } from "lucide-react";
 import type {
   Flag,
   FlagState,
   Environment,
   Segment,
-  AuditEntry,
   TargetingRule,
 } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
@@ -52,7 +49,7 @@ export default function FlagDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [audit, setAudit] = useState<AuditEntry[]>([]);
+
   const [segments, setSegments] = useState<{ key: string; name: string }[]>([]);
   const [showPromote, setShowPromote] = useState(false);
   const [promoteTarget, setPromoteTarget] = useState("");
@@ -73,36 +70,49 @@ export default function FlagDetailPage() {
     mutexGroup: string | null;
     dependentFlags: string[];
   } | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !projectId) return;
-    api
-      .getFlag(token, projectId, flagKey)
-      .then((f) => {
-        if (!f) return;
+    setFetching(true);
+    setFetchError(null);
+
+    Promise.all([
+      api.getFlag(token, projectId, flagKey).then((f) => {
+        if (!f) throw new Error("Flag not found");
         setFlag(f);
         setEditForm({ name: f.name ?? "", description: f.description || "" });
         setPrereqs(f.prerequisites || []);
         setMutexGroup(f.mutual_exclusion_group || "");
-      })
-      .catch(() => {});
-    api
-      .listFlags(token, projectId)
-      .then((f) => setAllFlags(f ?? []))
-      .catch(() => {});
-    api.listEnvironments(token, projectId).then((e) => {
-      const list = e ?? [];
-      setEnvs(list);
-      if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
-    });
-    api
-      .listSegments(token, projectId)
-      .then((s) => {
-        setSegments(
-          (s ?? []).map((seg: Segment) => ({ key: seg.key, name: seg.name })),
+      }),
+      api
+        .listFlags(token, projectId)
+        .then((f) => setAllFlags(f ?? []))
+        .catch(() => {}),
+      api
+        .listEnvironments(token, projectId)
+        .then((e) => {
+          const list = e ?? [];
+          setEnvs(list);
+          if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
+        })
+        .catch(() => {}),
+      api
+        .listSegments(token, projectId)
+        .then((s) => {
+          setSegments(
+            (s ?? []).map((seg: Segment) => ({ key: seg.key, name: seg.name })),
+          );
+        })
+        .catch(() => {}),
+    ])
+      .catch((err) => {
+        setFetchError(
+          err instanceof Error ? err.message : "Failed to load flag",
         );
       })
-      .catch(() => {});
+      .finally(() => setFetching(false));
   }, [token, projectId, flagKey, selectedEnv]);
 
   useEffect(() => {
@@ -112,20 +122,6 @@ export default function FlagDetailPage() {
       .then(setState)
       .catch(() => {});
   }, [token, projectId, flagKey, selectedEnv]);
-
-  useEffect(() => {
-    if (!token || tab !== "history") return;
-    api
-      .listAudit(token, 50)
-      .then((a) => {
-        const filtered = (a ?? []).filter(
-          (e: AuditEntry) =>
-            e.resource_type === "flag" && e.resource_id === flag?.id,
-        );
-        setAudit(filtered);
-      })
-      .catch(() => {});
-  }, [token, tab, flag?.id]);
 
   // Fetch flag states for all environments
   useEffect(() => {
@@ -294,8 +290,53 @@ export default function FlagDetailPage() {
         .then(setFlag);
   }
 
-  if (!flag) {
-    return <LoadingSpinner fullPage />;
+  // Loading state
+  if (fetching) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded-lg" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error / not-found state
+  if (fetchError || !flag) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center max-w-md">
+          <AlertTriangle
+            className="h-8 w-8 text-red-400 mx-auto mb-3"
+            strokeWidth={1.5}
+          />
+          <h2 className="text-lg font-bold text-red-800 mb-1">
+            Flag not found
+          </h2>
+          <p className="text-sm text-red-600 mb-4">
+            {fetchError ||
+              `The flag "${flagKey}" does not exist or has been deleted.`}
+          </p>
+          <Button variant="secondary" onClick={() => router.push("/flags")}>
+            Back to Flags
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const envColors: Record<string, string> = {};

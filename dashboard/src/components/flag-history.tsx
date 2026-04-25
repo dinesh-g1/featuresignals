@@ -269,7 +269,7 @@ export function FlagHistory({
                     <button
                       type="button"
                       onClick={() => toggleDiff(v.version)}
-                      className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-indigo-600"
+                      className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-accent"
                       aria-expanded={expanded}
                       aria-label={`Version ${v.version}`}
                     >

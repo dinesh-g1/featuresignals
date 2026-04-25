@@ -142,7 +142,7 @@ export function PrerequisiteGate({
           <div
             className={`rounded-2xl border p-6 transition-all ${
               !state.hasProjects
-                ? "border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white shadow-lg shadow-indigo-500/5"
+                ? "border-accent/20 bg-gradient-to-br from-accent/5 to-white shadow-lg shadow-accent/10"
                 : "border-slate-200 bg-white"
             }`}
           >
@@ -151,7 +151,7 @@ export function PrerequisiteGate({
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                   state.hasProjects
                     ? "bg-emerald-100 text-emerald-600"
-                    : "bg-indigo-100 text-indigo-600"
+                    : "bg-accent/10 text-accent"
                 }`}
               >
                 {state.hasProjects ? (
@@ -199,7 +199,7 @@ export function PrerequisiteGate({
           <div
             className={`rounded-2xl border p-6 transition-all ${
               state.hasProjects && !state.hasEnvironments
-                ? "border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white shadow-lg shadow-indigo-500/5"
+                ? "border-accent/20 bg-gradient-to-br from-accent/5 to-white shadow-lg shadow-accent/10"
                 : state.hasEnvironments
                   ? "border-slate-200 bg-white"
                   : "border-slate-200 bg-slate-50/50 opacity-50"
@@ -211,7 +211,7 @@ export function PrerequisiteGate({
                   state.hasEnvironments
                     ? "bg-emerald-100 text-emerald-600"
                     : state.hasProjects
-                      ? "bg-indigo-100 text-indigo-600"
+                      ? "bg-accent/10 text-accent"
                       : "bg-slate-200 text-slate-400"
                 }`}
               >
@@ -272,8 +272,8 @@ export function PrerequisiteGate({
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-slate-500">
-                    You're all set! Navigate to the Flags page to create your
-                    first feature flag.
+                    You&apos;re all set! Navigate to the Flags page to create
+                    your first feature flag.
                   </p>
                 </div>
               </div>

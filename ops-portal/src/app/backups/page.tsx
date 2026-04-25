@@ -153,6 +153,7 @@ export default function BackupsPage() {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [restoreBackupId, setRestoreBackupId] = useState<string | null>(null);
   const [restoreReason, setRestoreReason] = useState("");
+  const [restoreConfirmText, setRestoreConfirmText] = useState("");
   const [selectedBackupForRestore, setSelectedBackupForRestore] =
     useState<BackupEntry | null>(null);
 
@@ -231,6 +232,7 @@ export default function BackupsPage() {
       setSelectedBackupForRestore(null);
       setRestoreBackupId(null);
       setRestoreReason("");
+      setRestoreConfirmText("");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to initiate restore";
@@ -705,6 +707,7 @@ export default function BackupsPage() {
             setShowRestoreModal(false);
             setSelectedBackupForRestore(null);
             setRestoreReason("");
+            setRestoreConfirmText("");
           }
         }}
         title="Restore from Backup"
@@ -717,6 +720,7 @@ export default function BackupsPage() {
         onConfirm={handleRestoreConfirm}
         loading={restoreMutation.isPending}
         destructive
+        confirmDisabled={restoreConfirmText !== "restore"}
         size="md"
       >
         <div className="space-y-4">
@@ -781,6 +785,25 @@ export default function BackupsPage() {
             helperText="This will be logged in the audit trail."
             required
           />
+
+          {/* Confirmation input */}
+          <div>
+            <label
+              htmlFor="restore-confirm"
+              className="block text-sm font-medium text-text-secondary mb-1.5"
+            >
+              Type <span className="font-mono">restore</span> to confirm
+            </label>
+            <Input
+              id="restore-confirm"
+              placeholder="Type 'restore' to confirm"
+              value={restoreConfirmText}
+              onChange={(e) => setRestoreConfirmText(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              className="font-mono text-sm"
+            />
+          </div>
         </div>
       </Modal>
     </div>

@@ -22,6 +22,8 @@ import (
 	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
 	"github.com/featuresignals/server/internal/pricing"
+	"github.com/featuresignals/server/internal/provision/hetzner"
+	"github.com/featuresignals/server/internal/service"
 	"github.com/featuresignals/server/internal/status"
 )
 
@@ -486,7 +488,26 @@ func NewRouter(
 	opsH := handlers.NewOpsHandler(store, lifecycle)
 	opsAuthH := handlers.NewOpsAuthHandler(store, jwtMgr, logger)
 	opsTenantsH := handlers.NewOpsTenantsHandler(store, logger)
-	opsCellsH := handlers.NewOpsCellsHandler(store, logger)
+	// Initialize Hetzner provisioner and provision service (if API token is configured)
+	var provisionSvc *service.ProvisionService
+	if cfg.HetznerAPIToken != "" {
+		hetznerCfg := hetzner.Config{
+			APIToken:  cfg.HetznerAPIToken,
+			Region:    cfg.HetznerDefaultRegion,
+			SSHKeyID:  cfg.HetznerSSHKeyID,
+			NetworkID: cfg.HetznerNetworkID,
+		}
+		hetznerProvisioner := hetzner.NewProvisioner(hetznerCfg, logger)
+		provisionSvc = service.NewProvisionService(hetznerProvisioner, store, logger)
+		logger.Info("Hetzner provisioner initialized",
+			"region", cfg.HetznerDefaultRegion,
+			"ssh_key_id", cfg.HetznerSSHKeyID,
+			"network_id", cfg.HetznerNetworkID,
+		)
+	} else {
+		logger.Warn("HETZNER_API_TOKEN not set — cell provisioning will be unavailable")
+	}
+	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, logger)
 	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
 	opsSystemH := handlers.NewOpsSystemHandler(store, logger)
 	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
@@ -513,7 +534,9 @@ func NewRouter(
 
 		// ── Cells ──────────────────────────────────────────────
 		r.Get("/cells", opsCellsH.List)
+		r.Post("/cells", opsCellsH.Create)
 		r.Get("/cells/{id}", opsCellsH.Get)
+		r.Delete("/cells/{id}", opsCellsH.Delete)
 		r.Get("/cells/{id}/metrics", opsCellsH.Metrics)
 
 		// ── Previews ───────────────────────────────────────────

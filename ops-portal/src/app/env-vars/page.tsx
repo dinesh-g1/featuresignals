@@ -194,6 +194,7 @@ export default function EnvVarsPage() {
       setEditingVar(null);
       setEditKey("");
       setEditValue("");
+      setConfirmOpen(false);
     } catch (err) {
       const message =
         err instanceof Error
@@ -201,7 +202,15 @@ export default function EnvVarsPage() {
           : "Failed to update environment variable";
       toast.error("Update failed", message);
     }
-  }, [editingVar, selectedCellId, editKey, editValue, updateMutation, toast]);
+  }, [
+    editingVar,
+    selectedCellId,
+    editKey,
+    editValue,
+    updateMutation,
+    toast,
+    setConfirmOpen,
+  ]);
 
   const handleEditModalClose = useCallback((open: boolean) => {
     if (!open) {

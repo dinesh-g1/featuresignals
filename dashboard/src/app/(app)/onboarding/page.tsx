@@ -436,7 +436,7 @@ function OnboardingContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
       </div>
     );
   }
@@ -446,13 +446,13 @@ function OnboardingContent() {
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
       <div className="text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/5 px-4 py-1.5 text-xs font-medium text-accent-dark ring-1 ring-accent/10">
           <Sparkles className="h-3.5 w-3.5" />
           AI-Powered Feature Management
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           Welcome{greeting} to{" "}
-          <span className="text-indigo-600">FeatureSignals</span>
+          <span className="text-accent">FeatureSignals</span>
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           Your workspace is ready. Let&apos;s get your first flag live in under
@@ -461,14 +461,14 @@ function OnboardingContent() {
       </div>
 
       {hasPlanIntent && (
-        <div className="rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 px-4 py-3 text-center">
-          <p className="text-sm text-indigo-800">
+        <div className="rounded-lg bg-gradient-to-r from-accent/5 to-purple-50 border border-accent/20 px-4 py-3 text-center">
+          <p className="text-sm text-accent-dark">
             Your <span className="font-bold">Pro trial</span> is active.
             Complete onboarding, then subscribe to keep all Pro features.
           </p>
           <Link
             href="/settings/billing"
-            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-dark"
           >
             Subscribe now <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -490,7 +490,7 @@ function OnboardingContent() {
                     done
                       ? "bg-emerald-500 text-white shadow-sm"
                       : active
-                        ? "bg-indigo-600 text-white shadow-md ring-4 ring-indigo-100"
+                        ? "bg-accent text-white shadow-md ring-4 ring-accent/10"
                         : "bg-slate-200 text-slate-500",
                   )}
                 >
@@ -500,7 +500,7 @@ function OnboardingContent() {
                   className={cn(
                     "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium whitespace-nowrap",
                     active
-                      ? "text-indigo-700"
+                      ? "text-accent-dark"
                       : done
                         ? "text-emerald-700"
                         : "text-slate-400",
@@ -581,7 +581,7 @@ function OnboardingContent() {
         </button>
         <Link
           href="/settings/billing"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-500 transition-colors hover:text-indigo-700"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent-dark"
         >
           View plans & pricing <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -595,7 +595,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
         </div>
       }
     >
@@ -669,14 +669,14 @@ function StepProjectSetup({
                 className={cn(
                   "flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all",
                   selectedId === p.id
-                    ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
+                    ? "border-accent bg-accent/5 ring-2 ring-accent/20"
                     : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
                 )}
               >
                 <FolderOpen
                   className={cn(
                     "h-5 w-5",
-                    selectedId === p.id ? "text-indigo-600" : "text-slate-400",
+                    selectedId === p.id ? "text-accent" : "text-slate-400",
                   )}
                 />
                 <div>
@@ -684,7 +684,7 @@ function StepProjectSetup({
                     className={cn(
                       "text-sm font-medium",
                       selectedId === p.id
-                        ? "text-indigo-900"
+                        ? "text-accent-dark"
                         : "text-slate-700",
                     )}
                   >
@@ -812,7 +812,7 @@ function StepEnvSetup({
                 className={cn(
                   "flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all",
                   selectedId === env.id
-                    ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200"
+                    ? "border-accent bg-accent/5 ring-2 ring-accent/20"
                     : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
                 )}
               >
@@ -822,7 +822,7 @@ function StepEnvSetup({
                     className={cn(
                       "text-sm font-medium",
                       selectedId === env.id
-                        ? "text-indigo-900"
+                        ? "text-accent-dark"
                         : "text-slate-700",
                     )}
                   >
@@ -1015,9 +1015,9 @@ function StepInstallSdk({
       </p>
 
       {apiKey && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2">
-          <Key className="h-4 w-4 shrink-0 text-indigo-500" />
-          <span className="text-xs font-medium text-indigo-700">
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-accent/10 bg-accent/5 px-3 py-2">
+          <Key className="h-4 w-4 shrink-0 text-accent" />
+          <span className="text-xs font-medium text-accent-dark">
             Your API key is pre-filled in the snippets below
           </span>
         </div>
@@ -1031,7 +1031,7 @@ function StepInstallSdk({
             className={cn(
               "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               selectedSdk === tab.id
-                ? "bg-indigo-600 text-white"
+                ? "bg-accent text-white"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200",
             )}
           >
@@ -1048,7 +1048,7 @@ function StepInstallSdk({
             </span>
             <button
               onClick={() => copyText(SDK_INSTALL[selectedSdk], "install")}
-              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-dark"
             >
               {copied === "install" ? (
                 <>
@@ -1073,7 +1073,7 @@ function StepInstallSdk({
             </span>
             <button
               onClick={() => copyText(snippet, "snippet")}
-              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-dark"
             >
               {copied === "snippet" ? (
                 <>
@@ -1113,8 +1113,8 @@ function StepInstallSdk({
 function StepComplete({ onFinish }: { onFinish: () => void }) {
   return (
     <div className="text-center py-8">
-      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100">
-        <Sparkles className="h-10 w-10 text-indigo-600" />
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-purple-100">
+        <Sparkles className="h-10 w-10 text-accent" />
       </div>
 
       <h2 className="mt-6 text-2xl font-bold text-slate-900">

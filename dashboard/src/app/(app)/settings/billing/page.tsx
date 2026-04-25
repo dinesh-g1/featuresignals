@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Skeleton, SettingsPageSkeleton } from "@/components/ui/skeleton";
 import {
   Check,
   CreditCard,
@@ -247,7 +248,27 @@ function BillingContent() {
       )}
 
       {loading ? (
-        <LoadingSpinner fullPage />
+        <div className="space-y-6">
+          {/* Upgrade card skeleton */}
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-soft">
+            <div className="bg-gradient-to-br from-accent/20 via-accent/10 to-teal-800/20 p-6 sm:p-8">
+              <Skeleton className="h-4 w-48 bg-white/30 mb-4" />
+              <Skeleton className="h-6 w-64 bg-white/30 mb-2" />
+              <Skeleton className="h-4 w-96 bg-white/20" />
+            </div>
+            <div className="p-6 sm:p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-10 w-40 rounded-lg" />
+              </div>
+              <Skeleton className="h-12 w-full rounded-lg" />
+            </div>
+          </div>
+          <SettingsPageSkeleton />
+        </div>
       ) : error ? (
         <Card className="border-red-200 bg-red-50 p-4 sm:p-6 text-center">
           <p className="text-sm font-medium text-red-700">{error}</p>

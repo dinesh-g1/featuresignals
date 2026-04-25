@@ -12,11 +12,11 @@ import {
   HardDrive,
   Eye,
   CreditCard,
+  Download,
   Server,
   Activity,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import * as api from "@/lib/api";
+import { useAuditLog } from "@/hooks/use-audit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -304,17 +304,18 @@ function AuditPageContent() {
 
   const currentPage = currentFilters.page ?? 1;
 
+  // ─── Auto-refresh state ────────────────────────────────────────────
+
+  const [autoRefresh, setAutoRefresh] = useState(false);
+
   // ─── Query ───────────────────────────────────────────────────────────
 
-  const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["audit", currentFilters],
-    queryFn: () =>
-      api.getAuditLog(
-        currentFilters as Record<string, string | number | boolean | undefined>,
-      ),
-    staleTime: 15_000,
-    gcTime: 60_000,
-    retry: 2,
+  const { data, isLoading, isFetching, error, refetch } = useAuditLog({
+    filters: currentFilters as Record<
+      string,
+      string | number | boolean | undefined
+    >,
+    refetchInterval: autoRefresh ? 15_000 : undefined,
   });
 
   const totalPages = data?.total ? Math.ceil(data.total / PAGE_SIZE) : 1;
@@ -415,6 +416,18 @@ function AuditPageContent() {
             </Button>
           )}
           <Button
+            variant={autoRefresh ? "primary" : "secondary"}
+            size="sm"
+            onClick={() => setAutoRefresh((prev) => !prev)}
+            aria-label="Toggle auto-refresh"
+          >
+            <RotateCcw
+              className={cn("h-4 w-4", autoRefresh && "animate-spin")}
+              aria-hidden="true"
+            />
+            Auto
+          </Button>
+          <Button
             variant="secondary"
             size="sm"
             onClick={() => refetch()}
@@ -427,6 +440,17 @@ function AuditPageContent() {
             />
             Refresh
           </Button>
+          <div title="Export feature is coming soon">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled
+              aria-label="Export audit log"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Export
+            </Button>
+          </div>
         </div>
       </div>
 

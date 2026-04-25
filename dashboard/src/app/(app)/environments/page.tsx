@@ -18,7 +18,6 @@ import {
   Trash2,
   ArrowLeftRight,
   CheckCircle2,
-  Loader2,
   Server,
   Key,
   Flag,
@@ -31,6 +30,7 @@ import { DOCS_LINKS } from "@/components/docs-link";
 import type { Environment, Project } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import { useEnvironments, useProjects } from "@/hooks/use-data";
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 
 export default function EnvironmentsPage() {
   const {
@@ -41,8 +41,20 @@ export default function EnvironmentsPage() {
 
   if (prereqLoading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-36" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+          <Skeleton className="h-9 w-36 rounded-lg" />
+        </div>
+        <SkeletonCard />
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -172,8 +184,20 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-36" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+          <Skeleton className="h-9 w-36 rounded-lg" />
+        </div>
+        <SkeletonCard />
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }

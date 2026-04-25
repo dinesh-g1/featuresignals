@@ -194,8 +194,8 @@ export default function ForgotPasswordPage() {
 
   if (loadingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
       </div>
     );
   }
@@ -203,13 +203,13 @@ export default function ForgotPasswordPage() {
   // Success state
   if (step === "success") {
     return (
-      <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 px-4">
+      <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-400/[0.07] blur-3xl" />
+          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/7 blur-3xl" />
         </div>
         <Card className="relative w-full max-w-md space-y-6 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
           <div className="text-center">
-            <h1 className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
+            <h1 className="bg-gradient-to-r from-accent-dark to-accent bg-clip-text text-2xl font-bold tracking-tight text-transparent">
               FeatureSignals
             </h1>
           </div>
@@ -229,14 +229,14 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-400/[0.07] blur-3xl" />
+        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/7 blur-3xl" />
         <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-purple-400/[0.05] blur-3xl" />
       </div>
       <Card className="relative w-full max-w-md space-y-6 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
         <div className="text-center">
-          <h1 className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
+          <h1 className="bg-gradient-to-r from-accent-dark to-accent bg-clip-text text-2xl font-bold tracking-tight text-transparent">
             FeatureSignals
           </h1>
           <p className="mt-2 text-sm text-slate-500">
@@ -313,7 +313,7 @@ export default function ForgotPasswordPage() {
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
                     onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent ${
                       fieldErrors.otp
                         ? "border-red-300 bg-red-50"
                         : "border-slate-200 bg-white"
@@ -451,7 +451,7 @@ export default function ForgotPasswordPage() {
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
                     onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent ${
                       fieldErrors.otp
                         ? "border-red-300 bg-red-50"
                         : "border-slate-200 bg-white"

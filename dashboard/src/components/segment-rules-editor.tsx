@@ -32,19 +32,28 @@ const MATCH_TYPE_OPTIONS = [
   { value: "any", label: "Match ANY" },
 ];
 
-export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatchType, onSave }: Props) {
+export function SegmentRulesEditor({
+  rules: initialRules,
+  matchType: initialMatchType,
+  onSave,
+}: Props) {
   const [rules, setRules] = useState<Condition[]>(initialRules ?? []);
   const [matchType, setMatchType] = useState(initialMatchType || "all");
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   function addCondition() {
-    setRules((prev) => [...prev, { attribute: "", operator: "eq", values: [""] }]);
+    setRules((prev) => [
+      ...prev,
+      { attribute: "", operator: "eq", values: [""] },
+    ]);
     setDirty(true);
   }
 
   function updateCondition(idx: number, patch: Partial<Condition>) {
-    setRules((prev) => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
+    setRules((prev) =>
+      prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)),
+    );
     setDirty(true);
   }
 
@@ -83,7 +92,7 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
         <div className="flex gap-2">
           <button
             onClick={addCondition}
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+            className="text-xs font-medium text-accent hover:text-accent-dark"
           >
             + Add Condition
           </button>
@@ -91,7 +100,7 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow-sm transition-all hover:bg-indigo-700 disabled:opacity-50"
+              className="inline-flex items-center rounded-lg bg-accent px-3 py-1 text-xs font-medium text-white shadow-sm transition-all hover:bg-accent-dark disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
@@ -101,18 +110,24 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
 
       {rules.length === 0 ? (
         <p className="text-xs text-slate-400 italic py-2">
-          No conditions — this segment matches all users. Click &ldquo;+ Add Condition&rdquo; to define who belongs to this segment.
+          No conditions — this segment matches all users. Click &ldquo;+ Add
+          Condition&rdquo; to define who belongs to this segment.
         </p>
       ) : (
         <div className="space-y-2">
           {rules.map((cond, i) => (
-            <div key={i} className="flex items-center gap-2 rounded-lg bg-slate-50 p-2.5 ring-1 ring-slate-100">
+            <div
+              key={i}
+              className="flex items-center gap-2 rounded-lg bg-slate-50 p-2.5 ring-1 ring-slate-100"
+            >
               <input
                 type="text"
                 value={cond.attribute}
-                onChange={(e) => updateCondition(i, { attribute: e.target.value })}
+                onChange={(e) =>
+                  updateCondition(i, { attribute: e.target.value })
+                }
                 placeholder="attribute (e.g. plan)"
-                className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               />
               <Select
                 value={cond.operator}
@@ -129,7 +144,7 @@ export function SegmentRulesEditor({ rules: initialRules, matchType: initialMatc
                   })
                 }
                 placeholder="value(s), comma-separated"
-                className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               />
               <button
                 onClick={() => removeCondition(i)}

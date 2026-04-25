@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 
-
 const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -31,7 +30,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!data?.access_token) return;
       const user = data.user ?? useAppStore.getState().user;
       const org = data.organization ?? useAppStore.getState().organization;
-      setAuth(data.access_token, data.refresh_token, user, org, data.expires_at, data.onboarding_completed);
+      setAuth(
+        data.access_token,
+        data.refresh_token,
+        user,
+        org,
+        data.expires_at,
+        data.onboarding_completed,
+      );
     } catch {
       logout();
       router.replace("/login?session_expired=true");
@@ -69,7 +75,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (!hydrated || !token) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
       </div>
     );
   }

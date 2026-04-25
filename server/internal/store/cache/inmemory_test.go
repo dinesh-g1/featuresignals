@@ -701,3 +701,8 @@ func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time)
 func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
 func (s *mockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
 func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
+func (m *mockStore) GetCell(_ context.Context, _ string) (*domain.Cell, error) { return nil, nil }
+func (m *mockStore) ListCells(_ context.Context, _ domain.CellFilter) ([]*domain.Cell, error) { return nil, nil }
+func (m *mockStore) CreateCell(_ context.Context, _ *domain.Cell) error { return nil }
+func (m *mockStore) UpdateCell(_ context.Context, _ *domain.Cell) error { return nil }
+func (m *mockStore) DeleteCell(_ context.Context, _ string) error { return nil }

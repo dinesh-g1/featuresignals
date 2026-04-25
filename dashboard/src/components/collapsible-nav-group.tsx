@@ -48,12 +48,12 @@ function NavLink({
         locked
           ? "text-slate-600 hover:bg-amber-500/10 hover:text-amber-400"
           : active
-            ? "bg-white/10 text-white shadow-sm shadow-indigo-500/10"
+            ? "bg-white/10 text-white shadow-sm shadow-accent/20"
             : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
       )}
     >
       {active && !locked && (
-        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-400 shadow-sm shadow-indigo-400/50" />
+        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent shadow-sm shadow-accent/30" />
       )}
       <Icon
         className={cn(
@@ -61,7 +61,7 @@ function NavLink({
           locked
             ? "text-slate-600"
             : active
-              ? "text-indigo-400"
+              ? "text-accent/60"
               : "text-slate-500 group-hover:text-slate-300",
         )}
         strokeWidth={1.5}
@@ -129,7 +129,7 @@ const CollapsibleNavGroupInner = ({
         className={cn(
           "group flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-all duration-200",
           expanded
-            ? "bg-white/[0.08] text-indigo-300"
+            ? "bg-white/[0.08] text-accent/40"
             : "text-slate-500 hover:text-slate-300",
         )}
         aria-expanded={expanded}
@@ -138,7 +138,7 @@ const CollapsibleNavGroupInner = ({
           className={cn(
             "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-all duration-200",
             expanded
-              ? "bg-indigo-500/30 text-indigo-200"
+              ? "bg-accent/20 text-accent/50"
               : "bg-white/5 text-slate-500",
           )}
         >

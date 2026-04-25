@@ -1,0 +1,369 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "FeatureSignals" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e5]
+        - generic [ref=e9]: FeatureSignals
+      - navigation "Main" [ref=e10]:
+        - list [ref=e12]:
+          - listitem [ref=e13]
+          - listitem [ref=e17]
+          - listitem [ref=e21]
+          - listitem [ref=e23]
+          - listitem [ref=e25]
+      - generic [ref=e27]:
+        - link "Sign In" [ref=e28] [cursor=pointer]:
+          - /url: https://app.featuresignals.com/login
+        - link "Start Free" [ref=e29] [cursor=pointer]:
+          - /url: https://app.featuresignals.com/register
+  - main [ref=e30]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]: SOC 2 Type II (Audit in Progress)
+        - generic [ref=e37]: OpenFeature Native
+        - generic [ref=e38]: Apache 2.0
+      - heading "Mission-critical flags. Zero vendor lock-in." [level=1] [ref=e39]:
+        - text: Mission-critical flags.
+        - text: Zero vendor lock-in.
+      - paragraph [ref=e40]:
+        - text: The control plane for software delivery. Sub-millisecond latency. Automated tech-debt cleanup. We integrate natively with Terraform and charge for infrastructure —
+        - strong [ref=e41]: never by Monthly Active Users.
+      - generic [ref=e42]:
+        - link "Deploy in 3 Minutes" [ref=e43] [cursor=pointer]:
+          - /url: https://app.featuresignals.com/register
+          - text: Deploy in 3 Minutes
+          - img [ref=e44]
+        - link "Migrate from LaunchDarkly" [ref=e46] [cursor=pointer]:
+          - /url: "#migration"
+          - img [ref=e47]
+          - text: Migrate from LaunchDarkly
+      - paragraph [ref=e50]: "> fs migrate --from=launchdarkly --project=core"
+    - generic [ref=e53]:
+      - paragraph [ref=e54]: Trusted by engineering teams at
+      - generic [ref=e55]:
+        - generic [ref=e56]: Acme Corp
+        - generic [ref=e57]: TechFlow
+        - generic [ref=e58]: DataBridge
+        - generic [ref=e59]: CloudNova
+        - generic [ref=e60]: ShipFast
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - generic [ref=e66]: 2.1B+
+        - generic [ref=e67]: Evaluations / month
+      - generic [ref=e68]:
+        - generic [ref=e69]: 500+
+        - generic [ref=e70]: Organizations
+      - generic [ref=e71]:
+        - generic [ref=e72]: 2,000+
+        - generic [ref=e73]: Developers
+      - generic [ref=e74]:
+        - generic [ref=e75]: 99.95%
+        - generic [ref=e76]: Uptime SLA
+    - generic [ref=e78]:
+      - heading "Feature flags should solve problems, not create them" [level=2] [ref=e79]
+      - paragraph [ref=e80]: Most teams end up with hundreds of stale flags, surprise bills, and vendor lock-in. FeatureSignals was built to fix all three.
+      - generic [ref=e81]:
+        - generic [ref=e82]:
+          - generic [ref=e83]
+          - generic [ref=e88]
+        - generic [ref=e91]:
+          - generic [ref=e92]
+          - generic [ref=e97]
+        - generic [ref=e100]:
+          - generic [ref=e101]
+          - generic [ref=e106]
+    - generic [ref=e111]:
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - img [ref=e114]
+          - text: 100% Availability Architecture
+        - heading "Built for 100% Availability." [level=2] [ref=e116]
+        - paragraph [ref=e117]: If our core API goes down, your application shouldn't. Our decentralized edge architecture ensures zero-downtime evaluations, while background polling keeps your latency strictly under 5ms globally.
+        - generic [ref=e118]:
+          - generic [ref=e119]: Sub 1ms Latency
+          - generic [ref=e120]: Zero PII Egress
+          - generic [ref=e121]: 100% Uptime Resiliency
+      - generic [ref=e122]:
+        - generic [ref=e123]: ⚑
+        - heading "The Hybrid-Edge Architecture" [level=3] [ref=e124]
+        - paragraph [ref=e125]: To win enterprise and startup alike, the control plane (UI, RBAC, Audit) is managed SaaS, while the data plane runs at the edge (Cloudflare Workers / Fastly) or entirely within your VPC via a lightweight binary sidecar.
+        - generic [ref=e126]:
+          - generic [ref=e127]: ◀ Control Plane (SaaS)
+          - generic [ref=e128]: Data Plane (Edge) ▶
+        - generic [ref=e129]:
+          - generic [ref=e130]
+          - generic [ref=e133]
+          - generic [ref=e136]
+    - generic [ref=e140]:
+      - heading "Why engineering teams choose FeatureSignals" [level=2] [ref=e141]
+      - paragraph [ref=e142]: Built for developers who value speed, control, and transparency. No vendor lock-in. No surprise bills.
+      - generic [ref=e143]:
+        - generic [ref=e144]:
+          - img [ref=e146]
+          - heading "Predictable Pricing" [level=3] [ref=e148]
+          - paragraph [ref=e149]: No per-seat fees. No per-MAU charges. No hidden costs. Just ₹999/month for unlimited everything.
+          - link "See pricing" [ref=e150] [cursor=pointer]:
+            - /url: /pricing
+        - generic [ref=e153]:
+          - img [ref=e155]
+          - heading "AI Janitor" [level=3] [ref=e163]
+          - paragraph [ref=e164]: AI scans your codebase, identifies stale flags, analyzes usage patterns, and generates cleanup pull requests automatically. You just review and merge.
+          - link "Explore AI features" [ref=e165] [cursor=pointer]:
+            - /url: /features/ai
+        - generic [ref=e168]:
+          - img [ref=e170]
+          - heading "Enterprise Governance" [level=3] [ref=e173]
+          - paragraph [ref=e174]: RBAC, tamper-evident audit logs, approval workflows, SSO (SAML/OIDC), SCIM, IP allowlists. Deploy on your infrastructure or ours.
+          - link "Security details" [ref=e175] [cursor=pointer]:
+            - /url: /features/security
+        - generic [ref=e178]:
+          - img [ref=e180]
+          - heading "A/B Experimentation" [level=3] [ref=e182]
+          - paragraph [ref=e183]: Built-in variant assignment with consistent hashing, weighted splits, mutual exclusion groups, and impression tracking for analytics.
+          - link "See experimentation" [ref=e184] [cursor=pointer]:
+            - /url: /features
+        - generic [ref=e187]:
+          - img [ref=e189]
+          - heading "Sub-millisecond Edge" [level=3] [ref=e191]
+          - paragraph [ref=e192]: SSE streaming pushes flag changes to SDKs instantly. Sub-1ms local evaluation. Relay proxy for edge deployments.
+          - link "See flag engine" [ref=e193] [cursor=pointer]:
+            - /url: /features
+        - generic [ref=e196]:
+          - img [ref=e198]
+          - heading "SDKs for Every Stack" [level=3] [ref=e201]
+          - paragraph [ref=e202]: Go, Node.js, Python, Java, C#, Ruby, React, Vue — all with OpenFeature providers. Switch providers without code changes.
+          - link "View SDKs" [ref=e203] [cursor=pointer]:
+            - /url: https://docs.featuresignals.com/sdks/overview
+    - generic [ref=e208]:
+      - generic [ref=e209]:
+        - generic [ref=e210]:
+          - img [ref=e211]
+          - text: The AI Janitor
+        - heading "The hidden tax on engineering velocity." [level=2] [ref=e219]
+        - paragraph [ref=e220]: Every stale feature flag is a logic path that must be tested and maintained. FeatureSignals' AI Janitor eradicates debt autonomously.
+      - generic [ref=e221]:
+        - generic [ref=e222]:
+          - paragraph [ref=e223]: When a feature reaches 100% rollout, our engine automatically issues a GitHub Pull Request to delete the dead code. No tickets. No sprint planning. Just clean code.
+          - generic [ref=e224]
+          - link "Start recovering that cost today" [ref=e239] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register
+        - generic [ref=e242]:
+          - generic [ref=e243]
+          - generic [ref=e246]
+    - generic [ref=e273]:
+      - heading "Up and running in 3 minutes" [level=2] [ref=e274]
+      - paragraph [ref=e275]: Three steps from zero to shipping features safely.
+      - generic [ref=e276]:
+        - generic [ref=e277]:
+          - img [ref=e279]
+          - generic [ref=e281]: Step 1
+          - heading "Create a flag" [level=3] [ref=e282]
+          - paragraph [ref=e283]: Define your flag with targeting rules, percentage rollouts, and environment-specific states.
+          - img [ref=e285]
+        - generic [ref=e287]:
+          - img [ref=e289]
+          - generic [ref=e293]: Step 2
+          - heading "Integrate your SDK" [level=3] [ref=e294]
+          - paragraph [ref=e295]: Drop in one of our 8 SDKs (Go, Node, Python, Java, C#, Ruby, React, Vue). All support OpenFeature.
+          - img [ref=e297]
+        - generic [ref=e299]:
+          - img [ref=e301]
+          - generic [ref=e306]: Step 3
+          - heading "Ship with confidence" [level=3] [ref=e307]
+          - paragraph [ref=e308]: Roll out gradually, A/B test, use kill switches. AI monitors and cleans up stale flags automatically.
+    - generic [ref=e311]:
+      - generic [ref=e312]:
+        - generic [ref=e313]:
+          - img [ref=e314]
+          - text: AI Where It Matters
+        - heading "AI-powered flag lifecycle management" [level=2] [ref=e322]
+        - paragraph [ref=e323]: "AI that solves the #1 pain point in feature flags: stale flag cleanup. No gimmicks. No chatbots. Just infrastructure that works."
+      - generic [ref=e324]:
+        - generic [ref=e325]:
+          - img [ref=e327]
+          - heading "AI Flag Cleanup" [level=3] [ref=e329]
+          - paragraph [ref=e330]: Scans codebase, identifies stale flags, generates cleanup PRs. Human reviews and approves.
+        - generic [ref=e331]:
+          - img [ref=e333]
+          - heading "AI Anomaly Detection" [level=3] [ref=e336]
+          - paragraph [ref=e337]: Monitors evaluation patterns, detects anomalies, alerts with root cause analysis.
+        - generic [ref=e338]:
+          - img [ref=e340]
+          - heading "AI Incident Response" [level=3] [ref=e343]
+          - paragraph [ref=e344]: Correlates flag changes with errors, suggests rollback. Human approves one-click revert.
+      - link "Explore all AI capabilities" [ref=e346] [cursor=pointer]:
+        - /url: /features/ai
+        - text: Explore all AI capabilities
+        - img [ref=e347]
+    - generic [ref=e350]:
+      - heading "What engineering teams are saying" [level=2] [ref=e352]
+      - generic [ref=e353]:
+        - blockquote [ref=e354]:
+          - paragraph [ref=e355]: “FeatureSignals cut our stale flag cleanup time from weeks to minutes. The AI scans our entire codebase and generates PRs we just review and merge. We've reclaimed 40% of our flag technical debt in the first month.”
+          - generic [ref=e356]
+        - blockquote [ref=e361]:
+          - paragraph [ref=e362]: “We migrated from LaunchDarkly in under an hour. Same features, open-source, and our monthly bill went from $4,200 to ₹999. The predictable pricing alone made this a no-brainer for our 60-person engineering org.”
+          - generic [ref=e363]
+        - blockquote [ref=e368]:
+          - paragraph [ref=e369]: “The kill switch saved us during a production incident. One click and the problematic flag was off across all environments. Our MTTR dropped from 45 minutes to under 2 minutes.”
+          - generic [ref=e370]
+    - generic [ref=e377]:
+      - generic [ref=e378]:
+        - heading "FeatureSignals vs LaunchDarkly" [level=2] [ref=e379]
+        - paragraph [ref=e380]: Same enterprise features. Open-source. Predictable pricing. One-click migration.
+      - generic [ref=e381]:
+        - generic [ref=e382]:
+          - generic [ref=e383]
+          - generic [ref=e391]: Pro plan pricing
+          - generic [ref=e392]: Unlimited everything. No per-seat fees.
+        - generic [ref=e393]:
+          - generic [ref=e394]
+          - generic [ref=e402]: Open-source licensed
+          - generic [ref=e403]: Self-host anywhere. Full code access.
+        - generic [ref=e404]:
+          - generic [ref=e405]
+          - generic [ref=e413]: Stale flag cleanup
+          - generic [ref=e414]: AI scans code, generates PRs. Human approves.
+      - paragraph [ref=e417]:
+        - text: "Here's the thing: LaunchDarkly charges $12 per connection. A typical 100-person engineering org pays $12,000/month. We charge ₹999 (~$12)."
+        - text: You do the math. Then migrate.
+      - link "Start your migration" [ref=e419] [cursor=pointer]:
+        - /url: "#migration"
+        - text: Start your migration
+        - img [ref=e420]
+    - generic [ref=e424]:
+      - generic [ref=e425]:
+        - generic [ref=e426]:
+          - img [ref=e427]
+          - text: The Escape Hatch
+        - heading "Migrate from any provider in under an hour" [level=2] [ref=e430]
+        - paragraph [ref=e431]: We import your flags, environments, targeting rules, and SDK configuration — preserving your exact evaluation logic.
+      - generic [ref=e432]:
+        - generic [ref=e433]:
+          - heading "LaunchDarkly" [level=3] [ref=e434]
+          - paragraph [ref=e435]
+          - generic [ref=e437]: $ fs migrate --from=launchdarkly --project=core
+          - link "Migrate now" [ref=e438] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register
+        - generic [ref=e441]:
+          - heading "Unleash" [level=3] [ref=e442]
+          - paragraph [ref=e443]
+          - generic [ref=e445]: $ fs migrate --from=unleash --project=core
+          - link "Migrate now" [ref=e446] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register
+        - generic [ref=e449]:
+          - heading "Flagsmith" [level=3] [ref=e450]
+          - paragraph [ref=e451]
+          - generic [ref=e453]: $ fs migrate --from=flagsmith --project=core
+          - link "Migrate now" [ref=e454] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register
+      - generic [ref=e457]:
+        - heading "How the migration works" [level=3] [ref=e458]
+        - generic [ref=e459]:
+          - generic [ref=e460]
+          - generic [ref=e464]
+          - generic [ref=e468]
+          - generic [ref=e472]
+    - generic [ref=e477]:
+      - generic [ref=e478]:
+        - heading "Deploy your way" [level=2] [ref=e479]
+        - paragraph [ref=e480]: Self-host on your infrastructure, use our cloud, or run a hybrid. Docker Compose, Kubernetes, or a single binary.
+      - generic [ref=e481]:
+        - generic [ref=e482]:
+          - img [ref=e484]
+          - heading "Self-Hosted" [level=3] [ref=e486]
+          - paragraph [ref=e487]: Deploy on any VPS or Kubernetes cluster. Apache-2.0 licensed. Full code access. Infrastructure cost from ~$17/mo.
+          - link "Quickstart guide" [ref=e488] [cursor=pointer]:
+            - /url: https://docs.featuresignals.com/getting-started/quickstart
+        - generic [ref=e491]:
+          - img [ref=e493]
+          - heading "Cloud-Hosted" [level=3] [ref=e498]
+          - paragraph [ref=e499]: Use our managed service with multi-region data residency. US, Europe, India regions. 14-day Pro trial included.
+          - link "Start free trial" [ref=e500] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register
+        - generic [ref=e503]:
+          - img [ref=e505]
+          - heading "OpenFeature Compatible" [level=3] [ref=e508]
+          - paragraph [ref=e509]: All 8 SDKs ship with OpenFeature providers. Switch providers without code changes. Zero vendor lock-in, guaranteed.
+          - link "OpenFeature docs" [ref=e510] [cursor=pointer]:
+            - /url: https://docs.featuresignals.com/sdks/openfeature
+    - generic [ref=e515]:
+      - generic [ref=e516]:
+        - heading "Pay for infrastructure. Not your success." [level=2] [ref=e517]
+        - paragraph [ref=e518]:
+          - text: Legacy tools tax your growth by charging per Monthly Active User. We charge a flat rate.
+          - strong [ref=e519]: Unlimited MAUs. Unlimited seats.
+      - generic [ref=e520]:
+        - generic [ref=e521]:
+          - heading "Developer" [level=3] [ref=e522]
+          - generic [ref=e523]: Free/mo
+          - list [ref=e524]
+          - link "Start Building" [ref=e540] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register
+        - generic [ref=e541]:
+          - generic [ref=e542]: Most Popular
+          - heading "Pro" [level=3] [ref=e543]
+          - generic [ref=e544]: ₹999/mo
+          - list [ref=e545]
+          - link "Upgrade to Pro" [ref=e567] [cursor=pointer]:
+            - /url: https://app.featuresignals.com/register?plan=pro
+        - generic [ref=e568]:
+          - heading "Enterprise" [level=3] [ref=e569]
+          - generic [ref=e570]: Custom
+          - list [ref=e571]
+          - link "Talk to Sales" [ref=e587] [cursor=pointer]:
+            - /url: /contact
+      - generic [ref=e588]:
+        - paragraph [ref=e589]: All plans include
+        - generic [ref=e590]:
+          - generic [ref=e591]
+          - generic [ref=e594]
+          - generic [ref=e597]
+          - generic [ref=e600]
+          - generic [ref=e603]
+          - generic [ref=e606]
+    - generic [ref=e612]:
+      - generic [ref=e613]:
+        - img [ref=e614]
+        - text: Start shipping with confidence
+      - heading "Ready to ship faster?" [level=2] [ref=e619]
+      - paragraph [ref=e620]: Start a free trial with full Pro features for 14 days, or self-host in under 3 minutes. No credit card required.
+      - generic [ref=e621]:
+        - link "Start Free — No Credit Card" [ref=e622] [cursor=pointer]:
+          - /url: https://app.featuresignals.com/register
+          - text: Start Free — No Credit Card
+          - img [ref=e623]
+        - link "Self-Host in 3 Minutes" [ref=e625] [cursor=pointer]:
+          - /url: https://docs.featuresignals.com/getting-started/quickstart
+          - img [ref=e626]
+          - text: Self-Host in 3 Minutes
+      - paragraph [ref=e628]: Apache-2.0 · 8 SDKs · Sub-millisecond evaluation · 14-day Pro trial
+  - contentinfo [ref=e629]:
+    - generic [ref=e630]:
+      - generic [ref=e631]:
+        - generic [ref=e632]:
+          - generic [ref=e633]
+          - paragraph [ref=e639]: The control plane for software delivery. Sub-millisecond latency. Automated tech-debt cleanup. OpenFeature native.
+          - generic [ref=e640]
+        - generic [ref=e653]:
+          - generic [ref=e654]
+          - generic [ref=e669]
+          - generic [ref=e682]
+          - generic [ref=e695]
+          - generic [ref=e708]
+      - generic [ref=e721]:
+        - generic [ref=e726]: All Edge Nodes Operational
+        - generic [ref=e727]:
+          - link "SOC 2 Type II" [ref=e728] [cursor=pointer]:
+            - /url: /features/security
+          - link "OpenFeature Native" [ref=e729] [cursor=pointer]:
+            - /url: /features/integrations
+          - link "Uptime 99.95%" [ref=e730] [cursor=pointer]:
+            - /url: /status
+      - generic [ref=e731]:
+        - paragraph [ref=e732]: © 2026 Vivekananda Technology Labs, trading as FeatureSignals. Apache-2.0 License.
+        - paragraph [ref=e733]: Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad, Telangana - 500089, India
+  - button "Open Next.js Dev Tools" [ref=e739] [cursor=pointer]:
+    - img [ref=e740]
+  - alert [ref=e743]

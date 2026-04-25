@@ -20,7 +20,8 @@ import {
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { InlineCreateForm } from "@/components/ui/inline-create-form";
-import { Users, Trash2, ChevronDown, Loader2 } from "lucide-react";
+import { Users, Trash2, ChevronDown } from "lucide-react";
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { DOCS_LINKS } from "@/components/docs-link";
 import {
@@ -140,8 +141,20 @@ export default function SegmentsPage() {
 
   if (prereqLoading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-9 w-36 rounded-lg" />
+        </div>
+        <SkeletonCard />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -219,7 +232,7 @@ function SegmentsContent({
       <ContextualHint hint={HINTS.segmentsIntro} />
 
       {showCreate && (
-        <InlineCreateForm variant="indigo">
+        <InlineCreateForm variant="accent">
           <form onSubmit={handleCreate} noValidate className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -331,7 +344,7 @@ function SegmentsContent({
                   <div
                     className={cn(
                       "flex flex-col gap-2 px-4 py-3 transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4",
-                      isExpanded ? "bg-indigo-50/40" : "hover:bg-indigo-50/30",
+                      isExpanded ? "bg-accent/5" : "hover:bg-accent/5",
                     )}
                     onClick={() => setExpanded(isExpanded ? null : seg.key)}
                   >
