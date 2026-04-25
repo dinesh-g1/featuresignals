@@ -27,6 +27,8 @@
 #   CLUSTER_CIDR                   Pod network CIDR (default: 10.42.0.0/16)
 #   SERVICE_CIDR                   Service network CIDR (default: 10.43.0.0/16)
 #   K3S_VERSION                    k3s version (default: latest stable)
+#   SIGNOZ_ENABLED                 Install SigNoz observability stack (default: true)
+#   TEMPORAL_ENABLED               Install Temporal workflow engine (default: true)
 #
 # This script is idempotent — safe to run multiple times. Components that are
 # already installed will be skipped.
@@ -54,10 +56,16 @@ CERT_MANAGER_VERSION="v1.16.3"
 METALLB_VERSION="v0.14.9"
 POSTGRESQL_HELM_VERSION="16.4.8"
 CADDY_INGRESS_VERSION="0.1.0"
+SIGNOZ_HELM_CHART_VERSION="0.63.0"
+TEMPORAL_HELM_CHART_VERSION="1.25.2"
 
 # ---- Network Defaults -------------------------------------------------------
 CLUSTER_CIDR="${CLUSTER_CIDR:-10.42.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.43.0.0/16}"
+
+# ---- Feature Flags ----------------------------------------------------------
+SIGNOZ_ENABLED="${SIGNOZ_ENABLED:-true}"
+TEMPORAL_ENABLED="${TEMPORAL_ENABLED:-true}"
 
 # ---- Prerequisite Check -----------------------------------------------------
 prereq_check() {
@@ -183,7 +191,7 @@ setup_namespaces() {
     log_info "=== Setting up Namespaces ==="
 
     # Core infrastructure namespaces
-    for ns in cert-manager metallb-system caddy-system featuresignals-system featuresignals-saas; do
+    for ns in cert-manager metallb-system caddy-system featuresignals-system featuresignals-saas signoz temporal; do
         if kubectl get namespace "$ns" &>/dev/null; then
             log_info "Namespace '$ns' already exists. Skipping."
         else
@@ -446,6 +454,56 @@ setup_storage_box() {
     log_info "Storage Box configuration created."
 }
 
+# ---- SigNoz Installation ----------------------------------------------------
+install_signoz() {
+    if [[ "${SIGNOZ_ENABLED}" != "true" ]]; then
+        log_info "SigNoz installation skipped (SIGNOZ_ENABLED=false)."
+        return 0
+    fi
+
+    log_info "=== Installing SigNoz (Observability Stack) ==="
+
+    # Check if already installed
+    if helm ls -n signoz --short 2>/dev/null | grep -q "^signoz$"; then
+        log_info "SigNoz is already installed. Skipping."
+        return 0
+    fi
+
+    local signoz_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../k8s/infra/signoz" && pwd)/install.sh"
+    if [[ -f "$signoz_script" ]]; then
+        log_info "Running SigNoz install script: ${signoz_script}"
+        bash "$signoz_script"
+        log_info "SigNoz installation complete."
+    else
+        log_warn "SigNoz install script not found at ${signoz_script}. Skipping."
+    fi
+}
+
+# ---- Temporal Installation --------------------------------------------------
+install_temporal() {
+    if [[ "${TEMPORAL_ENABLED}" != "true" ]]; then
+        log_info "Temporal installation skipped (TEMPORAL_ENABLED=false)."
+        return 0
+    fi
+
+    log_info "=== Installing Temporal (Workflow Engine) ==="
+
+    # Check if already installed
+    if helm ls -n temporal --short 2>/dev/null | grep -q "^temporal$"; then
+        log_info "Temporal is already installed. Skipping."
+        return 0
+    fi
+
+    local temporal_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../k8s/infra/temporal" && pwd)/install.sh"
+    if [[ -f "$temporal_script" ]]; then
+        log_info "Running Temporal install script: ${temporal_script}"
+        bash "$temporal_script"
+        log_info "Temporal installation complete."
+    else
+        log_warn "Temporal install script not found at ${temporal_script}. Skipping."
+    fi
+}
+
 # ---- Wait for Ready ---------------------------------------------------------
 wait_for_ready() {
     log_info "=== Waiting for all components to be Ready ==="
@@ -469,6 +527,20 @@ wait_for_ready() {
     kubectl wait --for=condition=Ready pods --all \
         -n featuresignals-system --timeout=300s 2>/dev/null || \
         log_warn "Some FeatureSignals pods not ready yet. Continuing..."
+
+    if [[ "${SIGNOZ_ENABLED}" == "true" ]]; then
+        log_info "Waiting for all pods in signoz namespace..."
+        kubectl wait --for=condition=Ready pods --all \
+            -n signoz --timeout=600s 2>/dev/null || \
+            log_warn "Some SigNoz pods not ready yet. Continuing..."
+    fi
+
+    if [[ "${TEMPORAL_ENABLED}" == "true" ]]; then
+        log_info "Waiting for all pods in temporal namespace..."
+        kubectl wait --for=condition=Ready pods --all \
+            -n temporal --timeout=300s 2>/dev/null || \
+            log_warn "Some Temporal pods not ready yet. Continuing..."
+    fi
 
     log_info "=== Cluster Status ==="
     echo ""
@@ -508,6 +580,8 @@ output_connection_info() {
     echo "  MetalLB:         Installed"
     echo "  Caddy Ingress:   Installed"
     echo "  PostgreSQL:      Installed"
+    echo "  SigNoz:          $([[ "${SIGNOZ_ENABLED}" == "true" ]] && echo "Installed" || echo "Disabled")"
+    echo "  Temporal:        $([[ "${TEMPORAL_ENABLED}" == "true" ]] && echo "Installed" || echo "Disabled")"
     echo ""
     echo "  Namespaces:"
     echo "    - cert-manager"
@@ -515,6 +589,8 @@ output_connection_info() {
     echo "    - caddy-system"
     echo "    - featuresignals-system"
     echo "    - featuresignals-saas"
+    echo "    - signoz"
+    echo "    - temporal"
     echo ""
     echo "  Storage Box:     $([ -n "${HETZNER_STORAGE_BOX_URL:-}" ] && echo "Configured" || echo "Not configured")"
     echo ""
@@ -526,6 +602,10 @@ output_connection_info() {
     echo "  To verify cluster health:"
     echo "    kubectl get nodes"
     echo "    kubectl get pods --all-namespaces"
+    echo ""
+    echo "  To port-forward SigNoz dashboard:"
+    echo "    kubectl port-forward -n signoz svc/signoz-frontend 3301:3301"
+    echo "    # Open http://localhost:3301 (default admin/signoz)"
     echo ""
     echo "  To deploy the application:"
     echo "    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
@@ -556,6 +636,8 @@ main() {
     install_caddy_ingress
     install_postgresql
     setup_storage_box
+    install_signoz
+    install_temporal
     wait_for_ready
     output_connection_info
 

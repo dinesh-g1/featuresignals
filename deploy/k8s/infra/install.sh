@@ -10,14 +10,19 @@
 #   2. MetalLB + IP pool
 #   3. Caddy ingress controller
 #   4. PostgreSQL via Helm
-#   5. Wait for all components to be Ready
+#   5. SigNoz (if --with-signoz or --all)
+#   6. Temporal (if --with-temporal or --all)
+#   7. Wait for all components to be Ready
 #
 # This script is called by `make infra-deploy` and is idempotent.
 #
 # Usage:
 #   export ACME_EMAIL="admin@featuresignals.com"
 #   export VPS_IP="$(curl -s https://api.ipify.org)"
-#   ./install.sh
+#   ./install.sh                          # base infra only
+#   ./install.sh --with-signoz             # base + SigNoz
+#   ./install.sh --with-temporal           # base + Temporal
+#   ./install.sh --all                     # everything
 #
 # Required Environment Variables:
 #   ACME_EMAIL         Email for Let's Encrypt certificate registration
@@ -26,6 +31,8 @@
 #   VPS_IP             VPS public IP address (auto-detected if not set)
 #   POSTGRES_PASSWORD  PostgreSQL password (auto-generated if empty)
 #   KUBECONFIG         Path to kubeconfig (default: /etc/rancher/k3s/k3s.yaml)
+#   SIGNOZ_ENABLED     Set to "true" (default) to install SigNoz
+#   TEMPORAL_ENABLED   Set to "true" (default) to install Temporal
 # =============================================================================
 
 set -euo pipefail
@@ -47,6 +54,10 @@ INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACME_EMAIL="${ACME_EMAIL:-}"
 VPS_IP="${VPS_IP:-}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
+
+# Feature flags — these can also be set via command-line flags
+INSTALL_SIGNOZ=false
+INSTALL_TEMPORAL=false
 
 # ---- Prerequisite Check -----------------------------------------------------
 prereq_check() {
@@ -84,6 +95,12 @@ prereq_check() {
             exit 1
         fi
         log_info "Auto-detected VPS IP: ${VPS_IP}"
+    fi
+
+    # Ensure Helm is installed
+    if ! command -v helm &>/dev/null; then
+        log_error "Helm is not installed."
+        exit 1
     fi
 
     log_info "All prerequisites satisfied."
@@ -267,6 +284,48 @@ install_postgresql() {
     log_info "PostgreSQL installation complete."
 }
 
+# ---- SigNoz Installation ----------------------------------------------------
+install_signoz() {
+    log_info "=== Installing SigNoz (Observability Stack) ==="
+
+    local signoz_script="${INFRA_DIR}/signoz/install.sh"
+    if [[ ! -f "$signoz_script" ]]; then
+        log_warn "SigNoz install script not found at ${signoz_script}. Skipping."
+        return 0
+    fi
+
+    # Check if already installed
+    if helm ls -n signoz --short 2>/dev/null | grep -q "^signoz$"; then
+        log_info "SigNoz is already installed. Skipping."
+        return 0
+    fi
+
+    log_info "Running SigNoz install script..."
+    bash "$signoz_script"
+    log_info "SigNoz installation complete."
+}
+
+# ---- Temporal Installation --------------------------------------------------
+install_temporal() {
+    log_info "=== Installing Temporal (Workflow Engine) ==="
+
+    local temporal_script="${INFRA_DIR}/temporal/install.sh"
+    if [[ ! -f "$temporal_script" ]]; then
+        log_warn "Temporal install script not found at ${temporal_script}. Skipping."
+        return 0
+    fi
+
+    # Check if already installed
+    if helm ls -n temporal --short 2>/dev/null | grep -q "^temporal$"; then
+        log_info "Temporal is already installed. Skipping."
+        return 0
+    fi
+
+    log_info "Running Temporal install script..."
+    bash "$temporal_script"
+    log_info "Temporal installation complete."
+}
+
 # ---- Wait for Components to Be Ready ----------------------------------------
 wait_for_ready() {
     log_info "=== Waiting for all components to be Ready ==="
@@ -287,6 +346,20 @@ wait_for_ready() {
             --namespace="${namespace}" --timeout=180s 2>/dev/null || \
             log_warn "Some pods in '${namespace}' are not ready yet."
     done
+
+    if [[ "$INSTALL_SIGNOZ" == true ]]; then
+        log_info "Waiting for pods in signoz namespace..."
+        kubectl wait --for=condition=Ready pods --all \
+            --namespace=signoz --timeout=600s 2>/dev/null || \
+            log_warn "Some SigNoz pods are not ready yet."
+    fi
+
+    if [[ "$INSTALL_TEMPORAL" == true ]]; then
+        log_info "Waiting for pods in temporal namespace..."
+        kubectl wait --for=condition=Ready pods --all \
+            --namespace=temporal --timeout=300s 2>/dev/null || \
+            log_warn "Some Temporal pods are not ready yet."
+    fi
 
     log_info "=== Cluster Status ==="
     echo ""
@@ -324,9 +397,24 @@ print_summary() {
     echo "  MetalLB            $(kubectl get pods -n metallb-system --field-selector=status.phase=Running -o name 2>/dev/null | wc -l | xargs) pods running"
     echo "  Caddy Ingress      IP: ${caddy_ip}"
     echo "  PostgreSQL         $(kubectl get pods -n featuresignals-system --selector=app.kubernetes.io/instance=featuresignals-db --field-selector=status.phase=Running -o name 2>/dev/null | wc -l | xargs) pods running"
+    if [[ "$INSTALL_SIGNOZ" == true ]]; then
+        echo "  SigNoz             $(kubectl get pods -n signoz --field-selector=status.phase=Running -o name 2>/dev/null | wc -l | xargs) pods running"
+    fi
+    if [[ "$INSTALL_TEMPORAL" == true ]]; then
+        echo "  Temporal           $(kubectl get pods -n temporal --field-selector=status.phase=Running -o name 2>/dev/null | wc -l | xargs) pods running"
+    fi
     echo ""
     echo "  ACME Email:        ${ACME_EMAIL}"
     echo "  VPS IP:            ${VPS_IP}"
+    echo ""
+
+    if [[ "$INSTALL_SIGNOZ" == true ]]; then
+        echo "  SigNoz Dashboard:  kubectl port-forward -n signoz svc/signoz-frontend 3301:3301"
+        echo "                     (Open http://localhost:3301, default admin/signoz)"
+    fi
+    if [[ "$INSTALL_TEMPORAL" == true ]]; then
+        echo "  Temporal gRPC:     temporal.temporal.svc.cluster.local:7233"
+    fi
     echo ""
     echo "  To deploy the application:"
     echo "    make app-deploy"
@@ -339,6 +427,24 @@ print_summary() {
     echo "================================================================"
 }
 
+# ---- Usage ------------------------------------------------------------------
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --with-signoz     Install SigNoz observability stack"
+    echo "  --with-temporal   Install Temporal workflow engine"
+    echo "  --all             Install all components (cert-manager, MetalLB, Caddy,"
+    echo "                    PostgreSQL, SigNoz, Temporal)"
+    echo "  --help, -h        Show this help message"
+    echo ""
+    echo "Environment Variables:"
+    echo "  ACME_EMAIL        Required. Email for Let's Encrypt."
+    echo "  POSTGRES_PASSWORD Optional. Auto-generated if not set."
+    echo "  VPS_IP            Optional. Auto-detected if not set."
+    echo "  KUBECONFIG        Optional. Default: /etc/rancher/k3s/k3s.yaml"
+}
+
 # ---- Main -------------------------------------------------------------------
 main() {
     echo ""
@@ -346,6 +452,34 @@ main() {
     echo "  FeatureSignals — Infrastructure Install"
     echo "================================================================"
     echo ""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --with-signoz)
+                INSTALL_SIGNOZ=true
+                shift
+                ;;
+            --with-temporal)
+                INSTALL_TEMPORAL=true
+                shift
+                ;;
+            --all)
+                INSTALL_SIGNOZ=true
+                INSTALL_TEMPORAL=true
+                shift
+                ;;
+            --help|-h)
+                usage
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+        esac
+    done
 
     prereq_check
 
@@ -357,6 +491,15 @@ main() {
     install_metallb
     install_caddy_ingress
     install_postgresql
+
+    if [[ "$INSTALL_SIGNOZ" == true ]]; then
+        install_signoz
+    fi
+
+    if [[ "$INSTALL_TEMPORAL" == true ]]; then
+        install_temporal
+    fi
+
     wait_for_ready
     print_summary
 

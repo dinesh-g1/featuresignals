@@ -6,19 +6,23 @@
 # Hetzner CPX42 (8 vCPU, 16 GB RAM, 160 GB NVMe).
 #
 # Usage:
-#   make k3s-install         — Bootstrap the k3s cluster (run once on new VPS)
-#   make infra-deploy        — Deploy all infrastructure components
-#   make app-deploy          — Deploy/upgrade the FeatureSignals application
-#   make app-deploy-staging  — Deploy staging (staging values)
-#   make app-deploy-production — Deploy production (production values)
-#   make db-migrate          — Run database migration job
-#   make backup-now          — Trigger an immediate backup
-#   make status              — Show cluster status overview
-#   make logs-server         — Tail server API logs
-#   make logs-dashboard      — Tail dashboard logs
-#   make shell-postgres      — Open a psql shell to the database
-#   make cert-renew          — Force certificate renewal
-#   make help                — Show this help message
+#   make k3s-install            — Bootstrap the k3s cluster (run once on new VPS)
+#   make infra-deploy           — Deploy infrastructure (cert-manager, MetalLB, Caddy, PostgreSQL)
+#   make infra-deploy-all       — Deploy ALL infrastructure including SigNoz and Temporal
+#   make signoz-install         — Install SigNoz observability stack
+#   make temporal-install       — Install Temporal workflow engine
+#   make observability-install  — Install both SigNoz and Temporal
+#   make app-deploy             — Deploy/upgrade the FeatureSignals application
+#   make app-deploy-staging     — Deploy staging (staging values)
+#   make app-deploy-production  — Deploy production (production values)
+#   make db-migrate             — Run database migration job
+#   make backup-now             — Trigger an immediate backup
+#   make status                 — Show cluster status overview
+#   make logs-server            — Tail server API logs
+#   make logs-dashboard         — Tail dashboard logs
+#   make shell-postgres         — Open a psql shell to the database
+#   make cert-renew             — Force certificate renewal
+#   make help                   — Show this help message
 # =============================================================================
 
 SHELL := /usr/bin/env bash
@@ -61,12 +65,40 @@ k3s-install: ## Bootstrap the k3s cluster (run as root on fresh VPS)
 	@echo -e "$(GREEN)[INFO]$(NC) To use kubectl, run: export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
 
 .PHONY: infra-deploy
-infra-deploy: ## Deploy all infrastructure components (cert-manager, MetalLB, Caddy)
+infra-deploy: ## Deploy infrastructure components (cert-manager, MetalLB, Caddy, PostgreSQL)
 	@echo -e "$(GREEN)[INFO]$(NC) Deploying infrastructure components..."
 	source /etc/k3s.env 2>/dev/null || true
 	export KUBECONFIG=$(KUBECONFIG)
 	bash $(INFRA_DIR)/install.sh
 	@echo -e "$(GREEN)[INFO]$(NC) Infrastructure deployment complete."
+
+.PHONY: infra-deploy-all
+infra-deploy-all: ## Deploy ALL infrastructure including SigNoz and Temporal
+	@echo -e "$(GREEN)[INFO]$(NC) Deploying all infrastructure (including SigNoz and Temporal)..."
+	source /etc/k3s.env 2>/dev/null || true
+	export KUBECONFIG=$(KUBECONFIG)
+	bash $(INFRA_DIR)/install.sh --all
+	@echo -e "$(GREEN)[INFO]$(NC) Full infrastructure deployment complete."
+
+
+.PHONY: signoz-install
+signoz-install: ## Install SigNoz observability stack (OTel-native traces, metrics, logs)
+	@echo -e "$(GREEN)[INFO]$(NC) Installing SigNoz observability stack..."
+	source /etc/k3s.env 2>/dev/null || true
+	export KUBECONFIG=$(KUBECONFIG)
+	bash $(INFRA_DIR)/signoz/install.sh
+	@echo -e "$(GREEN)[INFO]$(NC) SigNoz installation complete."
+
+.PHONY: temporal-install
+temporal-install: ## Install Temporal workflow engine (shared PostgreSQL, no Cassandra)
+	@echo -e "$(GREEN)[INFO]$(NC) Installing Temporal workflow engine..."
+	source /etc/k3s.env 2>/dev/null || true
+	export KUBECONFIG=$(KUBECONFIG)
+	bash $(INFRA_DIR)/temporal/install.sh
+	@echo -e "$(GREEN)[INFO]$(NC) Temporal installation complete."
+
+.PHONY: observability-install
+observability-install: signoz-install temporal-install ## Install both SigNoz and Temporal (full observability + workflows)
 
 .PHONY: app-deploy
 app-deploy: ## Deploy/upgrade the FeatureSignals application via Helm
@@ -242,16 +274,21 @@ infra-destroy: ## Remove all infrastructure components (careful!)
 		exit 1
 	fi
 	source /etc/k3s.env 2>/dev/null || true
+	helm uninstall signoz --namespace signoz 2>/dev/null || true
+	helm uninstall temporal --namespace temporal 2>/dev/null || true
 	helm uninstall featuresignals-db --namespace $(NAMESPACE_SYSTEM) 2>/dev/null || true
 	helm uninstall caddy-ingress --namespace caddy-system 2>/dev/null || true
 	helm uninstall metallb --namespace metallb-system 2>/dev/null || true
 	helm uninstall cert-manager --namespace cert-manager 2>/dev/null || true
+	kubectl delete namespace signoz 2>/dev/null || true
+	kubectl delete namespace temporal 2>/dev/null || true
 	kubectl delete namespace featuresignals-saas 2>/dev/null || true
 	kubectl delete namespace featuresignals-system 2>/dev/null || true
 	kubectl delete namespace caddy-system 2>/dev/null || true
 	kubectl delete namespace metallb-system 2>/dev/null || true
 	kubectl delete namespace cert-manager 2>/dev/null || true
 	@echo -e "$(GREEN)[INFO]$(NC) Infrastructure destroyed."
+
 
 .PHONY: k3s-uninstall
 k3s-uninstall: ## Completely remove k3s from the node
