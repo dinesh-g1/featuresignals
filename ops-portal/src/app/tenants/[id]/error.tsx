@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { ErrorState } from '@/components/ui/error-state';
+import { useEffect } from "react";
+import { ErrorState } from "@/components/ui/error-state";
 
 export default function TenantDetailError({
   error,
@@ -12,7 +12,7 @@ export default function TenantDetailError({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service in production
-    console.error('Tenant detail page error:', error);
+    console.error("Tenant detail page error:", error);
   }, [error]);
 
   return (
@@ -20,13 +20,11 @@ export default function TenantDetailError({
       <ErrorState
         title="Failed to load tenant details"
         message={
-          error.message ?? 'An unexpected error occurred while loading this page.'
+          error.message ??
+          "An unexpected error occurred while loading this page."
         }
         onRetry={() => reset()}
       />
     </div>
   );
 }
-```
-
-Now let me continue creating the remaining files - the cells pages.

@@ -11,11 +11,14 @@ import {
   BookOpen,
   Sparkles,
   Share2,
-  Link as LinkIcon,
   MessageSquare,
   ExternalLink,
+  Mail,
 } from "lucide-react";
 import posts from "@/data/blog-content";
+import { ShareButton } from "@/components/blog/share-button";
+import { ReadingProgress } from "@/components/blog/reading-progress";
+import { ContentWithIds } from "@/components/blog/content-with-ids";
 
 // ─── Generate static params for all blog posts ─────────────────────────────
 
@@ -25,12 +28,13 @@ export function generateStaticParams() {
 
 // ─── Dynamic metadata per post ─────────────────────────────────────────────
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
-}): Metadata {
-  const post = posts.find((p) => p.slug === params.slug);
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = posts.find((p) => p.slug === slug);
   if (!post) return {};
 
   return {
@@ -53,75 +57,8 @@ export function generateMetadata({
   };
 }
 
-// ─── Share button component ────────────────────────────────────────────────
-
-function ShareButton({ url, title }: { url: string; title: string }) {
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">
-        Share
-      </span>
-      <a
-        href={`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rounded-lg p-2 text-stone-400 transition-colors hover:bg-accent/10 hover:text-accent"
-        aria-label="Share on X (Twitter)"
-      >
-        <svg
-          className="h-4 w-4"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-        </svg>
-      </a>
-      <a
-        href={`https://linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rounded-lg p-2 text-stone-400 transition-colors hover:bg-accent/10 hover:text-accent"
-        aria-label="Share on LinkedIn"
-      >
-        <svg
-          className="h-4 w-4"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-        </svg>
-      </a>
-      <button
-        onClick={() => {
-          navigator.clipboard.writeText(url);
-        }}
-        className="rounded-lg p-2 text-stone-400 transition-colors hover:bg-accent/10 hover:text-accent"
-        aria-label="Copy link"
-      >
-        <LinkIcon className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
-// ─── Reading progress bar ──────────────────────────────────────────────────
-
-function ReadingProgress() {
-  return (
-    <div className="fixed top-0 left-0 right-0 z-[100] h-0.5 bg-stone-100">
-      <div
-        id="reading-progress"
-        className="h-full bg-accent transition-all duration-150 ease-out"
-        style={{ width: "0%" }}
-      />
-    </div>
-  );
-}
+// ─── Share button component is now in @/components/blog/share-button.tsx ──
+// ─── Reading progress is now in @/components/blog/reading-progress.tsx ────
 
 // ─── Table of contents extractor ───────────────────────────────────────────
 
@@ -157,8 +94,13 @@ function extractHeadings(children: React.ReactNode): Array<{
 
 // ─── Page component ────────────────────────────────────────────────────────
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = posts.find((p) => p.slug === params.slug);
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const post = posts.find((p) => p.slug === slug);
   if (!post) notFound();
 
   const headings = extractHeadings(post.content);
@@ -188,19 +130,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <ReadingProgress />
 
       {/* ── Reading progress script ── */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            document.addEventListener('scroll', function() {
-              const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-              const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-              const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-              const bar = document.getElementById('reading-progress');
-              if (bar) bar.style.width = progress + '%';
-            });
-          `,
-        }}
-      />
+      <script />
 
       {/* ── JSON-LD Article Schema ── */}
       <script
@@ -509,25 +439,13 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
               Get engineering insights, product updates, and best practices
               delivered to your inbox. No spam — just depth.
             </p>
-            <form
-              className="flex flex-col sm:flex-row items-center justify-center gap-3"
-              action="#"
-              method="post"
+            <a
+              href="mailto:sales@featuresignals.com?subject=Blog%20Newsletter%20Subscription"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-md"
             >
-              <input
-                type="email"
-                placeholder="you@company.com"
-                className="w-full rounded-xl border border-stone-700 bg-stone-800 px-5 py-3.5 text-sm text-white placeholder-stone-500 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-                required
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-md shrink-0"
-              >
-                Subscribe
-                <ArrowRight className="h-4 w-4" strokeWidth={2} />
-              </button>
-            </form>
+              <Mail className="h-4 w-4" strokeWidth={2} />
+              Subscribe via Email
+            </a>
           </div>
         </div>
       </section>
@@ -535,47 +453,4 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   );
 }
 
-// ─── Helper: renders content with auto-generated heading IDs ───────────────
-
-function ContentWithIds({ children }: { children: React.ReactNode }) {
-  function addIds(node: React.ReactNode): React.ReactNode {
-    if (!node || typeof node !== "object") return node;
-    if (Array.isArray(node)) return node.map(addIds);
-
-    const element = node as React.ReactElement & {
-      props: { children?: React.ReactNode };
-    };
-
-    if (
-      (element.type === "h2" || element.type === "h3") &&
-      typeof element.props.children === "string"
-    ) {
-      const id = element.props.children
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-
-      // Return early with a fragment if we can't clone
-      if (typeof element.type !== "string") return element;
-
-      // We know element.type is a string ('h2' or 'h3'), so it's safe to clone
-      const Tag = element.type as "h2" | "h3";
-      return <Tag id={id}>{element.props.children}</Tag>;
-    }
-
-    if (element.props?.children) {
-      const newChildren = addIds(element.props.children);
-      // We can't easily clone without React.cloneElement
-      // Return the element as-is with children replaced
-      if (typeof element.type === "string") {
-        const Tag = element.type as keyof React.JSX.IntrinsicElements;
-        const { children: _, ...rest } = element.props;
-        return <Tag {...rest}>{newChildren}</Tag>;
-      }
-    }
-
-    return element;
-  }
-
-  return <>{addIds(children)}</>;
-}
+// ─── ContentWithIds is now in @/components/blog/content-with-ids.tsx ─────

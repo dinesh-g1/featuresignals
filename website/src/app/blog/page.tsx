@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Sparkles, ArrowRight, Calendar, User, Tag } from "lucide-react";
+import { Sparkles, ArrowRight, Calendar, User, Tag, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -222,25 +222,13 @@ export default function BlogPage() {
             Get the latest posts delivered to your inbox. No spam — just
             engineering insights and product updates.
           </p>
-          <form
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto"
-            action="#"
-            method="post"
+          <a
+            href="mailto:sales@featuresignals.com?subject=Blog%20Newsletter%20Subscription"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-md"
           >
-            <input
-              type="email"
-              placeholder="you@company.com"
-              className="w-full rounded-xl border border-stone-700 bg-stone-800 px-4 py-3 text-sm text-white placeholder-stone-500 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-              required
-            />
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-md shrink-0"
-            >
-              Subscribe
-              <ArrowRight className="h-4 w-4" strokeWidth={2} />
-            </button>
-          </form>
+            <Mail className="h-4 w-4" strokeWidth={2} />
+            Subscribe via Email
+          </a>
         </div>
       </section>
     </>

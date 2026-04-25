@@ -42,7 +42,7 @@ export default function EnvironmentsPage() {
   if (prereqLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -173,7 +173,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -195,7 +195,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-teal-700 text-white shadow-sm">
               <Globe className="h-5 w-5" />
             </div>
             <div>
@@ -235,14 +235,14 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                 key={env.id}
                 className={`group relative p-4 sm:p-5 transition-all hover:shadow-md ${
                   isActive
-                    ? "border-indigo-200 bg-indigo-50/30 ring-2 ring-indigo-400/20"
-                    : "hover:border-indigo-200"
+                    ? "border-accent/20 bg-accent/5 ring-2 ring-accent/20"
+                    : "hover:border-accent/20"
                 }`}
               >
                 {/* Active indicator */}
                 {isActive && (
                   <div className="absolute -top-1.5 -right-1.5">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white shadow-sm">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                     </div>
                   </div>

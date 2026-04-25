@@ -12,11 +12,12 @@ export interface Cell {
   updatedAt: string;
 }
 
-export type CellStatus = 'healthy' | 'degraded' | 'down' | 'empty' | 'draining';
+export type CellStatus = "healthy" | "degraded" | "down" | "empty" | "draining";
 
 export interface CellHealth {
   cellId: string;
   cellName: string;
+  region: string;
   status: CellStatus;
   cpuUsagePercent: number;
   memoryUsagePercent: number;
@@ -46,7 +47,7 @@ export interface NetworkMetrics {
 
 export interface PodStatus {
   name: string;
-  status: 'running' | 'pending' | 'failed' | 'succeeded';
+  status: "running" | "pending" | "failed" | "succeeded";
   restarts: number;
   cpuUsage: number;
   memoryUsage: number;
@@ -55,7 +56,7 @@ export interface PodStatus {
 
 export interface CellLogEntry {
   timestamp: string;
-  level: 'info' | 'warn' | 'error';
+  level: "info" | "warn" | "error";
   message: string;
   source: string;
 }

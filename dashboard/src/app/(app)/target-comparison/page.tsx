@@ -68,7 +68,7 @@ function AttrEditor({
       ))}
       <button
         onClick={() => setAttrs([...attrs, { key: "", value: "" }])}
-        className="text-xs text-indigo-600 hover:text-indigo-700"
+        className="text-xs text-accent hover:text-accent-dark"
       >
         + Add attribute
       </button>
@@ -249,7 +249,7 @@ export default function TargetComparisonPage() {
                 type="checkbox"
                 checked={showDiffOnly}
                 onChange={(e) => setShowDiffOnly(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
               />
               Show differences only
             </label>
@@ -270,7 +270,7 @@ export default function TargetComparisonPage() {
                   {filtered?.map((r) => (
                     <tr
                       key={r.flag_key}
-                      className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-indigo-50/30"}`}
+                      className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-accent-glass"}`}
                     >
                       <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
                         {r.flag_key}

@@ -478,9 +478,9 @@ export default function FlagDetailPage() {
       )}
 
       {showPromote && (
-        <Card className="border-indigo-200 bg-indigo-50/50 ring-1 ring-indigo-100">
+        <Card className="border-accent/20 bg-accent/5 ring-1 ring-accent/10">
           <CardContent>
-            <p className="text-sm font-medium text-indigo-800">
+            <p className="text-sm font-medium text-accent-dark">
               Promote <span className="font-mono">{flag.key}</span> from{" "}
               <span className="font-semibold">
                 {envs.find((e) => e.id === selectedEnv)?.name || "current"}
@@ -516,7 +516,7 @@ export default function FlagDetailPage() {
       {editing && (
         <form
           onSubmit={handleEdit}
-          className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-indigo-100 sm:p-6"
+          className="rounded-xl border border-slate-200/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
         >
           <div>
             <Label>Name</Label>
@@ -650,7 +650,7 @@ export default function FlagDetailPage() {
                         className={cn(
                           "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
                           env.id === selectedEnv
-                            ? "border-indigo-300 bg-indigo-50 ring-1 ring-indigo-100"
+                            ? "border-accent/30 bg-accent/5 ring-1 ring-accent/10"
                             : "border-slate-200 bg-white hover:bg-slate-50",
                         )}
                       >
@@ -809,7 +809,7 @@ export default function FlagDetailPage() {
                       step={100}
                       value={state?.percentage_rollout || 0}
                       onChange={(e) => updateRollout(parseInt(e.target.value))}
-                      className="w-full accent-indigo-600"
+                      className="w-full accent-accent"
                     />
                     <div className="mt-1 flex justify-between text-xs text-slate-400">
                       <span>0%</span>
@@ -817,7 +817,7 @@ export default function FlagDetailPage() {
                       <span>100%</span>
                     </div>
                   </div>
-                  <span className="rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-mono font-semibold text-indigo-700 ring-1 ring-indigo-100 self-start sm:self-auto">
+                  <span className="rounded-lg bg-accent/10 px-3 py-1.5 text-sm font-mono font-semibold text-accent-dark ring-1 ring-accent/10 self-start sm:self-auto">
                     {((state?.percentage_rollout || 0) / 100).toFixed(1)}%
                   </span>
                 </div>
@@ -863,7 +863,7 @@ export default function FlagDetailPage() {
                           type="datetime-local"
                           value={scheduleEnable}
                           onChange={(e) => setScheduleEnable(e.target.value)}
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-accent/40 focus:outline-none focus:ring-2 focus:ring-accent/20"
                         />
                         {scheduleEnable && (
                           <Button
@@ -906,7 +906,7 @@ export default function FlagDetailPage() {
                           type="datetime-local"
                           value={scheduleDisable}
                           onChange={(e) => setScheduleDisable(e.target.value)}
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-slate-300 focus:border-accent/40 focus:outline-none focus:ring-2 focus:ring-accent/20"
                         />
                         {scheduleDisable && (
                           <Button

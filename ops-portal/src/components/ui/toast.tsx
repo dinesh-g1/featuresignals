@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useUIStore, type Toast } from '@/lib/store';
+import { useEffect } from "react";
+import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useUIStore, type Toast } from "@/lib/store";
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
 
@@ -16,24 +16,24 @@ const toastIcons = {
 
 const toastStyles = {
   success: {
-    border: 'border-accent-success/30',
-    bg: 'bg-accent-success/5',
-    icon: 'text-accent-success',
+    border: "border-accent-success/30",
+    bg: "bg-accent-success/5",
+    icon: "text-accent-success",
   },
   error: {
-    border: 'border-accent-danger/30',
-    bg: 'bg-accent-danger/5',
-    icon: 'text-accent-danger',
+    border: "border-accent-danger/30",
+    bg: "bg-accent-danger/5",
+    icon: "text-accent-danger",
   },
   warning: {
-    border: 'border-accent-warning/30',
-    bg: 'bg-accent-warning/5',
-    icon: 'text-accent-warning',
+    border: "border-accent-warning/30",
+    bg: "bg-accent-warning/5",
+    icon: "text-accent-warning",
   },
   info: {
-    border: 'border-accent-info/30',
-    bg: 'bg-accent-info/5',
-    icon: 'text-accent-info',
+    border: "border-accent-info/30",
+    bg: "bg-accent-info/5",
+    icon: "text-accent-info",
   },
 } as const;
 
@@ -49,18 +49,23 @@ function ToastItem({ toast }: { toast: Toast }) {
       role="status"
       aria-live="polite"
       className={cn(
-        'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border p-4 shadow-lg',
-        'animate-in slide-in-from-right-full fade-in',
+        "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border p-4 shadow-lg",
+        "animate-in slide-in-from-right-full fade-in",
         styles.border,
         styles.bg,
       )}
     >
-      <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', styles.icon)} aria-hidden="true" />
+      <Icon
+        className={cn("mt-0.5 h-5 w-5 shrink-0", styles.icon)}
+        aria-hidden="true"
+      />
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-text-primary">{toast.title}</p>
         {toast.description && (
-          <p className="mt-0.5 text-xs text-text-secondary">{toast.description}</p>
+          <p className="mt-0.5 text-xs text-text-secondary">
+            {toast.description}
+          </p>
         )}
       </div>
 
@@ -102,14 +107,13 @@ export function useToast() {
 
   return {
     success: (title: string, description?: string, duration?: number) =>
-      addToast({ type: 'success', title, description, duration }),
+      addToast({ type: "success", title, description, duration }),
     error: (title: string, description?: string, duration?: number) =>
-      addToast({ type: 'error', title, description, duration }),
+      addToast({ type: "error", title, description, duration }),
     warning: (title: string, description?: string, duration?: number) =>
-      addToast({ type: 'warning', title, description, duration }),
+      addToast({ type: "warning", title, description, duration }),
     info: (title: string, description?: string, duration?: number) =>
-      addToast({ type: 'info', title, description, duration }),
+      addToast({ type: "info", title, description, duration }),
     dismiss: removeToast,
   };
 }
-```Now let me continue creating the remaining files.

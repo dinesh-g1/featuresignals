@@ -176,7 +176,7 @@ export default function SettingsGeneralPage() {
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/5 text-accent">
               <Building2 className="h-5 w-5" />
             </div>
             <div>
@@ -268,7 +268,7 @@ export default function SettingsGeneralPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+            <Loader2 className="h-5 w-5 animate-spin text-accent" />
           </div>
         ) : projects.length === 0 ? (
           <p className="text-sm text-slate-400 py-8 text-center">
@@ -283,19 +283,19 @@ export default function SettingsGeneralPage() {
                   key={project.id}
                   className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
                     isActive
-                      ? "border-indigo-200 bg-indigo-50/30"
+                      ? "border-accent/20 bg-accent-glass"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-teal-700 text-white shadow-sm">
                       <FolderOpen className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-900 truncate">
                         {project.name}
                         {isActive && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                          <span className="ml-2 inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent-dark">
                             Active
                           </span>
                         )}

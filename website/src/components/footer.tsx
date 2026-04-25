@@ -20,9 +20,9 @@ const footerSections = [
         href: "https://docs.featuresignals.com/getting-started/quickstart",
         external: true,
       },
-      { label: "Migrate from LaunchDarkly", href: "#migration" },
-      { label: "Migrate from Unleash", href: "#migration" },
-      { label: "Migrate from Flagsmith", href: "#migration" },
+      { label: "Migrate from LaunchDarkly", href: "/use-cases#migration" },
+      { label: "Migrate from Unleash", href: "/use-cases#migration" },
+      { label: "Migrate from Flagsmith", href: "/use-cases#migration" },
       { label: "Log in", href: "https://app.featuresignals.com/login" },
     ],
   },
@@ -124,6 +124,7 @@ export function Footer() {
                 viewBox="0 0 32 32"
                 fill="none"
                 className="h-6 w-6"
+                aria-hidden="true"
               >
                 <rect width="32" height="32" rx="7" fill="#0d9488" />
                 <path
@@ -235,18 +236,18 @@ export function Footer() {
           </div>
 
           <div className="flex gap-6 text-sm text-stone-500">
-            <a
-              href="#"
+            <Link
+              href="/features/security"
               className="hover:text-stone-300 transition-colors font-mono text-xs"
             >
               SOC 2 Type II
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              href="/features/integrations"
               className="hover:text-stone-300 transition-colors font-mono text-xs"
             >
               OpenFeature Native
-            </a>
+            </Link>
             <Link
               href="/status"
               className="hover:text-stone-300 transition-colors font-mono text-xs"

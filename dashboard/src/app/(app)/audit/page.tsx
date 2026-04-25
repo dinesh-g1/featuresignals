@@ -300,7 +300,7 @@ export default function AuditPage() {
             filtered.map((entry) => (
               <div
                 key={entry.id}
-                className="px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6 sm:py-4"
+                className="px-4 py-3 transition-colors hover:bg-accent-glass sm:px-6 sm:py-4"
               >
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">

@@ -325,11 +325,11 @@ export default function TeamPage() {
             members.map((member) => (
               <div key={member.id}>
                 <div
-                  className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-100 transition-colors hover:bg-indigo-50/30 cursor-pointer sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-100 transition-colors hover:bg-accent-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
                   onClick={() => toggleExpand(member.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 shrink-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent-dark shrink-0">
                       {member.name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div className="min-w-0">
@@ -461,7 +461,7 @@ export default function TeamPage() {
                                     "can_toggle",
                                   )
                                 }
-                                className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                className="h-3.5 w-3.5 rounded border-slate-300 text-accent focus:ring-accent"
                               />
                               Toggle
                             </label>
@@ -480,7 +480,7 @@ export default function TeamPage() {
                                     "can_edit_rules",
                                   )
                                 }
-                                className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                className="h-3.5 w-3.5 rounded border-slate-300 text-accent focus:ring-accent"
                               />
                               Edit Rules
                             </label>

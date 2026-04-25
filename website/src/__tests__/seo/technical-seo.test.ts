@@ -31,6 +31,7 @@ const EXPECTED_PAGES = [
   { path: "/terms-and-conditions", priority: 0.3 },
   { path: "/refund-policy", priority: 0.3 },
   { path: "/cancellation-policy", priority: 0.3 },
+  { path: "/shipping-policy", priority: 0.3 },
 ];
 
 // ─── Expected page.tsx files that must exist ──────────────────────────────
@@ -52,6 +53,7 @@ const EXPECTED_PAGE_FILES = [
   "terms-and-conditions/page.tsx",
   "refund-policy/page.tsx",
   "cancellation-policy/page.tsx",
+  "shipping-policy/page.tsx",
 ];
 
 // ─── Expected pages that must have BreadcrumbList JSON-LD ─────────────────
@@ -88,73 +90,79 @@ const PAGES_REQUIRING_METADATA = [
   "terms-and-conditions/page.tsx",
   "refund-policy/page.tsx",
   "cancellation-policy/page.tsx",
+  "shipping-policy/page.tsx",
 ];
 
-// ─── 1. robots.txt ─────────────────────────────────────────────────────────
+// ─── 1. robots.txt (static) ────────────────────────────────────────────────
 
 describe("SEO: robots.txt", () => {
-  const robotsPath = path.join(publicDir, "robots.txt");
+  const robotsTxtPath = path.join(publicDir, "robots.txt");
 
-  it("exists in the public directory", () => {
-    expect(fs.existsSync(robotsPath)).toBe(true);
+  it("exists in the app directory", () => {
+    expect(fs.existsSync(robotsTxtPath)).toBe(true);
   });
 
   it("allows all user agents", () => {
-    const content = fs.readFileSync(robotsPath, "utf-8");
-    expect(content).toContain("User-agent: *");
-    expect(content).toContain("Allow: /");
+    const content = fs.readFileSync(robotsTxtPath, "utf-8");
+    expect(content).toContain('userAgent: "*"');
+    expect(content).toContain('allow: "/"');
   });
 
   it("points to the sitemap", () => {
-    const content = fs.readFileSync(robotsPath, "utf-8");
+    const content = fs.readFileSync(robotsTxtPath, "utf-8");
     expect(content).toContain(
-      "Sitemap: https://featuresignals.com/sitemap.xml",
+      'sitemap: "https://featuresignals.com/sitemap.xml"',
     );
+  });
+
+  it("exports a default function", () => {
+    const content = fs.readFileSync(robotsTxtPath, "utf-8");
+    expect(content).toContain("export default function robots");
   });
 });
 
-// ─── 2. sitemap.xml ────────────────────────────────────────────────────────
+// ─── 2. sitemap.xml (static) ──────────────────────────────────────────────
 
 describe("SEO: sitemap.xml", () => {
-  const sitemapPath = path.join(publicDir, "sitemap.xml");
+  const sitemapXmlPath = path.join(publicDir, "sitemap.xml");
 
-  it("exists in the public directory", () => {
-    expect(fs.existsSync(sitemapPath)).toBe(true);
+  it("exists in the app directory", () => {
+    expect(fs.existsSync(sitemapXmlPath)).toBe(true);
   });
 
-  it("is valid XML with urlset namespace", () => {
-    const content = fs.readFileSync(sitemapPath, "utf-8");
-    expect(content).toContain(
-      'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
-    );
-    expect(content).toContain("<urlset");
-    expect(content).toContain("</urlset>");
+  it("exports a default function returning Sitemap array", () => {
+    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
+    expect(content).toContain("export default function sitemap()");
+    expect(content).toContain("MetadataRoute.Sitemap");
   });
 
-  it("covers all expected pages", () => {
-    const content = fs.readFileSync(sitemapPath, "utf-8");
+  it("covers all expected pages with correct base URL", () => {
+    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
     for (const page of EXPECTED_PAGES) {
-      const fullUrl = `https://featuresignals.com${page.path}`;
-      expect(content).toContain(`<loc>${fullUrl}</loc>`);
+      const fullUrl = `\${baseUrl}${page.path}`;
+      // The sitemap.ts uses template literals for the base URL
+      // Each page entry uses: url: `${baseUrl}/path`
+      expect(content).toContain(
+        page.path === "" ? "baseUrl" : `\${baseUrl}${page.path}`,
+      );
     }
-  });
-
-  it("has correct priority for the homepage", () => {
-    const content = fs.readFileSync(sitemapPath, "utf-8");
-    const homeEntry = content.match(
-      /<url>[\s\S]*?<loc>https:\/\/featuresignals\.com<\/loc>[\s\S]*?<priority>(.*?)<\/priority>/,
-    );
-    expect(homeEntry).not.toBeNull();
-    expect(homeEntry![1]).toBe("1.0");
   });
 
   it("uses featuresignals.com domain (not localhost)", () => {
-    const content = fs.readFileSync(sitemapPath, "utf-8");
-    const locs = content.match(/<loc>(.*?)<\/loc>/g) || [];
-    for (const loc of locs) {
-      expect(loc).toContain("https://featuresignals.com");
-      expect(loc).not.toContain("localhost");
-    }
+    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
+    expect(content).toContain("https://featuresignals.com");
+    expect(content).not.toContain("localhost");
+  });
+
+  it("has correct priority for the homepage (1.0)", () => {
+    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
+    expect(content).toContain("priority: 1.0");
+  });
+
+  it("imports blog posts from data source for dynamic blog entries", () => {
+    const content = fs.readFileSync(sitemapXmlPath, "utf-8");
+    expect(content).toContain("posts.map");
+    expect(content).toContain("blog/${post.slug}");
   });
 });
 
@@ -350,6 +358,12 @@ describe("SEO: Blog [slug] page", () => {
     const content = fs.readFileSync(slugPagePath, "utf-8");
     expect(content).toContain("Continue reading");
   });
+
+  it("uses async params (Next.js 16)", () => {
+    const content = fs.readFileSync(slugPagePath, "utf-8");
+    expect(content).toContain("Promise<{ slug: string }>");
+    expect(content).toContain("await params");
+  });
 });
 
 // ─── 8. Pricing page: special schemas ──────────────────────────────────────
@@ -382,7 +396,35 @@ describe("SEO: Pricing page schemas", () => {
   });
 });
 
-// ─── 9. next.config.ts integrity ───────────────────────────────────────────
+// ─── 9. Shipping Policy page: metadata ─────────────────────────────────────
+
+describe("SEO: Shipping Policy page", () => {
+  const shippingPath = path.join(appDir, "shipping-policy/page.tsx");
+
+  it("has export const metadata for SEO", () => {
+    const content = fs.readFileSync(shippingPath, "utf-8");
+    expect(content).toContain("export const metadata");
+  });
+
+  it("has proper title metadata", () => {
+    const content = fs.readFileSync(shippingPath, "utf-8");
+    expect(content).toContain('title: "Shipping Policy"');
+  });
+
+  it("has proper description metadata", () => {
+    const content = fs.readFileSync(shippingPath, "utf-8");
+    expect(content).toContain("description:");
+    expect(content).toContain("digital software delivery");
+  });
+
+  it("has proper heading hierarchy (h1, h2)", () => {
+    const content = fs.readFileSync(shippingPath, "utf-8");
+    expect(content).toContain("<h1");
+    expect(content).toContain("<h2");
+  });
+});
+
+// ─── 10. next.config.ts integrity ──────────────────────────────────────────
 
 describe("SEO: next.config.ts", () => {
   const configPath = path.resolve(__dirname, "../../../next.config.ts");
@@ -397,6 +439,34 @@ describe("SEO: next.config.ts", () => {
     const content = fs.readFileSync(configPath, "utf-8");
     expect(content).toContain("unoptimized");
     expect(content).toContain("true");
+  });
+});
+
+// ─── 11. Footer link integrity ─────────────────────────────────────────────
+
+describe("SEO: Footer link integrity", () => {
+  const footerPath = path.join(__dirname, "../../components/footer.tsx");
+
+  it("migration links point to real page anchors", () => {
+    const content = fs.readFileSync(footerPath, "utf-8");
+    // Migration links should point to /use-cases#migration (not bare #migration)
+    expect(content).toContain("/use-cases#migration");
+    expect(content).not.toContain('href: "#migration"');
+  });
+
+  it("SOC 2 badge links to features/security page", () => {
+    const content = fs.readFileSync(footerPath, "utf-8");
+    expect(content).toContain('href: "/features/security"');
+  });
+
+  it("OpenFeature badge links to integrations page", () => {
+    const content = fs.readFileSync(footerPath, "utf-8");
+    expect(content).toContain('href: "/features/integrations"');
+  });
+
+  it("status link points to /status page", () => {
+    const content = fs.readFileSync(footerPath, "utf-8");
+    expect(content).toContain('href: "/status"');
   });
 });
 

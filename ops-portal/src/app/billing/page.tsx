@@ -173,11 +173,11 @@ function buildInvoiceColumns(
       header: "Customer",
       cell: (info) => (
         <span className="text-sm font-medium text-text-primary">
-          {info.getValue()}
+          {info.getValue() as string}
         </span>
       ),
       enableSorting: true,
-    }),
+    }) as ColumnDef<Invoice>,
     invoiceColumnHelper.accessor("amount", {
       header: "Amount",
       cell: (info) => {
@@ -189,11 +189,11 @@ function buildInvoiceColumns(
         );
       },
       enableSorting: true,
-    }),
+    }) as ColumnDef<Invoice>,
     invoiceColumnHelper.accessor("dueDate", {
       header: "Due Date",
       cell: (info) => {
-        const dueDate = new Date(info.getValue());
+        const dueDate = new Date(info.getValue() as string);
         const isOverdue =
           dueDate < new Date() && info.row.original.status !== "paid";
         return (
@@ -214,11 +214,11 @@ function buildInvoiceColumns(
         );
       },
       enableSorting: true,
-    }),
+    }) as ColumnDef<Invoice>,
     invoiceColumnHelper.accessor("status", {
       header: "Status",
       cell: (info) => {
-        const status = info.getValue();
+        const status = info.getValue() as string;
         return (
           <Badge variant={INVOICE_STATUS_MAP[status] ?? "default"} size="sm">
             <span className="capitalize">{status.replace("_", " ")}</span>
@@ -226,7 +226,7 @@ function buildInvoiceColumns(
         );
       },
       enableSorting: true,
-    }),
+    }) as ColumnDef<Invoice>,
     invoiceColumnHelper.accessor("id", {
       header: "",
       id: "actions",
@@ -267,7 +267,7 @@ function buildInvoiceColumns(
         );
       },
       enableSorting: false,
-    }),
+    }) as ColumnDef<Invoice>,
   ];
 }
 

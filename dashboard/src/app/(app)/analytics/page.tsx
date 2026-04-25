@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
               onClick={() => setPeriod(p.value)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 period === p.value
-                  ? "bg-indigo-600 text-white shadow-sm"
+                  ? "bg-accent text-white shadow-sm"
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
               }`}
             >
@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
         </div>
       ) : data ? (
         <>
@@ -93,7 +93,7 @@ export default function AnalyticsPage() {
               label="Active Workspaces"
               value={data.active_workspaces}
               icon={Building2}
-              color="indigo"
+              color="accent"
             />
             <StatCard
               label="Active Users"
@@ -111,7 +111,7 @@ export default function AnalyticsPage() {
               label="Flag Events"
               value={data.event_counts?.flag ?? 0}
               icon={BarChart3}
-              color="indigo"
+              color="accent"
             />
           </div>
 
@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
                       <div className="flex-1">
                         <div className="h-7 overflow-hidden rounded-md bg-slate-100">
                           <div
-                            className={`flex h-full items-center rounded-md bg-indigo-500 px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
+                            className={`flex h-full items-center rounded-md bg-accent px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
                           >
                             {count}
                           </div>
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
                       <span className="text-sm font-medium capitalize text-slate-700">
                         {plan}
                       </span>
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                      <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent-dark">
                         {count}
                       </span>
                     </div>

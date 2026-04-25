@@ -1,20 +1,25 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as api from '@/lib/api';
-import type { BackupFilters } from '@/types/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as api from "@/lib/api";
 
 // ─── List Backups ──────────────────────────────────────────────────────────
 
 export interface UseBackupsOptions {
-  filters?: BackupFilters;
+  filters?: Record<string, string | number | boolean | undefined>;
   enabled?: boolean;
 }
 
-export function useBackups({ filters, enabled = true }: UseBackupsOptions = {}) {
+export function useBackups({
+  filters,
+  enabled = true,
+}: UseBackupsOptions = {}) {
   return useQuery({
-    queryKey: ['backups', filters],
-    queryFn: () => api.listBackups(filters),
+    queryKey: ["backups", filters],
+    queryFn: () =>
+      api.listBackups(
+        filters as Record<string, string | number | boolean | undefined>,
+      ),
     staleTime: 15_000,
     gcTime: 60_000,
     retry: 3,
@@ -27,7 +32,7 @@ export function useBackups({ filters, enabled = true }: UseBackupsOptions = {}) 
 
 export function useBackupStatus() {
   return useQuery({
-    queryKey: ['backups', 'status'],
+    queryKey: ["backups", "status"],
     queryFn: () => api.getBackupStatus(),
     staleTime: 10_000,
     gcTime: 30_000,
@@ -45,8 +50,8 @@ export function useTriggerBackup() {
   return useMutation({
     mutationFn: () => api.triggerBackup(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['backups'] });
-      queryClient.invalidateQueries({ queryKey: ['backups', 'status'] });
+      queryClient.invalidateQueries({ queryKey: ["backups"] });
+      queryClient.invalidateQueries({ queryKey: ["backups", "status"] });
     },
   });
 }
@@ -59,8 +64,8 @@ export function useRestoreBackup() {
   return useMutation({
     mutationFn: (id: string) => api.restoreBackup(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['backups'] });
-      queryClient.invalidateQueries({ queryKey: ['backups', 'status'] });
+      queryClient.invalidateQueries({ queryKey: ["backups"] });
+      queryClient.invalidateQueries({ queryKey: ["backups", "status"] });
     },
   });
 }

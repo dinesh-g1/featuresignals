@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   Plus,
   RefreshCw,
@@ -110,7 +111,9 @@ function formatTTL(expiresAt: string): { display: string; urgent: boolean } {
 const columnHelper = createColumnHelper<Preview>();
 
 // We build columns lazily because we need the delete handler and router ref
-function buildColumns(onDelete: (preview: Preview) => void) {
+function buildColumns(
+  onDelete: (preview: Preview) => void,
+): ColumnDef<Preview>[] {
   return [
     columnHelper.accessor("name", {
       header: "Name",
@@ -137,7 +140,7 @@ function buildColumns(onDelete: (preview: Preview) => void) {
         );
       },
       enableSorting: true,
-    }),
+    }) as ColumnDef<Preview>,
     columnHelper.accessor("ref", {
       header: "PR / Tag",
       cell: (info) => {
@@ -156,14 +159,14 @@ function buildColumns(onDelete: (preview: Preview) => void) {
         );
       },
       enableSorting: true,
-    }),
+    }) as ColumnDef<Preview>,
     columnHelper.accessor("ownerName", {
       header: "Owner",
       cell: (info) => (
         <span className="text-sm text-text-secondary">{info.getValue()}</span>
       ),
       enableSorting: true,
-    }),
+    }) as ColumnDef<Preview>,
     columnHelper.accessor("createdAt", {
       header: "Created",
       cell: (info) => (
@@ -172,7 +175,7 @@ function buildColumns(onDelete: (preview: Preview) => void) {
         </span>
       ),
       enableSorting: true,
-    }),
+    }) as ColumnDef<Preview>,
     columnHelper.display({
       id: "ttl",
       header: "TTL",
@@ -202,7 +205,7 @@ function buildColumns(onDelete: (preview: Preview) => void) {
         );
       },
       enableSorting: false,
-    }),
+    }) as ColumnDef<Preview>,
     columnHelper.accessor("status", {
       header: "Status",
       cell: (info) => {
@@ -215,7 +218,7 @@ function buildColumns(onDelete: (preview: Preview) => void) {
         );
       },
       enableSorting: true,
-    }),
+    }) as ColumnDef<Preview>,
     columnHelper.display({
       id: "actions",
       header: "",
@@ -241,7 +244,7 @@ function buildColumns(onDelete: (preview: Preview) => void) {
         );
       },
       enableSorting: false,
-    }),
+    }) as ColumnDef<Preview>,
   ];
 }
 

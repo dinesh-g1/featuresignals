@@ -2,145 +2,126 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://featuresignals.com</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/features</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/features/ai</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://featuresignals.com/features/integrations</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/features/security</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://featuresignals.com/pricing</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://featuresignals.com/use-cases</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://featuresignals.com/blog</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://featuresignals.com/features/integrations</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://featuresignals.com/use-cases</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/pricing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://featuresignals.com/blog/introducing-ai-janitor</loc>
-    <lastmod>2026-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/migrating-from-launchdarkly-guide</loc>
-    <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/sub-millisecond-flag-evaluation</loc>
-    <lastmod>2026-01-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/multi-iac-provider-support</loc>
-    <lastmod>2025-12-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/openfeature-interoperability</loc>
-    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/soc2-compliant-feature-flags</loc>
-    <lastmod>2025-12-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/cost-of-flag-rot</loc>
-    <lastmod>2025-12-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/blog/progressive-delivery-beyond-flags</loc>
-    <lastmod>2025-12-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/changelog</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/about</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/contact</loc>
-    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/status</loc>
-    <lastmod>2026-04-25</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>always</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/privacy-policy</loc>
-    <lastmod>2026-01-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/terms-and-conditions</loc>
-    <lastmod>2026-01-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/refund-policy</loc>
-    <lastmod>2026-01-15</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://featuresignals.com/cancellation-policy</loc>
-    <lastmod>2026-01-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/shipping-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

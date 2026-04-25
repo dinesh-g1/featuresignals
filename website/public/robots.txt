@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /_next/
+Disallow: /out/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
 
 Sitemap: https://featuresignals.com/sitemap.xml

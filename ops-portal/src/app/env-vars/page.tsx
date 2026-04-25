@@ -181,7 +181,8 @@ export default function EnvVarsPage() {
 
     try {
       await updateMutation.mutateAsync({
-        cellId: selectedCellId,
+        scope: "cell",
+        scopeId: selectedCellId,
         req: {
           overrides: [{ key: editKey, value: editValue }],
         },

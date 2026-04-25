@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import * as api from '@/lib/api';
-import type { SystemHealth, ServiceStatusEntry } from '@/types/api';
+import { useQuery } from "@tanstack/react-query";
+import * as api from "@/lib/api";
+import type { SystemHealth } from "@/types/api";
+import type { ServiceStatusEntry } from "@/lib/api";
 
 // ─── Use System Health ────────────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ export function useSystemHealth({
   refetchInterval = 30_000,
 }: UseSystemHealthOptions = {}) {
   return useQuery<SystemHealth>({
-    queryKey: ['system', 'health'],
+    queryKey: ["system", "health"],
     queryFn: () => api.getSystemHealth(),
     staleTime: 15_000,
     gcTime: 60_000,
@@ -40,7 +41,7 @@ export function useServiceStatuses({
   refetchInterval = 30_000,
 }: UseServiceStatusesOptions = {}) {
   return useQuery<ServiceStatusEntry[]>({
-    queryKey: ['system', 'services'],
+    queryKey: ["system", "services"],
     queryFn: () => api.getServiceStatuses(),
     staleTime: 15_000,
     gcTime: 60_000,

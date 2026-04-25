@@ -241,7 +241,7 @@ export default function APIKeysPage() {
               return (
                 <div
                   key={k.id}
-                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-indigo-50/30"}`}
+                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-accent-glass"}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

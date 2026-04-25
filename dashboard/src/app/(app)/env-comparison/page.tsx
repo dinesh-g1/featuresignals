@@ -213,7 +213,7 @@ export default function EnvComparisonPage() {
                     type="checkbox"
                     checked={selected.size === (comparison.diffs ?? []).length}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
                   />
                   <span className="text-sm font-medium text-slate-700">
                     {selected.size > 0
@@ -250,14 +250,14 @@ export default function EnvComparisonPage() {
                     {(comparison.diffs ?? []).map((d) => (
                       <tr
                         key={d.flag_key}
-                        className="transition-colors hover:bg-indigo-50/30"
+                        className="transition-colors hover:bg-accent-glass"
                       >
                         <td className="px-4 py-3 sm:px-6">
                           <input
                             type="checkbox"
                             checked={selected.has(d.flag_key)}
                             onChange={() => toggleSelect(d.flag_key)}
-                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
                           />
                         </td>
                         <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">

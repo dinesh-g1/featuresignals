@@ -318,8 +318,8 @@ resource "featuresignals_flag" "example" {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 shrink-0">
-            <Cloud className="h-5 w-5 text-indigo-600" strokeWidth={1.5} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 shrink-0">
+            <Cloud className="h-5 w-5 text-accent" strokeWidth={1.5} />
           </div>
           <div>
             <CardTitle>Terraform Provider</CardTitle>

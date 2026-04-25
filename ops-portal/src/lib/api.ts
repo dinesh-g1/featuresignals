@@ -56,8 +56,6 @@ import type {
   DashboardStats,
   RecentActivity,
   SystemHealth,
-  AuditFilters,
-  BackupFilters,
   PaginatedResponse,
   ApiErrorResponse,
   OpsUser,
@@ -74,7 +72,7 @@ interface ApiOptions extends Omit<RequestInit, "headers"> {
   skipAuth?: boolean;
   retries?: number;
   headers?: Record<string, string>;
-  params?: Record<string, unknown>;
+  params?: Record<string, string | number | boolean | undefined>;
 }
 
 // ─── ApiError ──────────────────────────────────────────────────────────────
@@ -506,7 +504,7 @@ export async function updateEnvVarsAtScope(
 // ─── Backup Endpoints ───────────────────────────────────────────────────────
 
 export async function listBackups(
-  filters?: BackupFilters,
+  filters?: Record<string, string | number | boolean | undefined>,
 ): Promise<PaginatedResponse<BackupEntry>> {
   return request<PaginatedResponse<BackupEntry>>("/backups", {
     params: filters,
@@ -528,7 +526,7 @@ export async function getBackupStatus(): Promise<BackupStatus> {
 // ─── Audit Endpoints ────────────────────────────────────────────────────────
 
 export async function getAuditLog(
-  filters?: AuditFilters,
+  filters?: Record<string, string | number | boolean | undefined>,
 ): Promise<PaginatedResponse<AuditEntry>> {
   return request<PaginatedResponse<AuditEntry>>("/audit", { params: filters });
 }

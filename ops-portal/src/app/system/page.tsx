@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 import {
   RefreshCw,
   Server,
@@ -14,16 +14,23 @@ import {
   Globe,
   Shield,
   Layers,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ErrorState } from '@/components/ui/error-state';
-import { StatusDot } from '@/components/ui/status-dot';
-import { Badge } from '@/components/ui/badge';
-import { cn, formatRelativeTime } from '@/lib/utils';
-import { useSystemHealth, useServiceStatuses } from '@/hooks/use-system';
-import type { NodeStatus, ServiceStatusEntry } from '@/types/api';
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { StatusDot } from "@/components/ui/status-dot";
+import { Badge } from "@/components/ui/badge";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { useSystemHealth, useServiceStatuses } from "@/hooks/use-system";
+import type { NodeStatus, ServiceStatus } from "@/types/api";
+import type { ServiceStatusEntry } from "@/lib/api";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -31,17 +38,15 @@ const SERVICE_ICONS: Record<string, React.ReactNode> = {
   postgresql: <Database className="h-5 w-5" aria-hidden="true" />,
   signoz: <BarChart3 className="h-5 w-5" aria-hidden="true" />,
   temporal: <Activity className="h-5 w-5" aria-hidden="true" />,
-  'api-server': <Server className="h-5 w-5" aria-hidden="true" />,
+  "api-server": <Server className="h-5 w-5" aria-hidden="true" />,
   dashboard: <Globe className="h-5 w-5" aria-hidden="true" />,
-  'caddy-ingress': <Shield className="h-5 w-5" aria-hidden="true" />,
+  "caddy-ingress": <Shield className="h-5 w-5" aria-hidden="true" />,
 };
 
 const DEFAULT_SERVICE_ICON = <Cpu className="h-5 w-5" aria-hidden="true" />;
 
 function getServiceLabel(name: string): string {
-  return name
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return name.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function getServiceIcon(name: string): React.ReactNode {
@@ -50,29 +55,29 @@ function getServiceIcon(name: string): React.ReactNode {
 
 function statusDotVariant(
   status: string,
-): 'healthy' | 'warning' | 'danger' | 'neutral' {
+): "healthy" | "warning" | "danger" | "neutral" {
   switch (status) {
-    case 'healthy':
-      return 'healthy';
-    case 'degraded':
-      return 'warning';
-    case 'down':
-      return 'danger';
+    case "healthy":
+      return "healthy";
+    case "degraded":
+      return "warning";
+    case "down":
+      return "danger";
     default:
-      return 'neutral';
+      return "neutral";
   }
 }
 
 function statusColorClass(status: string): string {
   switch (status) {
-    case 'healthy':
-      return 'text-accent-success';
-    case 'degraded':
-      return 'text-accent-warning';
-    case 'down':
-      return 'text-accent-danger';
+    case "healthy":
+      return "text-accent-success";
+    case "degraded":
+      return "text-accent-warning";
+    case "down":
+      return "text-accent-danger";
     default:
-      return 'text-text-muted';
+      return "text-text-muted";
   }
 }
 
@@ -80,9 +85,9 @@ function statusColorClass(status: string): string {
 
 function ResourceBar({ label, percent }: { label: string; percent: number }) {
   const barColor = (pct: number) => {
-    if (pct > 80) return 'bg-accent-danger';
-    if (pct > 60) return 'bg-accent-warning';
-    return 'bg-accent-success';
+    if (pct > 80) return "bg-accent-danger";
+    if (pct > 60) return "bg-accent-warning";
+    return "bg-accent-success";
   };
 
   return (
@@ -90,7 +95,10 @@ function ResourceBar({ label, percent }: { label: string; percent: number }) {
       <span className="text-xs text-text-muted w-10 shrink-0">{label}</span>
       <div className="flex-1 h-2 rounded-full bg-bg-elevated overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all duration-500', barColor(percent))}
+          className={cn(
+            "h-full rounded-full transition-all duration-500",
+            barColor(percent),
+          )}
           style={{ width: `${Math.min(percent, 100)}%` }}
           role="progressbar"
           aria-valuenow={Math.round(percent)}
@@ -99,7 +107,9 @@ function ResourceBar({ label, percent }: { label: string; percent: number }) {
           aria-label={`${label}: ${Math.round(percent)}%`}
         />
       </div>
-      <span className="text-xs text-text-muted w-9 text-right">{Math.round(percent)}%</span>
+      <span className="text-xs text-text-muted w-9 text-right">
+        {Math.round(percent)}%
+      </span>
     </div>
   );
 }
@@ -107,22 +117,27 @@ function ResourceBar({ label, percent }: { label: string; percent: number }) {
 // ─── Node Card ─────────────────────────────────────────────────────────────
 
 function NodeCard({ node }: { node: NodeStatus }) {
-  const ready = node.status === 'ready';
+  const ready = node.status === "ready";
 
   return (
-    <Card variant="bordered" className={cn(!ready && 'border-accent-danger/30')}>
+    <Card
+      variant="bordered"
+      className={cn(!ready && "border-accent-danger/30")}
+    >
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bg-tertiary">
               <Server className="h-4 w-4 text-text-muted" aria-hidden="true" />
             </div>
-            <span className="text-sm font-medium text-text-primary truncate">{node.name}</span>
+            <span className="text-sm font-medium text-text-primary truncate">
+              {node.name}
+            </span>
           </div>
           <StatusDot
-            status={ready ? 'healthy' : 'danger'}
+            status={ready ? "healthy" : "danger"}
             pulse={!ready}
-            label={ready ? 'Ready' : 'Not Ready'}
+            label={ready ? "Ready" : "Not Ready"}
             size="sm"
           />
         </div>
@@ -153,9 +168,10 @@ function ServiceCard({ service }: { service: ServiceCardData }) {
     <Card
       variant="default"
       className={cn(
-        'transition-all',
-        service.status === 'down' && 'border-accent-danger/40 bg-accent-danger/5',
-        service.status === 'degraded' && 'border-accent-warning/30',
+        "transition-all",
+        service.status === "down" &&
+          "border-accent-danger/40 bg-accent-danger/5",
+        service.status === "degraded" && "border-accent-warning/30",
       )}
     >
       <CardContent className="p-4">
@@ -163,22 +179,30 @@ function ServiceCard({ service }: { service: ServiceCardData }) {
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               className={cn(
-                'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-                service.status === 'healthy'
-                  ? 'bg-accent-success/10'
-                  : service.status === 'degraded'
-                    ? 'bg-accent-warning/10'
-                    : 'bg-accent-danger/10',
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                service.status === "healthy"
+                  ? "bg-accent-success/10"
+                  : service.status === "degraded"
+                    ? "bg-accent-warning/10"
+                    : "bg-accent-danger/10",
               )}
             >
               <span className={colorCls}>{icon}</span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-text-primary truncate">{displayName}</p>
-              <p className={cn('text-xs font-medium capitalize', colorCls)}>{service.status}</p>
+              <p className="text-sm font-medium text-text-primary truncate">
+                {displayName}
+              </p>
+              <p className={cn("text-xs font-medium capitalize", colorCls)}>
+                {service.status}
+              </p>
             </div>
           </div>
-          <StatusDot status={dotVariant} pulse={service.status !== 'healthy'} size="sm" />
+          <StatusDot
+            status={dotVariant}
+            pulse={service.status !== "healthy"}
+            size="sm"
+          />
         </div>
 
         <div className="flex items-center gap-3 text-xs text-text-muted">
@@ -190,13 +214,13 @@ function ServiceCard({ service }: { service: ServiceCardData }) {
           )}
           {service.version && (
             <span className="flex items-center gap-1">
-              <Layers className="h-3 w-3" aria-hidden="true" />
-              v{service.version}
+              <Layers className="h-3 w-3" aria-hidden="true" />v
+              {service.version}
             </span>
           )}
         </div>
 
-        {service.message && service.status !== 'healthy' && (
+        {service.message && service.status !== "healthy" && (
           <div className="mt-2 rounded-md bg-accent-danger/10 px-2.5 py-1.5">
             <p className="text-xs text-accent-danger">{service.message}</p>
           </div>
@@ -264,16 +288,23 @@ function SigNozSection() {
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div>
           <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-accent-primary" aria-hidden="true" />
+            <BarChart3
+              className="h-4 w-4 text-accent-primary"
+              aria-hidden="true"
+            />
             SigNoz Observability
           </CardTitle>
-          <CardDescription>Application performance monitoring and tracing</CardDescription>
+          <CardDescription>
+            Application performance monitoring and tracing
+          </CardDescription>
         </div>
         {sigNozUrl && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open(sigNozUrl, '_blank', 'noopener,noreferrer')}
+            onClick={() =>
+              window.open(sigNozUrl, "_blank", "noopener,noreferrer")
+            }
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             Open SigNoz
@@ -284,7 +315,7 @@ function SigNozSection() {
         {sigNozUrl ? (
           <div
             className="relative w-full overflow-hidden rounded-lg border border-border-default"
-            style={{ height: '400px' }}
+            style={{ height: "400px" }}
           >
             <iframe
               src={sigNozUrl}
@@ -297,13 +328,18 @@ function SigNozSection() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border-default bg-bg-tertiary/30 py-12 text-center">
-            <BarChart3 className="h-10 w-10 text-text-muted mb-3" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-text-primary">SigNoz Not Configured</h3>
+            <BarChart3
+              className="h-10 w-10 text-text-muted mb-3"
+              aria-hidden="true"
+            />
+            <h3 className="text-sm font-semibold text-text-primary">
+              SigNoz Not Configured
+            </h3>
             <p className="mt-1 max-w-md text-xs text-text-secondary">
-              To embed the SigNoz dashboard, set the{' '}
+              To embed the SigNoz dashboard, set the{" "}
               <code className="rounded bg-bg-tertiary px-1.5 py-0.5 font-mono text-accent-primary text-[10px]">
                 NEXT_PUBLIC_SIGNOZ_URL
-              </code>{' '}
+              </code>{" "}
               environment variable to your SigNoz instance URL.
             </p>
           </div>
@@ -326,12 +362,12 @@ function AutoRefreshToggle({
     <button
       onClick={onToggle}
       className={cn(
-        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
         enabled
-          ? 'bg-accent-success/10 text-accent-success'
-          : 'bg-bg-tertiary text-text-muted hover:text-text-secondary',
+          ? "bg-accent-success/10 text-accent-success"
+          : "bg-bg-tertiary text-text-muted hover:text-text-secondary",
       )}
-      aria-label={enabled ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+      aria-label={enabled ? "Disable auto-refresh" : "Enable auto-refresh"}
       aria-pressed={enabled}
     >
       {enabled ? (
@@ -339,7 +375,7 @@ function AutoRefreshToggle({
       ) : (
         <ToggleLeft className="h-3.5 w-3.5" aria-hidden="true" />
       )}
-      {enabled ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
+      {enabled ? "Auto-refresh ON" : "Auto-refresh OFF"}
     </button>
   );
 }
@@ -373,7 +409,8 @@ export default function SystemHealthPage() {
     refetchInterval: autoRefresh ? 30_000 : false,
   });
 
-  const loadingInitial = healthLoading && servicesLoading && !health && !serviceStatuses;
+  const loadingInitial =
+    healthLoading && servicesLoading && !health && !serviceStatuses;
   const refreshing = (healthLoading || servicesLoading) && !!health;
   const hasError = !!healthError || !!servicesError;
   const hasData = !!health || !!serviceStatuses;
@@ -383,9 +420,12 @@ export default function SystemHealthPage() {
     : undefined;
 
   const downServices =
-    serviceStatuses?.filter((s) => s.status === 'down' || s.status === 'degraded') ?? [];
+    serviceStatuses?.filter(
+      (s) => s.status === "down" || s.status === "degraded",
+    ) ?? [];
 
-  const healthyCount = serviceStatuses?.filter((s) => s.status === 'healthy').length ?? 0;
+  const healthyCount =
+    serviceStatuses?.filter((s) => s.status === "healthy").length ?? 0;
   const totalServices = serviceStatuses?.length ?? 0;
 
   const handleRetryAll = useCallback(() => {
@@ -395,7 +435,14 @@ export default function SystemHealthPage() {
 
   // ─── Full failure state ───────────────────────────────────────────────
 
-  if (healthError && servicesError && !health && !serviceStatuses && !healthLoading && !servicesLoading) {
+  if (
+    healthError &&
+    servicesError &&
+    !health &&
+    !serviceStatuses &&
+    !healthLoading &&
+    !servicesLoading
+  ) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <ErrorState
@@ -412,14 +459,21 @@ export default function SystemHealthPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">System Health</h1>
+          <h1 className="text-2xl font-bold text-text-primary">
+            System Health
+          </h1>
           <p className="text-sm text-text-muted mt-1">
             Infrastructure cluster and service status overview
-            {lastUpdated && <span className="ml-2 text-xs">· Updated {lastUpdated}</span>}
+            {lastUpdated && (
+              <span className="ml-2 text-xs">· Updated {lastUpdated}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <AutoRefreshToggle enabled={autoRefresh} onToggle={toggleAutoRefresh} />
+          <AutoRefreshToggle
+            enabled={autoRefresh}
+            onToggle={toggleAutoRefresh}
+          />
           <Button
             variant="secondary"
             size="sm"
@@ -427,7 +481,10 @@ export default function SystemHealthPage() {
             disabled={refreshing}
             aria-label="Refresh system health"
           >
-            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} aria-hidden="true" />
+            <RefreshCw
+              className={cn("h-4 w-4", refreshing && "animate-spin")}
+              aria-hidden="true"
+            />
             Refresh
           </Button>
         </div>
@@ -442,11 +499,14 @@ export default function SystemHealthPage() {
           <StatusDot status="danger" pulse size="md" />
           <div>
             <p className="text-sm font-medium text-accent-danger">
-              {downServices.length} {downServices.length === 1 ? 'service is' : 'services are'}{' '}
+              {downServices.length}{" "}
+              {downServices.length === 1 ? "service is" : "services are"}{" "}
               degraded or down
             </p>
             <p className="text-xs text-text-secondary mt-0.5">
-              {downServices.map((s) => s.displayName || getServiceLabel(s.name)).join(', ')}
+              {downServices
+                .map((s) => s.displayName || getServiceLabel(s.name))
+                .join(", ")}
             </p>
           </div>
         </div>
@@ -455,15 +515,17 @@ export default function SystemHealthPage() {
       {/* Cluster Status */}
       <section aria-label="Cluster status">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-text-primary">Cluster Status</h2>
+          <h2 className="text-lg font-semibold text-text-primary">
+            Cluster Status
+          </h2>
           {health && (
             <Badge
               variant={
-                health.cluster.status === 'healthy'
-                  ? 'success'
-                  : health.cluster.status === 'degraded'
-                    ? 'warning'
-                    : 'danger'
+                health.cluster.status === "healthy"
+                  ? "success"
+                  : health.cluster.status === "degraded"
+                    ? "warning"
+                    : "danger"
               }
               size="sm"
             >
@@ -489,8 +551,13 @@ export default function SystemHealthPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border-default bg-bg-tertiary/30 py-8 text-center">
-            <Server className="mx-auto h-8 w-8 text-text-muted mb-2" aria-hidden="true" />
-            <p className="text-sm text-text-muted">No cluster nodes available</p>
+            <Server
+              className="mx-auto h-8 w-8 text-text-muted mb-2"
+              aria-hidden="true"
+            />
+            <p className="text-sm text-text-muted">
+              No cluster nodes available
+            </p>
           </div>
         )}
       </section>
@@ -504,7 +571,8 @@ export default function SystemHealthPage() {
               {healthyCount}/{totalServices} healthy
               {downServices.length > 0 && (
                 <span className="text-accent-danger ml-1">
-                  · {downServices.length} {downServices.length === 1 ? 'issue' : 'issues'}
+                  · {downServices.length}{" "}
+                  {downServices.length === 1 ? "issue" : "issues"}
                 </span>
               )}
             </span>
@@ -528,7 +596,10 @@ export default function SystemHealthPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border-default bg-bg-tertiary/30 py-8 text-center">
-            <Activity className="mx-auto h-8 w-8 text-text-muted mb-2" aria-hidden="true" />
+            <Activity
+              className="mx-auto h-8 w-8 text-text-muted mb-2"
+              aria-hidden="true"
+            />
             <p className="text-sm text-text-muted">No service data available</p>
           </div>
         )}

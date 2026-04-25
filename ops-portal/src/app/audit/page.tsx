@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useCallback, useMemo, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useCallback, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
   RotateCcw,
@@ -14,77 +14,78 @@ import {
   CreditCard,
   Server,
   Activity,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import * as api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
-import { ErrorState } from '@/components/ui/error-state';
-import { cn, formatDate } from '@/lib/utils';
-import type { AuditEntry, AuditFilters } from '@/types/api';
-import type { SelectOption } from '@/components/ui/select';
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import * as api from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton, SkeletonTable } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { cn, formatDate } from "@/lib/utils";
+import type { AuditFilters } from "@/types/api";
+import type { AuditEntry } from "@/lib/api";
+import type { SelectOption } from "@/components/ui/select";
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 25;
 
 const ACTION_TYPE_OPTIONS: SelectOption[] = [
-  { value: '', label: 'All Actions' },
-  { value: 'cell.update', label: 'Cell Update' },
-  { value: 'backup.complete', label: 'Backup Complete' },
-  { value: 'preview.create', label: 'Preview Create' },
-  { value: 'preview.expire', label: 'Preview Expire' },
-  { value: 'billing.failed', label: 'Billing Failed' },
-  { value: 'billing.invoice', label: 'Billing Invoice' },
-  { value: 'tenant.provision', label: 'Tenant Provision' },
-  { value: 'tenant.deprovision', label: 'Tenant Deprovision' },
-  { value: 'tenant.suspend', label: 'Tenant Suspend' },
-  { value: 'tenant.activate', label: 'Tenant Activate' },
-  { value: 'user.login', label: 'User Login' },
-  { value: 'user.invite', label: 'User Invite' },
-  { value: 'user.role', label: 'User Role Change' },
-  { value: 'settings.update', label: 'Settings Update' },
-  { value: 'backup.restore', label: 'Backup Restore' },
-  { value: 'cell.scale', label: 'Cell Scale' },
-  { value: 'cell.drain', label: 'Cell Drain' },
-  { value: 'env.update', label: 'Env Var Update' },
-  { value: 'system.config', label: 'System Config Change' },
+  { value: "", label: "All Actions" },
+  { value: "cell.update", label: "Cell Update" },
+  { value: "backup.complete", label: "Backup Complete" },
+  { value: "preview.create", label: "Preview Create" },
+  { value: "preview.expire", label: "Preview Expire" },
+  { value: "billing.failed", label: "Billing Failed" },
+  { value: "billing.invoice", label: "Billing Invoice" },
+  { value: "tenant.provision", label: "Tenant Provision" },
+  { value: "tenant.deprovision", label: "Tenant Deprovision" },
+  { value: "tenant.suspend", label: "Tenant Suspend" },
+  { value: "tenant.activate", label: "Tenant Activate" },
+  { value: "user.login", label: "User Login" },
+  { value: "user.invite", label: "User Invite" },
+  { value: "user.role", label: "User Role Change" },
+  { value: "settings.update", label: "Settings Update" },
+  { value: "backup.restore", label: "Backup Restore" },
+  { value: "cell.scale", label: "Cell Scale" },
+  { value: "cell.drain", label: "Cell Drain" },
+  { value: "env.update", label: "Env Var Update" },
+  { value: "system.config", label: "System Config Change" },
 ];
 
 const SEVERITY_VARIANT: Record<
-  AuditEntry['severity'],
-  'success' | 'warning' | 'danger' | 'info' | 'default'
+  AuditEntry["severity"],
+  "success" | "warning" | "danger" | "info" | "default"
 > = {
-  info: 'info',
-  warning: 'warning',
-  error: 'danger',
+  info: "info",
+  warning: "warning",
+  error: "danger",
 };
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {
-  'cell.update': <Server className="h-4 w-4" aria-hidden="true" />,
-  'cell.scale': <Server className="h-4 w-4" aria-hidden="true" />,
-  'cell.drain': <Server className="h-4 w-4" aria-hidden="true" />,
-  'backup.complete': <HardDrive className="h-4 w-4" aria-hidden="true" />,
-  'backup.restore': <RotateCcw className="h-4 w-4" aria-hidden="true" />,
-  'preview.create': <Eye className="h-4 w-4" aria-hidden="true" />,
-  'preview.expire': <Eye className="h-4 w-4" aria-hidden="true" />,
-  'billing.failed': <CreditCard className="h-4 w-4" aria-hidden="true" />,
-  'billing.invoice': <CreditCard className="h-4 w-4" aria-hidden="true" />,
-  'tenant.provision': <Server className="h-4 w-4" aria-hidden="true" />,
-  'tenant.deprovision': <Server className="h-4 w-4" aria-hidden="true" />,
-  'tenant.suspend': <Server className="h-4 w-4" aria-hidden="true" />,
-  'tenant.activate': <Server className="h-4 w-4" aria-hidden="true" />,
-  'user.login': <User className="h-4 w-4" aria-hidden="true" />,
-  'user.invite': <User className="h-4 w-4" aria-hidden="true" />,
-  'user.role': <User className="h-4 w-4" aria-hidden="true" />,
-  'settings.update': <FileEdit className="h-4 w-4" aria-hidden="true" />,
-  'env.update': <FileEdit className="h-4 w-4" aria-hidden="true" />,
-  'system.config': <Activity className="h-4 w-4" aria-hidden="true" />,
+  "cell.update": <Server className="h-4 w-4" aria-hidden="true" />,
+  "cell.scale": <Server className="h-4 w-4" aria-hidden="true" />,
+  "cell.drain": <Server className="h-4 w-4" aria-hidden="true" />,
+  "backup.complete": <HardDrive className="h-4 w-4" aria-hidden="true" />,
+  "backup.restore": <RotateCcw className="h-4 w-4" aria-hidden="true" />,
+  "preview.create": <Eye className="h-4 w-4" aria-hidden="true" />,
+  "preview.expire": <Eye className="h-4 w-4" aria-hidden="true" />,
+  "billing.failed": <CreditCard className="h-4 w-4" aria-hidden="true" />,
+  "billing.invoice": <CreditCard className="h-4 w-4" aria-hidden="true" />,
+  "tenant.provision": <Server className="h-4 w-4" aria-hidden="true" />,
+  "tenant.deprovision": <Server className="h-4 w-4" aria-hidden="true" />,
+  "tenant.suspend": <Server className="h-4 w-4" aria-hidden="true" />,
+  "tenant.activate": <Server className="h-4 w-4" aria-hidden="true" />,
+  "user.login": <User className="h-4 w-4" aria-hidden="true" />,
+  "user.invite": <User className="h-4 w-4" aria-hidden="true" />,
+  "user.role": <User className="h-4 w-4" aria-hidden="true" />,
+  "settings.update": <FileEdit className="h-4 w-4" aria-hidden="true" />,
+  "env.update": <FileEdit className="h-4 w-4" aria-hidden="true" />,
+  "system.config": <Activity className="h-4 w-4" aria-hidden="true" />,
 };
 
 const DEFAULT_ICON = <Activity className="h-4 w-4" aria-hidden="true" />;
@@ -95,9 +96,9 @@ function getActionIcon(action: string): React.ReactNode {
 
 function formatActionLabel(action: string): string {
   return action
-    .split('.')
+    .split(".")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+    .join(" ");
 }
 
 // ─── Filter Bar Skeleton ──────────────────────────────────────────────────
@@ -119,7 +120,10 @@ function TableSkeleton() {
   return (
     <div className="space-y-1 animate-pulse">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 rounded-lg border border-border-default p-4">
+        <div
+          key={i}
+          className="flex items-center gap-4 rounded-lg border border-border-default p-4"
+        >
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-48" />
           <Skeleton className="h-4 w-28" />
@@ -155,10 +159,10 @@ function AuditRow({ entry }: AuditRowProps) {
         <div className="w-36 shrink-0">
           <p className="text-xs text-text-muted">
             {formatDate(entry.timestamp, {
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
             })}
           </p>
         </div>
@@ -168,14 +172,19 @@ function AuditRow({ entry }: AuditRowProps) {
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg-tertiary">
             <User className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
           </div>
-          <span className="truncate text-sm text-text-primary" title={entry.actor}>
+          <span
+            className="truncate text-sm text-text-primary"
+            title={entry.actor}
+          >
             {entry.actor}
           </span>
         </div>
 
         {/* Action */}
         <div className="w-28 shrink-0 flex items-center gap-1.5">
-          <span className="text-text-muted shrink-0">{getActionIcon(entry.action)}</span>
+          <span className="text-text-muted shrink-0">
+            {getActionIcon(entry.action)}
+          </span>
           <span className="text-sm text-text-primary truncate">
             {formatActionLabel(entry.action)}
           </span>
@@ -183,7 +192,10 @@ function AuditRow({ entry }: AuditRowProps) {
 
         {/* Target */}
         <div className="flex-1 min-w-0">
-          <span className="text-sm text-text-secondary truncate block" title={entry.target}>
+          <span
+            className="text-sm text-text-secondary truncate block"
+            title={entry.target}
+          >
             {entry.target}
           </span>
         </div>
@@ -198,9 +210,15 @@ function AuditRow({ entry }: AuditRowProps) {
         {/* Expand toggle */}
         <div className="w-6 shrink-0 flex justify-center">
           {expanded ? (
-            <ChevronDown className="h-4 w-4 text-text-muted" aria-hidden="true" />
+            <ChevronDown
+              className="h-4 w-4 text-text-muted"
+              aria-hidden="true"
+            />
           ) : (
-            <ChevronRight className="h-4 w-4 text-text-muted" aria-hidden="true" />
+            <ChevronRight
+              className="h-4 w-4 text-text-muted"
+              aria-hidden="true"
+            />
           )}
         </div>
       </button>
@@ -216,8 +234,10 @@ function AuditRow({ entry }: AuditRowProps) {
           </div>
           {entry.targetId && (
             <p className="mt-2 text-xs text-text-muted">
-              Target ID:{' '}
-              <span className="font-mono text-text-secondary">{entry.targetId}</span>
+              Target ID:{" "}
+              <span className="font-mono text-text-secondary">
+                {entry.targetId}
+              </span>
             </p>
           )}
         </div>
@@ -228,7 +248,10 @@ function AuditRow({ entry }: AuditRowProps) {
 
 // ─── Page Numbers Helper ──────────────────────────────────────────────────
 
-function getPageNumbers(currentPage: number, totalPages: number): (number | null)[] {
+function getPageNumbers(
+  currentPage: number,
+  totalPages: number,
+): (number | null)[] {
   const pages: (number | null)[] = [];
   const maxVisible = 5;
 
@@ -260,20 +283,20 @@ function getPageNumbers(currentPage: number, totalPages: number): (number | null
 
 // ─── Audit Page ───────────────────────────────────────────────────────────
 
-export default function AuditPage() {
+function AuditPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // ─── Derive filters from URL query params ────────────────────────────
 
   const currentFilters: AuditFilters = useMemo(() => {
-    const page = parseInt(searchParams.get('page') ?? '1', 10);
+    const page = parseInt(searchParams.get("page") ?? "1", 10);
     return {
-      search: searchParams.get('search') ?? undefined,
-      action_type: searchParams.get('action_type') ?? undefined,
-      actor: searchParams.get('actor') ?? undefined,
-      date_from: searchParams.get('date_from') ?? undefined,
-      date_to: searchParams.get('date_to') ?? undefined,
+      search: searchParams.get("search") ?? undefined,
+      action_type: searchParams.get("action_type") ?? undefined,
+      actor: searchParams.get("actor") ?? undefined,
+      date_from: searchParams.get("date_from") ?? undefined,
+      date_to: searchParams.get("date_to") ?? undefined,
       page: isNaN(page) || page < 1 ? 1 : page,
       limit: PAGE_SIZE,
     };
@@ -283,15 +306,12 @@ export default function AuditPage() {
 
   // ─── Query ───────────────────────────────────────────────────────────
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['audit', currentFilters],
-    queryFn: () => api.getAuditLog(currentFilters),
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ["audit", currentFilters],
+    queryFn: () =>
+      api.getAuditLog(
+        currentFilters as Record<string, string | number | boolean | undefined>,
+      ),
     staleTime: 15_000,
     gcTime: 60_000,
     retry: 2,
@@ -305,15 +325,15 @@ export default function AuditPage() {
     (updates: Partial<AuditFilters>) => {
       const params = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(updates)) {
-        if (value === undefined || value === null || value === '') {
+        if (value === undefined || value === null || value === "") {
           params.delete(key);
         } else {
           params.set(key, String(value));
         }
       }
       // Reset to page 1 when filters change (unless updating page itself)
-      if (!('page' in updates)) {
-        params.delete('page');
+      if (!("page" in updates)) {
+        params.delete("page");
       }
       router.push(`/audit?${params.toString()}`, { scroll: false });
     },
@@ -363,7 +383,7 @@ export default function AuditPage() {
   );
 
   const handleClearFilters = useCallback(() => {
-    router.push('/audit', { scroll: false });
+    router.push("/audit", { scroll: false });
   }, [router]);
 
   const hasActiveFilters = useMemo(() => {
@@ -402,7 +422,7 @@ export default function AuditPage() {
             aria-label="Refresh audit log"
           >
             <RotateCcw
-              className={cn('h-4 w-4', isFetching && 'animate-spin')}
+              className={cn("h-4 w-4", isFetching && "animate-spin")}
               aria-hidden="true"
             />
             Refresh
@@ -422,7 +442,7 @@ export default function AuditPage() {
                 <div className="flex-1">
                   <Input
                     placeholder="Search by actor name or email..."
-                    value={currentFilters.search ?? ''}
+                    value={currentFilters.search ?? ""}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     icon={<Search className="h-4 w-4" aria-hidden="true" />}
                     aria-label="Search audit log"
@@ -430,7 +450,7 @@ export default function AuditPage() {
                 </div>
                 <div className="w-full sm:w-52">
                   <Select
-                    value={currentFilters.action_type ?? ''}
+                    value={currentFilters.action_type ?? ""}
                     onValueChange={handleActionTypeChange}
                     options={ACTION_TYPE_OPTIONS}
                     placeholder="All Actions"
@@ -440,7 +460,7 @@ export default function AuditPage() {
                 <div className="w-full sm:w-48">
                   <Input
                     placeholder="Actor name..."
-                    value={currentFilters.actor ?? ''}
+                    value={currentFilters.actor ?? ""}
                     onChange={(e) => handleActorChange(e.target.value)}
                     aria-label="Filter by actor"
                   />
@@ -459,7 +479,7 @@ export default function AuditPage() {
                   <Input
                     id="date-from"
                     type="date"
-                    value={currentFilters.date_from ?? ''}
+                    value={currentFilters.date_from ?? ""}
                     onChange={(e) => handleDateFromChange(e.target.value)}
                     aria-label="Start date"
                   />
@@ -474,7 +494,7 @@ export default function AuditPage() {
                   <Input
                     id="date-to"
                     type="date"
-                    value={currentFilters.date_to ?? ''}
+                    value={currentFilters.date_to ?? ""}
                     onChange={(e) => handleDateToChange(e.target.value)}
                     aria-label="End date"
                   />
@@ -491,7 +511,7 @@ export default function AuditPage() {
           <CardTitle className="text-base">Activity Entries</CardTitle>
           {data && !isLoading && (
             <span className="text-xs text-text-muted">
-              {data.total} total {data.total === 1 ? 'entry' : 'entries'}
+              {data.total} total {data.total === 1 ? "entry" : "entries"}
             </span>
           )}
         </CardHeader>
@@ -517,17 +537,17 @@ export default function AuditPage() {
                 icon={Search}
                 title={
                   hasActiveFilters
-                    ? 'No audit entries match your filters'
-                    : 'No audit entries yet'
+                    ? "No audit entries match your filters"
+                    : "No audit entries yet"
                 }
                 description={
                   hasActiveFilters
-                    ? 'Try adjusting your search or filter criteria.'
-                    : 'Audit entries will appear here as actions are performed in the system.'
+                    ? "Try adjusting your search or filter criteria."
+                    : "Audit entries will appear here as actions are performed in the system."
                 }
                 action={
                   hasActiveFilters
-                    ? { label: 'Clear Filters', onClick: handleClearFilters }
+                    ? { label: "Clear Filters", onClick: handleClearFilters }
                     : undefined
                 }
               />
@@ -558,7 +578,10 @@ export default function AuditPage() {
           {isFetching && data && (
             <div className="flex items-center justify-center border-t border-border-default py-2">
               <div className="flex items-center gap-2 text-xs text-text-muted">
-                <RotateCcw className="h-3 w-3 animate-spin" aria-hidden="true" />
+                <RotateCcw
+                  className="h-3 w-3 animate-spin"
+                  aria-hidden="true"
+                />
                 Updating...
               </div>
             </div>
@@ -605,12 +628,12 @@ export default function AuditPage() {
                 ) : (
                   <Button
                     key={page}
-                    variant={page === currentPage ? 'primary' : 'ghost'}
+                    variant={page === currentPage ? "primary" : "ghost"}
                     size="icon"
                     className="h-8 w-8 text-xs"
                     onClick={() => handlePageChange(page)}
                     aria-label={`Page ${page}`}
-                    aria-current={page === currentPage ? 'page' : undefined}
+                    aria-current={page === currentPage ? "page" : undefined}
                   >
                     {page}
                   </Button>
@@ -639,6 +662,30 @@ export default function AuditPage() {
           </nav>
         </div>
       )}
+    </div>
+  );
+}
+
+export default function AuditPage() {
+  return (
+    <Suspense fallback={<AuditPageFallback />}>
+      <AuditPageContent />
+    </Suspense>
+  );
+}
+
+function AuditPageFallback() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Audit Log</h1>
+          <p className="text-sm text-text-muted mt-1">
+            System-wide audit trail of all operations
+          </p>
+        </div>
+      </div>
+      <SkeletonTable rows={8} />
     </div>
   );
 }

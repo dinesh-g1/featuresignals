@@ -265,7 +265,7 @@ function BillingContent() {
           {/* ── Upgrade / Checkout section ────────────────────────────── */}
           {isUpgradeable && (
             <Card className="overflow-hidden border-0 shadow-lg">
-              <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-6 sm:p-8 text-white">
+              <div className="bg-gradient-to-br from-accent via-accent-dark to-teal-800 p-6 sm:p-8 text-white">
                 <div className="relative">
                   {plan === "trial" && trialDaysLeft !== null && (
                     <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
@@ -281,7 +281,7 @@ function BillingContent() {
                       ? "Subscribe to keep Pro features"
                       : "Unlock the full power of FeatureSignals"}
                   </h2>
-                  <p className="mt-2 max-w-lg text-sm text-indigo-100">
+                  <p className="mt-2 max-w-lg text-sm text-teal-100">
                     {plan === "trial"
                       ? "Your trial gives you full access to Pro features. Subscribe now to ensure uninterrupted access."
                       : "Unlimited projects, environments, team members, RBAC, webhooks, and priority support."}
@@ -292,7 +292,7 @@ function BillingContent() {
                       {proPlan.features.slice(0, 4).map((f) => (
                         <span
                           key={f}
-                          className="inline-flex items-center gap-1.5 text-xs text-indigo-200"
+                          className="inline-flex items-center gap-1.5 text-xs text-teal-200"
                         >
                           <Check className="h-3 w-3" /> {f}
                         </span>
@@ -351,7 +351,7 @@ function BillingContent() {
                               className={cn(
                                 "flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors",
                                 selectedGateway === gw.id
-                                  ? "bg-indigo-50"
+                                  ? "bg-accent/5"
                                   : "hover:bg-slate-50",
                               )}
                             >
@@ -359,12 +359,12 @@ function BillingContent() {
                                 className={cn(
                                   "mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center",
                                   selectedGateway === gw.id
-                                    ? "border-indigo-600"
+                                    ? "border-accent"
                                     : "border-slate-300",
                                 )}
                               >
                                 {selectedGateway === gw.id && (
-                                  <div className="h-2 w-2 rounded-full bg-indigo-600" />
+                                  <div className="h-2 w-2 rounded-full bg-accent" />
                                 )}
                               </div>
                               <div>
@@ -372,7 +372,7 @@ function BillingContent() {
                                   className={cn(
                                     "text-sm font-medium",
                                     selectedGateway === gw.id
-                                      ? "text-indigo-900"
+                                      ? "text-accent-dark"
                                       : "text-slate-700",
                                   )}
                                 >
@@ -395,7 +395,7 @@ function BillingContent() {
                   onClick={handleUpgrade}
                   disabled={upgrading}
                   size="lg"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
+                  className="w-full bg-accent hover:bg-accent-dark text-white shadow-md"
                 >
                   <Zap className="mr-2 h-4 w-4" />
                   {upgrading
@@ -507,7 +507,7 @@ function BillingContent() {
                     To manage or cancel your subscription, please contact{" "}
                     <a
                       href="mailto:support@featuresignals.com"
-                      className="font-medium text-indigo-600 hover:text-indigo-700"
+                      className="font-medium text-accent hover:text-accent-dark"
                     >
                       support@featuresignals.com
                     </a>
@@ -531,15 +531,15 @@ function BillingContent() {
                 </div>
                 <button
                   onClick={handleManageBilling}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1"
+                  className="text-sm font-medium text-accent hover:text-accent-dark inline-flex items-center gap-1"
                 >
                   Update
                   <ExternalLink className="h-3 w-3" />
                 </button>
               </div>
               <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100">
-                  <CreditCard className="h-6 w-6 text-indigo-600" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
+                  <CreditCard className="h-6 w-6 text-accent" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-900">
@@ -774,7 +774,7 @@ function UsageCard({
         <div
           className={cn(
             "h-1.5 rounded-full transition-all",
-            isNearLimit ? "bg-amber-500" : "bg-indigo-500",
+            isNearLimit ? "bg-amber-500" : "bg-accent",
             `w-[${pct}%]`,
           )}
         />
@@ -810,7 +810,7 @@ function PlanCard({
       className={cn(
         "p-4 sm:p-6",
         highlighted
-          ? "border-indigo-300 bg-indigo-50/30 ring-1 ring-indigo-100 shadow-sm"
+          ? "border-accent/30 bg-accent-glass ring-1 ring-accent/10 shadow-sm"
           : "hover:shadow-lg hover:border-slate-300",
       )}
     >
@@ -830,7 +830,7 @@ function PlanCard({
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
             <Check
-              className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500"
+              className="mt-0.5 h-4 w-4 shrink-0 text-accent"
               strokeWidth={2}
             />
             {f}
@@ -863,8 +863,8 @@ function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fade-in">
       <div className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100">
-          <PartyPopper className="h-8 w-8 text-indigo-600" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-teal-100">
+          <PartyPopper className="h-8 w-8 text-accent" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900">Welcome to Pro!</h2>
         <p className="mt-2 text-sm text-slate-600">
@@ -883,7 +883,7 @@ function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
           ].map((f) => (
             <span
               key={f}
-              className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700"
+              className="inline-flex items-center gap-1 rounded-full bg-accent/5 px-2.5 py-1 text-xs font-medium text-accent-dark"
             >
               <Check className="h-3 w-3" />
               {f}
@@ -892,7 +892,7 @@ function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <button
           onClick={onDismiss}
-          className="mt-6 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+          className="mt-6 w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-dark transition-colors"
         >
           Start Exploring
         </button>

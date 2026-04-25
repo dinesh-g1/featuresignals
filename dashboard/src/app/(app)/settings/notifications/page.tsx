@@ -8,9 +8,24 @@ import { PageHeader, Card, CardHeader, Button } from "@/components/ui";
 import { Bell, Mail, Loader2 } from "lucide-react";
 
 const PREFS = [
-  { value: "all", label: "All updates", description: "Product tips, weekly digest, feature announcements, and all notifications" },
-  { value: "important", label: "Important only", description: "Trial reminders, payment alerts, security notifications, and team invites" },
-  { value: "transactional", label: "Transactional only", description: "Verification codes, receipts, and account security alerts — nothing else" },
+  {
+    value: "all",
+    label: "All updates",
+    description:
+      "Product tips, weekly digest, feature announcements, and all notifications",
+  },
+  {
+    value: "important",
+    label: "Important only",
+    description:
+      "Trial reminders, payment alerts, security notifications, and team invites",
+  },
+  {
+    value: "transactional",
+    label: "Transactional only",
+    description:
+      "Verification codes, receipts, and account security alerts — nothing else",
+  },
 ];
 
 export default function NotificationsPage() {
@@ -60,9 +75,12 @@ export default function NotificationsPage() {
               id="email-consent"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
             />
-            <label htmlFor="email-consent" className="text-sm font-medium text-slate-700">
+            <label
+              htmlFor="email-consent"
+              className="text-sm font-medium text-slate-700"
+            >
               I agree to receive emails from FeatureSignals
             </label>
           </div>
@@ -74,7 +92,7 @@ export default function NotificationsPage() {
                   key={p.value}
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all ${
                     preference === p.value
-                      ? "border-indigo-300 bg-indigo-50/50 ring-1 ring-indigo-200"
+                      ? "border-accent/30 bg-accent/10 ring-1 ring-accent/20"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
@@ -84,11 +102,15 @@ export default function NotificationsPage() {
                     value={p.value}
                     checked={preference === p.value}
                     onChange={() => setPreference(p.value)}
-                    className="mt-0.5 h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="mt-0.5 h-4 w-4 border-slate-300 text-accent focus:ring-accent"
                   />
                   <div>
-                    <span className="text-sm font-medium text-slate-700">{p.label}</span>
-                    <p className="mt-0.5 text-xs text-slate-500">{p.description}</p>
+                    <span className="text-sm font-medium text-slate-700">
+                      {p.label}
+                    </span>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {p.description}
+                    </p>
                   </div>
                 </label>
               ))}
@@ -97,7 +119,11 @@ export default function NotificationsPage() {
 
           <div className="mt-4 flex items-center gap-3 pt-2">
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Bell className="h-4 w-4" />
+              )}
               Save Preferences
             </Button>
           </div>

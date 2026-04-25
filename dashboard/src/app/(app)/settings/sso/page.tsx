@@ -74,7 +74,7 @@ function SSOUpgradeGate() {
       </p>
       <Button
         onClick={() => router.push("/settings/billing")}
-        className="mt-6 bg-indigo-600 hover:bg-indigo-700"
+        className="mt-6 bg-accent hover:bg-accent-dark"
       >
         Upgrade to {plan}
       </Button>
@@ -274,7 +274,7 @@ export default function SSOSettingsPage() {
                   className={cn(
                     "flex-1 rounded-lg border-2 p-4 text-left transition-all",
                     form.provider_type === type
-                      ? "border-indigo-500 bg-indigo-50/50"
+                      ? "border-accent bg-accent/10"
                       : "border-slate-200 hover:border-slate-300",
                   )}
                 >
@@ -372,7 +372,7 @@ export default function SSOSettingsPage() {
                   placeholder="Paste IdP metadata XML here..."
                   value={form.metadata_xml}
                   onChange={(e) => updateForm("metadata_xml", e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-mono focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
                 />
                 {config?.has_metadata_xml && !form.metadata_xml && (
                   <p className="mt-1 text-xs text-slate-400">
@@ -408,7 +408,7 @@ export default function SSOSettingsPage() {
                   placeholder="-----BEGIN CERTIFICATE-----..."
                   value={form.certificate}
                   onChange={(e) => updateForm("certificate", e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-mono focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
                 />
                 {config?.has_certificate && !form.certificate && (
                   <p className="mt-1 text-xs text-slate-400">
@@ -431,7 +431,7 @@ export default function SSOSettingsPage() {
                   id="default_role"
                   value={form.default_role}
                   onChange={(e) => updateForm("default_role", e.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none sm:w-48"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none sm:w-48"
                 >
                   <option value="developer">Developer</option>
                   <option value="viewer">Viewer</option>
@@ -447,7 +447,7 @@ export default function SSOSettingsPage() {
                   type="checkbox"
                   checked={form.enabled}
                   onChange={(e) => updateForm("enabled", e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
                 />
                 <div>
                   <span className="text-sm font-medium text-slate-900">
@@ -464,7 +464,7 @@ export default function SSOSettingsPage() {
                   type="checkbox"
                   checked={form.enforce}
                   onChange={(e) => updateForm("enforce", e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
                 />
                 <div>
                   <span className="text-sm font-medium text-slate-900">

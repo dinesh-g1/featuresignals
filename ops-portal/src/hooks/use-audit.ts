@@ -2,12 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
-import type { AuditFilters } from "@/types/api";
 
 // ─── Use Audit Log ────────────────────────────────────────────────────────
 
 export interface UseAuditLogOptions {
-  filters?: AuditFilters;
+  filters?: Record<string, string | number | boolean | undefined>;
   enabled?: boolean;
 }
 
@@ -17,7 +16,10 @@ export function useAuditLog({
 }: UseAuditLogOptions = {}) {
   return useQuery({
     queryKey: ["audit", filters],
-    queryFn: () => api.getAuditLog(filters),
+    queryFn: () =>
+      api.getAuditLog(
+        filters as Record<string, string | number | boolean | undefined>,
+      ),
     staleTime: 15_000,
     gcTime: 60_000,
     retry: 2,

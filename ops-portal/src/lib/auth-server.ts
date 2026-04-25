@@ -21,8 +21,8 @@ export interface ServerSession {
  * Reads the ops_access_token from httpOnly cookies.
  * Returns null if no token is present (user not logged in).
  */
-export function getServerToken(): string | null {
-  const cookieStore = cookies();
+export async function getServerToken(): Promise<string | null> {
+  const cookieStore = await cookies();
   return cookieStore.get("ops_access_token")?.value ?? null;
 }
 
@@ -30,8 +30,8 @@ export function getServerToken(): string | null {
  * Reads the ops_refresh_token from httpOnly cookies.
  * Returns null if no refresh token is present.
  */
-export function getServerRefreshToken(): string | null {
-  const cookieStore = cookies();
+export async function getServerRefreshToken(): Promise<string | null> {
+  const cookieStore = await cookies();
   return cookieStore.get("ops_refresh_token")?.value ?? null;
 }
 
@@ -42,8 +42,8 @@ export function getServerRefreshToken(): string | null {
  *
  * Returns the session info if valid, null otherwise.
  */
-export function getServerSession(): ServerSession | null {
-  const token = getServerToken();
+export async function getServerSession(): Promise<ServerSession | null> {
+  const token = await getServerToken();
   if (!token) return null;
 
   try {
@@ -65,8 +65,8 @@ export function getServerSession(): ServerSession | null {
  * Protects a server component route.
  * Redirects to /login if no valid session is found.
  */
-export function requireAuth(): ServerSession {
-  const session = getServerSession();
+export async function requireAuth(): Promise<ServerSession> {
+  const session = await getServerSession();
   if (!session) {
     redirect("/login");
   }

@@ -9,7 +9,13 @@ describe("Footer", () => {
 
   it("renders all link section headings", () => {
     render(<Footer />);
-    const sections = ["Product", "Get Started", "Developers", "Resources", "Legal"];
+    const sections = [
+      "Product",
+      "Get Started",
+      "Developers",
+      "Resources",
+      "Legal",
+    ];
     for (const title of sections) {
       expect(screen.getByText(title)).toBeInTheDocument();
     }
@@ -60,7 +66,13 @@ describe("Footer", () => {
 
   it("renders Resources links", () => {
     render(<Footer />);
-    const links = ["Blog", "Changelog", "System Status", "About", "Contact Sales"];
+    const links = [
+      "Blog",
+      "Changelog",
+      "System Status",
+      "About",
+      "Contact Sales",
+    ];
     for (const label of links) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
@@ -96,24 +108,20 @@ describe("Footer", () => {
   it("renders the tagline", () => {
     render(<Footer />);
     expect(
-      screen.getByText(
-        /The control plane for software delivery/i
-      )
+      screen.getByText(/The control plane for software delivery/i),
     ).toBeInTheDocument();
   });
 
   it("renders the company address", () => {
     render(<Footer />);
     expect(
-      screen.getByText(/Hyderabad, Telangana - 500089, India/i)
+      screen.getByText(/Hyderabad, Telangana - 500089, India/i),
     ).toBeInTheDocument();
   });
 
   it("renders the copyright with Apache-2.0 license", () => {
     render(<Footer />);
-    expect(
-      screen.getByText(/Apache-2.0 License/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Apache-2.0 License/i)).toBeInTheDocument();
   });
 
   it("renders status badges (SOC 2, OpenFeature, Uptime)", () => {
@@ -128,5 +136,39 @@ describe("Footer", () => {
     const docsLink = screen.getByText("Documentation").closest("a");
     expect(docsLink).toHaveAttribute("target", "_blank");
     expect(docsLink).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("migration links point to /use-cases#migration (not bare anchors)", () => {
+    render(<Footer />);
+    const launchdarklyLink = screen
+      .getByText("Migrate from LaunchDarkly")
+      .closest("a");
+    expect(launchdarklyLink).toHaveAttribute("href", "/use-cases#migration");
+
+    const unleashLink = screen.getByText("Migrate from Unleash").closest("a");
+    expect(unleashLink).toHaveAttribute("href", "/use-cases#migration");
+
+    const flagsmithLink = screen
+      .getByText("Migrate from Flagsmith")
+      .closest("a");
+    expect(flagsmithLink).toHaveAttribute("href", "/use-cases#migration");
+  });
+
+  it("status badges link to real pages (not #)", () => {
+    render(<Footer />);
+    const soc2Link = screen.getByText("SOC 2 Type II").closest("a");
+    expect(soc2Link).toHaveAttribute("href", "/features/security");
+
+    const ofLink = screen.getByText("OpenFeature Native").closest("a");
+    expect(ofLink).toHaveAttribute("href", "/features/integrations");
+
+    const uptimeLink = screen.getByText("Uptime 99.95%").closest("a");
+    expect(uptimeLink).toHaveAttribute("href", "/status");
+  });
+
+  it("shipping policy link points to the shipping policy page", () => {
+    render(<Footer />);
+    const shippingLink = screen.getByText("Shipping Policy").closest("a");
+    expect(shippingLink).toHaveAttribute("href", "/shipping-policy");
   });
 });

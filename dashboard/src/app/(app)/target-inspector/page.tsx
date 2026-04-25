@@ -147,7 +147,7 @@ export default function TargetInspectorPage() {
             <button
               type="button"
               onClick={addAttr}
-              className="text-xs text-indigo-600 hover:text-indigo-700"
+              className="text-xs text-accent hover:text-accent-dark"
             >
               + Add attribute
             </button>
@@ -224,7 +224,7 @@ export default function TargetInspectorPage() {
                   {filtered?.map((r) => (
                     <tr
                       key={r.flag_key}
-                      className="transition-colors hover:bg-indigo-50/30"
+                      className="transition-colors hover:bg-accent-glass"
                     >
                       <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
                         {r.flag_key}

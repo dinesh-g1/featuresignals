@@ -22,9 +22,9 @@ export default function MagicLinkCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
             <p className="text-sm text-slate-500">Loading...</p>
           </div>
         </div>
@@ -65,12 +65,12 @@ function MagicLinkCallbackContent() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
         <div className="w-full max-w-md rounded-lg border border-red-200 bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-red-600">{error}</p>
           <a
             href="/login"
-            className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="mt-4 inline-block text-sm font-medium text-accent hover:text-accent-dark"
           >
             Back to login
           </a>
@@ -80,9 +80,9 @@ function MagicLinkCallbackContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
         <p className="text-sm text-slate-500">Logging you in...</p>
       </div>
     </div>

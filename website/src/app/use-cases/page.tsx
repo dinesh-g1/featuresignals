@@ -293,6 +293,95 @@ export default function UseCasesPage() {
         );
       })}
 
+      {/* Migration */}
+      <section id="migration" className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
+          <div className="mx-auto max-w-5xl">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent mb-6">
+                  <Zap className="h-7 w-7" strokeWidth={1.5} />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-4">
+                  Migrate from any provider in under an hour
+                </h2>
+                <p className="text-stone-600 leading-relaxed mb-6">
+                  Whether you&apos;re coming from LaunchDarkly, Unleash,
+                  Flagsmith, or any other feature flag provider, FeatureSignals
+                  makes migration seamless. Import your flags, targeting rules,
+                  and segments with zero downtime — and have both systems
+                  running side-by-side for validation.
+                </p>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-start gap-3 text-sm text-stone-600">
+                    <span className="mt-1.5 flex h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>
+                      One-click import from LaunchDarkly, Unleash, Flagsmith,
+                      and Split
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3 text-sm text-stone-600">
+                    <span className="mt-1.5 flex h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>
+                      Side-by-side evaluation comparison to validate correctness
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3 text-sm text-stone-600">
+                    <span className="mt-1.5 flex h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>
+                      OpenFeature-native SDKs — no code changes if already using
+                      OpenFeature
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3 text-sm text-stone-600">
+                    <span className="mt-1.5 flex h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>
+                      IaC export: generate Terraform/HCL from your existing
+                      flags
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3 text-sm text-stone-600">
+                    <span className="mt-1.5 flex h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>
+                      Gradual cutover: migrate one environment, project, or team
+                      at a time
+                    </span>
+                  </li>
+                </ul>
+                <Link
+                  href="/blog/migrating-from-launchdarkly-guide"
+                  className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white hover:bg-accent-dark transition-colors shadow-lg"
+                >
+                  Read the migration guide
+                  <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                </Link>
+              </div>
+              <div className="hidden lg:block rounded-lg bg-stone-900 p-6 font-mono text-xs text-stone-300 overflow-x-auto">
+                <div className="text-stone-500 mb-2">
+                  # Import existing flags from LaunchDarkly
+                </div>
+                <div className="text-accent">
+                  featuresignals migrate launchdarkly \
+                </div>
+                <div> --api-key="ld_api_xxxx" \</div>
+                <div> --project="my-app" \</div>
+                <div> --target-env="production" \</div>
+                <div> --dry-run</div>
+                <div className="text-stone-500 mt-3 mb-1"># Validate</div>
+                <div className="text-emerald-400">✓ 147 flags imported</div>
+                <div className="text-emerald-400">✓ 23 segments created</div>
+                <div className="text-emerald-400">
+                  ✓ 412 targeting rules mapped
+                </div>
+                <div className="text-stone-500 mt-1">
+                  # Run without --dry-run to apply
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats */}
       <section className="border-b border-stone-200 bg-stone-900">
         <div className="mx-auto max-w-7xl px-6 py-16">

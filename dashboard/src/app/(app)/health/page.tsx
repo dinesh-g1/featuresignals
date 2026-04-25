@@ -144,7 +144,7 @@ export default function FlagHealthPage() {
         <HealthStatCard
           label="Total Flags"
           value={flags.length}
-          color="indigo"
+          color="accent"
         />
         <HealthStatCard
           label="Stale"
@@ -258,7 +258,7 @@ function HealthStatCard({
   color: string;
 }) {
   const colors: Record<string, string> = {
-    indigo: "text-indigo-600",
+    accent: "text-accent",
     emerald: "text-emerald-600",
     amber: "text-amber-600",
     red: "text-red-600",
@@ -312,7 +312,7 @@ function FlagRow({
   return (
     <Link
       href={`/flags/${flag.key}`}
-      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-indigo-50/30 sm:px-6"
+      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent-glass sm:px-6"
     >
       <div className="min-w-0">
         <p className="font-mono text-sm font-medium text-slate-900">

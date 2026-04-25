@@ -219,7 +219,13 @@ export async function logout(): Promise<void> {
     // Swallow network errors during logout — local cleanup is what matters
   } finally {
     clearAuthData();
-    redirect("/login");
+    // Use a dynamic import approach for redirect — works on both client and server
+    try {
+      const { redirect } = await import("next/navigation");
+      redirect("/login");
+    } catch {
+      window.location.href = "/login";
+    }
   }
 }
 

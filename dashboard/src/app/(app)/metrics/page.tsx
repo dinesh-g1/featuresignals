@@ -113,7 +113,7 @@ export default function MetricsPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Total Evaluations
           </p>
-          <p className="mt-2 text-3xl font-bold text-indigo-600 sm:text-4xl">
+          <p className="mt-2 text-3xl font-bold text-accent sm:text-4xl">
             {(data?.total_evaluations || 0).toLocaleString()}
           </p>
         </Card>
@@ -190,7 +190,7 @@ export default function MetricsPage() {
                 </span>
                 <div className="flex-1 h-5 rounded-full bg-slate-100 sm:h-6">
                   <div
-                    className={`h-full rounded-full bg-indigo-500 transition-all w-[${Math.max(2, (count / maxFlagCount) * 100)}%]`}
+                    className={`h-full rounded-full bg-accent transition-all w-[${Math.max(2, (count / maxFlagCount) * 100)}%]`}
                   />
                 </div>
                 <span className="w-16 text-right text-sm font-semibold text-slate-700 sm:w-20">

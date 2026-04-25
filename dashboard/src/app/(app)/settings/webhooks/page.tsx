@@ -383,7 +383,7 @@ export default function WebhooksPage() {
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors",
                       form.events.includes(evt)
-                        ? "bg-indigo-50 text-indigo-700 ring-indigo-200"
+                        ? "bg-accent/5 text-accent-dark ring-accent/20"
                         : "bg-white text-slate-500 ring-slate-200 hover:bg-slate-50",
                     )}
                   >
@@ -424,7 +424,7 @@ export default function WebhooksPage() {
                         className={cn(
                           "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
                           selectedPreviewEvent === evt
-                            ? "bg-indigo-100 text-indigo-700"
+                            ? "bg-accent/10 text-accent-dark"
                             : "bg-white text-slate-500 hover:bg-slate-100",
                         )}
                       >
@@ -488,7 +488,7 @@ export default function WebhooksPage() {
 
               return (
                 <div key={wh.id}>
-                  <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-100 transition-colors hover:bg-indigo-50/30 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-100 transition-colors hover:bg-accent-glass sm:flex-row sm:items-center sm:justify-between">
                     <div
                       className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
                       onClick={() => loadDeliveries(wh.id)}
@@ -527,7 +527,7 @@ export default function WebhooksPage() {
                         size="icon-sm"
                         onClick={() => handleTest(wh)}
                         disabled={isTesting}
-                        className="text-slate-400 hover:text-indigo-500 hover:bg-indigo-50"
+                        className="text-slate-400 hover:text-accent hover:bg-accent/5"
                         title="Test webhook"
                       >
                         {isTesting ? (
