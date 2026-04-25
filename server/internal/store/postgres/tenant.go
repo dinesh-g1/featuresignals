@@ -95,10 +95,10 @@ func (s *TenantStore) LookupByKey(ctx context.Context, apiKeyHash string) (*doma
 	t := &domain.Tenant{}
 	err := s.pool.QueryRow(ctx,
 		`SELECT t.id, t.name, t.slug, t.schema, t.tier, t.status, t.created_at, t.updated_at
-		 FROM public.tenants t
-		 INNER JOIN public.api_keys ak ON ak.tenant_id = t.id
-		 WHERE ak.key_hash = $1
-		   AND ak.revoked_at IS NULL`,
+			 FROM public.tenants t
+			 INNER JOIN public.tenant_api_keys ak ON ak.tenant_id = t.id
+			 WHERE ak.key_hash = $1
+			   AND ak.revoked_at IS NULL`,
 		apiKeyHash,
 	).Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
@@ -240,7 +240,7 @@ func (s *TenantStore) Decommission(ctx context.Context, tenantID string) error {
 
 	// Revoke all API keys for this tenant.
 	_, err = tx.Exec(ctx,
-		`UPDATE public.api_keys SET revoked_at = NOW() WHERE tenant_id = $1 AND revoked_at IS NULL`,
+		`UPDATE public.tenant_api_keys SET revoked_at = NOW() WHERE tenant_id = $1 AND revoked_at IS NULL`,
 		tenantID,
 	)
 	if err != nil {
@@ -272,7 +272,7 @@ func (s *TenantStore) Decommission(ctx context.Context, tenantID string) error {
 // CreateAPIKey registers a new tenant-level API key in the public schema.
 func (s *TenantStore) CreateAPIKey(ctx context.Context, key *domain.TenantAPIKey) error {
 	err := s.pool.QueryRow(ctx,
-		`INSERT INTO public.api_keys (id, tenant_id, key_prefix, key_hash, label)
+		`INSERT INTO public.tenant_api_keys (id, tenant_id, key_prefix, key_hash, label)
 		 VALUES ($1, $2, $3, $4, $5)
 		 RETURNING created_at`,
 		key.ID, key.TenantID, key.KeyPrefix, key.KeyHash, key.Label,
@@ -283,7 +283,7 @@ func (s *TenantStore) CreateAPIKey(ctx context.Context, key *domain.TenantAPIKey
 // RevokeAPIKey soft-deletes a tenant-level API key by setting revoked_at.
 func (s *TenantStore) RevokeAPIKey(ctx context.Context, keyID string) error {
 	tag, err := s.pool.Exec(ctx,
-		`UPDATE public.api_keys SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL`,
+		`UPDATE public.tenant_api_keys SET revoked_at = NOW() WHERE id = $1 AND revoked_at IS NULL`,
 		keyID,
 	)
 	if err != nil {
@@ -300,9 +300,9 @@ func (s *TenantStore) RevokeAPIKey(ctx context.Context, keyID string) error {
 func (s *TenantStore) ListAPIKeys(ctx context.Context, tenantID string) ([]*domain.TenantAPIKey, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, tenant_id, key_prefix, key_hash, label, last_used_at, created_at
-		 FROM public.api_keys
-		 WHERE tenant_id = $1 AND revoked_at IS NULL
-		 ORDER BY created_at DESC`, tenantID,
+			 FROM public.tenant_api_keys
+			 WHERE tenant_id = $1 AND revoked_at IS NULL
+			 ORDER BY created_at DESC`, tenantID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list tenant api keys: %w", err)

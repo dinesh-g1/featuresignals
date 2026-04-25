@@ -100,6 +100,24 @@ func (s *inMemoryPreviewStore) Delete(_ context.Context, id string) error {
 	return nil
 }
 
+func (s *inMemoryPreviewStore) ExtendTTL(_ context.Context, id string, ttlHours int) (*Preview, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	p, ok := s.previews[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+
+	clone := *p
+	clone.ExpiresAt = clone.ExpiresAt.Add(time.Duration(ttlHours) * time.Hour)
+	clone.UpdatedAt = time.Now().UTC()
+	clone.Status = "active"
+	s.previews[id] = &clone
+
+	return &clone, nil
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────
 
 // OpsPreviewsHandler serves preview management endpoints for the ops portal.
@@ -209,6 +227,41 @@ func (h *OpsPreviewsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("preview deleted", "preview_id", id)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ExtendTTL handles POST /api/v1/ops/previews/{id}/ttl
+func (h *OpsPreviewsHandler) ExtendTTL(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_previews_extend_ttl")
+	id := chi.URLParam(r, "id")
+
+	var req struct {
+		TTLHours int `json:"ttl_hours"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.TTLHours <= 0 {
+		httputil.Error(w, http.StatusBadRequest, "ttl_hours must be positive")
+		return
+	}
+	if req.TTLHours > 168 {
+		req.TTLHours = 168 // Max 7 days
+	}
+
+	preview, err := h.previews.ExtendTTL(r.Context(), id, req.TTLHours)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "preview not found")
+			return
+		}
+		log.Error("failed to extend preview TTL", "error", err, "preview_id", id)
+		httputil.Error(w, http.StatusInternalServerError, "failed to extend preview TTL")
+		return
+	}
+
+	log.Info("preview TTL extended", "preview_id", id, "ttl_hours", req.TTLHours)
+	httputil.JSON(w, http.StatusOK, preview)
 }
 
 // generatePreviewID creates a short, readable preview ID.

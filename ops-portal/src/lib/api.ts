@@ -218,7 +218,7 @@ function buildUrl(
       }
     }
   }
-  return url.pathname + url.search;
+  return url.toString();
 }
 
 async function parseErrorBody(response: Response): Promise<ApiErrorResponse> {
@@ -565,7 +565,7 @@ export async function getCell(id: string): Promise<Cell> {
 }
 
 export async function getCellMetrics(id: string): Promise<CellMetrics> {
-  return request<CellMetrics>(`/cells/${id}/metrics`);
+  return request<CellMetrics>(`/cells/${id}/metrics/current`);
 }
 
 export async function scaleCell(id: string, req: ScaleRequest): Promise<void> {

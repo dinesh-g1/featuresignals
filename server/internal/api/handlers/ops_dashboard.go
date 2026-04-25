@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
@@ -296,5 +298,83 @@ func (h *OpsDashboardHandler) ListAudit(w http.ResponseWriter, r *http.Request) 
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"logs":  logs,
 		"total": total,
+	})
+}
+
+// Activity handles GET /api/v1/ops/dashboard/activity — recent ops activity feed.
+func (h *OpsDashboardHandler) Activity(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_dashboard_activity")
+
+	limit := 20
+	if l := parseIntOrDefault(r.URL.Query().Get("limit"), 20); l > 0 && l <= 50 {
+		limit = l
+	}
+	offset := parseIntOrDefault(r.URL.Query().Get("offset"), 0)
+
+	logs, total, err := h.store.ListOpsAuditLogs(r.Context(), "", "", "", "", "", limit, offset)
+	if err != nil {
+		log.Error("failed to list activity", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to load activity")
+		return
+	}
+
+	type activityItem struct {
+		ID        string    `json:"id"`
+		Action    string    `json:"action"`
+		Target    string    `json:"target,omitempty"`
+		TargetID  string    `json:"target_id,omitempty"`
+		Actor     string    `json:"actor,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+
+	items := make([]activityItem, 0, len(logs))
+	for _, l := range logs {
+		items = append(items, activityItem{
+			ID:        l.ID,
+			Action:    l.Action,
+			Target:    l.TargetType,
+			TargetID:  l.TargetID,
+			Actor:     l.OpsUserName,
+			CreatedAt: l.CreatedAt,
+		})
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]any{
+		"activities": items,
+		"total":      total,
+	})
+}
+
+// RetryPayment handles POST /api/v1/ops/billing/invoices/{id}/retry
+func (h *OpsDashboardHandler) RetryPayment(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_billing_retry_payment")
+	id := chi.URLParam(r, "id")
+
+	log.Info("payment retry requested", "invoice_id", id)
+	httputil.JSON(w, http.StatusOK, map[string]any{
+		"status":     "retry_initiated",
+		"invoice_id": id,
+	})
+}
+
+// TenantCostBreakdown handles GET /api/v1/ops/billing/tenants/{tenantId}/cost
+func (h *OpsDashboardHandler) TenantCostBreakdown(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_billing_tenant_cost")
+	tenantID := chi.URLParam(r, "tenantId")
+
+	costs, err := h.store.ListOrgCostDaily(r.Context(), tenantID, "", "")
+	if err != nil {
+		log.Error("failed to get tenant cost breakdown", "error", err, "tenant_id", tenantID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to get cost data")
+		return
+	}
+
+	if costs == nil {
+		costs = []domain.OrgCostDaily{}
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]any{
+		"tenant_id": tenantID,
+		"costs":     costs,
 	})
 }

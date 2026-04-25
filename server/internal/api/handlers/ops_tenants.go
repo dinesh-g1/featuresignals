@@ -180,3 +180,77 @@ func (h *OpsTenantsHandler) setTenantStatus(w http.ResponseWriter, r *http.Reque
 	httputil.Error(w, http.StatusNotFound, "tenant registry not available")
 }
 
+// Update handles PUT /api/v1/ops/tenants/{id} — updates tenant fields.
+func (h *OpsTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_tenants_update")
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
+
+	var req struct {
+		Name string `json:"name,omitempty"`
+		Slug string `json:"slug,omitempty"`
+		Tier string `json:"tier,omitempty"`
+	}
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if registry, ok := h.store.(domain.TenantRegistry); ok {
+		tenant, err := registry.LookupByID(r.Context(), id)
+		if err != nil {
+			if errors.Is(err, domain.ErrNotFound) {
+				httputil.Error(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			log.Error("failed to get tenant for update", "error", err, "tenant_id", id)
+			httputil.Error(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		if req.Name != "" {
+			tenant.Name = req.Name
+		}
+		if req.Slug != "" {
+			tenant.Slug = req.Slug
+		}
+		if req.Tier != "" {
+			tenant.Tier = req.Tier
+		}
+		tenant.UpdatedAt = time.Now().UTC()
+		httputil.JSON(w, http.StatusOK, tenant)
+		return
+	}
+
+	httputil.Error(w, http.StatusNotFound, "tenant registry not available")
+}
+
+// Deprovision handles DELETE /api/v1/ops/tenants/{id} — decommissions a tenant.
+func (h *OpsTenantsHandler) Deprovision(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_tenants_deprovision")
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		httputil.Error(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
+
+	if registry, ok := h.store.(domain.TenantRegistry); ok {
+		if err := registry.Decommission(r.Context(), id); err != nil {
+			if errors.Is(err, domain.ErrNotFound) {
+				httputil.Error(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			log.Error("failed to deprovision tenant", "error", err, "tenant_id", id)
+			httputil.Error(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		log.Info("tenant deprovisioned", "tenant_id", id)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	httputil.Error(w, http.StatusNotFound, "tenant registry not available")
+}
+

@@ -266,6 +266,7 @@ func main() {
 
 	case "none":
 		lifecycleMailer = mailer.NewNoopMailer(logger)
+		otpSender = mailer.NewNoopMailer(logger)
 		logger.Info("email sending disabled (EMAIL_PROVIDER=none)")
 
 	default:

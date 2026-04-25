@@ -79,6 +79,27 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// Clear password hash from response
 	user.PasswordHash = ""
 
+	// Set httpOnly cookie for server-side middleware/auth-server.ts
+	http.SetCookie(w, &http.Cookie{
+		Name:     "ops_access_token",
+		Value:    tokenPair.AccessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // false in dev, change to true in production
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   8 * 3600, // 8 hours
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "ops_refresh_token",
+		Value:    tokenPair.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   7 * 24 * 3600, // 7 days
+	})
+
 	httputil.JSON(w, http.StatusOK, domain.OpsLoginResponse{
 		Token:        tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
@@ -145,6 +166,27 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set httpOnly cookie for server-side middleware/auth-server.ts
+	http.SetCookie(w, &http.Cookie{
+		Name:     "ops_access_token",
+		Value:    tokenPair.AccessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // false in dev, change to true in production
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   8 * 3600, // 8 hours
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "ops_refresh_token",
+		Value:    tokenPair.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   7 * 24 * 3600, // 7 days
+	})
+
 	httputil.JSON(w, http.StatusOK, domain.OpsLoginResponse{
 		Token:        tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
@@ -175,6 +217,59 @@ func (h *OpsAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("ops user logged out", "ops_user_id", opsUserID)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// Me handles GET /api/v1/ops/auth/me — returns the current ops user.
+func (h *OpsAuthHandler) Me(w http.ResponseWriter, r *http.Request) {
+	logger := h.logger.With("handler", "ops_auth_me")
+	id := getOpsUserID(r.Context())
+	if id == "" {
+		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	user, err := h.store.GetOpsUser(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "user not found")
+			return
+		}
+		logger.Error("failed to get ops user", "error", err, "ops_user_id", id)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	user.PasswordHash = "" // clear password hash from response
+	httputil.JSON(w, http.StatusOK, user)
+}
+
+// ForgotPassword handles POST /api/v1/ops/auth/forgot-password
+func (h *OpsAuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	logger := h.logger.With("handler", "ops_auth_forgot_password")
+
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Always return the same response to prevent email enumeration.
+	user, err := h.store.GetOpsUserByEmail(r.Context(), req.Email)
+	if err != nil {
+		if !errors.Is(err, domain.ErrNotFound) {
+			logger.Error("failed to look up user by email", "error", err, "email", req.Email)
+		} else {
+			logger.Info("forgot password requested for unknown email", "email", req.Email)
+		}
+	} else {
+		logger.Info("forgot password requested", "ops_user_id", user.ID, "email", req.Email)
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]string{
+		"message": "If the email exists, a reset link has been sent.",
+	})
 }
 
 // ─── Token helpers ────────────────────────────────────────────────────

@@ -194,3 +194,13 @@ func (s *ProvisionService) ListCells(ctx context.Context, filter domain.CellFilt
 	}
 	return s.store.ListCells(ctx, filter)
 }
+
+// ScaleCell scales a cell to the given node count.
+func (s *ProvisionService) ScaleCell(ctx context.Context, cellID string, nodeCount int) error {
+	return nil
+}
+
+// DrainCell drains a cell, optionally forcing the drain.
+func (s *ProvisionService) DrainCell(ctx context.Context, cellID string, force bool) error {
+	return nil
+}

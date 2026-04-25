@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/featuresignals/server/internal/domain"
@@ -15,6 +16,15 @@ var userEmailContextKey = userEmailCtxKey{}
 
 // RequireDomain restricts access to users whose email ends with the given domain.
 func RequireDomain(allowedDomain string) func(http.Handler) http.Handler {
+	// Allow env var override. "*" or empty means allow all.
+	if envDomain := os.Getenv("OPS_ALLOWED_DOMAIN"); envDomain != "" {
+		if envDomain == "*" {
+			return func(next http.Handler) http.Handler {
+				return next
+			}
+		}
+		allowedDomain = envDomain
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims := GetClaims(r.Context())

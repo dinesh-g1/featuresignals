@@ -37,10 +37,9 @@ CREATE INDEX IF NOT EXISTS idx_usage_tenant_metric
 CREATE INDEX IF NOT EXISTS idx_usage_recorded_at
     ON usage_records(recorded_at DESC);
 
--- Partial index for recent records (optimizes the flush-from-buffer query).
-CREATE INDEX IF NOT EXISTS idx_usage_recent
-    ON usage_records(recorded_at DESC)
-    WHERE recorded_at > NOW() - INTERVAL '1 hour';
+-- (Partial index skipped: NOW() is not IMMUTABLE, preventing index creation)
+-- Consider a TTL-based cleanup or application-level filtering instead.
+
 
 -- ── Invoices ──────────────────────────────────────────────────────────────
 -- Monthly billing statements. Each invoice represents one tenant's bill for

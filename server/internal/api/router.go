@@ -511,10 +511,13 @@ func NewRouter(
 	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
 	opsSystemH := handlers.NewOpsSystemHandler(store, logger)
 	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
+	opsEnvVarsH := handlers.NewOpsEnvVarsHandler(store, logger)
+	opsBackupsH := handlers.NewOpsBackupsHandler(store, logger)
 	// ── Ops Portal Auth (public) ────────────────────────────────
 	r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
 	r.Post("/api/v1/ops/auth/refresh", opsAuthH.Refresh)
 	r.Post("/api/v1/ops/auth/logout", opsAuthH.Logout)
+	r.Post("/api/v1/ops/auth/forgot-password", opsAuthH.ForgotPassword)
 
 	r.Route("/api/v1/ops", func(r chi.Router) {
 		r.Use(jwtAuth)
@@ -522,13 +525,19 @@ func NewRouter(
 		// Domain restriction: only @featuresignals.com users
 		r.Use(middleware.RequireDomain("featuresignals.com"))
 
+		// ── Auth ───────────────────────────────────────────────
+		r.Get("/auth/me", opsAuthH.Me)
+
 		// ── Dashboard ──────────────────────────────────────────
 		r.Get("/dashboard/stats", opsDashboardH.Stats)
+		r.Get("/dashboard/activity", opsDashboardH.Activity)
 
 		// ── Tenants ────────────────────────────────────────────
 		r.Get("/tenants", opsTenantsH.List)
 		r.Get("/tenants/{id}", opsTenantsH.Get)
 		r.Post("/tenants", opsTenantsH.Provision)
+		r.Put("/tenants/{id}", opsTenantsH.Update)
+		r.Delete("/tenants/{id}", opsTenantsH.Deprovision)
 		r.Post("/tenants/{id}/suspend", opsTenantsH.Suspend)
 		r.Post("/tenants/{id}/activate", opsTenantsH.Activate)
 
@@ -538,21 +547,40 @@ func NewRouter(
 		r.Get("/cells/{id}", opsCellsH.Get)
 		r.Delete("/cells/{id}", opsCellsH.Delete)
 		r.Get("/cells/{id}/metrics", opsCellsH.Metrics)
+		r.Get("/cells/{id}/metrics/current", opsCellsH.MetricsCurrent)
+		r.Post("/cells/{id}/scale", opsCellsH.Scale)
+		r.Post("/cells/{id}/drain", opsCellsH.Drain)
+		r.Post("/cells/{id}/migrate", opsCellsH.MigrateTenants)
 
 		// ── Previews ───────────────────────────────────────────
 		r.Get("/previews", opsPreviewsH.List)
 		r.Post("/previews", opsPreviewsH.Create)
 		r.Delete("/previews/{id}", opsPreviewsH.Delete)
+		r.Post("/previews/{id}/ttl", opsPreviewsH.ExtendTTL)
 
 		// ── Billing ────────────────────────────────────────────
 		r.Get("/billing/mrr", opsDashboardH.MRR)
 		r.Get("/billing/invoices", opsDashboardH.Invoices)
+		r.Post("/billing/invoices/{id}/retry", opsDashboardH.RetryPayment)
+		r.Get("/billing/tenants/{tenantId}/cost", opsDashboardH.TenantCostBreakdown)
+
+		// ── Environment Variables ──────────────────────────────
+		r.Get("/env-vars", opsEnvVarsH.ListGlobal)
+		r.Get("/env-vars/{cellId}", opsEnvVarsH.GetEffective)
+		r.Post("/env-vars/{cellId}", opsEnvVarsH.Update)
+
+		// ── Backups ────────────────────────────────────────────
+		r.Get("/backups", opsBackupsH.List)
+		r.Post("/backups", opsBackupsH.Trigger)
+		r.Get("/backups/status", opsBackupsH.Status)
+		r.Post("/backups/{id}/restore", opsBackupsH.Restore)
 
 		// ── Audit ──────────────────────────────────────────────
-		r.Get("/audit", opsH.ListOpsAuditLogs)
+		r.Get("/audit", opsDashboardH.ListAudit)
 
 		// ── System ─────────────────────────────────────────────
 		r.Get("/system/health", opsSystemH.Health)
+		r.Get("/system/services", opsSystemH.Services)
 
 		// ── Legacy Ops Routes (deprecated, moving to new structure) ──
 		// Environments

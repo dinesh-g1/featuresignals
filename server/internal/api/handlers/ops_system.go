@@ -140,3 +140,53 @@ func (h *OpsSystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, statusCode, health)
 }
+
+// Services handles GET /api/v1/ops/system/services — returns status of all system services.
+func (h *OpsSystemHandler) Services(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_system_services")
+
+	// Check database connectivity with a short timeout.
+	dbCtx, dbCancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer dbCancel()
+
+	dbStatus := "healthy"
+	var dbLatency time.Duration
+	var dbErr error
+
+	dbStart := time.Now()
+	registry, ok := h.store.(domain.TenantRegistry)
+	if ok {
+		if _, _, err := registry.List(dbCtx, domain.TenantFilter{Limit: 1}); err != nil {
+			dbStatus = "down"
+			dbErr = err
+			log.Warn("database health check failed for services", "error", err)
+		}
+	}
+	dbLatency = time.Since(dbStart)
+
+	services := []ServiceStatus{
+		{
+			Name:    "database",
+			Status:  dbStatus,
+			Latency: dbLatency.Round(time.Microsecond).String(),
+			Message: errorMessage(dbErr),
+		},
+		{
+			Name:   "api",
+			Status: "healthy",
+		},
+	}
+
+	httputil.JSON(w, http.StatusOK, map[string]any{
+		"services":   services,
+		"checked_at": time.Now().UTC(),
+	})
+}
+
+// errorMessage returns the error string or empty if nil.
+func errorMessage(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
+}

@@ -301,7 +301,7 @@ func (m *NoopMailer) SendOTP(_ context.Context, toEmail, toName, otp string) err
 	m.logger.Info("OTP email suppressed (noop)",
 		"to", toEmail,
 		"name", toName,
-		"otp_length", len(otp),
+		"otp", otp,
 	)
 	return nil
 }
@@ -311,7 +311,7 @@ func (m *NoopMailer) SendPasswordResetOTP(_ context.Context, toEmail, toName, ot
 	m.logger.Info("password reset email suppressed (noop)",
 		"to", toEmail,
 		"name", toName,
-		"otp_length", len(otp),
+		"otp", otp,
 	)
 	return nil
 }

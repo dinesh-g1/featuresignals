@@ -4,6 +4,6 @@
 
 DROP FUNCTION IF EXISTS public.create_tenant_schema(TEXT);
 
-DROP TABLE IF EXISTS public.api_keys CASCADE;
+DROP TABLE IF EXISTS public.tenant_api_keys CASCADE;
 
 DROP TABLE IF EXISTS public.tenants CASCADE;
