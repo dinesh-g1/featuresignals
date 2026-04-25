@@ -11,8 +11,6 @@
  * - Auto-refresh: attempts refresh 5 minutes before expiry
  */
 
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import type { LoginRequest, LoginResponse, OpsUser } from "@/types/api";
 
 // ─── Constants ───────────────────────────────────────────────────────────
@@ -226,43 +224,6 @@ export async function logout(): Promise<void> {
 }
 
 // ─── Server-side Session ────────────────────────────────────────────────
-
-export interface ServerSession {
-  user: OpsUser;
-  accessToken: string;
-}
-
-/**
- * Get the current session from the server side.
- * Reads the httpOnly cookie and verifies the token with the API.
- * Returns null if not authenticated.
- *
- * Call this from server components and middleware only.
- */
-export async function getServerSession(): Promise<ServerSession | null> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("ops_access_token");
-
-    if (!token?.value) return null;
-
-    const baseUrl = getBaseUrl();
-    const response = await fetch(`${baseUrl}${AUTH_API.ME}`, {
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
-      // Short timeout to avoid hanging page loads
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!response.ok) return null;
-
-    const user: OpsUser = await response.json();
-    return { user, accessToken: token.value };
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Verify a token value (used in middleware).
