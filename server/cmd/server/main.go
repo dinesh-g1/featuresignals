@@ -39,11 +39,53 @@ import (
 	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
 	"github.com/featuresignals/server/internal/store/postgres"
+	"github.com/featuresignals/server/internal/version"
 	"github.com/featuresignals/server/internal/webhook"
 	"github.com/featuresignals/server/internal/zeptomail"
 )
 
+// banner is the ASCII art startup banner displayed when the server starts.
+// It includes trademark and version information.
+const banner = `
+  ███████╗███████╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗
+  ██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔════╝
+  █████╗  █████╗  ███████║   ██║   ██║   ██║██████╔╝█████╗
+  ██╔══╝  ██╔══╝  ██╔══██║   ██║   ██║   ██║██╔══██╗██╔══╝
+  ██║     ███████╗██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗
+  ╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝
+
+  ███████╗██╗ ██████╗ ███╗   ██╗ █████╗ ██╗     ███████╗
+  ██╔════╝██║██╔════╝ ████╗  ██║██╔══██╗██║     ██╔════╝
+  ███████╗██║██║  ███╗██╔██╗ ██║███████║██║     ███████╗
+  ╚════██║██║██║   ██║██║╚██╗██║██╔══██║██║     ╚════██║
+  ███████║██║╚██████╔╝██║ ╚████║██║  ██║███████╗███████║
+  ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚══════╝
+
+  FeatureSignals v%s — Enterprise Feature Management Platform
+  Copyright © %d FeatureSignals Inc. All rights reserved.
+  FeatureSignals is a trademark of FeatureSignals Inc.
+  Licensed under the Apache License, Version 2.0.
+`
+
+// printBanner prints the startup banner to stderr.
+// It is skipped during test runs.
+func printBanner() {
+	if len(os.Args) > 0 {
+		// Skip banner during test runs
+		for _, arg := range os.Args {
+			if arg == "-test.v" || arg == "-test.run" || arg == "-test.count" {
+				return
+			}
+		}
+	}
+	// Only print to stderr, not stdout (stdout is for structured JSON logs)
+	fmt.Fprintf(os.Stderr, banner, version.Version, time.Now().Year())
+	fmt.Fprintln(os.Stderr)
+}
+
 func main() {
+	printBanner()
+
 	// Load .env file for local development (no-op in production)
 	_ = godotenv.Load()
 

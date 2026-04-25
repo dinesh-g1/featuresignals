@@ -485,6 +485,11 @@ func NewRouter(
 	// Restricted to @featuresignals.com users via middleware check
 	opsH := handlers.NewOpsHandler(store, lifecycle)
 	opsAuthH := handlers.NewOpsAuthHandler(store, jwtMgr, logger)
+	opsTenantsH := handlers.NewOpsTenantsHandler(store, logger)
+	opsCellsH := handlers.NewOpsCellsHandler(store, logger)
+	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
+	opsSystemH := handlers.NewOpsSystemHandler(store, logger)
+	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
 	// ── Ops Portal Auth (public) ────────────────────────────────
 	r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
 	r.Post("/api/v1/ops/auth/refresh", opsAuthH.Refresh)
@@ -496,6 +501,37 @@ func NewRouter(
 		// Domain restriction: only @featuresignals.com users
 		r.Use(middleware.RequireDomain("featuresignals.com"))
 
+		// ── Dashboard ──────────────────────────────────────────
+		r.Get("/dashboard/stats", opsDashboardH.Stats)
+
+		// ── Tenants ────────────────────────────────────────────
+		r.Get("/tenants", opsTenantsH.List)
+		r.Get("/tenants/{id}", opsTenantsH.Get)
+		r.Post("/tenants", opsTenantsH.Provision)
+		r.Post("/tenants/{id}/suspend", opsTenantsH.Suspend)
+		r.Post("/tenants/{id}/activate", opsTenantsH.Activate)
+
+		// ── Cells ──────────────────────────────────────────────
+		r.Get("/cells", opsCellsH.List)
+		r.Get("/cells/{id}", opsCellsH.Get)
+		r.Get("/cells/{id}/metrics", opsCellsH.Metrics)
+
+		// ── Previews ───────────────────────────────────────────
+		r.Get("/previews", opsPreviewsH.List)
+		r.Post("/previews", opsPreviewsH.Create)
+		r.Delete("/previews/{id}", opsPreviewsH.Delete)
+
+		// ── Billing ────────────────────────────────────────────
+		r.Get("/billing/mrr", opsDashboardH.MRR)
+		r.Get("/billing/invoices", opsDashboardH.Invoices)
+
+		// ── Audit ──────────────────────────────────────────────
+		r.Get("/audit", opsH.ListOpsAuditLogs)
+
+		// ── System ─────────────────────────────────────────────
+		r.Get("/system/health", opsSystemH.Health)
+
+		// ── Legacy Ops Routes (deprecated, moving to new structure) ──
 		// Environments
 		r.Get("/environments", opsH.ListEnvironments)
 		r.Get("/environments/{id}", opsH.GetEnvironment)
@@ -537,9 +573,6 @@ func NewRouter(
 		r.Get("/users/me", opsH.GetMe)
 		r.Post("/users", opsH.CreateOpsUser)
 		r.Patch("/users/{id}", opsH.UpdateOpsUser)
-
-		// Audit
-		r.Get("/audit", opsH.ListOpsAuditLogs)
 	})
 
 	return r

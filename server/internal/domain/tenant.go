@@ -57,18 +57,8 @@ type TenantRegistry interface {
 	// UpdateStatus changes a tenant's status: active ↔ suspended ↔ decommissioned.
 	UpdateStatus(ctx context.Context, tenantID, status string) error
 
-	// Decommission removes a tenant: drops its schema, deletes from
-	// public.tenants, and revokes all API keys. Irreversible.
+	// Decommission removes a tenant and its schema.
 	Decommission(ctx context.Context, tenantID string) error
-
-	// CreateAPIKey registers a new tenant-level API key.
-	CreateAPIKey(ctx context.Context, key *TenantAPIKey) error
-
-	// RevokeAPIKey soft-deletes a tenant-level API key.
-	RevokeAPIKey(ctx context.Context, keyID string) error
-
-	// ListAPIKeys returns all non-revoked API keys for a tenant.
-	ListAPIKeys(ctx context.Context, tenantID string) ([]*TenantAPIKey, error)
 }
 
 // TenantFilter specifies search and pagination for tenant listing.

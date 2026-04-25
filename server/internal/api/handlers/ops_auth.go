@@ -19,13 +19,13 @@ import (
 
 // OpsAuthHandler handles ops portal authentication endpoints.
 type OpsAuthHandler struct {
-	store  domain.OpsPortalStore
+	store  domain.Store
 	jwtMgr auth.TokenManager
 	logger *slog.Logger
 }
 
 // NewOpsAuthHandler creates a new ops auth handler.
-func NewOpsAuthHandler(store domain.OpsPortalStore, jwtMgr auth.TokenManager, logger *slog.Logger) *OpsAuthHandler {
+func NewOpsAuthHandler(store domain.Store, jwtMgr auth.TokenManager, logger *slog.Logger) *OpsAuthHandler {
 	return &OpsAuthHandler{store: store, jwtMgr: jwtMgr, logger: logger}
 }
 
