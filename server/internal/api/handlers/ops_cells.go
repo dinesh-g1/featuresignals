@@ -59,11 +59,12 @@ type CellMetrics struct {
 
 // ProvisionCellRequest is the request body for creating a new cell.
 type ProvisionCellRequest struct {
-	Name       string `json:"name"`
-	ServerType string `json:"server_type"`
-	Location   string `json:"location"`
-	UserData   string `json:"user_data,omitempty"`
-	Version    string `json:"version,omitempty"`
+	Name           string `json:"name"`
+	ServerType     string `json:"server_type"`
+	Location       string `json:"location"`
+	UserData       string `json:"user_data,omitempty"`
+	Version        string `json:"version,omitempty"`
+	SignozEnabled  bool   `json:"signoz_enabled,omitempty"`
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────
@@ -197,6 +198,7 @@ func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
 			UserData:         req.UserData,
 			PostgresPassword: pgPassword,
 			Version:          req.Version,
+			SignozEnabled:    req.SignozEnabled,
 		})
 		if err != nil {
 			log.Error("failed to enqueue provisioning", "error", err)

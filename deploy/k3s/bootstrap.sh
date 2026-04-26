@@ -289,6 +289,23 @@ configure_traefik() {
     fi
 }
 
+# ---- Observability (SigNoz) -------------------------------------------------
+deploy_observability() {
+    log_info "=== Deploying Observability Stack ==="
+    if [[ "${SIGNOZ_ENABLED:-false}" != "true" ]]; then
+        log_info "SigNoz disabled. Set SIGNOZ_ENABLED=true via env to enable."
+        return 0
+    fi
+
+    # Source and execute deploy-observability.sh
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ -f "${SCRIPT_DIR}/deploy-observability.sh" ]]; then
+        bash "${SCRIPT_DIR}/deploy-observability.sh"
+    else
+        log_warn "deploy-observability.sh not found. Skipping."
+    fi
+}
+
 # ---- Deploy node-exporter DaemonSet (idempotent) ----------------------------
 deploy_node_exporter() {
     log_info "=== Deploying node-exporter DaemonSet ==="
@@ -370,18 +387,17 @@ verify_pods() {
         if ! kubectl get namespace "$ns" &>/dev/null; then
             continue
         fi
-        local pods
-        pods=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | wc -l)
-        if [[ "$pods" -eq 0 ]]; then
-            continue
-        fi
-        local not_ready
-        not_ready=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | awk '{print $3}' | grep -v "Running\|Completed" || true | wc -l)
-        if [[ "$not_ready" -gt 0 ]]; then
-            log_warn "Namespace '$ns' has $not_ready pods not in Running/Completed state."
+        local pod_count
+        pod_count=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | wc -l)
+        [[ "$pod_count" -eq 0 ]] && continue
+
+        local pending
+        pending=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | awk '{if ($3 != "Running" && $3 != "Completed") print $3}' | wc -l)
+        if [[ "$pending" -gt 0 ]]; then
+            log_warn "Namespace '$ns' has $pending pods not in Running/Completed state."
             all_ready=false
         else
-            log_info "Namespace '$ns': all $pods pods are Running."
+            log_info "Namespace '$ns': all $pod_count pods are Running."
         fi
     done
 
@@ -494,6 +510,7 @@ main() {
     configure_traefik
     deploy_node_exporter
     apply_firewall
+    deploy_observability
     verify_pods
     cleanup_temp_files
     output_connection_info

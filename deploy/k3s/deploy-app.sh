@@ -67,6 +67,14 @@ spec:
           value: "postgres://fs:${POSTGRES_PASSWORD}@featuresignals-db-postgresql.featuresignals-system.svc.cluster.local:5432/featuresignals?sslmode=disable"
         - name: JWT_SECRET
           value: "cell-${CELL_SUBDOMAIN}-jwt"
+        - name: OTEL_ENABLED
+          value: "${OTEL_ENABLED:-true}"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://signoz-otel-collector.signoz:4318}"
+        - name: OTEL_SERVICE_NAME
+          value: "featuresignals-api"
+        - name: LOG_LEVEL
+          value: "${LOG_LEVEL:-info}"
         resources:
           requests: { memory: "256Mi", cpu: "200m" }
           limits: { memory: "512Mi", cpu: "500m" }
@@ -115,6 +123,10 @@ spec:
         env:
         - name: API_URL
           value: "http://featuresignals-api.featuresignals-saas.svc.cluster.local:8080"
+        - name: OTEL_ENABLED
+          value: "${OTEL_ENABLED:-true}"
+        - name: OTEL_SERVICE_NAME
+          value: "featuresignals-dashboard"
         resources:
           requests: { memory: "128Mi", cpu: "100m" }
           limits: { memory: "256Mi", cpu: "300m" }
@@ -163,8 +175,14 @@ spec:
           value: "8081"
         - name: DATABASE_URL
           value: "postgres://featuresignals:${POSTGRES_PASSWORD}@featuresignals-db-postgresql.featuresignals-system.svc.cluster.local:5432/featuresignals?sslmode=disable"
+        - name: OTEL_ENABLED
+          value: "${OTEL_ENABLED:-true}"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://signoz-otel-collector.signoz:4318}"
+        - name: OTEL_SERVICE_NAME
+          value: "edge-worker"
         - name: LOG_LEVEL
-          value: "info"
+          value: "${LOG_LEVEL:-info}"
         resources:
           requests: { cpu: 100m, memory: 128Mi }
           limits: { cpu: 500m, memory: 256Mi }

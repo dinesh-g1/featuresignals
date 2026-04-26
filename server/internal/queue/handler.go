@@ -307,6 +307,50 @@ func (h *Handler) HandleProvisionCell(ctx context.Context, t *asynq.Task) error 
 		}
 	}
 
+	// After app deploy, deploy observability (SigNoz) if enabled
+	if payload.SignozEnabled {
+		h.recordEvent(ctx, payload.CellID, "observability_started", nil)
+
+		observabilityScriptPaths := []string{
+			"deploy/k3s/deploy-observability.sh",
+			"../deploy/k3s/deploy-observability.sh",
+			"/app/deploy/k3s/deploy-observability.sh",
+		}
+		var observabilityScript []byte
+		var obsFound bool
+		for _, p := range observabilityScriptPaths {
+			observabilityScript, err = os.ReadFile(p)
+			if err == nil {
+				obsFound = true
+				break
+			}
+		}
+
+		if obsFound {
+			obsEnvPrefix := fmt.Sprintf(
+				"export KUBECONFIG='/etc/rancher/k3s/k3s.yaml'\nexport SIGNOZ_ENABLED='true'\nexport CELL_SUBDOMAIN='%s'\nexport STORAGE_SIZE='10Gi'\n",
+				cell.Name+".featuresignals.com",
+			)
+			fullObsScript := obsEnvPrefix + string(observabilityScript)
+
+			obsOutput, obsErr := sshAccess.ExecuteScript(ctx, serverInfo.PublicIP, []byte(fullObsScript))
+			if obsErr != nil {
+				logger.Warn("observability deploy failed",
+					"error", obsErr,
+					"output", truncateStr(obsOutput, 300),
+				)
+				h.recordEvent(ctx, payload.CellID, "observability_pending", map[string]string{
+					"reason": "SigNoz deploy failed — check /var/log/featuresignals-observability.log",
+				})
+			} else {
+				h.recordEvent(ctx, payload.CellID, "observability_completed", nil)
+				logger.Info("SigNoz observability deployed")
+			}
+		} else {
+			logger.Warn("deploy-observability.sh not found, skipping observability deployment")
+		}
+	}
+
 	logger.Info("cell provisioned successfully",
 		"server_id", serverInfo.ID,
 		"public_ip", serverInfo.PublicIP,
