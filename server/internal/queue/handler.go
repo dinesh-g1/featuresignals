@@ -188,21 +188,40 @@ func (h *Handler) HandleProvisionCell(ctx context.Context, t *asynq.Task) error 
 	}
 
 	// Read and template the bootstrap script
-	scriptTemplate, err := os.ReadFile("deploy/k3s/bootstrap.sh")
-	if err != nil {
-		// Try alternative path for when running in container
-		scriptTemplate, err = os.ReadFile("/app/deploy/k3s/bootstrap.sh")
-		if err != nil {
-			h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
-				"error": "bootstrap script not found",
-			})
-			return fmt.Errorf("read bootstrap script: %w", err)
+	scriptPaths := []string{
+		"deploy/k3s/bootstrap.sh",       // CWD is project root (Docker)
+		"../deploy/k3s/bootstrap.sh",    // CWD is server/ subdirectory (local dev)
+		"/app/deploy/k3s/bootstrap.sh",  // Docker container path
+	}
+	var scriptTemplate []byte
+	var found bool
+	for _, p := range scriptPaths {
+		scriptTemplate, err = os.ReadFile(p)
+		if err == nil {
+			found = true
+			break
 		}
 	}
+	if !found {
+		h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+			"error": "bootstrap script not found",
+		})
+		return fmt.Errorf("read bootstrap script: not found in any known path")
+	}
 
-	script := strings.ReplaceAll(string(scriptTemplate), "${POSTGRES_PASSWORD}", payload.PostgresPassword)
-	script = strings.ReplaceAll(script, "${CELL_SUBDOMAIN}", cell.Name+".featuresignals.com")
-	script = strings.ReplaceAll(script, "${FEATURESIGNALS_VERSION}", cell.Version)
+	// Prepend environment variable exports instead of inline template replacement.
+	// Bash syntax like ${VAR:-default} is not affected by this approach.
+	pgPassword := payload.PostgresPassword
+	if pgPassword == "" {
+		pgPassword = "featuresignals"
+	}
+	envPrefix := fmt.Sprintf(
+		"export POSTGRES_PASSWORD='%s'\nexport CELL_SUBDOMAIN='%s'\nexport FEATURESIGNALS_VERSION='%s'\nexport KUBECONFIG='/etc/rancher/k3s/k3s.yaml'\n",
+		pgPassword,
+		cell.Name+".featuresignals.com",
+		cell.Version,
+	)
+	script := envPrefix + string(scriptTemplate)
 
 	// Execute bootstrap script
 	output, err := sshAccess.ExecuteScript(ctx, serverInfo.PublicIP, []byte(script))

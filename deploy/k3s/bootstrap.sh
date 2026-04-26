@@ -47,7 +47,7 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
 
 # ---- Defaults & Constants ---------------------------------------------------
-K3S_VERSION="${K3S_VERSION:-stable}"
+K3S_VERSION="${K3S_VERSION:-v1.30.0+k3s1}"
 CLUSTER_CIDR="${CLUSTER_CIDR:-10.42.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.43.0.0/16}"
 ACME_EMAIL="${ACME_EMAIL:-admin@featuresignals.com}"
@@ -66,8 +66,9 @@ prereq_check() {
     fi
 
     if [[ -z "${POSTGRES_PASSWORD:-}" ]]; then
-        log_error "POSTGRES_PASSWORD is not set. This is required."
-        exit 1
+        log_warn "POSTGRES_PASSWORD not set — generating random password."
+        POSTGRES_PASSWORD="$(openssl rand -base64 32)"
+        log_info "Generated POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}"
     fi
 
     if [[ -z "${CELL_SUBDOMAIN:-}" ]]; then
@@ -111,7 +112,6 @@ install_k3s() {
         INSTALL_K3S_VERSION="${K3S_VERSION}" \
         INSTALL_K3S_EXEC="server \
             --write-kubeconfig-mode 644 \
-            --kubelet-arg=\"max-pods=100\" \
             --cluster-cidr=${CLUSTER_CIDR} \
             --service-cidr=${SERVICE_CIDR}" \
         sh -
@@ -146,7 +146,29 @@ EOF
 # ---- Wait for Node Ready ----------------------------------------------------
 wait_for_node() {
     log_info "=== Waiting for node to be Ready ==="
-    kubectl wait --for=condition=Ready node --all --timeout=60s
+
+    # Wait for the k3s API server to become available first
+    local api_retries=0
+    local api_max=30
+    until kubectl cluster-info &>/dev/null; do
+        api_retries=$((api_retries + 1))
+        if [ "$api_retries" -ge "$api_max" ]; then
+            log_error "k3s API server not ready after ${api_max}s"
+            kubectl cluster-info 2>&1 || true
+            return 1
+        fi
+        sleep 2
+    done
+    log_info "k3s API server is ready."
+
+    # Now wait for the node to be Ready
+    if ! kubectl wait --for=condition=Ready node --all --timeout=120s 2>&1; then
+        log_warn "kubectl wait timed out. Checking node status..."
+        kubectl get nodes -o wide
+        kubectl describe node 2>&1 | head -20
+        return 1
+    fi
+
     log_info "Node is Ready."
 }
 

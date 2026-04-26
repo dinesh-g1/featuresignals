@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	crand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -175,13 +177,19 @@ func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Enqueue async provisioning task
+		// Generate a random postgres password for the cell
+		pgPassBytes := make([]byte, 16)
+		crand.Read(pgPassBytes)
+		pgPassword := hex.EncodeToString(pgPassBytes)
+
 		taskID, err := h.queueClient.EnqueueProvisionCell(r.Context(), queue.ProvisionCellPayload{
-			CellID:     cellID,
-			Name:       req.Name,
-			Provider:   "hetzner",
-			ServerType: req.ServerType,
-			Region:     req.Location,
-			UserData:   req.UserData,
+			CellID:           cellID,
+			Name:             req.Name,
+			Provider:         "hetzner",
+			ServerType:       req.ServerType,
+			Region:           req.Location,
+			UserData:         req.UserData,
+			PostgresPassword: pgPassword,
 		})
 		if err != nil {
 			log.Error("failed to enqueue provisioning", "error", err)
