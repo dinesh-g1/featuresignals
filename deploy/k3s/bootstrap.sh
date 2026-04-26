@@ -376,7 +376,7 @@ verify_pods() {
             continue
         fi
         local not_ready
-        not_ready=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | awk '{print $3}' | grep -v "Running\|Completed" | wc -l)
+        not_ready=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | awk '{print $3}' | grep -v "Running\|Completed" || true | wc -l)
         if [[ "$not_ready" -gt 0 ]]; then
             log_warn "Namespace '$ns' has $not_ready pods not in Running/Completed state."
             all_ready=false
@@ -480,7 +480,7 @@ main() {
     echo "================================================================"
     echo "  FeatureSignals — k3s Bootstrap"
     echo "================================================================"
-    echo "  Cell IP:        $(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
+    echo "  Cell IP:        $(curl -s --max-time 2 ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo 'unknown')"
     echo "  Log file:       ${LOGFILE}"
     echo "================================================================"
     echo ""
