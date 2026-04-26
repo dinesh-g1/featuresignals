@@ -368,12 +368,89 @@ func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version 
 // DeployCell — deploy a version to a specific cell
 // =========================================================================
 
-// DeployCell deploys a version to a specific cell.
-// For MVP, this just verifies the cell is reachable.
+// DeployCell deploys a specific version to a single cell.
+// SSHs into the cell, updates the FeatureSignals API, Dashboard, and
+// Edge Worker deployments to the given image tag, then verifies rollout.
+//
+// Required host environment variables:
+//   - SSH_PRIVATE_KEY:      SSH private key content (for kubectl over SSH)
+//   - CELL_SSH_USER:        SSH user (default: "root")
 func (m *Ci) DeployCell(ctx context.Context, source *dagger.Directory, version, cellIP, cellName string) error {
-	fmt.Printf("Deploying cell %s (%s) with version %s\n", cellName, cellIP, version)
-	// SSH into the cell and run helm upgrade
-	// For MVP, just verify the cell is reachable
+	if version == "" {
+		return fmt.Errorf("version is required")
+	}
+	if cellIP == "" {
+		return fmt.Errorf("cellIP is required")
+	}
+
+	ghcrToken := dag.Host().EnvVariable("GHCR_TOKEN").Secret()
+	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
+	sshUser := dag.Host().EnvVariable("CELL_SSH_USER")
+	fmt.Printf("🚀 Deploying v%s to cell %s (%s)\n", version, cellName, cellIP)
+
+	// Ensure images exist on GHCR first by publishing with the version tag
+	serverImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
+		Dockerfile: "deploy/docker/Dockerfile.server",
+	})
+	serverTag := fmt.Sprintf("ghcr.io/featuresignals/server:%s", version)
+	_, err := serverImg.
+		WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).
+		Publish(ctx, serverTag)
+	if err != nil {
+		return fmt.Errorf("publish server:%s: %w", version, err)
+	}
+	fmt.Printf("  ✅ Published server:%s\n", version)
+
+	dashboardImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
+		Dockerfile: "deploy/docker/Dockerfile.dashboard",
+		BuildArgs: []dagger.BuildArg{
+			{Name: "NEXT_PUBLIC_API_URL", Value: "https://api.featuresignals.com"},
+			{Name: "NEXT_PUBLIC_APP_URL", Value: "https://app.featuresignals.com"},
+		},
+	})
+	dashTag := fmt.Sprintf("ghcr.io/featuresignals/dashboard:%s", version)
+	_, err = dashboardImg.
+		WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).
+		Publish(ctx, dashTag)
+	if err != nil {
+		return fmt.Errorf("publish dashboard:%s: %w", version, err)
+	}
+	fmt.Printf("  ✅ Published dashboard:%s\n", version)
+
+	// SSH into the cell and update deployments
+	sshCtr := dag.Container().
+		From("alpine:3.20").
+		WithExec([]string{"apk", "add", "--no-cache", "openssh", "curl", "kubectl"}).
+		WithSecretVariable("SSH_KEY", sshKey).
+		WithExec([]string{"sh", "-c", "mkdir -p /root/.ssh && echo \"$SSH_KEY\" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519"})
+
+	// Determine SSH user
+	sshUserStr := "root"
+	if sshUser != "" {
+		sshUserStr = sshUser
+	}
+	host := fmt.Sprintf("%s@%s", sshUserStr, cellIP)
+
+	// Update API deployment
+	cmds := []string{
+		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl set image deployment/featuresignals-api -n featuresignals-saas api=%s'`, host, serverTag),
+		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl set image deployment/featuresignals-dashboard -n featuresignals-saas dashboard=%s'`, host, dashTag),
+		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl set image deployment/edge-worker -n featuresignals-saas edge-worker=%s'`, host, serverTag),
+		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl rollout status deployment/featuresignals-api -n featuresignals-saas --timeout=3m'`, host),
+		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl rollout status deployment/featuresignals-dashboard -n featuresignals-saas --timeout=3m'`, host),
+		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl rollout status deployment/edge-worker -n featuresignals-saas --timeout=3m'`, host),
+	}
+
+	for _, cmd := range cmds {
+		ctr, err := sshCtr.WithExec([]string{"sh", "-c", cmd}).Sync(ctx)
+		if err != nil {
+			return fmt.Errorf("deploy step failed on %s: %w\ncmd: %s", cellName, err, cmd)
+		}
+		output, _ := ctr.Stdout(ctx)
+		fmt.Printf("  %s\n", strings.TrimSpace(output))
+	}
+
+	fmt.Printf("✅ Cell %s (%s) updated to v%s\n", cellName, cellIP, version)
 	return nil
 }
 

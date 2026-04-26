@@ -51,7 +51,9 @@ K3S_VERSION="${K3S_VERSION:-v1.30.0+k3s1}"
 CLUSTER_CIDR="${CLUSTER_CIDR:-10.42.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.43.0.0/16}"
 ACME_EMAIL="${ACME_EMAIL:-admin@featuresignals.com}"
-FEATURESIGNALS_VERSION="${FEATURESIGNALS_VERSION:-latest}"
+# FEATURESIGNALS_VERSION is required — set to a specific git SHA or semver tag.
+# No default. The CI/CD pipeline sets this during build and deploy.
+FEATURESIGNALS_VERSION="${FEATURESIGNALS_VERSION:?FEATURESIGNALS_VERSION is required}"
 
 CERT_MANAGER_VERSION="v1.16.3"
 # POSTGRESQL_HELM_VERSION removed — using latest chart
@@ -616,6 +618,14 @@ verify_pods() {
     fi
 }
 
+# ---- Cleanup Temp Files ----------------------------------------------------
+cleanup_temp_files() {
+    log_info "=== Cleaning up temporary files ==="
+    rm -f /tmp/bootstrap.sh /tmp/k3s-install.sh /tmp/helm-install.sh 2>/dev/null
+    rm -rf /tmp/helm-* 2>/dev/null
+    log_info "Temporary files cleaned."
+}
+
 # ---- Output Connection Info -------------------------------------------------
 output_connection_info() {
     log_info "=== Connection Information ==="
@@ -668,6 +678,7 @@ main() {
     deploy_node_exporter
     deploy_edge_worker
     verify_pods
+    cleanup_temp_files
     output_connection_info
 
     log_info "Bootstrap complete!"
