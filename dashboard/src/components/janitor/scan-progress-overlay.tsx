@@ -1,17 +1,38 @@
 "use client";
 
+import { useState } from "react";
 import { ScanProgressState } from "@/hooks/use-janitor-scan-progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, CheckCircle, Loader2, AlertCircle, Clock, Brain, FileCode } from "lucide-react";
+import { api } from "@/lib/api";
+import { useAppStore } from "@/stores/app-store";
+import {
+  X,
+  CheckCircle,
+  Loader2,
+  AlertCircle,
+  Clock,
+  Brain,
+  FileCode,
+} from "lucide-react";
 
 interface ScanProgressOverlayProps {
   state: ScanProgressState;
   onClose: () => void;
+  onCancel?: () => void;
 }
 
-export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps) {
-  const isActive = state.phase !== "idle" && state.phase !== "complete" && state.phase !== "error";
+export function ScanProgressOverlay({
+  state,
+  onClose,
+  onCancel,
+}: ScanProgressOverlayProps) {
+  const token = useAppStore((s) => s.token);
+  const [cancelling, setCancelling] = useState(false);
+  const isActive =
+    state.phase !== "idle" &&
+    state.phase !== "complete" &&
+    state.phase !== "error";
   const isDone = state.phase === "complete" || state.phase === "error";
 
   return (
@@ -38,7 +59,10 @@ export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps
             </h3>
           </div>
           {isDone && (
-            <button onClick={onClose} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100">
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100"
+            >
               <X className="h-5 w-5" />
             </button>
           )}
@@ -69,7 +93,9 @@ export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps
         {state.repos.length > 0 && (
           <div className="mb-4">
             <h4 className="text-xs font-semibold text-stone-600 uppercase tracking-wider mb-2">
-              Repositories ({state.repos.filter(r => r.status === "complete").length}/{state.repos.length})
+              Repositories (
+              {state.repos.filter((r) => r.status === "complete").length}/
+              {state.repos.length})
             </h4>
             <div className="space-y-1.5">
               {state.repos.map((repo) => (
@@ -85,7 +111,9 @@ export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps
                     ) : (
                       <Clock className="h-3.5 w-3.5 text-stone-400" />
                     )}
-                    <span className="font-medium text-stone-700">{repo.name}</span>
+                    <span className="font-medium text-stone-700">
+                      {repo.name}
+                    </span>
                   </div>
                   <span className="text-stone-400">
                     {repo.status === "scanning"
@@ -104,7 +132,9 @@ export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps
         {state.flags.length > 0 && (
           <div className="mb-4">
             <h4 className="text-xs font-semibold text-stone-600 uppercase tracking-wider mb-2">
-              AI Analysis ({state.flags.filter(f => f.status === "completed").length}/{state.flags.length} flags)
+              AI Analysis (
+              {state.flags.filter((f) => f.status === "completed").length}/
+              {state.flags.length} flags)
             </h4>
             <div className="space-y-1.5 max-h-40 overflow-y-auto">
               {state.flags.map((flag) => (
@@ -124,7 +154,9 @@ export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps
                     ) : (
                       <Clock className="h-3.5 w-3.5 text-stone-400" />
                     )}
-                    <code className="font-medium text-stone-700">{flag.flagKey}</code>
+                    <code className="font-medium text-stone-700">
+                      {flag.flagKey}
+                    </code>
                   </div>
                   <span className="text-stone-400">
                     {flag.status === "completed" && flag.confidence
@@ -150,8 +182,22 @@ export function ScanProgressOverlay({ state, onClose }: ScanProgressOverlayProps
 
         {/* Actions */}
         {isActive && (
-          <Button variant="secondary" className="w-full" onClick={onClose}>
-            Cancel Scan
+          <Button
+            variant="secondary"
+            className="w-full"
+            disabled={cancelling}
+            onClick={async () => {
+              setCancelling(true);
+              try {
+                if (state.scanId && token) {
+                  await api.cancelScan(token, state.scanId);
+                }
+              } catch {}
+              if (onCancel) onCancel();
+              onClose();
+            }}
+          >
+            {cancelling ? "Cancelling..." : "Cancel Scan"}
           </Button>
         )}
         {state.phase === "complete" && (

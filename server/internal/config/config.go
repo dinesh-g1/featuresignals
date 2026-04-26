@@ -48,6 +48,26 @@ type Config struct {
 	StripePriceID       string
 	StripeMode          string
 
+	// ── AI Janitor ──────────────────────────────────────────────
+	DeepSeekAPIKey         string
+	DeepSeekModel          string
+	OpenAIAPIKey           string
+	OpenAIModel            string
+	OpenAIEndpoint         string
+	AzureOpenAIAPIKey      string
+	AzureOpenAIEndpoint    string
+	AzureOpenAIModel       string
+	GitHubClientID         string
+	GitHubClientSecret     string
+	GitLabClientID         string
+	GitLabClientSecret     string
+	BitbucketClientID      string
+	BitbucketClientSecret  string
+	JanitorEncryptionKey   string
+	JanitorLLMTimeout      time.Duration
+	JanitorLLMMaxRetries   int
+	JanitorLLMMinConfidence float64
+
 	// Hetzner Cloud
 	HetznerAPIToken     string
 	HetznerDefaultRegion string
@@ -136,6 +156,26 @@ func Load() *Config {
 		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		StripePriceID:       os.Getenv("STRIPE_PRICE_ID"),
 		StripeMode:          getEnv("STRIPE_MODE", "test"),
+
+		// ── AI Janitor ──────────────────────────────────────────────
+		DeepSeekAPIKey:          os.Getenv("DEEPSEEK_API_KEY"),
+		DeepSeekModel:           getEnv("DEEPSEEK_MODEL", "deepseek-chat"),
+		OpenAIAPIKey:            os.Getenv("OPENAI_API_KEY"),
+		OpenAIModel:             getEnv("OPENAI_MODEL", "gpt-4o-mini"),
+		OpenAIEndpoint:          getEnv("OPENAI_ENDPOINT", "https://api.openai.com/v1"),
+		AzureOpenAIAPIKey:       os.Getenv("AZURE_OPENAI_API_KEY"),
+		AzureOpenAIEndpoint:     os.Getenv("AZURE_OPENAI_ENDPOINT"),
+		AzureOpenAIModel:        getEnv("AZURE_OPENAI_MODEL", "gpt-4o"),
+		GitHubClientID:          os.Getenv("GITHUB_CLIENT_ID"),
+		GitHubClientSecret:      os.Getenv("GITHUB_CLIENT_SECRET"),
+		GitLabClientID:          os.Getenv("GITLAB_CLIENT_ID"),
+		GitLabClientSecret:      os.Getenv("GITLAB_CLIENT_SECRET"),
+		BitbucketClientID:       os.Getenv("BITBUCKET_CLIENT_ID"),
+		BitbucketClientSecret:   os.Getenv("BITBUCKET_CLIENT_SECRET"),
+		JanitorEncryptionKey:    os.Getenv("JANITOR_ENCRYPTION_KEY"),
+		JanitorLLMTimeout:       time.Duration(getEnvInt("JANITOR_LLM_TIMEOUT_SECONDS", 30)) * time.Second,
+		JanitorLLMMaxRetries:    getEnvInt("JANITOR_LLM_MAX_RETRIES", 3),
+		JanitorLLMMinConfidence: getEnvFloat("JANITOR_LLM_MIN_CONFIDENCE", 0.85),
 
 		HetznerAPIToken:      os.Getenv("HETZNER_API_TOKEN"),
 		HetznerDefaultRegion: getEnv("HETZNER_DEFAULT_REGION", "fsn1"),

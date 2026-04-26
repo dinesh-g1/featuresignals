@@ -244,3 +244,30 @@ func (r *GitProviderRegistry) HealthCheck(ctx context.Context, tokens map[string
 	}
 	return results
 }
+
+// NewGitProvider creates the appropriate provider for the given config using
+// this registry's registered factories.
+func (r *GitProviderRegistry) NewGitProvider(config GitProviderConfig) (GitProvider, error) {
+	r.mu.RLock()
+	factory, ok := r.factories[config.Provider]
+	r.mu.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("%w: unsupported git provider %q — "+
+			"available: %v", domain.ErrValidation, config.Provider, r.ListProviders())
+	}
+
+	return factory(config)
+}
+
+// ListProviders returns all registered Git provider names from this registry.
+func (r *GitProviderRegistry) ListProviders() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	names := make([]string, 0, len(r.factories))
+	for name := range r.factories {
+		names = append(names, name)
+	}
+	return names
+}

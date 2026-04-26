@@ -18,10 +18,12 @@ export function useJanitor(filter?: string) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.listStaleFlags(currentProjectId, filter);
+      const data = await api.listStaleFlags(token, currentProjectId, filter);
       setFlags(data.data || []);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load stale flags");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load stale flags",
+      );
     } finally {
       setLoading(false);
     }
@@ -32,13 +34,13 @@ export function useJanitor(filter?: string) {
   }, [refresh]);
 
   const generatePR = async (flagKey: string, repoId: string) => {
-    const result = await api.generateCleanupPR(flagKey, repoId);
+    const result = await api.generateCleanupPR(token!, flagKey, repoId);
     await refresh();
     return result;
   };
 
   const dismissFlag = async (flagKey: string, reason?: string) => {
-    await api.dismissFlag(flagKey, reason);
+    await api.dismissFlag(token!, flagKey, reason);
     await refresh();
   };
 

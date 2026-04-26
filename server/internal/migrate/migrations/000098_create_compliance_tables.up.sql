@@ -4,7 +4,7 @@
 -- Approved LLM providers per organization
 CREATE TABLE approved_llm_providers (
     id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id          TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    org_id          UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name            TEXT NOT NULL,                    -- "deepseek", "azure-openai", "openai", "self-hosted"
     model           TEXT NOT NULL,                    -- "deepseek-chat", "gpt-4", etc.
     endpoint_url    TEXT NOT NULL DEFAULT '',
@@ -20,7 +20,7 @@ CREATE INDEX idx_approved_providers_org ON approved_llm_providers(org_id);
 -- Redaction rules for masking sensitive data before LLM processing
 CREATE TABLE redaction_rules (
     id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id          TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    org_id          UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name            TEXT NOT NULL,
     pattern         TEXT NOT NULL,                     -- Go regexp pattern
     replacement     TEXT NOT NULL DEFAULT '[REDACTED]',
@@ -32,7 +32,7 @@ CREATE INDEX idx_redaction_rules_org ON redaction_rules(org_id);
 
 -- Compliance policy (one per org)
 CREATE TABLE llm_compliance_policies (
-    org_id                  TEXT PRIMARY KEY REFERENCES organizations(id) ON DELETE CASCADE,
+    org_id                  UUID PRIMARY KEY REFERENCES organizations(id) ON DELETE CASCADE,
     mode                    TEXT NOT NULL DEFAULT 'approved'
                             CHECK (mode IN ('disabled', 'approved', 'byo', 'strict')),
     allowed_provider_ids    TEXT[] NOT NULL DEFAULT '{}',
@@ -49,7 +49,7 @@ CREATE TABLE llm_compliance_policies (
 -- Immutable audit log for all LLM interactions
 CREATE TABLE llm_interaction_log (
     id                      TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id                  TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    org_id                  UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     scan_id                 TEXT NOT NULL,
     flag_key                TEXT NOT NULL,
     operation               TEXT NOT NULL,             -- "analyze", "validate", "generate_pr"

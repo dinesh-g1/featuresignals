@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +38,7 @@ export default function JanitorPage() {
   const [activeScanId, setActiveScanId] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [repos, setRepos] = useState<Repository[]>([]);
-  const [reposLoading, setReposLoading] = useState(true);
+  const [reposLoading, setReposLoading] = useState(true); // default true for initial load
 
   const {
     flags,
@@ -52,29 +52,35 @@ export default function JanitorPage() {
   const scanProgress = useJanitorScanProgress(activeScanId);
 
   // Load repositories on mount
-  useState(() => {
+  useEffect(() => {
     if (!token || !currentProjectId) return;
-    setReposLoading(true);
+    let cancelled = false;
     api
-      .listRepositories(currentProjectId)
+      .listRepositories(token, currentProjectId)
       .then((data) => {
+        if (cancelled) return;
         setRepos(data.data || []);
         setShowWizard((data.data || []).length === 0);
+        setReposLoading(false);
       })
-      .catch(() => {})
-      .finally(() => setReposLoading(false));
-  });
+      .catch(() => {
+        if (!cancelled) setReposLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, currentProjectId]);
 
   const handleScan = useCallback(async () => {
-    if (!currentProjectId) return;
+    if (!currentProjectId || !token) return;
     setScanning(true);
     try {
-      const result = await api.scanRepository(currentProjectId);
+      const result = await api.scanRepository(token, currentProjectId);
       setActiveScanId(result.scan_id);
       // Poll for scan completion
       const poll = setInterval(async () => {
         try {
-          const status = await api.getScanStatus(result.scan_id);
+          const status = await api.getScanStatus(token, result.scan_id);
           if (status.status === "completed" || status.status === "failed") {
             clearInterval(poll);
             setScanning(false);
@@ -86,7 +92,7 @@ export default function JanitorPage() {
           setScanning(false);
         }
       }, 2000);
-    } catch (err: any) {
+    } catch {
       setScanning(false);
     }
   }, [currentProjectId, refreshFlags]);
@@ -107,9 +113,18 @@ export default function JanitorPage() {
     [dismissFlag],
   );
 
-  const handleConnectProvider = useCallback((provider: string) => {
-    window.location.href = `/settings/integrations?connect=${provider}`;
-  }, []);
+  const handleRepoConnected = useCallback(
+    (_result: unknown) => {
+      setShowWizard(false);
+      // Refresh repos list
+      if (!token || !currentProjectId) return;
+      api
+        .listRepositories(token, currentProjectId)
+        .then((data) => setRepos(data.data || []))
+        .catch(() => {});
+    },
+    [token, currentProjectId],
+  );
 
   // Compute filter counts
   const safeCount = flags.filter((f) => f.safe_to_remove).length;
@@ -176,6 +191,10 @@ export default function JanitorPage() {
             setActiveScanId(null);
             scanProgress.reset();
           }}
+          onCancel={() => {
+            setActiveScanId(null);
+            scanProgress.reset();
+          }}
         />
       )}
 
@@ -234,7 +253,10 @@ export default function JanitorPage() {
 
       {/* Setup Wizard for first-time users */}
       {showWizard && repos.length === 0 && (
-        <SetupWizard onConnect={handleConnectProvider} />
+        <SetupWizard
+          onRepoConnected={handleRepoConnected}
+          onCancel={() => setShowWizard(false)}
+        />
       )}
 
       {/* LLM Status */}
@@ -343,7 +365,7 @@ export default function JanitorPage() {
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors -mb-[9px]",
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors -mb-2.25",
                 filter === tab.value
                   ? "border-b-2 border-accent text-accent"
                   : "text-stone-500 hover:text-stone-800",

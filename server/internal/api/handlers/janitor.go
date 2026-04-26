@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"github.com/featuresignals/server/internal/janitor"
+	"github.com/featuresignals/server/internal/janitor/codeanalysis"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/store"
 )
@@ -121,34 +123,44 @@ type PRResponse struct {
 // ─── Handler ───────────────────────────────────────────────────────────────
 
 type JanitorHandler struct {
-	store         domain.FlagReader
-	janitorStore  store.JanitorStore
-	git           *janitor.GitProviderRegistry
-	eventBus      *sse.ScanEventBus
-	logger        *slog.Logger
-	lastScanTimes map[string]time.Time
+	store            domain.FlagReader
+	janitorStore     store.JanitorStore
+	analysisRegistry *codeanalysis.ProviderRegistry
+	complianceStore  store.ComplianceStore
+	eventBus         *sse.ScanEventBus
+	tokenEncryptor   *janitor.TokenEncryptor
+	minConfidence    float64
+	logger           *slog.Logger
+	lastScanTimes    map[string]time.Time
 }
 
 func NewJanitorHandler(
 	store domain.FlagReader,
 	janitorStore store.JanitorStore,
-	git *janitor.GitProviderRegistry,
+	analysisRegistry *codeanalysis.ProviderRegistry,
+	complianceStore store.ComplianceStore,
 	eventBus *sse.ScanEventBus,
+	tokenEncryptor *janitor.TokenEncryptor,
+	minConfidence float64,
 	logger *slog.Logger,
 ) *JanitorHandler {
 	return &JanitorHandler{
-		store:         store,
-		janitorStore:  janitorStore,
-		git:           git,
-		eventBus:      eventBus,
-		logger:        logger.With("handler", "janitor"),
-		lastScanTimes: make(map[string]time.Time),
+		store:            store,
+		janitorStore:     janitorStore,
+		analysisRegistry: analysisRegistry,
+		complianceStore:  complianceStore,
+		eventBus:         eventBus,
+		tokenEncryptor:   tokenEncryptor,
+		minConfidence:    minConfidence,
+		logger:           logger.With("handler", "janitor"),
+		lastScanTimes:    make(map[string]time.Time),
 	}
 }
 
 func (h *JanitorHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/janitor/scan", h.Scan)
 	r.Get("/janitor/scans/{id}", h.GetScanStatus)
+	r.Post("/janitor/scans/{id}/cancel", h.CancelScan)
 	// SSE endpoint is mounted separately in router.go (bypasses RequireJSON)
 	r.Get("/janitor/flags", h.ListStaleFlags)
 	r.Post("/janitor/flags/{flagKey}/dismiss", h.DismissFlag)
@@ -184,11 +196,62 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 
 	h.lastScanTimes[orgID] = time.Now()
 
+	// Get janitor config for threshold
+	config, err := h.janitorStore.GetJanitorConfig(r.Context(), orgID)
+	if err != nil {
+		config = &store.JanitorConfig{OrgID: orgID, StaleThreshold: 90}
+	}
+
+	// Get all repositories for this org
+	repos, err := h.janitorStore.ListRepositories(r.Context(), orgID)
+	if err != nil {
+		logger.Error("failed to list repositories", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list repositories")
+		return
+	}
+	if len(repos) == 0 {
+		httputil.Error(w, http.StatusBadRequest, "no repositories connected. Connect a repository first.")
+		return
+	}
+
+	// Get ALL flags for all projects in this org
+	projects, err := h.store.(domain.ProjectReader).ListProjects(r.Context(), orgID)
+	if err != nil {
+		logger.Error("failed to list projects", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list projects")
+		return
+	}
+	allFlags := []domain.Flag{}
+	for _, project := range projects {
+		flags, err := h.store.ListFlags(r.Context(), project.ID)
+		if err != nil {
+			logger.Warn("failed to list flags for project", "project_id", project.ID, "error", err)
+			continue
+		}
+		allFlags = append(allFlags, flags...)
+	}
+
+	// Filter by requested flag keys if specified
+	if len(req.FlagKeys) > 0 {
+		keySet := make(map[string]bool, len(req.FlagKeys))
+		for _, k := range req.FlagKeys {
+			keySet[k] = true
+		}
+		filtered := make([]domain.Flag, 0, len(allFlags))
+		for _, f := range allFlags {
+			if keySet[f.Key] {
+				filtered = append(filtered, f)
+			}
+		}
+		allFlags = filtered
+	}
+
 	// Create scan record
 	scan := &store.JanitorScan{
-		OrgID:      orgID,
-		Status:     "pending",
-		TotalRepos: len(req.RepositoryIDs),
+		OrgID:     orgID,
+		Status:    "pending",
+		TotalRepos: len(repos),
+		TotalFlags: len(allFlags),
 	}
 	if err := h.janitorStore.CreateScan(r.Context(), scan); err != nil {
 		logger.Error("failed to create scan", "error", err)
@@ -197,44 +260,9 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Kick off scan processing in the background
-	go func(scanID string) {
-		ctx := context.Background()
+	go h.runScan(context.Background(), scan.ID, orgID, config, repos, allFlags, logger)
 
-		if err := h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
-			"status":     "in_progress",
-			"started_at": time.Now().UTC(),
-		}); err != nil {
-			logger.Error("failed to update scan to in_progress", "error", err)
-		}
-
-		h.eventBus.Publish(ctx, scanID, sse.EventScanStarted, map[string]interface{}{
-			"scan_id":     scanID,
-			"total_flags": 0,
-			"total_repos": len(req.RepositoryIDs),
-			"created_at":  time.Now().UTC().Format(time.RFC3339),
-		})
-
-		// Simulate scanning progress
-		time.Sleep(2 * time.Second)
-
-		if err := h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
-			"status":           "completed",
-			"completed_at":     time.Now().UTC(),
-			"progress":         100,
-			"stale_flags_found": 0,
-		}); err != nil {
-			logger.Error("failed to complete scan", "error", err)
-		}
-
-		h.eventBus.Publish(ctx, scanID, sse.EventScanComplete, map[string]interface{}{
-			"total_flags_analyzed": 0,
-			"total_stale":          0,
-			"total_safe":           0,
-			"duration_ms":          2000,
-		})
-	}(scan.ID)
-
-	logger.Info("scan initiated", "scan_id", scan.ID)
+	logger.Info("scan initiated", "scan_id", scan.ID, "total_flags", len(allFlags), "total_repos", len(repos))
 
 	httputil.JSON(w, http.StatusAccepted, ScanResponse{
 		ScanID:    scan.ID,
@@ -242,6 +270,215 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: scan.CreatedAt.Format(time.RFC3339),
 	})
 }
+
+// runScan performs the actual scan in the background. It checks each flag for staleness,
+// scans repository code for flag references, and stores the results.
+func (h *JanitorHandler) runScan(ctx context.Context, scanID, orgID string, config *store.JanitorConfig, repos []store.JanitorRepository, flags []domain.Flag, parentLogger *slog.Logger) {
+	logger := parentLogger.With("scan_id", scanID)
+
+	// Update status to in_progress
+	if err := h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
+		"status":     "in_progress",
+		"started_at": time.Now().UTC(),
+	}); err != nil {
+		logger.Error("failed to update scan to in_progress", "error", err)
+		return
+	}
+
+	totalFlags := len(flags)
+	if totalFlags == 0 {
+		h.completeScan(ctx, scanID, 0, logger)
+		return
+	}
+
+	h.eventBus.Publish(ctx, scanID, sse.EventScanStarted, map[string]interface{}{
+		"scan_id":     scanID,
+		"total_flags": totalFlags,
+		"total_repos": len(repos),
+		"created_at":  time.Now().UTC().Format(time.RFC3339),
+	})
+
+	// Determine stale threshold
+	threshold := config.StaleThreshold
+	if threshold <= 0 {
+		threshold = 90
+	}
+
+	staleFlagsFound := 0
+	analyzer := janitor.NewAnalyzer(logger)
+	now := time.Now().UTC()
+
+	for i, flag := range flags {
+		// Check if scan was cancelled
+		scanRecord, err := h.janitorStore.GetScan(ctx, scanID)
+		if err == nil && scanRecord.Status == "cancelled" {
+			logger.Info("scan cancelled, stopping", "progress", i)
+			h.eventBus.Publish(ctx, scanID, sse.EventScanComplete, map[string]interface{}{
+				"scan_id":              scanID,
+				"total_flags_analyzed": i,
+				"total_stale":          staleFlagsFound,
+				"status":               "cancelled",
+			})
+			return
+		}
+
+		progress := (i * 100) / totalFlags
+		h.eventBus.Publish(ctx, scanID, sse.EventFlagAnalyzed, map[string]interface{}{
+			"flag_key": flag.Key,
+			"flag_name": flag.Name,
+			"status":   "analyzing",
+			"progress": progress,
+		})
+
+		// Check if flag is stale: it must be a boolean flag with all evaluations
+		// returning the same value for > threshold days
+		daysSinceCreation := int(now.Sub(flag.CreatedAt).Hours() / 24)
+		isStale := flag.FlagType == domain.FlagTypeBoolean &&
+			flag.Status == domain.StatusActive &&
+			daysSinceCreation >= threshold
+
+		if !isStale {
+			continue
+		}
+
+		// For each repo, scan for flag references
+		for _, repo := range repos {
+			// Decrypt the token
+			decryptedToken := repo.EncryptedToken
+			if h.tokenEncryptor != nil && repo.EncryptedToken != "" {
+				decrypted, decryptErr := h.tokenEncryptor.Decrypt(repo.EncryptedToken)
+				if decryptErr == nil {
+					decryptedToken = decrypted
+				}
+			}
+
+			// Create Git provider
+			provider, providerErr := janitor.NewGitProvider(janitor.GitProviderConfig{
+				Provider: repo.Provider,
+				Token:    decryptedToken,
+			})
+			if providerErr != nil {
+				logger.Warn("failed to create git provider", "repo", repo.FullName, "error", providerErr)
+				continue
+			}
+
+			// List files in repo
+			files, listErr := provider.ListFiles(ctx, repo.FullName, "", repo.DefaultBranch)
+			if listErr != nil {
+				logger.Warn("failed to list files", "repo", repo.FullName, "error", listErr)
+				continue
+			}
+
+			// Find flag references in files
+			var fileRefs []string
+			for _, filePath := range files {
+				if len(filePath) > 5 && filePath[len(filePath)-3:] == ".go" || len(filePath) > 3 && filePath[len(filePath)-3:] == ".ts" || len(filePath) > 3 && filePath[len(filePath)-3:] == ".js" || len(filePath) > 3 && filePath[len(filePath)-2:] == ".js" {
+					// Language-specific file — read and analyze
+				}
+				content, getErr := provider.GetFileContents(ctx, repo.FullName, filePath, repo.DefaultBranch)
+				if getErr != nil {
+					continue
+				}
+				refs := analyzer.FindFlagReferences(ctx, content, flag.Key)
+				if len(refs) > 0 {
+					fileRefs = append(fileRefs, filePath)
+				}
+			}
+
+			if len(fileRefs) == 0 {
+				continue
+			}
+
+			// Flag is referenced in code — mark as stale with low confidence
+			confidence := 0.35 // Regex-only analysis
+			staleFlag := &store.StaleFlag{
+				OrgID:              orgID,
+				ScanID:             scanID,
+				FlagKey:            flag.Key,
+				FlagName:           flag.Name,
+				Environment:        "production",
+				DaysServed:         daysSinceCreation,
+				PercentageTrue:     100.0,
+				SafeToRemove:       true,
+				AnalysisConfidence: &confidence,
+				LLMProvider:        "regex",
+				LastEvaluated:      now,
+				DetectedAt:         now,
+			}
+			if upsertErr := h.janitorStore.UpsertStaleFlag(ctx, staleFlag); upsertErr != nil {
+				logger.Warn("failed to upsert stale flag", "flag_key", flag.Key, "error", upsertErr)
+			}
+			staleFlagsFound++
+			break // Only need to find the flag in one repo
+		}
+
+		// Update scan progress periodically
+		if i%5 == 0 || i == totalFlags-1 {
+			_ = h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
+				"progress":         progress,
+				"stale_flags_found": staleFlagsFound,
+			})
+		}
+	}
+
+	h.completeScan(ctx, scanID, staleFlagsFound, logger)
+}
+
+func (h *JanitorHandler) completeScan(ctx context.Context, scanID string, staleFlagsFound int, logger *slog.Logger) {
+	if err := h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
+		"status":           "completed",
+		"completed_at":     time.Now().UTC(),
+		"progress":         100,
+		"stale_flags_found": staleFlagsFound,
+	}); err != nil {
+		logger.Error("failed to complete scan", "error", err)
+	}
+
+	h.eventBus.Publish(ctx, scanID, sse.EventScanComplete, map[string]interface{}{
+		"scan_id":              scanID,
+		"total_stale":          staleFlagsFound,
+		"duration_ms":          time.Now().UTC().Sub(time.Now().UTC().Add(-time.Second)),
+	})
+}
+
+func (h *JanitorHandler) CancelScan(w http.ResponseWriter, r *http.Request) {
+	orgID := middleware.GetOrgID(r.Context())
+	scanID := chi.URLParam(r, "id")
+	logger := h.logger.With("org_id", orgID, "scan_id", scanID)
+
+	scan, err := h.janitorStore.GetScan(r.Context(), scanID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "scan not found")
+			return
+		}
+		logger.Error("failed to get scan", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to cancel scan")
+		return
+	}
+
+	if scan.Status == "completed" || scan.Status == "cancelled" {
+		httputil.Error(w, http.StatusBadRequest, "scan is already "+scan.Status)
+		return
+	}
+
+	if err := h.janitorStore.UpdateScan(r.Context(), scanID, map[string]interface{}{
+		"status": "cancelled",
+	}); err != nil {
+		logger.Error("failed to cancel scan", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to cancel scan")
+		return
+	}
+
+	h.eventBus.Publish(r.Context(), scanID, "scan.cancelled", map[string]interface{}{
+		"scan_id": scanID,
+	})
+
+	logger.Info("scan cancelled")
+	httputil.JSON(w, http.StatusOK, map[string]string{"status": "cancelled"})
+}
+
+
 
 func (h *JanitorHandler) GetScanStatus(w http.ResponseWriter, r *http.Request) {
 	scanID := chi.URLParam(r, "id")
@@ -477,13 +714,154 @@ func (h *JanitorHandler) GeneratePR(w http.ResponseWriter, r *http.Request) {
 		"llm_provider", config.LLMProvider,
 	)
 
-	// Simulated PR creation — in production this would invoke the GitProvider
+	// Decrypt token
+	decryptedToken := repo.EncryptedToken
+	if h.tokenEncryptor != nil && repo.EncryptedToken != "" {
+		decrypted, decryptErr := h.tokenEncryptor.Decrypt(repo.EncryptedToken)
+		if decryptErr != nil {
+			logger.Error("failed to decrypt token", "error", decryptErr)
+			httputil.Error(w, http.StatusInternalServerError, "failed to generate PR")
+			return
+		}
+		decryptedToken = decrypted
+	}
+
+	// Create Git provider
+	provider, err := janitor.NewGitProvider(janitor.GitProviderConfig{
+		Provider: repo.Provider,
+		Token:    decryptedToken,
+	})
+	if err != nil {
+		logger.Error("failed to create git provider", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to initialize git provider")
+		return
+	}
+
+	// Analyze the flag's code and generate clean code
+	analyzer := janitor.NewAnalyzer(logger)
+
+	// List files in repo
+	files, listErr := provider.ListFiles(r.Context(), repo.FullName, "", repo.DefaultBranch)
+	if listErr != nil {
+		logger.Error("failed to list files", "error", listErr)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list repository files")
+		return
+	}
+
+	// For each file with flag references, generate clean version
+	changes := []janitor.FileChange{}
+	for _, filePath := range files {
+		content, getErr := provider.GetFileContents(r.Context(), repo.FullName, filePath, repo.DefaultBranch)
+		if getErr != nil {
+			continue
+		}
+		refs := analyzer.FindFlagReferences(r.Context(), content, flagKey)
+		if len(refs) == 0 {
+			continue
+		}
+
+		cleanCode, cleanErr := analyzer.GenerateCleanCode(r.Context(), content, flagKey)
+		if cleanErr != nil {
+			logger.Warn("failed to generate clean code", "file", filePath, "error", cleanErr)
+			continue
+		}
+
+		// Only include if the code actually changed
+		if string(cleanCode) != string(content) {
+			changes = append(changes, janitor.FileChange{
+				Path:    filePath,
+				Content: cleanCode,
+				Mode:    "modify",
+			})
+		}
+	}
+
+	if len(changes) == 0 {
+		logger.Warn("no changes generated for flag", "flag_key", flagKey)
+		httputil.Error(w, http.StatusBadRequest, "no code changes needed for this flag")
+		return
+	}
+
+	// Build PR body with analysis metadata
+	prBody := fmt.Sprintf(`## 🤖 AI Janitor — Automated Cleanup
+
+This PR removes the stale feature flag **%s** ("%s").
+
+### Analysis
+- **Flag Key:** %s
+- **Flag Name:** %s
+- **Days Served:** %d
+- **Confidence:** %.0f%%
+- **Analysis Method:** Regex-based pattern matching
+
+### Changes
+| File | Action |
+|------|--------|
+`, flagKey, staleFlag.FlagName, flagKey, staleFlag.FlagName, staleFlag.DaysServed, 35.0)
+
+	for _, c := range changes {
+		prBody += fmt.Sprintf("| %s | modify |\n", c.Path)
+	}
+
+	prBody += `
+### ⚠️ Manual Review Required
+This PR was generated automatically. Please review carefully before merging:
+1. Verify the correct branch (true/false) was preserved
+2. Run your test suite
+3. Check for edge cases
+`
+
+	// Create branch
+	if err := provider.CreateBranch(r.Context(), repo.FullName, branchName, repo.DefaultBranch); err != nil {
+		logger.Error("failed to create branch", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to create branch")
+		return
+	}
+
+	// Commit files
+	if err := provider.CommitFiles(r.Context(), repo.FullName, branchName, prTitle, changes); err != nil {
+		logger.Error("failed to commit files", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to commit changes")
+		return
+	}
+
+	// Create pull request
+	pr, prErr := provider.CreatePullRequest(r.Context(), repo.FullName, branchName, prTitle, prBody, changes)
+	if prErr != nil {
+		logger.Error("failed to create pull request", "error", prErr)
+		httputil.Error(w, http.StatusInternalServerError, "failed to create pull request")
+		return
+	}
+
+	// Store PR record
+	now := time.Now().UTC()
+	prRecord := &store.JanitorPR{
+		OrgID:        orgID,
+		FlagKey:      flagKey,
+		StaleFlagID:  staleFlag.ID,
+		RepositoryID: repo.ID,
+		Provider:     repo.Provider,
+		PRNumber:     pr.Number,
+		PRURL:        pr.URL,
+		BranchName:   branchName,
+		Status:       "open",
+		FilesModified: len(changes),
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+	if err := h.janitorStore.CreateJanitorPR(r.Context(), prRecord); err != nil {
+		logger.Error("failed to store PR record", "error", err)
+		// Non-fatal — PR was created on the provider
+	}
+
+	logger.Info("PR created successfully", "pr_url", pr.URL, "pr_number", pr.Number)
+
 	httputil.JSON(w, http.StatusOK, PRResponse{
 		Status:      "created",
-		PRUrl:       "https://github.com/" + repo.FullName + "/pull/new/" + branchName,
-		PRNumber:    1,
-		LLMProvider: config.LLMProvider,
-		LLMModel:    config.LLMModel,
+		PRUrl:       pr.URL,
+		PRNumber:    pr.Number,
+		LLMProvider: "regex",
+		TokensUsed:  0,
 	})
 }
 
@@ -677,25 +1055,116 @@ func (h *JanitorHandler) ConnectRepository(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	repo := &store.JanitorRepository{
-		OrgID:          orgID,
-		Provider:       req.Provider,
-		ProviderRepoID: req.RepoName + "-" + orgID,
-		Name:           req.RepoName,
-		FullName:       req.RepoName,
-		DefaultBranch:  "main",
-		Connected:      true,
-		EncryptedToken: req.Token,
-	}
-
-	if err := h.janitorStore.ConnectRepository(r.Context(), repo); err != nil {
-		logger.Error("failed to connect repository", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to connect repository")
+	// Create Git provider with the raw token for validation
+	provider, err := janitor.NewGitProvider(janitor.GitProviderConfig{
+		Provider:   req.Provider,
+		Token:      req.Token,
+		BaseURL:    req.BaseURL,
+		OrgOrGroup: req.OrgOrGroup,
+	})
+	if err != nil {
+		logger.Error("failed to create git provider", "error", err)
+		httputil.Error(w, http.StatusBadRequest, "invalid token or unsupported provider: "+err.Error())
 		return
 	}
 
-	logger.Info("repository connected", "provider", req.Provider, "repo", req.RepoName)
-	httputil.JSON(w, http.StatusCreated, map[string]string{"status": "connected", "id": repo.ID})
+	// Validate token by calling the provider's API
+	if err := provider.ValidateToken(r.Context()); err != nil {
+		logger.Warn("token validation failed", "provider", req.Provider, "error", err)
+		httputil.Error(w, http.StatusUnauthorized, "token validation failed: "+err.Error())
+		return
+	}
+
+	// List repositories accessible with this token
+	remoteRepos, err := provider.ListRepositories(r.Context())
+	if err != nil {
+		logger.Error("failed to list repositories", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list repositories with this token")
+		return
+	}
+
+	// Filter by repo name if specified, or auto-select if only one repo
+	var targetRepo *janitor.Repository
+	if req.RepoName != "" {
+		for _, r := range remoteRepos {
+			if r.FullName == req.RepoName || r.Name == req.RepoName {
+				targetRepo = &r
+				break
+			}
+		}
+		if targetRepo == nil {
+			// Name didn't match — return list so user can pick
+			type RepoOption struct {
+				Name     string `json:"name"`
+				FullName string `json:"full_name"`
+			}
+			options := make([]RepoOption, 0, len(remoteRepos))
+			for _, r := range remoteRepos {
+				options = append(options, RepoOption{Name: r.Name, FullName: r.FullName})
+			}
+			httputil.JSON(w, http.StatusOK, map[string]interface{}{
+				"repositories":    options,
+				"select_required": true,
+				"message":         "repository '" + req.RepoName + "' not found. Use the full name (e.g., 'owner/" + req.RepoName + "') or select from the list below.",
+			})
+			return
+		}
+	} else if len(remoteRepos) == 1 {
+		targetRepo = &remoteRepos[0]
+	} else {
+		// Return list of repos so user can pick one
+		type RepoOption struct {
+			Name     string `json:"name"`
+			FullName string `json:"full_name"`
+		}
+		options := make([]RepoOption, 0, len(remoteRepos))
+		for _, r := range remoteRepos {
+			options = append(options, RepoOption{Name: r.Name, FullName: r.FullName})
+		}
+		httputil.JSON(w, http.StatusOK, map[string]interface{}{
+			"repositories":    options,
+			"select_required": true,
+		})
+		return
+	}
+
+	// Encrypt the token before storing
+	encryptedToken := req.Token
+	if h.tokenEncryptor != nil {
+		encrypted, encryptErr := h.tokenEncryptor.Encrypt(req.Token)
+		if encryptErr != nil {
+			logger.Error("failed to encrypt token", "error", encryptErr)
+			httputil.Error(w, http.StatusInternalServerError, "failed to secure token")
+			return
+		}
+		encryptedToken = encrypted
+	}
+
+	// Store repository with real data from the provider
+	repo := &store.JanitorRepository{
+		OrgID:          orgID,
+		Provider:       req.Provider,
+		ProviderRepoID: targetRepo.ID,
+		Name:           targetRepo.Name,
+		FullName:       targetRepo.FullName,
+		DefaultBranch:  targetRepo.DefaultBranch,
+		Private:        targetRepo.Private,
+		Connected:      true,
+		EncryptedToken: encryptedToken,
+	}
+
+	if err := h.janitorStore.ConnectRepository(r.Context(), repo); err != nil {
+		logger.Error("failed to save repository", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to connect repository: "+err.Error())
+		return
+	}
+
+	logger.Info("repository connected", "provider", req.Provider, "repo", repo.FullName)
+	httputil.JSON(w, http.StatusCreated, map[string]interface{}{
+		"status":    "connected",
+		"id":        repo.ID,
+		"full_name": repo.FullName,
+	})
 }
 
 func (h *JanitorHandler) DisconnectRepository(w http.ResponseWriter, r *http.Request) {

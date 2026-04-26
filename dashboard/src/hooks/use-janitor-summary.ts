@@ -22,14 +22,14 @@ export function useJanitorSummary(refreshInterval = 60000) {
 
     const fetchSummary = async () => {
       try {
-        const data = await api.getJanitorStats(currentProjectId);
+        const data = await api.getJanitorStats(token, currentProjectId);
         if (mounted && data) {
           setStaleCount(data.stale_flags ?? 0);
           setError(null);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err?.message || null);
+          setError(err instanceof Error ? err.message : null);
         }
       } finally {
         if (mounted) setLoading(false);

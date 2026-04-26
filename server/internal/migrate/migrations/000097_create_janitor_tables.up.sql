@@ -2,7 +2,7 @@
 -- AI Janitor: Stale flag detection and cleanup engine
 
 CREATE TABLE janitor_config (
-    org_id TEXT PRIMARY KEY REFERENCES organizations(id),
+    org_id UUID PRIMARY KEY REFERENCES organizations(id),
     scan_schedule TEXT NOT NULL DEFAULT 'weekly',
     stale_threshold_days INTEGER NOT NULL DEFAULT 90,
     auto_generate_pr BOOLEAN NOT NULL DEFAULT false,
@@ -17,7 +17,7 @@ CREATE TABLE janitor_config (
 
 CREATE TABLE janitor_repositories (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id TEXT NOT NULL REFERENCES organizations(id),
+    org_id UUID NOT NULL REFERENCES organizations(id),
     provider TEXT NOT NULL CHECK (provider IN ('github', 'gitlab', 'bitbucket')),
     provider_repo_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE janitor_repositories (
 
 CREATE TABLE janitor_scans (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id TEXT NOT NULL REFERENCES organizations(id),
+    org_id UUID NOT NULL REFERENCES organizations(id),
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'failed', 'cancelled')),
     progress INTEGER NOT NULL DEFAULT 0,
     total_repos INTEGER NOT NULL DEFAULT 0,
@@ -57,7 +57,7 @@ CREATE INDEX idx_janitor_scan_events_scan_id ON janitor_scan_events(scan_id, id)
 
 CREATE TABLE janitor_stale_flags (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id TEXT NOT NULL REFERENCES organizations(id),
+    org_id UUID NOT NULL REFERENCES organizations(id),
     scan_id TEXT NOT NULL REFERENCES janitor_scans(id),
     flag_key TEXT NOT NULL,
     flag_name TEXT NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE janitor_stale_flags (
 
 CREATE TABLE janitor_prs (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-    org_id TEXT NOT NULL REFERENCES organizations(id),
+    org_id UUID NOT NULL REFERENCES organizations(id),
     flag_key TEXT NOT NULL,
     stale_flag_id TEXT NOT NULL REFERENCES janitor_stale_flags(id),
     repository_id TEXT NOT NULL REFERENCES janitor_repositories(id),

@@ -491,6 +491,7 @@ func NewRouter(
 				r.Use(jwtAuth)
 				r.Use(middleware.RequireRole(ownerAdmin...))
 				r.Post("/janitor/scan", janitorH.Scan)
+				r.Post("/janitor/scans/{id}/cancel", janitorH.CancelScan)
 				r.Get("/janitor/scans/{id}", janitorH.GetScanStatus)
 				r.Get("/janitor/flags", janitorH.ListStaleFlags)
 				r.Post("/janitor/flags/{flagKey}/dismiss", janitorH.DismissFlag)

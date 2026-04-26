@@ -940,48 +940,65 @@ export const api = {
     request("/v1/internal/reset-onboarding", { method: "POST", token }),
   // ── AI Janitor API ──────────────────────────────────────────
 
-  scanRepository: (projectId: string, repoIds?: string[]) =>
+  scanRepository: (token: string, projectId: string, repoIds?: string[]) =>
     request<ScanResponse>("/v1/janitor/scan", {
       method: "POST",
       body: { repository_ids: repoIds },
+      token,
     }),
 
-  getScanStatus: (scanId: string) =>
-    request<ScanStatusResponse>(`/v1/janitor/scans/${scanId}`),
+  getScanStatus: (token: string, scanId: string) =>
+    request<ScanStatusResponse>(`/v1/janitor/scans/${scanId}`, { token }),
 
-  listStaleFlags: (projectId: string, filter?: string) =>
+  cancelScan: (token: string, scanId: string) =>
+    request<{ status: string }>(`/v1/janitor/scans/${scanId}/cancel`, {
+      method: "POST",
+      token,
+    }),
+
+  listStaleFlags: (token: string, projectId: string, filter?: string) =>
     request<PaginatedResponse<StaleFlag>>(
       `/v1/janitor/flags${filter ? `?filter=${filter}` : ""}`,
+      { token },
     ),
 
-  dismissFlag: (flagKey: string, reason?: string) =>
+  dismissFlag: (token: string, flagKey: string, reason?: string) =>
     request(`/v1/janitor/flags/${flagKey}/dismiss`, {
       method: "POST",
       body: { reason },
+      token,
     }),
 
-  generateCleanupPR: (flagKey: string, repoId: string) =>
+  generateCleanupPR: (token: string, flagKey: string, repoId: string) =>
     request<PRResponse>(`/v1/janitor/flags/${flagKey}/generate-pr`, {
       method: "POST",
       body: { repository_id: repoId },
+      token,
     }),
 
-  getJanitorStats: (projectId: string) =>
-    request<JanitorStats>(`/v1/janitor/stats`),
+  getJanitorStats: (token: string, projectId: string) =>
+    request<JanitorStats>(`/v1/janitor/stats`, { token }),
 
-  getJanitorConfig: () => request<JanitorConfig>(`/v1/janitor/config`),
+  getJanitorConfig: (token: string) =>
+    request<JanitorConfig>(`/v1/janitor/config`, { token }),
 
-  updateJanitorConfig: (config: UpdateJanitorConfigRequest) =>
-    request(`/v1/janitor/config`, { method: "PUT", body: config }),
+  updateJanitorConfig: (token: string, config: UpdateJanitorConfigRequest) =>
+    request(`/v1/janitor/config`, { method: "PUT", body: config, token }),
 
-  listRepositories: (projectId: string) =>
-    request<PaginatedResponse<Repository>>(`/v1/janitor/repositories`),
+  listRepositories: (token: string, projectId: string) =>
+    request<PaginatedResponse<Repository>>(`/v1/janitor/repositories`, {
+      token,
+    }),
 
-  connectRepository: (config: ConnectRepoRequest) =>
-    request(`/v1/janitor/repositories`, { method: "POST", body: config }),
+  connectRepository: (token: string, config: ConnectRepoRequest) =>
+    request(`/v1/janitor/repositories`, {
+      method: "POST",
+      body: config,
+      token,
+    }),
 
-  disconnectRepository: (repoId: string) =>
-    request(`/v1/janitor/repositories/${repoId}`, { method: "DELETE" }),
+  disconnectRepository: (token: string, repoId: string) =>
+    request(`/v1/janitor/repositories/${repoId}`, { method: "DELETE", token }),
 };
 
 // ── AI Janitor Types ──────────────────────────────────────────

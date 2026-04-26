@@ -23,14 +23,14 @@ export function useJanitorStats(refreshInterval = 30000) {
 
     const fetchStats = async () => {
       try {
-        const data = await api.getJanitorStats(currentProjectId);
+        const data = await api.getJanitorStats(token, currentProjectId);
         if (mounted) {
           setStats(data);
           setError(null);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err?.message || "Failed to load stats");
+          setError(err instanceof Error ? err.message : "Failed to load stats");
         }
       } finally {
         if (mounted) setLoading(false);

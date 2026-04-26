@@ -28,9 +28,14 @@ import (
 	"github.com/featuresignals/server/internal/integrations/flagsmith"
 	"github.com/featuresignals/server/internal/integrations/iac"
 	"github.com/featuresignals/server/internal/integrations/unleash"
+	"github.com/featuresignals/server/internal/janitor"
+	"github.com/featuresignals/server/internal/janitor/bitbucket"
 	"github.com/featuresignals/server/internal/janitor/codeanalysis"
 	"github.com/featuresignals/server/internal/janitor/codeanalysis/deepseek"
 	"github.com/featuresignals/server/internal/janitor/codeanalysis/openai"
+	"github.com/featuresignals/server/internal/janitor/codeanalysis/regex"
+	"github.com/featuresignals/server/internal/janitor/github"
+	"github.com/featuresignals/server/internal/janitor/gitlab"
 	"github.com/featuresignals/server/internal/lifecycle"
 	"github.com/featuresignals/server/internal/mailer"
 	"github.com/featuresignals/server/internal/metrics"
@@ -341,16 +346,115 @@ func main() {
 		complianceStore := postgres.NewComplianceStore(pool)
 		eventBus := sse.NewScanEventBus(janitorLogger)
 
+		// Code analysis provider registry
+		analysisRegistry := codeanalysis.NewProviderRegistry()
+		_ = regex.NewRegexProvider(janitorLogger)
+
+		// Register DeepSeek
+		if cfg.DeepSeekAPIKey != "" {
+			deepseekCfg := codeanalysis.ProviderConfig{
+				APIKey:  cfg.DeepSeekAPIKey,
+				Model:   cfg.DeepSeekModel,
+				Timeout: cfg.JanitorLLMTimeout,
+			}
+			deepseekProvider, dsErr := deepseek.NewDeepSeekProvider(deepseekCfg)
+			if dsErr == nil {
+				if regErr := analysisRegistry.Register(deepseekProvider.Name(), func(cfg codeanalysis.ProviderConfig) (codeanalysis.CodeAnalysisProvider, error) {
+					return deepseek.NewDeepSeekProvider(cfg)
+				}, codeanalysis.ProviderCapabilities{
+					SupportsSelfHosted: true,
+					RequiresAPIKey:     true,
+					Status:             "active",
+				}); regErr == nil {
+					janitorLogger.Info("DeepSeek provider registered", "model", cfg.DeepSeekModel)
+				}
+			}
+			_ = deepseekProvider
+		} else {
+			janitorLogger.Warn("DEEPSEEK_API_KEY not set — DeepSeek LLM analysis unavailable")
+		}
+
+		// Register OpenAI
+		if cfg.OpenAIAPIKey != "" {
+			if regErr := analysisRegistry.Register("openai", func(cfg codeanalysis.ProviderConfig) (codeanalysis.CodeAnalysisProvider, error) {
+				return openai.NewOpenAIProvider(cfg)
+			}, codeanalysis.ProviderCapabilities{
+				SupportsSelfHosted: false,
+				RequiresAPIKey:     true,
+				Status:             "active",
+			}); regErr == nil {
+				janitorLogger.Info("OpenAI provider registered", "model", cfg.OpenAIModel)
+			}
+		}
+
+		// Register Azure OpenAI
+		if cfg.AzureOpenAIAPIKey != "" && cfg.AzureOpenAIEndpoint != "" {
+			azureEndpoint := cfg.AzureOpenAIEndpoint
+			if regErr := analysisRegistry.Register("azure-openai", func(pCfg codeanalysis.ProviderConfig) (codeanalysis.CodeAnalysisProvider, error) {
+				pCfg.BaseURL = azureEndpoint
+				return openai.NewOpenAIProvider(pCfg)
+			}, codeanalysis.ProviderCapabilities{
+				SupportsSelfHosted: false,
+				RequiresAPIKey:     true,
+				Status:             "active",
+			}); regErr == nil {
+				janitorLogger.Info("Azure OpenAI provider registered", "model", cfg.AzureOpenAIModel)
+			}
+		}
+
+		// Git provider registry — register with global singleton
+		janitor.RegisterGitProvider("github", func(config janitor.GitProviderConfig) (janitor.GitProvider, error) {
+			return github.NewGitHubProvider(config)
+		})
+		janitor.RegisterGitProvider("gitlab", func(config janitor.GitProviderConfig) (janitor.GitProvider, error) {
+			return gitlab.NewGitLabProvider(config)
+		})
+		janitor.RegisterGitProvider("bitbucket", func(config janitor.GitProviderConfig) (janitor.GitProvider, error) {
+			return bitbucket.NewBitbucketProvider(config)
+		})
+		janitorLogger.Info("Git providers registered", "providers", janitor.ListGitProviders())
+
+		// Token encryptor (best-effort — tokens stored in plaintext if key is missing)
+		var tokenEncryptor *janitor.TokenEncryptor
+		if cfg.JanitorEncryptionKey != "" {
+			var encErr error
+			tokenEncryptor, encErr = janitor.NewTokenEncryptor(cfg.JanitorEncryptionKey)
+			if encErr != nil {
+				janitorLogger.Warn("failed to create token encryptor, tokens stored in plaintext", "error", encErr)
+			} else {
+				janitorLogger.Info("token encryptor initialized")
+			}
+		} else {
+			janitorLogger.Warn("JANITOR_ENCRYPTION_KEY not set — Git tokens stored in plaintext")
+		}
+
 		janitorH = handlers.NewJanitorHandler(
-			store,        // domain.Store (implements FlagReader + others)
-			janitorStore, // store.JanitorStore
-			nil,          // Git provider registry (nil for now — not wired yet)
-			eventBus,     // SSE event bus for scan progress
+			store,              // domain.Store (implements FlagReader + others)
+			janitorStore,       // store.JanitorStore
+			analysisRegistry,   // Code analysis provider registry
+			complianceStore,    // Compliance store for provider selection
+			eventBus,           // SSE event bus for scan progress
+			tokenEncryptor,     // Token encryption/decryption
+			cfg.JanitorLLMMinConfidence,
 			janitorLogger,
 		)
-		_ = complianceStore // Will be used when compliance layer is wired
 
-		janitorLogger.Info("AI Janitor initialized")
+		// Register regex provider (always last, lowest priority)
+		if regErr := analysisRegistry.Register("regex", func(cfg codeanalysis.ProviderConfig) (codeanalysis.CodeAnalysisProvider, error) {
+			return regex.NewRegexProvider(janitorLogger), nil
+		}, codeanalysis.ProviderCapabilities{
+			SupportsSelfHosted: true,
+			RequiresAPIKey:     false,
+			Status:             "active",
+		}); regErr != nil {
+			janitorLogger.Warn("failed to register regex provider", "error", regErr)
+		}
+
+		janitorLogger.Info("AI Janitor initialized",
+			"llm_providers", analysisRegistry.ListProviders(),
+			"git_providers", janitor.ListGitProviders(),
+			"encryption", tokenEncryptor != nil,
+		)
 	}
 
 	// ── Provisioning Queue (async cell provisioning) ──────────────

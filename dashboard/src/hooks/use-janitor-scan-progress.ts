@@ -19,7 +19,14 @@ interface FlagAnalysisState {
 }
 
 export interface ScanProgressState {
-  phase: "idle" | "pending" | "scanning_repos" | "analyzing_flags" | "generating_report" | "complete" | "error";
+  phase:
+    | "idle"
+    | "pending"
+    | "scanning_repos"
+    | "analyzing_flags"
+    | "generating_report"
+    | "complete"
+    | "error";
   progress: number;
   repos: RepoProgressState[];
   flags: FlagAnalysisState[];
@@ -57,7 +64,10 @@ export function useJanitorScanProgress(scanId: string | null) {
       progress: 0,
     }));
 
-    const eventSource = new EventSource(`/v1/janitor/scans/${scanId}/events`);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const eventSource = new EventSource(
+      `${apiUrl}/v1/janitor/scans/${scanId}/events`,
+    );
 
     eventSource.addEventListener("scan.started", (e: MessageEvent) => {
       const data = JSON.parse(e.data);
@@ -74,7 +84,11 @@ export function useJanitorScanProgress(scanId: string | null) {
         const repos = [...prev.repos];
         const idx = repos.findIndex((r) => r.name === data.repo);
         if (idx >= 0) {
-          repos[idx] = { ...repos[idx], filesScanned: data.files_scanned, totalFiles: data.total_files };
+          repos[idx] = {
+            ...repos[idx],
+            filesScanned: data.files_scanned,
+            totalFiles: data.total_files,
+          };
         } else {
           repos.push({
             name: data.repo,
@@ -92,7 +106,9 @@ export function useJanitorScanProgress(scanId: string | null) {
       const data = JSON.parse(e.data);
       setState((prev) => {
         const repos = prev.repos.map((r) =>
-          r.name === data.repo ? { ...r, status: "complete" as const, flagged: data.flagged } : r
+          r.name === data.repo
+            ? { ...r, status: "complete" as const, flagged: data.flagged }
+            : r,
         );
         return { ...prev, repos, progress: Math.min(prev.progress + 5, 60) };
       });
@@ -101,14 +117,22 @@ export function useJanitorScanProgress(scanId: string | null) {
     eventSource.addEventListener("scan.flag.analyzed", (e: MessageEvent) => {
       const data = JSON.parse(e.data);
       setState((prev) => {
-        const flags = [...prev.flags, {
-          flagKey: data.flag_key,
-          safeToRemove: data.safe_to_remove,
-          referencesFound: data.references_found || 0,
-          confidence: data.confidence,
-          status: "completed" as const,
-        }];
-        return { ...prev, flags, phase: "analyzing_flags" as const, progress: Math.min(prev.progress + 3, 85) };
+        const flags = [
+          ...prev.flags,
+          {
+            flagKey: data.flag_key,
+            safeToRemove: data.safe_to_remove,
+            referencesFound: data.references_found || 0,
+            confidence: data.confidence,
+            status: "completed" as const,
+          },
+        ];
+        return {
+          ...prev,
+          flags,
+          phase: "analyzing_flags" as const,
+          progress: Math.min(prev.progress + 3, 85),
+        };
       });
     });
 
@@ -116,7 +140,16 @@ export function useJanitorScanProgress(scanId: string | null) {
       const data = JSON.parse(e.data);
       setState((prev) => {
         const flags = prev.flags.map((f) =>
-          f.flagKey === data.flag_key ? { ...f, status: data.status === "completed" ? "completed" as const : "analyzing" as const, confidence: data.confidence } : f
+          f.flagKey === data.flag_key
+            ? {
+                ...f,
+                status:
+                  data.status === "completed"
+                    ? ("completed" as const)
+                    : ("analyzing" as const),
+                confidence: data.confidence,
+              }
+            : f,
         );
         return { ...prev, flags };
       });
