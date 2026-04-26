@@ -592,6 +592,30 @@ export async function migrateTenants(
   });
 }
 
+// ─── Pod Status ─────────────────────────────────────────────────────────────
+
+export interface PodStatus {
+  name: string;
+  namespace: string;
+  phase: string;
+  host_ip?: string;
+  pod_ip?: string;
+  containers?: ContainerStatus[];
+}
+
+export interface ContainerStatus {
+  name: string;
+  state: string;
+  ready: boolean;
+  restart_count: number;
+  reason?: string;
+  exit_code?: number;
+}
+
+export async function getCellPods(id: string): Promise<PodStatus[]> {
+  return request<PodStatus[]>(`/cells/${id}/pods`);
+}
+
 // ─── Preview Endpoints ──────────────────────────────────────────────────────
 
 /** Raw preview shape returned by the backend /previews endpoint (snake_case). */

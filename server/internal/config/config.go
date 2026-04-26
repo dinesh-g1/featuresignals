@@ -74,6 +74,11 @@ type Config struct {
 	HetznerSSHKeyID     int64
 	HetznerNetworkID    int64
 
+	// SSH config for cell bootstrap
+	SSHPrivateKeyPath string        // SSH_PRIVATE_KEY_PATH
+	SSHUser           string        // SSH_USER, default "root"
+	SSHTimeout        time.Duration // SSH_TIMEOUT_SECONDS, default 60
+
 	// Deployment mode: "cloud" or "onprem"
 	DeploymentMode string
 
@@ -181,6 +186,10 @@ func Load() *Config {
 		HetznerDefaultRegion: getEnv("HETZNER_DEFAULT_REGION", "fsn1"),
 		HetznerSSHKeyID:      getEnvInt64("HETZNER_SSH_KEY_ID", 0),
 		HetznerNetworkID:     getEnvInt64("HETZNER_NETWORK_ID", 0),
+
+		SSHPrivateKeyPath: os.Getenv("SSH_PRIVATE_KEY_PATH"),
+		SSHUser:           getEnv("SSH_USER", "root"),
+		SSHTimeout:        time.Duration(getEnvInt("SSH_TIMEOUT_SECONDS", 60)) * time.Second,
 
 		DeploymentMode: getEnv("DEPLOYMENT_MODE", "cloud"),
 		EmailProvider:  getEnv("EMAIL_PROVIDER", "zeptomail"),

@@ -794,22 +794,6 @@ func (noopStore) ConsumeMagicLinkToken(context.Context, string) (string, string,
 
 // ─── OpsStore stubs (required by domain.Store) ────────────────────────
 
-func (noopStore) ListCustomerEnvironments(context.Context, string, string, string, string, int, int) ([]domain.CustomerEnvironment, int, error) {
-	return nil, 0, nil
-}
-func (noopStore) GetCustomerEnvironment(context.Context, string) (*domain.CustomerEnvironment, error) {
-	return nil, errNoop
-}
-func (noopStore) GetCustomerEnvironmentByVPSID(context.Context, string) (*domain.CustomerEnvironment, error) {
-	return nil, errNoop
-}
-func (noopStore) CreateCustomerEnvironment(context.Context, *domain.CustomerEnvironment) error {
-	return errNoop
-}
-func (noopStore) UpdateCustomerEnvironment(context.Context, string, map[string]any) error {
-	return errNoop
-}
-func (noopStore) DeleteCustomerEnvironment(context.Context, string) error { return errNoop }
 func (noopStore) ListLicenses(context.Context, string, string, string) ([]domain.License, int, error) {
 	return nil, 0, nil
 }
@@ -840,38 +824,15 @@ func (noopStore) UpdateOpsUser(context.Context, string, map[string]any) error {
 	return errNoop
 }
 func (noopStore) DeleteOpsUser(context.Context, string) error { return errNoop }
-func (noopStore) ListSandboxes(context.Context, string, string) ([]domain.SandboxEnvironment, int, error) {
-	return nil, 0, nil
-}
-func (noopStore) CreateSandbox(context.Context, *domain.SandboxEnvironment) error {
-	return errNoop
-}
-func (noopStore) RenewSandbox(context.Context, string) (*domain.SandboxEnvironment, error) {
-	return nil, errNoop
-}
-func (noopStore) DecommissionSandbox(context.Context, string) error { return errNoop }
-func (noopStore) GetExpiringSandboxes(context.Context, int) ([]domain.SandboxEnvironment, error) {
-	return nil, nil
-}
+
 func (noopStore) ListOrgCostDaily(context.Context, string, string, string) ([]domain.OrgCostDaily, error) {
 	return nil, nil
 }
-func (noopStore) ListOrgCostMonthly(context.Context, string) ([]domain.OrgCostMonthlySummary, error) {
-	return nil, nil
-}
-func (noopStore) GetFinancialSummary(context.Context) (*domain.FinancialSummary, error) {
-	return nil, nil
-}
+
 func (noopStore) ListOpsAuditLogs(context.Context, string, string, string, string, string, int, int) ([]domain.OpsAuditLog, int, error) {
 	return nil, 0, nil
 }
 func (noopStore) CreateOpsAuditLog(context.Context, *domain.OpsAuditLog) error { return errNoop }
-func (noopStore) ListCustomers(context.Context, string, string, string) ([]domain.CustomerSummary, int, error) {
-	return nil, 0, nil
-}
-func (noopStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
-	return nil, errNoop
-}
 
 func (noopStore) CreateIntegration(context.Context, domain.CreateIntegrationRequest) (*domain.Integration, error) {
 	return nil, nil

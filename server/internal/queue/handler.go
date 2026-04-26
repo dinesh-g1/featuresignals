@@ -8,10 +8,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/hibiken/asynq"
 
+	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/provision"
 )
@@ -31,6 +34,7 @@ type Handler struct {
 	provisioner provision.Provisioner
 	eventBus    EventPublisher
 	logger      *slog.Logger
+	cfg         *config.Config
 }
 
 // NewHandler creates a new queue handler with the given dependencies.
@@ -40,12 +44,14 @@ func NewHandler(
 	provisioner provision.Provisioner,
 	eventBus EventPublisher,
 	logger *slog.Logger,
+	cfg *config.Config,
 ) *Handler {
 	return &Handler{
 		store:       store,
 		provisioner: provisioner,
 		eventBus:    eventBus,
 		logger:      logger.With("service", "provision_queue"),
+		cfg:         cfg,
 	}
 }
 
@@ -61,6 +67,19 @@ func (h *Handler) HandleProvisionCell(ctx context.Context, t *asynq.Task) error 
 
 	logger := h.logger.With("cell_id", payload.CellID, "task_id", t.ResultWriter().TaskID())
 	logger.Info("processing provision cell task")
+
+	// ─── Idempotent Retry ───────────────────────────────────────────
+	// Check if cell is already running or provisioning — skip if so.
+	// If previously failed, allow retry.
+	if cell, err := h.store.GetCell(ctx, payload.CellID); err == nil {
+		if cell.Status == "running" || cell.Status == "provisioning" {
+			logger.Info("cell already provisioned or provisioning, skipping", "cell_id", payload.CellID, "status", cell.Status)
+			return nil
+		}
+		if cell.Status == "failed" {
+			logger.Info("cell previously failed, retrying", "cell_id", payload.CellID)
+		}
+	}
 
 	// Update cell status to provisioning
 	cell, err := h.store.GetCell(ctx, payload.CellID)
@@ -131,6 +150,92 @@ func (h *Handler) HandleProvisionCell(ctx context.Context, t *asynq.Task) error 
 		"provider":   serverInfo.Provider,
 	})
 
+	// ─── SSH Bootstrap ────────────────────────────────────────────────
+	// After Hetzner provision completes, bootstrap k3s on the VPS
+	h.recordEvent(ctx, payload.CellID, "bootstrap_started", map[string]string{
+		"public_ip": serverInfo.PublicIP,
+	})
+
+	// Create SSH access from config
+	sshAccess, err := provision.NewSSHAccess(h.cfg.SSHPrivateKeyPath,
+		provision.WithSSHUser(h.cfg.SSHUser),
+		provision.WithSSHTimeout(h.cfg.SSHTimeout),
+	)
+	if err != nil {
+		h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+			"error": fmt.Sprintf("ssh config: %v", err),
+		})
+		return fmt.Errorf("create ssh access: %w", err)
+	}
+
+	// Wait for SSH to become available
+	if err := sshAccess.WaitForSSH(ctx, serverInfo.PublicIP); err != nil {
+		h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+			"error": fmt.Sprintf("ssh wait: %v", err),
+		})
+		return fmt.Errorf("wait for ssh: %w", err)
+	}
+
+	h.recordEvent(ctx, payload.CellID, "bootstrap_ssh_ready", nil)
+
+	// Re-fetch the cell to get current Name and Version for templating
+	cell, err = h.store.GetCell(ctx, payload.CellID)
+	if err != nil {
+		h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+			"error": fmt.Sprintf("get cell: %v", err),
+		})
+		return fmt.Errorf("get cell for bootstrap: %w", err)
+	}
+
+	// Read and template the bootstrap script
+	scriptTemplate, err := os.ReadFile("deploy/k3s/bootstrap.sh")
+	if err != nil {
+		// Try alternative path for when running in container
+		scriptTemplate, err = os.ReadFile("/app/deploy/k3s/bootstrap.sh")
+		if err != nil {
+			h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+				"error": "bootstrap script not found",
+			})
+			return fmt.Errorf("read bootstrap script: %w", err)
+		}
+	}
+
+	script := strings.ReplaceAll(string(scriptTemplate), "${POSTGRES_PASSWORD}", payload.PostgresPassword)
+	script = strings.ReplaceAll(script, "${CELL_SUBDOMAIN}", cell.Name+".featuresignals.com")
+	script = strings.ReplaceAll(script, "${FEATURESIGNALS_VERSION}", cell.Version)
+
+	// Execute bootstrap script
+	output, err := sshAccess.ExecuteScript(ctx, serverInfo.PublicIP, []byte(script))
+	if err != nil {
+		truncated := output
+		if len(truncated) > 500 {
+			truncated = truncated[:500]
+		}
+		h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+			"error":  fmt.Sprintf("bootstrap: %v", err),
+			"output": truncated,
+		})
+		return fmt.Errorf("bootstrap script: %w\noutput: %s", err, output)
+	}
+
+	// Verify k3s is running
+	verifyOutput, err := sshAccess.Execute(ctx, serverInfo.PublicIP, "k3s kubectl get nodes -o json")
+	if err != nil {
+		truncated := verifyOutput
+		if len(truncated) > 500 {
+			truncated = truncated[:500]
+		}
+		h.recordEvent(ctx, payload.CellID, "bootstrap_failed", map[string]string{
+			"error":  fmt.Sprintf("k3s verify: %v", err),
+			"output": truncated,
+		})
+		return fmt.Errorf("verify k3s: %w\noutput: %s", err, verifyOutput)
+	}
+
+	h.recordEvent(ctx, payload.CellID, "bootstrap_completed", map[string]string{
+		"public_ip": serverInfo.PublicIP,
+	})
+
 	logger.Info("cell provisioned successfully",
 		"server_id", serverInfo.ID,
 		"public_ip", serverInfo.PublicIP,
@@ -160,10 +265,15 @@ func (h *Handler) HandleDeprovisionCell(ctx context.Context, t *asynq.Task) erro
 	// Deprovision the server if a server was provisioned
 	if cell.ProviderServerID != "" {
 		if err := h.provisioner.DeprovisionServer(ctx, cell.ProviderServerID); err != nil {
-			h.recordEvent(ctx, payload.CellID, "deprovisioning_failed", map[string]string{
-				"error": err.Error(),
-			})
-			return fmt.Errorf("deprovision server: %w", err)
+			// If cloud provider returns 404, still clean DB record
+			if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not found") {
+				logger.Warn("server not found in cloud provider, cleaning DB record", "server_id", cell.ProviderServerID)
+			} else {
+				h.recordEvent(ctx, payload.CellID, "deprovisioning_failed", map[string]string{
+					"error": err.Error(),
+				})
+				return fmt.Errorf("deprovision server: %w", err)
+			}
 		}
 	}
 

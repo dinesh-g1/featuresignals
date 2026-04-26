@@ -23,6 +23,7 @@ import {
   useConfirmDialog,
 } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { ProvisionTimeline } from "@/components/cells/provision-timeline";
 import type { CellHealthResponse, CellHealth } from "@/types/cell";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -85,6 +86,16 @@ function ProvisionCellModal({
   const [serverType, setServerType] = React.useState("cx22");
   const [location, setLocation] = React.useState("fsn1");
   const [userData, setUserData] = React.useState("");
+  const [provisionedCellId, setProvisionedCellId] = React.useState<
+    string | null
+  >(null);
+
+  // Reset provisioned cell ID when modal opens for a new provision
+  React.useEffect(() => {
+    if (open) {
+      setProvisionedCellId(null);
+    }
+  }, [open]);
 
   const provisionMutation = useProvisionCell();
 
@@ -99,12 +110,12 @@ function ProvisionCellModal({
         user_data: userData || undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setName("");
           setServerType("cx22");
           setLocation("fsn1");
           setUserData("");
-          onOpenChange(false);
+          setProvisionedCellId(data.id);
         },
       },
     );
@@ -177,7 +188,9 @@ function ProvisionCellModal({
           />
         </div>
 
-        {provisionMutation.isError && (
+        {provisionedCellId && <ProvisionTimeline cellId={provisionedCellId} />}
+
+        {!provisionedCellId && provisionMutation.isError && (
           <div className="rounded-lg bg-accent-danger/5 border border-accent-danger/20 p-3">
             <p className="text-xs text-accent-danger">
               <strong>Error:</strong>{" "}
@@ -187,10 +200,12 @@ function ProvisionCellModal({
           </div>
         )}
 
-        <p className="text-xs text-text-muted">
-          A Hetzner cloud server will be provisioned with the FeatureSignals
-          stack. This process typically takes 2–5 minutes.
-        </p>
+        {!provisionedCellId && (
+          <p className="text-xs text-text-muted">
+            A Hetzner cloud server will be provisioned with the FeatureSignals
+            stack. This process typically takes 2–5 minutes.
+          </p>
+        )}
       </div>
     </Modal>
   );

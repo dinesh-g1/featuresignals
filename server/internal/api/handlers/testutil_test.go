@@ -1478,22 +1478,6 @@ func (m *mockStore) ConsumeMagicLinkToken(_ context.Context, _ string) (string, 
 
 // ─── OpsStore stubs (required by domain.Store) ────────────────────────
 
-func (m *mockStore) ListCustomerEnvironments(context.Context, string, string, string, string, int, int) ([]domain.CustomerEnvironment, int, error) {
-	return nil, 0, nil
-}
-func (m *mockStore) GetCustomerEnvironment(context.Context, string) (*domain.CustomerEnvironment, error) {
-	return nil, fmt.Errorf("not found")
-}
-func (m *mockStore) GetCustomerEnvironmentByVPSID(context.Context, string) (*domain.CustomerEnvironment, error) {
-	return nil, fmt.Errorf("not found")
-}
-func (m *mockStore) CreateCustomerEnvironment(context.Context, *domain.CustomerEnvironment) error {
-	return nil
-}
-func (m *mockStore) UpdateCustomerEnvironment(context.Context, string, map[string]any) error {
-	return nil
-}
-func (m *mockStore) DeleteCustomerEnvironment(context.Context, string) error { return nil }
 func (m *mockStore) ListLicenses(context.Context, string, string, string) ([]domain.License, int, error) {
 	return nil, 0, nil
 }
@@ -1524,40 +1508,16 @@ func (m *mockStore) UpdateOpsUser(context.Context, string, map[string]any) error
 	return nil
 }
 func (m *mockStore) DeleteOpsUser(context.Context, string) error { return nil }
-func (m *mockStore) ListSandboxes(context.Context, string, string) ([]domain.SandboxEnvironment, int, error) {
-	return nil, 0, nil
-}
-func (m *mockStore) CreateSandbox(context.Context, *domain.SandboxEnvironment) error {
-	return nil
-}
-func (m *mockStore) RenewSandbox(context.Context, string) (*domain.SandboxEnvironment, error) {
-	return nil, fmt.Errorf("not found")
-}
-func (m *mockStore) DecommissionSandbox(context.Context, string) error { return nil }
-func (m *mockStore) GetExpiringSandboxes(context.Context, int) ([]domain.SandboxEnvironment, error) {
-	return nil, nil
-}
+
 func (m *mockStore) ListOrgCostDaily(context.Context, string, string, string) ([]domain.OrgCostDaily, error) {
 	return nil, nil
 }
-func (m *mockStore) ListOrgCostMonthly(context.Context, string) ([]domain.OrgCostMonthlySummary, error) {
-	return nil, nil
-}
-func (m *mockStore) GetFinancialSummary(context.Context) (*domain.FinancialSummary, error) {
-	return nil, nil
-}
+
 func (m *mockStore) ListOpsAuditLogs(context.Context, string, string, string, string, string, int, int) ([]domain.OpsAuditLog, int, error) {
 	return nil, 0, nil
 }
 func (m *mockStore) CreateOpsAuditLog(context.Context, *domain.OpsAuditLog) error { return nil }
-func (m *mockStore) ListCustomers(context.Context, string, string, string) ([]domain.CustomerSummary, int, error) {
-	return nil, 0, nil
-}
-func (m *mockStore) GetCustomerDetail(context.Context, string) (*domain.CustomerDetail, error) {
-	return nil, fmt.Errorf("not found")
-}
 
-// FlagVersionStore stubs
 func (m *mockStore) ListFlagVersions(_ context.Context, _ string, _, _ int) ([]domain.FlagVersion, error) {
 	return nil, nil
 }

@@ -1,9 +1,0 @@
-# Dev environment docker-compose with monitoring tools
-#
-# This extends the regional compose to add:
-#   - Website + docs (primary region mode)
-#   - Dozzle for real-time log monitoring (via shared monitoring compose)
-#
-# Usage: docker compose --env-file .env -f deploy/docker-compose.region.yml -f deploy/docker-compose.monitoring.yml up -d dozzle
-#
-# Note: Dozzle is defined in deploy/docker-compose.monitoring.yml for reuse across dev/prod.

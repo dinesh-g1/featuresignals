@@ -73,22 +73,22 @@ type RecentAction struct {
 func (h *OpsDashboardHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	log := h.logger.With("handler", "ops_dashboard_stats")
 
-	// 1. Financial summary
-	financial, err := h.store.GetFinancialSummary(r.Context())
-	if err != nil {
-		log.Error("failed to get financial summary", "error", err)
-		// Continue with defaults — financials are non-critical for dashboard load
-		financial = &domain.FinancialSummary{
-			MarginByTier:   make(map[string]*domain.TierFinancials),
-			TopCustomers:   []domain.CustomerSummary{},
-			NegativeMargin: []domain.CustomerSummary{},
-		}
+	// 1. Dashboard stats (financial defaults — premium metrics removed)
+	financial := struct {
+		TotalMRR       int64   `json:"total_mrr"`
+		TotalCost      int64   `json:"total_cost"`
+		TotalMargin    float64 `json:"total_margin"`
+		TenantCount    int     `json:"tenant_count"`
+		CellCount      int     `json:"cell_count"`
+	}{
+		TotalMRR:  0,
+		TotalCost: 0,
 	}
 
 	// 2. Tenant counts
 	tenantStats := h.collectTenantStats(r.Context(), log)
 
-	// 3. Cell stats (from environment health)
+	// 3. Cell stats
 	cellStats := h.collectCellStats(r.Context(), log)
 
 	// 4. Recent actions from ops audit log
@@ -109,10 +109,7 @@ func (h *OpsDashboardHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	customerCount := 0
-	if financial != nil {
-		customerCount = len(financial.TopCustomers) + len(financial.NegativeMargin)
-	}
+	customerCount := financial.TenantCount
 
 	stats := DashboardStats{
 		Tenants: tenantStats,
@@ -168,54 +165,25 @@ func (h *OpsDashboardHandler) collectTenantStats(ctx context.Context, log *slog.
 	return stats
 }
 
-// collectCellStats derives cell health from customer environment statuses.
+// collectCellStats derives cell health from cell statuses.
 func (h *OpsDashboardHandler) collectCellStats(ctx context.Context, log *slog.Logger) CellStats {
 	stats := CellStats{}
 
-	envs, _, err := h.store.ListCustomerEnvironments(ctx, "", "", "", "", 1000, 0)
+	cells, err := h.store.ListCells(ctx, domain.CellFilter{Limit: 1000})
 	if err != nil {
-		log.Warn("failed to list environments for cell stats", "error", err)
+		log.Warn("failed to list cells for dashboard stats", "error", err)
 		return stats
 	}
 
-	// Group environments by region (cell) and assess health.
-	type cellHealth struct {
-		total    int
-		healthy  int
-		degraded int
-		down     int
-	}
-	cells := make(map[string]*cellHealth)
-
-	for _, env := range envs {
-		region := env.VPSRegion
-		if region == "" {
-			region = "unknown"
-		}
-		ch, ok := cells[region]
-		if !ok {
-			ch = &cellHealth{}
-			cells[region] = ch
-		}
-		ch.total++
-		switch env.Status {
-		case "active", "provisioned":
-			ch.healthy++
-		case "maintenance", "provisioning", "decommissioning":
-			ch.degraded++
-		default:
-			ch.down++
-		}
-	}
-
-	stats.Total = len(cells)
-	for _, ch := range cells {
-		if ch.down > 0 {
-			stats.Down++
-		} else if ch.degraded > 0 {
-			stats.Degraded++
-		} else {
+	for _, c := range cells {
+		stats.Total++
+		switch c.Status {
+		case domain.CellStatusRunning:
 			stats.Healthy++
+		case domain.CellStatusDegraded, domain.CellStatusDraining:
+			stats.Degraded++
+		default:
+			stats.Down++
 		}
 	}
 
@@ -224,21 +192,13 @@ func (h *OpsDashboardHandler) collectCellStats(ctx context.Context, log *slog.Lo
 
 // MRR handles GET /api/v1/ops/billing/mrr
 func (h *OpsDashboardHandler) MRR(w http.ResponseWriter, r *http.Request) {
-	log := h.logger.With("handler", "ops_billing_mrr")
-
-	summary, err := h.store.GetFinancialSummary(r.Context())
-	if err != nil {
-		log.Error("failed to get financial summary", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get MRR data")
-		return
-	}
-
+	// Premium metrics removed. Return default stub data.
 	httputil.JSON(w, http.StatusOK, map[string]any{
-		"total_mrr":      summary.TotalMRR,
-		"total_cost":     summary.TotalCost,
-		"total_margin":   summary.TotalMargin,
-		"margin_by_tier": summary.MarginByTier,
-		"top_customers":  summary.TopCustomers,
+		"total_mrr":      0,
+		"total_cost":     0,
+		"total_margin":   0.0,
+		"margin_by_tier": map[string]any{},
+		"top_customers":  []any{},
 	})
 }
 
@@ -252,21 +212,21 @@ func (h *OpsDashboardHandler) Invoices(w http.ResponseWriter, r *http.Request) {
 		month = time.Now().UTC().Format("2006-01")
 	}
 
-	summaries, err := h.store.ListOrgCostMonthly(r.Context(), month)
+	costs, err := h.store.ListOrgCostDaily(r.Context(), "", "", "")
 	if err != nil {
 		log.Error("failed to get cost data for invoices", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to get invoice data")
 		return
 	}
 
-	if summaries == nil {
-		summaries = []domain.OrgCostMonthlySummary{}
+	if costs == nil {
+		costs = []domain.OrgCostDaily{}
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"month":    month,
-		"invoices": summaries,
-		"total":    len(summaries),
+		"invoices": costs,
+		"total":    len(costs),
 	})
 }
 

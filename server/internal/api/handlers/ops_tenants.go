@@ -95,10 +95,11 @@ func (h *OpsTenantsHandler) Provision(w http.ResponseWriter, r *http.Request) {
 	log := h.logger.With("handler", "ops_tenants_provision")
 
 	var req struct {
-		Name  string `json:"name"`
-		Slug  string `json:"slug"`
-		Tier  string `json:"tier"`
-		Email string `json:"email"`
+		Name   string `json:"name"`
+		Slug   string `json:"slug"`
+		Tier   string `json:"tier"`
+		CellID string `json:"cellId,omitempty"`
+		Email  string `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
@@ -124,6 +125,7 @@ func (h *OpsTenantsHandler) Provision(w http.ResponseWriter, r *http.Request) {
 			Slug:      req.Slug,
 			Schema:    "tenant_" + generateShortID(),
 			Tier:      req.Tier,
+			CellID:    req.CellID,
 			Status:    "active",
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),

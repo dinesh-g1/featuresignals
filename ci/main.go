@@ -19,13 +19,15 @@ type Ci struct{}
 // =========================================================================
 
 // Validate runs locally before pushing.
-// Filter can be "server", "dashboard", or empty (both).
+// Filter can be "server", "dashboard", "ops-portal", or empty (all).
 func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter string) error {
 	switch strings.ToLower(filter) {
 	case "server":
 		return m.validateServer(ctx, source)
 	case "dashboard":
 		return m.validateDashboard(ctx, source)
+	case "ops-portal":
+		return m.validateOpsPortal(ctx, source)
 	case "":
 		if err := m.validateServer(ctx, source); err != nil {
 			return fmt.Errorf("server validation failed: %w", err)
@@ -33,9 +35,12 @@ func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter stri
 		if err := m.validateDashboard(ctx, source); err != nil {
 			return fmt.Errorf("dashboard validation failed: %w", err)
 		}
+		if err := m.validateOpsPortal(ctx, source); err != nil {
+			return fmt.Errorf("ops-portal validation failed: %w", err)
+		}
 		return nil
 	default:
-		return fmt.Errorf("unknown filter %q; use 'server', 'dashboard', or '' (both)", filter)
+		return fmt.Errorf("unknown filter %q; use 'server', 'dashboard', 'ops-portal', or '' (all)", filter)
 	}
 }
 
@@ -100,6 +105,23 @@ func (m *Ci) validateDashboard(ctx context.Context, source *dagger.Directory) er
 	}
 
 	return nil
+}
+
+func (m *Ci) validateOpsPortal(ctx context.Context, source *dagger.Directory) error {
+	// Use node:22-alpine
+	builder := dag.Container().From("node:22-alpine").
+		WithWorkdir("/app").
+		WithFile("/app/package.json", source.File("ops-portal/package.json")).
+		WithFile("/app/package-lock.json", source.File("ops-portal/package-lock.json")).
+		WithExec([]string{"npm", "ci"}).
+		WithDirectory("/app", source.Directory("ops-portal"), dagger.ContainerWithDirectoryOpts{
+			Exclude: []string{"node_modules"},
+		}).
+		WithExec([]string{"npx", "tsc", "--noEmit"}).
+		WithExec([]string{"npm", "run", "lint"}).
+		WithExec([]string{"npm", "run", "build"})
+	_, err := builder.Stderr(ctx)
+	return err
 }
 
 // =========================================================================
@@ -283,8 +305,8 @@ func (m *Ci) testSDK(ctx context.Context, source *dagger.Directory, name, path s
 // BuildImages — build and push OCI images to GHCR
 // =========================================================================
 
-// BuildImages builds server and dashboard Docker images and pushes them
-// to ghcr.io/featuresignals/ tagged with the given version.
+// BuildImages builds server, dashboard, and ops-portal Docker images and
+// pushes them to ghcr.io/featuresignals/ tagged with the given version.
 //
 // Required host environment variables:
 //   - GHCR_TOKEN: GitHub Container Registry token (classic PAT with write:packages)
@@ -325,6 +347,33 @@ func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version 
 		return fmt.Errorf("failed to publish dashboard image: %w", err)
 	}
 
+	// ---- Ops-portal image ----
+	opsPortalDir := source.Directory("ops-portal")
+	if _, err := opsPortalDir.Entries(ctx); err == nil {
+		opsPortalImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
+			Dockerfile: "deploy/docker/Dockerfile.ops-portal",
+		})
+		opsTag := fmt.Sprintf("ghcr.io/featuresignals/ops-portal:%s", version)
+		_, err = opsPortalImg.WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).Publish(ctx, opsTag)
+		if err != nil {
+			return fmt.Errorf("publish ops-portal: %w", err)
+		}
+		fmt.Printf("Published ops-portal:%s\n", version)
+	}
+
+	return nil
+}
+
+// =========================================================================
+// DeployCell — deploy a version to a specific cell
+// =========================================================================
+
+// DeployCell deploys a version to a specific cell.
+// For MVP, this just verifies the cell is reachable.
+func (m *Ci) DeployCell(ctx context.Context, source *dagger.Directory, version, cellIP, cellName string) error {
+	fmt.Printf("Deploying cell %s (%s) with version %s\n", cellName, cellIP, version)
+	// SSH into the cell and run helm upgrade
+	// For MVP, just verify the cell is reachable
 	return nil
 }
 

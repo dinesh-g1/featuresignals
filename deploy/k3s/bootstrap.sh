@@ -4,68 +4,57 @@
 # FeatureSignals — k3s Single-Node Bootstrap Script
 # =============================================================================
 #
-# A single, idempotent bootstrap script that provisions a Hetzner VPS running
-# Ubuntu 24.04 with k3s (single-node, embedded SQLite) and all required
-# infrastructure components for the FeatureSignals platform.
+# Idempotent bootstrap script that provisions a VPS running Ubuntu 24.04 with
+# k3s (single-node, embedded SQLite) and all required components for the
+# FeatureSignals platform: PostgreSQL, the FeatureSignals API and Dashboard,
+# Traefik ingress, node-exporter, and cert-manager.
+#
+# This script is idempotent — safe to run multiple times. Components that are
+# already installed will be skipped or upgraded in-place.
 #
 # Usage:
-#   export HETZNER_STORAGE_BOX_URL="https://your-storage-box.your-storagebox.de"
-#   export HETZNER_STORAGE_BOX_ACCESS_KEY="your-access-key"
-#   export HETZNER_STORAGE_BOX_SECRET_KEY="your-secret-key"
-#   export ACME_EMAIL="admin@featuresignals.com"
-#   export POSTGRES_PASSWORD="$(openssl rand -base64 32)"
+#   export POSTGRES_PASSWORD="your-secure-password"
+#   export CELL_SUBDOMAIN="cell-name.featuresignals.com"
+#   export FEATURESIGNALS_VERSION="latest"
 #   sudo ./bootstrap.sh
 #
 # Required Environment Variables:
-#   HETZNER_STORAGE_BOX_URL       S3-compatible endpoint URL for backups
-#   HETZNER_STORAGE_BOX_ACCESS_KEY S3 access key
-#   HETZNER_STORAGE_BOX_SECRET_KEY S3 secret key
-#   ACME_EMAIL                     Email for Let's Encrypt certificate registration
+#   POSTGRES_PASSWORD          Password for the PostgreSQL superuser
+#   CELL_SUBDOMAIN             The subdomain for this cell (e.g., cell-01.featuresignals.com)
 #
 # Optional Environment Variables:
-#   POSTGRES_PASSWORD              PostgreSQL password (auto-generated if empty)
-#   CLUSTER_CIDR                   Pod network CIDR (default: 10.42.0.0/16)
-#   SERVICE_CIDR                   Service network CIDR (default: 10.43.0.0/16)
-#   K3S_VERSION                    k3s version (default: latest stable)
-#   SIGNOZ_ENABLED                 Install SigNoz observability stack (default: true)
-#   TEMPORAL_ENABLED               Install Temporal workflow engine (default: true)
-#
-# This script is idempotent — safe to run multiple times. Components that are
-# already installed will be skipped.
-#
-# Hardware Target: Hetzner CPX42 (8 vCPU, 16 GB RAM, 160 GB NVMe)
-# Budget: €29.38/month (€25.49 VPS + €3.89 Storage Box)
+#   FEATURESIGNALS_VERSION     FeatureSignals image tag (default: "latest")
+#   CLUSTER_CIDR               Pod network CIDR (default: 10.42.0.0/16)
+#   SERVICE_CIDR               Service network CIDR (default: 10.43.0.0/16)
+#   K3S_VERSION                k3s version (default: stable)
+#   ACME_EMAIL                 Email for Let's Encrypt (default: admin@featuresignals.com)
 #
 # =============================================================================
 
 set -euo pipefail
 
-# ---- Color Output -----------------------------------------------------------
+# ---- Logging ----------------------------------------------------------------
+LOGFILE="/var/log/featuresignals-bootstrap.log"
+exec > >(tee -a "$LOGFILE") 2>&1
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 log_info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
 
-# ---- Version Constants ------------------------------------------------------
+# ---- Defaults & Constants ---------------------------------------------------
 K3S_VERSION="${K3S_VERSION:-stable}"
-CERT_MANAGER_VERSION="v1.16.3"
-METALLB_VERSION="v0.14.9"
-POSTGRESQL_HELM_VERSION="16.4.8"
-CADDY_INGRESS_VERSION="0.1.0"
-SIGNOZ_HELM_CHART_VERSION="0.63.0"
-TEMPORAL_HELM_CHART_VERSION="1.25.2"
-
-# ---- Network Defaults -------------------------------------------------------
 CLUSTER_CIDR="${CLUSTER_CIDR:-10.42.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.43.0.0/16}"
+ACME_EMAIL="${ACME_EMAIL:-admin@featuresignals.com}"
+FEATURESIGNALS_VERSION="${FEATURESIGNALS_VERSION:-latest}"
 
-# ---- Feature Flags ----------------------------------------------------------
-SIGNOZ_ENABLED="${SIGNOZ_ENABLED:-true}"
-TEMPORAL_ENABLED="${TEMPORAL_ENABLED:-true}"
+CERT_MANAGER_VERSION="v1.16.3"
+POSTGRESQL_HELM_VERSION="16.4.8"
 
 # ---- Prerequisite Check -----------------------------------------------------
 prereq_check() {
@@ -76,12 +65,16 @@ prereq_check() {
         exit 1
     fi
 
-    if [[ -z "${ACME_EMAIL:-}" ]]; then
-        log_error "ACME_EMAIL is not set. This is required for Let's Encrypt."
+    if [[ -z "${POSTGRES_PASSWORD:-}" ]]; then
+        log_error "POSTGRES_PASSWORD is not set. This is required."
         exit 1
     fi
 
-    # Detect architecture
+    if [[ -z "${CELL_SUBDOMAIN:-}" ]]; then
+        log_error "CELL_SUBDOMAIN is not set. This is required."
+        exit 1
+    fi
+
     local arch
     arch="$(uname -m)"
     if [[ "$arch" != "x86_64" ]]; then
@@ -89,7 +82,6 @@ prereq_check() {
         exit 1
     fi
 
-    # Check OS
     if ! grep -qi "ubuntu" /etc/os-release 2>/dev/null; then
         log_warn "This script is designed for Ubuntu 24.04. Proceeding anyway..."
     fi
@@ -97,9 +89,9 @@ prereq_check() {
     log_info "All prerequisites satisfied."
 }
 
-# ---- k3s Installation -------------------------------------------------------
+# ---- k3s Installation (idempotent) ------------------------------------------
 install_k3s() {
-    log_info "=== Installing k3s (single-node, embedded SQLite) ==="
+    log_info "=== Installing k3s ==="
 
     if command -v k3s &>/dev/null; then
         log_info "k3s is already installed. Checking if service is active..."
@@ -115,26 +107,15 @@ install_k3s() {
     # Remove any existing config to ensure clean install
     rm -f /etc/k3s.env
 
-    # Install k3s with our specific configuration
-    # --disable traefik: We use Caddy as ingress
-    # --disable local-storage: We use Hetzner Storage Box / PVCs
-    # --disable servicelb: We use MetalLB for LoadBalancer IPs
-    # --write-kubeconfig-mode 644: Allow non-root kubectl access
-    # --kubelet-arg="max-pods=100": Allow more pods per node
-    # --cluster-cidr / --service-cidr: Custom network ranges
     curl -sfL https://get.k3s.io | \
         INSTALL_K3S_VERSION="${K3S_VERSION}" \
         INSTALL_K3S_EXEC="server \
-            --disable traefik \
-            --disable local-storage \
-            --disable servicelb \
             --write-kubeconfig-mode 644 \
             --kubelet-arg=\"max-pods=100\" \
             --cluster-cidr=${CLUSTER_CIDR} \
             --service-cidr=${SERVICE_CIDR}" \
         sh -
 
-    # Wait for k3s to be ready
     log_info "Waiting for k3s to become ready..."
     local retries=30
     local count=0
@@ -148,10 +129,9 @@ install_k3s() {
         count=$((count + 1))
     done
 
-    # Wait for node to be Ready
     kubectl wait --for=condition=Ready node --all --timeout=120s
 
-    # Create k3s environment file for other tools
+    # Create k3s environment file
     cat > /etc/k3s.env <<EOF
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 export K3S_CLUSTER_CIDR=${CLUSTER_CIDR}
@@ -163,7 +143,14 @@ EOF
     log_info "  Kubeconfig: /etc/rancher/k3s/k3s.yaml"
 }
 
-# ---- Helm Installation ------------------------------------------------------
+# ---- Wait for Node Ready ----------------------------------------------------
+wait_for_node() {
+    log_info "=== Waiting for node to be Ready ==="
+    kubectl wait --for=condition=Ready node --all --timeout=60s
+    log_info "Node is Ready."
+}
+
+# ---- Helm Installation (idempotent) -----------------------------------------
 install_helm() {
     log_info "=== Installing Helm ==="
 
@@ -176,40 +163,13 @@ install_helm() {
 
     # Add required Helm repositories
     helm repo add jetstack https://charts.jetstack.io --force-update
-    helm repo add metallb https://metallb.github.io/metallb --force-update
-    helm repo add signoz https://charts.signoz.io --force-update
-    helm repo add temporal https://temporalio.github.io/helm-charts --force-update
     helm repo add bitnami https://charts.bitnami.com/bitnami --force-update
-    helm repo add caddy-ingress https://caddyserver.github.io/ingress --force-update
     helm repo update
 
     log_info "Helm installed and repositories configured."
 }
 
-# ---- Namespace Setup --------------------------------------------------------
-setup_namespaces() {
-    log_info "=== Setting up Namespaces ==="
-
-    # Core infrastructure namespaces
-    for ns in cert-manager metallb-system caddy-system featuresignals-system featuresignals-saas signoz temporal; do
-        if kubectl get namespace "$ns" &>/dev/null; then
-            log_info "Namespace '$ns' already exists. Skipping."
-        else
-            kubectl create namespace "$ns"
-            log_info "Created namespace: $ns"
-        fi
-    done
-
-    # Label the FeatureSignals namespaces
-    kubectl label namespace featuresignals-system --overwrite \
-        name=featuresignals-system \
-        app.kubernetes.io/managed-by=helm
-    kubectl label namespace featuresignals-saas --overwrite \
-        name=featuresignals-saas \
-        app.kubernetes.io/managed-by=helm
-}
-
-# ---- cert-manager Installation ----------------------------------------------
+# ---- cert-manager Installation (idempotent) ---------------------------------
 install_cert_manager() {
     log_info "=== Installing cert-manager ==="
 
@@ -218,24 +178,19 @@ install_cert_manager() {
         return 0
     fi
 
-    # Install cert-manager with CRDs
+    kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+
     helm upgrade --install cert-manager jetstack/cert-manager \
         --namespace cert-manager \
         --version "$CERT_MANAGER_VERSION" \
         --set installCRDs=true \
         --set global.leaderElection.namespace=cert-manager \
-        --set webhook.resources.requests.memory=64Mi \
-        --set cainjector.resources.requests.memory=64Mi \
-        --set resources.requests.memory=64Mi \
         --wait \
         --timeout 5m
 
     log_info "cert-manager installed."
 
-    # Create ClusterIssuers
-    log_info "Creating ClusterIssuers..."
-
-    # Production issuer
+    # Create ClusterIssuers (idempotent)
     cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -250,10 +205,9 @@ spec:
     solvers:
     - http01:
         ingress:
-          class: caddy
+          class: traefik
 EOF
 
-    # Staging issuer (for testing)
     cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -268,349 +222,399 @@ spec:
     solvers:
     - http01:
         ingress:
-          class: caddy
+          class: traefik
 EOF
 
     log_info "ClusterIssuers created: letsencrypt-prod, letsencrypt-staging"
 }
 
-# ---- MetalLB Installation ---------------------------------------------------
-install_metallb() {
-    log_info "=== Installing MetalLB ==="
-
-    if helm ls -n metallb-system --short 2>/dev/null | grep -q "^metallb$"; then
-        log_info "MetalLB is already installed. Skipping."
-        return 0
-    fi
-
-    # Install MetalLB with minimal resource requests
-    helm upgrade --install metallb metallb/metallb \
-        --namespace metallb-system \
-        --version "$METALLB_VERSION" \
-        --set controller.resources.requests.memory=64Mi \
-        --set speaker.resources.requests.memory=64Mi \
-        --wait \
-        --timeout 5m
-
-    log_info "MetalLB installed. Creating IP pool..."
-
-    # Get the VPS IP address
-    local vps_ip
-    vps_ip="$(curl -s https://api.ipify.org || curl -s https://icanhazip.com)"
-
-    if [[ -z "$vps_ip" ]]; then
-        log_error "Could not determine VPS IP address."
-        exit 1
-    fi
-
-    log_info "VPS IP detected: ${vps_ip}"
-
-    # Create IP pool and L2 advertisement
-    cat <<EOF | kubectl apply -f -
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: vps-pool
-  namespace: metallb-system
-spec:
-  addresses:
-  - ${vps_ip}/32
-  autoAssign: true
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: l2-advert
-  namespace: metallb-system
-spec:
-  ipAddressPools:
-  - vps-pool
-EOF
-
-    log_info "MetalLB IP pool configured with ${vps_ip}/32"
-}
-
-# ---- Caddy Ingress Installation ---------------------------------------------
-install_caddy_ingress() {
-    log_info "=== Installing Caddy Ingress ==="
-
-    if helm ls -n caddy-system --short 2>/dev/null | grep -q "^caddy-ingress$"; then
-        log_info "Caddy ingress is already installed. Upgrading..."
-        helm upgrade caddy-ingress caddy-ingress/caddy-ingress-controller \
-            --namespace caddy-system \
-            --version "$CADDY_INGRESS_VERSION" \
-            --reuse-values \
-            --wait \
-            --timeout 5m
-        return 0
-    fi
-
-    # Create the Caddy ingress configuration values
-    local caddy_values="/tmp/caddy-ingress-values.yaml"
-
-    cat > "$caddy_values" <<VALUESEOF
-service:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
-config:
-  email: ${ACME_EMAIL}
-  onDemandTLS: false
-VALUESEOF
-
-    helm upgrade --install caddy-ingress caddy-ingress/caddy-ingress-controller \
-        --namespace caddy-system \
-        --version "$CADDY_INGRESS_VERSION" \
-        --values "$caddy_values" \
-        --wait \
-        --timeout 5m
-
-    rm -f "$caddy_values"
-
-    log_info "Caddy ingress installed."
-}
-
-# ---- PostgreSQL Installation ------------------------------------------------
+# ---- PostgreSQL via Bitnami Helm (idempotent) --------------------------------
 install_postgresql() {
     log_info "=== Installing PostgreSQL (Bitnami) ==="
 
     if helm ls -n featuresignals-system --short 2>/dev/null | grep -q "^featuresignals-db$"; then
-        log_info "PostgreSQL is already installed. Upgrading..."
+        log_info "PostgreSQL is already installed. Skipping."
         return 0
     fi
 
-    # Generate password if not provided
-    local pg_password="${POSTGRES_PASSWORD:-}"
-    if [[ -z "$pg_password" ]]; then
-        pg_password="$(openssl rand -base64 32)"
-        log_warn "POSTGRES_PASSWORD was not set. Generated: ${pg_password}"
-        log_warn "Save this password! It will not be shown again."
-    fi
-
-    # Store the password for future runs
-    export POSTGRES_PASSWORD="$pg_password"
+    kubectl create namespace featuresignals-system --dry-run=client -o yaml | kubectl apply -f -
 
     helm upgrade --install featuresignals-db bitnami/postgresql \
         --namespace featuresignals-system \
         --version "$POSTGRESQL_HELM_VERSION" \
-        --set auth.postgresPassword="$pg_password" \
+        --set auth.postgresPassword="$POSTGRES_PASSWORD" \
         --set auth.database=featuresignals \
         --set auth.username=fs \
-        --set auth.password="$pg_password" \
+        --set auth.password="$POSTGRES_PASSWORD" \
         --set persistence.size=30Gi \
         --set primary.resources.requests.memory=512Mi \
         --set primary.resources.requests.cpu=250m \
         --set primary.resources.limits.memory=1Gi \
         --set primary.resources.limits.cpu=1000m \
         --set metrics.enabled=true \
-        --set metrics.serviceMonitor.enabled=true \
         --wait \
         --timeout 10m
 
-    log_info "PostgreSQL installed."
+    log_info "PostgreSQL installed in namespace featuresignals-system."
 }
 
-# ---- Hetzner Storage Box Setup ----------------------------------------------
-setup_storage_box() {
-    log_info "=== Setting up Hetzner Storage Box (S3-compatible) ==="
+# ---- Deploy FeatureSignals API (idempotent) ----------------------------------
+deploy_featuresignals_api() {
+    log_info "=== Deploying FeatureSignals API ==="
 
-    if [[ -z "${HETZNER_STORAGE_BOX_URL:-}" ]]; then
-        log_warn "HETZNER_STORAGE_BOX_URL not set. Skipping Storage Box setup."
-        log_warn "Backup functionality will not work without it."
-        return 0
-    fi
+    kubectl create namespace featuresignals-saas --dry-run=client -o yaml | kubectl apply -f -
 
-    if [[ -z "${HETZNER_STORAGE_BOX_ACCESS_KEY:-}" ]] || [[ -z "${HETZNER_STORAGE_BOX_SECRET_KEY:-}" ]]; then
-        log_warn "HETZNER_STORAGE_BOX_ACCESS_KEY or HETZNER_STORAGE_BOX_SECRET_KEY not set."
-        log_warn "Skipping Storage Box setup."
-        return 0
-    fi
+    # Generate or update the API deployment manifest
+    cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: featuresignals-api
+  namespace: featuresignals-saas
+  labels:
+    app: featuresignals-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: featuresignals-api
+  template:
+    metadata:
+      labels:
+        app: featuresignals-api
+    spec:
+      containers:
+      - name: api
+        image: featuresignals/api:${FEATURESIGNALS_VERSION}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "${POSTGRES_PASSWORD}"
+        - name: CELL_SUBDOMAIN
+          value: "${CELL_SUBDOMAIN}"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: featuresignals-api
+  namespace: featuresignals-saas
+  labels:
+    app: featuresignals-api
+spec:
+  selector:
+    app: featuresignals-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+EOF
 
-    # Create secret for S3-compatible storage
-    if kubectl get secret hetzner-storage-box -n featuresignals-system &>/dev/null; then
-        log_info "Storage Box secret already exists. Updating..."
-        kubectl delete secret hetzner-storage-box -n featuresignals-system
-    fi
-
-    kubectl create secret generic hetzner-storage-box \
-        --namespace featuresignals-system \
-        --from-literal=endpoint="${HETZNER_STORAGE_BOX_URL}" \
-        --from-literal=access-key="${HETZNER_STORAGE_BOX_ACCESS_KEY}" \
-        --from-literal=secret-key="${HETZNER_STORAGE_BOX_SECRET_KEY}"
-
-    log_info "Hetzner Storage Box credentials stored as Kubernetes secret."
-
-    # Create a ConfigMap with the backup configuration
-    if kubectl get configmap storage-box-config -n featuresignals-system &>/dev/null; then
-        kubectl delete configmap storage-box-config -n featuresignals-system
-    fi
-
-    kubectl create configmap storage-box-config \
-        --namespace featuresignals-system \
-        --from-literal=backup-bucket="featuresignals-backups" \
-        --from-literal=backup-region="eu-central-1" \
-        --from-literal=backup-schedule="0 */6 * * *" \
-        --from-literal=retention-days="30"
-
-    log_info "Storage Box configuration created."
+    log_info "FeatureSignals API deployment applied."
 }
 
-# ---- SigNoz Installation ----------------------------------------------------
-install_signoz() {
-    if [[ "${SIGNOZ_ENABLED}" != "true" ]]; then
-        log_info "SigNoz installation skipped (SIGNOZ_ENABLED=false)."
-        return 0
-    fi
+# ---- Deploy FeatureSignals Dashboard (idempotent) ---------------------------
+deploy_featuresignals_dashboard() {
+    log_info "=== Deploying FeatureSignals Dashboard ==="
 
-    log_info "=== Installing SigNoz (Observability Stack) ==="
+    cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: featuresignals-dashboard
+  namespace: featuresignals-saas
+  labels:
+    app: featuresignals-dashboard
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: featuresignals-dashboard
+  template:
+    metadata:
+      labels:
+        app: featuresignals-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: featuresignals/dashboard:${FEATURESIGNALS_VERSION}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: API_URL
+          value: "http://featuresignals-api.featuresignals-saas.svc.cluster.local:8080"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: featuresignals-dashboard
+  namespace: featuresignals-saas
+  labels:
+    app: featuresignals-dashboard
+spec:
+  selector:
+    app: featuresignals-dashboard
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+  type: ClusterIP
+EOF
 
-    # Check if already installed
-    if helm ls -n signoz --short 2>/dev/null | grep -q "^signoz$"; then
-        log_info "SigNoz is already installed. Skipping."
-        return 0
-    fi
+    log_info "FeatureSignals Dashboard deployment applied."
+}
 
-    local signoz_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../k8s/infra/signoz" && pwd)/install.sh"
-    if [[ -f "$signoz_script" ]]; then
-        log_info "Running SigNoz install script: ${signoz_script}"
-        bash "$signoz_script"
-        log_info "SigNoz installation complete."
+# ---- Re-enable Traefik for Ingress ------------------------------------------
+configure_traefik() {
+    log_info "=== Configuring Traefik Ingress ==="
+
+    # k3s includes Traefik by default but disables it with --disable traefik.
+    # Since we start k3s with Traefik enabled, it's already running.
+    # Verify Traefik is up.
+    if kubectl get pods -n kube-system -l app.kubernetes.io/name=traefik --field-selector=status.phase=Running 2>/dev/null | grep -q traefik; then
+        log_info "Traefik is already running."
     else
-        log_warn "SigNoz install script not found at ${signoz_script}. Skipping."
+        log_warn "Traefik not found in kube-system. It should be included with k3s by default."
     fi
+
+    # Create an IngressRoute for the FeatureSignals API
+    cat <<EOF | kubectl apply -f -
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: featuresignals-api-ingress
+  namespace: featuresignals-saas
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(\`api.${CELL_SUBDOMAIN}\`)
+    kind: Rule
+    services:
+    - name: featuresignals-api
+      port: 8080
+  - match: Host(\`${CELL_SUBDOMAIN}\`)
+    kind: Rule
+    services:
+    - name: featuresignals-dashboard
+      port: 3000
+  tls:
+    certResolver: letsencrypt
+EOF
+
+    log_info "Traefik IngressRoute configured for api.${CELL_SUBDOMAIN} and ${CELL_SUBDOMAIN}."
 }
 
-# ---- Temporal Installation --------------------------------------------------
-install_temporal() {
-    if [[ "${TEMPORAL_ENABLED}" != "true" ]]; then
-        log_info "Temporal installation skipped (TEMPORAL_ENABLED=false)."
+# ---- Deploy node-exporter DaemonSet (idempotent) ----------------------------
+deploy_node_exporter() {
+    log_info "=== Deploying node-exporter DaemonSet ==="
+
+    if kubectl get daemonset node-exporter -n kube-system &>/dev/null; then
+        log_info "node-exporter is already deployed. Skipping."
         return 0
     fi
 
-    log_info "=== Installing Temporal (Workflow Engine) ==="
+    cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: kube-system
+  labels:
+    app: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:latest
+        args:
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        - --path.rootfs=/host/root
+        ports:
+        - containerPort: 9100
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+        - name: root
+          mountPath: /host/root
+          readOnly: true
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: root
+        hostPath:
+          path: /
+EOF
 
-    # Check if already installed
-    if helm ls -n temporal --short 2>/dev/null | grep -q "^temporal$"; then
-        log_info "Temporal is already installed. Skipping."
-        return 0
-    fi
+    log_info "node-exporter DaemonSet deployed."
+}
 
-    local temporal_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../k8s/infra/temporal" && pwd)/install.sh"
-    if [[ -f "$temporal_script" ]]; then
-        log_info "Running Temporal install script: ${temporal_script}"
-        bash "$temporal_script"
-        log_info "Temporal installation complete."
+# ─── Edge Worker Deployment ──────────────────────────────────────
+deploy_edge_worker() {
+    log_info "=== Deploying Edge Worker ==="
+
+    cat <<'EOF' | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-worker
+  namespace: featuresignals-saas
+  labels:
+    app: edge-worker
+    featuresignals.com/component: edge-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: edge-worker
+  template:
+    metadata:
+      labels:
+        app: edge-worker
+    spec:
+      containers:
+      - name: edge-worker
+        image: featuresignals/edge-worker:${FEATURESIGNALS_VERSION:-latest}
+        ports:
+        - containerPort: 8081
+        env:
+        - name: PORT
+          value: "8081"
+        - name: DATABASE_URL
+          value: "postgres://featuresignals:${POSTGRES_PASSWORD}@localhost:5432/featuresignals?sslmode=disable"
+        - name: LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-worker
+  namespace: featuresignals-saas
+spec:
+  selector:
+    app: edge-worker
+  ports:
+  - port: 8081
+    targetPort: 8081
+  type: ClusterIP
+EOF
+
+    log_info "Edge Worker deployed (3 replicas)"
+}
+
+# ---- Verify All Pods Running ------------------------------------------------
+verify_pods() {
+    log_info "=== Verifying all pods are Running ==="
+
+    local namespaces=("cert-manager" "featuresignals-system" "featuresignals-saas" "kube-system")
+    local all_ready=true
+
+    for ns in "${namespaces[@]}"; do
+        if ! kubectl get namespace "$ns" &>/dev/null; then
+            continue
+        fi
+        local pods
+        pods=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | wc -l)
+        if [[ "$pods" -eq 0 ]]; then
+            continue
+        fi
+        local not_ready
+        not_ready=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null | awk '{print $3}' | grep -v "Running\|Completed" | wc -l)
+        if [[ "$not_ready" -gt 0 ]]; then
+            log_warn "Namespace '$ns' has $not_ready pods not in Running/Completed state."
+            all_ready=false
+        else
+            log_info "Namespace '$ns': all $pods pods are Running."
+        fi
+    done
+
+    if [[ "$all_ready" == "true" ]]; then
+        log_info "All pods are Running."
     else
-        log_warn "Temporal install script not found at ${temporal_script}. Skipping."
+        log_warn "Some pods are not yet Running. Check with: kubectl get pods --all-namespaces"
     fi
-}
-
-# ---- Wait for Ready ---------------------------------------------------------
-wait_for_ready() {
-    log_info "=== Waiting for all components to be Ready ==="
-
-    log_info "Waiting for all pods in cert-manager namespace..."
-    kubectl wait --for=condition=Ready pods --all \
-        -n cert-manager --timeout=180s 2>/dev/null || \
-        log_warn "Some cert-manager pods not ready yet. Continuing..."
-
-    log_info "Waiting for all pods in metallb-system namespace..."
-    kubectl wait --for=condition=Ready pods --all \
-        -n metallb-system --timeout=180s 2>/dev/null || \
-        log_warn "Some MetalLB pods not ready yet. Continuing..."
-
-    log_info "Waiting for all pods in caddy-system namespace..."
-    kubectl wait --for=condition=Ready pods --all \
-        -n caddy-system --timeout=180s 2>/dev/null || \
-        log_warn "Some Caddy pods not ready yet. Continuing..."
-
-    log_info "Waiting for all pods in featuresignals-system namespace..."
-    kubectl wait --for=condition=Ready pods --all \
-        -n featuresignals-system --timeout=300s 2>/dev/null || \
-        log_warn "Some FeatureSignals pods not ready yet. Continuing..."
-
-    if [[ "${SIGNOZ_ENABLED}" == "true" ]]; then
-        log_info "Waiting for all pods in signoz namespace..."
-        kubectl wait --for=condition=Ready pods --all \
-            -n signoz --timeout=600s 2>/dev/null || \
-            log_warn "Some SigNoz pods not ready yet. Continuing..."
-    fi
-
-    if [[ "${TEMPORAL_ENABLED}" == "true" ]]; then
-        log_info "Waiting for all pods in temporal namespace..."
-        kubectl wait --for=condition=Ready pods --all \
-            -n temporal --timeout=300s 2>/dev/null || \
-            log_warn "Some Temporal pods not ready yet. Continuing..."
-    fi
-
-    log_info "=== Cluster Status ==="
-    echo ""
-    echo "Nodes:"
-    kubectl get nodes -o wide
-    echo ""
-    echo "Namespaces:"
-    kubectl get namespaces
-    echo ""
-    echo "Pods (all namespaces):"
-    kubectl get pods --all-namespaces
-    echo ""
-    echo "Services:"
-    kubectl get services --all-namespaces
 }
 
 # ---- Output Connection Info -------------------------------------------------
 output_connection_info() {
     log_info "=== Connection Information ==="
+
+    local traefik_svc_ip=""
+    traefik_svc_ip=$(kubectl get svc -n kube-system traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
+
     echo ""
     echo "================================================================"
-    echo "  FeatureSignals — Cluster Bootstrap Complete"
+    echo "  FeatureSignals — Bootstrap Complete"
     echo "================================================================"
     echo ""
-
-    # Get the Caddy ingress service IP
-    local caddy_ip
-    caddy_ip=$(kubectl get svc -n caddy-system -l app.kubernetes.io/name=caddy-ingress-controller \
-        -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
-
     echo "  k3s Node:        $(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
     echo "  Kubeconfig:      /etc/rancher/k3s/k3s.yaml"
-    echo ""
-    echo "  Caddy Ingress:   ${caddy_ip}"
-    echo ""
-    echo "  cert-manager:    Installed (ClusterIssuers: letsencrypt-prod, letsencrypt-staging)"
-    echo "  MetalLB:         Installed"
-    echo "  Caddy Ingress:   Installed"
-    echo "  PostgreSQL:      Installed"
-    echo "  SigNoz:          $([[ "${SIGNOZ_ENABLED}" == "true" ]] && echo "Installed" || echo "Disabled")"
-    echo "  Temporal:        $([[ "${TEMPORAL_ENABLED}" == "true" ]] && echo "Installed" || echo "Disabled")"
-    echo ""
-    echo "  Namespaces:"
-    echo "    - cert-manager"
-    echo "    - metallb-system"
-    echo "    - caddy-system"
-    echo "    - featuresignals-system"
-    echo "    - featuresignals-saas"
-    echo "    - signoz"
-    echo "    - temporal"
-    echo ""
-    echo "  Storage Box:     $([ -n "${HETZNER_STORAGE_BOX_URL:-}" ] && echo "Configured" || echo "Not configured")"
+    echo "  Traefik IP:      ${traefik_svc_ip}"
     echo ""
     echo "  DNS Records (set these in your DNS provider):"
-    echo "    A   api.featuresignals.com       → ${caddy_ip}"
-    echo "    A   app.featuresignals.com        → ${caddy_ip}"
-    echo "    A   *.preview.featuresignals.com  → ${caddy_ip}"
+    echo "    A   api.${CELL_SUBDOMAIN}    → ${traefik_svc_ip}"
+    echo "    A   ${CELL_SUBDOMAIN}        → ${traefik_svc_ip}"
     echo ""
-    echo "  To verify cluster health:"
+    echo "  To verify:"
+    echo "    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
     echo "    kubectl get nodes"
     echo "    kubectl get pods --all-namespaces"
     echo ""
-    echo "  To port-forward SigNoz dashboard:"
-    echo "    kubectl port-forward -n signoz svc/signoz-frontend 3301:3301"
-    echo "    # Open http://localhost:3301 (default admin/signoz)"
-    echo ""
-    echo "  To deploy the application:"
-    echo "    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
-    echo "    cd deploy/k8s && make app-deploy"
-    echo ""
+    echo "  Log file:        ${LOGFILE}"
     echo "================================================================"
 }
 
@@ -620,25 +624,23 @@ main() {
     echo "================================================================"
     echo "  FeatureSignals — k3s Bootstrap"
     echo "================================================================"
-    echo "  Target: Hetzner CPX42 (8 vCPU, 16 GB RAM, 160 GB NVMe)"
-    echo "  OS:     Ubuntu 24.04 (amd64)"
-    echo "  Budget: €29.38/month"
+    echo "  Cell Subdomain: ${CELL_SUBDOMAIN}"
+    echo "  Log file:       ${LOGFILE}"
     echo "================================================================"
     echo ""
 
     prereq_check
-
     install_k3s
+    wait_for_node
     install_helm
-    setup_namespaces
     install_cert_manager
-    install_metallb
-    install_caddy_ingress
     install_postgresql
-    setup_storage_box
-    install_signoz
-    install_temporal
-    wait_for_ready
+    deploy_featuresignals_api
+    deploy_featuresignals_dashboard
+    configure_traefik
+    deploy_node_exporter
+    deploy_edge_worker
+    verify_pods
     output_connection_info
 
     log_info "Bootstrap complete!"

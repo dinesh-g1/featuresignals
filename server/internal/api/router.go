@@ -143,6 +143,7 @@ func NewRouter(
 	integrationH := handlers.NewIntegrationHandler(store, logger)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments)
+	cellRouterMw := middleware.NewCellRouter(store)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
@@ -281,12 +282,14 @@ func NewRouter(
 		// Evaluation API (authenticated via API key, tier rate limited)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.CacheControl("no-store"))
+			r.Use(cellRouterMw.Middleware)
 			r.Post("/evaluate", evalH.Evaluate)
 			r.Post("/evaluate/bulk", evalH.BulkEvaluate)
 			r.Get("/client/{envKey}/flags", evalH.ClientFlags)
 			r.Get("/stream/{envKey}", evalH.Stream)
 			r.Post("/track", metricsH.TrackImpression)
 		})
+
 
 		// Agent API endpoints (authenticated via API key, stricter rate limits)
 		// These endpoints are optimized for AI agent programmatic access with
@@ -536,9 +539,20 @@ func NewRouter(
 	} else {
 		logger.Warn("HETZNER_API_TOKEN not set — cell provisioning will be unavailable")
 	}
-	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, queueClient, eventBus, logger)
+	var sshAccess *provision.SSHAccess
+	if cfg.SSHPrivateKeyPath != "" {
+		var err error
+		sshAccess, err = provision.NewSSHAccess(cfg.SSHPrivateKeyPath,
+			provision.WithSSHUser(cfg.SSHUser),
+			provision.WithSSHTimeout(cfg.SSHTimeout),
+		)
+		if err != nil {
+			logger.Warn("failed to create SSH access for pods endpoint", "error", err)
+		}
+	}
+	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, queueClient, eventBus, sshAccess, logger)
 	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
-	opsSystemH := handlers.NewOpsSystemHandler(store, logger)
+	opsSystemH := handlers.NewOpsSystemHandler(store, nil, logger)
 	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
 	opsEnvVarsH := handlers.NewOpsEnvVarsHandler(store, logger)
 	opsBackupsH := handlers.NewOpsBackupsHandler(store, logger)
@@ -578,6 +592,7 @@ func NewRouter(
 		r.Get("/cells/{id}/metrics", opsCellsH.Metrics)
 		r.Get("/cells/{id}/metrics/current", opsCellsH.MetricsCurrent)
 		r.Get("/cells/{id}/provision-status", opsCellsH.ProvisionStatus)
+		r.Get("/cells/{id}/pods", opsCellsH.Pods)
 		r.Post("/cells/{id}/scale", opsCellsH.Scale)
 		r.Post("/cells/{id}/drain", opsCellsH.Drain)
 		r.Post("/cells/{id}/migrate", opsCellsH.MigrateTenants)
@@ -612,19 +627,7 @@ func NewRouter(
 		r.Get("/system/health", opsSystemH.Health)
 		r.Get("/system/services", opsSystemH.Services)
 
-		// ── Legacy Ops Routes (deprecated, moving to new structure) ──
-		// Environments
-		r.Get("/environments", opsH.ListEnvironments)
-		r.Get("/environments/{id}", opsH.GetEnvironment)
-		r.Patch("/environments/{id}", opsH.UpdateEnvironment)
-		r.Get("/environments/vps/{vps_id}", opsH.GetEnvironment)
-		r.Post("/environments/provision", opsH.ProvisionEnvironment)
-		r.Post("/environments/{id}/decommission", opsH.DecommissionEnvironment)
-		r.Post("/environments/{id}/maintenance", opsH.ToggleMaintenance)
-		r.Post("/environments/{id}/debug", opsH.ToggleDebug)
-		r.Post("/environments/{id}/restart", opsH.RestartEnvironment)
-
-		// Licenses
+		// ── Licenses ────────────────────────────────────────────
 		r.Get("/licenses", opsH.ListLicenses)
 		r.Get("/licenses/{id}", opsH.GetLicense)
 		r.Get("/licenses/org/{org_id}", opsH.GetLicenseByOrg)
@@ -633,22 +636,7 @@ func NewRouter(
 		r.Post("/licenses/{id}/quota-override", opsH.OverrideLicenseQuota)
 		r.Post("/licenses/{id}/reset-usage", opsH.ResetLicenseUsage)
 
-		// Sandboxes
-		r.Get("/sandboxes", opsH.ListSandboxes)
-		r.Post("/sandboxes", opsH.CreateSandbox)
-		r.Post("/sandboxes/{id}/renew", opsH.RenewSandbox)
-		r.Post("/sandboxes/{id}/decommission", opsH.DecommissionSandbox)
-
-		// Financial
-		r.Get("/financial/costs/daily", opsH.GetCostDaily)
-		r.Get("/financial/costs/monthly", opsH.GetCostMonthly)
-		r.Get("/financial/summary", opsH.GetFinancialSummary)
-
-		// Customers
-		r.Get("/customers", opsH.ListCustomers)
-		r.Get("/customers/{org_id}", opsH.GetCustomerDetail)
-
-		// Ops Users
+		// ── Ops Users ──────────────────────────────────────────
 		r.Get("/users", opsH.ListOpsUsers)
 		r.Get("/users/{id}", opsH.GetOpsUser)
 		r.Get("/users/me", opsH.GetMe)

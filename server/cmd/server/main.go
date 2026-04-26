@@ -48,6 +48,7 @@ import (
 	"github.com/featuresignals/server/internal/provision/hetzner"
 	"github.com/featuresignals/server/internal/queue"
 	"github.com/featuresignals/server/internal/scheduler"
+	"github.com/featuresignals/server/internal/service"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
@@ -123,6 +124,25 @@ func main() {
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
 	slog.SetDefault(logger)
+
+	// ─── Config Validation ──────────────────────────────────────────
+	if cfg.HetznerAPIToken != "" {
+		logger.Info("Hetzner API token configured — will test on first provision")
+	}
+	if cfg.SSHPrivateKeyPath != "" {
+		if _, err := os.Stat(cfg.SSHPrivateKeyPath); err != nil {
+			logger.Warn("SSH private key not found at configured path", "path", cfg.SSHPrivateKeyPath, "error", err)
+		} else {
+			logger.Info("SSH private key found", "path", cfg.SSHPrivateKeyPath)
+		}
+	}
+	if cfg.RedisAddr != "" {
+		logger.Info("Redis configured at", "addr", cfg.RedisAddr)
+	}
+	if cfg.DatabaseURL == "" {
+		logger.Error("DATABASE_URL is required")
+		os.Exit(1)
+	}
 
 	// OpenTelemetry (async, non-blocking -- safe to init before anything else)
 	var otelShutdown func(context.Context) error
@@ -477,7 +497,7 @@ func main() {
 		}
 		provisioner = hetzner.NewHetznerProvisioner(hetznerCfg, logger)
 
-		queueHandler := queue.NewHandler(store, provisioner, eventBus, logger)
+		queueHandler := queue.NewHandler(store, provisioner, eventBus, logger, cfg)
 		provWorker = asynq.NewServer(
 			asynq.RedisClientOpt{Addr: cfg.RedisAddr},
 			asynq.Config{Concurrency: cfg.ProvisionQueueConcurrency},
@@ -499,6 +519,24 @@ func main() {
 		)
 	} else {
 		logger.Warn("REDIS_ADDR or HETZNER_API_TOKEN not set — async provisioning disabled")
+	}
+
+	// Cell health heartbeat — runs every 30 seconds
+	if provisioner != nil && cfg.SSHPrivateKeyPath != "" {
+		sshAccess, err := provision.NewSSHAccess(cfg.SSHPrivateKeyPath,
+			provision.WithSSHUser(cfg.SSHUser),
+			provision.WithSSHTimeout(cfg.SSHTimeout),
+		)
+		if err != nil {
+			logger.Warn("failed to create SSH access for heartbeat, cell health monitoring disabled", "error", err)
+		} else {
+			heartbeatCtx, heartbeatCancel := context.WithCancel(context.Background())
+			_ = heartbeatCancel // silence unused warning; call during shutdown
+			go service.Run(heartbeatCtx, store, sshAccess, logger, 30*time.Second)
+			logger.Info("cell health heartbeat started", "interval", "30s")
+		}
+	} else {
+		logger.Warn("SSH_PRIVATE_KEY_PATH not set — cell health heartbeat disabled")
 	}
 
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{

@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -274,4 +276,12 @@ func (h *OpsBackupsHandler) Status(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, status)
+}
+
+func generateShortID() string {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		return fmt.Sprintf("fallback-%d", time.Now().UnixNano())
+	}
+	return fmt.Sprintf("%x", b)
 }

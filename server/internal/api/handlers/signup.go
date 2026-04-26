@@ -269,6 +269,20 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 	// Clean up pending registration
 	_ = h.store.DeletePendingRegistration(ctx, pr.ID)
 
+	// ─── Auto-Assign Tenant to Cell ───────────────────────────────
+	// After tenant creation, find the cell with the fewest tenants
+	// and assign this tenant to it for balanced capacity distribution.
+	if registry, ok := h.store.(domain.TenantRegistry); ok {
+		cell, cellErr := registry.GetCellWithFewestTenants(ctx)
+		if cellErr == nil && cell != nil {
+			if assignErr := registry.AssignCell(ctx, org.ID, cell.ID); assignErr != nil {
+				log.Warn("failed to assign tenant to cell", "tenant_id", org.ID, "cell_id", cell.ID, "error", assignErr)
+			} else {
+				log.Info("tenant auto-assigned to cell", "tenant_id", org.ID, "cell_id", cell.ID, "cell_name", cell.Name)
+			}
+		}
+	}
+
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), user.Email, org.DataRegion)
 	if err != nil {
 		log.Error("token generation failed", "error", err)

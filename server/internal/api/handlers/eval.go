@@ -19,6 +19,22 @@ type RulesetCache interface {
 	LoadRuleset(ctx context.Context, projectID, envID string) (*domain.Ruleset, error)
 }
 
+// NewRulesetCache creates an empty ruleset cache for standalone edge-worker usage.
+// The edge worker loads rulesets on demand via LoadRuleset.
+func NewRulesetCache() RulesetCache {
+	return &noopRulesetCache{}
+}
+
+// noopRulesetCache is a minimal RulesetCache implementation with no backing store.
+// It always returns nil from GetRuleset and error from LoadRuleset.
+type noopRulesetCache struct{}
+
+func (n *noopRulesetCache) GetRuleset(_ string) *domain.Ruleset { return nil }
+
+func (n *noopRulesetCache) LoadRuleset(_ context.Context, _, _ string) (*domain.Ruleset, error) {
+	return nil, fmt.Errorf("edge-worker: no backing store configured")
+}
+
 // StreamServer abstracts the SSE server for testability.
 type StreamServer interface {
 	HandleStream(w http.ResponseWriter, r *http.Request, envID string)

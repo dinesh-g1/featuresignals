@@ -71,16 +71,18 @@ type OpsCellsHandler struct {
 	provisionService *service.ProvisionService
 	queueClient      *queue.Client
 	eventBus         *provision.EventBus
+	sshAccess        *provision.SSHAccess
 	logger           *slog.Logger
 }
 
 // NewOpsCellsHandler creates a new ops cells handler.
-func NewOpsCellsHandler(store domain.Store, provisionService *service.ProvisionService, queueClient *queue.Client, eventBus *provision.EventBus, logger *slog.Logger) *OpsCellsHandler {
+func NewOpsCellsHandler(store domain.Store, provisionService *service.ProvisionService, queueClient *queue.Client, eventBus *provision.EventBus, sshAccess *provision.SSHAccess, logger *slog.Logger) *OpsCellsHandler {
 	return &OpsCellsHandler{
 		store:            store,
 		provisionService: provisionService,
 		queueClient:      queueClient,
 		eventBus:         eventBus,
+		sshAccess:        sshAccess,
 		logger:           logger,
 	}
 }
@@ -279,6 +281,131 @@ func (h *OpsCellsHandler) ProvisionStatus(w http.ResponseWriter, r *http.Request
 func writeSSEEvent(w io.Writer, evt *domain.ProvisionEvent) {
 	data, _ := json.Marshal(evt)
 	fmt.Fprintf(w, "id: %s\nevent: %s\ndata: %s\n\n", evt.ID, evt.EventType, string(data))
+}
+
+// Pods handles GET /api/v1/ops/cells/{id}/pods
+// It returns a list of Kubernetes pods running in the cell's featuresignals namespace.
+func (h *OpsCellsHandler) Pods(w http.ResponseWriter, r *http.Request) {
+	cellID := chi.URLParam(r, "id")
+	logger := h.logger.With("handler", "ops_cell_pods", "cell_id", cellID)
+
+	cell, err := h.store.GetCell(r.Context(), cellID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "cell not found")
+			return
+		}
+		logger.Error("failed to get cell", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	if cell.PublicIP == "" {
+		httputil.JSON(w, http.StatusOK, []PodStatus{})
+		return
+	}
+
+	// SSH into the cell and get pods
+	if h.sshAccess == nil {
+		httputil.Error(w, http.StatusServiceUnavailable, "SSH not configured")
+		return
+	}
+
+	output, err := h.sshAccess.Execute(r.Context(), cell.PublicIP, "k3s kubectl get pods -n featuresignals -o json")
+	if err != nil {
+		logger.Error("failed to execute kubectl get pods", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to get pod status")
+		return
+	}
+
+	var podList struct {
+		Items []struct {
+			Metadata struct {
+				Name      string            `json:"name"`
+				Labels    map[string]string `json:"labels"`
+				Namespace string            `json:"namespace"`
+			} `json:"metadata"`
+			Status struct {
+				Phase             string `json:"phase"`
+				HostIP            string `json:"hostIP"`
+				PodIP             string `json:"podIP"`
+				StartTime         string `json:"startTime"`
+				ContainerStatuses  []struct {
+					Name         string `json:"name"`
+					Ready        bool   `json:"ready"`
+					RestartCount int    `json:"restartCount"`
+					State        struct {
+						Running    *struct{} `json:"running"`
+						Waiting    *struct {
+							Reason string `json:"reason"`
+						} `json:"waiting"`
+						Terminated *struct {
+							Reason   string `json:"reason"`
+							ExitCode int    `json:"exitCode"`
+						} `json:"terminated"`
+					} `json:"state"`
+				} `json:"containerStatuses"`
+			} `json:"status"`
+		} `json:"items"`
+	}
+
+	if err := json.Unmarshal([]byte(output), &podList); err != nil {
+		logger.Error("failed to parse kubectl output", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "failed to parse pod data")
+		return
+	}
+
+	pods := make([]PodStatus, 0, len(podList.Items))
+	for _, item := range podList.Items {
+		pod := PodStatus{
+			Name:      item.Metadata.Name,
+			Namespace: item.Metadata.Namespace,
+			Phase:     item.Status.Phase,
+			HostIP:    item.Status.HostIP,
+			PodIP:     item.Status.PodIP,
+		}
+		for _, cs := range item.Status.ContainerStatuses {
+			container := ContainerStatus{
+				Name:         cs.Name,
+				Ready:        cs.Ready,
+				RestartCount: cs.RestartCount,
+			}
+			if cs.State.Running != nil {
+				container.State = "running"
+			} else if cs.State.Waiting != nil {
+				container.State = "waiting"
+				container.Reason = cs.State.Waiting.Reason
+			} else if cs.State.Terminated != nil {
+				container.State = "terminated"
+				container.Reason = cs.State.Terminated.Reason
+				container.ExitCode = cs.State.Terminated.ExitCode
+			}
+			pod.Containers = append(pod.Containers, container)
+		}
+		pods = append(pods, pod)
+	}
+
+	httputil.JSON(w, http.StatusOK, pods)
+}
+
+// PodStatus represents a Kubernetes pod summary for the ops portal.
+type PodStatus struct {
+	Name       string            `json:"name"`
+	Namespace  string            `json:"namespace"`
+	Phase      string            `json:"phase"`
+	HostIP     string            `json:"host_ip,omitempty"`
+	PodIP      string            `json:"pod_ip,omitempty"`
+	Containers []ContainerStatus `json:"containers,omitempty"`
+}
+
+// ContainerStatus represents a container within a pod.
+type ContainerStatus struct {
+	Name         string `json:"name"`
+	State        string `json:"state"`
+	Ready        bool   `json:"ready"`
+	RestartCount int    `json:"restart_count"`
+	Reason       string `json:"reason,omitempty"`
+	ExitCode     int    `json:"exit_code,omitempty"`
 }
 
 // Delete handles DELETE /api/v1/ops/cells/{id}

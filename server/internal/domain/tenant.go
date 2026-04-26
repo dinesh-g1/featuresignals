@@ -17,6 +17,7 @@ type Tenant struct {
 	Schema    string    `json:"schema"`    // PostgreSQL schema: "tenant_<short_id>"
 	Tier      string    `json:"tier"`      // "free", "pro", "enterprise"
 	Status    string    `json:"status"`    // "active", "suspended", "decommissioned"
+	CellID    string    `json:"cell_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -59,6 +60,15 @@ type TenantRegistry interface {
 
 	// Decommission removes a tenant and its schema.
 	Decommission(ctx context.Context, tenantID string) error
+
+	// AssignCell assigns a tenant to a specific cell.
+	AssignCell(ctx context.Context, tenantID, cellID string) error
+
+	// LookupByCell returns all tenants assigned to the given cell.
+	LookupByCell(ctx context.Context, cellID string) ([]*Tenant, error)
+
+	// GetCellWithFewestTenants returns the cell with the fewest assigned tenants.
+	GetCellWithFewestTenants(ctx context.Context) (*Cell, error)
 }
 
 // TenantFilter specifies search and pagination for tenant listing.
@@ -66,6 +76,7 @@ type TenantFilter struct {
 	Search string `json:"search,omitempty"`
 	Tier   string `json:"tier,omitempty"`
 	Status string `json:"status,omitempty"`
+	CellID string `json:"cell_id,omitempty"`
 	Limit  int    `json:"limit,omitempty"`
 	Offset int    `json:"offset,omitempty"`
 }

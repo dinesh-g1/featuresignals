@@ -16,10 +16,8 @@ import (
 // ─── Test Helpers ─────────────────────────────────────────────────────
 
 type opsMockStore struct {
-	envs      map[string]*domain.CustomerEnvironment
 	licenses  map[string]*domain.License
 	opsUsers  map[string]*domain.OpsUser
-	sandboxes map[string]*domain.SandboxEnvironment
 	orgs      map[string]*domain.Organization
 	users     map[string]*domain.User
 	costs     []domain.OrgCostDaily
@@ -28,80 +26,14 @@ type opsMockStore struct {
 
 func newOpsMockStore() *opsMockStore {
 	return &opsMockStore{
-		envs:      make(map[string]*domain.CustomerEnvironment),
 		licenses:  make(map[string]*domain.License),
 		opsUsers:  make(map[string]*domain.OpsUser),
-		sandboxes: make(map[string]*domain.SandboxEnvironment),
 		orgs:      make(map[string]*domain.Organization),
 		users:     make(map[string]*domain.User),
 	}
 }
 
-func (m *opsMockStore) ListCustomerEnvironments(_ context.Context, status, deploymentModel, region, search string, limit, offset int) ([]domain.CustomerEnvironment, int, error) {
-	var result []domain.CustomerEnvironment
-	for _, e := range m.envs {
-		if status != "" && e.Status != status {
-			continue
-		}
-		if deploymentModel != "" && e.DeploymentModel != deploymentModel {
-			continue
-		}
-		result = append(result, *e)
-	}
-	if offset >= len(result) {
-		return nil, len(result), nil
-	}
-	end := offset + limit
-	if end > len(result) {
-		end = len(result)
-	}
-	return result[offset:end], len(result), nil
-}
 
-func (m *opsMockStore) GetCustomerEnvironment(_ context.Context, id string) (*domain.CustomerEnvironment, error) {
-	if e, ok := m.envs[id]; ok {
-		return e, nil
-	}
-	return nil, domain.ErrNotFound
-}
-
-func (m *opsMockStore) GetCustomerEnvironmentByVPSID(_ context.Context, vpsID string) (*domain.CustomerEnvironment, error) {
-	for _, e := range m.envs {
-		if e.VPSID == vpsID {
-			return e, nil
-		}
-	}
-	return nil, domain.ErrNotFound
-}
-
-func (m *opsMockStore) CreateCustomerEnvironment(_ context.Context, env *domain.CustomerEnvironment) error {
-	m.envs[env.ID] = env
-	return nil
-}
-
-func (m *opsMockStore) UpdateCustomerEnvironment(_ context.Context, id string, updates map[string]any) error {
-	if e, ok := m.envs[id]; ok {
-		for k, v := range updates {
-			switch k {
-			case "status":
-				e.Status = v.(string)
-			case "maintenance_mode":
-				e.MaintenanceMode = v.(bool)
-			case "maintenance_reason":
-				e.MaintenanceReason = v.(string)
-			case "debug_mode":
-				e.DebugMode = v.(bool)
-			}
-		}
-		return nil
-	}
-	return domain.ErrNotFound
-}
-
-func (m *opsMockStore) DeleteCustomerEnvironment(_ context.Context, id string) error {
-	delete(m.envs, id)
-	return nil
-}
 
 func (m *opsMockStore) ListLicenses(_ context.Context, plan, deploymentModel, search string) ([]domain.License, int, error) {
 	var result []domain.License
@@ -222,67 +154,8 @@ func (m *opsMockStore) DeleteOpsUser(_ context.Context, id string) error {
 	return nil
 }
 
-func (m *opsMockStore) ListSandboxes(_ context.Context, status, ownerID string) ([]domain.SandboxEnvironment, int, error) {
-	var result []domain.SandboxEnvironment
-	for _, s := range m.sandboxes {
-		if status != "" && s.Status != status {
-			continue
-		}
-		if ownerID != "" && s.OwnerUserID != ownerID {
-			continue
-		}
-		result = append(result, *s)
-	}
-	return result, len(result), nil
-}
-
-func (m *opsMockStore) CreateSandbox(_ context.Context, s *domain.SandboxEnvironment) error {
-	m.sandboxes[s.ID] = s
-	return nil
-}
-
-func (m *opsMockStore) RenewSandbox(_ context.Context, id string) (*domain.SandboxEnvironment, error) {
-	if s, ok := m.sandboxes[id]; ok {
-		if s.RenewalCount >= s.MaxRenewals {
-			return nil, domain.ErrNotFound
-		}
-		s.ExpiresAt = s.ExpiresAt.Add(30 * 24 * time.Hour)
-		s.RenewalCount++
-		return s, nil
-	}
-	return nil, domain.ErrNotFound
-}
-
-func (m *opsMockStore) DecommissionSandbox(_ context.Context, id string) error {
-	if s, ok := m.sandboxes[id]; ok {
-		s.Status = "decommissioned"
-		s.DecommissionedAt = timePtr(time.Now())
-		return nil
-	}
-	return domain.ErrNotFound
-}
-
-func (m *opsMockStore) GetExpiringSandboxes(_ context.Context, days int) ([]domain.SandboxEnvironment, error) {
-	return nil, nil
-}
-
 func (m *opsMockStore) ListOrgCostDaily(_ context.Context, orgID, startDate, endDate string) ([]domain.OrgCostDaily, error) {
 	return m.costs, nil
-}
-
-func (m *opsMockStore) ListOrgCostMonthly(_ context.Context, month string) ([]domain.OrgCostMonthlySummary, error) {
-	return nil, nil
-}
-
-func (m *opsMockStore) GetFinancialSummary(_ context.Context) (*domain.FinancialSummary, error) {
-	return &domain.FinancialSummary{
-		TotalMRR:       500000,
-		TotalCost:      50000,
-		TotalMargin:    90,
-		MarginByTier:   map[string]*domain.TierFinancials{},
-		TopCustomers:   []domain.CustomerSummary{},
-		NegativeMargin: []domain.CustomerSummary{},
-	}, nil
 }
 
 func (m *opsMockStore) ListOpsAuditLogs(_ context.Context, action, targetType, userID, startDate, endDate string, limit, offset int) ([]domain.OpsAuditLog, int, error) {
@@ -292,17 +165,6 @@ func (m *opsMockStore) ListOpsAuditLogs(_ context.Context, action, targetType, u
 func (m *opsMockStore) CreateOpsAuditLog(_ context.Context, log *domain.OpsAuditLog) error {
 	m.auditLogs = append(m.auditLogs, *log)
 	return nil
-}
-
-func (m *opsMockStore) ListCustomers(_ context.Context, plan, deploymentModel, search string) ([]domain.CustomerSummary, int, error) {
-	return nil, 0, nil
-}
-
-func (m *opsMockStore) GetCustomerDetail(_ context.Context, orgID string) (*domain.CustomerDetail, error) {
-	if org, ok := m.orgs[orgID]; ok {
-		return &domain.CustomerDetail{Org: *org}, nil
-	}
-	return nil, domain.ErrNotFound
 }
 
 func (m *opsMockStore) CreateOrganization(_ context.Context, org *domain.Organization) error {
@@ -398,124 +260,13 @@ func timePtr(t time.Time) *time.Time { return &t }
 
 // ─── Tests ────────────────────────────────────────────────────────────
 
-func TestOpsHandler_ListEnvironments(t *testing.T) {
-	store := newOpsMockStore()
-	store.envs["env-1"] = &domain.CustomerEnvironment{
-		ID: "env-1", OrgID: "org-1", DeploymentModel: "isolated",
-		Status: "active", Subdomain: "acme.featuresignals.com",
-	}
-	handler := NewOpsHandler(store, NoopLifecycle())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/environments", nil)
-	w := httptest.NewRecorder()
-	handler.ListEnvironments(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
 
-	var resp struct {
-		Environments []domain.CustomerEnvironment `json:"environments"`
-		Total        int                          `json:"total"`
-	}
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-	if resp.Total != 1 {
-		t.Errorf("expected total 1, got %d", resp.Total)
-	}
-	if len(resp.Environments) != 1 {
-		t.Errorf("expected 1 environment, got %d", len(resp.Environments))
-	}
-}
 
-func TestOpsHandler_GetEnvironment_NotFound(t *testing.T) {
-	store := newOpsMockStore()
-	handler := NewOpsHandler(store, NoopLifecycle())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/environments/nonexistent", nil)
-	w := httptest.NewRecorder()
 
-	// Simulate chi URL param
-	ctx := setChiRouteParam(req.Context(), "id", "nonexistent")
-	handler.GetEnvironment(w, req.WithContext(ctx))
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
-	}
-}
-
-func TestOpsHandler_ProvisionEnvironment_Validation(t *testing.T) {
-	store := newOpsMockStore()
-	handler := NewOpsHandler(store, NoopLifecycle())
-
-	tests := []struct {
-		name       string
-		body       string
-		wantStatus int
-	}{
-		{
-			name:       "empty body",
-			body:       `{}`,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "missing org_id",
-			body:       `{"customer_name":"test"}`,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "missing customer_name",
-			body:       `{"org_id":"org-1"}`,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "valid request",
-			body:       `{"customer_name":"acme","org_id":"org-1","vps_type":"cx32","region":"fsn1","plan":"enterprise"}`,
-			wantStatus: http.StatusAccepted,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/ops/environments/provision", bytes.NewBufferString(tc.body))
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-			handler.ProvisionEnvironment(w, req)
-
-			if w.Code != tc.wantStatus {
-				t.Errorf("expected %d, got %d: %s", tc.wantStatus, w.Code, w.Body.String())
-			}
-		})
-	}
-}
-
-func TestOpsHandler_ToggleMaintenance(t *testing.T) {
-	store := newOpsMockStore()
-	store.envs["env-1"] = &domain.CustomerEnvironment{
-		ID: "env-1", OrgID: "org-1", Status: "active",
-	}
-	handler := NewOpsHandler(store, NoopLifecycle())
-
-	body := `{"enabled": true, "reason": "Database migration"}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/ops/environments/env-1/maintenance", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx := setChiRouteParam(req.Context(), "id", "env-1")
-	w := httptest.NewRecorder()
-	handler.ToggleMaintenance(w, req.WithContext(ctx))
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
-
-	var env domain.CustomerEnvironment
-	if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-	if !env.MaintenanceMode {
-		t.Error("expected maintenance mode to be enabled")
-	}
-}
 
 func TestOpsHandler_CreateLicense_Validation(t *testing.T) {
 	store := newOpsMockStore()
@@ -585,72 +336,9 @@ func TestOpsHandler_RevokeLicense(t *testing.T) {
 	}
 }
 
-func TestOpsHandler_GetFinancialSummary(t *testing.T) {
-	store := newOpsMockStore()
-	handler := NewOpsHandler(store, NoopLifecycle())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/ops/financial/summary", nil)
-	w := httptest.NewRecorder()
-	handler.GetFinancialSummary(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
-	}
 
-	var summary domain.FinancialSummary
-	if err := json.Unmarshal(w.Body.Bytes(), &summary); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-	if summary.TotalMRR != 500000 {
-		t.Errorf("expected MRR 500000, got %d", summary.TotalMRR)
-	}
-	if summary.TotalMargin != 90 {
-		t.Errorf("expected margin 90, got %.0f", summary.TotalMargin)
-	}
-}
-
-func TestOpsHandler_CreateSandbox_Validation(t *testing.T) {
-	store := newOpsMockStore()
-	store.users["user-1"] = &domain.User{
-		ID: "user-1", Email: "test@featuresignals.com", Name: "Test User",
-	}
-	store.opsUsers["ops-1"] = &domain.OpsUser{
-		ID: "ops-1", UserID: "user-1", OpsRole: "engineer",
-		IsActive: true, MaxSandboxEnvs: 2,
-	}
-	handler := NewOpsHandler(store, NoopLifecycle())
-
-	tests := []struct {
-		name       string
-		body       string
-		wantStatus int
-	}{
-		{
-			name:       "empty body",
-			body:       `{}`,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "missing purpose",
-			body:       `{}`,
-			wantStatus: http.StatusBadRequest,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/ops/sandboxes", bytes.NewBufferString(tc.body))
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
-			handler.CreateSandbox(w, req)
-
-			// Should be 400 for empty body (no purpose)
-			if w.Code != http.StatusBadRequest {
-				t.Errorf("expected %d, got %d: %s", http.StatusBadRequest, w.Code, w.Body.String())
-			}
-		})
-	}
-}
 
 func TestOpsHandler_ListOpsAuditLogs(t *testing.T) {
 	store := newOpsMockStore()

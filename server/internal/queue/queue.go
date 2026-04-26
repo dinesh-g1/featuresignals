@@ -15,12 +15,13 @@ const (
 
 // ProvisionCellPayload is enqueued when a new cell provisioning is requested.
 type ProvisionCellPayload struct {
-	CellID     string `json:"cell_id"`
-	Name       string `json:"name"`
-	Provider   string `json:"provider"`
-	ServerType string `json:"server_type"`
-	Region     string `json:"region"`
-	UserData   string `json:"user_data,omitempty"`
+	CellID           string `json:"cell_id"`
+	Name             string `json:"name"`
+	Provider         string `json:"provider"`
+	ServerType       string `json:"server_type"`
+	Region           string `json:"region"`
+	UserData         string `json:"user_data,omitempty"`
+	PostgresPassword string `json:"postgres_password,omitempty"`
 }
 
 // DeprovisionCellPayload is enqueued when a cell should be destroyed.

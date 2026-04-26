@@ -11,19 +11,27 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+// ─── Interfaces ──────────────────────────────────────────────────────
+
+// Pinger is the minimal interface for health-checking a backing service.
+// Both *redis.Client and test mocks satisfy this interface.
+type Pinger interface {
+	Ping(ctx context.Context) error
+}
+
 // ─── Domain Types ─────────────────────────────────────────────────────
 
 // SystemHealth holds the overall system health information for the ops portal.
 type SystemHealth struct {
-	Status      string            `json:"status"` // healthy, degraded, down
-	Uptime      string            `json:"uptime"`
-	Version     string            `json:"version,omitempty"`
-	GoVersion   string            `json:"go_version,omitempty"`
-	NumCPU      int               `json:"num_cpu"`
-	Goroutines  int               `json:"goroutines"`
-	Services    []ServiceStatus   `json:"services"`
-	Resources   ResourceUsage     `json:"resource_usage"`
-	CheckedAt   time.Time         `json:"checked_at"`
+	Status      string          `json:"status"` // healthy, degraded, down
+	Uptime      string          `json:"uptime"`
+	Version     string          `json:"version,omitempty"`
+	GoVersion   string          `json:"go_version,omitempty"`
+	NumCPU      int             `json:"num_cpu"`
+	Goroutines  int             `json:"goroutines"`
+	Services    []ServiceStatus `json:"services"`
+	Resources   ResourceUsage   `json:"resource_usage"`
+	CheckedAt   time.Time       `json:"checked_at"`
 }
 
 // ServiceStatus holds the status of a single system service.
@@ -45,79 +53,58 @@ type ResourceUsage struct {
 	NumGC              uint32  `json:"num_gc"`
 }
 
-
-
 // ─── Handler ──────────────────────────────────────────────────────────
 
 // OpsSystemHandler serves system health endpoints for the ops portal.
 type OpsSystemHandler struct {
-	store   domain.Store
-	started time.Time
-	logger  *slog.Logger
+	store       domain.Store
+	redisClient Pinger
+	started     time.Time
+	logger      *slog.Logger
 }
 
 // NewOpsSystemHandler creates a new ops system handler.
-func NewOpsSystemHandler(store domain.Store, logger *slog.Logger) *OpsSystemHandler {
+// Pass nil for redisClient if Redis is not configured.
+func NewOpsSystemHandler(store domain.Store, redisClient Pinger, logger *slog.Logger) *OpsSystemHandler {
 	return &OpsSystemHandler{
-		store:   store,
-		started: time.Now(),
-		logger:  logger,
+		store:       store,
+		redisClient: redisClient,
+		started:     time.Now(),
+		logger:      logger,
 	}
 }
 
 // Health handles GET /api/v1/ops/system/health
 func (h *OpsSystemHandler) Health(w http.ResponseWriter, r *http.Request) {
-	log := h.logger.With("handler", "ops_system_health")
+	logger := h.logger.With("handler", "ops_system_health")
+	ctx := r.Context()
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	overall := "healthy"
-	dbStatus := "healthy"
-	var dbLatency time.Duration
-	var dbErr error
-
-	// Check database connectivity with a short timeout.
-	dbCtx, dbCancel := context.WithTimeout(r.Context(), 2*time.Second)
-	defer dbCancel()
-
-	dbStart := time.Now()
-	// Health check: perform a lightweight database query.
-	registry, ok := h.store.(domain.TenantRegistry)
-	if ok {
-		if _, _, err := registry.List(dbCtx, domain.TenantFilter{Limit: 1}); err != nil {
-			dbStatus = "down"
-			dbErr = err
-			overall = "degraded"
-			log.Warn("database health check failed", "error", err)
-		}
-	}
-	dbLatency = time.Since(dbStart)
-
-	services := []ServiceStatus{
-		{
-			Name:    "database",
-			Status:  dbStatus,
-			Latency: dbLatency.Round(time.Microsecond).String(),
-		},
-		{
-			Name:   "api",
-			Status: "healthy",
-		},
-	}
-
-	if dbErr != nil {
-		services[0].Message = dbErr.Error()
-	}
-
-	health := SystemHealth{
-		Status:     overall,
-		Uptime:     time.Since(h.started).Round(time.Second).String(),
-		Version:    "unknown", // version.Version would be imported in real code
+	health := struct {
+		Status   string `json:"status"`
+		Database string `json:"database"`
+		Redis    string `json:"redis,omitempty"`
+		Cells    struct {
+			Total        int `json:"total"`
+			Healthy      int `json:"healthy"`
+			Degraded     int `json:"degraded"`
+			Down         int `json:"down"`
+			Provisioning int `json:"provisioning"`
+		} `json:"cells"`
+		Uptime     string        `json:"uptime"`
+		Version    string        `json:"version,omitempty"`
+		GoVersion  string        `json:"go_version,omitempty"`
+		NumCPU     int           `json:"num_cpu"`
+		Goroutines int           `json:"goroutines"`
+		Resources  ResourceUsage `json:"resource_usage"`
+		CheckedAt  time.Time     `json:"checked_at"`
+	}{
 		GoVersion:  runtime.Version(),
 		NumCPU:     runtime.NumCPU(),
 		Goroutines: runtime.NumGoroutine(),
-		Services:   services,
+		Uptime:     time.Since(h.started).Round(time.Second).String(),
 		Resources: ResourceUsage{
 			MemoryAllocatedMB: float64(m.Alloc) / 1024 / 1024,
 			MemoryTotalMB:     float64(m.TotalAlloc) / 1024 / 1024,
@@ -130,11 +117,62 @@ func (h *OpsSystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 		CheckedAt: time.Now().UTC(),
 	}
 
-	statusCode := http.StatusOK
-	if overall == "degraded" {
-		statusCode = http.StatusServiceUnavailable
+	// Check database via lightweight query.
+	dbCtx, dbCancel := context.WithTimeout(ctx, 2*time.Second)
+	defer dbCancel()
+
+	if registry, ok := h.store.(domain.TenantRegistry); ok {
+		if _, _, err := registry.List(dbCtx, domain.TenantFilter{Limit: 1}); err != nil {
+			health.Database = "unhealthy"
+			health.Status = "degraded"
+			logger.Error("database health check failed", "error", err)
+		} else {
+			health.Database = "healthy"
+		}
+	} else {
+		health.Database = "healthy"
 	}
-	if overall == "down" {
+
+	// Check Redis (optional)
+	if h.redisClient != nil {
+		if err := h.redisClient.Ping(ctx); err != nil {
+			health.Redis = "unhealthy"
+			if health.Status == "" {
+				health.Status = "degraded"
+			}
+		} else {
+			health.Redis = "healthy"
+		}
+	}
+
+	// Get cell health counts
+	cells, err := h.store.ListCells(ctx, domain.CellFilter{Limit: 1000})
+	if err != nil {
+		logger.Error("failed to list cells for health", "error", err)
+	} else {
+		health.Cells.Total = len(cells)
+		for _, c := range cells {
+			switch c.Status {
+			case "running":
+				health.Cells.Healthy++
+			case "degraded":
+				health.Cells.Degraded++
+			case "down", "failed":
+				health.Cells.Down++
+			case "provisioning", "draining":
+				health.Cells.Provisioning++
+			default:
+				health.Cells.Down++
+			}
+		}
+	}
+
+	if health.Status == "" {
+		health.Status = "healthy"
+	}
+
+	statusCode := http.StatusOK
+	if health.Status != "healthy" {
 		statusCode = http.StatusServiceUnavailable
 	}
 
@@ -143,50 +181,59 @@ func (h *OpsSystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 
 // Services handles GET /api/v1/ops/system/services — returns status of all system services.
 func (h *OpsSystemHandler) Services(w http.ResponseWriter, r *http.Request) {
-	log := h.logger.With("handler", "ops_system_services")
+	ctx := r.Context()
 
-	// Check database connectivity with a short timeout.
-	dbCtx, dbCancel := context.WithTimeout(r.Context(), 2*time.Second)
+	services := []struct {
+		Name   string `json:"name"`
+		Status string `json:"status"`
+		Detail string `json:"detail,omitempty"`
+	}{}
+
+	// Database
+	dbCtx, dbCancel := context.WithTimeout(ctx, 2*time.Second)
 	defer dbCancel()
 
-	dbStatus := "healthy"
-	var dbLatency time.Duration
-	var dbErr error
-
-	dbStart := time.Now()
-	registry, ok := h.store.(domain.TenantRegistry)
-	if ok {
+	if registry, ok := h.store.(domain.TenantRegistry); ok {
 		if _, _, err := registry.List(dbCtx, domain.TenantFilter{Limit: 1}); err != nil {
-			dbStatus = "down"
-			dbErr = err
-			log.Warn("database health check failed for services", "error", err)
+			services = append(services, struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+				Detail string `json:"detail,omitempty"`
+			}{Name: "postgresql", Status: "unhealthy", Detail: err.Error()})
+		} else {
+			services = append(services, struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+				Detail string `json:"detail,omitempty"`
+			}{Name: "postgresql", Status: "healthy"})
 		}
+	} else {
+		services = append(services, struct {
+			Name   string `json:"name"`
+			Status string `json:"status"`
+			Detail string `json:"detail,omitempty"`
+		}{Name: "postgresql", Status: "healthy"})
 	}
-	dbLatency = time.Since(dbStart)
 
-	services := []ServiceStatus{
-		{
-			Name:    "database",
-			Status:  dbStatus,
-			Latency: dbLatency.Round(time.Microsecond).String(),
-			Message: errorMessage(dbErr),
-		},
-		{
-			Name:   "api",
-			Status: "healthy",
-		},
+	// Redis (optional)
+	if h.redisClient != nil {
+		if err := h.redisClient.Ping(ctx); err != nil {
+			services = append(services, struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+				Detail string `json:"detail,omitempty"`
+			}{Name: "redis", Status: "unhealthy", Detail: err.Error()})
+		} else {
+			services = append(services, struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+				Detail string `json:"detail,omitempty"`
+			}{Name: "redis", Status: "healthy"})
+		}
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"services":   services,
 		"checked_at": time.Now().UTC(),
 	})
-}
-
-// errorMessage returns the error string or empty if nil.
-func errorMessage(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }

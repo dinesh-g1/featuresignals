@@ -121,10 +121,6 @@ func (h *ImportHandler) ImportLaunchDarkly(w http.ResponseWriter, r *http.Reques
 	// ── Map and persist ─────────────────────────────────────────────
 	importedCount := 0
 	for _, ldFlag := range ldFlags {
-		if ldFlag == nil {
-			continue
-		}
-
 		flagImport, err := launchdarkly.MapLDFlagToDomain(ldFlag, environments)
 		if err != nil {
 			logger.Warn("skipping unmappable LD flag", "flag_key", ldFlag.Key, "error", err)
@@ -136,7 +132,7 @@ func (h *ImportHandler) ImportLaunchDarkly(w http.ResponseWriter, r *http.Reques
 		flagImport.Flag.OrgID = project.OrgID
 
 		// Create the flag.
-		if err := h.store.CreateFlag(r.Context(), flagImport.Flag); err != nil {
+		if err := h.store.CreateFlag(r.Context(), &flagImport.Flag); err != nil {
 			if errors.Is(err, domain.ErrConflict) {
 				logger.Warn("flag already exists, skipping", "flag_key", ldFlag.Key)
 				continue

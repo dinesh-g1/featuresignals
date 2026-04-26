@@ -52,9 +52,9 @@ func (s *TenantStore) Register(ctx context.Context, t *domain.Tenant) error {
 
 	// 1. Insert into public.tenants
 	_, err = tx.Exec(ctx,
-		`INSERT INTO public.tenants (id, name, slug, schema, tier, status)
-		 VALUES ($1, $2, $3, $4, $5, $6)`,
-		t.ID, t.Name, t.Slug, t.Schema, t.Tier, t.Status,
+		`INSERT INTO public.tenants (id, name, slug, schema, tier, status, cell_id)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		t.ID, t.Name, t.Slug, t.Schema, t.Tier, t.Status, t.CellID,
 	)
 	if err != nil {
 		return wrapConflict(fmt.Errorf("insert tenant: %w", err), "tenant")
@@ -94,13 +94,13 @@ func (s *TenantStore) Register(ctx context.Context, t *domain.Tenant) error {
 func (s *TenantStore) LookupByKey(ctx context.Context, apiKeyHash string) (*domain.Tenant, error) {
 	t := &domain.Tenant{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT t.id, t.name, t.slug, t.schema, t.tier, t.status, t.created_at, t.updated_at
+		`SELECT t.id, t.name, t.slug, t.schema, t.tier, t.status, t.cell_id, t.created_at, t.updated_at
 			 FROM public.tenants t
 			 INNER JOIN public.tenant_api_keys ak ON ak.tenant_id = t.id
 			 WHERE ak.key_hash = $1
 			   AND ak.revoked_at IS NULL`,
 		apiKeyHash,
-	).Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CreatedAt, &t.UpdatedAt)
+	).Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CellID, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "tenant api key")
 	}
@@ -111,9 +111,9 @@ func (s *TenantStore) LookupByKey(ctx context.Context, apiKeyHash string) (*doma
 func (s *TenantStore) LookupByID(ctx context.Context, tenantID string) (*domain.Tenant, error) {
 	t := &domain.Tenant{}
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, name, slug, schema, tier, status, created_at, updated_at
+		`SELECT id, name, slug, schema, tier, status, cell_id, created_at, updated_at
 		 FROM public.tenants WHERE id = $1`, tenantID,
-	).Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CreatedAt, &t.UpdatedAt)
+	).Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CellID, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, wrapNotFound(err, "tenant")
 	}
@@ -145,6 +145,11 @@ func (s *TenantStore) List(ctx context.Context, filter domain.TenantFilter) ([]*
 		args = append(args, filter.Status)
 		argIdx++
 	}
+	if filter.CellID != "" {
+		conditions = append(conditions, fmt.Sprintf("cell_id = $%d", argIdx))
+		args = append(args, filter.CellID)
+		argIdx++
+	}
 
 	whereClause := ""
 	if len(conditions) > 0 {
@@ -174,7 +179,7 @@ func (s *TenantStore) List(ctx context.Context, filter domain.TenantFilter) ([]*
 
 	args = append(args, limit, offset)
 	dataQuery := fmt.Sprintf(
-		`SELECT id, name, slug, schema, tier, status, created_at, updated_at
+		`SELECT id, name, slug, schema, tier, status, cell_id, created_at, updated_at
 		 FROM public.tenants %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
 		whereClause, argIdx, argIdx+1,
 	)
@@ -188,7 +193,7 @@ func (s *TenantStore) List(ctx context.Context, filter domain.TenantFilter) ([]*
 	tenants := make([]*domain.Tenant, 0, limit)
 	for rows.Next() {
 		t := &domain.Tenant{}
-		if err := rows.Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CellID, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("scan tenant: %w", err)
 		}
 		tenants = append(tenants, t)
@@ -267,6 +272,98 @@ func (s *TenantStore) Decommission(ctx context.Context, tenantID string) error {
 
 	logger.Info("tenant decommissioned", "schema", schemaName)
 	return nil
+}
+
+// AssignCell assigns a tenant to a specific cell by updating its cell_id.
+func (s *TenantStore) AssignCell(ctx context.Context, tenantID, cellID string) error {
+	tag, err := s.pool.Exec(ctx,
+		`UPDATE public.tenants SET cell_id = $1, updated_at = NOW() WHERE id = $2`,
+		cellID, tenantID,
+	)
+	if err != nil {
+		return fmt.Errorf("assign tenant to cell: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.WrapNotFound("tenant")
+	}
+	s.logger.Info("tenant assigned to cell", "tenant_id", tenantID, "cell_id", cellID)
+	return nil
+}
+
+// LookupByCell returns all tenants assigned to the given cell.
+func (s *TenantStore) LookupByCell(ctx context.Context, cellID string) ([]*domain.Tenant, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, name, slug, schema, tier, status, cell_id, created_at, updated_at
+		 FROM public.tenants WHERE cell_id = $1
+		 ORDER BY created_at DESC`, cellID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("lookup tenants by cell: %w", err)
+	}
+	defer rows.Close()
+
+	tenants := make([]*domain.Tenant, 0)
+	for rows.Next() {
+		t := &domain.Tenant{}
+		if err := rows.Scan(&t.ID, &t.Name, &t.Slug, &t.Schema, &t.Tier, &t.Status, &t.CellID, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan tenant: %w", err)
+		}
+		tenants = append(tenants, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate tenants: %w", err)
+	}
+	return tenants, nil
+}
+
+// GetCellWithFewestTenants returns the cell with the fewest assigned tenants.
+// Useful for balanced tenant placement when provisioning new tenants.
+func (s *TenantStore) GetCellWithFewestTenants(ctx context.Context) (*domain.Cell, error) {
+	cell := &domain.Cell{}
+	var cpuTotal, cpuUsed, memTotal, memUsed, diskTotal, diskUsed float64
+
+	err := s.pool.QueryRow(ctx,
+		`SELECT c.id, c.name, c.provider, c.region, c.status, c.version, c.tenant_count,
+		        c.provider_server_id, c.public_ip, c.private_ip,
+		        c.cpu_total, c.cpu_used, c.mem_total, c.mem_used, c.disk_total, c.disk_used,
+		        c.created_at, c.updated_at
+		 FROM public.cells c
+		 LEFT JOIN public.tenants t ON t.cell_id = c.id
+		 WHERE c.status = 'running'
+		 GROUP BY c.id
+		 ORDER BY COUNT(t.id) ASC, c.tenant_count ASC
+		 LIMIT 1`,
+	).Scan(
+		&cell.ID, &cell.Name, &cell.Provider, &cell.Region,
+		&cell.Status, &cell.Version, &cell.TenantCount,
+		&cell.ProviderServerID, &cell.PublicIP, &cell.PrivateIP,
+		&cpuTotal, &cpuUsed, &memTotal, &memUsed, &diskTotal, &diskUsed,
+		&cell.CreatedAt, &cell.UpdatedAt,
+	)
+	if err != nil {
+		return nil, wrapNotFound(fmt.Errorf("get cell with fewest tenants: %w", err), "cell")
+	}
+
+	cell.CPU = domain.ResourceUsage{
+		Total:     cpuTotal,
+		Used:      cpuUsed,
+		Available: cpuTotal - cpuUsed,
+		Percent:   safePercent(cpuUsed, cpuTotal),
+	}
+	cell.Memory = domain.ResourceUsage{
+		Total:     memTotal,
+		Used:      memUsed,
+		Available: memTotal - memUsed,
+		Percent:   safePercent(memUsed, memTotal),
+	}
+	cell.Disk = domain.ResourceUsage{
+		Total:     diskTotal,
+		Used:      diskUsed,
+		Available: diskTotal - diskUsed,
+		Percent:   safePercent(diskUsed, diskTotal),
+	}
+
+	return cell, nil
 }
 
 // CreateAPIKey registers a new tenant-level API key in the public schema.
