@@ -67,6 +67,9 @@ private/
 # Claude local settings
 .claude/settings.local.json
 
+# Screenshots and browser test images — must never be committed
+*.png
+
 # Local developer config (VPS host, etc.)
 .featuresignals/
 
