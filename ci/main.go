@@ -411,19 +411,20 @@ func (m *Ci) DetectChanges(ctx context.Context, source *dagger.Directory, baseSh
 //
 // Required host environment variables:
 //   - GHCR_TOKEN: GitHub Container Registry token (classic PAT with write:packages)
-func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version string, projects []string) error {
+func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version string, projects string) error {
 	if version == "" {
 		return fmt.Errorf("version is required")
 	}
 
-	// If no projects specified, build all
-	if len(projects) == 0 {
-		projects = []string{"server", "dashboard", "ops-portal"}
+	// Parse comma-separated projects. If empty, build all.
+	projectList := []string{"server", "dashboard", "ops-portal"}
+	if projects != "" {
+		projectList = strings.Split(projects, ",")
 	}
 
 	ghcrToken := dag.Host().EnvVariable("GHCR_TOKEN").Secret()
 	buildMap := map[string]bool{}
-	for _, p := range projects {
+	for _, p := range projectList {
 		buildMap[p] = true
 	}
 

@@ -32,7 +32,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $*"; }
 IMAGE_TAG="${FEATURESIGNALS_VERSION:?FEATURESIGNALS_VERSION is required}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
 CELL_SUBDOMAIN="${CELL_SUBDOMAIN:?CELL_SUBDOMAIN is required}"
-REGISTRY="ghcr.io/featuresignals"
+REGISTRY="${REGISTRY:-ghcr.io/dinesh-g1}"
 
 kubectl create namespace featuresignals-saas --dry-run=client -o yaml | kubectl apply -f -
 
