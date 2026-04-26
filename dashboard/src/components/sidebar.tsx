@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useFeatures } from "@/hooks/use-features";
+import { useJanitorSummary } from "@/hooks/use-janitor-summary";
 import { Logo } from "@/components/logo";
+import { JanitorIcon } from "@/components/icons/janitor-icon";
 import {
   LayoutDashboard,
   Flag,
@@ -51,7 +53,9 @@ import type { LucideIcon } from "lucide-react";
 interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon:
+    | LucideIcon
+    | React.ComponentType<{ className?: string; strokeWidth?: number }>;
   gatedFeature?: string;
   badge?: string | number;
 }
@@ -92,7 +96,7 @@ const navGroups: NavGroup[] = [
     storageKey: "fs:nav-intelligence",
     defaultExpanded: true,
     items: [
-      { href: "/janitor", label: "AI Janitor", icon: Sparkles, badge: 2 },
+      { href: "/janitor", label: "AI Janitor", icon: JanitorIcon },
       { href: "/env-comparison", label: "Env Compare", icon: GitCompare },
       {
         href: "/target-inspector",
@@ -179,6 +183,41 @@ function NavLink({
 
 // ─── Collapsible Group ──────────────────────────────────────────────
 
+function JanitorNavLink() {
+  const pathname = usePathname();
+  const { staleCount } = useJanitorSummary();
+  const active = pathname.startsWith("/janitor");
+
+  return (
+    <Link
+      href="/janitor"
+      className={cn(
+        "group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+        active
+          ? "bg-accent/10 text-accent-dark font-semibold"
+          : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <JanitorIcon className="h-4 w-4 text-current" strokeWidth={1.5} />
+        <span>AI Janitor</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {staleCount > 0 && (
+          <span
+            className={cn(
+              "inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+              active ? "bg-accent text-white" : "bg-stone-200 text-stone-600",
+            )}
+          >
+            {staleCount > 99 ? "99+" : staleCount}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 function NavGroupSection({ group }: { group: NavGroup }) {
   const pathname = usePathname();
   const { isEnabled, minPlanFor } = useFeatures();
@@ -220,6 +259,9 @@ function NavGroupSection({ group }: { group: NavGroup }) {
       {expanded && (
         <div className="mt-0.5 space-y-0.5 pl-2 pr-1">
           {group.items.map((item) => {
+            if (item.href === "/janitor") {
+              return <JanitorNavLink key={item.href} />;
+            }
             const active = pathname.startsWith(item.href);
             const locked = item.gatedFeature
               ? !isEnabled(item.gatedFeature)
@@ -243,19 +285,38 @@ function NavGroupSection({ group }: { group: NavGroup }) {
 // ─── AI Janitor Widget ──────────────────────────────────────────────
 
 function AIJanitorWidget() {
+  const token = useAppStore((s) => s.token);
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const { staleCount, loading, error } = useJanitorSummary();
+
   return (
     <Link
-      href="/settings/general"
+      href="/janitor"
       className="mx-3 mb-2 block rounded-xl border border-stone-200 bg-white p-4 shadow-soft transition-all duration-200 hover:shadow-float hover:border-accent/30 group"
     >
       <div className="flex items-center gap-2 text-sm font-semibold text-stone-800 mb-1">
-        <Sparkles className="h-4 w-4 text-accent" strokeWidth={1.5} />
+        <JanitorIcon className="h-4 w-4 text-accent" strokeWidth={1.5} />
         <span>AI Janitor</span>
       </div>
-      <p className="text-xs text-stone-500 mb-3 leading-relaxed">
-        <span className="font-medium text-accent">2 flags</span> ready for
-        automatic cleanup.
-      </p>
+      {loading ? (
+        <div className="animate-pulse space-y-2 mb-3">
+          <div className="h-3 w-32 rounded bg-stone-200" />
+          <div className="h-8 rounded-lg bg-stone-100" />
+        </div>
+      ) : error ? (
+        <p className="text-xs text-stone-400 mb-3">Unable to check status</p>
+      ) : staleCount === 0 ? (
+        <p className="text-xs text-emerald-600 mb-3 leading-relaxed">
+          ✨ All clean — no stale flags detected.
+        </p>
+      ) : (
+        <p className="text-xs text-stone-500 mb-3 leading-relaxed">
+          <span className="font-medium text-accent">
+            {staleCount} flag{staleCount !== 1 ? "s" : ""}
+          </span>{" "}
+          ready for automatic cleanup.
+        </p>
+      )}
       <div className="flex items-center gap-2 rounded-lg bg-stone-100 px-3 py-2 text-xs font-semibold text-stone-600 transition-colors group-hover:bg-accent/10 group-hover:text-accent-dark">
         <GitPullRequest className="h-3.5 w-3.5" strokeWidth={2} />
         <span>Review Cleanup PRs</span>

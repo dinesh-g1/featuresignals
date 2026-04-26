@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { ExternalLink } from "lucide-react";
 
 interface PageHeaderProps {
-  title: string;
+  title: string | ReactNode;
   description?: string;
   actions?: ReactNode;
   children?: ReactNode;
@@ -140,6 +140,7 @@ interface StatCardProps {
     | React.ComponentType<{ className?: string; strokeWidth?: number }>;
   color?: string;
   className?: string;
+  tooltip?: string;
 }
 
 /**
@@ -152,6 +153,7 @@ export function StatCard({
   trend,
   icon,
   className,
+  tooltip,
 }: StatCardProps) {
   const IconComponent = typeof icon === "function" ? icon : null;
   const emojiIcon = typeof icon === "string" ? icon : null;
@@ -162,6 +164,7 @@ export function StatCard({
         "rounded-xl border border-stone-200 bg-white p-4 shadow-soft transition-all duration-200 hover:shadow-float",
         className,
       )}
+      title={tooltip}
     >
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">

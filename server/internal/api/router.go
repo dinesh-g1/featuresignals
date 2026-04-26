@@ -64,6 +64,7 @@ func NewRouter(
 	salesNotifyEmail string,
 	queueClient *queue.Client,
 	eventBus *provision.EventBus,
+	janitorH *handlers.JanitorHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -485,6 +486,29 @@ func NewRouter(
 				r.Delete("/roles/{roleID}", customRoleH.Delete)
 			})
 		})
+		// ── AI Janitor Routes (Pro+, admin-only) ──────────────────────────
+			r.Group(func(r chi.Router) {
+				r.Use(jwtAuth)
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Post("/janitor/scan", janitorH.Scan)
+				r.Get("/janitor/scans/{id}", janitorH.GetScanStatus)
+				r.Get("/janitor/flags", janitorH.ListStaleFlags)
+				r.Post("/janitor/flags/{flagKey}/dismiss", janitorH.DismissFlag)
+				r.Post("/janitor/flags/{flagKey}/generate-pr", janitorH.GeneratePR)
+				r.Get("/janitor/stats", janitorH.GetStats)
+				r.Get("/janitor/config", janitorH.GetConfig)
+				r.Put("/janitor/config", janitorH.UpdateConfig)
+				r.Get("/janitor/repositories", janitorH.ListRepositories)
+				r.Post("/janitor/repositories", janitorH.ConnectRepository)
+				r.Delete("/janitor/repositories/{id}", janitorH.DisconnectRepository)
+			})
+	})
+
+	// SSE endpoint for janitor scan progress (bypasses RequireJSON — mounted outside /v1)
+	r.Group(func(r chi.Router) {
+		r.Use(jwtAuth)
+		r.Use(middleware.RequireRole(ownerAdmin...))
+		r.Get("/v1/janitor/scans/{scanId}/events", janitorH.ScanEvents)
 	})
 
 	// ── Operations Portal API (/api/v1/ops) ─────────────────────────

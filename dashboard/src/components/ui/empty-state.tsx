@@ -3,10 +3,13 @@ import { ExternalLink } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface EmptyStateProps {
-  icon: LucideIcon;
-  title: string;
+  icon:
+    | LucideIcon
+    | React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  title: string | React.ReactNode;
   description?: string;
   action?: React.ReactNode;
+  children?: React.ReactNode;
   docsUrl?: string;
   docsLabel?: string;
   emoji?: string;

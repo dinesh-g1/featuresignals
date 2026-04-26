@@ -938,7 +938,147 @@ export const api = {
   // Internal / Super Mode
   resetOnboarding: (token: string) =>
     request("/v1/internal/reset-onboarding", { method: "POST", token }),
+  // ── AI Janitor API ──────────────────────────────────────────
+
+  scanRepository: (projectId: string, repoIds?: string[]) =>
+    request<ScanResponse>("/v1/janitor/scan", {
+      method: "POST",
+      body: { repository_ids: repoIds },
+    }),
+
+  getScanStatus: (scanId: string) =>
+    request<ScanStatusResponse>(`/v1/janitor/scans/${scanId}`),
+
+  listStaleFlags: (projectId: string, filter?: string) =>
+    request<PaginatedResponse<StaleFlag>>(
+      `/v1/janitor/flags${filter ? `?filter=${filter}` : ""}`,
+    ),
+
+  dismissFlag: (flagKey: string, reason?: string) =>
+    request(`/v1/janitor/flags/${flagKey}/dismiss`, {
+      method: "POST",
+      body: { reason },
+    }),
+
+  generateCleanupPR: (flagKey: string, repoId: string) =>
+    request<PRResponse>(`/v1/janitor/flags/${flagKey}/generate-pr`, {
+      method: "POST",
+      body: { repository_id: repoId },
+    }),
+
+  getJanitorStats: (projectId: string) =>
+    request<JanitorStats>(`/v1/janitor/stats`),
+
+  getJanitorConfig: () => request<JanitorConfig>(`/v1/janitor/config`),
+
+  updateJanitorConfig: (config: UpdateJanitorConfigRequest) =>
+    request(`/v1/janitor/config`, { method: "PUT", body: config }),
+
+  listRepositories: (projectId: string) =>
+    request<PaginatedResponse<Repository>>(`/v1/janitor/repositories`),
+
+  connectRepository: (config: ConnectRepoRequest) =>
+    request(`/v1/janitor/repositories`, { method: "POST", body: config }),
+
+  disconnectRepository: (repoId: string) =>
+    request(`/v1/janitor/repositories/${repoId}`, { method: "DELETE" }),
 };
+
+// ── AI Janitor Types ──────────────────────────────────────────
+
+export interface StaleFlag {
+  key: string;
+  name: string;
+  type: string;
+  environment: string;
+  days_served: number;
+  percentage_true: number;
+  safe_to_remove: boolean;
+  dismissed: boolean;
+  last_evaluated: string;
+  pr_url?: string;
+  pr_status?: "open" | "merged" | "failed";
+  analysis_confidence?: number;
+  llm_provider?: string;
+}
+
+export interface JanitorStats {
+  total_flags: number;
+  stale_flags: number;
+  safe_to_remove: number;
+  open_prs: number;
+  merged_prs: number;
+  last_scan: string;
+}
+
+export interface JanitorConfig {
+  scan_schedule: string;
+  stale_threshold_days: number;
+  auto_generate_pr: boolean;
+  branch_prefix: string;
+  notifications_enabled: boolean;
+  llm_provider: string;
+  llm_model: string;
+  llm_temperature: number;
+  updated_at: string;
+}
+
+export interface Repository {
+  id: string;
+  provider: "github" | "gitlab" | "bitbucket";
+  name: string;
+  full_name: string;
+  default_branch: string;
+  private: boolean;
+  connected: boolean;
+  last_scanned?: string;
+}
+
+export interface ScanResponse {
+  scan_id: string;
+  status: string;
+  created_at: string;
+}
+
+export interface ScanStatusResponse {
+  scan_id: string;
+  status: string;
+  created_at: string;
+  total_repos: number;
+  scanned_repos: number;
+  total_flags: number;
+  stale_flags: number;
+  errors?: string[];
+}
+
+export interface PRResponse {
+  status: string;
+  pr_url: string;
+  pr_number: number;
+  analysis_confidence?: number;
+  llm_provider?: string;
+  llm_model?: string;
+  tokens_used?: number;
+}
+
+export interface ConnectRepoRequest {
+  provider: string;
+  token: string;
+  base_url?: string;
+  org_or_group?: string;
+  repo_name?: string;
+}
+
+export interface UpdateJanitorConfigRequest {
+  scan_schedule?: string;
+  stale_threshold_days?: number;
+  auto_generate_pr?: boolean;
+  branch_prefix?: string;
+  notifications_enabled?: boolean;
+  llm_provider?: string;
+  llm_model?: string;
+  llm_temperature?: number;
+}
 
 // Initialize offline detection in browser environments
 if (typeof window !== "undefined") {

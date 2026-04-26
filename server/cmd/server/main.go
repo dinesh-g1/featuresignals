@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 
 	"github.com/featuresignals/server/internal/api"
+	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/domain"
@@ -27,6 +28,9 @@ import (
 	"github.com/featuresignals/server/internal/integrations/flagsmith"
 	"github.com/featuresignals/server/internal/integrations/iac"
 	"github.com/featuresignals/server/internal/integrations/unleash"
+	"github.com/featuresignals/server/internal/janitor/codeanalysis"
+	"github.com/featuresignals/server/internal/janitor/codeanalysis/deepseek"
+	"github.com/featuresignals/server/internal/janitor/codeanalysis/openai"
 	"github.com/featuresignals/server/internal/lifecycle"
 	"github.com/featuresignals/server/internal/mailer"
 	"github.com/featuresignals/server/internal/metrics"
@@ -329,6 +333,26 @@ func main() {
 	defer cancelRouter()
 	regionsEnabled := !cfg.IsOnPrem()
 
+	// ── AI Janitor Setup ──────────────────────────────────────────
+	var janitorH *handlers.JanitorHandler
+	{
+		janitorLogger := logger.With("component", "janitor")
+		janitorStore := postgres.NewJanitorStore(pool)
+		complianceStore := postgres.NewComplianceStore(pool)
+		eventBus := sse.NewScanEventBus(janitorLogger)
+
+		janitorH = handlers.NewJanitorHandler(
+			store,        // domain.Store (implements FlagReader + others)
+			janitorStore, // store.JanitorStore
+			nil,          // Git provider registry (nil for now — not wired yet)
+			eventBus,     // SSE event bus for scan progress
+			janitorLogger,
+		)
+		_ = complianceStore // Will be used when compliance layer is wired
+
+		janitorLogger.Info("AI Janitor initialized")
+	}
+
 	// ── Provisioning Queue (async cell provisioning) ──────────────
 	var queueClient *queue.Client
 	var eventBus *provision.EventBus
@@ -377,7 +401,7 @@ func main() {
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, queueClient, eventBus)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, queueClient, eventBus, janitorH)
 
 	// Server
 	srv := &http.Server{
@@ -531,21 +555,38 @@ func (m *multiHandler) WithGroup(name string) slog.Handler {
 // Called explicitly from main() — no init() functions with side effects.
 func initProviders() {
 	// ─── 1. Migration Importers (feature flag providers) ──────────────
-	// Note: LaunchDarkly uses the client directly since it doesn't have
-	// a NewImporter factory. The integration handler wraps it.
-	// integrations.Register("launchdarkly", launchdarkly.NewImporter)
 	integrations.Register("unleash", unleash.NewImporter)
 	integrations.Register("flagsmith", flagsmith.NewImporter)
 
 	// ─── 2. Git Providers (AI Janitor PR generation) ─────────────────
-	// Git provider implementations are loaded via the JanitorHandler.
-	// Providers register their factories at startup.
-	// janitor.RegisterGitProvider("github", janitor.NewGitHubProvider)
-	// janitor.RegisterGitProvider("gitlab", janitor.NewGitLabProvider)
-	// janitor.RegisterGitProvider("bitbucket", janitor.NewBitbucketProvider)
-	// janitor.RegisterGitProvider("azure-devops", janitor.NewAzureDevOpsProvider)
+	// Git provider implementations (GitHub, GitLab, Bitbucket) are not yet
+	// fully implemented. When ready, register them here:
+	// janitor.RegisterGitProvider("github", github.NewProvider)
+	// janitor.RegisterGitProvider("gitlab", gitlab.NewProvider)
+	// janitor.RegisterGitProvider("bitbucket", bitbucket.NewProvider)
 
-	// ─── 3. IaC Generators (config export to any format) ────────────
+	// ─── 3. LLM Code Analysis Providers (AI Janitor) ─────────────────
+	// Register LLM providers for AI-powered stale flag analysis.
+	// Provider selection per org is handled by the compliance layer.
+	providers := []struct {
+		name     string
+		register func(*codeanalysis.ProviderRegistry) error
+	}{
+		{name: "deepseek", register: deepseek.Register},
+		{name: "openai-compatible", register: openai.Register},
+		{name: "openai", register: openai.RegisterAsOpenAI},
+		{name: "azure-openai", register: openai.RegisterAsAzureOpenAI},
+	}
+
+	registry := codeanalysis.NewProviderRegistry()
+	for _, p := range providers {
+		if err := p.register(registry); err != nil {
+			panic("failed to register LLM provider " + p.name + ": " + err.Error())
+		}
+	}
+	slog.Info("LLM providers registered", "count", registry.ProviderCount(), "providers", registry.ListProviders())
+
+	// ─── 4. IaC Generators (config export to any format) ────────────
 	iac.RegisterGenerator("terraform", func() iac.Generator { return iac.NewTerraformGenerator() })
 	iac.RegisterGenerator("pulumi", func() iac.Generator { return iac.NewPulumiGenerator() })
 	iac.RegisterGenerator("ansible", func() iac.Generator { return iac.NewAnsibleGenerator() })
