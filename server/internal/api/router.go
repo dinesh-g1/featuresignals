@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -76,12 +75,7 @@ func NewRouter(
 		logger.Warn("internalChecker is not *config.Config, using empty config")
 	}
 
-	// CORS is handled by Caddy at the edge layer in staging/production.
-	// See deploy/Caddyfile.region for the full configuration.
-	// For local dev only, we inject CORS when CORS_ENABLED=true.
-	if os.Getenv("CORS_ENABLED") == "true" {
-		r.Use(middleware.CORS())
-	}
+	r.Use(middleware.CORS)
 	r.Use(otelchi.Middleware("featuresignals-api", otelchi.WithChiRoutes(r)))
 	r.Use(chimw.Compress(5))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
@@ -143,7 +137,7 @@ func NewRouter(
 	integrationH := handlers.NewIntegrationHandler(store, logger)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments)
-	cellRouterMw := middleware.NewCellRouter(store)
+	cellRouterMw := middleware.NewCellRouter(store, cfg.JWTSecret, logger)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)

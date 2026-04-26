@@ -63,6 +63,7 @@ type ProvisionCellRequest struct {
 	ServerType string `json:"server_type"`
 	Location   string `json:"location"`
 	UserData   string `json:"user_data,omitempty"`
+	Version    string `json:"version,omitempty"`
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────
@@ -166,7 +167,7 @@ func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
 			Provider:  domain.CellProviderHetzner,
 			Region:    req.Location,
 			Status:    "pending",
-			Version:   "0.1.0",
+			Version:   req.Version,
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
@@ -174,6 +175,11 @@ func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
 			log.Error("failed to create cell record", "error", err)
 			httputil.Error(w, http.StatusInternalServerError, "failed to create cell")
 			return
+		}
+
+		// Set default version for backward compat if not provided
+		if req.Version == "" {
+			req.Version = "latest"
 		}
 
 		// Enqueue async provisioning task
@@ -190,6 +196,7 @@ func (h *OpsCellsHandler) Create(w http.ResponseWriter, r *http.Request) {
 			Region:           req.Location,
 			UserData:         req.UserData,
 			PostgresPassword: pgPassword,
+			Version:          req.Version,
 		})
 		if err != nil {
 			log.Error("failed to enqueue provisioning", "error", err)

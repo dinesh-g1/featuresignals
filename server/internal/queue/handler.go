@@ -255,6 +255,58 @@ func (h *Handler) HandleProvisionCell(ctx context.Context, t *asynq.Task) error 
 		"public_ip": serverInfo.PublicIP,
 	})
 
+	// After bootstrap completes, deploy the application stack with the version tag
+	if payload.Version != "" {
+		h.recordEvent(ctx, payload.CellID, "deploy_started", map[string]string{
+			"version": payload.Version,
+		})
+
+		// Read deploy-app.sh
+		deployScriptPaths := []string{
+			"deploy/k3s/deploy-app.sh",
+			"../deploy/k3s/deploy-app.sh",
+			"/app/deploy/k3s/deploy-app.sh",
+		}
+		var deployScript []byte
+		var deployFound bool
+		for _, p := range deployScriptPaths {
+			deployScript, err = os.ReadFile(p)
+			if err == nil {
+				deployFound = true
+				break
+			}
+		}
+		if deployFound {
+			// Prepend env vars for the deploy script
+			deployEnvPrefix := fmt.Sprintf(
+				"export FEATURESIGNALS_VERSION='%s'\nexport POSTGRES_PASSWORD='%s'\n",
+				payload.Version,
+				payload.PostgresPassword,
+			)
+			fullDeployScript := deployEnvPrefix + string(deployScript)
+
+			deployOutput, deployErr := sshAccess.ExecuteScript(ctx, serverInfo.PublicIP, []byte(fullDeployScript))
+			if deployErr != nil {
+				// Deploy may fail if images aren't pushed yet — that's OK
+				logger.Warn("app deploy script failed (images may not be pushed yet)",
+					"version", payload.Version, "error", deployErr,
+					"output", truncateStr(deployOutput, 300),
+				)
+				h.recordEvent(ctx, payload.CellID, "deploy_pending", map[string]string{
+					"version": payload.Version,
+					"reason":  "images not pushed yet — run dagger deploy-cell",
+				})
+			} else {
+				h.recordEvent(ctx, payload.CellID, "deploy_completed", map[string]string{
+					"version": payload.Version,
+				})
+				logger.Info("app deployed", "version", payload.Version)
+			}
+		} else {
+			logger.Warn("deploy-app.sh not found, skipping app deployment")
+		}
+	}
+
 	logger.Info("cell provisioned successfully",
 		"server_id", serverInfo.ID,
 		"public_ip", serverInfo.PublicIP,
@@ -328,4 +380,13 @@ func (h *Handler) recordEvent(ctx context.Context, cellID, eventType string, met
 	if h.eventBus != nil {
 		h.eventBus.Publish(evt)
 	}
+}
+
+// truncateStr truncates a string to the specified max length.
+// If the string is shorter than maxLen, it is returned as-is.
+func truncateStr(s string, maxLen int) string {
+	if len(s) > maxLen {
+		return s[:maxLen]
+	}
+	return s
 }

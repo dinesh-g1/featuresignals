@@ -19,29 +19,48 @@ type Ci struct{}
 // =========================================================================
 
 // Validate runs locally before pushing.
-// Filter can be "server", "dashboard", "ops-portal", or empty (all).
-func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter string) error {
+// Filter can be "server", "dashboard", "ops-portal", or empty (changed projects).
+// When filter is empty, uses DetectChanges to determine what to validate.
+func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter string, baseSha string) error {
+	// Determine which projects to validate
+	projects := []string{}
 	switch strings.ToLower(filter) {
-	case "server":
-		return m.validateServer(ctx, source)
-	case "dashboard":
-		return m.validateDashboard(ctx, source)
-	case "ops-portal":
-		return m.validateOpsPortal(ctx, source)
+	case "server", "dashboard", "ops-portal":
+		projects = append(projects, strings.ToLower(filter))
 	case "":
-		if err := m.validateServer(ctx, source); err != nil {
-			return fmt.Errorf("server validation failed: %w", err)
+		var err error
+		projects, err = m.DetectChanges(ctx, source, baseSha)
+		if err != nil {
+			return fmt.Errorf("detect changes: %w", err)
 		}
-		if err := m.validateDashboard(ctx, source); err != nil {
-			return fmt.Errorf("dashboard validation failed: %w", err)
+		if len(projects) == 0 {
+			fmt.Println("No changed projects detected. Nothing to validate.")
+			return nil
 		}
-		if err := m.validateOpsPortal(ctx, source); err != nil {
-			return fmt.Errorf("ops-portal validation failed: %w", err)
-		}
-		return nil
 	default:
-		return fmt.Errorf("unknown filter %q; use 'server', 'dashboard', 'ops-portal', or '' (all)", filter)
+		return fmt.Errorf("unknown filter %q; use 'server', 'dashboard', 'ops-portal', or '' (auto)", filter)
 	}
+
+	// Validate each changed project
+	for _, p := range projects {
+		switch p {
+		case "server":
+			if err := m.validateServer(ctx, source); err != nil {
+				return fmt.Errorf("server validation failed: %w", err)
+			}
+		case "dashboard":
+			if err := m.validateDashboard(ctx, source); err != nil {
+				return fmt.Errorf("dashboard validation failed: %w", err)
+			}
+		case "ops-portal":
+			if err := m.validateOpsPortal(ctx, source); err != nil {
+				return fmt.Errorf("ops-portal validation failed: %w", err)
+			}
+		default:
+			fmt.Printf("Skipping unknown project: %s\n", p)
+		}
+	}
+	return nil
 }
 
 func (m *Ci) validateServer(ctx context.Context, source *dagger.Directory) error {
@@ -302,63 +321,159 @@ func (m *Ci) testSDK(ctx context.Context, source *dagger.Directory, name, path s
 }
 
 // =========================================================================
-// BuildImages — build and push OCI images to GHCR
+// DetectChanges — identify changed projects via git diff
 // =========================================================================
 
-// BuildImages builds server, dashboard, and ops-portal Docker images and
-// pushes them to ghcr.io/featuresignals/ tagged with the given version.
+// DetectChanges compares HEAD against baseSha and returns the list of
+// projects whose source files have changed. Only these projects need
+// validation and image builds.
+//
+// Detected projects: "server", "dashboard", "ops-portal", "website", "docs"
+// Root-level changes (go.mod, package.json, .github/) trigger ALL projects.
+func (m *Ci) DetectChanges(ctx context.Context, source *dagger.Directory, baseSha string) ([]string, error) {
+	if baseSha == "" {
+		// No base SHA provided — validate everything
+		return []string{"server", "dashboard", "ops-portal"}, nil
+	}
+
+	// Get list of changed files
+	files, err := dag.Container().
+		From("alpine/git:latest").
+		WithDirectory("/src", source).
+		WithWorkdir("/src").
+		WithExec([]string{"git", "diff", "--name-only", baseSha, "HEAD"}).
+		Stdout(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("detect changes: %w", err)
+	}
+
+	// Classify changes into projects
+	changed := map[string]bool{}
+	rootChanged := false
+	for _, f := range strings.Split(strings.TrimSpace(files), "\n") {
+		if f == "" {
+			continue
+		}
+		switch {
+		case strings.HasPrefix(f, "server/"):
+			changed["server"] = true
+		case strings.HasPrefix(f, "dashboard/"):
+			changed["dashboard"] = true
+		case strings.HasPrefix(f, "ops-portal/"):
+			changed["ops-portal"] = true
+		case strings.HasPrefix(f, "website/"):
+			changed["website"] = true
+		case strings.HasPrefix(f, "docs/"):
+			changed["docs"] = true
+		case strings.HasPrefix(f, "ci/"):
+			changed["ci"] = true
+		case strings.HasPrefix(f, "deploy/"):
+			changed["deploy"] = true
+		default:
+			// Root-level changes affect all projects
+			rootChanged = true
+		}
+	}
+
+	// Root changes trigger full build
+	if rootChanged {
+		return []string{"server", "dashboard", "ops-portal"}, nil
+	}
+
+	// CI/deploy-only changes don't need image builds
+	if len(changed) == 0 || (changed["ci"] && len(changed) == 1) || (changed["deploy"] && len(changed) == 1) {
+		return []string{}, nil
+	}
+
+	// Convert map to sorted slice (server first for priority)
+	projects := make([]string, 0, len(changed))
+	if changed["server"] {
+		projects = append(projects, "server")
+	}
+	if changed["dashboard"] {
+		projects = append(projects, "dashboard")
+	}
+	if changed["ops-portal"] {
+		projects = append(projects, "ops-portal")
+	}
+
+	fmt.Printf("Changed projects: %s (from %d files)\n", strings.Join(projects, ", "), len(strings.Split(strings.TrimSpace(files), "\n"))-1)
+	return projects, nil
+}
+
+// =========================================================================
+// BuildImages — build and push OCI images to GHCR (selective)
+// =========================================================================
+
+// BuildImages builds Docker images for the given projects and pushes them
+// to ghcr.io/featuresignals/ tagged with the given version.
+// If projects is empty, builds ALL projects.
 //
 // Required host environment variables:
 //   - GHCR_TOKEN: GitHub Container Registry token (classic PAT with write:packages)
-func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version string) error {
+func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version string, projects []string) error {
 	if version == "" {
 		return fmt.Errorf("version is required")
 	}
 
+	// If no projects specified, build all
+	if len(projects) == 0 {
+		projects = []string{"server", "dashboard", "ops-portal"}
+	}
+
 	ghcrToken := dag.Host().EnvVariable("GHCR_TOKEN").Secret()
+	buildMap := map[string]bool{}
+	for _, p := range projects {
+		buildMap[p] = true
+	}
 
 	// ---- Server image ----
-	serverImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
-		Dockerfile: "deploy/docker/Dockerfile.server",
-	})
-	serverTag := fmt.Sprintf("ghcr.io/featuresignals/server:%s", version)
+	if buildMap["server"] {
+		serverImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
+			Dockerfile: "deploy/docker/Dockerfile.server",
+		})
+		serverTag := fmt.Sprintf("ghcr.io/featuresignals/server:%s", version)
 
-	_, err := serverImg.
-		WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).
-		Publish(ctx, serverTag)
-	if err != nil {
-		return fmt.Errorf("failed to publish server image: %w", err)
+		_, err := serverImg.
+			WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).
+			Publish(ctx, serverTag)
+		if err != nil {
+			return fmt.Errorf("failed to publish server image: %w", err)
+		}
+		fmt.Printf("✅ Published server:%s\n", version)
 	}
 
 	// ---- Dashboard image ----
-	dashboardImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
-		Dockerfile: "deploy/docker/Dockerfile.dashboard",
-		BuildArgs: []dagger.BuildArg{
-			{Name: "NEXT_PUBLIC_API_URL", Value: "https://api.featuresignals.com"},
-			{Name: "NEXT_PUBLIC_APP_URL", Value: "https://app.featuresignals.com"},
-		},
-	})
-	dashTag := fmt.Sprintf("ghcr.io/featuresignals/dashboard:%s", version)
+	if buildMap["dashboard"] {
+		dashboardImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
+			Dockerfile: "deploy/docker/Dockerfile.dashboard",
+			BuildArgs: []dagger.BuildArg{
+				{Name: "NEXT_PUBLIC_API_URL", Value: "https://api.featuresignals.com"},
+				{Name: "NEXT_PUBLIC_APP_URL", Value: "https://app.featuresignals.com"},
+			},
+		})
+		dashTag := fmt.Sprintf("ghcr.io/featuresignals/dashboard:%s", version)
 
-	_, err = dashboardImg.
-		WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).
-		Publish(ctx, dashTag)
-	if err != nil {
-		return fmt.Errorf("failed to publish dashboard image: %w", err)
+		_, err := dashboardImg.
+			WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).
+			Publish(ctx, dashTag)
+		if err != nil {
+			return fmt.Errorf("failed to publish dashboard image: %w", err)
+		}
+		fmt.Printf("✅ Published dashboard:%s\n", version)
 	}
 
 	// ---- Ops-portal image ----
-	opsPortalDir := source.Directory("ops-portal")
-	if _, err := opsPortalDir.Entries(ctx); err == nil {
+	if buildMap["ops-portal"] {
 		opsPortalImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
 			Dockerfile: "deploy/docker/Dockerfile.ops-portal",
 		})
 		opsTag := fmt.Sprintf("ghcr.io/featuresignals/ops-portal:%s", version)
-		_, err = opsPortalImg.WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).Publish(ctx, opsTag)
+		_, err := opsPortalImg.WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).Publish(ctx, opsTag)
 		if err != nil {
 			return fmt.Errorf("publish ops-portal: %w", err)
 		}
-		fmt.Printf("Published ops-portal:%s\n", version)
+		fmt.Printf("✅ Published ops-portal:%s\n", version)
 	}
 
 	return nil

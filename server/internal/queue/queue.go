@@ -22,6 +22,7 @@ type ProvisionCellPayload struct {
 	Region           string `json:"region"`
 	UserData         string `json:"user_data,omitempty"`
 	PostgresPassword string `json:"postgres_password,omitempty"`
+	Version          string `json:"version,omitempty"`
 }
 
 // DeprovisionCellPayload is enqueued when a cell should be destroyed.

@@ -1,32 +1,33 @@
 #!/usr/bin/env bash
 #
 # =============================================================================
-# FeatureSignals — k3s Single-Node Bootstrap Script
+# FeatureSignals — k3s Single-Node Bootstrap Script (Infra Only)
 # =============================================================================
 #
-# Idempotent bootstrap script that provisions a VPS running Ubuntu 24.04 with
-# k3s (single-node, embedded SQLite) and all required components for the
-# FeatureSignals platform: PostgreSQL, the FeatureSignals API and Dashboard,
-# Traefik ingress, node-exporter, and cert-manager.
+# Idempotent bootstrap script that provisions a VPS with:
+# - k3s (single-node Kubernetes)
+# - PostgreSQL (Bitnami Helm chart)
+# - cert-manager + Let's Encrypt ClusterIssuers
+# - Traefik ingress
+# - node-exporter for metrics
+#
+# The FeatureSignals application (API, Dashboard, Edge Worker) is deployed
+# separately via `deploy-app.sh` with a specific version tag from CI/CD.
 #
 # This script is idempotent — safe to run multiple times. Components that are
 # already installed will be skipped or upgraded in-place.
 #
 # Usage:
 #   export POSTGRES_PASSWORD="your-secure-password"
-#   export CELL_SUBDOMAIN="cell-name.featuresignals.com"
-#   export FEATURESIGNALS_VERSION="latest"
 #   sudo ./bootstrap.sh
 #
 # Required Environment Variables:
 #   POSTGRES_PASSWORD          Password for the PostgreSQL superuser
-#   CELL_SUBDOMAIN             The subdomain for this cell (e.g., cell-01.featuresignals.com)
 #
 # Optional Environment Variables:
-#   FEATURESIGNALS_VERSION     FeatureSignals image tag (default: "latest")
 #   CLUSTER_CIDR               Pod network CIDR (default: 10.42.0.0/16)
 #   SERVICE_CIDR               Service network CIDR (default: 10.43.0.0/16)
-#   K3S_VERSION                k3s version (default: stable)
+#   K3S_VERSION                k3s version (default: v1.30.0+k3s1)
 #   ACME_EMAIL                 Email for Let's Encrypt (default: admin@featuresignals.com)
 #
 # =============================================================================
@@ -51,9 +52,7 @@ K3S_VERSION="${K3S_VERSION:-v1.30.0+k3s1}"
 CLUSTER_CIDR="${CLUSTER_CIDR:-10.42.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.43.0.0/16}"
 ACME_EMAIL="${ACME_EMAIL:-admin@featuresignals.com}"
-# FEATURESIGNALS_VERSION is required — set to a specific git SHA or semver tag.
-# No default. The CI/CD pipeline sets this during build and deploy.
-FEATURESIGNALS_VERSION="${FEATURESIGNALS_VERSION:?FEATURESIGNALS_VERSION is required}"
+# FEATURESIGNALS_VERSION is set in deploy-app.sh for app deployments.
 
 CERT_MANAGER_VERSION="v1.16.3"
 # POSTGRESQL_HELM_VERSION removed — using latest chart
@@ -71,11 +70,6 @@ prereq_check() {
         log_warn "POSTGRES_PASSWORD not set — generating random password."
         POSTGRES_PASSWORD="$(openssl rand -base64 32)"
         log_info "Generated POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}"
-    fi
-
-    if [[ -z "${CELL_SUBDOMAIN:-}" ]]; then
-        log_error "CELL_SUBDOMAIN is not set. This is required."
-        exit 1
     fi
 
     local arch
@@ -281,179 +275,18 @@ install_postgresql() {
     log_info "PostgreSQL installed in namespace featuresignals-system."
 }
 
-# ---- Deploy FeatureSignals API (idempotent) ----------------------------------
-deploy_featuresignals_api() {
-    log_info "=== Deploying FeatureSignals API ==="
-
-    kubectl create namespace featuresignals-saas --dry-run=client -o yaml | kubectl apply -f -
-
-    # Generate or update the API deployment manifest
-    cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: featuresignals-api
-  namespace: featuresignals-saas
-  labels:
-    app: featuresignals-api
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: featuresignals-api
-  template:
-    metadata:
-      labels:
-        app: featuresignals-api
-    spec:
-      containers:
-      - name: api
-        image: ghcr.io/featuresignals/server:${FEATURESIGNALS_VERSION}
-        ports:
-        - containerPort: 8080
-        env:
-        - name: POSTGRES_PASSWORD
-          value: "${POSTGRES_PASSWORD}"
-        - name: CELL_SUBDOMAIN
-          value: "${CELL_SUBDOMAIN}"
-        - name: DATABASE_URL
-          value: "postgres://fs:${POSTGRES_PASSWORD}@featuresignals-db-postgresql.featuresignals-system.svc.cluster.local:5432/featuresignals?sslmode=disable"
-        - name: REDIS_ADDR
-          value: ""
-        - name: JWT_SECRET
-          value: "cell-${CELL_SUBDOMAIN}-jwt-secret"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "200m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: featuresignals-api
-  namespace: featuresignals-saas
-  labels:
-    app: featuresignals-api
-spec:
-  selector:
-    app: featuresignals-api
-  ports:
-  - port: 8080
-    targetPort: 8080
-    name: http
-  type: ClusterIP
-EOF
-
-    log_info "FeatureSignals API deployment applied."
-}
-
-# ---- Deploy FeatureSignals Dashboard (idempotent) ---------------------------
-deploy_featuresignals_dashboard() {
-    log_info "=== Deploying FeatureSignals Dashboard ==="
-
-    cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: featuresignals-dashboard
-  namespace: featuresignals-saas
-  labels:
-    app: featuresignals-dashboard
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: featuresignals-dashboard
-  template:
-    metadata:
-      labels:
-        app: featuresignals-dashboard
-    spec:
-      containers:
-      - name: dashboard
-        image: ghcr.io/featuresignals/dashboard:${FEATURESIGNALS_VERSION}
-        ports:
-        - containerPort: 3000
-        env:
-        - name: API_URL
-          value: "http://featuresignals-api.featuresignals-saas.svc.cluster.local:8080"
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "300m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: featuresignals-dashboard
-  namespace: featuresignals-saas
-  labels:
-    app: featuresignals-dashboard
-spec:
-  selector:
-    app: featuresignals-dashboard
-  ports:
-  - port: 3000
-    targetPort: 3000
-    name: http
-  type: ClusterIP
-EOF
-
-    log_info "FeatureSignals Dashboard deployment applied."
-}
-
 # ---- Re-enable Traefik for Ingress ------------------------------------------
 configure_traefik() {
-    log_info "=== Configuring Traefik Ingress ==="
+    log_info "=== Verifying Traefik ==="
 
-    # k3s includes Traefik by default but disables it with --disable traefik.
-    # Since we start k3s with Traefik enabled, it's already running.
-    # Verify Traefik is up.
+    # k3s includes Traefik by default.
+    # No IngressRoute is created — cells have no public DNS.
+    # Customer traffic goes through the Central API → Cell Router proxy.
     if kubectl get pods -n kube-system -l app.kubernetes.io/name=traefik --field-selector=status.phase=Running 2>/dev/null | grep -q traefik; then
-        log_info "Traefik is already running."
+        log_info "Traefik is running."
     else
-        log_warn "Traefik not found in kube-system. It should be included with k3s by default."
+        log_warn "Traefik not found in kube-system."
     fi
-
-    # Create an IngressRoute for the FeatureSignals API
-    cat <<EOF | kubectl apply -f -
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: featuresignals-api-ingress
-  namespace: featuresignals-saas
-spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-  - match: Host(\`api.${CELL_SUBDOMAIN}\`)
-    kind: Rule
-    services:
-    - name: featuresignals-api
-      port: 8080
-  - match: Host(\`${CELL_SUBDOMAIN}\`)
-    kind: Rule
-    services:
-    - name: featuresignals-dashboard
-      port: 3000
-  tls:
-    certResolver: letsencrypt
-EOF
-
-    log_info "Traefik IngressRoute configured for api.${CELL_SUBDOMAIN} and ${CELL_SUBDOMAIN}."
 }
 
 # ---- Deploy node-exporter DaemonSet (idempotent) ----------------------------
@@ -525,71 +358,12 @@ EOF
     log_info "node-exporter DaemonSet deployed."
 }
 
-# ─── Edge Worker Deployment ──────────────────────────────────────
-deploy_edge_worker() {
-    log_info "=== Deploying Edge Worker ==="
-
-    cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: edge-worker
-  namespace: featuresignals-saas
-  labels:
-    app: edge-worker
-    featuresignals.com/component: edge-worker
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: edge-worker
-  template:
-    metadata:
-      labels:
-        app: edge-worker
-    spec:
-      containers:
-      - name: edge-worker
-        image: ghcr.io/featuresignals/edge-worker:${FEATURESIGNALS_VERSION}
-        ports:
-        - containerPort: 8081
-        env:
-        - name: PORT
-          value: "8081"
-        - name: DATABASE_URL
-          value: "postgres://featuresignals:${POSTGRES_PASSWORD}@featuresignals-db-postgresql.featuresignals-system.svc.cluster.local:5432/featuresignals?sslmode=disable"
-        - name: LOG_LEVEL
-          value: "info"
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 256Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: edge-worker
-  namespace: featuresignals-saas
-spec:
-  selector:
-    app: edge-worker
-  ports:
-  - port: 8081
-    targetPort: 8081
-  type: ClusterIP
-EOF
-
-    log_info "Edge Worker deployed (3 replicas)"
-}
 
 # ---- Verify All Pods Running ------------------------------------------------
 verify_pods() {
     log_info "=== Verifying all pods are Running ==="
 
-    local namespaces=("cert-manager" "featuresignals-system" "featuresignals-saas" "kube-system")
+    local namespaces=("cert-manager" "featuresignals-system" "kube-system")
     local all_ready=true
 
     for ns in "${namespaces[@]}"; do
@@ -618,6 +392,53 @@ verify_pods() {
     fi
 }
 
+# ---- Firewall Hardening -----------------------------------------------------
+apply_firewall() {
+    log_info "=== Applying firewall rules ==="
+
+    # Default policy: DROP all inbound, ALLOW established/internal
+    cat > /etc/featuresignals-firewall.rules <<'FWRULES'
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+
+# Allow established connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Allow loopback
+-A INPUT -i lo -j ACCEPT
+
+# Allow SSH from anywhere (key-based auth only)
+-A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Allow k3s internal traffic
+-A INPUT -s 10.42.0.0/16 -j ACCEPT
+-A INPUT -s 10.43.0.0/16 -j ACCEPT
+
+# Allow node-exporter metrics
+-A INPUT -p tcp --dport 9100 -j ACCEPT
+
+# Log dropped packets (rate limited)
+-A INPUT -m limit --limit 5/min -j LOG --log-prefix "FW-DROP: "
+
+COMMIT
+FWRULES
+
+    iptables-restore < /etc/featuresignals-firewall.rules 2>/dev/null || {
+        log_warn "iptables-restore failed (may need root or iptables not available). Skipping firewall."
+        return 0
+    }
+
+    # Persist rules (survive reboot)
+    if command -v iptables-save &>/dev/null; then
+        mkdir -p /etc/iptables/
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    fi
+
+    log_info "Firewall rules applied. Default: DROP all inbound."
+}
+
 # ---- Cleanup Temp Files ----------------------------------------------------
 cleanup_temp_files() {
     log_info "=== Cleaning up temporary files ==="
@@ -642,9 +463,7 @@ output_connection_info() {
     echo "  Kubeconfig:      /etc/rancher/k3s/k3s.yaml"
     echo "  Traefik IP:      ${traefik_svc_ip}"
     echo ""
-    echo "  DNS Records (set these in your DNS provider):"
-    echo "    A   api.${CELL_SUBDOMAIN}    → ${traefik_svc_ip}"
-    echo "    A   ${CELL_SUBDOMAIN}        → ${traefik_svc_ip}"
+    echo "  (No public DNS — cells are internal. Traffic routed via Central API.)"
     echo ""
     echo "  To verify:"
     echo "    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
@@ -661,7 +480,7 @@ main() {
     echo "================================================================"
     echo "  FeatureSignals — k3s Bootstrap"
     echo "================================================================"
-    echo "  Cell Subdomain: ${CELL_SUBDOMAIN}"
+    echo "  Cell IP:        $(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
     echo "  Log file:       ${LOGFILE}"
     echo "================================================================"
     echo ""
@@ -672,11 +491,9 @@ main() {
     install_helm
     install_cert_manager
     install_postgresql
-    deploy_featuresignals_api
-    deploy_featuresignals_dashboard
     configure_traefik
     deploy_node_exporter
-    deploy_edge_worker
+    apply_firewall
     verify_pods
     cleanup_temp_files
     output_connection_info
