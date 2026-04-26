@@ -54,7 +54,7 @@ ACME_EMAIL="${ACME_EMAIL:-admin@featuresignals.com}"
 FEATURESIGNALS_VERSION="${FEATURESIGNALS_VERSION:-latest}"
 
 CERT_MANAGER_VERSION="v1.16.3"
-POSTGRESQL_HELM_VERSION="16.4.8"
+# POSTGRESQL_HELM_VERSION removed — using latest chart
 
 # ---- Prerequisite Check -----------------------------------------------------
 prereq_check() {
@@ -263,7 +263,6 @@ install_postgresql() {
 
     helm upgrade --install featuresignals-db bitnami/postgresql \
         --namespace featuresignals-system \
-        --version "$POSTGRESQL_HELM_VERSION" \
         --set auth.postgresPassword="$POSTGRES_PASSWORD" \
         --set auth.database=featuresignals \
         --set auth.username=fs \
@@ -307,7 +306,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: featuresignals/api:${FEATURESIGNALS_VERSION}
+        image: ghcr.io/featuresignals/server:${FEATURESIGNALS_VERSION}
         ports:
         - containerPort: 8080
         env:
@@ -315,6 +314,12 @@ spec:
           value: "${POSTGRES_PASSWORD}"
         - name: CELL_SUBDOMAIN
           value: "${CELL_SUBDOMAIN}"
+        - name: DATABASE_URL
+          value: "postgres://fs:${POSTGRES_PASSWORD}@featuresignals-db-postgresql.featuresignals-system.svc.cluster.local:5432/featuresignals?sslmode=disable"
+        - name: REDIS_ADDR
+          value: ""
+        - name: JWT_SECRET
+          value: "cell-${CELL_SUBDOMAIN}-jwt-secret"
         resources:
           requests:
             memory: "256Mi"
@@ -373,7 +378,7 @@ spec:
     spec:
       containers:
       - name: dashboard
-        image: featuresignals/dashboard:${FEATURESIGNALS_VERSION}
+        image: ghcr.io/featuresignals/dashboard:${FEATURESIGNALS_VERSION}
         ports:
         - containerPort: 3000
         env:
@@ -522,7 +527,7 @@ EOF
 deploy_edge_worker() {
     log_info "=== Deploying Edge Worker ==="
 
-    cat <<'EOF' | kubectl apply -f -
+    cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -543,14 +548,14 @@ spec:
     spec:
       containers:
       - name: edge-worker
-        image: featuresignals/edge-worker:${FEATURESIGNALS_VERSION:-latest}
+        image: ghcr.io/featuresignals/edge-worker:${FEATURESIGNALS_VERSION}
         ports:
         - containerPort: 8081
         env:
         - name: PORT
           value: "8081"
         - name: DATABASE_URL
-          value: "postgres://featuresignals:${POSTGRES_PASSWORD}@localhost:5432/featuresignals?sslmode=disable"
+          value: "postgres://featuresignals:${POSTGRES_PASSWORD}@featuresignals-db-postgresql.featuresignals-system.svc.cluster.local:5432/featuresignals?sslmode=disable"
         - name: LOG_LEVEL
           value: "info"
         resources:
