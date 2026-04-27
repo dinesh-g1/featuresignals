@@ -1,4 +1,3 @@
-// Deployed at: Mon Apr 27 06:15:46 IST 2026
 import Link from "next/link";
 import { SectionReveal } from "@/components/section-reveal";
 import { FlagRotCalculator } from "@/components/flag-rot-calculator";
@@ -1180,3 +1179,5 @@ export default function HomePage() {
     </>
   );
 }
+-e 
+// deployment: 1777250753
