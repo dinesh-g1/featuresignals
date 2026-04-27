@@ -124,8 +124,8 @@ func (s *Store) GetCellWithFewestTenantsInRegion(ctx context.Context, region str
 func (s *Store) GetCellLoad(ctx context.Context) ([]domain.CellLoadInfo, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT c.id, c.name, 
-			COALESCE(c.cpu_percent, 0) as cpu_percent,
-			COALESCE(c.memory_percent, 0) as mem_percent,
+			CASE WHEN c.cpu_total > 0 THEN ((c.cpu_used / c.cpu_total) * 100.0) ELSE 0 END as cpu_percent,
+			CASE WHEN c.mem_total > 0 THEN ((c.mem_used / c.mem_total) * 100.0) ELSE 0 END as mem_percent,
 			(SELECT COUNT(*) FROM tenant_region tr WHERE tr.cell_id = c.id) as tenant_count,
 			c.status
 		FROM cells c
