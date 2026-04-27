@@ -113,35 +113,35 @@ jobs:
           username: root
           password: ${{ steps.reset.outputs.password }}
           envs: GHCR_TOKEN
-        script: |
-          set -e
+          script: |
+            set -e
 
-          cd /opt/featuresignals
+            cd /opt/featuresignals
 
-          # Log in to GHCR
-          echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
-          echo "✅ Logged in to GHCR"
+            # Log in to GHCR
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
+            echo "✅ Logged in to GHCR"
 
-          # Pull latest images
-          docker pull ghcr.io/dinesh-g1/featuresignals-server:latest
-          docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:latest
-          echo "✅ Images pulled"
+            # Pull latest images
+            docker pull ghcr.io/dinesh-g1/featuresignals-server:latest
+            docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:latest
+            echo "✅ Images pulled"
 
-          # Start the stack
-          FEATURESIGNALS_VERSION=latest docker compose up -d
-          echo "✅ Stack started"
+            # Start the stack
+            FEATURESIGNALS_VERSION=latest docker compose up -d
+            echo "✅ Stack started"
 
-          # Wait for health
-          echo "Waiting for health check..."
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
-              echo "✅ Cell is healthy"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "❌ Health check timed out"
-          exit 1
+            # Wait for health
+            echo "Waiting for health check..."
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
+                echo "✅ Cell is healthy"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "❌ Health check timed out"
+            exit 1
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
