@@ -338,6 +338,21 @@ func (s *tierMockStore) GetComponentHistory(_ context.Context, _ int) ([]domain.
 	return nil, nil
 }
 
+// TenantRegionStore stubs
+func (s *tierMockStore) Get(_ context.Context, _ string) (*domain.TenantRegion, error) { return nil, domain.ErrNotFound }
+func (s *tierMockStore) Upsert(_ context.Context, _ *domain.TenantRegion) error { return nil }
+func (s *tierMockStore) GetByRoutingKey(_ context.Context, _ string) (*domain.TenantRegion, error) { return nil, domain.ErrNotFound }
+func (s *tierMockStore) ListByRegion(_ context.Context, _ string) ([]*domain.TenantRegion, error) { return nil, nil }
+func (s *tierMockStore) Delete(_ context.Context, _ string) error { return nil }
+func (s *tierMockStore) GetCellWithFewestTenantsInRegion(_ context.Context, _ string) (*domain.Cell, error) { return nil, nil }
+func (s *tierMockStore) GetCellLoad(_ context.Context) ([]domain.CellLoadInfo, error) { return nil, nil }
+
+// TenantResourceOverrideStore stubs
+func (s *tierMockStore) GetOverride(_ context.Context, _ string) (*domain.TenantResourceOverride, error) { return nil, domain.ErrNotFound }
+func (s *tierMockStore) UpsertOverride(_ context.Context, _ *domain.TenantResourceOverride) error { return nil }
+func (s *tierMockStore) DeleteOverride(_ context.Context, _ string) error { return nil }
+
+
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)
 }

@@ -49,9 +49,11 @@ import type {
 } from "@/types/preview";
 import type {
   EnvVar,
-  EnvVarList,
-  EnvVarUpdateRequest,
-  EnvVarUpdateResponse,
+  EnvVarListResponse,
+  EnvVarEffectiveResponse,
+  EnvVarUpsertRequest,
+  EnvVarUpsertResponse,
+  RevealResponse,
 } from "@/types/env-var";
 import type {
   LoginRequest,
@@ -722,55 +724,145 @@ export async function getUsageRecords(period?: string): Promise<UsageRecord[]> {
 
 // ─── Env Var Endpoints ──────────────────────────────────────────────────────
 
-export async function getEnvVars(): Promise<EnvVar[]> {
-  return request<EnvVar[]>("/env-vars");
+// ─── Multi-Scope Env Var Endpoints (new unified API) ─────────────────
+
+/** List env vars with optional scope filtering */
+export async function listEnvVars(params?: {
+  scope?: string;
+  scope_id?: string;
+  search?: string;
+  secret?: boolean;
+  reveal?: boolean;
+}): Promise<EnvVarListResponse> {
+  return request<EnvVarListResponse>("/env-vars", {
+    params: params as Record<string, string | number | boolean | undefined>,
+  });
 }
 
-export async function getEffectiveEnvVars(cellId: string): Promise<EnvVarList> {
-  return request<EnvVarList>(`/env-vars/${cellId}`);
+/** Get available scopes */
+export async function getEnvVarScopes(): Promise<{ scopes: string[] }> {
+  return request<{ scopes: string[] }>("/env-vars/scopes");
 }
 
-export async function updateEnvVars(
-  cellId: string,
-  req: EnvVarUpdateRequest,
-): Promise<EnvVarUpdateResponse> {
-  return request<EnvVarUpdateResponse>(`/env-vars/${cellId}`, {
-    method: "PUT",
+/** Upsert env vars at a scope */
+export async function upsertEnvVars(
+  req: EnvVarUpsertRequest,
+): Promise<EnvVarUpsertResponse> {
+  return request<EnvVarUpsertResponse>("/env-vars", {
+    method: "POST",
     body: JSON.stringify(req),
   });
 }
 
-// ─── Multi-Scope Env Var Update ────────────────────────────────────────────
-
-export type EnvVarScope = "global" | "cloud" | "region" | "cell" | "tenant";
-
-/** Build the correct API path for a given scope and scope ID. */
-function buildEnvVarScopePath(scope: EnvVarScope, scopeId: string): string {
-  switch (scope) {
-    case "global":
-      return "/env-vars/global";
-    case "cloud":
-      return `/env-vars/cloud/${scopeId}`;
-    case "region":
-      return `/env-vars/region/${scopeId}`;
-    case "cell":
-      return `/env-vars/${scopeId}`;
-    case "tenant":
-      return `/env-vars/tenant/${scopeId}`;
-  }
+/** Get effective env vars for a tenant (resolved across global→region→cell→tenant chain) */
+export async function getEffectiveEnvVarsForTenant(
+  tenantId: string,
+): Promise<EnvVarEffectiveResponse> {
+  return request<EnvVarEffectiveResponse>(`/env-vars/effective/${tenantId}`);
 }
 
-/** Update environment variables at any scope level. */
-export async function updateEnvVarsAtScope(
-  scope: EnvVarScope,
-  scopeId: string,
-  req: EnvVarUpdateRequest,
-): Promise<EnvVarUpdateResponse> {
-  const path = buildEnvVarScopePath(scope, scopeId);
-  return request<EnvVarUpdateResponse>(path, {
-    method: "PUT",
-    body: JSON.stringify(req),
+// ─── Auth Reveal ──────────────────────────────────────────────────────
+
+/** Issue a short-lived JWT for revealing secret env var values */
+export async function revealSecrets(password: string): Promise<RevealResponse> {
+  return request<RevealResponse>("/auth/reveal", {
+    method: "POST",
+    body: JSON.stringify({ password }),
   });
+}
+
+// ─── Regions ──────────────────────────────────────────────────────────
+
+export interface RegionLoadInfo {
+  region: string;
+  name: string;
+  cells: CellLoadInfo[];
+  total_cpu_percent: number;
+  total_memory_percent: number;
+}
+
+export interface CellLoadInfo {
+  cell_id: string;
+  name: string;
+  cpu_percent: number;
+  mem_percent: number;
+  tenant_count: number;
+  status: string;
+}
+
+/** List regions with cell load metrics */
+export async function getRegions(): Promise<{ regions: RegionLoadInfo[] }> {
+  return request<{ regions: RegionLoadInfo[] }>("/regions");
+}
+
+/** List cells in a region */
+export async function getCellsInRegion(
+  region: string,
+): Promise<{ cells: any[]; region: string; total: number }> {
+  return request<{ cells: any[]; region: string; total: number }>(
+    `/regions/${region}/cells`,
+  );
+}
+
+// ─── SigNoz Logs ──────────────────────────────────────────────────────
+
+/** Query logs from SigNoz */
+export async function getSignozLogs(
+  params?: Record<string, string | number | boolean | undefined>,
+): Promise<any> {
+  return request<any>("/signoz/logs", { params });
+}
+
+/** List services from SigNoz */
+export async function getSignozServices(): Promise<any> {
+  return request<any>("/signoz/services");
+}
+
+// ─── Resource Quota ───────────────────────────────────────────────────
+
+export interface ResourceQuotaInfo {
+  tenant_id: string;
+  tier: string;
+  using_defaults: boolean;
+  cpu_request: string;
+  memory_request: string;
+  cpu_limit: string;
+  memory_limit: string;
+  priority_class: string;
+}
+
+/** Get tenant resource quota overrides */
+export async function getTenantResourceQuota(
+  tenantId: string,
+): Promise<ResourceQuotaInfo> {
+  return request<ResourceQuotaInfo>(`/tenants/${tenantId}/resource-quota`);
+}
+
+/** Update tenant resource quota overrides */
+export async function updateTenantResourceQuota(
+  tenantId: string,
+  quota: {
+    cpu_request: string;
+    memory_request: string;
+    cpu_limit: string;
+    memory_limit: string;
+    priority_class: string;
+  },
+): Promise<{ status: string; tenant_id: string }> {
+  return request<{ status: string; tenant_id: string }>(
+    `/tenants/${tenantId}/resource-quota`,
+    {
+      method: "PUT",
+      body: JSON.stringify(quota),
+    },
+  );
+}
+
+// ─── Autoscaler ───────────────────────────────────────────────────────
+
+/** Get autoscaler status */
+export async function getAutoscalerStatus(): Promise<any> {
+  return request<any>("/autoscaler/status");
 }
 
 // ─── Backup Endpoints ───────────────────────────────────────────────────────

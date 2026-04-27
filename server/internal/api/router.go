@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"log/slog"
 	"net/http"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/featuresignals/server/internal/queue"
 	"github.com/featuresignals/server/internal/service"
 	"github.com/featuresignals/server/internal/status"
+	"github.com/featuresignals/server/internal/store/postgres"
 )
 
 // BillingConfig holds payment gateway registry and URL configuration.
@@ -137,7 +139,11 @@ func NewRouter(
 	integrationH := handlers.NewIntegrationHandler(store, logger)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments)
-	cellRouterMw := middleware.NewCellRouter(store, cfg.JWTSecret, logger)
+	var tenantRegStore domain.TenantRegionStore
+	if trs, ok := store.(domain.TenantRegionStore); ok {
+		tenantRegStore = trs
+	}
+	cellRouterMw := middleware.NewCellRouter(store, tenantRegStore, cfg.JWTSecret, logger)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
@@ -547,8 +553,29 @@ func NewRouter(
 	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, queueClient, eventBus, sshAccess, logger)
 	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
 	opsSystemH := handlers.NewOpsSystemHandler(store, nil, logger)
+	opsRegionH := handlers.NewOpsRegionHandler(store, logger)
+	opsSignozH := handlers.NewOpsSignozHandler(cfg.SignozURL, cfg.SignozAPIToken, logger)
 	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
-	opsEnvVarsH := handlers.NewOpsEnvVarsHandler(store, logger)
+	// Create env var store with encryption master key
+	var envVarStore domain.EnvVarStore
+	var masterKey [32]byte
+	envVarMasterKeyHex := cfg.EncryptionMasterKey
+	if len(envVarMasterKeyHex) >= 64 {
+		keyBytes, err := hex.DecodeString(envVarMasterKeyHex[:64])
+		if err == nil {
+			copy(masterKey[:], keyBytes)
+		}
+	}
+	if envVarPgStore, ok := store.(*postgres.Store); ok && masterKey != [32]byte{} {
+		envVarStore = postgres.NewEnvVarStore(envVarPgStore.Pool(), masterKey)
+		logger.Info("env var store initialized with encryption")
+	} else {
+		logger.Warn("env var encryption master key not configured — env vars disabled")
+	}
+
+	opsEnvVarsH := handlers.NewOpsEnvVarsHandler(envVarStore, store, masterKey, logger)
+	opsRevealH := handlers.NewOpsAuthRevealHandler(store, []byte(cfg.JWTSecret), logger)
+	opsScaleH := handlers.NewOpsScaleHandler(store, logger)
 	opsBackupsH := handlers.NewOpsBackupsHandler(store, logger)
 	// ── Ops Portal Auth (public) ────────────────────────────────
 	r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
@@ -604,9 +631,17 @@ func NewRouter(
 		r.Get("/billing/tenants/{tenantId}/cost", opsDashboardH.TenantCostBreakdown)
 
 		// ── Environment Variables ──────────────────────────────
-		r.Get("/env-vars", opsEnvVarsH.ListGlobal)
-		r.Get("/env-vars/{cellId}", opsEnvVarsH.GetEffective)
-		r.Post("/env-vars/{cellId}", opsEnvVarsH.Update)
+		r.Get("/env-vars", opsEnvVarsH.List)
+		r.Get("/env-vars/scopes", opsEnvVarsH.GetScopes)
+		r.Post("/env-vars", opsEnvVarsH.Upsert)
+		r.Get("/env-vars/effective/{tenantId}", opsEnvVarsH.GetEffective)
+
+		// ── Auth Reveal ────────────────────────────────────────
+		r.Post("/auth/reveal", opsRevealH.Reveal)
+
+		// ── Resource Quota ─────────────────────────────────────
+		r.Get("/tenants/{id}/resource-quota", opsScaleH.GetResourceQuota)
+		r.Put("/tenants/{id}/resource-quota", opsScaleH.UpdateResourceQuota)
 
 		// ── Backups ────────────────────────────────────────────
 		r.Get("/backups", opsBackupsH.List)
@@ -620,6 +655,17 @@ func NewRouter(
 		// ── System ─────────────────────────────────────────────
 		r.Get("/system/health", opsSystemH.Health)
 		r.Get("/system/services", opsSystemH.Services)
+
+		// ── Regions ──────────────────────────────────────────
+		r.Get("/regions", opsRegionH.ListRegions)
+		r.Get("/regions/{region}/cells", opsRegionH.ListCellsInRegion)
+
+		// ── SigNoz ──────────────────────────────────────────
+		r.Get("/signoz/logs", opsSignozH.ListLogs)
+		r.Get("/signoz/services", opsSignozH.ListServices)
+
+		// ── Autoscaler ──────────────────────────────────────
+		r.Get("/autoscaler/status", opsSystemH.AutoscalerStatus)
 
 		// ── Licenses ────────────────────────────────────────────
 		r.Get("/licenses", opsH.ListLicenses)

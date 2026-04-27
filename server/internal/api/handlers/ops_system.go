@@ -237,3 +237,71 @@ func (h *OpsSystemHandler) Services(w http.ResponseWriter, r *http.Request) {
 		"checked_at": time.Now().UTC(),
 	})
 }
+
+// AutoscalerStatus handles GET /api/v1/ops/autoscaler/status
+func (h *OpsSystemHandler) AutoscalerStatus(w http.ResponseWriter, r *http.Request) {
+	logger := h.logger.With("handler", "ops_autoscaler_status")
+
+	cells, err := h.store.ListCells(r.Context(), domain.CellFilter{Limit: 1000})
+	if err != nil {
+		logger.Error("failed to list cells for autoscaler status", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	type cellAutoscaleInfo struct {
+		CellID      string  `json:"cell_id"`
+		Name        string  `json:"name"`
+		Region      string  `json:"region"`
+		Status      string  `json:"status"`
+		TenantCount int     `json:"tenant_count"`
+		CPUPercent  float64 `json:"cpu_percent"`
+		MemPercent  float64 `json:"mem_percent"`
+	}
+
+	autoscalerInfo := struct {
+		Status  string              `json:"status"`
+		Cells   []cellAutoscaleInfo `json:"cells"`
+		Summary struct {
+			TotalCells   int `json:"total_cells"`
+			RunningCells int `json:"running_cells"`
+			Overloaded   int `json:"overloaded"`
+			Underloaded  int `json:"underloaded"`
+		} `json:"summary"`
+		CheckedAt string `json:"checked_at"`
+	}{
+		Status:    "ok",
+		Cells:     make([]cellAutoscaleInfo, 0, len(cells)),
+		CheckedAt: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	for _, c := range cells {
+		cpuPercent := c.CPU.Percent
+		memPercent := c.Memory.Percent
+		autoscalerInfo.Cells = append(autoscalerInfo.Cells, cellAutoscaleInfo{
+			CellID:      c.ID,
+			Name:        c.Name,
+			Region:      c.Region,
+			Status:      c.Status,
+			TenantCount: c.TenantCount,
+			CPUPercent:  cpuPercent,
+			MemPercent:  memPercent,
+		})
+		autoscalerInfo.Summary.TotalCells++
+
+		if c.Status == "running" {
+			autoscalerInfo.Summary.RunningCells++
+		}
+		if cpuPercent > 80 || memPercent > 80 {
+			autoscalerInfo.Summary.Overloaded++
+		} else if cpuPercent < 20 && memPercent < 20 && c.Status == "running" {
+			autoscalerInfo.Summary.Underloaded++
+		}
+	}
+
+	if autoscalerInfo.Summary.Overloaded > 0 {
+		autoscalerInfo.Status = "attention_required"
+	}
+
+	httputil.JSON(w, http.StatusOK, autoscalerInfo)
+}

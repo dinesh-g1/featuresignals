@@ -667,4 +667,15 @@ func (m *mockStore) UpdateCell(_ context.Context, _ *domain.Cell) error { return
 func (m *mockStore) DeleteCell(_ context.Context, _ string) error { return nil }
 func (m *mockStore) CreateProvisionEvent(_ context.Context, _ *domain.ProvisionEvent) error { return nil }
 func (m *mockStore) ListProvisionEvents(_ context.Context, _ string, _ time.Time) ([]*domain.ProvisionEvent, error) { return nil, nil }
+func (m *mockStore) Get(_ context.Context, _ string) (*domain.TenantRegion, error) { return nil, domain.ErrNotFound }
+func (m *mockStore) Upsert(_ context.Context, _ *domain.TenantRegion) error { return nil }
+func (m *mockStore) GetByRoutingKey(_ context.Context, _ string) (*domain.TenantRegion, error) { return nil, domain.ErrNotFound }
+func (m *mockStore) ListByRegion(_ context.Context, _ string) ([]*domain.TenantRegion, error) { return nil, nil }
+func (m *mockStore) Delete(_ context.Context, _ string) error { return nil }
+func (m *mockStore) GetCellWithFewestTenantsInRegion(_ context.Context, _ string) (*domain.Cell, error) { return nil, nil }
+func (m *mockStore) GetCellLoad(_ context.Context) ([]domain.CellLoadInfo, error) { return nil, nil }
+func (m *mockStore) GetOverride(_ context.Context, _ string) (*domain.TenantResourceOverride, error) { return nil, domain.ErrNotFound }
+func (m *mockStore) UpsertOverride(_ context.Context, _ *domain.TenantResourceOverride) error { return nil }
+func (m *mockStore) DeleteOverride(_ context.Context, _ string) error { return nil }
+
 

@@ -481,30 +481,30 @@ func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version 
 }
 
 // =========================================================================
-// DeployCell — deploy a version to a specific cell
+// DeployCellViaHelm — deploy a version to a specific cell using Helm
 // =========================================================================
 
-// DeployCell deploys a specific version to a single cell.
-// SSHs into the cell, updates the FeatureSignals API, Dashboard, and
-// Edge Worker deployments to the given image tag, then verifies rollout.
+// DeployCellViaHelm deploys a version to a specific cell using Helm with a kubeconfig secret.
+// Replaces the old DeployCell which used SSH + kubectl set image.
 //
 // Required host environment variables:
-//   - SSH_PRIVATE_KEY:      SSH private key content (for kubectl over SSH)
-//   - CELL_SSH_USER:        SSH user (default: "root")
-func (m *Ci) DeployCell(ctx context.Context, source *dagger.Directory, version, cellIP, cellName string) error {
+//   - GHCR_TOKEN:                GitHub Container Registry token
+//   - CELL_{NAME}_KUBECONFIG:    Base64-encoded kubeconfig for the cell
+func (m *Ci) DeployCellViaHelm(ctx context.Context, source *dagger.Directory, version, cellName string) error {
 	if version == "" {
 		return fmt.Errorf("version is required")
 	}
-	if cellIP == "" {
-		return fmt.Errorf("cellIP is required")
+	if cellName == "" {
+		return fmt.Errorf("cellName is required")
 	}
 
 	ghcrToken := dag.Host().EnvVariable("GHCR_TOKEN").Secret()
-	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
-	sshUser := dag.Host().EnvVariable("CELL_SSH_USER")
-	fmt.Printf("🚀 Deploying v%s to cell %s (%s)\n", version, cellName, cellIP)
 
-	// Ensure images exist on GHCR first by publishing with the version tag
+	// Get cell-specific kubeconfig from host env variable
+	kubeconfigVarName := fmt.Sprintf("CELL_%s_KUBECONFIG", strings.ToUpper(strings.ReplaceAll(cellName, "-", "_")))
+	kubeconfig := dag.Host().EnvVariable(kubeconfigVarName).Secret()
+
+	// First publish images
 	serverImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
 		Dockerfile: "deploy/docker/Dockerfile.server",
 	})
@@ -515,7 +515,6 @@ func (m *Ci) DeployCell(ctx context.Context, source *dagger.Directory, version, 
 	if err != nil {
 		return fmt.Errorf("publish server:%s: %w", version, err)
 	}
-	fmt.Printf("  ✅ Published server:%s\n", version)
 
 	dashboardImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
 		Dockerfile: "deploy/docker/Dockerfile.dashboard",
@@ -531,42 +530,41 @@ func (m *Ci) DeployCell(ctx context.Context, source *dagger.Directory, version, 
 	if err != nil {
 		return fmt.Errorf("publish dashboard:%s: %w", version, err)
 	}
-	fmt.Printf("  ✅ Published dashboard:%s\n", version)
 
-	// SSH into the cell and update deployments
-	sshCtr := dag.Container().
-		From("alpine:3.20").
-		WithExec([]string{"apk", "add", "--no-cache", "openssh", "curl", "kubectl"}).
-		WithSecretVariable("SSH_KEY", sshKey).
-		WithExec([]string{"sh", "-c", "mkdir -p /root/.ssh && echo \"$SSH_KEY\" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519"})
+	// Use Helm container with kubeconfig
+	kubeconfigDir := "/root/.kube"
+	kubeconfigPath := fmt.Sprintf("%s/config", kubeconfigDir)
 
-	// Determine SSH user
-	sshUserStr := "root"
-	if sshUser != "" {
-		sshUserStr = sshUser
+	helmCtr := dag.Container().
+		From("alpine/helm:3.16").
+		WithDirectory("/app", source).
+		WithWorkdir("/app").
+		WithSecretVariable("KUBECONFIG", kubeconfig).
+		WithExec([]string{"mkdir", "-p", kubeconfigDir}).
+		WithExec([]string{"sh", "-c", fmt.Sprintf(
+			`echo "$KUBECONFIG" | base64 -d > %s && chmod 600 %s`,
+			kubeconfigPath, kubeconfigPath,
+		)})
+
+	// Run Helm upgrade
+	_, err = helmCtr.WithExec([]string{
+		"helm", "upgrade", "--install", "featuresignals",
+		"./deploy/k8s/helm/featuresignals",
+		"--namespace", "featuresignals-saas",
+		"--create-namespace",
+		"--set", fmt.Sprintf("server.image.tag=%s", version),
+		"--set", "server.image.repository=ghcr.io/featuresignals/server",
+		"--set", fmt.Sprintf("dashboard.image.tag=%s", version),
+		"--set", "dashboard.image.repository=ghcr.io/featuresignals/dashboard",
+		"--set", fmt.Sprintf("edgeWorker.image.tag=%s", version),
+		"--set", "edgeWorker.image.repository=ghcr.io/featuresignals/server",
+		"--wait",
+		"--timeout", "5m",
+	}).Sync(ctx)
+	if err != nil {
+		return fmt.Errorf("helm upgrade failed for cell %s: %w", cellName, err)
 	}
-	host := fmt.Sprintf("%s@%s", sshUserStr, cellIP)
 
-	// Update API deployment
-	cmds := []string{
-		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl set image deployment/featuresignals-api -n featuresignals-saas api=%s'`, host, serverTag),
-		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl set image deployment/featuresignals-dashboard -n featuresignals-saas dashboard=%s'`, host, dashTag),
-		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl set image deployment/edge-worker -n featuresignals-saas edge-worker=%s'`, host, serverTag),
-		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl rollout status deployment/featuresignals-api -n featuresignals-saas --timeout=3m'`, host),
-		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl rollout status deployment/featuresignals-dashboard -n featuresignals-saas --timeout=3m'`, host),
-		fmt.Sprintf(`ssh -o StrictHostKeyChecking=no %s 'kubectl rollout status deployment/edge-worker -n featuresignals-saas --timeout=3m'`, host),
-	}
-
-	for _, cmd := range cmds {
-		ctr, err := sshCtr.WithExec([]string{"sh", "-c", cmd}).Sync(ctx)
-		if err != nil {
-			return fmt.Errorf("deploy step failed on %s: %w\ncmd: %s", cellName, err, cmd)
-		}
-		output, _ := ctr.Stdout(ctx)
-		fmt.Printf("  %s\n", strings.TrimSpace(output))
-	}
-
-	fmt.Printf("✅ Cell %s (%s) updated to v%s\n", cellName, cellIP, version)
 	return nil
 }
 
@@ -1037,160 +1035,93 @@ elif isinstance(plans, list):
 }
 
 // =========================================================================
-// DeployWeb — one-time VPS bootstrap
+// DeployWeb — deprecated
 // =========================================================================
 
-// DeployWeb creates a permanent web VPS and bootstraps it with Caddy.
-// This is a one-time setup script — run it once on a fresh VPS, then use
-// DeployWebsite / DeployDocs for all subsequent content updates.
-//
-// Required host environment variables:
-//   - WEB_VPS_IP:        IP address of the web VPS
-//   - SSH_PRIVATE_KEY:   SSH private key with root access to the VPS
+// DeployWeb is deprecated. Use DeployToBucket with project=website or project=docs instead.
 func (m *Ci) DeployWeb(ctx context.Context, source *dagger.Directory, version string) error {
-	fmt.Println("=== Deploying web VPS ===")
-	fmt.Println("This is a one-time setup. After the VPS is created:")
-	fmt.Println("  1. Run deploy/k3s/bootstrap-web.sh on the VPS as root")
-	fmt.Println("  2. Point DNS A records to the VPS IP")
-	fmt.Println("  3. Use DeployWebsite / DeployDocs for content updates")
-
-	// Upload and execute the bootstrap script
-	if version == "" {
-		version = "latest"
-	}
-
-	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
-	webHost := dag.Host().EnvVariable("WEB_VPS_IP")
-
-	ctr := dag.Container().
-		From("alpine:3.20").
-		WithExec([]string{"apk", "add", "--no-cache", "openssh"}).
-		WithSecretVariable("SSH_KEY", sshKey).
-		WithDirectory("/provision", source.Directory("deploy/k3s")).
-		WithExec([]string{"sh", "-c", `mkdir -p /root/.ssh && echo "$SSH_KEY" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519`})
-
-	// Upload the bootstrap script and execute it
-	_, err := ctr.WithExec([]string{
-		"sh", "-c",
-		fmt.Sprintf(
-			`scp -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519 /provision/bootstrap-web.sh root@%s:/tmp/bootstrap-web.sh && ssh -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519 root@%s "bash /tmp/bootstrap-web.sh"`,
-			webHost, webHost,
-		),
-	}).Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("deploy web VPS bootstrap: %w", err)
-	}
-
-	fmt.Printf("✅ Web VPS (%s) bootstrapped with Caddy\n", webHost)
+	fmt.Println("DeployWeb is deprecated. Use DeployToBucket with project=website or project=docs instead.")
 	return nil
 }
 
 // =========================================================================
-// DeployWebsite — build and deploy website to web VPS
+// DeployWebsite — deprecated
 // =========================================================================
 
-// DeployWebsite builds the Next.js website (static export) and deploys
-// it to the web VPS via rsync over SSH.
-//
-// Required host environment variables:
-//   - WEB_VPS_IP:        IP address of the web VPS
-//   - SSH_PRIVATE_KEY:   SSH private key with root access to the VPS
+// DeployWebsite is deprecated. Use DeployToBucket with project=website instead.
 func (m *Ci) DeployWebsite(ctx context.Context, source *dagger.Directory, version string) error {
-	if version == "" {
-		version = "latest"
-	}
-
-	fmt.Printf("=== Building website (v%s) ===\n", version)
-
-	// Build website with Next.js static export
-	website := dag.Container().From("node:22-alpine").
-		WithDirectory("/app", source.Directory("website")).
-		WithWorkdir("/app").
-		WithExec([]string{"npm", "ci"}).
-		WithExec([]string{"npm", "run", "build"})
-
-	// Get the static export output (Next.js output: "export" → /app/out)
-	outDir := website.Directory("out")
-
-	// SSH key and host
-	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
-	webHost := dag.Host().EnvVariable("WEB_VPS_IP")
-
-	fmt.Printf("=== Deploying website to %s ===\n", webHost)
-
-	// Upload via rsync over SSH
-	ctr := dag.Container().
-		From("alpine:3.20").
-		WithExec([]string{"apk", "add", "--no-cache", "openssh", "rsync"}).
-		WithSecretVariable("SSH_KEY", sshKey).
-		WithDirectory("/website", outDir).
-		WithExec([]string{"sh", "-c", `mkdir -p /root/.ssh && echo "$SSH_KEY" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519`})
-
-	_, err := ctr.WithExec([]string{
-		"rsync", "-avz", "--delete",
-		"-e", "ssh -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519",
-		"/website/",
-		fmt.Sprintf("root@%s:/var/www/html/", webHost),
-	}).Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("deploy website: %w", err)
-	}
-
-	fmt.Printf("✅ Website (v%s) deployed to https://featuresignals.com\n", version)
+	fmt.Println("DeployWebsite is deprecated. Use DeployToBucket with project=website instead.")
 	return nil
 }
 
 // =========================================================================
-// DeployDocs — build and deploy documentation to web VPS
+// DeployDocs — deprecated
 // =========================================================================
 
-// DeployDocs builds the Docusaurus documentation site and deploys it
-// to the web VPS via rsync over SSH.
+// DeployDocs is deprecated. Use DeployToBucket with project=docs instead.
+func (m *Ci) DeployDocs(ctx context.Context, source *dagger.Directory, version string) error {
+	fmt.Println("DeployDocs is deprecated. Use DeployToBucket with project=docs instead.")
+	return nil
+}
+
+// =========================================================================
+// DeployToBucket — build and deploy static content to S3-compatible storage
+// =========================================================================
+
+// DeployToBucket builds and uploads static content to an S3-compatible bucket.
+// Used for website and docs deployments — no SSH, no rsync.
 //
 // Required host environment variables:
-//   - WEB_VPS_IP:        IP address of the web VPS
-//   - SSH_PRIVATE_KEY:   SSH private key with root access to the VPS
-func (m *Ci) DeployDocs(ctx context.Context, source *dagger.Directory, version string) error {
-	if version == "" {
-		version = "latest"
+//   - AWS_ACCESS_KEY_ID:       AWS or MinIO access key
+//   - AWS_SECRET_ACCESS_KEY:   AWS or MinIO secret key
+func (m *Ci) DeployToBucket(ctx context.Context, source *dagger.Directory, project, version, bucketName, endpoint, region string) error {
+	// Validate project
+	switch project {
+	case "website", "docs":
+	default:
+		return fmt.Errorf("project must be 'website' or 'docs', got %q", project)
 	}
 
-	fmt.Printf("=== Building docs (v%s) ===\n", version)
+	awsKey := dag.Host().EnvVariable("AWS_ACCESS_KEY_ID").Secret()
+	awsSecret := dag.Host().EnvVariable("AWS_SECRET_ACCESS_KEY").Secret()
 
-	// Build docs with Docusaurus
-	docs := dag.Container().From("node:22-alpine").
-		WithDirectory("/app", source.Directory("docs")).
-		WithWorkdir("/app").
-		WithExec([]string{"npm", "ci"}).
-		WithExec([]string{"npm", "run", "build"})
+	// Build the static site
+	var builtDir *dagger.Directory
+	if project == "website" {
+		website := dag.Container().From("node:22-alpine").
+			WithDirectory("/app", source.Directory("website")).
+			WithWorkdir("/app").
+			WithExec([]string{"npm", "ci"}).
+			WithExec([]string{"npm", "run", "build"})
+		builtDir = website.Directory("out")
+	} else {
+		docs := dag.Container().From("node:22-alpine").
+			WithDirectory("/app", source.Directory("docs")).
+			WithWorkdir("/app").
+			WithExec([]string{"npm", "ci"}).
+			WithExec([]string{"npm", "run", "build"})
+		builtDir = docs.Directory("build")
+	}
 
-	// Docusaurus outputs to /app/build
-	outDir := docs.Directory("build")
-
-	// SSH key and host
-	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
-	webHost := dag.Host().EnvVariable("WEB_VPS_IP")
-
-	fmt.Printf("=== Deploying docs to %s ===\n", webHost)
-
-	// Upload via rsync over SSH
+	// Upload via AWS CLI
 	ctr := dag.Container().
-		From("alpine:3.20").
-		WithExec([]string{"apk", "add", "--no-cache", "openssh", "rsync"}).
-		WithSecretVariable("SSH_KEY", sshKey).
-		WithDirectory("/docs", outDir).
-		WithExec([]string{"sh", "-c", `mkdir -p /root/.ssh && echo "$SSH_KEY" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519`})
+		From("amazon/aws-cli:2.17").
+		WithSecretVariable("AWS_ACCESS_KEY_ID", awsKey).
+		WithSecretVariable("AWS_SECRET_ACCESS_KEY", awsSecret).
+		WithDirectory("/content", builtDir)
+
+	s3Endpoint := fmt.Sprintf("--endpoint-url=%s", endpoint)
+	s3Region := fmt.Sprintf("--region=%s", region)
 
 	_, err := ctr.WithExec([]string{
-		"rsync", "-avz", "--delete",
-		"-e", "ssh -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519",
-		"/docs/",
-		fmt.Sprintf("root@%s:/var/www/docs/", webHost),
+		"aws", "s3", "sync", "/content/",
+		fmt.Sprintf("s3://%s/", bucketName),
+		s3Endpoint, s3Region,
+		"--delete",
 	}).Sync(ctx)
 	if err != nil {
-		return fmt.Errorf("deploy docs: %w", err)
+		return fmt.Errorf("deploy %s to S3: %w", project, err)
 	}
 
-	fmt.Printf("✅ Docs (v%s) deployed to https://docs.featuresignals.com\n", version)
 	return nil
 }

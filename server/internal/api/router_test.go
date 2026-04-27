@@ -361,6 +361,20 @@ func (noopStore) DeleteCell(_ context.Context, _ string) error { return nil }
 func (noopStore) CreateProvisionEvent(_ context.Context, _ *domain.ProvisionEvent) error { return nil }
 func (noopStore) ListProvisionEvents(_ context.Context, _ string, _ time.Time) ([]*domain.ProvisionEvent, error) { return nil, nil }
 
+// TenantRegionStore stubs
+func (noopStore) Get(_ context.Context, _ string) (*domain.TenantRegion, error) { return nil, domain.ErrNotFound }
+func (noopStore) Upsert(_ context.Context, _ *domain.TenantRegion) error { return nil }
+func (noopStore) GetByRoutingKey(_ context.Context, _ string) (*domain.TenantRegion, error) { return nil, domain.ErrNotFound }
+func (noopStore) ListByRegion(_ context.Context, _ string) ([]*domain.TenantRegion, error) { return nil, nil }
+func (noopStore) Delete(_ context.Context, _ string) error { return nil }
+func (noopStore) GetCellWithFewestTenantsInRegion(_ context.Context, _ string) (*domain.Cell, error) { return nil, nil }
+func (noopStore) GetCellLoad(_ context.Context) ([]domain.CellLoadInfo, error) { return nil, nil }
+
+// TenantResourceOverrideStore stubs
+func (noopStore) GetOverride(_ context.Context, _ string) (*domain.TenantResourceOverride, error) { return nil, domain.ErrNotFound }
+func (noopStore) UpsertOverride(_ context.Context, _ *domain.TenantResourceOverride) error { return nil }
+func (noopStore) DeleteOverride(_ context.Context, _ string) error { return nil }
+
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error              { return nil }

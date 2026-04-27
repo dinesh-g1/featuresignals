@@ -1,12 +1,9 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"net/http"
-	"sync"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -14,194 +11,166 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
-// ─── View Models ──────────────────────────────────────────────────────
-
-// EnvVar represents an environment variable for ops portal configuration.
-// Vars are scoped to either "global" or a specific "cell" for layered overrides.
-type EnvVar struct {
-	Key       string    `json:"key"`
-	Value     string    `json:"value"`
-	Scope     string    `json:"scope"`
-	ScopeID   string    `json:"scope_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+// OpsEnvVarsHandler serves environment variable management endpoints for the ops portal.
+// Values are encrypted at rest via the EnvVarStore.
+type OpsEnvVarsHandler struct {
+	envVarStore domain.EnvVarStore
+	store       domain.Store
+	masterKey   [32]byte
+	logger      *slog.Logger
 }
 
-// inMemoryEnvVarStore provides a thread-safe in-memory store for environment variables.
-// This is an MVP implementation — production would use a database-backed store.
-type inMemoryEnvVarStore struct {
-	mu   sync.RWMutex
-	vars map[string][]EnvVar // keyed by "scope:scopeID"
-}
-
-func newInMemoryEnvVarStore() *inMemoryEnvVarStore {
-	return &inMemoryEnvVarStore{
-		vars: make(map[string][]EnvVar),
+// NewOpsEnvVarsHandler creates a new ops env vars handler with DB-backed encrypted storage.
+func NewOpsEnvVarsHandler(envVarStore domain.EnvVarStore, store domain.Store, masterKey [32]byte, logger *slog.Logger) *OpsEnvVarsHandler {
+	return &OpsEnvVarsHandler{
+		envVarStore: envVarStore,
+		store:       store,
+		masterKey:   masterKey,
+		logger:      logger,
 	}
 }
 
-// List returns all env vars for the given scope and scopeID.
-// If scope and scopeID are empty, returns all global vars.
-func (s *inMemoryEnvVarStore) List(_ context.Context, scope, scopeID string) ([]EnvVar, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// List handles GET /api/v1/ops/env-vars
+// Supports ?scope=global&scope_id=&search=KEY&secret=true&reveal=true
+func (h *OpsEnvVarsHandler) List(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_env_vars_list")
+	q := r.URL.Query()
 
-	key := scope + ":" + scopeID
-	vars, ok := s.vars[key]
-	if !ok {
-		return []EnvVar{}, nil
+	filter := domain.EnvVarFilter{
+		Scope:   q.Get("scope"),
+		ScopeID: q.Get("scope_id"),
+		Search:  q.Get("search"),
 	}
 
-	result := make([]EnvVar, len(vars))
-	copy(result, vars)
-	return result, nil
-}
-
-// Upsert replaces all env vars for the given scope and scopeID.
-func (s *inMemoryEnvVarStore) Upsert(_ context.Context, scope, scopeID string, vars []EnvVar) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	key := scope + ":" + scopeID
-	now := time.Now().UTC()
-
-	updated := make([]EnvVar, len(vars))
-	for i, v := range vars {
-		updated[i] = v
-		updated[i].Scope = scope
-		updated[i].ScopeID = scopeID
-		updated[i].UpdatedAt = now
-		if v.CreatedAt.IsZero() {
-			updated[i].CreatedAt = now
-		}
+	if secretStr := q.Get("secret"); secretStr != "" {
+		secret := secretStr == "true"
+		filter.Secret = &secret
 	}
 
-	s.vars[key] = updated
-	return nil
-}
-
-// GetEffective returns vars merged from global scope then cell scope,
-// with cell-scoped values overriding globals with matching keys.
-func (s *inMemoryEnvVarStore) GetEffective(_ context.Context, scopeID string) ([]EnvVar, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	globalKey := "global:"
-	cellKey := "cell:" + scopeID
-
-	result := make([]EnvVar, 0)
-
-	// Collect global vars first.
-	if globalVars, ok := s.vars[globalKey]; ok {
-		result = append(result, globalVars...)
+	envVars, err := h.envVarStore.List(r.Context(), filter)
+	if err != nil {
+		log.Error("failed to list env vars", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
 	}
 
-	// Merge cell-scoped vars, overriding any matching keys from global.
-	if cellVars, ok := s.vars[cellKey]; ok {
-		seen := make(map[string]int, len(result))
-		for i, v := range result {
-			seen[v.Key] = i
-		}
-		for _, v := range cellVars {
-			if idx, exists := seen[v.Key]; exists {
-				result[idx] = v
-			} else {
-				result = append(result, v)
+	// Mask secret values unless reveal is explicitly requested and authorized
+	reveal := q.Get("reveal") == "true"
+	if !reveal {
+		for _, v := range envVars {
+			if v.IsSecret {
+				v.Value = "••••••••"
 			}
 		}
 	}
 
-	if result == nil {
-		result = []EnvVar{}
-	}
-
-	return result, nil
-}
-
-// ─── Handler ──────────────────────────────────────────────────────────
-
-// OpsEnvVarsHandler serves environment variable management endpoints for the ops portal.
-type OpsEnvVarsHandler struct {
-	store   domain.Store
-	envVars *inMemoryEnvVarStore
-	logger  *slog.Logger
-}
-
-// NewOpsEnvVarsHandler creates a new ops env vars handler.
-func NewOpsEnvVarsHandler(store domain.Store, logger *slog.Logger) *OpsEnvVarsHandler {
-	return &OpsEnvVarsHandler{
-		store:   store,
-		envVars: newInMemoryEnvVarStore(),
-		logger:  logger,
-	}
-}
-
-// ListGlobal handles GET /api/v1/ops/env-vars
-func (h *OpsEnvVarsHandler) ListGlobal(w http.ResponseWriter, r *http.Request) {
-	log := h.logger.With("handler", "ops_env_vars_list_global")
-
-	envVars, err := h.envVars.List(r.Context(), "global", "")
-	if err != nil {
-		log.Error("failed to list global env vars", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list env vars")
-		return
-	}
-
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"env_vars": envVars,
 		"total":    len(envVars),
 	})
 }
 
-// GetEffective handles GET /api/v1/ops/env-vars/{cellId}
+// GetScopes handles GET /api/v1/ops/env-vars/scopes
+func (h *OpsEnvVarsHandler) GetScopes(w http.ResponseWriter, r *http.Request) {
+	scopes := []string{"global", "region", "cell", "tenant"}
+	httputil.JSON(w, http.StatusOK, map[string]any{"scopes": scopes})
+}
+
+// GetEffective handles GET /api/v1/ops/env-vars/effective/{tenantId}
 func (h *OpsEnvVarsHandler) GetEffective(w http.ResponseWriter, r *http.Request) {
-	log := h.logger.With("handler", "ops_env_vars_get_effective")
-	cellID := chi.URLParam(r, "cellId")
+	log := h.logger.With("handler", "ops_env_vars_effective")
+	tenantID := chi.URLParam(r, "tenantId")
+	if tenantID == "" {
+		httputil.Error(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
 
-	envVars, err := h.envVars.GetEffective(r.Context(), cellID)
+	envVars, err := h.envVarStore.GetEffective(r.Context(), tenantID)
 	if err != nil {
-		log.Error("failed to get effective env vars", "error", err, "cell_id", cellID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get effective env vars")
+		if errors.Is(err, domain.ErrNotFound) {
+			// Tenant has no region assignment, return global vars only
+			filter := domain.EnvVarFilter{Scope: "global", ScopeID: ""}
+			globalVars, listErr := h.envVarStore.List(r.Context(), filter)
+			if listErr != nil {
+				log.Error("failed to list global env vars", "error", listErr)
+				httputil.Error(w, http.StatusInternalServerError, "internal error")
+				return
+			}
+			httputil.JSON(w, http.StatusOK, map[string]any{
+				"env_vars": globalVars,
+				"total":    len(globalVars),
+			})
+			return
+		}
+		log.Error("failed to get effective env vars", "error", err, "tenant_id", tenantID)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
-		"env_vars": envVars,
-		"total":    len(envVars),
+		"env_vars":  envVars,
+		"tenant_id": tenantID,
+		"total":     len(envVars),
 	})
 }
 
-// Update handles POST /api/v1/ops/env-vars/{cellId}
-func (h *OpsEnvVarsHandler) Update(w http.ResponseWriter, r *http.Request) {
-	log := h.logger.With("handler", "ops_env_vars_update")
-	cellID := chi.URLParam(r, "cellId")
+// Upsert handles POST /api/v1/ops/env-vars
+func (h *OpsEnvVarsHandler) Upsert(w http.ResponseWriter, r *http.Request) {
+	log := h.logger.With("handler", "ops_env_vars_upsert")
 
 	var req struct {
-		EnvVars []EnvVar `json:"env_vars"`
+		Scope   string              `json:"scope"`
+		ScopeID string              `json:"scope_id"`
+		Vars    []domain.EnvVarInput `json:"env_vars"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if len(req.EnvVars) == 0 {
+
+	// Validate scope
+	validScopes := map[string]bool{"global": true, "region": true, "cell": true, "tenant": true}
+	if !validScopes[req.Scope] {
+		httputil.Error(w, http.StatusBadRequest, "invalid scope: must be global, region, cell, or tenant")
+		return
+	}
+
+	// ScopeID is required for non-global scopes
+	if req.Scope != "global" && req.ScopeID == "" {
+		httputil.Error(w, http.StatusBadRequest, "scope_id is required for non-global scopes")
+		return
+	}
+
+	if len(req.Vars) == 0 {
 		httputil.Error(w, http.StatusBadRequest, "env_vars is required")
 		return
 	}
 
-	if err := h.envVars.Upsert(r.Context(), "cell", cellID, req.EnvVars); err != nil {
+	// Get updated_by from request context (set by auth middleware)
+	updatedBy := "system"
+	if claims := r.Context().Value("claims"); claims != nil {
+		if c, ok := claims.(map[string]any); ok {
+			if email, ok := c["email"].(string); ok {
+				updatedBy = email
+			}
+		}
+	}
+
+	if err := h.envVarStore.Upsert(r.Context(), domain.EnvVarScope(req.Scope), req.ScopeID, req.Vars, updatedBy); err != nil {
 		if errors.Is(err, domain.ErrConflict) {
 			httputil.Error(w, http.StatusConflict, "env var conflict")
 			return
 		}
-		log.Error("failed to update env vars", "error", err, "cell_id", cellID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update env vars")
+		log.Error("failed to upsert env vars", "error", err, "scope", req.Scope, "scope_id", req.ScopeID)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
-	log.Info("env vars updated", "cell_id", cellID, "count", len(req.EnvVars))
+	log.Info("env vars upserted", "scope", req.Scope, "scope_id", req.ScopeID, "count", len(req.Vars), "by", updatedBy)
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"status":   "updated",
-		"cell_id":  cellID,
-		"env_vars": req.EnvVars,
+		"scope":    req.Scope,
+		"scope_id": req.ScopeID,
+		"count":    len(req.Vars),
 	})
 }

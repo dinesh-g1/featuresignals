@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Eye, EyeOff, HardDrive, RefreshCw, Save } from "lucide-react";
-import { useEnvVars, useUpdateEnvVar } from "@/hooks/use-env-vars";
+import { Eye, EyeOff, HardDrive, RefreshCw } from "lucide-react";
+import { useEnvVars, useUpsertEnvVars } from "@/hooks/use-env-vars";
 import { useCells } from "@/hooks/use-cells";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,31 +22,34 @@ import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/utils";
 import type { EnvVar } from "@/types/env-var";
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+type ScopeOption = "global" | "region" | "cell" | "tenant";
+
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const SOURCE_ORDER: EnvVar["source"][] = [
-  "global",
-  "cloud",
-  "region",
-  "cell",
-  "tenant",
+const SCOPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "global", label: "Global" },
+  { value: "region", label: "Region" },
+  { value: "cell", label: "Cell" },
+  { value: "tenant", label: "Tenant" },
 ];
 
-const SOURCE_LABELS: Record<EnvVar["source"], string> = {
+const SCOPE_ORDER: ScopeOption[] = ["global", "region", "cell", "tenant"];
+
+const SCOPE_LABELS: Record<ScopeOption, string> = {
   global: "Global",
-  cloud: "Cloud",
   region: "Region",
   cell: "Cell",
   tenant: "Tenant",
 };
 
-const SOURCE_VARIANTS: Record<
-  EnvVar["source"],
+const SCOPE_VARIANTS: Record<
+  ScopeOption,
   "default" | "info" | "primary" | "warning" | "success"
 > = {
   global: "default",
-  cloud: "info",
-  region: "primary",
+  region: "info",
   cell: "warning",
   tenant: "success",
 };
@@ -77,20 +80,6 @@ function truncateValue(value: string, maxLen: number = 60): string {
   return value.substring(0, maxLen - 3) + "...";
 }
 
-function isSensitiveKey(key: string): boolean {
-  const sensitivePrefixes = [
-    "SECRET",
-    "TOKEN",
-    "KEY",
-    "PASSWORD",
-    "PASSWD",
-    "CREDENTIAL",
-    "AUTH",
-  ];
-  const upper = key.toUpperCase();
-  return sensitivePrefixes.some((p) => upper.includes(p));
-}
-
 // ─── Page Component ─────────────────────────────────────────────────────────
 
 export default function EnvVarsPage() {
@@ -98,7 +87,8 @@ export default function EnvVarsPage() {
 
   // ─── State ────────────────────────────────────────────────────────────
 
-  const [selectedCellId, setSelectedCellId] = useState<string>("__all__");
+  const [selectedScope, setSelectedScope] = useState<ScopeOption>("global");
+  const [selectedScopeId, setSelectedScopeId] = useState<string>("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [editKey, setEditKey] = useState("");
   const [editValue, setEditValue] = useState("");
@@ -114,15 +104,35 @@ export default function EnvVarsPage() {
 
   // ─── Queries ──────────────────────────────────────────────────────────
 
+  const listParams = useMemo(() => {
+    const params: {
+      scope?: string;
+      scope_id?: string;
+      search?: string;
+      secret?: boolean;
+      reveal?: boolean;
+    } = { scope: selectedScope };
+
+    if (selectedScope === "cell" && selectedScopeId) {
+      params.scope_id = selectedScopeId;
+    } else if (selectedScope === "region" && selectedScopeId) {
+      params.scope_id = selectedScopeId;
+    } else if (selectedScope === "tenant" && selectedScopeId) {
+      params.scope_id = selectedScopeId;
+    }
+
+    return Object.keys(params).length > 0 ? params : undefined;
+  }, [selectedScope, selectedScopeId]);
+
   const {
     data: envVarList,
     isLoading,
     error,
     refetch,
-  } = useEnvVars(selectedCellId === "__all__" ? undefined : selectedCellId);
+  } = useEnvVars(listParams);
 
   const { data: cells } = useCells();
-  const updateMutation = useUpdateEnvVar();
+  const upsertMutation = useUpsertEnvVars();
 
   // ─── Derived Data ─────────────────────────────────────────────────────
 
@@ -132,17 +142,28 @@ export default function EnvVarsPage() {
       label: `${cell.name} (${cell.region})`,
       disabled: false,
     }));
-    return [{ value: "__all__", label: "All Cells (Global View)" }, ...options];
+    return options;
   }, [cells]);
 
   const envVars: EnvVar[] = useMemo(
-    () => envVarList?.envVars ?? [],
+    () => envVarList?.env_vars ?? [],
     [envVarList],
   );
 
-  const hasCellFilter = selectedCellId !== "__all__";
+  const hasScopeSelector = selectedScope !== "global";
 
-  // ─── Handlers ─────────────────────────────────────────────────────────
+  // ─── Scope Change Handlers ────────────────────────────────────────────
+
+  const handleScopeChange = useCallback((value: string) => {
+    setSelectedScope(value as ScopeOption);
+    setSelectedScopeId("");
+  }, []);
+
+  const handleScopeIdChange = useCallback((value: string) => {
+    setSelectedScopeId(value);
+  }, []);
+
+  // ─── Edit Handlers ────────────────────────────────────────────────────
 
   const handleEditClick = useCallback((ev: EnvVar) => {
     setEditingVar(ev);
@@ -177,19 +198,19 @@ export default function EnvVarsPage() {
   }, [editingVar, editKey, editValue, setConfirmOpen]);
 
   const handleConfirmApply = useCallback(async () => {
-    if (!editingVar || selectedCellId === "__all__") return;
+    if (!editingVar) return;
+
+    const scopeId = selectedScope === "global" ? "" : selectedScopeId;
 
     try {
-      await updateMutation.mutateAsync({
-        scope: "cell",
-        scopeId: selectedCellId,
-        req: {
-          overrides: [{ key: editKey, value: editValue }],
-        },
+      await upsertMutation.mutateAsync({
+        scope: selectedScope,
+        scope_id: scopeId,
+        env_vars: [{ key: editKey, value: editValue }],
       });
       toast.success(
         "Environment variable updated",
-        `"${editKey}" has been applied to cell ${selectedCellId}.`,
+        `"${editKey}" has been applied at ${selectedScope} scope${scopeId ? ` (${scopeId})` : ""}.`,
       );
       setEditingVar(null);
       setEditKey("");
@@ -204,10 +225,11 @@ export default function EnvVarsPage() {
     }
   }, [
     editingVar,
-    selectedCellId,
+    selectedScope,
+    selectedScopeId,
     editKey,
     editValue,
-    updateMutation,
+    upsertMutation,
     toast,
     setConfirmOpen,
   ]);
@@ -238,10 +260,11 @@ export default function EnvVarsPage() {
           <p className="mt-1 text-sm text-text-muted max-w-2xl">
             Environment variables follow an inheritance chain:{" "}
             <span className="font-medium text-text-secondary">
-              Global → Cloud → Region → Cell → Tenant
+              Global → Region → Cell → Tenant
             </span>
             . Variables defined at a lower scope override those from higher
-            scopes. Select a cell to view its effective configuration.
+            scopes. Select a scope and optional scope ID to view or manage
+            environment variables.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -261,20 +284,59 @@ export default function EnvVarsPage() {
         </div>
       </div>
 
-      {/* ─── Cell Selector ────────────────────────────────────────────── */}
+      {/* ─── Scope Selector ───────────────────────────────────────────── */}
       <Card>
         <CardContent className="pt-4">
-          <div className="max-w-sm">
-            <Select
-              label="Cell"
-              value={selectedCellId}
-              onValueChange={setSelectedCellId}
-              options={cellOptions}
-              placeholder="Select a cell..."
-              searchable
-              searchPlaceholder="Search cells..."
-              helperText="Filter to see effective env vars for a specific cell."
-            />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="w-full sm:w-48">
+              <Select
+                label="Scope"
+                value={selectedScope}
+                onValueChange={handleScopeChange}
+                options={SCOPE_OPTIONS}
+                placeholder="Select scope..."
+                helperText="Choose which scope to view or manage."
+              />
+            </div>
+
+            {selectedScope === "cell" && (
+              <div className="w-full sm:max-w-sm">
+                <Select
+                  label="Cell"
+                  value={selectedScopeId}
+                  onValueChange={handleScopeIdChange}
+                  options={cellOptions}
+                  placeholder="Select a cell..."
+                  searchable
+                  searchPlaceholder="Search cells..."
+                  helperText="Filter to see env vars for a specific cell."
+                />
+              </div>
+            )}
+
+            {selectedScope === "tenant" && (
+              <div className="w-full sm:max-w-xs">
+                <Input
+                  label="Tenant ID"
+                  value={selectedScopeId}
+                  onChange={(e) => handleScopeIdChange(e.target.value)}
+                  placeholder="Enter tenant ID..."
+                  helperText="View env vars for a specific tenant."
+                />
+              </div>
+            )}
+
+            {selectedScope === "region" && (
+              <div className="w-full sm:max-w-xs">
+                <Input
+                  label="Region"
+                  value={selectedScopeId}
+                  onChange={(e) => handleScopeIdChange(e.target.value)}
+                  placeholder="Enter region (e.g. us-east-1)..."
+                  helperText="View env vars for a specific region."
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -282,12 +344,12 @@ export default function EnvVarsPage() {
       {/* ─── Inheritance Legend ───────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-text-muted">
         <span className="font-medium text-text-secondary">Inheritance:</span>
-        {SOURCE_ORDER.map((src, idx) => (
-          <span key={src} className="inline-flex items-center gap-1">
-            <Badge variant={SOURCE_VARIANTS[src]} size="sm">
-              {SOURCE_LABELS[src]}
+        {SCOPE_ORDER.map((scope, idx) => (
+          <span key={scope} className="inline-flex items-center gap-1">
+            <Badge variant={SCOPE_VARIANTS[scope]} size="sm">
+              {SCOPE_LABELS[scope]}
             </Badge>
-            {idx < SOURCE_ORDER.length - 1 && (
+            {idx < SCOPE_ORDER.length - 1 && (
               <span className="text-text-muted" aria-hidden="true">
                 →
               </span>
@@ -327,8 +389,8 @@ export default function EnvVarsPage() {
           icon={HardDrive}
           title="No environment variables configured"
           description={
-            hasCellFilter
-              ? "This cell has no effective environment variables. Variables may be inherited from a higher scope."
+            hasScopeSelector
+              ? "No environment variables found for this scope. Variables may be inherited from a higher scope."
               : "No global environment variables have been configured yet. Environment variables are used to configure cell and tenant behavior."
           }
         />
@@ -360,7 +422,7 @@ export default function EnvVarsPage() {
             <tbody>
               {envVars.map((ev) => (
                 <tr
-                  key={ev.key + ev.source}
+                  key={ev.id || ev.key}
                   className="border-b border-border-default transition-colors last:border-b-0 hover:bg-bg-tertiary/30"
                 >
                   {/* Key */}
@@ -374,9 +436,9 @@ export default function EnvVarsPage() {
                   <td className="px-4 py-3">
                     <span
                       className="text-text-secondary font-mono text-xs"
-                      title={isSensitiveKey(ev.key) ? undefined : ev.value}
+                      title={ev.is_secret ? undefined : ev.value}
                     >
-                      {isSensitiveKey(ev.key)
+                      {ev.is_secret
                         ? maskValue(ev.value)
                         : truncateValue(ev.value)}
                     </span>
@@ -384,19 +446,26 @@ export default function EnvVarsPage() {
 
                   {/* Source */}
                   <td className="px-4 py-3">
-                    <Badge variant={SOURCE_VARIANTS[ev.source]} size="sm">
-                      {ev.sourceLabel || SOURCE_LABELS[ev.source]}
+                    <Badge
+                      variant={
+                        SCOPE_VARIANTS[ev.scope as ScopeOption] ?? "default"
+                      }
+                      size="sm"
+                    >
+                      {ev.source ??
+                        SCOPE_LABELS[ev.scope as ScopeOption] ??
+                        ev.scope}
                     </Badge>
                   </td>
 
                   {/* Updated */}
                   <td className="px-4 py-3 text-text-muted text-xs">
-                    {formatRelativeTime(ev.updatedAt)}
+                    {formatRelativeTime(ev.updated_at)}
                   </td>
 
                   {/* Actions */}
                   <td className="px-4 py-3 text-right">
-                    {ev.overridable && hasCellFilter ? (
+                    {hasScopeSelector && selectedScopeId ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -407,7 +476,9 @@ export default function EnvVarsPage() {
                       </Button>
                     ) : (
                       <span className="text-xs text-text-muted italic">
-                        {!hasCellFilter ? "Select a cell" : "Read-only"}
+                        {!hasScopeSelector || !selectedScopeId
+                          ? "Select a scope ID"
+                          : "Read-only"}
                       </span>
                     )}
                   </td>
@@ -424,13 +495,13 @@ export default function EnvVarsPage() {
         onOpenChange={handleEditModalClose}
         title="Edit Environment Variable"
         description={
-          hasCellFilter
-            ? `Set an override for this variable on the selected cell.`
+          hasScopeSelector && selectedScopeId
+            ? `Set an override for this variable at the ${selectedScope} scope.`
             : undefined
         }
         confirmLabel="Apply Override"
         onConfirm={handleEditSave}
-        loading={updateMutation.isPending}
+        loading={upsertMutation.isPending}
         confirmDisabled={!editValue || !!editError}
         size="md"
       >
@@ -469,16 +540,16 @@ export default function EnvVarsPage() {
             </div>
           </div>
 
-          {hasCellFilter && (
+          {hasScopeSelector && selectedScopeId && (
             <div className="rounded-lg border border-accent-warning/20 bg-accent-warning/5 p-3">
               <p className="text-xs text-accent-warning">
-                <strong>Override scope:</strong> This value will be applied as a{" "}
-                <Badge variant="warning" size="sm">
-                  Cell
+                <strong>Override scope:</strong> This value will be applied at
+                the{" "}
+                <Badge variant={SCOPE_VARIANTS[selectedScope]} size="sm">
+                  {SCOPE_LABELS[selectedScope]}
                 </Badge>{" "}
-                override, taking precedence over values from higher scopes
-                (Global, Cloud, Region). Changes may take a few seconds to
-                propagate to live cells.
+                scope, taking precedence over values from higher scopes (Global,
+                Region). Changes may take a few seconds to propagate.
               </p>
             </div>
           )}
@@ -489,8 +560,8 @@ export default function EnvVarsPage() {
       <ConfirmDialog
         {...confirmDialogProps}
         title="Apply Environment Variable Override"
-        message="This will apply the new value as a cell-level override. Existing running workloads in the cell may need a restart to pick up the change."
-        details={`Key: ${editKey}\nScope: Cell (${selectedCellId})`}
+        message="This will apply the new value at the selected scope. Existing running workloads may need a restart to pick up the change."
+        details={`Key: ${editKey}\nScope: ${selectedScope}${selectedScopeId ? ` (${selectedScopeId})` : ""}`}
         resourceName={editKey}
         resourceType="environment variable override"
         requireConfirmation={false}

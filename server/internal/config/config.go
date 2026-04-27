@@ -110,6 +110,10 @@ type Config struct {
 	// Audit log retention in days (default 90, configurable for enterprise/self-hosted)
 	AuditRetentionDays int
 
+	// Encryption master key (hex-encoded, 64 hex chars = 32 bytes for AES-256)
+	// Used to encrypt env var values at rest in the database.
+	EncryptionMasterKey string
+
 	// Sales inquiry notification email (where contact form submissions are sent).
 	SalesNotifyEmail string
 
@@ -134,6 +138,10 @@ type Config struct {
 	OTELLogsEnabled    bool
 	OTELLogLevel       string
 	OTELSampleRate     float64
+
+	// SigNoz observability proxy
+	SignozURL       string
+	SignozAPIToken  string
 
 	// Redis (async provisioning queue)
 	RedisAddr string
@@ -214,6 +222,8 @@ func Load() *Config {
 
 		AuditRetentionDays: getEnvInt("AUDIT_RETENTION_DAYS", 90),
 
+		EncryptionMasterKey: os.Getenv("ENCRYPTION_MASTER_KEY"),
+
 		SalesNotifyEmail: getEnv("SALES_NOTIFY_EMAIL", "dineshreddy@featuresignals.com"),
 
 		SuperModeDomain: strings.ToLower(strings.TrimSpace(os.Getenv("SUPER_MODE_DOMAIN"))),
@@ -231,6 +241,9 @@ func Load() *Config {
 		OTELLogsEnabled:    getEnvBool("OTEL_LOGS_ENABLED", false),
 		OTELLogLevel:       getEnv("OTEL_LOG_LEVEL", "warn"),
 		OTELSampleRate:     getEnvFloat("OTEL_TRACE_SAMPLE_RATE", 0.1),
+
+		SignozURL:       os.Getenv("SIGNOZ_URL"),
+		SignozAPIToken:  os.Getenv("SIGNOZ_API_TOKEN"),
 
 		RedisAddr:                  getEnv("REDIS_ADDR", ""),
 		ProvisionQueueConcurrency:  getEnvInt("PROVISION_QUEUE_CONCURRENCY", 10),

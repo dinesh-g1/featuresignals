@@ -29,6 +29,12 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
+// Pool returns the underlying connection pool, allowing other stores
+// (e.g. env var store) to share the same pool.
+func (s *Store) Pool() *pgxpool.Pool {
+	return s.pool
+}
+
 // wrapNotFound converts pgx.ErrNoRows into domain.ErrNotFound.
 func wrapNotFound(err error, noun string) error {
 	if err == nil {
