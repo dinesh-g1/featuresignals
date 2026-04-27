@@ -1,23 +1,20 @@
 # Bootstrap Cell — One-time Setup
 #
-# Uses Hetzner rescue mode to inject an SSH deploy key, then installs
-# Docker + Docker Compose and starts the application stack.
-#
-# Workflow:
-#   1. Generate ephemeral SSH key pair
-#   2. Boot cell into Hetzner rescue mode
-#   3. SSH via rescue password, add deploy key, fix sshd config, reboot
-#   4. SSH via deploy key, install Docker + Compose
-#   5. Upload compose files, start the stack
-#   6. Store deploy key as CELL_SSH_KEY GitHub secret for CD workflow
+# Generates an SSH deploy key (or reuses existing one from GitHub Variables),
+# installs Docker + Docker Compose on the cell VPS, uploads compose files,
+# and starts the application stack.
 #
 # Usage:
-#   gh workflow run bootstrap-cell.yml -f cell-ip=46.224.31.37
+#   First run — generates key, prints command to add it:
+#     gh workflow run bootstrap-cell.yml -f cell-ip=46.224.31.37
+#
+#   Add the SSH public key to the cell, then re-run (same command):
+#     → The same key is reused (stored in GitHub Variables)
+#     → SSH works, Docker gets installed, stack starts
 #
 # Required secrets:
-#   HETZNER_API_TOKEN — Hetzner Cloud API token (read:write)
-#   GHCR_TOKEN        — GitHub PAT with read:packages
-#   GH_TOKEN          — GitHub PAT with repo scope (for gh secret set)
+#   GHCR_TOKEN   — GitHub PAT with read:packages (for image pulls)
+#   GH_TOKEN     — GitHub PAT with repo scope (for gh variable set/get)
 
 name: Bootstrap Cell
 
@@ -29,11 +26,6 @@ on:
         required: true
         type: string
         default: "46.224.31.37"
-      cell-server-id:
-        description: "Hetzner server ID"
-        required: true
-        type: string
-        default: "128090728"
       cell-name:
         description: "Cell name"
         required: true
@@ -46,184 +38,101 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ── Step 1: Generate ephemeral SSH deploy key ─────────────────────
-      - name: Generate SSH deploy key
+      # ── Step 1: Get or generate SSH key ────────────────────────────────
+      - name: Get or generate SSH deploy key
         id: ssh-key
-        run: |
-          ssh-keygen -t ed25519 -f /tmp/deploy-key -N "" -C "deploy-${{ inputs.cell-name }}" >/dev/null 2>&1
-          echo "✅ SSH key generated"
-          echo "pubkey<<EOF" >> "$GITHUB_OUTPUT"
-          cat /tmp/deploy-key.pub >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
-      # ── Step 2: Boot into Hetzner rescue mode ─────────────────────────
-      - name: Enable Hetzner rescue mode
-        id: rescue
         env:
-          HETZNER_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          echo "Enabling rescue mode for server ${{ inputs.cell-server-id }}..."
-          RESP=$(curl -sf -X POST \
-            "https://api.hetzner.cloud/v1/servers/${{ inputs.cell-server-id }}/actions/enable_rescue" \
-            -H "Authorization: Bearer $HETZNER_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"type":"linux64"}')
-          PASSWORD=$(echo "$RESP" | jq -r '.action.root_password // .root_password')
-          if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ]; then
-            echo "❌ Failed to get rescue password. Response:"
-            echo "$RESP" | jq .
-            exit 1
+          set -e
+          mkdir -p /tmp/ssh-key
+
+          # Check if a key already exists in GitHub Variables (readable across runs)
+          EXISTING_KEY=$(gh variable get CELL_SSH_KEY --repo ${{ github.repository }} 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING_KEY" ]; then
+            # Reuse existing key
+            echo "$EXISTING_KEY" | base64 -d > /tmp/ssh-key/deploy-key
+            chmod 600 /tmp/ssh-key/deploy-key
+            echo "✅ Reusing existing SSH key from CELL_SSH_KEY variable"
+          else
+            # Generate new key pair
+            ssh-keygen -t ed25519 -f /tmp/ssh-key/deploy-key -N "" \
+              -C "deploy-${{ inputs.cell-name }}" >/dev/null 2>&1
+            chmod 600 /tmp/ssh-key/deploy-key
+            echo "✅ Generated new SSH deploy key"
+
+            # Store private key as GitHub Variable (readable via API)
+            gh variable set CELL_SSH_KEY --repo ${{ github.repository }} \
+              --body "$(cat /tmp/ssh-key/deploy-key | base64 -w0)" 2>/dev/null && \
+              echo "   ✅ Private key saved as CELL_SSH_KEY variable" || \
+              echo "   ⚠️  Could not save CELL_SSH_KEY variable"
           fi
-          echo "::add-mask::$PASSWORD"
-          echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
-          echo "✅ Rescue mode enabled"
 
-      # ── Step 3: Reboot into rescue mode ───────────────────────────────
-      - name: Reboot server into rescue mode
-        env:
-          HETZNER_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
-        run: |
-          echo "Rebooting server into rescue mode..."
-          curl -sf -X POST \
-            "https://api.hetzner.cloud/v1/servers/${{ inputs.cell-server-id }}/actions/reboot" \
-            -H "Authorization: Bearer $HETZNER_TOKEN" \
-            -H "Content-Type: application/json" >/dev/null
-          echo "✅ Reboot initiated. Waiting for server to come back..."
-          for i in $(seq 1 60); do
-            if ping -c1 -W2 ${{ inputs.cell-ip }} >/dev/null 2>&1; then
-              echo "✅ Server reachable after ${i}s"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "❌ Server did not come back"
-          exit 1
+          # Always store/update the public key for reference
+          gh variable set CELL_SSH_KEY_PUBLIC --repo ${{ github.repository }} \
+            --body "$(cat /tmp/ssh-key/deploy-key.pub)" 2>/dev/null && \
+            echo "   ✅ Public key saved as CELL_SSH_KEY_PUBLIC variable"
 
-      # ── Step 4: Wait for SSH in rescue mode ───────────────────────────
-      - name: Wait for rescue SSH
-        env:
-          PASSWORD: ${{ steps.rescue.outputs.password }}
-        run: |
-          echo "Waiting for rescue SSH..."
-          for i in $(seq 1 30); do
-            if sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
-              -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 \
-              "root@${{ inputs.cell-ip }}" "echo rescue-ready" >/dev/null 2>&1; then
-              echo "✅ Rescue SSH ready after ${i}s"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "❌ Rescue SSH not available"
-          exit 1
+          echo "pubkey<<GITHUB_EOF" >> "$GITHUB_OUTPUT"
+          cat /tmp/ssh-key/deploy-key.pub >> "$GITHUB_OUTPUT"
+          echo "GITHUB_EOF" >> "$GITHUB_OUTPUT"
 
-      # ── Step 5: Inject deploy key into the server filesystem ──────────
-      - name: Inject SSH deploy key via rescue mode
-        env:
-          PASSWORD: ${{ steps.rescue.outputs.password }}
-          PUBKEY: ${{ steps.ssh-key.outputs.pubkey }}
+      # ── Step 2: Try SSH — if fails, print add-key command and exit ─────
+      - name: Try SSH with deploy key
+        id: try-ssh
+        continue-on-error: true
         run: |
-          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+          echo "Trying SSH to root@${{ inputs.cell-ip }}..."
+          if ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            "root@${{ inputs.cell-ip }}" bash -s << 'RESCUE'
-            set -eux
+            -o ConnectTimeout=10 \
+            -i /tmp/ssh-key/deploy-key \
+            "root@${{ inputs.cell-ip }}" "echo ssh-ok" 2>/dev/null; then
+            echo "✅ SSH successful — deploy key is active"
+            echo "success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "❌ SSH failed — key not yet added to this cell"
+            echo "success=false" >> "$GITHUB_OUTPUT"
+          fi
 
-            # Find and mount the root filesystem
-            ROOT_DEV=$(mount | grep 'on / ' | awk '{print $1}')
-            if [ -z "$ROOT_DEV" ]; then
-              # Server is in rescue mode, find the OS disk
-              for DEV in /dev/sda* /dev/nvme0n1* /dev/vda*; do
-                if [ -e "$DEV" ]; then
-                  # Try to mount each partition
-                  for PART in ${DEV}*; do
-                    MOUNT_TEST=$(mount "$PART" /mnt 2>&1) && {
-                      if [ -d "/mnt/etc/ssh" ] || [ -d "/mnt/root" ]; then
-                        echo "Mounted $PART as root filesystem"
-                        break 2
-                      fi
-                      umount /mnt 2>/dev/null || true
-                    } || true
-                  done
-                fi
-              done
-            fi
-
-            if [ ! -d "/mnt/root/.ssh" ] && [ ! -d "/mnt/root" ]; then
-              echo "Could not find root filesystem. Available disks:"
-              ls -la /dev/sd* /dev/nvme* /dev/vd* 2>/dev/null || echo "No block devices found"
-              lsblk
-              exit 1
-            fi
-
-            # Create .ssh directory and add deploy key
-            mkdir -p /mnt/root/.ssh
-            chmod 700 /mnt/root/.ssh
-
-            # Add the deploy public key
-            echo "$PUBKEY" >> /mnt/root/.ssh/authorized_keys
-            chmod 600 /mnt/root/.ssh/authorized_keys
-
-            # Enable SSH key auth in sshd config
-            SSHD_CONFIG="/mnt/etc/ssh/sshd_config"
-            if [ -f "$SSHD_CONFIG" ]; then
-              sed -i 's/^#\?PubkeyAuthentication.*/PubkeyAuthentication yes/' "$SSHD_CONFIG"
-              sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' "$SSHD_CONFIG"
-              sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin prohibit-password/' "$SSHD_CONFIG"
-              echo "✅ SSH config updated"
-            fi
-
-            # Sync disks and unmount
-            sync
-            umount /mnt 2>/dev/null || true
-            echo "✅ Deploy key injected, unmounting"
-RESCUE
-          echo "✅ SSH key injected into server"
-
-      # ── Step 6: Reboot into normal mode ───────────────────────────────
-      - name: Reboot into normal mode
-        env:
-          HETZNER_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+      # ── Step 3: Print command to add key ───────────────────────────────
+      - name: Add SSH key to cell
+        if: steps.try-ssh.outputs.success != 'true'
         run: |
-          echo "Rebooting into normal mode..."
-          curl -sf -X POST \
-            "https://api.hetzner.cloud/v1/servers/${{ inputs.cell-server-id }}/actions/reboot" \
-            -H "Authorization: Bearer $HETZNER_TOKEN" \
-            -H "Content-Type: application/json" >/dev/null
-          echo "✅ Reboot initiated. Waiting for server..."
-          for i in $(seq 1 60); do
-            if ping -c1 -W2 ${{ inputs.cell-ip }} >/dev/null 2>&1; then
-              echo "✅ Server reachable after ${i}s"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "❌ Server did not come back"
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║   ADD THIS SSH KEY TO THE CELL VPS                        ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  SSH into the cell at ${{ inputs.cell-ip }} and run:"
+          echo ""
+          echo "    mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+          echo "    echo '$(cat /tmp/ssh-key/deploy-key.pub)' \\"
+          echo "      >> ~/.ssh/authorized_keys"
+          echo "    chmod 600 ~/.ssh/authorized_keys"
+          echo ""
+          echo "  ──── Or append this public key to ~/.ssh/authorized_keys ────"
+          echo ""
+          cat /tmp/ssh-key/deploy-key.pub
+          echo ""
+          echo "  ──────────────────────────────────────────────────────────────"
+          echo ""
+          echo "  After adding the key, re-run this workflow with the SAME"
+          echo "  inputs. The key is saved in GitHub Variables and won't change."
+          echo ""
+          echo "  To view the saved public key later:"
+          echo "    gh variable get CELL_SSH_KEY_PUBLIC --repo ${{ github.repository }}"
+          echo ""
           exit 1
 
-      # ── Step 7: Wait for SSH with deploy key ──────────────────────────
-      - name: Wait for deploy SSH
-        run: |
-          echo "Waiting for SSH with deploy key..."
-          for i in $(seq 1 30); do
-            if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-              -o ConnectTimeout=5 -i /tmp/deploy-key \
-              "root@${{ inputs.cell-ip }}" "echo ssh-ready" >/dev/null 2>&1; then
-              echo "✅ Deploy SSH ready after ${i}s"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "❌ Deploy SSH not available"
-          exit 1
-
-      # ── Step 8: Install Docker + Docker Compose ───────────────────────
+      # ── Step 4: Install Docker + Docker Compose ────────────────────────
       - name: Install Docker
         run: |
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            -i /tmp/deploy-key "root@${{ inputs.cell-ip }}" bash -s << 'REMOTE'
+            -i /tmp/ssh-key/deploy-key "root@${{ inputs.cell-ip }}" bash -s << 'REMOTE'
             set -eux
 
-            # Install Docker if not present
             if ! command -v docker &>/dev/null; then
               apt-get update -qq
               apt-get install -y -qq docker.io docker-compose-v2 curl
@@ -231,55 +140,51 @@ RESCUE
               systemctl start docker
               echo "✅ Docker installed"
             else
-              echo "✅ Docker already installed"
+              echo "✅ Docker already present: $(docker --version)"
             fi
 
-            # Create app directory
+            docker compose version
             mkdir -p /opt/featuresignals
             echo "✅ /opt/featuresignals ready"
 REMOTE
 
-      # ── Step 9: Upload compose files ──────────────────────────────────
+      # ── Step 5: Upload compose files ────────────────────────────────────
       - name: Upload compose files
         run: |
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            -i /tmp/deploy-key \
+            -i /tmp/ssh-key/deploy-key \
             deploy/docker-compose.cell.yml \
             "root@${{ inputs.cell-ip }}:/opt/featuresignals/docker-compose.yml"
 
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            -i /tmp/deploy-key \
+            -i /tmp/ssh-key/deploy-key \
             deploy/Caddyfile \
             "root@${{ inputs.cell-ip }}:/opt/featuresignals/Caddyfile"
 
-          echo "✅ Files uploaded"
+          echo "✅ Compose files uploaded"
 
-      # ── Step 10: Start the application stack ──────────────────────────
+      # ── Step 6: Pull images and start the stack ────────────────────────
       - name: Start application stack
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            -i /tmp/deploy-key "root@${{ inputs.cell-ip }}" \
+            -i /tmp/ssh-key/deploy-key "root@${{ inputs.cell-ip }}" \
             "GHCR_TOKEN=$GHCR_TOKEN" bash -s << 'REMOTE'
             set -eux
 
             cd /opt/featuresignals
 
-            # Log in to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
             echo "✅ Logged in to GHCR"
 
-            # Pull latest images
             docker pull ghcr.io/dinesh-g1/featuresignals-server:latest
             docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:latest
             echo "✅ Images pulled"
 
-            # Start the stack
             FEATURESIGNALS_VERSION=latest docker compose up -d
             echo "✅ Stack started"
 
-            # Wait for health
             echo "Waiting for health check..."
             for i in $(seq 1 30); do
               if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
@@ -288,43 +193,28 @@ REMOTE
               fi
               sleep 2
             done
-            echo "❌ Health check timed out"
+            echo "❌ Health check failed after 60s"
             exit 1
 REMOTE
 
-      # ── Step 11: Store deploy key as GitHub secret for CD ─────────────
-      - name: Store SSH key for CD workflow
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          BASE64_KEY=$(cat /tmp/deploy-key | base64 -w0)
-          if gh secret set CELL_SSH_KEY --repo ${{ github.repository }} --body "$BASE64_KEY" 2>/dev/null; then
-            echo "✅ SSH key stored as CELL_SSH_KEY secret"
-            echo ""
-            echo "  CD workflow will use this key to deploy without password resets."
-            echo "  Usage: gh workflow run cd.yml -f version=v1.0.0"
-          else
-            echo "⚠️  Could not store SSH key (need GH_TOKEN with repo scope)"
-            echo "   Manual: gh secret set CELL_SSH_KEY --repo ${{ github.repository }} --body \"$BASE64_KEY\""
-          fi
-
-      # ── Step 12: External smoke test ──────────────────────────────────
-      - name: External smoke test
+      # ── Step 7: External smoke test ─────────────────────────────────────
+      - name: Smoke test via public API
         run: |
           echo "Checking https://api.featuresignals.com/health..."
           for i in $(seq 1 15); do
             HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
               "https://api.featuresignals.com/health")
             if [ "$HTTP" = "200" ]; then
-              echo "✅ API healthy via LB (HTTP $HTTP)"
+              echo "✅ API healthy via load balancer"
               exit 0
             fi
             echo "  Waiting for LB... ($i/15, HTTP $HTTP)"
             sleep 4
           done
-          echo "⚠️  API not yet reachable via LB (DNS propagation may take time)"
+          echo "ℹ️  API not yet reachable via LB (DNS may need time)"
           echo "   Direct: http://${{ inputs.cell-ip }}:8080/health"
 
+      # ── Step 8: Summary ────────────────────────────────────────────────
       - name: Summary
         run: |
           echo ""
@@ -332,18 +222,15 @@ REMOTE
           echo "║           CELL BOOTSTRAP COMPLETE                          ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
-          echo "  Cell:      ${{ inputs.cell-name }}"
-          echo "  IP:        ${{ inputs.cell-ip }}"
-          echo "  Server ID: ${{ inputs.cell-server-id }}"
-          echo "  SSH key:   CELL_SSH_KEY (GitHub secret)"
+          echo "  Cell:      ${{ inputs.cell-name }} (${{ inputs.cell-ip }})"
+          echo "  SSH key:   CELL_SSH_KEY (GitHub Variable — readable by CD)"
           echo ""
           echo "  On the cell:"
           echo "    /opt/featuresignals/docker-compose.yml"
           echo "    /opt/featuresignals/Caddyfile"
-          echo "    Docker + Docker Compose installed"
           echo "    Stack: postgres → server → dashboard → caddy"
           echo ""
-          echo "  Workflow:"
-          echo "    1. gh workflow run ci.yml -f version=v1.0.0    (build images)"
-          echo "    2. gh workflow run cd.yml -f version=v1.0.0    (deploy to cell)"
+          echo "  Workflow (manual, in order):"
+          echo "    1. gh workflow run ci.yml -f version=v1.0.0"
+          echo "    2. gh workflow run cd.yml -f version=v1.0.0"
           echo ""

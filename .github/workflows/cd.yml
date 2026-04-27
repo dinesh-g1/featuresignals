@@ -24,6 +24,7 @@ on:
 env:
   CELL_IP: 46.224.31.37
   CELL_NAME: prod-eu-001
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
 jobs:
   deploy:
@@ -33,11 +34,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install SSH key
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           mkdir -p /root/.ssh /tmp/ssh-key
-          echo "${{ secrets.CELL_SSH_KEY }}" | base64 -d > /tmp/ssh-key/deploy-key
+          gh variable get CELL_SSH_KEY --repo ${{ github.repository }} 2>/dev/null \
+            | base64 -d > /tmp/ssh-key/deploy-key
           chmod 600 /tmp/ssh-key/deploy-key
-          echo "✅ SSH key installed"
+          echo "✅ SSH key installed from CELL_SSH_KEY variable"
 
       - name: Wait for SSH to be ready
         run: |
@@ -58,6 +62,7 @@ jobs:
       - name: Deploy application
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             -i /tmp/ssh-key/deploy-key "root@${{ env.CELL_IP }}" \
