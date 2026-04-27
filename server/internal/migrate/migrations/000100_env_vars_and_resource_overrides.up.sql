@@ -43,12 +43,3 @@ CREATE TABLE IF NOT EXISTS public.resource_overrides (
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_by     TEXT        NOT NULL DEFAULT 'system'
 );
-```
-
-```featuresignals/server/internal/migrate/migrations/000100_env_vars_and_resource_overrides.down.sql
--- Drop env_vars and resource_overrides tables.
-DROP TABLE IF EXISTS public.resource_overrides CASCADE;
-DROP TABLE IF EXISTS public.env_vars CASCADE;
-```
-
-Now let me verify all the files compile by running a build check.
