@@ -1,0 +1,124 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: featuresignals
+      POSTGRES_USER: fs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD}
+      DB_READONLY_PASSWORD: ${DB_READONLY_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fs -d featuresignals"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    image: ghcr.io/featuresignals/server:${FEATURESIGNALS_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: "8080"
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://app.${DOMAIN}}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DEPLOYMENT_MODE: cloud
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-none}
+      ZEPTOMAIL_TOKEN: ${ZEPTOMAIL_TOKEN}
+      ZEPTOMAIL_FROM_EMAIL: ${ZEPTOMAIL_FROM_EMAIL:-noreply@featuresignals.com}
+      ZEPTOMAIL_FROM_NAME: ${ZEPTOMAIL_FROM_NAME:-FeatureSignals}
+      ZEPTOMAIL_BASE_URL: ${ZEPTOMAIL_BASE_URL:-https://api.zeptomail.in}
+      APP_BASE_URL: ${APP_BASE_URL:-https://${DOMAIN}}
+      DASHBOARD_URL: ${DASHBOARD_URL:-https://app.${DOMAIN}}
+      PAYU_MERCHANT_KEY: ${PAYU_MERCHANT_KEY}
+      PAYU_SALT: ${PAYU_SALT}
+      PAYU_MODE: ${PAYU_MODE:-live}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
+      STRIPE_MODE: ${STRIPE_MODE:-live}
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-featuresignals-cell}
+      OTEL_SERVICE_REGION: ${OTEL_SERVICE_REGION}
+      OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-false}
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-false}
+      OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-false}
+      OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-warn}
+      OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-0.1}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  dashboard:
+    image: ghcr.io/featuresignals/dashboard:${FEATURESIGNALS_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      HOSTNAME: "0.0.0.0"
+      NEXT_PUBLIC_API_URL: ${API_URL:-https://api.${DOMAIN}}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:3000/api/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      DOMAIN: ${DOMAIN}
+      API_URL: ${API_URL:-https://api.${DOMAIN}}
+      CF_API_TOKEN: ${CF_API_TOKEN}
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:

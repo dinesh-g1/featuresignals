@@ -1,0 +1,362 @@
+# FeatureSignals CI/CD Pipeline
+#
+# Architecture:
+#   ┌─ Build/Test (self-hosted,k3s runner) ──────────────────────┐
+#   │  detect → validate → full-test → build-and-push to GHCR   │
+#   └────────────────────────────────────────────────────────────┘
+#                                │
+#   ┌─ Deploy (self-hosted,cell runner ON the VPS) ──────────────┐
+#   │  docker compose pull → up -d → health check                │
+#   └────────────────────────────────────────────────────────────┘
+#                                │
+#   ┌─ Smoke Test (self-hosted,k3s runner) ─────────────────────┐
+#   │  curl /health, /v1/flags, dashboard                       │
+#   └───────────────────────────────────────────────────────────┘
+#
+# Key: The deploy runs on a self-hosted runner installed ON the cell VPS
+# itself via cloud-init. No SSH needed. The runner was installed during
+# BootstrapCell (via Hetzner API + cloud-init).
+#
+# Required GitHub Secrets:
+#   GHCR_TOKEN  — GitHub PAT with write:packages scope
+#   HETZNER_API_TOKEN — Hetzner Cloud API token (for bootstrap only)
+
+name: CI/CD
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DAGGER_VERSION: 0.20.6
+  REGISTRY: ghcr.io/featuresignals
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # STEP 1: Detect which projects changed
+  # ═══════════════════════════════════════════════════════════════════════════
+  detect-changes:
+    runs-on: [self-hosted, k3s]
+    outputs:
+      server: ${{ steps.detect.outputs.server }}
+      dashboard: ${{ steps.detect.outputs.dashboard }}
+      any: ${{ steps.detect.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - id: detect
+        shell: bash
+        run: |
+          CHANGES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          IS_SERVER=false
+          IS_DASHBOARD=false
+
+          if echo "$CHANGES" | grep -qE '^(server/|internal/|go\.mod|go\.sum|ci/)'; then
+            IS_SERVER=true
+          fi
+          if echo "$CHANGES" | grep -qE '^(dashboard/|dashboard/package\.json|dashboard/package-lock\.json)'; then
+            IS_DASHBOARD=true
+          fi
+
+          # On push to main, always build everything (root changes affect all)
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            IS_SERVER=true
+            IS_DASHBOARD=true
+          fi
+
+          echo "server=$IS_SERVER" >> "$GITHUB_OUTPUT"
+          echo "dashboard=$IS_DASHBOARD" >> "$GITHUB_OUTPUT"
+          echo "any=$([ "$IS_SERVER" = "true" ] || [ "$IS_DASHBOARD" = "true" ] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # STEP 2: Validate changed projects (PR + push)
+  # ═══════════════════════════════════════════════════════════════════════════
+  validate:
+    needs: detect-changes
+    if: fromJSON(needs.detect-changes.outputs.any)
+    runs-on: [self-hosted, k3s]
+    strategy:
+      matrix:
+        project: [server, dashboard]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dagger CLI
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
+          sudo mv dagger /usr/local/bin/
+
+      - name: Validate ${{ matrix.project }}
+        run: |
+          cd ci
+          dagger call validate --source=.. --filter=${{ matrix.project }}
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # STEP 3: Full test suite (main only)
+  # ═══════════════════════════════════════════════════════════════════════════
+  full-test:
+    needs: detect-changes
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, k3s]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dagger CLI
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
+          sudo mv dagger /usr/local/bin/
+
+      - name: Full test suite
+        run: |
+          cd ci
+          dagger call full-test --source=..
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # STEP 4: Build and push images to GHCR (main only)
+  # ═══════════════════════════════════════════════════════════════════════════
+  build-and-push:
+    needs: [detect-changes, full-test]
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, k3s]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: version
+        run: echo "version=main-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Dagger CLI
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
+          sudo mv dagger /usr/local/bin/
+
+      - name: Build and push images
+        run: |
+          cd ci
+          dagger call build-images \
+            --source=.. \
+            --version=${{ steps.version.outputs.version }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # STEP 5: Deploy to cell — runs ON the cell's self-hosted runner
+  # ═══════════════════════════════════════════════════════════════════════════
+  #
+  # This job runs on the "cell" runner which is installed ON the cell VPS
+  # itself. No SSH needed — commands execute directly on the cell.
+  #
+  # The matrix defines all production cells. When you add more cells in
+  # the future, just add them to the matrix.
+  #
+  deploy:
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, cell]
+    strategy:
+      matrix:
+        cell:
+          - name: prod-eu-001
+            domain: featuresignals.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u featuresignals --password-stdin
+
+      - name: Pull new images
+        run: |
+          docker pull ${{ env.REGISTRY }}/server:${{ needs.build-and-push.outputs.version }}
+          docker pull ${{ env.REGISTRY }}/dashboard:${{ needs.build-and-push.outputs.version }}
+
+      - name: Deploy stack
+        working-directory: /opt/featuresignals
+        run: |
+          FEATURESIGNALS_VERSION=${{ needs.build-and-push.outputs.version }} \
+          docker compose up -d
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
+              echo "✅ Cell ${{ matrix.cell.name }} is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ Cell ${{ matrix.cell.name }} did not become healthy"
+          exit 1
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # STEP 6: Smoke test from external perspective (main only)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smoke-test:
+    needs: [deploy]
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, k3s]
+    steps:
+      - name: Install Dagger CLI
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
+          sudo mv dagger /usr/local/bin/
+
+      - name: Smoke test API
+        run: |
+          cd ci
+          dagger call smoke-test --url=https://api.featuresignals.com
+
+      - name: Smoke test Dashboard
+        run: |
+          cd ci
+          dagger call smoke-test --url=https://app.featuresignals.com
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PR Status Comment
+  # ═══════════════════════════════════════════════════════════════════════════
+  pr-comment:
+    needs: [validate]
+    if: github.event_name == 'pull_request' && always()
+    runs-on: [self-hosted, k3s]
+    steps:
+      - name: Comment PR status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const success = '${{ needs.validate.result }}' === 'success';
+            const status = success ? '✅ All checks passed' : '❌ Some checks failed';
+            const serverStatus = '${{ needs.validate.outputs.server }}' || 'skipped';
+            const dashStatus = '${{ needs.validate.outputs.dashboard }}' || 'skipped';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## CI Status\n\n${status}\n\n- Server: ${serverStatus}\n- Dashboard: ${dashStatus}`
+            });
+```
+
+Now let me also create the bootstrap workflow:
+
+```yaml
+# FeatureSignals Bootstrap Cell Workflow
+#
+# One-time workflow to bootstrap a new cell VPS:
+#   1. Uses Hetzner Cloud API to provision a new server
+#   2. Cloud-init installs Docker, GitHub Actions runner, and app
+#   3. The runner registers itself with this repo (label: "cell")
+#   4. All future deploys run on the cell's runner directly
+#
+# Required GitHub Secrets:
+#   HETZNER_API_TOKEN — Hetzner Cloud API token (read:write)
+#   GHCR_TOKEN        — GitHub PAT with read:packages (for image pulls)
+#   GH_TOKEN          — GitHub PAT with repo scope (for runner registration)
+#
+# Usage:
+#   gh workflow run bootstrap-cell.yml \
+#     -f cell-name=prod-eu-001 \
+#     -f server-type=cx33 \
+#     -f location=nbg1 \
+#     -f domain=featuresignals.com
+
+name: Bootstrap Cell
+on:
+  workflow_dispatch:
+    inputs:
+      cell-name:
+        description: 'Cell name (e.g., prod-eu-001)'
+        required: true
+        type: string
+        default: prod-eu-001
+      server-type:
+        description: 'Hetzner server type (e.g., cx33, cx42)'
+        required: true
+        type: string
+        default: cx33
+      location:
+        description: 'Hetzner location (e.g., nbg1, fsn1, hel1)'
+        required: true
+        type: string
+        default: nbg1
+      domain:
+        description: 'Root domain (e.g., featuresignals.com)'
+        required: true
+        type: string
+        default: featuresignals.com
+
+env:
+  DAGGER_VERSION: 0.20.6
+
+jobs:
+  bootstrap:
+    runs-on: [self-hosted, k3s]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dagger CLI
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
+          sudo mv dagger /usr/local/bin/
+
+      - name: Bootstrap cell via Hetzner API
+        run: |
+          cd ci
+          dagger call bootstrap-cell \
+            --source=.. \
+            --cell-name=${{ inputs.cell-name }} \
+            --domain=${{ inputs.domain }} \
+            --gh-repo=${{ github.repository }} \
+            --server-type=${{ inputs.server-type }}
+        env:
+          HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Wait for runner registration
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          echo "Waiting for cell runner to register with GitHub..."
+          for i in $(seq 1 30); do
+            RUNNERS=$(curl -sf -L \
+              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
+              jq '[.runners[] | select(.name == "cell-${{ inputs.cell-name }}" and .status == "online")] | length')
+            if [ "$RUNNERS" -gt 0 ]; then
+              echo "✅ Runner cell-${{ inputs.cell-name }} is online"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "⚠️  Runner not detected within timeout. Check the cell VPS."
+          exit 1
+
+      - name: Smoke test new cell
+        run: |
+          cd ci
+          dagger call smoke-test --url=https://api.${{ inputs.domain }}
+
+      - name: Summary
+        run: |
+          echo "✅ Cell ${{ inputs.cell-name }} is fully operational"
+          echo ""
+          echo "  GitHub runner: cell-${{ inputs.cell-name }} (self-hosted, cell)"
+          echo "  Domain: ${{ inputs.domain }}"
+          echo "  Server: Hetzner ${{ inputs.server-type }} in ${{ inputs.location }}"
+          echo ""
+          echo "  Next push to main will automatically:"
+          echo "    1. Build and test code"
+          echo "    2. Push images to GHCR"
+          echo "    3. Deploy to this cell via its runner"
+          echo "    4. Smoke test the deployment"

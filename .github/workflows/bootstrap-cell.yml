@@ -1,0 +1,142 @@
+# FeatureSignals Bootstrap Cell Workflow
+#
+# One-time workflow that installs a GitHub Actions self-hosted runner
+# on an existing cell VPS without destroying it.
+#
+# How it works:
+#   1. Uses Hetzner Cloud API to reset the root password
+#   2. SSHes into the cell with the temp password
+#   3. Installs and registers a GitHub Actions runner as a systemd service
+#   4. Uploads docker-compose.cell.yml and Caddyfile
+#   5. The runner registers as "cell-{name}" with labels "self-hosted,cell"
+#   6. ALL future deploys run on this runner directly — no SSH ever needed
+#
+# Required GitHub Secrets:
+#   HETZNER_API_TOKEN — Hetzner Cloud API token (for password reset)
+#   GHCR_TOKEN        — GitHub PAT with read:packages (for image pulls)
+#   GH_TOKEN          — GitHub PAT with repo scope (for runner registration + gh secret set)
+#
+# Usage:
+#   gh workflow run bootstrap-cell.yml \
+#     -f cell-server-id=128090728 \
+#     -f cell-ip=46.224.31.37 \
+#     -f cell-name=prod-eu-001 \
+#     -f gh-repo=dinesh-g1/featuresignals
+
+name: Bootstrap Cell
+on:
+  workflow_dispatch:
+    inputs:
+      cell-server-id:
+        description: 'Hetzner server ID (numeric, from cells table)'
+        required: true
+        type: string
+        default: '128090728'
+      cell-ip:
+        description: 'Cell public IP address'
+        required: true
+        type: string
+        default: '46.224.31.37'
+      cell-name:
+        description: 'Cell name (e.g., prod-eu-001)'
+        required: true
+        type: string
+        default: prod-eu-001
+      gh-repo:
+        description: 'GitHub repository (e.g., dinesh-g1/featuresignals)'
+        required: true
+        type: string
+        default: dinesh-g1/featuresignals
+
+env:
+  DAGGER_VERSION: 0.20.6
+
+jobs:
+  bootstrap:
+    runs-on: [self-hosted, k3s]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dagger CLI
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
+          sudo mv dagger /usr/local/bin/
+          dagger version
+
+      - name: Bootstrap cell — install GitHub Actions runner via Hetzner API
+        run: |
+          cd ci
+          dagger call bootstrap-cell \
+            --source=.. \
+            --cell-server-id=${{ inputs.cell-server-id }} \
+            --cell-ip=${{ inputs.cell-ip }} \
+            --cell-name=${{ inputs.cell-name }} \
+            --gh-repo=${{ inputs.gh-repo }}
+        env:
+          HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Wait for runner to register and come online
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          echo "Waiting for runner 'cell-${{ inputs.cell-name }}' to register with GitHub..."
+          for i in $(seq 1 60); do
+            RUNNERS=$(curl -sf -L \
+              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
+              jq '[.runners[] | select(.name == "cell-${{ inputs.cell-name }}" and .status == "online")] | length')
+            if [ "$RUNNERS" -gt 0 ]; then
+              echo "✅ Runner cell-${{ inputs.cell-name }} is ONLINE"
+              exit 0
+            fi
+            echo "  Waiting... ($i/60)"
+            sleep 10
+          done
+          echo "⚠️  Runner not detected within 10 minutes."
+          echo "   Check the cell VPS manually:"
+          echo "   SSH: ssh root@${{ inputs.cell-ip }}"
+          echo "   Check: systemctl status actions.runner.*"
+          echo "   Logs: journalctl -u actions.runner.* -n 50"
+          exit 1
+
+      - name: List registered runners
+        run: |
+          echo "All registered runners for ${{ github.repository }}:"
+          curl -sf -L \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
+            jq '.runners[] | {name: .name, status: .status, labels: [.labels[].name]}'
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║           CELL BOOTSTRAP COMPLETE                          ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  Cell:       ${{ inputs.cell-name }}"
+          echo "  IP:         ${{ inputs.cell-ip }}"
+          echo "  Hetzner ID: ${{ inputs.cell-server-id }}"
+          echo "  Runner:     cell-${{ inputs.cell-name }} (self-hosted, cell)"
+          echo ""
+          echo "  Files on the cell:"
+          echo "    /opt/featuresignals/docker-compose.yml"
+          echo "    /opt/featuresignals/Caddyfile"
+          echo "    /opt/featuresignals/install-runner.sh"
+          echo "    /opt/actions-runner/"
+          echo ""
+          echo "  What happens on next git push to main:"
+          echo "    1. Build and test code (on k3s runner)"
+          echo "    2. Push images to GHCR"
+          echo "    3. Deploy runs on cell-${{ inputs.cell-name }} runner:"
+          echo "       → docker login ghcr.io"
+          echo "       → docker compose pull"
+          echo "       → docker compose up -d"
+          echo "       → health check OK"
+          echo "    4. Smoke test from external runner"
+          echo ""
+          echo "  ✅ No SSH needed for any future deployment."
