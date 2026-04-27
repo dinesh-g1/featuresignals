@@ -91,7 +91,7 @@ jobs:
             done
             echo "❌ Stack did not become healthy"
             exit 1
-REMOTE
+          REMOTE
 
       - name: Smoke test via public API
         run: |
