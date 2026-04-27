@@ -132,7 +132,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             -i /tmp/ssh-key/deploy-key "root@${{ inputs.cell-ip }}" bash -s << 'REMOTE'
             set -eux
-
             if ! command -v docker &>/dev/null; then
               apt-get update -qq
               apt-get install -y -qq docker.io docker-compose-v2 curl
@@ -142,11 +141,10 @@ jobs:
             else
               echo "✅ Docker already present: $(docker --version)"
             fi
-
             docker compose version
             mkdir -p /opt/featuresignals
             echo "✅ /opt/featuresignals ready"
-REMOTE
+          REMOTE
 
       # ── Step 5: Upload compose files ────────────────────────────────────
       - name: Upload compose files
@@ -172,19 +170,14 @@ REMOTE
             -i /tmp/ssh-key/deploy-key "root@${{ inputs.cell-ip }}" \
             "GHCR_TOKEN=$GHCR_TOKEN" bash -s << 'REMOTE'
             set -eux
-
             cd /opt/featuresignals
-
             echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
             echo "✅ Logged in to GHCR"
-
             docker pull ghcr.io/dinesh-g1/featuresignals-server:latest
             docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:latest
             echo "✅ Images pulled"
-
             FEATURESIGNALS_VERSION=latest docker compose up -d
             echo "✅ Stack started"
-
             echo "Waiting for health check..."
             for i in $(seq 1 30); do
               if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
@@ -195,7 +188,7 @@ REMOTE
             done
             echo "❌ Health check failed after 60s"
             exit 1
-REMOTE
+          REMOTE
 
       # ── Step 7: External smoke test ─────────────────────────────────────
       - name: Smoke test via public API
