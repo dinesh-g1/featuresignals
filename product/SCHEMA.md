@@ -201,10 +201,17 @@ When asked a question:
 ```
 1. READ product/wiki/index.md — identify relevant pages
 2. SELECT the 3-5 most relevant pages
-3. READ those pages completely
-4. CHECK product/wiki/log.md for recent context (last 5 entries)
-5. SYNTHESIZE an answer with citations to wiki pages and raw sources
-6. If the answer is valuable enough to persist:
+3. For EACH selected page:
+   a. READ the page's ## headers (use grep "^## " or scan the page)
+   b. IDENTIFY which 1-2 sections are relevant to the query
+   c. READ only those sections — skip Overview if context already known
+   d. If no section seems relevant, read the first 20 lines only
+4. (Optional) SEARCH narrowly — if index.md alone doesn't pinpoint the right page:
+   a. Run: grep -ril "keyword1\|keyword2" product/wiki/public/ | head -3
+   b. Read matching pages using section-level reading (step 3)
+5. CHECK product/wiki/log.md for recent context (last 5 entries)
+6. SYNTHESIZE an answer with citations to wiki pages and raw sources
+7. If the answer is valuable enough to persist:
    a. Create a new wiki page or extend an existing one
    b. Update index.md
    c. Append to log.md
@@ -329,8 +336,11 @@ CREATED → CURRENT (up to date) → NEEDS_REVIEW (sources updated) → STALE (>
 |---|---|
 | Bootstrap wiki | First ingest pass reading all existing docs |
 | Ingest new source | Move file to `product/raw/`, run ingest workflow |
-| Query wiki | Read index, read pages, synthesize, file result |
+| Query wiki | Read index, read sections, synthesize, file result |
+| Quick search | `grep -ril "keyword1\|keyword2" product/wiki/public/ \| head -3` |
 | Lint wiki | Run on session start if >7 days since last lint |
 | Archive yearly | January 1st each year |
 | Check orphans | `grep -r "\[\[" product/wiki/ \| cut -d'[' -f3 \| sort -u` |
 | Find stale pages | Search frontmatter for `review_status: stale` |
+| List sections in a page | `grep "^## " product/wiki/public/PAGE.md` |
+| Extract one section | `awk "/^## Section Title/{found=1;next} found{print} /^## / && !found" page.md` (or ask the LLM to find it) |
