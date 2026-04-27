@@ -29,7 +29,7 @@ var AllRouteMeta = []RouteMeta{
 	{Method: "GET", Path: "/v1/status/history", Tag: "Status", Summary: "Get status history", Description: "Returns historical status records.", Status: 200},
 	{Method: "GET", Path: "/v1/status/sla", Tag: "Status", Summary: "Get SLA info", Description: "Returns current SLA compliance metrics.", Status: 200},
 	{Method: "GET", Path: "/v1/pricing", Tag: "Pricing", Summary: "Get pricing", Description: "Returns canonical pricing for all plans. Public endpoint.", Status: 200},
-	{Method: "GET", Path: "/v1/pricing/regions", Tag: "Pricing", Summary: "Get region pricing", Description: "Returns region-adjust pricing configuration.", Status: 200},
+
 	{Method: "GET", Path: "/v1/regions", Tag: "Pricing", Summary: "List data regions", Description: "Returns all available data regions for account creation.", Status: 200},
 	{Method: "GET", Path: "/v1/capabilities", Tag: "Pricing", Summary: "Get server capabilities", Description: "Returns deployment mode, billing status, and regions enablement.", Status: 200},
 

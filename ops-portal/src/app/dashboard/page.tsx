@@ -1,15 +1,22 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Users, DollarSign, Server, RefreshCw } from 'lucide-react';
-import * as api from '@/lib/api';
-import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/card';
-import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-import { ErrorState } from '@/components/ui/error-state';
-import { StatusDot } from '@/components/ui/status-dot';
-import { Badge } from '@/components/ui/badge';
-import { cn, formatCurrency, formatRelativeTime, formatDate } from '@/lib/utils';
-import type { DashboardStats, RecentActivity, SystemHealth } from '@/types/api';
+import { useQuery } from "@tanstack/react-query";
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  DollarSign,
+  Server,
+  RefreshCw,
+} from "lucide-react";
+import * as api from "@/lib/api";
+import { Card, CardTitle, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { StatusDot } from "@/components/ui/status-dot";
+import { Badge } from "@/components/ui/badge";
+import { cn, formatCurrency, formatRelativeTime } from "@/lib/utils";
+import type { DashboardStats, RecentActivity, SystemHealth } from "@/types/api";
 
 // ─── Stat Card ──────────────────────────────────────────────────────────────
 
@@ -32,13 +39,17 @@ function StatCard({ title, value, delta, icon, loading }: StatCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium text-text-muted">{title}</p>
-            <p className="text-2xl font-bold tracking-tight text-text-primary">{value}</p>
+            <p className="text-2xl font-bold tracking-tight text-text-primary">
+              {value}
+            </p>
             {delta && (
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
-                    'inline-flex items-center gap-0.5 text-xs font-medium',
-                    delta.positive ? 'text-accent-success' : 'text-accent-danger',
+                    "inline-flex items-center gap-0.5 text-xs font-medium",
+                    delta.positive
+                      ? "text-accent-success"
+                      : "text-accent-danger",
                   )}
                 >
                   {delta.positive ? (
@@ -83,22 +94,27 @@ interface ActivityFeedProps {
 }
 
 const activityIcons: Record<string, string> = {
-  'cell.provisioned': '🟢',
-  'preview.created': '🟢',
-  'billing.failed': '🔴',
-  'backup.complete': '🟢',
-  'preview.expired': '🟡',
+  "cell.provisioned": "🟢",
+  "preview.created": "🟢",
+  "billing.failed": "🔴",
+  "backup.complete": "🟢",
+  "preview.expired": "🟡",
 };
 
 const activityStyles: Record<string, string> = {
-  'cell.provisioned': 'border-l-accent-success',
-  'preview.created': 'border-l-accent-success',
-  'billing.failed': 'border-l-accent-danger',
-  'backup.complete': 'border-l-accent-success',
-  'preview.expired': 'border-l-accent-warning',
+  "cell.provisioned": "border-l-accent-success",
+  "preview.created": "border-l-accent-success",
+  "billing.failed": "border-l-accent-danger",
+  "backup.complete": "border-l-accent-success",
+  "preview.expired": "border-l-accent-warning",
 };
 
-function ActivityFeed({ activities, loading, error, onRetry }: ActivityFeedProps) {
+function ActivityFeed({
+  activities,
+  loading,
+  error,
+  onRetry,
+}: ActivityFeedProps) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -129,7 +145,9 @@ function ActivityFeed({ activities, loading, error, onRetry }: ActivityFeedProps
   if (!activities || activities.length === 0) {
     return (
       <div className="py-8 text-center">
-        <p className="text-sm text-text-muted">No activity in the last 24 hours.</p>
+        <p className="text-sm text-text-muted">
+          No activity in the last 24 hours.
+        </p>
       </div>
     );
   }
@@ -140,31 +158,33 @@ function ActivityFeed({ activities, loading, error, onRetry }: ActivityFeedProps
         <div
           key={activity.id}
           className={cn(
-            'flex items-start gap-3 rounded-lg border-l-2 px-4 py-3 transition-colors hover:bg-bg-tertiary/50',
-            activityStyles[activity.type] ?? 'border-l-accent-info',
+            "flex items-start gap-3 rounded-lg border-l-2 px-4 py-3 transition-colors hover:bg-bg-tertiary/50",
+            activityStyles[activity.type] ?? "border-l-accent-info",
           )}
           role="listitem"
         >
           <span className="text-base leading-none mt-0.5" aria-hidden="true">
-            {activityIcons[activity.type] ?? '🔵'}
+            {activityIcons[activity.type] ?? "🔵"}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-text-primary leading-snug">{activity.summary}</p>
+            <p className="text-sm text-text-primary leading-snug">
+              {activity.summary}
+            </p>
             <p className="text-xs text-text-muted mt-0.5">
               {formatRelativeTime(activity.timestamp)}
             </p>
           </div>
           <Badge
             variant={
-              activity.severity === 'error'
-                ? 'danger'
-                : activity.severity === 'warning'
-                  ? 'warning'
-                  : 'success'
+              activity.severity === "error"
+                ? "danger"
+                : activity.severity === "warning"
+                  ? "warning"
+                  : "success"
             }
             size="sm"
           >
-            {activity.type.split('.').pop() ?? 'event'}
+            {activity.type.split(".").pop() ?? "event"}
           </Badge>
         </div>
       ))}
@@ -181,7 +201,12 @@ interface SystemHealthWidgetProps {
   onRetry: () => void;
 }
 
-function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWidgetProps) {
+function SystemHealthWidget({
+  health,
+  loading,
+  error,
+  onRetry,
+}: SystemHealthWidgetProps) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -215,7 +240,9 @@ function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWid
   }
 
   const clusterStatus = health.cluster.status;
-  const servicesUp = health.services.filter((s) => s.status === 'healthy').length;
+  const servicesUp = health.services.filter(
+    (s) => s.status === "healthy",
+  ).length;
   const servicesTotal = health.services.length;
 
   return (
@@ -224,30 +251,31 @@ function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWid
       <div className="flex items-center gap-2">
         <StatusDot
           status={
-            clusterStatus === 'healthy'
-              ? 'healthy'
-              : clusterStatus === 'degraded'
-                ? 'warning'
-                : 'danger'
+            clusterStatus === "healthy"
+              ? "healthy"
+              : clusterStatus === "degraded"
+                ? "warning"
+                : "danger"
           }
-          pulse={clusterStatus !== 'healthy'}
+          pulse={clusterStatus !== "healthy"}
         />
         <span className="text-sm font-medium text-text-primary">
-          Cluster:{' '}
+          Cluster:{" "}
           <span
             className={
-              clusterStatus === 'healthy'
-                ? 'text-accent-success'
-                : clusterStatus === 'degraded'
-                  ? 'text-accent-warning'
-                  : 'text-accent-danger'
+              clusterStatus === "healthy"
+                ? "text-accent-success"
+                : clusterStatus === "degraded"
+                  ? "text-accent-warning"
+                  : "text-accent-danger"
             }
           >
             {clusterStatus.charAt(0).toUpperCase() + clusterStatus.slice(1)}
           </span>
         </span>
         <span className="text-xs text-text-muted">
-          {health.cluster.healthy_nodes}/{health.cluster.total_nodes} nodes healthy
+          {health.cluster.healthy_nodes}/{health.cluster.total_nodes} nodes
+          healthy
         </span>
       </div>
 
@@ -259,14 +287,16 @@ function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWid
             className="rounded-lg border border-border-default bg-bg-tertiary/50 p-3"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-text-primary">{node.name}</span>
+              <span className="text-sm font-medium text-text-primary">
+                {node.name}
+              </span>
               <StatusDot
                 status={
-                  node.status === 'ready'
-                    ? 'healthy'
-                    : node.status === 'not_ready'
-                      ? 'danger'
-                      : 'neutral'
+                  node.status === "ready"
+                    ? "healthy"
+                    : node.status === "not_ready"
+                      ? "danger"
+                      : "neutral"
                 }
                 size="sm"
               />
@@ -283,7 +313,9 @@ function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWid
       {/* Services summary */}
       <div className="rounded-lg border border-border-default bg-bg-tertiary/50 p-3">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-text-primary">Services</span>
+          <span className="text-sm font-medium text-text-primary">
+            Services
+          </span>
           <span className="text-xs text-text-muted">
             {servicesUp}/{servicesTotal} healthy
           </span>
@@ -293,15 +325,17 @@ function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWid
             <div key={service.name} className="flex items-center gap-2">
               <StatusDot
                 status={
-                  service.status === 'healthy'
-                    ? 'healthy'
-                    : service.status === 'degraded'
-                      ? 'warning'
-                      : 'danger'
+                  service.status === "healthy"
+                    ? "healthy"
+                    : service.status === "degraded"
+                      ? "warning"
+                      : "danger"
                 }
                 size="sm"
               />
-              <span className="text-xs text-text-secondary truncate">{service.name}</span>
+              <span className="text-xs text-text-secondary truncate">
+                {service.name}
+              </span>
             </div>
           ))}
         </div>
@@ -312,9 +346,9 @@ function SystemHealthWidget({ health, loading, error, onRetry }: SystemHealthWid
 
 function ResourceBar({ label, percent }: { label: string; percent: number }) {
   const getColor = (pct: number) => {
-    if (pct > 80) return 'bg-accent-danger';
-    if (pct > 60) return 'bg-accent-warning';
-    return 'bg-accent-success';
+    if (pct > 80) return "bg-accent-danger";
+    if (pct > 60) return "bg-accent-warning";
+    return "bg-accent-success";
   };
 
   return (
@@ -322,7 +356,10 @@ function ResourceBar({ label, percent }: { label: string; percent: number }) {
       <span className="text-xs text-text-muted w-12 shrink-0">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-bg-elevated overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all duration-500', getColor(percent))}
+          className={cn(
+            "h-full rounded-full transition-all duration-500",
+            getColor(percent),
+          )}
           style={{ width: `${Math.min(percent, 100)}%` }}
           role="progressbar"
           aria-valuenow={Math.round(percent)}
@@ -331,19 +368,30 @@ function ResourceBar({ label, percent }: { label: string; percent: number }) {
           aria-label={`${label}: ${Math.round(percent)}%`}
         />
       </div>
-      <span className="text-xs text-text-muted w-9 text-right">{Math.round(percent)}%</span>
+      <span className="text-xs text-text-muted w-9 text-right">
+        {Math.round(percent)}%
+      </span>
     </div>
   );
 }
 
 // ─── Section Header ─────────────────────────────────────────────────────────
 
-function SectionHeader({ title, loading }: { title: string; loading?: boolean }) {
+function SectionHeader({
+  title,
+  loading,
+}: {
+  title: string;
+  loading?: boolean;
+}) {
   return (
     <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
       {title}
       {loading && (
-        <RefreshCw className="h-4 w-4 text-text-muted animate-spin" aria-hidden="true" />
+        <RefreshCw
+          className="h-4 w-4 text-text-muted animate-spin"
+          aria-hidden="true"
+        />
       )}
     </h2>
   );
@@ -359,7 +407,7 @@ export default function DashboardPage() {
     error: statsError,
     refetch: refetchStats,
   } = useQuery<DashboardStats>({
-    queryKey: ['dashboard', 'stats'],
+    queryKey: ["dashboard", "stats"],
     queryFn: () => api.getDashboardStats(),
     refetchInterval: 30_000,
     retry: 3,
@@ -373,7 +421,7 @@ export default function DashboardPage() {
     error: activitiesError,
     refetch: refetchActivities,
   } = useQuery<RecentActivity[]>({
-    queryKey: ['dashboard', 'activity'],
+    queryKey: ["dashboard", "activity"],
     queryFn: () => api.getRecentActivity(5),
     refetchInterval: 15_000,
     retry: 2,
@@ -386,13 +434,16 @@ export default function DashboardPage() {
     error: healthError,
     refetch: refetchHealth,
   } = useQuery<SystemHealth>({
-    queryKey: ['system', 'health'],
+    queryKey: ["system", "health"],
     queryFn: () => api.getSystemHealth(),
     refetchInterval: 30_000,
     retry: 2,
   });
 
-  const isPartiallyLoaded = !statsLoading && !healthLoading && !activitiesLoading &&
+  const isPartiallyLoaded =
+    !statsLoading &&
+    !healthLoading &&
+    !activitiesLoading &&
     (!!statsError || !!healthError || !!activitiesError);
 
   // ─── All failed state ──────────────────────────────────────────────────
@@ -444,11 +495,11 @@ export default function DashboardPage() {
             <>
               <StatCard
                 title="Active Tenants"
-                value={stats?.active_tenants?.toLocaleString() ?? '—'}
+                value={stats?.active_tenants?.toLocaleString() ?? "—"}
                 delta={
                   stats
                     ? {
-                        value: `${stats.active_tenants_delta > 0 ? '+' : ''}${stats.active_tenants_delta}`,
+                        value: `${stats.active_tenants_delta > 0 ? "+" : ""}${stats.active_tenants_delta}`,
                         positive: (stats.active_tenants_delta ?? 0) >= 0,
                       }
                     : undefined
@@ -458,11 +509,13 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Monthly Revenue (MRR)"
-                value={stats ? formatCurrency(stats.mrr, stats.mrr_currency) : '—'}
+                value={
+                  stats ? formatCurrency(stats.mrr, stats.mrr_currency) : "—"
+                }
                 delta={
                   stats
                     ? {
-                        value: `${stats.mrr_delta_percent > 0 ? '+' : ''}${stats.mrr_delta_percent}%`,
+                        value: `${stats.mrr_delta_percent > 0 ? "+" : ""}${stats.mrr_delta_percent}%`,
                         positive: (stats.mrr_delta_percent ?? 0) >= 0,
                       }
                     : undefined
@@ -473,15 +526,13 @@ export default function DashboardPage() {
               <StatCard
                 title="Cells Healthy"
                 value={
-                  stats
-                    ? `${stats.healthy_cells}/${stats.total_cells}`
-                    : '—'
+                  stats ? `${stats.healthy_cells}/${stats.total_cells}` : "—"
                 }
                 icon={<Server className="h-5 w-5 text-accent-primary" />}
                 loading={false}
                 delta={
                   stats && stats.healthy_cells === stats.total_cells
-                    ? { value: 'All green', positive: true }
+                    ? { value: "All green", positive: true }
                     : stats
                       ? {
                           value: `${stats.total_cells - stats.healthy_cells} degraded`,

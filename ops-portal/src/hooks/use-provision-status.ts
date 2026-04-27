@@ -48,8 +48,10 @@ export function useProvisionStatus(cellId: string | null): {
     setError(null);
 
     const token =
-      typeof window !== "undefined" ? localStorage.getItem("ops_token") : null;
-    const baseUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/ops/cells/${cellId}/provision-status`;
+      typeof window !== "undefined"
+        ? localStorage.getItem("ops_access_token")
+        : null;
+    const baseUrl = `${process.env.NEXT_PUBLIC_OPS_API_URL || "/api/v1/ops"}/cells/${cellId}/provision-status`;
     const url = token
       ? `${baseUrl}?token=${encodeURIComponent(token)}`
       : baseUrl;

@@ -129,13 +129,18 @@ export interface AuthResult {
 export async function login(
   email: string,
   password: string,
+  rememberMe?: boolean,
 ): Promise<AuthResult> {
   try {
     const baseUrl = getBaseUrl();
     const response = await fetch(`${baseUrl}${AUTH_API.LOGIN}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password } satisfies LoginRequest),
+      body: JSON.stringify({
+        email,
+        password,
+        remember_me: rememberMe ?? false,
+      } satisfies LoginRequest & { remember_me: boolean }),
     });
 
     if (!response.ok) {

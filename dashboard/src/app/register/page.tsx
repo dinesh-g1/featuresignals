@@ -318,42 +318,24 @@ function RegisterForm() {
   });
 
   const [regions, setRegions] = useState<
-    Array<{ code: string; name: string; flag: string; app_endpoint: string }>
+    Array<{ code: string; name: string; flag: string }>
   >([
     {
       code: "in",
       name: "India",
       flag: "\u{1F1EE}\u{1F1F3}",
-      app_endpoint: "https://app.featuresignals.com",
     },
     {
       code: "us",
       name: "United States",
       flag: "\u{1F1FA}\u{1F1F8}",
-      app_endpoint: "https://app.us.featuresignals.com",
     },
     {
       code: "eu",
       name: "Europe",
       flag: "\u{1F1EA}\u{1F1FA}",
-      app_endpoint: "https://app.eu.featuresignals.com",
     },
   ]);
-  const [regionError, setRegionError] = useState(false);
-
-  useEffect(() => {
-    api
-      .listRegions()
-      .then((res) => {
-        if (res.regions?.length) {
-          setRegions(res.regions);
-        }
-      })
-      .catch(() => {
-        setRegionError(true);
-      });
-  }, []);
-
   // Countdown timer for resend cooldown
   useEffect(() => {
     if (countdown <= 0) return;
@@ -404,22 +386,6 @@ function RegisterForm() {
     if (!validateForm()) return;
 
     setLoading(true);
-
-    const targetRegion = regions.find((r) => r.code === form.data_region);
-    if (targetRegion?.app_endpoint) {
-      const currentOrigin = window.location.origin;
-      const targetOrigin = targetRegion.app_endpoint.replace(/\/$/, "");
-      if (
-        currentOrigin !== targetOrigin &&
-        !currentOrigin.includes("localhost")
-      ) {
-        const params = new URLSearchParams();
-        if (planIntent) params.set("plan", planIntent);
-        const qs = params.toString();
-        window.location.href = `${targetOrigin}/register${qs ? `?${qs}` : ""}`;
-        return;
-      }
-    }
 
     try {
       await api.initiateSignup(form);
@@ -586,17 +552,6 @@ function RegisterForm() {
           </div>
         )}
 
-        {regionError && (
-          <div
-            className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700 ring-1 ring-amber-100"
-            role="alert"
-          >
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              This region is temporarily unavailable. Please select another.
-            </span>
-          </div>
-        )}
 
         {/* Step 1: Account details */}
         {step === "form" && (

@@ -36,6 +36,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [state, setState] = useState<LoginState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [attempts, setAttempts] = useState(0);
@@ -93,7 +94,7 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      const result = await apiLogin(email, password);
+      const result = await apiLogin(email, password, rememberMe);
 
       if (result.success) {
         setState("idle");
@@ -271,6 +272,24 @@ export default function LoginPage() {
                     <Eye className="h-4 w-4" aria-hidden="true" />
                   )}
                 </button>
+              </div>
+
+              {/* Remember me */}
+              <div className="flex items-center gap-2">
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={isLoading || isLocked}
+                  className="h-4 w-4 rounded border-border-default bg-bg-tertiary text-accent-primary focus:ring-2 focus:ring-accent-primary focus:ring-offset-0"
+                />
+                <label
+                  htmlFor="remember-me"
+                  className="text-sm text-text-secondary cursor-pointer select-none"
+                >
+                  Remember me
+                </label>
               </div>
 
               {/* Submit */}

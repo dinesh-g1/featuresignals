@@ -391,7 +391,7 @@ func isUnreachableError(err error) bool {
 }
 
 func probeRemoteRegion(ctx context.Context, regionCode string, info domain.RegionInfo) RegionStatus {
-	healthURL := info.APIEndpoint + "/health"
+	healthURL := "http://localhost:8080/health"
 
 	start := time.Now()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, nil)
@@ -431,7 +431,7 @@ func probeRemoteRegion(ctx context.Context, regionCode string, info domain.Regio
 		apiStatus = "degraded"
 	}
 
-	statusURL := info.APIEndpoint + "/v1/status"
+	statusURL := "http://localhost:8080/v1/status"
 	statusReq, err := http.NewRequestWithContext(ctx, http.MethodGet, statusURL, nil)
 	if err != nil {
 		return RegionStatus{

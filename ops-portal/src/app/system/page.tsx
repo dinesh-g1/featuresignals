@@ -20,6 +20,7 @@ import {
   Trash2,
   UserCircle,
   Mail,
+  Gauge,
 } from "lucide-react";
 import {
   Card,
@@ -488,11 +489,27 @@ export default function SystemHealthPage() {
     refetchInterval: autoRefresh ? 30_000 : false,
   });
 
+  const {
+    data: autoscalerStatus,
+    isLoading: autoscalerLoading,
+    error: autoscalerError,
+    refetch: refetchAutoscaler,
+  } = useQuery({
+    queryKey: ["autoscaler", "status"],
+    queryFn: () => api.getAutoscalerStatus(),
+    staleTime: 15_000,
+    gcTime: 60_000,
+    retry: 2,
+    enabled: true,
+    refetchInterval: autoRefresh ? 30_000 : false,
+  });
+
   const loadingInitial =
     healthLoading && servicesLoading && !health && !serviceStatuses;
-  const refreshing = (healthLoading || servicesLoading) && !!health;
-  const hasError = !!healthError || !!servicesError;
-  const hasData = !!health || !!serviceStatuses;
+  const refreshing =
+    (healthLoading || servicesLoading || autoscalerLoading) && !!health;
+  const hasError = !!healthError || !!servicesError || !!autoscalerError;
+  const hasData = !!health || !!serviceStatuses || !!autoscalerStatus;
 
   const lastUpdated = health?.last_updated
     ? formatRelativeTime(health.last_updated)
@@ -510,7 +527,8 @@ export default function SystemHealthPage() {
   const handleRetryAll = useCallback(() => {
     refetchHealth();
     refetchServices();
-  }, [refetchHealth, refetchServices]);
+    refetchAutoscaler();
+  }, [refetchHealth, refetchServices, refetchAutoscaler]);
 
   // ─── Ops Users Management ──────────────────────────────────────────────
 
@@ -829,6 +847,178 @@ export default function SystemHealthPage() {
               />
               <p className="text-sm text-text-muted">
                 No service data available
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* ─── Autoscaler Status ──────────────────────────────────────── */}
+        <section aria-label="Autoscaler status">
+          <h2 className="text-lg font-semibold text-text-primary mb-4">
+            Autoscaler
+          </h2>
+
+          {autoscalerLoading && !autoscalerStatus ? (
+            <div className="rounded-lg border border-border-default bg-bg-secondary p-5">
+              <div className="animate-pulse space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+                <Skeleton className="h-2 w-full" />
+                <div className="flex gap-4">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            </div>
+          ) : autoscalerError && !autoscalerStatus ? (
+            <ErrorState
+              title="Failed to load autoscaler status"
+              message="Unable to fetch autoscaler information."
+              onRetry={() => refetchAutoscaler()}
+              compact
+            />
+          ) : autoscalerStatus ? (
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary/10">
+                      <Gauge
+                        className="h-5 w-5 text-accent-primary"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text-primary">
+                        {autoscalerStatus.mode === "enabled" ||
+                        autoscalerStatus.enabled
+                          ? "Autoscaling Active"
+                          : "Autoscaling Disabled"}
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        {autoscalerStatus.mode === "enabled" ||
+                        autoscalerStatus.enabled
+                          ? "Automatically scaling resources based on demand"
+                          : "Manual scaling only"}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusDot
+                    status={
+                      autoscalerStatus.mode === "enabled" ||
+                      autoscalerStatus.enabled
+                        ? "healthy"
+                        : "neutral"
+                    }
+                    pulse={
+                      autoscalerStatus.mode === "enabled" ||
+                      autoscalerStatus.enabled
+                    }
+                    size="md"
+                  />
+                </div>
+
+                {/* Metrics row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-text-muted">Min Replicas</p>
+                    <p className="text-lg font-semibold text-text-primary">
+                      {autoscalerStatus.min_replicas ??
+                        autoscalerStatus.minReplicas ??
+                        "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-muted">Max Replicas</p>
+                    <p className="text-lg font-semibold text-text-primary">
+                      {autoscalerStatus.max_replicas ??
+                        autoscalerStatus.maxReplicas ??
+                        "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-muted">Current Replicas</p>
+                    <p className="text-lg font-semibold text-text-primary">
+                      {autoscalerStatus.current_replicas ??
+                        autoscalerStatus.currentReplicas ??
+                        "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-muted">Target CPU</p>
+                    <p className="text-lg font-semibold text-text-primary">
+                      {autoscalerStatus.target_cpu_percent ??
+                        autoscalerStatus.targetCPUPercent ??
+                        "—"}
+                      {autoscalerStatus.target_cpu_percent != null && "%"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Events / recent actions */}
+                {autoscalerStatus.events &&
+                  autoscalerStatus.events.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-border-default">
+                      <p className="text-xs font-medium text-text-muted mb-2">
+                        Recent Events
+                      </p>
+                      <div className="space-y-1.5">
+                        {autoscalerStatus.events
+                          .slice(-5)
+                          .reverse()
+                          .map(
+                            (
+                              event: {
+                                time?: string;
+                                message?: string;
+                                type?: string;
+                              },
+                              idx: number,
+                            ) => (
+                              <div
+                                key={idx}
+                                className="flex items-start gap-2 text-xs"
+                              >
+                                <span
+                                  className={cn(
+                                    "mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                                    event.type === "scale_up" ||
+                                      event.type === "scale-down"
+                                      ? "bg-accent-primary"
+                                      : "bg-text-muted",
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                <span className="text-text-secondary">
+                                  {event.message ?? event.type}
+                                </span>
+                                {event.time && (
+                                  <span className="text-text-muted shrink-0">
+                                    {formatRelativeTime(event.time)}
+                                  </span>
+                                )}
+                              </div>
+                            ),
+                          )}
+                      </div>
+                    </div>
+                  )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border-default bg-bg-tertiary/30 py-8 text-center">
+              <Gauge
+                className="mx-auto h-8 w-8 text-text-muted mb-2"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-text-muted">
+                Autoscaler status unavailable
               </p>
             </div>
           )}

@@ -21,7 +21,6 @@ import (
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
-	"github.com/featuresignals/server/internal/pricing"
 	"github.com/featuresignals/server/internal/provision"
 	"github.com/featuresignals/server/internal/provision/hetzner"
 	"github.com/featuresignals/server/internal/queue"
@@ -205,7 +204,6 @@ func NewRouter(
 			}
 			httputil.JSON(w, http.StatusOK, cfg)
 		})
-		r.With(middleware.CacheControl("public, max-age=3600")).Get("/pricing/regions", pricing.HandleRegionPricing)
 
 		// Public auth routes (rate-limited to prevent brute force)
 		r.Group(func(r chi.Router) {

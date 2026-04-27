@@ -352,11 +352,9 @@ func TestHandler_CheckAllRegions_RegionCodeOverride(t *testing.T) {
 	// Temporarily override the US region endpoint to point at our fake server.
 	original := domain.Regions[domain.RegionUS]
 	domain.Regions[domain.RegionUS] = domain.RegionInfo{
-		Code:        domain.RegionUS,
-		Name:        "United States",
-		Flag:        "🇺🇸",
-		APIEndpoint: fakeSatellite.URL,
-		AppEndpoint: fakeSatellite.URL,
+		Code: domain.RegionUS,
+		Name: "United States",
+		Flag: "🇺🇸",
 	}
 	defer func() { domain.Regions[domain.RegionUS] = original }()
 

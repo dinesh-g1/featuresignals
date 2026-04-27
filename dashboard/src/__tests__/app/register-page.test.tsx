@@ -13,19 +13,16 @@ vi.mock("@/lib/api", () => ({
           code: "in",
           name: "India",
           flag: "\u{1F1EE}\u{1F1F3}",
-          app_endpoint: "https://app.featuresignals.com",
         },
         {
           code: "us",
           name: "United States",
           flag: "\u{1F1FA}\u{1F1F8}",
-          app_endpoint: "https://app.us.featuresignals.com",
         },
         {
           code: "eu",
           name: "Europe",
           flag: "\u{1F1EA}\u{1F1FA}",
-          app_endpoint: "https://app.eu.featuresignals.com",
         },
       ],
     }),
@@ -321,18 +318,6 @@ describe("RegisterPage", () => {
     expect(screen.getByText("Please select a data region")).toBeInTheDocument();
   });
 
-  it("shows region unavailable error when API fails", async () => {
-    vi.mocked(api.listRegions).mockRejectedValue(new Error("Network error"));
-    render(<RegisterPage />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "This region is temporarily unavailable. Please select another.",
-        ),
-      ).toBeInTheDocument();
-    });
-  });
 
   it("hides password strength when password is empty", () => {
     render(<RegisterPage />);

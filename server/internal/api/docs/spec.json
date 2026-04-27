@@ -5691,61 +5691,6 @@
         ]
       }
     },
-    "/v1/pricing/regions": {
-      "get": {
-        "description": "Returns region-adjust pricing configuration.",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Bad request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [],
-        "summary": "Get region pricing",
-        "tags": [
-          "Pricing"
-        ]
-      }
-    },
     "/v1/projects": {
       "get": {
         "description": "Returns all projects the authenticated user has access to.",

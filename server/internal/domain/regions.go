@@ -10,20 +10,17 @@ const (
 
 // RegionInfo describes a deployable data region.
 type RegionInfo struct {
-	Code        string `json:"code"`
-	Name        string `json:"name"`
-	Flag        string `json:"flag"`
-	APIEndpoint string `json:"api_endpoint"`
-	AppEndpoint string `json:"app_endpoint"`
+	Code string `json:"code"`
+	Name string `json:"name"`
+	Flag string `json:"flag"`
 }
 
 // Regions is the authoritative list of supported data regions.
-// Endpoint URLs are overridden at deploy time via config; these are defaults.
 var Regions = map[string]RegionInfo{
-	RegionIN:  {Code: RegionIN, Name: "India", Flag: "🇮🇳", APIEndpoint: "https://api.featuresignals.com", AppEndpoint: "https://app.featuresignals.com"},
-	RegionUS:  {Code: RegionUS, Name: "United States", Flag: "🇺🇸", APIEndpoint: "https://api.us.featuresignals.com", AppEndpoint: "https://app.us.featuresignals.com"},
-	RegionEU:  {Code: RegionEU, Name: "Europe", Flag: "🇪🇺", APIEndpoint: "https://api.eu.featuresignals.com", AppEndpoint: "https://app.eu.featuresignals.com"},
-	RegionDev: {Code: RegionDev, Name: "Development", Flag: "\U0001f6e0\ufe0f", APIEndpoint: "https://api.dev.featuresignals.com", AppEndpoint: "https://app.dev.featuresignals.com"},
+	RegionIN:  {Code: RegionIN, Name: "India", Flag: "🇮🇳"},
+	RegionUS:  {Code: RegionUS, Name: "United States", Flag: "🇺🇸"},
+	RegionEU:  {Code: RegionEU, Name: "Europe", Flag: "🇪🇺"},
+	RegionDev: {Code: RegionDev, Name: "Development", Flag: "\U0001f6e0\ufe0f"},
 }
 
 // ValidRegion returns true if the given region code is supported.

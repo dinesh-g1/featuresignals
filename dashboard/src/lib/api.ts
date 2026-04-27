@@ -399,9 +399,7 @@ export const api = {
       body: data,
     }),
 
-  // Verify-first signup (OTP-based). With GeoDNS, each region's dashboard
-  // talks to its co-located API. If the user selects a different data region,
-  // the register page redirects to that region's dashboard before initiating.
+  // Verify-first signup (OTP-based).
   initiateSignup: (data: {
     email: string;
     password: string;
@@ -437,8 +435,6 @@ export const api = {
         code: string;
         name: string;
         flag: string;
-        api_endpoint: string;
-        app_endpoint: string;
       }>;
     }>("/v1/regions", {}),
 
