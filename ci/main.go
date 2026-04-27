@@ -1035,3 +1035,162 @@ elif isinstance(plans, list):
 
 	return nil
 }
+
+// =========================================================================
+// DeployWeb — one-time VPS bootstrap
+// =========================================================================
+
+// DeployWeb creates a permanent web VPS and bootstraps it with Caddy.
+// This is a one-time setup script — run it once on a fresh VPS, then use
+// DeployWebsite / DeployDocs for all subsequent content updates.
+//
+// Required host environment variables:
+//   - WEB_VPS_IP:        IP address of the web VPS
+//   - SSH_PRIVATE_KEY:   SSH private key with root access to the VPS
+func (m *Ci) DeployWeb(ctx context.Context, source *dagger.Directory, version string) error {
+	fmt.Println("=== Deploying web VPS ===")
+	fmt.Println("This is a one-time setup. After the VPS is created:")
+	fmt.Println("  1. Run deploy/k3s/bootstrap-web.sh on the VPS as root")
+	fmt.Println("  2. Point DNS A records to the VPS IP")
+	fmt.Println("  3. Use DeployWebsite / DeployDocs for content updates")
+
+	// Upload and execute the bootstrap script
+	if version == "" {
+		version = "latest"
+	}
+
+	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
+	webHost := dag.Host().EnvVariable("WEB_VPS_IP")
+
+	ctr := dag.Container().
+		From("alpine:3.20").
+		WithExec([]string{"apk", "add", "--no-cache", "openssh"}).
+		WithSecretVariable("SSH_KEY", sshKey).
+		WithDirectory("/provision", source.Directory("deploy/k3s")).
+		WithExec([]string{"sh", "-c", `mkdir -p /root/.ssh && echo "$SSH_KEY" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519`})
+
+	// Upload the bootstrap script and execute it
+	_, err := ctr.WithExec([]string{
+		"sh", "-c",
+		fmt.Sprintf(
+			`scp -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519 /provision/bootstrap-web.sh root@%s:/tmp/bootstrap-web.sh && ssh -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519 root@%s "bash /tmp/bootstrap-web.sh"`,
+			webHost, webHost,
+		),
+	}).Sync(ctx)
+	if err != nil {
+		return fmt.Errorf("deploy web VPS bootstrap: %w", err)
+	}
+
+	fmt.Printf("✅ Web VPS (%s) bootstrapped with Caddy\n", webHost)
+	return nil
+}
+
+// =========================================================================
+// DeployWebsite — build and deploy website to web VPS
+// =========================================================================
+
+// DeployWebsite builds the Next.js website (static export) and deploys
+// it to the web VPS via rsync over SSH.
+//
+// Required host environment variables:
+//   - WEB_VPS_IP:        IP address of the web VPS
+//   - SSH_PRIVATE_KEY:   SSH private key with root access to the VPS
+func (m *Ci) DeployWebsite(ctx context.Context, source *dagger.Directory, version string) error {
+	if version == "" {
+		version = "latest"
+	}
+
+	fmt.Printf("=== Building website (v%s) ===\n", version)
+
+	// Build website with Next.js static export
+	website := dag.Container().From("node:22-alpine").
+		WithDirectory("/app", source.Directory("website")).
+		WithWorkdir("/app").
+		WithExec([]string{"npm", "ci"}).
+		WithExec([]string{"npm", "run", "build"})
+
+	// Get the static export output (Next.js output: "export" → /app/out)
+	outDir := website.Directory("out")
+
+	// SSH key and host
+	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
+	webHost := dag.Host().EnvVariable("WEB_VPS_IP")
+
+	fmt.Printf("=== Deploying website to %s ===\n", webHost)
+
+	// Upload via rsync over SSH
+	ctr := dag.Container().
+		From("alpine:3.20").
+		WithExec([]string{"apk", "add", "--no-cache", "openssh", "rsync"}).
+		WithSecretVariable("SSH_KEY", sshKey).
+		WithDirectory("/website", outDir).
+		WithExec([]string{"sh", "-c", `mkdir -p /root/.ssh && echo "$SSH_KEY" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519`})
+
+	_, err := ctr.WithExec([]string{
+		"rsync", "-avz", "--delete",
+		"-e", "ssh -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519",
+		"/website/",
+		fmt.Sprintf("root@%s:/var/www/html/", webHost),
+	}).Sync(ctx)
+	if err != nil {
+		return fmt.Errorf("deploy website: %w", err)
+	}
+
+	fmt.Printf("✅ Website (v%s) deployed to https://featuresignals.com\n", version)
+	return nil
+}
+
+// =========================================================================
+// DeployDocs — build and deploy documentation to web VPS
+// =========================================================================
+
+// DeployDocs builds the Docusaurus documentation site and deploys it
+// to the web VPS via rsync over SSH.
+//
+// Required host environment variables:
+//   - WEB_VPS_IP:        IP address of the web VPS
+//   - SSH_PRIVATE_KEY:   SSH private key with root access to the VPS
+func (m *Ci) DeployDocs(ctx context.Context, source *dagger.Directory, version string) error {
+	if version == "" {
+		version = "latest"
+	}
+
+	fmt.Printf("=== Building docs (v%s) ===\n", version)
+
+	// Build docs with Docusaurus
+	docs := dag.Container().From("node:22-alpine").
+		WithDirectory("/app", source.Directory("docs")).
+		WithWorkdir("/app").
+		WithExec([]string{"npm", "ci"}).
+		WithExec([]string{"npm", "run", "build"})
+
+	// Docusaurus outputs to /app/build
+	outDir := docs.Directory("build")
+
+	// SSH key and host
+	sshKey := dag.Host().EnvVariable("SSH_PRIVATE_KEY").Secret()
+	webHost := dag.Host().EnvVariable("WEB_VPS_IP")
+
+	fmt.Printf("=== Deploying docs to %s ===\n", webHost)
+
+	// Upload via rsync over SSH
+	ctr := dag.Container().
+		From("alpine:3.20").
+		WithExec([]string{"apk", "add", "--no-cache", "openssh", "rsync"}).
+		WithSecretVariable("SSH_KEY", sshKey).
+		WithDirectory("/docs", outDir).
+		WithExec([]string{"sh", "-c", `mkdir -p /root/.ssh && echo "$SSH_KEY" > /root/.ssh/id_ed25519 && chmod 600 /root/.ssh/id_ed25519`})
+
+	_, err := ctr.WithExec([]string{
+		"rsync", "-avz", "--delete",
+		"-e", "ssh -o StrictHostKeyChecking=no -i /root/.ssh/id_ed25519",
+		"/docs/",
+		fmt.Sprintf("root@%s:/var/www/docs/", webHost),
+	}).Sync(ctx)
+	if err != nil {
+		return fmt.Errorf("deploy docs: %w", err)
+	}
+
+	fmt.Printf("✅ Docs (v%s) deployed to https://docs.featuresignals.com\n", version)
+	return nil
+}
