@@ -61,9 +61,9 @@ jobs:
         run: |
           curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
           mkdir -p "$HOME/.local/bin"
-          mv dagger "$HOME/.local/bin/dagger"
+          mv bin/dagger "$HOME/.local/bin/dagger"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/dagger" version
+          dagger version
 
       - name: Bootstrap cell — install GitHub Actions runner via Hetzner API
         run: |
