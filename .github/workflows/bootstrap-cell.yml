@@ -28,22 +28,22 @@ on:
   workflow_dispatch:
     inputs:
       cell-server-id:
-        description: 'Hetzner server ID (numeric, from cells table)'
+        description: "Hetzner server ID (numeric, from cells table)"
         required: true
         type: string
-        default: '128090728'
+        default: "128090728"
       cell-ip:
-        description: 'Cell public IP address'
+        description: "Cell public IP address"
         required: true
         type: string
-        default: '46.224.31.37'
+        default: "46.224.31.37"
       cell-name:
-        description: 'Cell name (e.g., prod-eu-001)'
+        description: "Cell name (e.g., prod-eu-001)"
         required: true
         type: string
         default: prod-eu-001
       gh-repo:
-        description: 'GitHub repository (e.g., dinesh-g1/featuresignals)'
+        description: "GitHub repository (e.g., dinesh-g1/featuresignals)"
         required: true
         type: string
         default: dinesh-g1/featuresignals
@@ -60,8 +60,10 @@ jobs:
       - name: Install Dagger CLI
         run: |
           curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
-          sudo mv dagger /usr/local/bin/
-          dagger version
+          mkdir -p "$HOME/.local/bin"
+          mv dagger "$HOME/.local/bin/dagger"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/dagger" version
 
       - name: Bootstrap cell — install GitHub Actions runner via Hetzner API
         run: |

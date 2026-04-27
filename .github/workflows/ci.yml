@@ -92,7 +92,9 @@ jobs:
       - name: Install Dagger CLI
         run: |
           curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
-          sudo mv dagger /usr/local/bin/
+          mkdir -p "$HOME/.local/bin"
+          mv dagger "$HOME/.local/bin/dagger"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Validate ${{ matrix.project }}
         run: |
@@ -112,7 +114,9 @@ jobs:
       - name: Install Dagger CLI
         run: |
           curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
-          sudo mv dagger /usr/local/bin/
+          mkdir -p "$HOME/.local/bin"
+          mv dagger "$HOME/.local/bin/dagger"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Full test suite
         run: |
@@ -139,7 +143,9 @@ jobs:
       - name: Install Dagger CLI
         run: |
           curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
-          sudo mv dagger /usr/local/bin/
+          mkdir -p "$HOME/.local/bin"
+          mv dagger "$HOME/.local/bin/dagger"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Build and push images
         run: |
@@ -210,7 +216,9 @@ jobs:
       - name: Install Dagger CLI
         run: |
           curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
-          sudo mv dagger /usr/local/bin/
+          mkdir -p "$HOME/.local/bin"
+          mv dagger "$HOME/.local/bin/dagger"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Smoke test API
         run: |
