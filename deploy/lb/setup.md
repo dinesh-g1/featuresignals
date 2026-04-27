@@ -16,8 +16,8 @@ Each provisioned cell gets a subdomain under the root domain:
 
 | Record | Type | Value | Description |
 |--------|------|-------|-------------|
-| `*.featuresignals.com` | A | `<LB_PUBLIC_IP>` | Wildcard for cell subdomains |
-| `cell-01.featuresignals.com` | A | `<LB_PUBLIC_IP>` | Individual cell (if not using wildcard) |
+| `*.featuresignals.com` | A | `46.225.34.240` | Wildcard for cell subdomains |
+| `cell-01.featuresignals.com` | A | `46.225.34.240` | Individual cell (if not using wildcard) |
 
 ### Observability (SigNoz)
 
@@ -25,7 +25,7 @@ SigNoz provides metrics, traces, and log aggregation for all cell services.
 
 | Record | Type | Value | Description |
 |--------|------|-------|-------------|
-| `signoz.featuresignals.com` | A | `<LB_PUBLIC_IP>` | SigNoz UI access (query service) |
+| `signoz.featuresignals.com` | A | `46.225.34.240` | SigNoz UI access (query service) |
 
 When the observability stack is deployed via `deploy-observability.sh`, an
 Ingress is created for `signoz.<CELL_SUBDOMAIN>`. If you use the wildcard DNS
@@ -36,9 +36,9 @@ record above, SigNoz will be accessible at `signoz.cell-01.featuresignals.com`
 
 | Record | Type | Value | Description |
 |--------|------|-------|-------------|
-| `api.featuresignals.com` | A | `<LB_PUBLIC_IP>` | FeatureSignals API |
-| `app.featuresignals.com` | A | `<LB_PUBLIC_IP>` | FeatureSignals Dashboard |
-| `edge.featuresignals.com` | A | `<LB_PUBLIC_IP>` | Edge Worker |
+| `api.featuresignals.com` | A | `46.225.34.240` | FeatureSignals API |
+| `app.featuresignals.com` | A | `46.225.34.240` | FeatureSignals Dashboard |
+| `edge.featuresignals.com` | A | `46.225.34.240` | Edge Worker |
 
 ---
 
@@ -186,3 +186,34 @@ If DNS records change:
    curl -H "Host: api.featuresignals.com" http://<LB_IP>/health
    ```
 4. Certificate renewal may take a few minutes via cert-manager.
+---
+
+## Website Deployment (Cloudflare Pages)
+
+The marketing website at `featuresignals.com` is deployed via Cloudflare Pages.
+
+### Git Integration (auto-deploy on push)
+
+1. Go to **Cloudflare Dashboard → Workers & Pages → Pages → Create → Connect to Git**
+2. Select the `featuresignals` repository
+3. Configure:
+   - **Build command:** `cd website && npm ci && npm run build`
+   - **Build output directory:** `out`
+4. Save — auto-deploys on every push to `main`
+
+### Manual/Wrangler deploy
+
+```bash
+npx wrangler pages deploy out --project-name=featuresignals-website
+```
+
+Requires `CLOUDFLARE_API_TOKEN` with **Cloudflare Pages: Write** permission.
+
+### CI/CD (future)
+
+When `website/` directory changes are pushed, the Dagger CI pipeline will
+auto-deploy to Cloudflare Pages via Wrangler.
+
+| Record | Type | Value | Proxy | Description |
+|--------|------|-------|-------|-------------|
+| `featuresignals.com` | CNAME | `featuresignals.pages.dev` | Proxied ☁️ | Marketing website |
