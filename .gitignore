@@ -64,6 +64,14 @@ __pycache__/
 private/
 .internal/
 
+# LLM Wiki — private business knowledge (pricing, competitive intel, customers, roadmap)
+# gitignore so they never leak to public repo
+product/wiki/private/
+
+# LLM Wiki — internal ops knowledge (infra secrets, runbooks, incidents, compliance gaps)
+# Encrypted via git-crypt. This entry ensures unencrypted duplicates are ignored.
+product/wiki/internal/
+
 # Claude local settings
 .claude/settings.local.json
 

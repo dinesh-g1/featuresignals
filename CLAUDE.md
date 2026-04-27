@@ -7,7 +7,43 @@
 
 ---
 
-## 0. Core Philosophy
+## 0. Mandatory Wiki Consultation
+
+Every prompt in this repository **must** consult the FeatureSignals Product Wiki before responding. The wiki is the single source of truth for accumulated knowledge — architecture decisions, development patterns, testing strategies, infrastructure topology, competitive intelligence, customer feedback, and roadmap planning.
+
+### 0.1 Before Every Response
+
+1. **Read** `product/wiki/index.md` — identify the 3-5 most relevant pages
+2. **Read** those pages completely
+3. **Check** `product/wiki/log.md` for recent context (last 5–10 entries)
+4. **Synthesize** a response citing wiki pages as sources
+
+### 0.2 After Every Session
+
+1. **File new knowledge** — if the conversation produced valuable insights, create or update wiki pages
+2. **Update** `product/wiki/log.md` with a timestamped entry
+3. **Update** `product/wiki/index.md` if pages were added or modified
+4. **Commit** changes to git with `chore(wiki): description`
+
+### 0.3 Wiki Schema
+
+The operating rules for the wiki live in `product/SCHEMA.md`. Read it in full before your first wiki operation in any session.
+
+### 0.4 Wiki Layers
+
+| Layer | Visibility | Git | Contents |
+|---|---|---|---|
+| `product/wiki/public/` | Public | Committed | Architecture, dev patterns, SDKs, compliance, deployment |
+| `product/wiki/private/` | Private | Gitignored | Pricing strategy, competitive intel, customers, roadmap |
+| `product/wiki/internal/` | Private | Git-crypt | Infra secrets, runbooks, incidents, compliance gaps |
+
+### 0.5 Exceptions
+
+If a prompt is a simple code generation task with no strategic or knowledge component (e.g., "fix this typo", "rename this variable"), wiki consultation may be skipped. When in doubt, consult the wiki.
+
+---
+
+## 0A. Core Philosophy
 
 Every line of code you produce must be **production-ready, secure, testable, extensible, and maintainable**. If something would not pass a principal engineer's review at Stripe, Linear, or Netflix, do not write it.
 

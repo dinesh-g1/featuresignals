@@ -1,0 +1,45 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# git-crypt: encrypt internal wiki directory
+product/wiki/internal/** filter=git-crypt diff=git-crypt
+
+# Go source
+*.go text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Makefile
+Makefile text eol=lf
+Makefile.* text eol=lf
+
+# Markdown
+*.md text diff=markdown
+
+# YAML
+*.yml text
+*.yaml text
+
+# JSON
+*.json text
+
+# Dockerfiles
+Dockerfile* text
+
+# Environment file examples
+.env.example text
+*.env.example text
+
+# Binary files - treat as binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.tar.gz binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
