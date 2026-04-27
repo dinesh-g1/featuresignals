@@ -35,7 +35,7 @@ import type { SelectOption } from "@/components/ui/select";
 const PAGE_SIZE = 25;
 
 const ACTION_TYPE_OPTIONS: SelectOption[] = [
-  { value: "", label: "All Actions" },
+  { value: "__all__", label: "All Actions" },
   { value: "cell.update", label: "Cell Update" },
   { value: "backup.complete", label: "Backup Complete" },
   { value: "preview.create", label: "Preview Create" },
@@ -350,7 +350,7 @@ function AuditPageContent() {
 
   const handleActionTypeChange = useCallback(
     (value: string) => {
-      updateFilters({ action_type: value || undefined });
+      updateFilters({ action_type: value === "__all__" ? undefined : value });
     },
     [updateFilters],
   );
@@ -474,7 +474,7 @@ function AuditPageContent() {
                 </div>
                 <div className="w-full sm:w-52">
                   <Select
-                    value={currentFilters.action_type ?? ""}
+                    value={currentFilters.action_type ?? "__all__"}
                     onValueChange={handleActionTypeChange}
                     options={ACTION_TYPE_OPTIONS}
                     placeholder="All Actions"

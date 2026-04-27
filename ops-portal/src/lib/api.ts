@@ -92,6 +92,16 @@ interface CellResponse {
   total: number;
 }
 
+/** Raw activity item returned by the backend /dashboard/activity endpoint. */
+interface BackendActivityItem {
+  id: string;
+  action: string;
+  target: string;
+  target_id: string;
+  actor: string;
+  created_at: string;
+}
+
 // ─── Mappers ─────────────────────────────────────────────────────────────
 
 function toCell(bc: BackendCell): Cell {
@@ -153,6 +163,47 @@ function computeCellHealthSummary(
     draining,
     provisioning,
     total: cells.length,
+  };
+}
+
+/** Map a backend activity item (snake_case) to a RecentActivity (camelCase). */
+function toRecentActivity(item: BackendActivityItem): RecentActivity {
+  let type: RecentActivity["type"];
+  let severity: RecentActivity["severity"];
+
+  if (item.action.includes("provision") || item.action.includes("create")) {
+    type = "cell.provisioned";
+    severity = "success";
+  } else if (item.action.includes("preview")) {
+    type = "preview.created";
+    severity = "info";
+  } else if (
+    item.action.includes("billing") ||
+    item.action.includes("payment")
+  ) {
+    type = "billing.failed";
+    severity = "error";
+  } else if (item.action.includes("backup")) {
+    type = "backup.complete";
+    severity = "success";
+  } else if (item.action.includes("expir")) {
+    type = "preview.expired";
+    severity = "warning";
+  } else {
+    type = "cell.provisioned";
+    severity = "info";
+  }
+
+  const summary = item.action
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return {
+    id: item.id,
+    type,
+    summary: item.target ? `${summary}: ${item.target}` : summary,
+    severity,
+    timestamp: item.created_at,
+    metadata: { actor: item.actor, target_id: item.target_id },
   };
 }
 
@@ -462,9 +513,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 export async function getRecentActivity(
   limit: number = 5,
 ): Promise<RecentActivity[]> {
-  return request<RecentActivity[]>("/dashboard/activity", {
+  const data = await request<{
+    activities: BackendActivityItem[];
+    total: number;
+  }>("/dashboard/activity", {
     params: { limit },
   });
+  return data.activities.map(toRecentActivity);
 }
 
 // ─── Tenant Endpoints ───────────────────────────────────────────────────────
@@ -472,13 +527,20 @@ export async function getRecentActivity(
 export async function listTenants(
   filters?: Partial<TenantFilters>,
 ): Promise<TenantList> {
-  return request<TenantList>("/tenants", {
+  const data = await request<BackendTenantList>("/tenants", {
     params: filters as Record<string, string | number | boolean | undefined>,
   });
+  return {
+    tenants: data.tenants.map(toTenant),
+    total: data.total,
+    limit: data.limit,
+    offset: data.offset,
+  };
 }
 
 export async function getTenant(id: string): Promise<TenantDetail> {
-  return request<TenantDetail>(`/tenants/${id}`);
+  const data = await request<BackendTenantDetail>(`/tenants/${id}`);
+  return toTenantDetail(data);
 }
 
 /** Raw tenant shape returned by the backend /tenants endpoint (snake_case). */
@@ -488,8 +550,95 @@ interface BackendTenant {
   slug: string;
   tier: string;
   status: string;
+  cell_id: string;
+  cell_name: string;
+  cloud: string;
+  region: string;
+  cost: number;
+  currency: string;
   created_at: string;
   updated_at: string;
+}
+
+/** Raw tenant detail shape from /tenants/:id (snake_case). */
+interface BackendTenantDetail extends BackendTenant {
+  api_keys: Array<{
+    id: string;
+    tenant_id: string;
+    key_prefix: string;
+    label: string;
+    last_used_at: string | null;
+    created_at: string;
+  }>;
+  current_bill: {
+    amount: number;
+    currency: string;
+    period_start: string;
+    period_end: string;
+  };
+  activity_log: Array<{
+    id: string;
+    action: string;
+    actor: string;
+    target: string;
+    details: string;
+    timestamp: string;
+  }>;
+}
+
+interface BackendTenantList {
+  tenants: BackendTenant[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** Map a BackendTenant (snake_case) to a Tenant (camelCase). */
+function toTenant(bt: BackendTenant): Tenant {
+  return {
+    id: bt.id,
+    name: bt.name,
+    slug: bt.slug,
+    tier: bt.tier as Tenant["tier"],
+    status: bt.status as Tenant["status"],
+    cellId: bt.cell_id,
+    cellName: bt.cell_name,
+    cloud: bt.cloud,
+    region: bt.region,
+    cost: bt.cost,
+    currency: bt.currency,
+    createdAt: bt.created_at,
+    updatedAt: bt.updated_at,
+  };
+}
+
+/** Map a BackendTenantDetail (snake_case) to a TenantDetail (camelCase). */
+function toTenantDetail(btd: BackendTenantDetail): TenantDetail {
+  return {
+    ...toTenant(btd),
+    apiKeys: btd.api_keys.map((k) => ({
+      id: k.id,
+      tenantId: k.tenant_id,
+      keyPrefix: k.key_prefix,
+      label: k.label,
+      lastUsedAt: k.last_used_at,
+      createdAt: k.created_at,
+    })),
+    currentBill: {
+      amount: btd.current_bill.amount,
+      currency: btd.current_bill.currency,
+      periodStart: btd.current_bill.period_start,
+      periodEnd: btd.current_bill.period_end,
+    },
+    activityLog: btd.activity_log.map((a) => ({
+      id: a.id,
+      action: a.action,
+      actor: a.actor,
+      target: a.target,
+      details: a.details,
+      timestamp: a.timestamp,
+    })),
+  };
 }
 
 export async function getTenantStats(): Promise<TenantStats> {
@@ -508,20 +657,22 @@ export async function getTenantStats(): Promise<TenantStats> {
 }
 
 export async function provisionTenant(req: ProvisionRequest): Promise<Tenant> {
-  return request<Tenant>("/tenants", {
+  const data = await request<BackendTenant>("/tenants", {
     method: "POST",
     body: JSON.stringify(req),
   });
+  return toTenant(data);
 }
 
 export async function updateTenant(
   id: string,
   req: UpdateTenantRequest,
 ): Promise<Tenant> {
-  return request<Tenant>(`/tenants/${id}`, {
+  const data = await request<BackendTenant>(`/tenants/${id}`, {
     method: "PUT",
     body: JSON.stringify(req),
   });
+  return toTenant(data);
 }
 
 export async function deprovisionTenant(id: string): Promise<void> {
@@ -563,7 +714,8 @@ export async function getCellHealth(): Promise<CellHealthResponse> {
 }
 
 export async function getCell(id: string): Promise<Cell> {
-  return request<Cell>(`/cells/${id}`);
+  const data = await request<BackendCell>(`/cells/${id}`);
+  return toCell(data);
 }
 
 export async function getCellMetrics(id: string): Promise<CellMetrics> {
@@ -883,29 +1035,81 @@ async function requestOrEmpty<T>(
   }
 }
 
+/** Raw backup entry from backend (snake_case). */
+interface BackendBackupEntry {
+  id: string;
+  type: string;
+  size_bytes: number;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+/** Raw backup status from backend (snake_case). */
+interface BackendBackupStatus {
+  last_successful_at: string | null;
+  last_backup_size_bytes: number;
+  total_backup_size_bytes: number;
+  next_scheduled_at: string;
+  schedule: string;
+  is_running: boolean;
+}
+
+/** Map a BackendBackupEntry (snake_case) to a BackupEntry (camelCase). */
+function toBackupEntry(b: BackendBackupEntry): BackupEntry {
+  return {
+    id: b.id,
+    type: b.type as BackupEntry["type"],
+    sizeBytes: b.size_bytes,
+    status: b.status as BackupEntry["status"],
+    startedAt: b.started_at,
+    completedAt: b.completed_at,
+  };
+}
+
+/** Map a BackendBackupStatus (snake_case) to a BackupStatus (camelCase). */
+function toBackupStatus(b: BackendBackupStatus): BackupStatus {
+  return {
+    lastSuccessfulAt: b.last_successful_at,
+    lastBackupSizeBytes: b.last_backup_size_bytes,
+    totalBackupSizeBytes: b.total_backup_size_bytes,
+    nextScheduledAt: b.next_scheduled_at,
+    schedule: b.schedule,
+    isRunning: b.is_running,
+  };
+}
+
 export async function listBackups(
   filters?: Record<string, string | number | boolean | undefined>,
 ): Promise<PaginatedResponse<BackupEntry>> {
-  return requestOrEmpty<PaginatedResponse<BackupEntry>>(
-    "/backups",
-    { params: filters },
-    { data: [], total: 0, limit: 0, offset: 0 },
-  );
+  const data = await requestOrEmpty<{
+    backups: BackendBackupEntry[];
+    total: number;
+  }>("/backups", { params: filters }, { backups: [], total: 0 });
+  return {
+    data: data.backups.map(toBackupEntry),
+    total: data.total,
+    limit: 0,
+    offset: 0,
+  };
 }
 
 export async function triggerBackup(): Promise<BackupEntry> {
-  return requestOrEmpty<BackupEntry>(
+  const data = await requestOrEmpty<BackendBackupEntry>(
     "/backups",
     { method: "POST" },
     {
       id: "",
       type: "manual",
-      sizeBytes: 0,
+      size_bytes: 0,
       status: "completed",
-      startedAt: "",
-      completedAt: null,
+      started_at: "",
+      completed_at: null,
+      created_at: "",
     },
   );
+  return toBackupEntry(data);
 }
 
 export async function restoreBackup(id: string): Promise<void> {
@@ -917,18 +1121,19 @@ export async function restoreBackup(id: string): Promise<void> {
 }
 
 export async function getBackupStatus(): Promise<BackupStatus> {
-  return requestOrEmpty<BackupStatus>(
+  const data = await requestOrEmpty<BackendBackupStatus>(
     "/backups/status",
     {},
     {
-      lastSuccessfulAt: null,
-      lastBackupSizeBytes: 0,
-      totalBackupSizeBytes: 0,
-      nextScheduledAt: "",
+      last_successful_at: null,
+      last_backup_size_bytes: 0,
+      total_backup_size_bytes: 0,
+      next_scheduled_at: "",
       schedule: "unavailable",
-      isRunning: false,
+      is_running: false,
     },
   );
+  return toBackupStatus(data);
 }
 
 // ─── Audit Endpoints ────────────────────────────────────────────────────────

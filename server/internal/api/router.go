@@ -581,9 +581,15 @@ func NewRouter(
 	r.Post("/api/v1/ops/auth/logout", opsAuthH.Logout)
 	r.Post("/api/v1/ops/auth/forgot-password", opsAuthH.ForgotPassword)
 
+	// ── Public Ops Portal Endpoints (no auth required) ──────────
+	r.Get("/api/v1/ops/system/health", opsSystemH.Health)
+	r.Get("/api/v1/ops/system/services", opsSystemH.Services)
+	r.Get("/api/v1/ops/autoscaler/status", opsSystemH.AutoscalerStatus)
+	r.Get("/api/v1/ops/regions", opsRegionH.ListRegions)
+	r.Get("/api/v1/ops/env-vars/scopes", opsEnvVarsH.GetScopes)
+
 	r.Route("/api/v1/ops", func(r chi.Router) {
 		r.Use(jwtAuth)
-		r.Use(middleware.RequireJSON)
 		// Domain restriction: only @featuresignals.com users
 		r.Use(middleware.RequireDomain("featuresignals.com"))
 
@@ -630,7 +636,6 @@ func NewRouter(
 
 		// ── Environment Variables ──────────────────────────────
 		r.Get("/env-vars", opsEnvVarsH.List)
-		r.Get("/env-vars/scopes", opsEnvVarsH.GetScopes)
 		r.Post("/env-vars", opsEnvVarsH.Upsert)
 		r.Get("/env-vars/effective/{tenantId}", opsEnvVarsH.GetEffective)
 
@@ -650,20 +655,12 @@ func NewRouter(
 		// ── Audit ──────────────────────────────────────────────
 		r.Get("/audit", opsDashboardH.ListAudit)
 
-		// ── System ─────────────────────────────────────────────
-		r.Get("/system/health", opsSystemH.Health)
-		r.Get("/system/services", opsSystemH.Services)
-
 		// ── Regions ──────────────────────────────────────────
-		r.Get("/regions", opsRegionH.ListRegions)
 		r.Get("/regions/{region}/cells", opsRegionH.ListCellsInRegion)
 
 		// ── SigNoz ──────────────────────────────────────────
 		r.Get("/signoz/logs", opsSignozH.ListLogs)
 		r.Get("/signoz/services", opsSignozH.ListServices)
-
-		// ── Autoscaler ──────────────────────────────────────
-		r.Get("/autoscaler/status", opsSystemH.AutoscalerStatus)
 
 		// ── Licenses ────────────────────────────────────────────
 		r.Get("/licenses", opsH.ListLicenses)

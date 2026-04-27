@@ -337,8 +337,8 @@ func (s *Store) ListOrgCostDaily(ctx context.Context, orgID, startDate, endDate 
 
 func (s *Store) ListOpsAuditLogs(ctx context.Context, action, targetType, userID, startDate, endDate string, limit, offset int) ([]domain.OpsAuditLog, int, error) {
 	query := `SELECT oal.id, oal.ops_user_id, oal.action, COALESCE(oal.target_type,''),
-			COALESCE(oal.target_id,''), COALESCE(oal.target_name,''), oal.details,
-			COALESCE(oal.ip_address,''), COALESCE(oal.user_agent,''), oal.created_at,
+			COALESCE(oal.target_id::text,''), COALESCE(oal.target_name,''), oal.details,
+			COALESCE(oal.ip_address::text,''), COALESCE(oal.user_agent,''), oal.created_at,
 			COALESCE(u.name,'')
 		FROM ops_audit_log oal LEFT JOIN ops_users ou ON oal.ops_user_id = ou.id
 		LEFT JOIN users u ON ou.user_id = u.id WHERE 1=1`
