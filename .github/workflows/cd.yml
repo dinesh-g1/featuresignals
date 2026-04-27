@@ -1,0 +1,144 @@
+# CD — Deploy to Cell
+#
+# Manual trigger. Connects to the cell VPS via SSH (Hetzner password reset),
+# pulls the specified image versions from GHCR, and restarts the stack.
+#
+# Usage:
+#   gh workflow run cd.yml -f version=v1.0.0
+#
+# Required secrets:
+#   GHCR_TOKEN        — GitHub PAT with read:packages
+#   HETZNER_API_TOKEN — Hetzner Cloud API token (for password reset)
+
+name: CD - Deploy to Cell
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image version to deploy (must already exist in GHCR)"
+        required: true
+        type: string
+
+env:
+  CELL_IP: 46.224.31.37
+  CELL_SERVER_ID: "128090728"
+  CELL_NAME: prod-eu-001
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.version }} to ${{ env.CELL_NAME }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reset root password via Hetzner API
+        id: reset
+        env:
+          HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+        run: |
+          echo "Resetting root password for server ${{ env.CELL_SERVER_ID }}..."
+          RESP=$(curl -sf -X POST \
+            "https://api.hetzner.cloud/v1/servers/${{ env.CELL_SERVER_ID }}/actions/reset_password" \
+            -H "Authorization: Bearer $HETZNER_API_TOKEN" \
+            -H "Content-Type: application/json")
+          PASSWORD=$(echo "$RESP" | jq -r '.action.root_password // .root_password')
+          if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ]; then
+            echo "❌ Failed to extract root password from response"
+            echo "$RESP" | jq .
+            exit 1
+          fi
+          echo "✅ Root password reset successfully"
+          echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for SSH to be ready
+        env:
+          PASSWORD: ${{ steps.reset.outputs.password }}
+        run: |
+          echo "Waiting for SSH on ${{ env.CELL_IP }}..."
+          for i in $(seq 1 30); do
+            if sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=5 \
+              "root@${{ env.CELL_IP }}" "echo ready" >/dev/null 2>&1; then
+              echo "✅ SSH ready after ${i}s"
+              exit 0
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 5
+          done
+          echo "❌ SSH not ready after 150s"
+          exit 1
+
+      - name: Install deploy key for passwordless SSH
+        env:
+          PASSWORD: ${{ steps.reset.outputs.password }}
+        run: |
+          ssh-keygen -t ed25519 -f /tmp/deploy-key -N "" -C "gha-deploy-${{ env.CELL_NAME }}" >/dev/null 2>&1
+          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "root@${{ env.CELL_IP }}" \
+            "mkdir -p /root/.ssh && chmod 700 /root/.ssh && \
+             echo '$(cat /tmp/deploy-key.pub)' >> /root/.ssh/authorized_keys && \
+             chmod 600 /root/.ssh/authorized_keys"
+          echo "✅ Deploy key installed"
+
+      - name: Deploy application
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            -i /tmp/deploy-key "root@${{ env.CELL_IP }}" \
+            bash -s << 'REMOTE'
+            set -eux
+
+            # Log in to GHCR
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
+
+            # Pull new images
+            docker pull ghcr.io/dinesh-g1/featuresignals-server:${{ inputs.version }}
+            docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:${{ inputs.version }}
+
+            # Update and restart stack
+            cd /opt/featuresignals
+            export FEATURESIGNALS_VERSION=${{ inputs.version }}
+            docker compose up -d
+
+            # Wait for health
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
+                echo "✅ Stack is healthy"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "❌ Stack did not become healthy"
+            exit 1
+REMOTE
+
+      - name: Smoke test via public API
+        run: |
+          echo "Checking https://api.featuresignals.com/health..."
+          for i in $(seq 1 15); do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 5 "https://api.featuresignals.com/health")
+            if [ "$HTTP" = "200" ]; then
+              echo "✅ API healthy (HTTP 200)"
+              exit 0
+            fi
+            echo "  Waiting... ($i/15, HTTP $HTTP)"
+            sleep 4
+          done
+          echo "❌ API health check failed"
+          exit 1
+
+      - name: Cleanup deploy key from cell
+        if: always()
+        env:
+          PASSWORD: ${{ steps.reset.outputs.password }}
+        run: |
+          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "root@${{ env.CELL_IP }}" \
+            "sed -i '/gha-deploy-${{ env.CELL_NAME }}/d' /root/.ssh/authorized_keys 2>/dev/null || true"
+          echo "✅ Deploy key removed from cell"

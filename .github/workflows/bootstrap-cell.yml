@@ -1,117 +1,165 @@
-# FeatureSignals Bootstrap Cell Workflow
+# Bootstrap Cell — One-time Setup
 #
-# One-time workflow that installs a GitHub Actions self-hosted runner
-# on an existing cell VPS without destroying it.
-#
-# How it works:
-#   1. Uses Hetzner Cloud API to reset the root password
-#   2. SSHes into the cell with the temp password
-#   3. Installs and registers a GitHub Actions runner as a systemd service
-#   4. Uploads docker-compose.cell.yml and Caddyfile
-#   5. The runner registers as "cell-{name}" with labels "self-hosted,cell"
-#   6. ALL future deploys run on this runner directly — no SSH ever needed
-#
-# Required GitHub Secrets:
-#   HETZNER_API_TOKEN — Hetzner Cloud API token (for password reset)
-#   GHCR_TOKEN        — GitHub PAT with read:packages (for image pulls)
-#   GH_TOKEN          — GitHub PAT with repo scope (for runner registration + gh secret set)
+# Installs Docker + Docker Compose on the cell VPS, uploads compose files,
+# starts the application stack, and registers a temporary deploy key.
+# Run this ONCE after provisioning a new cell.
 #
 # Usage:
-#   gh workflow run bootstrap-cell.yml \
-#     -f cell-server-id=128090728 \
-#     -f cell-ip=46.224.31.37 \
-#     -f cell-name=prod-eu-001 \
-#     -f gh-repo=dinesh-g1/featuresignals
+#   gh workflow run bootstrap-cell.yml -f cell-ip=46.224.31.37
+#
+# Required secrets:
+#   HETZNER_API_TOKEN — Hetzner Cloud API token
+#   GHCR_TOKEN        — GitHub PAT with read:packages
 
 name: Bootstrap Cell
+
 on:
   workflow_dispatch:
     inputs:
-      cell-server-id:
-        description: "Hetzner server ID (numeric, from cells table)"
-        required: true
-        type: string
-        default: "128090728"
       cell-ip:
         description: "Cell public IP address"
         required: true
         type: string
         default: "46.224.31.37"
+      cell-server-id:
+        description: "Hetzner server ID"
+        required: true
+        type: string
+        default: "128090728"
       cell-name:
-        description: "Cell name (e.g., prod-eu-001)"
+        description: "Cell name (for labels)"
         required: true
         type: string
         default: prod-eu-001
-      gh-repo:
-        description: "GitHub repository (e.g., dinesh-g1/featuresignals)"
-        required: true
-        type: string
-        default: dinesh-g1/featuresignals
-
-env:
-  DAGGER_VERSION: 0.20.6
 
 jobs:
   bootstrap:
-    runs-on: [self-hosted, k3s]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Dagger CLI
-        run: |
-          curl -fsSL https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${{ env.DAGGER_VERSION }} sh
-          mkdir -p "$HOME/.local/bin"
-          mv bin/dagger "$HOME/.local/bin/dagger"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          dagger version
-
-      - name: Bootstrap cell — install GitHub Actions runner via Hetzner API
-        run: |
-          cd ci
-          dagger call bootstrap-cell \
-            --source=.. \
-            --cell-server-id=${{ inputs.cell-server-id }} \
-            --cell-ip=${{ inputs.cell-ip }} \
-            --cell-name=${{ inputs.cell-name }} \
-            --gh-repo=${{ inputs.gh-repo }}
+      - name: Reset root password via Hetzner API
+        id: reset
         env:
-          HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Wait for runner to register and come online
-        timeout-minutes: 10
-        shell: bash
+          HETZNER_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
         run: |
-          echo "Waiting for runner 'cell-${{ inputs.cell-name }}' to register with GitHub..."
-          for i in $(seq 1 60); do
-            RUNNERS=$(curl -sf -L \
-              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
-              jq '[.runners[] | select(.name == "cell-${{ inputs.cell-name }}" and .status == "online")] | length')
-            if [ "$RUNNERS" -gt 0 ]; then
-              echo "✅ Runner cell-${{ inputs.cell-name }} is ONLINE"
+          echo "Resetting root password for server ${{ inputs.cell-server-id }}..."
+          RESP=$(curl -sf -X POST \
+            "https://api.hetzner.cloud/v1/servers/${{ inputs.cell-server-id }}/actions/reset_password" \
+            -H "Authorization: Bearer $HETZNER_TOKEN" \
+            -H "Content-Type: application/json")
+          PASSWORD=$(echo "$RESP" | jq -r '.action.root_password // .root_password')
+          if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ]; then
+            echo "❌ Failed to extract password. Response:"
+            echo "$RESP" | jq .
+            exit 1
+          fi
+          # Mask the password in logs
+          echo "::add-mask::$PASSWORD"
+          echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
+          echo "✅ Root password reset"
+
+      - name: Install Docker + Docker Compose
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ inputs.cell-ip }}
+          username: root
+          password: ${{ steps.reset.outputs.password }}
+          script: |
+            set -e
+
+            # Install Docker if not present
+            if ! command -v docker &>/dev/null; then
+              apt-get update -qq
+              apt-get install -y -qq docker.io docker-compose-v2 curl
+              systemctl enable docker
+              systemctl start docker
+              echo "✅ Docker installed"
+            else
+              echo "✅ Docker already installed"
+            fi
+
+            # Verify docker compose v2
+            docker compose version
+
+            # Create app directory
+            mkdir -p /opt/featuresignals
+            echo "✅ /opt/featuresignals ready"
+
+      - name: Upload compose files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ inputs.cell-ip }}
+          username: root
+          password: ${{ steps.reset.outputs.password }}
+          source: "deploy/docker-compose.cell.yml,deploy/Caddyfile"
+          target: "/opt/featuresignals"
+          strip_components: 1
+
+      - name: Rename compose file
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ inputs.cell-ip }}
+          username: root
+          password: ${{ steps.reset.outputs.password }}
+          script: |
+            mv /opt/featuresignals/docker-compose.cell.yml /opt/featuresignals/docker-compose.yml
+            echo "✅ Files placed"
+
+      - name: Start the application stack
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ inputs.cell-ip }}
+          username: root
+          password: ${{ steps.reset.outputs.password }}
+          envs: GHCR_TOKEN
+        script: |
+          set -e
+
+          cd /opt/featuresignals
+
+          # Log in to GHCR
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
+          echo "✅ Logged in to GHCR"
+
+          # Pull latest images
+          docker pull ghcr.io/dinesh-g1/featuresignals-server:latest
+          docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:latest
+          echo "✅ Images pulled"
+
+          # Start the stack
+          FEATURESIGNALS_VERSION=latest docker compose up -d
+          echo "✅ Stack started"
+
+          # Wait for health
+          echo "Waiting for health check..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
+              echo "✅ Cell is healthy"
               exit 0
             fi
-            echo "  Waiting... ($i/60)"
-            sleep 10
+            sleep 2
           done
-          echo "⚠️  Runner not detected within 10 minutes."
-          echo "   Check the cell VPS manually:"
-          echo "   SSH: ssh root@${{ inputs.cell-ip }}"
-          echo "   Check: systemctl status actions.runner.*"
-          echo "   Logs: journalctl -u actions.runner.* -n 50"
+          echo "❌ Health check timed out"
           exit 1
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
-      - name: List registered runners
+      - name: External smoke test
         run: |
-          echo "All registered runners for ${{ github.repository }}:"
-          curl -sf -L \
-            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
-            jq '.runners[] | {name: .name, status: .status, labels: [.labels[].name]}'
+          echo "Checking https://api.featuresignals.com/health..."
+          for i in $(seq 1 15); do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 5 "https://api.featuresignals.com/health")
+            if [ "$HTTP" = "200" ]; then
+              echo "✅ API healthy via LB (HTTP $HTTP)"
+              exit 0
+            fi
+            echo "  Waiting for LB... ($i/15, HTTP $HTTP)"
+            sleep 4
+          done
+          echo "⚠️  API not yet reachable via LB. This is OK if DNS/ LB not configured."
+          echo "   Direct cell health: http://${{ inputs.cell-ip }}:8080/health"
 
       - name: Summary
         run: |
@@ -120,25 +168,17 @@ jobs:
           echo "║           CELL BOOTSTRAP COMPLETE                          ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
-          echo "  Cell:       ${{ inputs.cell-name }}"
-          echo "  IP:         ${{ inputs.cell-ip }}"
-          echo "  Hetzner ID: ${{ inputs.cell-server-id }}"
-          echo "  Runner:     cell-${{ inputs.cell-name }} (self-hosted, cell)"
+          echo "  Cell:      ${{ inputs.cell-name }}"
+          echo "  IP:        ${{ inputs.cell-ip }}"
+          echo "  Server ID: ${{ inputs.cell-server-id }}"
           echo ""
-          echo "  Files on the cell:"
+          echo "  What's on the cell:"
           echo "    /opt/featuresignals/docker-compose.yml"
           echo "    /opt/featuresignals/Caddyfile"
-          echo "    /opt/featuresignals/install-runner.sh"
-          echo "    /opt/actions-runner/"
+          echo "    Docker + Docker Compose installed"
+          echo "    Stack: postgres → server → dashboard → caddy"
           echo ""
-          echo "  What happens on next git push to main:"
-          echo "    1. Build and test code (on k3s runner)"
-          echo "    2. Push images to GHCR"
-          echo "    3. Deploy runs on cell-${{ inputs.cell-name }} runner:"
-          echo "       → docker login ghcr.io"
-          echo "       → docker compose pull"
-          echo "       → docker compose up -d"
-          echo "       → health check OK"
-          echo "    4. Smoke test from external runner"
+          echo "  Next steps:"
+          echo "    1. gh workflow run ci.yml -f version=v1.0.0   (build images)"
+          echo "    2. gh workflow run cd.yml -f version=v1.0.0   (deploy to cell)"
           echo ""
-          echo "  ✅ No SSH needed for any future deployment."
