@@ -279,9 +279,10 @@ func (h *Handler) HandleProvisionCell(ctx context.Context, t *asynq.Task) error 
 		if deployFound {
 			// Prepend env vars for the deploy script
 			deployEnvPrefix := fmt.Sprintf(
-				"export FEATURESIGNALS_VERSION='%s'\nexport POSTGRES_PASSWORD='%s'\n",
+				"export FEATURESIGNALS_VERSION='%s'\nexport POSTGRES_PASSWORD='%s'\nexport CELL_SUBDOMAIN='%s'\n",
 				payload.Version,
 				payload.PostgresPassword,
+				cell.Name+".featuresignals.com",
 			)
 			fullDeployScript := deployEnvPrefix + string(deployScript)
 

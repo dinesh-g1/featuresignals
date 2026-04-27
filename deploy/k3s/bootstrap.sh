@@ -157,11 +157,23 @@ wait_for_node() {
     done
     log_info "k3s API server is ready."
 
+    # Wait for at least one node to appear (can lag behind API readiness)
+    local node_retries=0
+    local node_max=30
+    until [ "$(kubectl get nodes --no-headers 2>/dev/null | wc -l)" -gt 0 ]; do
+        node_retries=$((node_retries + 1))
+        if [ "$node_retries" -ge "$node_max" ]; then
+            log_error "k3s node did not register within ${node_max}s"
+            return 1
+        fi
+        sleep 2
+    done
+    log_info "k3s node registered."
+
     # Now wait for the node to be Ready
     if ! kubectl wait --for=condition=Ready node --all --timeout=120s 2>&1; then
         log_warn "kubectl wait timed out. Checking node status..."
         kubectl get nodes -o wide
-        kubectl describe node 2>&1 | head -20
         return 1
     fi
 
@@ -416,7 +428,7 @@ apply_firewall() {
     cat > /etc/featuresignals-firewall.rules <<'FWRULES'
 *filter
 :INPUT DROP [0:0]
-:FORWARD DROP [0:0]
+:FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 
 # Allow established connections
@@ -428,7 +440,7 @@ apply_firewall() {
 # Allow SSH from anywhere (key-based auth only)
 -A INPUT -p tcp --dport 22 -j ACCEPT
 
-# Allow k3s internal traffic
+# Allow k3s internal traffic (pod network + service network)
 -A INPUT -s 10.42.0.0/16 -j ACCEPT
 -A INPUT -s 10.43.0.0/16 -j ACCEPT
 
