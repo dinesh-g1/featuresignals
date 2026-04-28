@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FeatureSignals Ops</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  h1 { font-size: 1.5rem; font-weight: 600; color: #f1f5f9; }
+  .cluster-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #334155; }
+  .cluster-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .cluster-name { font-size: 1.25rem; font-weight: 600; }
+  .cluster-status { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; }
+  .status-ok { background: #065f46; color: #6ee7b7; }
+  .status-degraded { background: #78350f; color: #fcd34d; }
+  .status-down { background: #7f1d1d; color: #fca5a5; }
+  .cluster-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  .meta-item { display: flex; flex-direction: column; }
+  .meta-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+  .meta-value { font-size: 1rem; font-weight: 500; }
+  .services { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #334155; }
+  .service-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+  .service-name { font-size: 0.875rem; }
+  .service-status { font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 999px; }
+  .loading { text-align: center; padding: 3rem; color: #94a3b8; }
+  .error { text-align: center; padding: 3rem; color: #fca5a5; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>&#x1f6e0; FeatureSignals Ops</h1>
+    <span id="refresh-time"></span>
+  </header>
+  <div id="clusters">
+    <div class="loading">Loading cluster status...</div>
+  </div>
+</div>
+<script>
+async function loadClusters() {
+  const container = document.getElementById('clusters');
+  try {
+    const resp = await fetch('/api/v1/ops/clusters');
+    if (!resp.ok) throw new Error('Failed to fetch clusters');
+    const clusters = await resp.json();
+
+    let html = '';
+    for (const cluster of clusters) {
+      const statusClass = cluster.status === 'ok' ? 'status-ok' : cluster.status === 'degraded' ? 'status-degraded' : 'status-down';
+      html += '<div class="cluster-card">';
+      html += '<div class="cluster-header">';
+      html += '<span class="cluster-name">' + cluster.name + '</span>';
+      html += '<span class="cluster-status ' + statusClass + '">' + cluster.status + '</span>';
+      html += '</div>';
+      html += '<div class="cluster-meta">';
+      html += '<div class="meta-item"><span class="meta-label">Region</span><span class="meta-value">' + cluster.region + '</span></div>';
+      html += '<div class="meta-item"><span class="meta-label">Version</span><span class="meta-value">' + cluster.version + '</span></div>';
+      html += '<div class="meta-item"><span class="meta-label">Nodes</span><span class="meta-value">' + cluster.node_count + '</span></div>';
+      html += '<div class="meta-item"><span class="meta-label">IP</span><span class="meta-value">' + (cluster.public_ip || 'N/A') + '</span></div>';
+      html += '</div>';
+
+      try {
+        const healthResp = await fetch('/api/v1/ops/clusters/' + cluster.name + '/health');
+        if (healthResp.ok) {
+          const health = await healthResp.json();
+          html += '<div class="services"><h3 style="font-size:0.875rem;margin-bottom:0.5rem;color:#94a3b8;">Services</h3>';
+          for (const [svc, svcStatus] of Object.entries(health.services || {})) {
+            const svcClass = svcStatus === 'ok' ? 'status-ok' : 'status-down';
+            html += '<div class="service-item"><span class="service-name">' + svc + '</span><span class="service-status ' + svcClass + '">' + svcStatus + '</span></div>';
+          }
+          html += '</div>';
+        }
+      } catch(e) {}
+
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+    document.getElementById('refresh-time').textContent = new Date().toLocaleTimeString();
+  } catch(e) {
+    container.innerHTML = '<div class="error">Error loading cluster data. Make sure you are authenticated.</div>';
+  }
+}
+
+loadClusters();
+setInterval(loadClusters, 30000);
+</script>
+</body>
+</html>

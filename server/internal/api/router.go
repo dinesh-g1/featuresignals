@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/hex"
 	"log/slog"
 	"net/http"
 
@@ -21,12 +20,7 @@ import (
 	"github.com/featuresignals/server/internal/metrics"
 	"github.com/featuresignals/server/internal/observability"
 	"github.com/featuresignals/server/internal/payment"
-	"github.com/featuresignals/server/internal/provision"
-	"github.com/featuresignals/server/internal/provision/hetzner"
-	"github.com/featuresignals/server/internal/queue"
-	"github.com/featuresignals/server/internal/service"
 	"github.com/featuresignals/server/internal/status"
-	"github.com/featuresignals/server/internal/store/postgres"
 )
 
 // BillingConfig holds payment gateway registry and URL configuration.
@@ -62,8 +56,6 @@ func NewRouter(
 	internalChecker dto.InternalChecker,
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
-	queueClient *queue.Client,
-	eventBus *provision.EventBus,
 	janitorH *handlers.JanitorHandler,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -138,11 +130,6 @@ func NewRouter(
 	integrationH := handlers.NewIntegrationHandler(store, logger)
 	approvalH := handlers.NewApprovalHandler(store)
 	evalH := handlers.NewEvalHandler(store, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments)
-	var tenantRegStore domain.TenantRegionStore
-	if trs, ok := store.(domain.TenantRegionStore); ok {
-		tenantRegStore = trs
-	}
-	cellRouterMw := middleware.NewCellRouter(store, tenantRegStore, cfg.JWTSecret, logger)
 	insightsH := handlers.NewInsightsHandler(store, evalCache, engine, metricsCollector)
 	impressionCollector := metrics.NewImpressionCollector(100_000)
 	metricsH := handlers.NewMetricsHandler(store, metricsCollector, impressionCollector)
@@ -280,7 +267,6 @@ func NewRouter(
 		// Evaluation API (authenticated via API key, tier rate limited)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.CacheControl("no-store"))
-			r.Use(cellRouterMw.Middleware)
 			r.Post("/evaluate", evalH.Evaluate)
 			r.Post("/evaluate/bulk", evalH.BulkEvaluate)
 			r.Get("/client/{envKey}/flags", evalH.ClientFlags)
@@ -516,77 +502,21 @@ func NewRouter(
 	// ── Operations Portal API (/api/v1/ops) ─────────────────────────
 	// Restricted to @featuresignals.com users via middleware check
 	opsH := handlers.NewOpsHandler(store, lifecycle)
+	opsDashboardH := handlers.NewOpsDashboardHandler(store, cfg, logger)
 	opsAuthH := handlers.NewOpsAuthHandler(store, jwtMgr, logger)
-	opsTenantsH := handlers.NewOpsTenantsHandler(store, logger)
-	// Initialize Hetzner provisioner and provision service (if API token is configured)
-	var provisionSvc *service.ProvisionService
-	if cfg.HetznerAPIToken != "" {
-		hetznerCfg := hetzner.Config{
-			APIToken:  cfg.HetznerAPIToken,
-			Region:    cfg.HetznerDefaultRegion,
-			SSHKeyID:  cfg.HetznerSSHKeyID,
-			NetworkID: cfg.HetznerNetworkID,
-		}
-		hetznerProvisioner := hetzner.NewHetznerProvisioner(hetznerCfg, logger)
-		provisionSvc = service.NewProvisionService(hetznerProvisioner, store, logger)
-		logger.Info("Hetzner provisioner initialized",
-			"region", cfg.HetznerDefaultRegion,
-			"ssh_key_id", cfg.HetznerSSHKeyID,
-			"network_id", cfg.HetznerNetworkID,
-		)
-	} else {
-		logger.Warn("HETZNER_API_TOKEN not set — cell provisioning will be unavailable")
-	}
-	var sshAccess *provision.SSHAccess
-	if cfg.SSHPrivateKeyPath != "" {
-		var err error
-		sshAccess, err = provision.NewSSHAccess(cfg.SSHPrivateKeyPath,
-			provision.WithSSHUser(cfg.SSHUser),
-			provision.WithSSHTimeout(cfg.SSHTimeout),
-		)
-		if err != nil {
-			logger.Warn("failed to create SSH access for pods endpoint", "error", err)
-		}
-	}
-	opsCellsH := handlers.NewOpsCellsHandler(store, provisionSvc, queueClient, eventBus, sshAccess, logger)
-	opsDashboardH := handlers.NewOpsDashboardHandler(store, logger)
-	opsSystemH := handlers.NewOpsSystemHandler(store, nil, logger)
-	opsRegionH := handlers.NewOpsRegionHandler(store, logger)
-	opsSignozH := handlers.NewOpsSignozHandler(cfg.SignozURL, cfg.SignozAPIToken, logger)
-	opsPreviewsH := handlers.NewOpsPreviewsHandler(store, logger)
-	// Create env var store with encryption master key
-	var envVarStore domain.EnvVarStore
-	var masterKey [32]byte
-	envVarMasterKeyHex := cfg.EncryptionMasterKey
-	if len(envVarMasterKeyHex) >= 64 {
-		keyBytes, err := hex.DecodeString(envVarMasterKeyHex[:64])
-		if err == nil {
-			copy(masterKey[:], keyBytes)
-		}
-	}
-	if envVarPgStore, ok := store.(*postgres.Store); ok && masterKey != [32]byte{} {
-		envVarStore = postgres.NewEnvVarStore(envVarPgStore.Pool(), masterKey)
-		logger.Info("env var store initialized with encryption")
-	} else {
-		logger.Warn("env var encryption master key not configured — env vars disabled")
-	}
 
-	opsEnvVarsH := handlers.NewOpsEnvVarsHandler(envVarStore, store, masterKey, logger)
-	opsRevealH := handlers.NewOpsAuthRevealHandler(store, []byte(cfg.JWTSecret), logger)
-	opsScaleH := handlers.NewOpsScaleHandler(store, logger)
-	opsBackupsH := handlers.NewOpsBackupsHandler(store, logger)
 	// ── Ops Portal Auth (public) ────────────────────────────────
 	r.Post("/api/v1/ops/auth/login", opsAuthH.Login)
 	r.Post("/api/v1/ops/auth/refresh", opsAuthH.Refresh)
 	r.Post("/api/v1/ops/auth/logout", opsAuthH.Logout)
 	r.Post("/api/v1/ops/auth/forgot-password", opsAuthH.ForgotPassword)
 
-	// ── Public Ops Portal Endpoints (no auth required) ──────────
-	r.Get("/api/v1/ops/system/health", opsSystemH.Health)
-	r.Get("/api/v1/ops/system/services", opsSystemH.Services)
-	r.Get("/api/v1/ops/autoscaler/status", opsSystemH.AutoscalerStatus)
-	r.Get("/api/v1/ops/regions", opsRegionH.ListRegions)
-	r.Get("/api/v1/ops/env-vars/scopes", opsEnvVarsH.GetScopes)
+	// Ops Dashboard HTML page (requires JWT + @featuresignals.com)
+	r.Group(func(r chi.Router) {
+		r.Use(jwtAuth)
+		r.Use(middleware.RequireDomain("featuresignals.com"))
+		r.Get("/ops", opsDashboardH.ServeDashboard)
+	})
 
 	r.Route("/api/v1/ops", func(r chi.Router) {
 		r.Use(jwtAuth)
@@ -595,72 +525,6 @@ func NewRouter(
 
 		// ── Auth ───────────────────────────────────────────────
 		r.Get("/auth/me", opsAuthH.Me)
-
-		// ── Dashboard ──────────────────────────────────────────
-		r.Get("/dashboard/stats", opsDashboardH.Stats)
-		r.Get("/dashboard/activity", opsDashboardH.Activity)
-
-		// ── Tenants ────────────────────────────────────────────
-		r.Get("/tenants", opsTenantsH.List)
-		r.Get("/tenants/{id}", opsTenantsH.Get)
-		r.Post("/tenants", opsTenantsH.Provision)
-		r.Put("/tenants/{id}", opsTenantsH.Update)
-		r.Delete("/tenants/{id}", opsTenantsH.Deprovision)
-		r.Post("/tenants/{id}/suspend", opsTenantsH.Suspend)
-		r.Post("/tenants/{id}/activate", opsTenantsH.Activate)
-
-		// ── Cells ──────────────────────────────────────────────
-		r.Get("/cells", opsCellsH.List)
-		r.Post("/cells", opsCellsH.Create)
-		r.Get("/cells/{id}", opsCellsH.Get)
-		r.Delete("/cells/{id}", opsCellsH.Delete)
-		r.Get("/cells/{id}/metrics", opsCellsH.Metrics)
-		r.Get("/cells/{id}/metrics/current", opsCellsH.MetricsCurrent)
-		r.Get("/cells/{id}/provision-status", opsCellsH.ProvisionStatus)
-		r.Get("/cells/{id}/pods", opsCellsH.Pods)
-		r.Post("/cells/{id}/scale", opsCellsH.Scale)
-		r.Post("/cells/{id}/drain", opsCellsH.Drain)
-		r.Post("/cells/{id}/migrate", opsCellsH.MigrateTenants)
-
-		// ── Previews ───────────────────────────────────────────
-		r.Get("/previews", opsPreviewsH.List)
-		r.Post("/previews", opsPreviewsH.Create)
-		r.Delete("/previews/{id}", opsPreviewsH.Delete)
-		r.Post("/previews/{id}/ttl", opsPreviewsH.ExtendTTL)
-
-		// ── Billing ────────────────────────────────────────────
-		r.Get("/billing/mrr", opsDashboardH.MRR)
-		r.Get("/billing/invoices", opsDashboardH.Invoices)
-		r.Post("/billing/invoices/{id}/retry", opsDashboardH.RetryPayment)
-		r.Get("/billing/tenants/{tenantId}/cost", opsDashboardH.TenantCostBreakdown)
-
-		// ── Environment Variables ──────────────────────────────
-		r.Get("/env-vars", opsEnvVarsH.List)
-		r.Post("/env-vars", opsEnvVarsH.Upsert)
-		r.Get("/env-vars/effective/{tenantId}", opsEnvVarsH.GetEffective)
-
-		// ── Auth Reveal ────────────────────────────────────────
-		r.Post("/auth/reveal", opsRevealH.Reveal)
-
-		// ── Resource Quota ─────────────────────────────────────
-		r.Get("/tenants/{id}/resource-quota", opsScaleH.GetResourceQuota)
-		r.Put("/tenants/{id}/resource-quota", opsScaleH.UpdateResourceQuota)
-
-		// ── Backups ────────────────────────────────────────────
-		r.Get("/backups", opsBackupsH.List)
-		r.Post("/backups", opsBackupsH.Trigger)
-		r.Get("/backups/status", opsBackupsH.Status)
-		r.Post("/backups/{id}/restore", opsBackupsH.Restore)
-
-		// ── Audit ──────────────────────────────────────────────
-		r.Get("/audit", opsDashboardH.ListAudit)
-
-		// ── Regions ──────────────────────────────────────────
-		r.Get("/regions/{region}/cells", opsRegionH.ListCellsInRegion)
-
-		// ── SigNoz ──────────────────────────────────────────
-		r.Get("/signoz/logs", opsSignozH.ListLogs)
-		r.Get("/signoz/services", opsSignozH.ListServices)
 
 		// ── Licenses ────────────────────────────────────────────
 		r.Get("/licenses", opsH.ListLicenses)
@@ -677,6 +541,10 @@ func NewRouter(
 		r.Get("/users/me", opsH.GetMe)
 		r.Post("/users", opsH.CreateOpsUser)
 		r.Patch("/users/{id}", opsH.UpdateOpsUser)
+
+		// ── Cluster Status ──────────────────────────────────────
+		r.Get("/clusters", opsDashboardH.ListClusters)
+		r.Get("/clusters/{name}/health", opsDashboardH.GetClusterHealth)
 	})
 
 	return r

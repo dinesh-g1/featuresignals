@@ -1,0 +1,54 @@
+# Global Router Configuration
+router:
+  domain: featuresignals.com
+  email: admin@featuresignals.com # For Let's Encrypt notifications
+
+  # TLS
+  tls:
+    cache_dir: /data/certs
+    port: 443
+
+  # DNS (for future multi-region geolocation)
+  dns:
+    enabled: false
+    port: 53
+
+  # Domains this router handles
+  domains:
+    - name: featuresignals.com
+      type: static
+      root: /data/www/website
+
+    - name: docs.featuresignals.com
+      type: static
+      root: /data/www/docs
+
+    - name: api.featuresignals.com
+      type: proxy
+      target: http://featuresignals-server:8080
+      rate_limit: 1000/min
+
+    - name: app.featuresignals.com
+      type: proxy
+      target: http://featuresignals-dashboard:3000
+      rate_limit: 100/min
+
+    - name: signoz.featuresignals.com
+      type: proxy
+      target: http://signoz-frontend:3301
+      rate_limit: 20/min
+      auth: ops
+
+  # Rate limiting
+  rate_limit:
+    default: 100/min
+    burst: 50
+    window: 60s
+
+  # Clusters
+  cluster:
+    name: us-001
+    region: us
+    public_ip: ""
+
+  peer_clusters: []

@@ -68,17 +68,6 @@ type Config struct {
 	JanitorLLMMaxRetries   int
 	JanitorLLMMinConfidence float64
 
-	// Hetzner Cloud
-	HetznerAPIToken     string
-	HetznerDefaultRegion string
-	HetznerSSHKeyID     int64
-	HetznerNetworkID    int64
-
-	// SSH config for cell bootstrap
-	SSHPrivateKeyPath string        // SSH_PRIVATE_KEY_PATH
-	SSHUser           string        // SSH_USER, default "root"
-	SSHTimeout        time.Duration // SSH_TIMEOUT_SECONDS, default 60
-
 	// Deployment mode: "cloud" or "onprem"
 	DeploymentMode string
 
@@ -127,7 +116,12 @@ type Config struct {
 	// Used for JWT claims, telemetry, and audit logging — not for routing.
 	LocalRegion string
 
-	// OpenTelemetry / SigNoz observability
+	// Router configuration
+	RouterDomain string
+	RouterEmail  string
+	ClusterName  string
+
+	// OpenTelemetry
 	OTELEnabled        bool
 	OTELEndpoint       string
 	OTELIngestionKey   string
@@ -139,15 +133,6 @@ type Config struct {
 	OTELLogLevel       string
 	OTELSampleRate     float64
 
-	// SigNoz observability proxy
-	SignozURL       string
-	SignozAPIToken  string
-
-	// Redis (async provisioning queue)
-	RedisAddr string
-
-	// Provisioning
-	ProvisionQueueConcurrency int
 }
 
 func Load() *Config {
@@ -190,15 +175,6 @@ func Load() *Config {
 		JanitorLLMMaxRetries:    getEnvInt("JANITOR_LLM_MAX_RETRIES", 3),
 		JanitorLLMMinConfidence: getEnvFloat("JANITOR_LLM_MIN_CONFIDENCE", 0.85),
 
-		HetznerAPIToken:      os.Getenv("HETZNER_API_TOKEN"),
-		HetznerDefaultRegion: getEnv("HETZNER_DEFAULT_REGION", "fsn1"),
-		HetznerSSHKeyID:      getEnvInt64("HETZNER_SSH_KEY_ID", 0),
-		HetznerNetworkID:     getEnvInt64("HETZNER_NETWORK_ID", 0),
-
-		SSHPrivateKeyPath: os.Getenv("SSH_PRIVATE_KEY_PATH"),
-		SSHUser:           getEnv("SSH_USER", "root"),
-		SSHTimeout:        time.Duration(getEnvInt("SSH_TIMEOUT_SECONDS", 60)) * time.Second,
-
 		DeploymentMode: getEnv("DEPLOYMENT_MODE", "cloud"),
 		EmailProvider:  getEnv("EMAIL_PROVIDER", "zeptomail"),
 
@@ -231,6 +207,10 @@ func Load() *Config {
 
 		LocalRegion: getEnv("LOCAL_REGION", "in"),
 
+		RouterDomain: getEnv("ROUTER_DOMAIN", ""),
+		RouterEmail:  getEnv("ROUTER_EMAIL", ""),
+		ClusterName:  getEnv("CLUSTER_NAME", "us-001"),
+
 		OTELEnabled:        getEnvBool("OTEL_ENABLED", false),
 		OTELEndpoint:       getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
 		OTELIngestionKey:   os.Getenv("OTEL_INGESTION_KEY"),
@@ -242,11 +222,6 @@ func Load() *Config {
 		OTELLogLevel:       getEnv("OTEL_LOG_LEVEL", "warn"),
 		OTELSampleRate:     getEnvFloat("OTEL_TRACE_SAMPLE_RATE", 0.1),
 
-		SignozURL:       os.Getenv("SIGNOZ_URL"),
-		SignozAPIToken:  os.Getenv("SIGNOZ_API_TOKEN"),
-
-		RedisAddr:                  getEnv("REDIS_ADDR", ""),
-		ProvisionQueueConcurrency:  getEnvInt("PROVISION_QUEUE_CONCURRENCY", 10),
 	}
 }
 
@@ -268,15 +243,6 @@ func getEnv(key, fallback string) string {
 func getEnvInt(key string, fallback int) int {
 	if v := os.Getenv(key); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
-			return i
-		}
-	}
-	return fallback
-}
-
-func getEnvInt64(key string, fallback int64) int64 {
-	if v := os.Getenv(key); v != "" {
-		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
 			return i
 		}
 	}

@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
-
 	"fmt"
-	"strconv"
 	"strings"
-	"time"
 
 	"dagger/ci/internal/dagger"
 )
@@ -22,13 +19,13 @@ type Ci struct{}
 // =========================================================================
 
 // Validate runs locally before pushing.
-// Filter can be "server", "dashboard", "ops-portal", or empty (changed projects).
+// Filter can be "server", "dashboard", or empty (changed projects).
 // When filter is empty, uses DetectChanges to determine what to validate.
 func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter string, baseSha string) error {
 	// Determine which projects to validate
 	projects := []string{}
 	switch strings.ToLower(filter) {
-	case "server", "dashboard", "ops-portal":
+	case "server", "dashboard":
 		projects = append(projects, strings.ToLower(filter))
 	case "":
 		var err error
@@ -41,7 +38,7 @@ func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter stri
 			return nil
 		}
 	default:
-		return fmt.Errorf("unknown filter %q; use 'server', 'dashboard', 'ops-portal', or '' (auto)", filter)
+		return fmt.Errorf("unknown filter %q; use 'server', 'dashboard', or '' (auto)", filter)
 	}
 
 	// Validate each changed project
@@ -54,10 +51,6 @@ func (m *Ci) Validate(ctx context.Context, source *dagger.Directory, filter stri
 		case "dashboard":
 			if err := m.validateDashboard(ctx, source); err != nil {
 				return fmt.Errorf("dashboard validation failed: %w", err)
-			}
-		case "ops-portal":
-			if err := m.validateOpsPortal(ctx, source); err != nil {
-				return fmt.Errorf("ops-portal validation failed: %w", err)
 			}
 		default:
 			fmt.Printf("Skipping unknown project: %s\n", p)
@@ -127,22 +120,6 @@ func (m *Ci) validateDashboard(ctx context.Context, source *dagger.Directory) er
 	}
 
 	return nil
-}
-
-func (m *Ci) validateOpsPortal(ctx context.Context, source *dagger.Directory) error {
-	builder := dag.Container().From("node:22-alpine").
-		WithWorkdir("/app").
-		WithFile("/app/package.json", source.File("ops-portal/package.json")).
-		WithFile("/app/package-lock.json", source.File("ops-portal/package-lock.json")).
-		WithExec([]string{"npm", "ci"}).
-		WithDirectory("/app", source.Directory("ops-portal"), dagger.ContainerWithDirectoryOpts{
-			Exclude: []string{"node_modules"},
-		}).
-		WithExec([]string{"npx", "tsc", "--noEmit"}).
-		WithExec([]string{"npm", "run", "lint"}).
-		WithExec([]string{"npm", "run", "build"})
-	_, err := builder.Stderr(ctx)
-	return err
 }
 
 // =========================================================================
@@ -234,11 +211,11 @@ func (m *Ci) testSDK(ctx context.Context, source *dagger.Directory, name, path s
 
 // DetectChanges analyzes the git diff between the current HEAD and the
 // provided base SHA to determine which projects have changed.
-// Returns a list of changed project names: "server", "dashboard", "ops-portal".
+// Returns a list of changed project names: "server", "dashboard".
 // If baseSha is empty, checks all projects.
 func (m *Ci) DetectChanges(ctx context.Context, source *dagger.Directory, baseSha string) ([]string, error) {
 	if baseSha == "" {
-		return []string{"server", "dashboard", "ops-portal"}, nil
+		return []string{"server", "dashboard"}, nil
 	}
 
 	// Use git to detect changes
@@ -260,8 +237,6 @@ func (m *Ci) DetectChanges(ctx context.Context, source *dagger.Directory, baseSh
 			changed["server"] = true
 		case strings.HasPrefix(f, "dashboard/"):
 			changed["dashboard"] = true
-		case strings.HasPrefix(f, "ops-portal/"):
-			changed["ops-portal"] = true
 		}
 	}
 
@@ -288,7 +263,7 @@ func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version 
 	}
 
 	// Parse comma-separated projects. If empty, build all.
-	projectList := []string{"server", "dashboard", "ops-portal"}
+	projectList := []string{"server", "dashboard"}
 	if projects != "" {
 		projectList = strings.Split(projects, ",")
 	}
@@ -333,19 +308,6 @@ func (m *Ci) BuildImages(ctx context.Context, source *dagger.Directory, version 
 			return fmt.Errorf("failed to publish dashboard image: %w", err)
 		}
 		fmt.Printf("✅ Published dashboard:%s\n", version)
-	}
-
-	// ---- Ops-portal image ----
-	if buildMap["ops-portal"] {
-		opsPortalImg := dag.Container().Build(source, dagger.ContainerBuildOpts{
-			Dockerfile: "deploy/docker/Dockerfile.ops-portal",
-		})
-		opsTag := fmt.Sprintf("ghcr.io/featuresignals/ops-portal:%s", version)
-		_, err := opsPortalImg.WithRegistryAuth("ghcr.io", "featuresignals", ghcrToken).Publish(ctx, opsTag)
-		if err != nil {
-			return fmt.Errorf("publish ops-portal: %w", err)
-		}
-		fmt.Printf("✅ Published ops-portal:%s\n", version)
 	}
 
 	return nil
@@ -434,366 +396,5 @@ func (m *Ci) SmokeTest(ctx context.Context, url string) error {
 		return fmt.Errorf("dashboard returned HTTP %s (expected 200 or redirect)", dashCode)
 	}
 
-	return nil
-}
-
-// =========================================================================
-// BootstrapCell — install GitHub Actions runner on existing cell VPS
-// =========================================================================
-//
-// BootstrapCell uses the Hetzner Cloud API to reset the root password
-// on an existing cell VPS, then SSHes in to:
-//  1. Generate and register a GitHub Actions self-hosted runner
-//  2. Verify Docker + Docker Compose are installed (production already runs them)
-//  3. Upload docker-compose.cell.yml and Caddyfile
-//  4. Start the application stack
-//
-// After bootstrap, ALL future deploys run on the cell's self-hosted
-// runner directly. Zero SSH needed forever.
-//
-// The temporary SSH key is stored as CELL_SSH_KEY GitHub secret for
-// emergency access.
-//
-// Required host environment variables:
-//   - HETZNER_API_TOKEN:   Hetzner Cloud API token (read:write)
-//   - GHCR_TOKEN:          GitHub PAT with read:packages
-//   - GH_TOKEN:            GitHub PAT with repo scope (for runner registration + gh secret set)
-//
-// Usage (via workflow_dispatch):
-//   gh workflow run bootstrap-cell.yml \
-//     -f cell-server-id=128090728 \
-//     -f cell-ip=46.224.31.37 \
-//     -f cell-name=prod-eu-001 \
-//     -f gh-repo=dinesh-g1/featuresignals
-func (m *Ci) BootstrapCell(
-	ctx context.Context,
-	source *dagger.Directory,
-	cellServerID string,
-	cellIP string,
-	cellName string,
-	ghRepo string,
-) error {
-	if cellServerID == "" {
-		return fmt.Errorf("cellServerID is required (Hetzner server ID)")
-	}
-	if cellIP == "" {
-		return fmt.Errorf("cellIP is required")
-	}
-	if cellName == "" {
-		return fmt.Errorf("cellName is required")
-	}
-	if ghRepo == "" {
-		return fmt.Errorf("ghRepo is required (e.g., 'dinesh-g1/featuresignals')")
-	}
-
-	hetznerToken := dag.Host().EnvVariable("HETZNER_API_TOKEN").Secret()
-	ghcrToken := dag.Host().EnvVariable("GHCR_TOKEN").Secret()
-	ghToken := dag.Host().EnvVariable("GH_TOKEN").Secret()
-
-	// ─── Step 1: Set up workspace container with tools ───────────────────
-	workspace := dag.Container().
-		From("ubuntu:24.04").
-		WithExec([]string{"apt-get", "update", "-qq"}).
-		WithExec([]string{"apt-get", "install", "-y", "-qq",
-			"curl", "jq", "openssh-client", "sshpass", "git", "gh", "ca-certificates"}).
-		WithSecretVariable("HETZNER_TOKEN", hetznerToken).
-		WithSecretVariable("GHCR_TOKEN", ghcrToken).
-		WithSecretVariable("GH_TOKEN", ghToken).
-		WithDirectory("/app", source).
-		WithWorkdir("/app")
-
-	// ─── Step 2: Generate an SSH key pair for bootstrap ──────────────────
-	// This key is ephemeral — exists only inside this Dagger container.
-	// We'll store it as a GitHub secret for future emergency access.
-	workspace = workspace.WithExec([]string{"sh", "-c",
-		"ssh-keygen -t ed25519 -f /tmp/bootstrap-key -N '' -C 'bootstrap-" + cellName + "'"})
-	bootstrapPubKey, err := workspace.WithExec([]string{"cat", "/tmp/bootstrap-key.pub"}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to generate SSH key: %w", err)
-	}
-	bootstrapPubKey = strings.TrimSpace(bootstrapPubKey)
-
-	// ─── Step 3: Reset root password via Hetzner API ──────────────────────
-	// POST /servers/{id}/actions/reset_password returns a new root password.
-	fmt.Printf("Resetting root password for server %s...\n", cellServerID)
-	resetResp, err := workspace.WithExec([]string{"sh", "-c", fmt.Sprintf(
-		`curl -sf -X POST "https://api.hetzner.cloud/v1/servers/%s/actions/reset_password" \
-		 -H "Authorization: Bearer $HETZNER_TOKEN" \
-		 -H "Content-Type: application/json" | tee /tmp/reset-response.json`,
-		cellServerID,
-	)}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to reset root password: %w", err)
-	}
-	fmt.Printf("Password reset response: %s\n", resetResp)
-
-	// Extract the new root password from the JSON response
-	rootPassword, err := workspace.WithExec([]string{
-		"jq", "-r", ".root_password", "/tmp/reset-response.json",
-	}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to extract root password from response: %w", err)
-	}
-	rootPassword = strings.TrimSpace(rootPassword)
-	if rootPassword == "" || rootPassword == "null" {
-		// Try alternative path
-		rootPassword, err = workspace.WithExec([]string{
-			"jq", "-r", ".action.root_password // .root_password", "/tmp/reset-response.json",
-		}).Stdout(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to extract root password: %w", err)
-		}
-		rootPassword = strings.TrimSpace(rootPassword)
-	}
-	fmt.Printf("Root password reset successfully\n")
-
-	// ─── Step 4: Wait for server to be ready after password reset ────────
-	fmt.Println("Waiting for server to accept connections...")
-	for i := 0; i < 30; i++ {
-		_, err := workspace.WithExec([]string{
-			"sshpass", "-p", rootPassword,
-			"ssh", "-o", "StrictHostKeyChecking=no",
-			"-o", "UserKnownHostsFile=/dev/null",
-			"-o", "ConnectTimeout=5",
-			fmt.Sprintf("root@%s", cellIP),
-			"echo ssh-ready",
-		}).Sync(ctx)
-		if err == nil {
-			fmt.Println("Server is reachable via SSH")
-			break
-		}
-		if i == 29 {
-			return fmt.Errorf("server %s did not become reachable within 5 minutes", cellIP)
-		}
-		fmt.Printf("  Waiting... (%d/30)\n", i+1)
-		time.Sleep(10 * time.Second)
-	}
-
-	// ─── Step 5: Add bootstrap public key to authorized_keys ──────────────
-	// This lets us use key-based auth for the rest of the bootstrap
-	_, err = workspace.WithExec([]string{
-		"sshpass", "-p", rootPassword,
-		"ssh", "-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
-		fmt.Sprintf("root@%s", cellIP),
-		fmt.Sprintf("mkdir -p /root/.ssh && echo '%s' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys", bootstrapPubKey),
-	}).Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to add SSH public key: %w", err)
-	}
-	fmt.Println("SSH public key installed on server")
-
-	// ─── Step 6: Get a GitHub runner registration token ──────────────────
-	runnerToken, err := workspace.WithExec([]string{"sh", "-c", fmt.Sprintf(
-		`curl -sf -L -X POST "https://api.github.com/repos/%s/actions/runners/registration-token" \
-		 -H "Authorization: Bearer $GH_TOKEN" \
-		 -H "Accept: application/vnd.github+json" \
-		 -H "X-GitHub-Api-Version: 2022-11-28" | jq -r '.token'`,
-		ghRepo,
-	)}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get GitHub runner registration token: %w", err)
-	}
-	runnerToken = strings.TrimSpace(runnerToken)
-	fmt.Println("GitHub runner registration token obtained")
-
-	// ─── Step 7: Upload docker-compose.cell.yml and Caddyfile ───────────
-	_, err = workspace.
-		WithExec([]string{"scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-			"-i", "/tmp/bootstrap-key",
-			"/app/deploy/docker-compose.cell.yml",
-			fmt.Sprintf("root@%s:/opt/featuresignals/docker-compose.yml", cellIP),
-		}).Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to upload compose file: %w", err)
-	}
-	fmt.Println("docker-compose.yml uploaded")
-
-	_, err = workspace.WithExec([]string{"scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-		"-i", "/tmp/bootstrap-key",
-		"/app/deploy/Caddyfile",
-		fmt.Sprintf("root@%s:/opt/featuresignals/Caddyfile", cellIP),
-	}).Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to upload Caddyfile: %w", err)
-	}
-	fmt.Println("Caddyfile uploaded")
-
-	// ─── Step 8: Install GitHub Actions runner on the cell ───────────────
-	installScript := fmt.Sprintf(`#!/bin/bash
-set -eux
-
-# Ensure Docker is available
-if ! command -v docker &>/dev/null; then
-	echo "ERROR: Docker is not installed on this server."
-	echo "Please install Docker manually and re-run bootstrap."
-	exit 1
-fi
-
-# Ensure docker compose (v2) is available
-if ! docker compose version &>/dev/null; then
-	echo "ERROR: Docker Compose v2 is not installed."
-	exit 1
-fi
-
-# Log in to GHCR
-echo "$GHCR_TOKEN" | docker login ghcr.io -u featuresignals --password-stdin
-
-# Create and configure GitHub Actions runner
-mkdir -p /opt/actions-runner
-cd /opt/actions-runner
-
-# Download runner if not already present
-if [ ! -f "run.sh" ]; then
-	curl -fsSL -o runner.tar.gz \
-		https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64-2.322.0.tar.gz
-	tar xzf runner.tar.gz
-	rm runner.tar.gz
-fi
-
-# Register the runner (idempotent — --replace handles re-registration)
-./config.sh --url "https://github.com/%s" \
-	--token "%s" \
-	--labels "self-hosted,cell" \
-	--name "cell-%s" \
-	--unattended \
-	--replace
-
-# Install and start as a systemd service
-./svc.sh install
-./svc.sh start
-
-echo "Runner 'cell-%s' installed and started successfully"
-
-# Pull initial images (if not already present)
-docker pull ghcr.io/featuresignals/server:latest 2>/dev/null || true
-docker pull ghcr.io/featuresignals/dashboard:latest 2>/dev/null || true
-
-# Start application stack
-cd /opt/featuresignals
-FEATURESIGNALS_VERSION=latest docker compose up -d 2>/dev/null || {
-	echo "Note: docker compose up failed. This is OK if the stack is already running via systemd."
-	echo "The CI/CD pipeline will handle deploys going forward."
-}
-
-echo "Bootstrap complete!"
-`, ghRepo, runnerToken, cellName, cellName)
-
-	// Write the install script and upload it
-	workspace = workspace.
-		WithNewFile("/tmp/install-runner.sh", dagger.ContainerWithNewFileOpts{
-			Contents:    installScript,
-			Permissions: 0755,
-		})
-
-	// Upload the script
-	_, err = workspace.WithExec([]string{"scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-		"-i", "/tmp/bootstrap-key",
-		"/tmp/install-runner.sh",
-		fmt.Sprintf("root@%s:/opt/featuresignals/install-runner.sh", cellIP),
-	}).Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to upload install script: %w", err)
-	}
-
-	// Execute the install script
-	installOut, err := workspace.WithExec([]string{
-		"ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-		"-i", "/tmp/bootstrap-key",
-		fmt.Sprintf("root@%s", cellIP),
-		"GHCR_TOKEN=$GHCR_TOKEN bash /opt/featuresignals/install-runner.sh 2>&1",
-	}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("install runner on cell %s: %w\noutput: %s", cellName, cellIP, err, installOut)
-	}
-	fmt.Printf("Runner installation output:\n%s\n", installOut)
-
-	// ─── Step 9: Store the SSH private key as a GitHub secret ─────────────
-	// This gives us emergency SSH access if needed
-	privKeyContent, err := workspace.WithExec([]string{"cat", "/tmp/bootstrap-key"}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to read bootstrap private key: %w", err)
-	}
-	privKeyContent = strings.TrimSpace(privKeyContent)
-
-	// Base64 encode the key for GitHub secret storage (it has newlines)
-	b64Key, err := workspace.WithExec([]string{"sh", "-c",
-		`cat /tmp/bootstrap-key | base64 -w0`}).Stdout(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to base64 encode SSH key: %w", err)
-	}
-	b64Key = strings.TrimSpace(b64Key)
-
-	_, err = workspace.WithExec([]string{"sh", "-c", fmt.Sprintf(
-		`gh secret set CELL_SSH_KEY --repo %s --body "%s"`,
-		ghRepo, b64Key,
-	)}).Sync(ctx)
-	if err != nil {
-		fmt.Printf("⚠️  Could not store SSH key as GitHub secret (need GH_TOKEN with repo scope)\n")
-		fmt.Printf("   Manual: gh secret set CELL_SSH_KEY --repo %s --body \"<base64-of-key>\"\n", ghRepo)
-	} else {
-		fmt.Println("✅ SSH key stored as CELL_SSH_KEY GitHub secret")
-	}
-
-	// ─── Step 10: Wait for runner to come online ─────────────────────────
-	fmt.Println("Waiting for runner to register and come online...")
-	for i := 0; i < 36; i++ {
-		runnerStatus, err := workspace.WithExec([]string{"sh", "-c", fmt.Sprintf(
-			`curl -sf -L \
-			 -H "Authorization: Bearer $GH_TOKEN" \
-			 -H "Accept: application/vnd.github+json" \
-			 "https://api.github.com/repos/%s/actions/runners" | \
-			 jq '[.runners[] | select(.name == "cell-%s" and .status == "online")] | length'`,
-			ghRepo, cellName,
-		)}).Stdout(ctx)
-		if err == nil {
-			count := strings.TrimSpace(runnerStatus)
-			if count == "1" || count == "2" {
-				fmt.Printf("✅ Runner cell-%s is online!\n", cellName)
-				break
-			}
-		}
-		if i == 35 {
-			fmt.Printf("⚠️  Runner not detected within 6 minutes. Check the cell VPS.\n")
-			fmt.Printf("   SSH: ssh -i /tmp/bootstrap-key root@%s\n", cellIP)
-			fmt.Printf("   Check: systemctl status actions.runner.*\n")
-		}
-		time.Sleep(10 * time.Second)
-	}
-
-	fmt.Printf("\n🎉 Cell %s (%s) bootstrapped successfully!\n", cellName, cellIP)
-	fmt.Printf("   - GitHub runner: cell-%s (labels: self-hosted, cell)\n", cellName)
-	fmt.Printf("   - Compose files: /opt/featuresignals/\n")
-	fmt.Printf("   - Runner dir:    /opt/actions-runner/\n")
-	fmt.Printf("\nNext push to main will auto-deploy via the cell runner.\n")
-	return nil
-}
-
-// =========================================================================
-// DeployCell — pull new images and restart the cell stack
-// =========================================================================
-//
-// DeployCell runs ON the cell's self-hosted GitHub Actions runner.
-// No SSH needed — commands execute directly on the cell VPS.
-// The actual deploy commands are in the CI workflow YAML.
-// This function exists as a logging hook for pre/post deploy actions.
-func (m *Ci) DeployCell(
-	ctx context.Context,
-	version string,
-) error {
-	if version == "" {
-		return fmt.Errorf("version is required (e.g., main-a1b2c3d)")
-	}
-
-	fmt.Printf("🚀 Deploying version %s to this cell...\n", version)
-
-	// The actual deploy is handled by the CI workflow:
-	//   docker login ghcr.io
-	//   docker compose pull
-	//   docker compose up -d
-	// This function logs the operation and can be extended
-	// with pre/post deploy hooks (e.g., DB migrations, cache warmup).
-
-	fmt.Printf("✅ Version %s deployed successfully\n", version)
 	return nil
 }

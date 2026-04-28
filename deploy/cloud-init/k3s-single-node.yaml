@@ -1,0 +1,35 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+  - git
+  - htop
+
+runcmd:
+  # 1. Install K3s single-node
+  - curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644" sh -
+
+  # 2. Wait for K3s to be ready
+  - until kubectl get nodes 2>/dev/null; do sleep 2; done
+
+  # 3. Install Helm (for SigNoz if needed)
+  - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+  # 4. Clone deployment manifests from GitHub
+  - git clone https://github.com/featuresignals/featuresignals.git /opt/featuresignals --depth 1
+
+  # 5. Deploy everything via kubectl
+  - kubectl apply -k /opt/featuresignals/deploy/k8s/
+
+  # 6. Wait for all pods to be ready
+  - kubectl wait --for=condition=Ready pods --all -n featuresignals --timeout=120s
+
+  # 7. Install GitHub Actions self-hosted runner
+  - mkdir -p /opt/actions-runner && cd /opt/actions-runner
+  - curl -o actions-runner-linux-x64.tar.gz -L https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64-2.322.0.tar.gz
+  - tar xzf actions-runner-linux-x64.tar.gz
+  - ./config.sh --url https://github.com/featuresignals/featuresignals --token ${RUNNER_TOKEN} --labels self-hosted --unattended
+  - ./svc.sh install && ./svc.sh start
+
+output:
+  all: '| tee -a /var/log/cloud-init-output.log'

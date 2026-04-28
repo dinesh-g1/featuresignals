@@ -3,6 +3,82 @@
 > Chronological record of all wiki operations. Append-only.
 > Format: `## [YYYY-MM-DD HH:MM] operation | description`
 
+## [2026-04-28 12:00] delete | Cell architecture removed from codebase
+
+- **Deleted 35+ files** from cell/tenant provisioning architecture:
+  - `server/internal/provision/` — provider.go, eventbus.go, ssh.go, hetzner/ (entire directory)
+  - `server/internal/queue/` — client.go, handler.go, queue.go
+  - `server/internal/domain/` — cell.go, region.go, tenant.go, tenant_scale.go
+  - `server/internal/service/` — provision.go, cellheartbeat.go
+  - `server/internal/api/middleware/` — tenant.go, cell_router.go
+  - `server/internal/api/handlers/` — ops_cells.go, ops_tenants.go, ops_region.go, ops_signoz.go, ops_previews.go, ops_dashboard.go, ops_scale.go, ops_system.go
+  - `server/internal/store/postgres/` — cell.go, tenant.go, tenant_region.go, tenant_resource_override.go, migrations/tenant.sql, migrations/tenant_template.sql, migrations/tenant_template_indexes.sql
+  - `server/internal/billing/` — temporal_workflow.go
+  - `deploy/` — docker-compose.cell.yml, Caddyfile
+  - `ops-portal/` (entire directory)
+  - `.github/workflows/bootstrap-cell.yml`
+- **Edited:** `config.go` (removed Hetzner/SSH/Redis/SigNoz fields, added RouterDomain/RouterEmail/ClusterName)
+- **Edited:** `domain/store.go` (removed CellStore, TenantRegionStore, TenantResourceOverrideStore)
+- **Edited:** `cmd/server/main.go` (removed provisioning queue, cell heartbeat, Redis/SigNoz setup)
+- **Edited:** `server/internal/api/router.go` (removed cell routing middleware, all ops handler creation except licenses/auth/users, added ops dashboard routes)
+- **Edited:** `ci/main.go` (removed BootstrapCell, DeployCell, validateOpsPortal)
+- **Edited:** `.github/workflows/ci.yml` (simplified to detect → validate → test → build-and-push)
+- **Fixed:** `signup.go` (removed tenant-to-cell auto-assignment block)
+- **Fixed:** `testutil_test.go`, `tier_test.go`, `router_test.go`, `inmemory_test.go` (removed mock stubs for deleted interfaces)
+- **Status:** `go build ./...` passes, `go test ./... -race` passes (1 pre-existing env var test failure unchanged)
+
+## [2026-04-28 13:00] build | K3s manifests, cloud-init, ops dashboard, CI/CD updates
+
+- **Created** `deploy/k8s/` — 7 Kubernetes manifests for single-node K3s deployment:
+  - `namespace.yaml` — `featuresignals` and `observability` namespaces
+  - `postgres.yaml` — Secret, ConfigMap, PVC, StatefulSet (postgres:16-alpine), Service
+  - `server.yaml` — Deployment, ConfigMap (otel/jwt/cluster), Service, jwt-secret
+  - `dashboard.yaml` — Deployment with NEXT_PUBLIC_API_URL, Service
+  - `global-router.yaml` — Deployment (hostNetwork), ConfigMap with domain proxy config, cert/www PVCs
+  - `signoz.yaml` — OTEL Collector DaemonSet, ClickHouse StatefulSet, Query Service + Frontend Deployments, Services
+  - `kustomization.yaml` — Kustomize listing all 6 resources
+
+- **Created** `deploy/cloud-init/k3s-single-node.yaml` — cloud-init for fresh VPS: install K3s, Helm, clone repo, `kubectl apply -k`, wait for pods, install GH Actions runner
+
+- **Created** `server/internal/api/handlers/ops_dashboard.go` + `ops_dashboard.html` — single-file ops dashboard with `embed.FS`, cluster status cards, auto-refresh
+
+- **Updated** `server/internal/api/router.go` — added `/ops` dashboard route and `/api/v1/ops/clusters` routes
+
+## [2026-04-28 14:00] build | Global Router
+
+- **Created** `deploy/global-router/` — 10 files:
+  - `go.mod` / `go.sum` — `golang.org/x/crypto` (autocert) + `gopkg.in/yaml.v3`
+  - `config.go` — YAML config parser with fully typed structs
+  - `config.yaml` — 5 domains (featuresignals.com, docs, api, app, signoz)
+  - `main.go` — entrypoint with graceful shutdown via SIGINT/SIGTERM
+  - `router.go` — host-based routing, static serving with caching, reverse proxy with X-Forwarded-*
+  - `security.go` — per-IP sliding window rate limiter, connection limiter (100/IP), WAF (SQLi/path traversal/XSS), security headers (HSTS/CSP), request validation
+  - `tls.go` — Let's Encrypt autocert with HTTP-01 challenge, TLS 1.2+ with modern cipher suites
+  - `dns.go` — minimal authoritative DNS server for future multi-region geolocation (disabled)
+  - `health.go` — `/ops/health` JSON endpoint with service status checks
+  - `Dockerfile` — multi-stage `golang:1.23-alpine` → `scratch` (~8-12MB)
+
+- **Verification:** `go build ./...` + `go vet ./...` pass with zero warnings
+
+## [2026-04-28 15:00] verify | Full system verification
+
+- `cd server && go build ./...` — all Go packages compile
+- `cd server && go test ./... -count=1 -timeout 120s -race` — all tests pass (1 pre-existing env var test failure unchanged)
+- `cd deploy/global-router && go build ./...` — global router compiles to single binary
+- `go mod tidy` — all dependencies resolved, no orphan imports
+- Wiki updated: ARCHITECTURE.md (public), INFRASTRUCTURE.md (internal), ROADMAP.md (private) all rewritten
+- **Architecture simplified from cell-based multi-region to single-node K3s with global router**
+  - `server.yaml` — ConfigMap (env vars for otel, jwt, db, cluster), Deployment, Service, jwt-secret Secret
+  - `dashboard.yaml` — Deployment (NEXT_PUBLIC_API_URL, NEXT_SERVER_API_URL), Service
+  - `global-router.yaml` — Router ConfigMap with domain proxy config (api/app/signoz), cert/www PVCs, hostNetwork Deployment
+  - `signoz.yaml` — OTEL Collector DaemonSet + ConfigMap, ClickHouse StatefulSet + Service, Query Service Deployment + Service, SigNoz Frontend Deployment + Service
+  - `kustomization.yaml` — Kustomize resources listing all 6 manifest files
+- **Created** `deploy/cloud-init/k3s-single-node.yaml` — Cloud-init for bare-metal K3s bootstrap: installs K3s, Helm, clones repo, applies kustomize, waits for readiness, installs GH Actions self-hosted runner
+- **Created** `server/internal/api/handlers/ops_dashboard.go` — New handler with `embed.FS` for HTML page, `ListClusters` (returns cluster info from config), `GetClusterHealth` (returns local service health)
+- **Created** `server/internal/api/handlers/ops_dashboard.html` — Vanilla JS/CSS ops dashboard with dark theme, cluster cards, service status, 30s auto-refresh, no build step
+- **Updated** `server/internal/api/router.go` — Added `opsDashboardH` handler creation, `/ops` HTML route (JWT + @featuresignals.com), `/api/v1/ops/clusters` and `/clusters/{name}/health` API routes
+- **Sources synthesized:** `product/wiki/internal/INFRASTRUCTURE.md` (single-node topology, DNS records, container images), `product/wiki/public/DEPLOYMENT.md` (k3s namespace structure, bootstrap steps, SigNoz observability), `server/internal/api/router.go` (existing ops route patterns, cfg extraction pattern, middleware usage)
+
 ## [2026-04-27 12:00] bootstrap | Initial wiki foundation
 
 - Created wiki directory structure (`public/`, `private/`, `internal/`, `archive/`)
@@ -98,6 +174,43 @@
 - **Total source documents ingested:** ~140+
 - **Orphans identified:** 14 of 18 pages have no inbound wikilinks (expected at bootstrap)
 - **Next action:** Schedule lint pass to add cross-references and resolve orphans
+
+## [2026-04-27 23:51] deploy | Cell VPS Docker Compose & Caddyfile
+
+- **Created** `deploy/docker-compose.cell.yml` — production Docker Compose for single-VPS cell deployment
+- **Created** `deploy/Caddyfile` — Caddy reverse proxy config using environment variable placeholders
+- **Sources synthesized:** `docker-compose.prod.yml` (server env vars, healthcheck patterns), `product/wiki/public/DEPLOYMENT.md` (single VPS topology section), `deploy/k3s/caddyfile-prod.conf` (existing Caddy patterns)
+- **Summary:** Created cell-specific Docker Compose stack using pre-built GHCR images (`ghcr.io/featuresignals/server`, `ghcr.io/featuresignals/dashboard`) instead of local builds. Stripped website-build/docs-build one-shot builders — cell is API+dashboard only. All env vars use `${VAR_NAME}` runtime substitution syntax. OTEL defaults set to `false`/`warn` for cells where observability is optional. Caddyfile uses `{$DOMAIN}` and `app.{$DOMAIN}` env var placeholders with `reverse_proxy` to compose service names. Healthchecks on all 4 services.
+
+## [2026-04-27 23:59] build | CI/CD pipeline automation
+
+- **Created** `ci/main.go` additions — `BootstrapCell` and `DeployViaCompose` Dagger functions
+- **Created** `.github/workflows/ci.yml` — full CI/CD workflow (detect → validate → full-test → build → deploy → smoke)
+- **Created** `deploy/.env.cell.example` — documented env vars for cell VPS
+- **Sources synthesized:** `ci/main.go` (existing Dagger patterns for BuildImages, SmokeTest, DeployCellViaHelm), `server/internal/provision/ssh.go` (SSH infrastructure patterns), `server/internal/service/provision.go` (cell provisioning flow), `docker-compose.prod.yml` (env vars), `product/wiki/internal/INFRASTRUCTURE.md` (cell topology)
+- **Cell discovered:** `prod-eu-001` at `46.224.31.37` (Hetzner CX33, Nuremberg, provisioned 2026-04-27)
+- **Summary:** Built complete push-to-deploy pipeline. `DeployViaCompose` performs SSH-based Docker Compose deploy (pulls new GHCR images, restarts stack, waits for health). `BootstrapCell` is one-time setup (installs Docker, uploads compose file, starts stack). Workflow runs: detect → validate → full-test → build-and-push → deploy-to-cell → smoke-test. Cell SSH key required as `CELL_SSH_KEY` GitHub secret.
+
+## [2026-04-28 12:00] cleanup | Cell/tenant architecture removal
+
+- **Deleted 31 files/directories** — complete removal of cell/tenant architecture from the codebase:
+  - **Provisioning:** `server/internal/provision/` (provider, eventbus, ssh, hetzner/) — entire subsystem
+  - **Queue:** `server/internal/queue/` (client, handler, queue) — async task processing
+  - **Domain types:** `domain/cell.go`, `domain/region.go`, `domain/tenant.go`, `domain/tenant_scale.go`
+  - **Services:** `service/provision.go`, `service/cellheartbeat.go`
+  - **Middleware:** `api/middleware/cell_router.go`
+  - **Handlers:** `api/handlers/ops_cells.go`, `ops_tenants.go`, `ops_region.go`, `ops_signoz.go`, `ops_previews.go`
+  - **Store:** `store/postgres/cell.go`, `tenant.go`, `tenant_region.go`, `tenant_resource_override.go`
+  - **Migrations:** `store/postgres/migrations/tenant.sql`, `tenant_template.sql`, `tenant_template_indexes.sql`
+  - **CI/CD:** `.github/workflows/bootstrap-cell.yml`
+  - **Deploy:** `deploy/docker-compose.cell.yml`, `deploy/Caddyfile`
+  - **Ops portal:** `ops-portal/` (entire directory)
+- **Updated 3 wiki pages** to reflect simplified single-node architecture:
+  - `wiki/public/ARCHITECTURE.md` — removed Cell Architecture section, updated ADR-002, simplified multi-tenancy model, slimmed security layers
+  - `wiki/internal/INFRASTRUCTURE.md` — removed multi-region/cell topology, simplified to single-node K3s, removed provisioning flows, updated container images and known gaps
+  - `wiki/private/ROADMAP.md` — removed "Cell Provisioning", "Multi-Region Deployment", and "Ops Portal" from In Progress; updated architecture evolution path and strategic priorities
+- **Total pages:** 18 (unchanged)
+- **Source files removed from codebase:** 31
 
 ```
 

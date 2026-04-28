@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/exaring/otelpgx"
-	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -44,11 +43,7 @@ import (
 	"github.com/featuresignals/server/internal/payment"
 	payupkg "github.com/featuresignals/server/internal/payment/payu"
 	stripepkg "github.com/featuresignals/server/internal/payment/stripe"
-	"github.com/featuresignals/server/internal/provision"
-	"github.com/featuresignals/server/internal/provision/hetzner"
-	"github.com/featuresignals/server/internal/queue"
 	"github.com/featuresignals/server/internal/scheduler"
-	"github.com/featuresignals/server/internal/service"
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
@@ -126,19 +121,6 @@ func main() {
 	slog.SetDefault(logger)
 
 	// ─── Config Validation ──────────────────────────────────────────
-	if cfg.HetznerAPIToken != "" {
-		logger.Info("Hetzner API token configured — will test on first provision")
-	}
-	if cfg.SSHPrivateKeyPath != "" {
-		if _, err := os.Stat(cfg.SSHPrivateKeyPath); err != nil {
-			logger.Warn("SSH private key not found at configured path", "path", cfg.SSHPrivateKeyPath, "error", err)
-		} else {
-			logger.Info("SSH private key found", "path", cfg.SSHPrivateKeyPath)
-		}
-	}
-	if cfg.RedisAddr != "" {
-		logger.Info("Redis configured at", "addr", cfg.RedisAddr)
-	}
 	if cfg.DatabaseURL == "" {
 		logger.Error("DATABASE_URL is required")
 		os.Exit(1)
@@ -477,73 +459,11 @@ func main() {
 		)
 	}
 
-	// ── Provisioning Queue (async cell provisioning) ──────────────
-	var queueClient *queue.Client
-	var eventBus *provision.EventBus
-	var provisioner provision.Provisioner
-	var provWorker *asynq.Server
-	var provWorkerMux *asynq.ServeMux
-
-	if cfg.RedisAddr != "" && cfg.HetznerAPIToken != "" {
-		eventBus = provision.NewEventBus()
-		queueClient = queue.NewClient(cfg.RedisAddr)
-		defer queueClient.Close()
-
-		hetznerCfg := hetzner.Config{
-			APIToken:  cfg.HetznerAPIToken,
-			Region:    cfg.HetznerDefaultRegion,
-			SSHKeyID:  cfg.HetznerSSHKeyID,
-			NetworkID: cfg.HetznerNetworkID,
-		}
-		provisioner = hetzner.NewHetznerProvisioner(hetznerCfg, logger)
-
-		queueHandler := queue.NewHandler(store, provisioner, eventBus, logger, cfg)
-		provWorker = asynq.NewServer(
-			asynq.RedisClientOpt{Addr: cfg.RedisAddr},
-			asynq.Config{Concurrency: cfg.ProvisionQueueConcurrency},
-		)
-		provWorkerMux = asynq.NewServeMux()
-		provWorkerMux.HandleFunc(queue.TypeProvisionCell, queueHandler.HandleProvisionCell)
-		provWorkerMux.HandleFunc(queue.TypeDeprovisionCell, queueHandler.HandleDeprovisionCell)
-
-		go func() {
-			if err := provWorker.Run(provWorkerMux); err != nil {
-				logger.Error("asynq provision worker error", "error", err)
-			}
-		}()
-		defer provWorker.Stop()
-
-		logger.Info("async provisioning queue initialized",
-			"redis_addr", cfg.RedisAddr,
-			"concurrency", cfg.ProvisionQueueConcurrency,
-		)
-	} else {
-		logger.Warn("REDIS_ADDR or HETZNER_API_TOKEN not set — async provisioning disabled")
-	}
-
-	// Cell health heartbeat — runs every 30 seconds
-	if provisioner != nil && cfg.SSHPrivateKeyPath != "" {
-		sshAccess, err := provision.NewSSHAccess(cfg.SSHPrivateKeyPath,
-			provision.WithSSHUser(cfg.SSHUser),
-			provision.WithSSHTimeout(cfg.SSHTimeout),
-		)
-		if err != nil {
-			logger.Warn("failed to create SSH access for heartbeat, cell health monitoring disabled", "error", err)
-		} else {
-			heartbeatCtx, heartbeatCancel := context.WithCancel(context.Background())
-			_ = heartbeatCancel // silence unused warning; call during shutdown
-			go service.Run(heartbeatCtx, store, sshAccess, logger, 30*time.Second)
-			logger.Info("cell health heartbeat started", "interval", "30s")
-		}
-	} else {
-		logger.Warn("SSH_PRIVATE_KEY_PATH not set — cell health heartbeat disabled")
-	}
-
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, queueClient, eventBus, janitorH)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH)
 
 	// Server
 	srv := &http.Server{

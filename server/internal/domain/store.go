@@ -341,7 +341,4 @@ type Store interface {
 	OpsStore
 	IntegrationStore
 	OpsPortalStore
-	CellStore
-	TenantRegionStore
-	TenantResourceOverrideStore
 }

@@ -3,9 +3,8 @@ title: Architecture Overview
 tags: [architecture, core]
 domain: architecture
 sources:
-  - ARCHITECTURE_IMPLEMENTATION.md (full architecture implementation with security layers, CI/CD, cell routing, DNS, CORS)
-  - .claude/INFRA_DEPLOYMENT_IMPLEMENTATION.md (infra gaps, provisioning flow, cleanup phases)
-  - FINAL_PROMPT.md (end-to-end provisioning, cell architecture, dead code removal)
+  - ARCHITECTURE_IMPLEMENTATION.md (full architecture implementation with security layers, CI/CD, DNS, CORS)
+  - .claude/INFRA_DEPLOYMENT_IMPLEMENTATION.md (infra gaps, provisioning flow)
   - docs/docs/architecture/overview.md (system architecture, data flow diagrams, component overview)
   - docs/docs/architecture/evaluation-engine.md (evaluation flow, hashing, targeting rules)
   - docs/docs/architecture/real-time-updates.md (SSE, LISTEN/NOTIFY, real-time architecture)
@@ -17,14 +16,12 @@ sources:
   - docs/docs/core-concepts/toggle-categories.md (release, experiment, ops, permission categories)
   - server/internal/domain/store.go (Store interface — all focused sub-interfaces)
   - server/internal/api/router.go (route definitions and middleware stack)
-  - server/internal/domain/cell.go (cell architecture types, CellManager interface)
-  - server/internal/domain/tenant.go (multi-tenancy model, TenantRegistry interface)
   - server/internal/domain/features.go (Open Core feature/license gating)
 related:
   - [[Development]]
   - [[Deployment]]
   - [[Performance]]
-last_updated: 2026-04-27
+last_updated: 2026-04-28
 maintainer: llm
 review_status: current
 confidence: high
@@ -32,7 +29,9 @@ confidence: high
 
 ## Overview
 
-FeatureSignals is a multi-tenant, cell-based feature flag platform built in Go (chi router) with a Next.js management dashboard, PostgreSQL persistence, and SDKs across 8+ languages. The architecture follows hexagonal (ports & adapters) design principles, uses a shared-database multi-tenancy model with schema-per-tenant isolation at the infrastructure level, and implements an Open Core business model where Community Edition features are free while Pro/Enterprise capabilities are gated behind plan enforcement. The evaluation hot path serves sub-millisecond latencies through an in-memory ruleset cache with PostgreSQL LISTEN/NOTIFY invalidation and SSE-based real-time propagation.
+FeatureSignals is a multi-tenant feature flag platform built in Go (chi router) with a Next.js management dashboard, PostgreSQL persistence, and SDKs across 8+ languages. The architecture follows hexagonal (ports & adapters) design principles and uses a shared-database, shared-schema multi-tenancy model enforced at the middleware layer. The platform implements an Open Core business model where Community Edition features are free while Pro/Enterprise capabilities are gated behind plan enforcement. The evaluation hot path serves sub-millisecond latencies through an in-memory ruleset cache with PostgreSQL LISTEN/NOTIFY invalidation and SSE-based real-time propagation.
+
+All services run on a single-node K3s cluster (or Docker Compose for simpler deployments), with PostgreSQL as the primary data store. The architecture is designed for operational simplicity — one binary, one database, zero external dependencies beyond optional observability (SigNoz).
 
 ---
 
@@ -53,14 +52,14 @@ eval engine (pure logic, zero I/O)
 
 ### Key Architectural Rules
 
-- All business logic depends on `domain.Store` and its focused sub-interfaces (`FlagReader`, `EvalStore`, `AuditWriter`, `CellStore`, etc.)
+- All business logic depends on `domain.Store` and its focused sub-interfaces (`FlagReader`, `EvalStore`, `AuditWriter`, etc.)
 - No handler, service, or middleware ever imports `store/postgres`, `cache`, or any concrete adapter
 - The only place that wires concrete implementations is `cmd/server/main.go`
 - This enables swapping PostgreSQL for another backend, adding new delivery mechanisms (gRPC, GraphQL), or running with in-memory mocks — all without touching business logic
 
 ### The Store Interface
 
-The `domain.Store` interface (`featuresignals/server/internal/domain/store.go`) composes **40+ focused sub-interfaces**, each representing the narrowest possible contract:
+The `domain.Store` interface (`featuresignals/server/internal/domain/store.go`) composes **35+ focused sub-interfaces**, each representing the narrowest possible contract:
 
 | Sub-Interface | Responsibility |
 |---|---|
@@ -76,14 +75,12 @@ The `domain.Store` interface (`featuresignals/server/internal/domain/store.go`) 
 | `APIKeyStore` | API key CRUD, rotation with grace periods |
 | `WebhookStore` | Webhook config and delivery tracking |
 | `BillingStore` | Subscriptions, usage, payment events, dunning |
-| `CellStore` | Cell CRUD + provisioning events (cell architecture) |
-| `TenantRegionStore` | Tenant-to-region mapping for cell routing |
 | `TokenRevocationStore` | JWT server-side session invalidation |
 | `MFAStore` | TOTP multi-factor authentication secrets |
 | `LoginAttemptStore` | Brute-force detection and rate limiting |
 | `IPAllowlistStore` | Per-org IP allowlist configuration |
 | `CustomRoleStore` | Org-scoped custom RBAC roles |
-| And others | SSO, SCIM, scheduling, flag versions, onboarding, sales, preferences, feedback, magic links, previews, operations, integrations |
+| And others | SSO, SCIM, scheduling, flag versions, onboarding, sales, preferences, feedback, magic links, previews, integrations |
 
 Each handler depends on the narrowest interface it needs (Interface Segregation Principle). For example, a read-only flag handler accepts `domain.FlagReader`, not the full `domain.Store`.
 
@@ -91,7 +88,7 @@ Each handler depends on the narrowest interface it needs (Interface Segregation 
 
 ## Multi-Tenancy Model
 
-FeatureSignals uses a **shared database, shared schema** multi-tenancy model at the application layer, with **schema-per-tenant isolation** at the infrastructure (cell) layer.
+FeatureSignals uses a **shared database, shared schema** multi-tenancy model. All tenant data resides in the same PostgreSQL database, isolated at the application layer via `org_id` scoping.
 
 ### Tenant Hierarchy
 
@@ -111,31 +108,12 @@ Organization (org_id)
 - **Cross-tenant isolation** is enforced at the middleware layer, not by convention in individual handlers.
 - All queries are scoped by `org_id`. Cross-tenant access returns **404 (not 403)** to prevent entity existence leakage.
 - API keys are SHA-256 hashed at rest. The raw key is shown once at creation.
+- No schema-per-tenant isolation — all tenants share the same database schema. This simplifies operations and enables cross-tenant analytics while maintaining security through middleware enforcement.
 
-### Infrastructure-Level Tenant Model (`domain/tenant.go`)
-
-At the infrastructure layer, tenants are modeled independently from organizations:
-
-```go
-type Tenant struct {
-    ID        string    // UUID
-    Name      string    // Human-readable
-    Slug      string    // URL-friendly identifier
-    Schema    string    // PostgreSQL schema: "tenant_<short_id>"
-    Tier      string    // "free", "pro", "enterprise"
-    Status    string    // "active", "suspended", "decommissioned"
-    CellID    string    // Assigned cell (for cell-based routing)
-    CreatedAt time.Time
-    UpdatedAt time.Time
-}
-```
-
-The `TenantRegistry` interface manages lifecycle:
-- `Register()` — Creates tenant in public schema, creates tenant schema, runs template migrations (atomic transaction)
-- `LookupByKey()` — **Hot path function** — resolves tenant from SHA-256 hashed API key, must be < 1ms
-- `AssignCell()` — Maps tenant to a specific cell for cell-based routing
-- `GetCellWithFewestTenants()` — Load-balancing for cell assignment
-- `Decommission()` — Removes tenant schema entirely
+**Why shared schema?** Schema-per-tenant in the application layer would make cross-tenant operations (analytics, billing, admin queries) prohibitively expensive. The shared schema approach allows efficient queries while maintaining tenant isolation through:
+- Middleware that injects org context
+- All queries starting from domain interfaces that require org context
+- Code review + integration tests that verify cross-tenant isolation
 
 ---
 
@@ -188,7 +166,7 @@ Enterprise licenses use signed keys: `fs_lic_{base64url(payload)}.{HMAC-SHA256 s
 
 ### HTTP Router (chi)
 
-The central API server listens on port **8080** and uses the **go-chi/chi** router. The `NewRouter` constructor (`featuresignals/server/internal/api/router.go`) accepts **~30 dependencies** via explicit constructor injection — no global state, no service locator.
+The central API server listens on port **8080** and uses the **go-chi/chi** router. The `NewRouter` constructor (`featuresignals/server/internal/api/router.go`) accepts **~25 dependencies** via explicit constructor injection — no global state, no service locator.
 
 ### Middleware Stack (applied in order)
 
@@ -220,7 +198,7 @@ Routes are organized into these groups:
 | `/v1/capabilities` | None | None | Deployment mode features |
 | `/v1/sales/inquiry` | None | None | Sales inquiry submission |
 | `/v1/billing/*` | None | None | Payment gateway callbacks |
-| `/v1/evaluate/**` | API Key | 1000/min | **Evaluation hot path** — cached, proxied through cell router |
+| `/v1/evaluate/**` | API Key | 1000/min | **Evaluation hot path** — cached |
 | `/v1/client/{envKey}/*` | API Key | 1000/min | SDK flag fetch + SSE stream |
 | `/agent/*` | API Key | Strict | AI agent-optimized evaluation (<5ms) |
 | `/v1/{resources}/*` | JWT | 100/min | Management CRUD (projects, flags, segments, etc.) |
@@ -231,7 +209,6 @@ Routes are organized into these groups:
 | `/v1/ip-allowlist` | JWT + Feature Gate | 100/min | IP allowlist (Enterprise) |
 | `/v1/custom-roles` | JWT + Feature Gate | 100/min | Custom RBAC roles (Enterprise) |
 | `/v1/janitor/*` | JWT | 100/min | AI flag cleanup (Pro+) |
-| `/api/v1/ops/*` | JWT + Domain | 100/min | Operations Portal — restricted to @featuresignals.com |
 
 ### Key Handlers
 
@@ -244,9 +221,6 @@ Routes are organized into these groups:
 | `WebhookHandler` | Webhook config + delivery history |
 | `ApprovalHandler` | Approval request lifecycle (create, review, list) |
 | `BillingHandler` | Checkout, subscription, usage, Stripe/PayU webhooks |
-| `OpsCellsHandler` | Cell provisioning, metrics, pods, scale, drain, migrate |
-| `OpsTenantsHandler` | Tenant CRUD, suspend, activate, provision |
-| `OpsSystemHandler` | System health, services, autoscaler status |
 | `AgentHandler` | AI agent-optimized evaluation endpoints |
 | `FeaturesHandler` | Returns enabled features for current plan |
 | `JanitorHandler` | Stale flag detection and automated PR generation |
@@ -263,9 +237,6 @@ The evaluation hot path is the most performance-critical code in the system. It 
 ```
 SDK (X-API-Key) → HTTP POST /v1/evaluate
     │
-    ▼
-Cell Router Middleware
-    │  (validates signed API key, resolves tenant → cell)
     ▼
 EvalHandler
     │
@@ -362,14 +333,11 @@ SDK                                          API Server
  │  {"flagKey": "my-flag", "context": {...}}   │
  │────────────────────────────────►│
  │                                              │
- │                          ┌─► Cell Router validates API key
- │                          │    (HMAC-SHA256 signature check)
- │                          │
- │                          └─► EvalHandler:
- │                               ├─ Resolve env from key hash
- │                               ├─ Load ruleset (cache or DB)
- │                               ├─ Evaluate flag (pure logic)
- │                               └─ Return {value, reason}
+ │                          ┌─► EvalHandler:
+ │                          │    ├─ Resolve env from key hash
+ │                          │    ├─ Load ruleset (cache or DB)
+ │                          │    ├─ Evaluate flag (pure logic)
+ │                          │    └─ Return {value, reason}
  │                                              │
  │  {"value": true, "reason": "TARGETED"}        │
  │◄────────────────────────────────│
@@ -433,11 +401,11 @@ GET /v1/stream/{envKey}?api_key=fs_srv_...
 
 ---
 
-## Cell Architecture
+## Deployment Topology
 
-FeatureSignals uses a **cell-based deployment architecture** where each cell is a k3s cluster (single-node for MVP, multi-node for scale) running the full FeatureSignals stack. The architecture supports multi-cloud deployments across Hetzner, AWS, and Azure.
+FeatureSignals deploys as a **single-node stack** — all services run on one machine (bare metal, VPS, or local). This is the simplest possible topology and is suitable for the vast majority of deployments.
 
-### Cell Topology
+### Single-Node Architecture
 
 ```
                           Internet
@@ -446,129 +414,51 @@ FeatureSignals uses a **cell-based deployment architecture** where each cell is 
           │                   │                   │
           ▼                   ▼                   ▼
   ┌──────────────┐   ┌──────────────┐   ┌──────────────────┐
-  │  Website      │   │  Central API │   │  Dashboard        │
+  │  Website      │   │  API Server  │   │  Dashboard        │
   │  featuresign  │   │  api.feature │   │  app.featuresign  │
   │  als.com      │   │  signals.com │   │  als.com          │
   │               │   │              │   │                   │
-  │  Static/CDN   │   │  ┌────────┐  │   │  Next.js SSR      │
-  │  (Cloudflare) │   │  │ Cell   │  │   │                   │
-  │               │   │  │ Router │  │   │  (deployed to     │
-  │  Build:       │   │  │ (proxy)│  │   │   central k3s)    │
-  │  Next.js SSG  │   │  └───┬────┘  │   └──────────────────┘
-  └──────────────┘   └──────┼────────┘
+  │  Static/CDN   │   │  Go binary   │   │  Next.js SSR      │
+  │  (Cloudflare) │   │  + chi       │   │                   │
+  │               │   │  (port 8080) │   │  (port 3000)      │
+  │  Build:       │   │              │   │                   │
+  │  Next.js SSG  │   │  All in one  │   │  (deployed to     │
+  └──────────────┘   │  server:     │   │   same K3s)       │
+                      │  auth, eval, │   └──────────────────┘
+                      │  CRUD, admin │
+                      └──────┬───────┘
                              │
                     ┌────────▼────────┐
-                    │  Central API    │
-                    │  (validates key,│
-                    │   proxies eval  │
-                    │   to cell)      │
-                    └────────┬────────┘
-                             │ Hetzner Private Network
-                    ┌────────▼────────┐
-                    │  Cell prod-     │
-                    │  eu-fsn-001     │
-                    │  (fsn1)         │
+                    │    PostgreSQL   │
+                    │     (local)     │
                     │                 │
-                    │  ┌────────────┐ │
-                    │  │ Postgres   │ │
-                    │  │ (local)    │ │
-                    │  ├────────────┤ │
-                    │  │ Edge       │ │
-                    │  │ Worker     │ │
-                    │  │ (x3 pods)  │ │
-                    │  └────────────┘ │
+                    │  One database   │
+                    │  One schema     │
+                    │  Multi-tenant   │
+                    │  via org_id     │
+                    │                 │
+                    │  + Cache        │
+                    │  (in-process)   │
                     └─────────────────┘
 ```
 
-### Domain Types (`domain/cell.go`)
+### Deployment Options
 
-```go
-type Cell struct {
-    ID               string       // UUID
-    Name             string       // e.g., "prod-eu-fsn-001"
-    Provider         string       // "hetzner", "aws", "azure"
-    Region           string       // "eu-falkenstein", "us-ashburn"
-    Status           string       // "provisioning", "running", "degraded", "down", "draining"
-    Version          string       // Deployed FeatureSignals version
-    TenantCount      int          // Number of tenants assigned
-    ProviderServerID string       // Hetzner server ID
-    PublicIP         string       // Server public IP
-    PrivateIP        string       // Private network IP
-    CPU/Memory/Disk  ResourceUsage // Capacity and consumption
-    CreatedAt/UpdatedAt time.Time
-}
-```
+| Method | Use Case | Complexity |
+|--------|----------|------------|
+| **Docker Compose** | Single VPS, local dev | Low — single `docker-compose up` |
+| **K3s (single-node)** | Production with ingress, TLS, observability | Medium — install k3s, apply Helm charts |
+| **Binary** | Tightly controlled environments | Low — single Go binary + PostgreSQL |
 
-### CellManager Interface
+### Key Simplifications
 
-The `CellManager` interface orchestrates cell lifecycle:
+- **No cell router** — all evaluation happens in-process. There is no proxy layer between the API and evaluation logic.
+- **No edge workers** — evaluation runs in the same process as the API server. The in-memory cache is local to the process.
+- **No multi-region routing** — all tenants are served from a single deployment. DNS points to one IP.
+- **Single PostgreSQL** — one database, one schema. No schema-per-tenant or per-region sharding.
+- **All handlers in one binary** — no separate cell router or edge worker processes. The Go server binary handles auth, evaluation, CRUD, admin, SSE, and webhooks.
 
-| Method | Purpose |
-|---|---|
-| `Provision()` | Creates k3s cluster, installs FeatureSignals stack, assigns initial tenant |
-| `Decommission()` | Drains tenants, destroys VPS, cleans DB records |
-| `GetStatus()` | Queries k3s API for node + pod health |
-| `List()` | Paginated, filterable cell listing |
-| `Scale()` | Adjusts replica count for the cell's FeatureSignals deployment |
-| `Drain()` | Marks draining, begins tenant migration |
-| `GetMetrics()` | Real-time CPU, memory, disk, request/error rates |
-
-### Cell Router Middleware
-
-The cell router (`server/internal/api/middleware/cell_router.go`) runs inside the Central API and:
-
-1. **Intercepts evaluation paths** (`/v1/evaluate`, `/v1/client/`, `/v1/stream/`)
-2. **Extracts the API key** from `Authorization: Bearer` or `X-API-Key` header
-3. **Validates the signed API key** (HMAC-SHA256): parses `fs_sk_{base64(payload)}.{signature}`, checks expiry, extracts `TenantInfo`
-4. **Resolves the tenant's cell** from the signed payload
-5. **Proxies to the target cell** if remote (over Hetzner private network)
-6. **Injects tenant info into request context** for downstream handlers
-
-For the single-cell MVP, all evaluation is local (NOP passthrough). Multi-cell routing is designed but not yet activated.
-
-### Provisioning Flow
-
-```
-Ops Portal → POST /api/v1/ops/cells
-    │
-    ▼
-OpsCellsHandler.Create → enqueue async provision task
-    │
-    ▼
-Queue handler (asynq):
-    1. Create cell record (status: "provisioning")
-    2. Provision Hetzner VPS (cx22/cx23 via hetzner provisioner)
-    3. Wait for SSH (polling, configurable timeout)
-    4. Upload bootstrap.sh via SSH → Execute:
-        ├── Install k3s (single-node, hardened)
-        ├── Install PostgreSQL (Bitnami Helm chart)
-        ├── Apply Hetzner firewall rules (iptables)
-        ├── Install cert-manager + Let's Encrypt
-        ├── Install node-exporter DaemonSet
-        └── Configure Traefik (internal ingress only — NO public DNS)
-    5. Upload deploy-app.sh via SSH → Execute:
-        ├── Deploy ghcr.io/featuresignals/server:VERSION
-        ├── Deploy ghcr.io/featuresignals/dashboard:VERSION
-        └── Deploy ghcr.io/featuresignals/edge-worker:VERSION (3 replicas)
-    6. Update cell status → "running"
-    7. Record all state transitions as ProvisionEvents
-```
-
-Each provisioning step emits a `ProvisionEvent` with `event_type` and `metadata`, streamed to the ops portal via SSE for real-time progress visualization.
-
-### Deprovisioning Flow
-
-```
-Ops Portal → DELETE /api/v1/ops/cells/{id}
-    │
-    ▼
-1. Record "deprovisioning_started" event
-2. SSH into cell → kubectl delete namespace featuresignals
-3. Delete Hetzner VPS (graceful if 404)
-4. Clear cell DB record
-5. Create audit log entry
-6. Record "deprovisioning_completed" event
-```
+**When to scale horizontally:** If the single node becomes a bottleneck, scale by running multiple instances behind a load balancer. All instances share the same PostgreSQL database. Cache invalidation uses LISTEN/NOTIFY. There is no cell-level isolation — scaling is purely horizontal replication of stateless API servers.
 
 ---
 
@@ -578,9 +468,9 @@ Five-layer defense-in-depth model. Each layer validates independently — no tru
 
 ```
  Layer 1:  Cloudflare (CDN/Edge)
- Layer 2:  Hetzner Load Balancer → Central API Server
- Layer 3:  Cell Router (API key validation)
- Layer 4:  Cell Internal (k3s cluster)
+ Layer 2:  Load Balancer → API Server
+ Layer 3:  API Server (JWT auth, API key auth, RBAC, org scoping)
+ Layer 4:  PostgreSQL (SSL enforced, parameterized queries, least-privilege user)
  Layer 5:  CI/CD Pipeline (build → scan → deploy)
 ```
 
@@ -595,7 +485,15 @@ Five-layer defense-in-depth model. Each layer validates independently — no tru
 | **Bot management** | Bot score check on login/signup endpoints |
 | **Geo-blocking** | Optional — block traffic from non-service regions |
 
-### Layer 2: Central API Server
+### Layer 2: Load Balancer → API Server
+
+| Control | Detail |
+|---|---|
+| **TLS termination** | Let's Encrypt via cert-manager (k3s) or Caddy (Docker Compose) |
+| **Rate limiting** | Basic connection-level rate limiting |
+| **Health checks** | LB health checks against /health endpoint |
+
+### Layer 3: API Server
 
 | Control | Detail |
 |---|---|
@@ -626,34 +524,14 @@ var allowedOrigins = map[string]bool{
 }
 ```
 
-### Layer 3: Cell Router (API Key Validation)
-
-Each evaluation API key is a **signed JWT-like token**:
-
-```
-Format: fs_sk_{base64url(payload)}.{HMAC-SHA256 signature}
-Payload: { "tid": "tenant-id", "cid": "cell-id", "exp": "timestamp" }
-```
-
-Validation flow:
-1. Parse prefix (`fs_sk_`), split payload and signature
-2. Decode payload (base64url), verify HMAC-SHA256 signature
-3. Check expiry — reject expired keys with 401
-4. Extract `TenantInfo` (tenant ID, cell ID) for routing
-5. **Never forward unauthenticated requests** to cells
-
-### Layer 4: Cell (Internal k3s)
+### Layer 4: PostgreSQL
 
 | Control | Detail |
 |---|---|
-| **Network isolation** | No public ports except SSH (ops-team only). App ports are ClusterIP |
-| **SSH access** | Key-based only. Root login via SSH key, passwords disabled. Ops-team keys only |
-| **Hetzner firewall** | Allow SSH from ops-team IPs only. Allow internal traffic from private network. Deny everything else |
-| **iptables** | Applied by bootstrap.sh: DROP default policy. Allow loopback, established connections, k3s pod/service networks, node-exporter metrics (locked to Central API IP) |
-| **PostgreSQL** | Listen on ClusterIP only (not public IP). Strong password, no default users |
-| **k3s hardening** | `--disable-cloud-controller --kubelet-arg=protect-kernel-defaults=true` |
-| **Secrets** | No secrets in env vars in manifests. k3s Secrets mounted as files |
-| **Rate-limited SSH** | `iptables` limit: 4 new SSH connections per 60 seconds per IP |
+| **SSL enforced** | All connections require TLS |
+| **Parameterized queries** | No raw string interpolation — pgx parameterized queries exclusively |
+| **Least-privilege user** | Application user has only the permissions it needs |
+| **No public access** | PostgreSQL listens on internal network only (ClusterIP in k3s, Docker network in compose) |
 
 ### Layer 5: CI/CD Pipeline
 
@@ -672,10 +550,10 @@ Validation flow:
 |---|---|---|---|
 | `featuresignals.com` | A | Proxied (Cloudflare) | CDN |
 | `docs.featuresignals.com` | A | Proxied (Cloudflare) | CDN |
-| `api.featuresignals.com` | A | DNS only (grey) | Hetzner LB static IP |
-| `app.featuresignals.com` | A | DNS only (grey) | Hetzner LB static IP |
+| `api.featuresignals.com` | A | DNS only (grey) | Server static IP |
+| `app.featuresignals.com` | A | DNS only (grey) | Server static IP |
 
-SDKs default to `https://api.featuresignals.com`. No extra DNS record for SDK endpoints.
+SDKs default to `https://api.featuresignals.com`.
 
 ---
 
@@ -683,23 +561,25 @@ SDKs default to `https://api.featuresignals.com`. No extra DNS record for SDK en
 
 ### ADR-001: Shared Database, Shared Schema Multi-Tenancy
 
-**Decision**: Use a single PostgreSQL database with `org_id` scoping for application-layer tenant isolation, plus schema-per-tenant isolation at the cell infrastructure layer.
+**Decision**: Use a single PostgreSQL database with `org_id` scoping for application-layer tenant isolation.
 
-**Rationale**: Schema-per-tenant in the application layer would make cross-tenant operations (analytics, billing, admin queries) prohibitively expensive. The shared schema approach allows efficient queries while maintaining tenant isolation through middleware enforcement and query scoping.
+**Rationale**: Schema-per-tenant would make cross-tenant operations (analytics, billing, admin queries) prohibitively expensive. The shared schema approach allows efficient queries while maintaining tenant isolation through middleware enforcement and query scoping.
 
 **Trade-offs**: Requires vigilance in middleware enforcement. A missing `WHERE org_id = ?` clause could leak data across tenants. Mitigated by: (a) middleware that injects org context, (b) all queries starting from domain interfaces that require org context, (c) code review + integration tests that verify cross-tenant isolation.
 
-### ADR-002: Cell-Based Deployment with Central Router
+### ADR-002: Single-Node Deployment with Horizontal Scaling Path
 
-**Decision**: Deploy cell clusters (k3s) with a central API router that proxies evaluation traffic to the correct cell based on the tenant's signed API key.
+**Decision**: Deploy as a single-node stack (K3s or Docker Compose) with all services co-located. Scale horizontally by running multiple stateless API instances behind a load balancer when needed.
 
-**Rationale**: This architecture provides:
-- **Data sovereignty** — tenant data stays in its region/cell
-- **Blast radius isolation** — a cell outage only affects its tenants
-- **Independent scaling** — cells can be provisioned independently
-- **Single endpoint** — SDKs always point to `api.featuresignals.com` regardless of which cell serves the tenant
+**Rationale**: Single-node deployments are:
+- **Operationally simple** — one machine to manage, one PostgreSQL instance, no distributed coordination
+- **Cost-effective** — a single VPS handles thousands of evaluations per second
+- **Easy to debug** — all logs, metrics, and traces in one place
+- **Simple to deploy** — Docker Compose or minimal K3s, no cell provisioning or multi-region routing
 
-**Trade-offs**: The Central API is a single point of failure and a potential bottleneck. Mitigated by: (a) the Central API is a thin router with minimal logic, (b) API key validation is lightweight (HMAC + cache), (c) the Central API runs on redundant infrastructure.
+**Horizontal scaling path**: When the single node is insufficient, add more API server instances behind a load balancer. All instances share the same PostgreSQL. Cache invalidation via LISTEN/NOTIFY keeps all instances in sync. No cell-level routing or tenant sharding is needed.
+
+**Trade-offs**: Single point of failure at the node level. Mitigated by: (a) horizontal scaling for redundancy, (b) automated backups with cross-region replication, (c) fast recovery from backup (RPO < 24h, RTO < 30min).
 
 ### ADR-003: RAW SQL with pgx — No ORM
 
@@ -756,7 +636,7 @@ Raw SQL with pgx gives complete control over query plans, enables `EXPLAIN ANALY
 ## Cross-References
 
 - [[Development]] — Go server patterns, handler conventions, code quality checklist
-- [[Deployment]] — CI/CD pipeline, Docker images, cell provisioning, Hetzner infrastructure
+- [[Deployment]] — CI/CD pipeline, Docker images, Hetzner infrastructure
 - [[Performance]] — Evaluation latency benchmarks, cache hit rates, p99 targets
 - [[SDK]] — Client library patterns, OpenFeature compliance, SSE integration
 - [[Testing]] — Test pyramid, store tests, handler tests, integration test patterns
@@ -765,9 +645,8 @@ Raw SQL with pgx gives complete control over query plans, enables `EXPLAIN ANALY
 
 ## Sources
 
-- `featuresignals/ARCHITECTURE_IMPLEMENTATION.md` — Full architecture implementation with 5-layer security model, cell routing, DNS records, CORS middleware, CI/CD change detection, Hetzner firewall rules, and load balancer setup
+- `featuresignals/ARCHITECTURE_IMPLEMENTATION.md` — Full architecture implementation with 5-layer security model, DNS records, CORS middleware, CI/CD change detection, firewall rules, and load balancer setup
 - `featuresignals/.claude/INFRA_DEPLOYMENT_IMPLEMENTATION.md` — 10-phase infrastructure plan: SSH bootstrap, cell heartbeat, ops-portal real-time feedback, tenant→cell assignment, Dagger CI/CD, cell routing, observability, edge worker, self-onboarding, production hardening
-- `featuresignals/FINAL_PROMPT.md` — End-to-end provisioning flow validation, dead code removal (old cell_manager.go, infra frameworks, legacy handlers), queue handler integration with bootstrap + deploy-app
 - `featuresignals/docs/docs/architecture/overview.md` — System architecture diagram, component descriptions (API server, Flag Engine, PostgreSQL, SDKs, Relay Proxy), data flow diagrams
 - `featuresignals/docs/docs/architecture/evaluation-engine.md` — 9-step evaluation chain, MurmurHash3 consistent hashing, condition evaluation with 13 operators, percentage rollouts in basis points, A/B variant assignment, mutual exclusion via lowest-bucket-wins
 - `featuresignals/docs/docs/architecture/real-time-updates.md` — SSE pipeline (NOTIFY → cache eviction → broadcast → SDK refetch), connection management with buffered channels, event types, latency benchmarks
@@ -777,8 +656,6 @@ Raw SQL with pgx gives complete control over query plans, enables `EXPLAIN ANALY
 - `featuresignals/docs/docs/core-concepts/mutual-exclusion.md` — Lowest-bucket-wins algorithm, MurmurHash3-based distribution, deterministic assignment per user
 - `featuresignals/docs/docs/core-concepts/prerequisites.md` — Recursive dependency evaluation, circular dependency warning
 - `featuresignals/docs/docs/core-concepts/toggle-categories.md` — Four categories (release, experiment, ops, permission) with category-aware staleness thresholds
-- `featuresignals/server/internal/domain/store.go` — Complete Store interface composition with 40+ focused sub-interfaces and ISP documentation
+- `featuresignals/server/internal/domain/store.go` — Complete Store interface composition with 35+ focused sub-interfaces and ISP documentation
 - `featuresignals/server/internal/api/router.go` — Full route table with middleware stack, handler constructors, route group organization, feature gates, CORS registration
-- `featuresignals/server/internal/domain/cell.go` — Cell domain types (Cell, CellProvisionRequest, CellStatus, CellMetrics, ProvisionEvent), CellManager interface with 8 methods, status/phase/provider/region constants
-- `featuresignals/server/internal/domain/tenant.go` — Tenant domain types (Tenant, TenantAPIKey), TenantRegistry interface with 9 methods, status/tier constants, schema-per-tenant isolation model
 - `featuresignals/server/internal/domain/features.go` — Feature gating model with plan ranking, feature→plan mapping, IsFeatureEnabled function, PlanFeatures enumeration, AllFeatures lookup

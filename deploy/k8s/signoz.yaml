@@ -1,0 +1,246 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: observability
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+    exporters:
+      otlp/clickhouse:
+        endpoint: signoz-clickhouse:9000
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/clickhouse]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/clickhouse]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/clickhouse]
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.108.0
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-contrib
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  selector:
+    app: otel-collector
+  ports:
+    - port: 4317
+      targetPort: 4317
+      name: otlp-grpc
+    - port: 4318
+      targetPort: 4318
+      name: otlp-http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-data
+  namespace: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: signoz-clickhouse
+  namespace: observability
+spec:
+  serviceName: signoz-clickhouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signoz-clickhouse
+  template:
+    metadata:
+      labels:
+        app: signoz-clickhouse
+    spec:
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:24.3
+          ports:
+            - containerPort: 9000
+              name: native
+            - containerPort: 8123
+              name: http
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signoz-clickhouse
+  namespace: observability
+spec:
+  selector:
+    app: signoz-clickhouse
+  ports:
+    - port: 9000
+      targetPort: 9000
+      name: native
+    - port: 8123
+      targetPort: 8123
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signoz-query-service
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signoz-query-service
+  template:
+    metadata:
+      labels:
+        app: signoz-query-service
+    spec:
+      containers:
+        - name: query-service
+          image: signoz/query-service:0.56.0
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ClickHouseUrl
+              value: tcp://signoz-clickhouse:9000
+            - name: ALERTMANAGER_API_PREFIX
+              value: http://localhost:9093
+            - name: SIGNOZ_LOCAL_DB_PATH
+              value: /var/lib/signoz/sqlite
+          resources:
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signoz-query-service
+  namespace: observability
+spec:
+  selector:
+    app: signoz-query-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signoz-frontend
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signoz-frontend
+  template:
+    metadata:
+      labels:
+        app: signoz-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: signoz/frontend:0.56.0
+          ports:
+            - containerPort: 3301
+          env:
+            - name: SIGNOZ_API_URL
+              value: http://signoz-query-service:8080
+          resources:
+            limits:
+              cpu: "250m"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signoz-frontend
+  namespace: observability
+spec:
+  selector:
+    app: signoz-frontend
+  ports:
+    - port: 3301
+      targetPort: 3301
