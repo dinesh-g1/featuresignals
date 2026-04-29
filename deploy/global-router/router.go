@@ -121,37 +121,40 @@ func (r *Router) serveStatic(w http.ResponseWriter, req *http.Request, d Domain)
 
 	// If root path, serve index.html
 	if cleanPath == "." || cleanPath == "/" {
-		filePath = filepath.Join(d.Root, "index.html")
-	}
+		        filePath = filepath.Join(d.Root, "index.html")
+		    }
 
-	// Next.js static export generates both features.html and features/ directory.
-	// When /features is requested, prefer features.html over the features/ directory.
-	htmlPath := filePath + ".html"
-	if htmlInfo, htmlErr := os.Stat(htmlPath); htmlErr == nil {
-		filePath = htmlPath
-		info = htmlInfo
-	} else {
-		info, err = os.Stat(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				http.Error(w, "404 Not Found", http.StatusNotFound)
-				return
-			}
-			http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
-			return
-		}
+		    // Next.js static export generates both features.html and features/ directory.
+		    // When /features is requested, prefer features.html over the features/ directory.
+		    // Check for {path}.html before {path}/ to handle name collisions.
+		    var info os.FileInfo
+		    var err error
+		    htmlPath := filePath + ".html"
+		    if htmlInfo, htmlErr := os.Stat(htmlPath); htmlErr == nil {
+		        filePath = htmlPath
+		        info = htmlInfo
+		    } else {
+		        info, err = os.Stat(filePath)
+		        if err != nil {
+		            if os.IsNotExist(err) {
+		                http.Error(w, "404 Not Found", http.StatusNotFound)
+		                return
+		            }
+		            http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		            return
+		        }
 
-		// If directory, serve index.html
-		if info.IsDir() {
-			filePath = filepath.Join(filePath, "index.html")
-			if _, err := os.Stat(filePath); err != nil {
-				http.Error(w, "404 Not Found", http.StatusNotFound)
-				return
-			}
-		}
-	}
+		        // If directory, serve index.html
+		        if info.IsDir() {
+		            filePath = filepath.Join(filePath, "index.html")
+		            if _, err := os.Stat(filePath); err != nil {
+		                http.Error(w, "404 Not Found", http.StatusNotFound)
+		                return
+		            }
+		        }
+		    }
 
-	// Set caching headers for static content
+		    // Set caching headers for static content
 	ext := filepath.Ext(filePath)
 	switch ext {
 	case ".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".webp":
