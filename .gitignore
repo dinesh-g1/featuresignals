@@ -113,3 +113,4 @@ ops-portal/ops-portal
 ops-portal/*.db
 ops-portal/*.db-*
 /tmp/*
+testcluster
