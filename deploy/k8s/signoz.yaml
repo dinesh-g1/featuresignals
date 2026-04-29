@@ -97,26 +97,6 @@ spec:
     requests:
       storage: 5Gi
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clickhouse-users-config
-  namespace: observability
-data:
-  signoz-user.xml: |
-    <clickhouse>
-      <users>
-        <signoz>
-          <password>signoz</password>
-          <networks>
-            <ip>::/0</ip>
-          </networks>
-          <profile>default</profile>
-          <quota>default</quota>
-        </signoz>
-      </users>
-    </clickhouse>
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -151,8 +131,6 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/clickhouse
-            - name: clickhouse-users
-              mountPath: /etc/clickhouse-server/users.d
           resources:
             limits:
               cpu: "1"
@@ -160,10 +138,6 @@ spec:
             requests:
               cpu: 500m
               memory: 1Gi
-      volumes:
-        - name: clickhouse-users
-          configMap:
-            name: clickhouse-users-config
   volumeClaimTemplates:
     - metadata:
         name: data
