@@ -191,7 +191,7 @@ spec:
             - name: STORAGE
               value: clickhouse
             - name: ClickHouseUrl
-              value: tcp://signoz-clickhouse:9000
+              value: tcp://signoz:signoz@signoz-clickhouse:9000
             - name: ClickHouseUser
               value: signoz
             - name: ClickHousePassword
