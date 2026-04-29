@@ -35,8 +35,8 @@ data:
           rate_limit: 20/min
           auth: ops
       rate_limit:
-        default: 100/min
-        burst: 50
+        default: 1000/min
+        burst: 200
         window: 60s
       cluster:
         name: eu-001
