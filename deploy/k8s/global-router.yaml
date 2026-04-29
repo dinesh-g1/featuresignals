@@ -39,34 +39,10 @@ data:
         burst: 50
         window: 60s
       cluster:
-        name: us-001
-        region: us
-        public_ip: ""
+        name: eu-001
+        region: eu
+        public_ip: "138.201.154.133"
       peer_clusters: []
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: router-certs
-  namespace: featuresignals
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: router-www
-  namespace: featuresignals
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -91,7 +67,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:7fde4eaa34f1454d9595c1e999e4eeba5202ea78
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:2653c49911baef6376991dde0290f33e63c4dc84
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml
@@ -114,11 +90,13 @@ spec:
           configMap:
             name: router-config
         - name: certs
-          persistentVolumeClaim:
-            claimName: router-certs
+          hostPath:
+            path: /data/certs
+            type: DirectoryOrCreate
         - name: www
-          persistentVolumeClaim:
-            claimName: router-www
+          hostPath:
+            path: /data/www
+            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
