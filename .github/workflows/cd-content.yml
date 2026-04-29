@@ -53,7 +53,7 @@ jobs:
         if: ${{ inputs.run_website == 'true' }}
         run: |
           cd website
-          npm ci --no-optional
+          npm ci
           npm run build
           ls -la out/ 2>/dev/null || { echo "❌ website/out/ not found — build failed"; exit 1; }
           echo "✅ Website built ($(ls out/ | wc -l) top-level items)"
@@ -84,7 +84,7 @@ jobs:
         if: ${{ inputs.run_docs == 'true' }}
         run: |
           cd docs
-          npm ci --no-optional
+          npm ci
           npm run build
           ls -la build/ 2>/dev/null || { echo "❌ docs/build/ not found — build failed"; exit 1; }
           echo "✅ Docs built ($(ls build/ | wc -l) top-level items)"
