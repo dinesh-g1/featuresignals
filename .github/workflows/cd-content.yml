@@ -64,9 +64,12 @@ jobs:
           ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "rm -rf /data/www/website/*" 2>/dev/null || true
 
-          # Upload new content
-          scp -i ~/.ssh/deploy-key -rq website/out/* \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/data/www/website/
+          # Upload new content (tar pipe to avoid glob issues with scp)
+          tar czf /tmp/website-content.tar.gz -C website/out .
+          scp -i ~/.ssh/deploy-key -q /tmp/website-content.tar.gz \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "tar xzf /tmp/website-content.tar.gz -C /data/www/website/ && rm /tmp/website-content.tar.gz"
           echo "✅ Website deployed to /data/www/website/"
 
       - name: Verify website
@@ -90,8 +93,11 @@ jobs:
           ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "rm -rf /data/www/docs/*" 2>/dev/null || true
 
-          scp -i ~/.ssh/deploy-key -rq docs/build/* \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/data/www/docs/
+          tar czf /tmp/docs-content.tar.gz -C docs/build .
+          scp -i ~/.ssh/deploy-key -q /tmp/docs-content.tar.gz \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "tar xzf /tmp/docs-content.tar.gz -C /data/www/docs/ && rm /tmp/docs-content.tar.gz"
           echo "✅ Docs deployed to /data/www/docs/"
 
       - name: Verify docs
