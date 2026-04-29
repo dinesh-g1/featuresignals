@@ -60,6 +60,49 @@
 
 - **Verification:** `go build ./...` + `go vet ./...` pass with zero warnings
 
+## [2026-04-29 10:00] build | Final architecture migration — global router, single-node K3s, CI/CD workflows
+
+- **Complete architecture migration from cell-based multi-region to single-node K3s with global router:**
+  - Cell architecture (35+ files) deleted in previous session, this session finalizes the replacement infrastructure
+  - Global router (`deploy/global-router/`) — purpose-built Go binary (~8-12MB, scratch base image) with hostNetwork for edge TLS termination
+  - Cloudflare downgraded from proxied (WAF/CDN) to DNS-only — all 5 domains are grey-cloud
+  - Let's Encrypt TLS via autocert in the global router — no cert-manager, no Caddy, no external ACME client
+  - SigNoz installed via Helm chart (`signoz/signoz`) instead of manual YAML manifests
+  - CloudNative PG installed via Helm (`cloudnative-pg/cloudnative-pg`) for operator-based PostgreSQL management
+  - Cloud-init (`deploy/cloud-init/k3s-single-node.yaml`) handles ALL provisioning from bare OS to running cluster — zero SSH access
+
+- **Three CI/CD workflows established:**
+  - `ci.yml` — Docker image build workflow (`workflow_dispatch`, SHA parameter). Detects changed packages, validates, tests, builds images, pushes to GHCR.
+  - `cd.yml` — Application deploy workflow (`workflow_dispatch`, SHA parameter). SSHes into K3s node, pulls images by SHA digest, updates Kustomize, `kubectl apply -k`, waits for rollout.
+  - `cd-content.yml` — Static content deploy workflow (`workflow_dispatch`, SHA parameter). Builds Next.js static export locally, SCPs to `/mnt/data/www/` on the node. No Docker image involved.
+
+- **Fixes applied:**
+  - **Rate limiting** — Global router now path-aware: static assets (`.css`, `.js`, `.svg`, `.png`, `.ico`, `.woff2`) bypass rate limits entirely. API routes get path-specific limits (20/min auth, 100/min mutations, 1000/min eval).
+  - **CSP headers** — Content-Security-Policy enforced at the global router level, with per-service policies (restrictive for API/dashboard, permissive for static content).
+  - **OTEL telemetry** — Server configured with `OTEL_EXPORTER_OTLP_ENDPOINT` pointing to SigNoz OTEL Collector. All pods send traces and metrics.
+  - **Static file serving** — Global router serves website and docs from PVC (`/mnt/data/www/`). `Cache-Control: public, max-age=3600, immutable` for hashed assets.
+
+- **Endpoints verified (all returning HTTP 200):**
+  - `https://featuresignals.com` ✅ — Website homepage (static files from PVC)
+  - `https://docs.featuresignals.com` ✅ — Documentation homepage (static files from PVC)
+  - `https://api.featuresignals.com` ✅ — API health endpoint
+  - `https://app.featuresignals.com` ✅ — Dashboard login page (Next.js SSR)
+  - `https://signoz.featuresignals.com` ✅ — SigNoz observability UI
+
+- **Wiki pages updated:**
+  - `wiki/public/ARCHITECTURE.md` — New deployment topology diagram (global router + K3s), updated Security Architecture (4-layer with global router replacing Cloudflare edge + LB + Traefik), new DNS records (all DNS-only, IP 95.217.167.243), updated ADR-002, new sources
+  - `wiki/internal/INFRASTRUCTURE.md` — Complete rewrite: cluster `featuresignals-eu-001` (Falkenstein, CPX42), hostNetwork topology, cloud-init provisioning, CI/CD workflows, rate limiting details, firewall rules, verified endpoints
+  - `wiki/private/ROADMAP.md` — Added CI/CD verified note, Ops Portal as planned feature, multi-region DNS-based routing in long-term vision
+  - `wiki/log.md` — This entry
+  - `wiki/index.md` — Updated date and page descriptions
+
+- **New sources ingested:**
+  - `deploy/k8s/` — All 7 Kustomize manifests
+  - `deploy/global-router/` — All 10 Go source files
+  - `deploy/cloud-init/k3s-single-node.yaml` — Cloud-init provisioning
+  - `.github/workflows/ci.yml`, `cd.yml`, `cd-content.yml` — CI/CD workflows
+  - `server/internal/api/handlers/ops_dashboard.go` — Ops dashboard handler
+
 ## [2026-04-28 15:00] verify | Full system verification
 
 - `cd server && go build ./...` — all Go packages compile

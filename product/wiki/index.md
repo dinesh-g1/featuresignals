@@ -1,6 +1,6 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-04-28
+> **Updated:** 2026-04-29
 > **Total pages:** 18 (7 public, 7 private, 4 internal, 0 archive)
 
 ---
@@ -11,7 +11,7 @@
 
 | Page | Status | Summary | Inbound Links |
 |------|--------|---------|---------------|
-| [[ARCHITECTURE.md]] | `current` | System architecture, hexagonal design, ADRs, component relationships, data flow diagrams, single-node deployment topology, multi-tenancy, Open Core model, 5-layer security defense-in-depth, evaluation hot path design | 2 (DEPLOYMENT.md, DEVELOPMENT.md) |
+| [[ARCHITECTURE.md]] | `current` | System architecture, hexagonal design, ADRs, component relationships, data flow diagrams, single-node deployment topology (global router with hostNetwork), multi-tenancy, Open Core model, 4-layer security defense-in-depth, evaluation hot path design, cloud-init provisioning | 2 (DEPLOYMENT.md, DEVELOPMENT.md) |
 | [[DEPLOYMENT.md]] | `current` | Deployment topologies (local, single VPS, on-premises, air-gapped), CI/CD pipeline (12 Dagger functions), environment strategy (preview/staging/production), DNS, container images (9 Dockerfiles), k3s, SigNoz observability, incident runbooks, DR scenarios | 1 (ARCHITECTURE.md) |
 
 ### Development
@@ -52,7 +52,7 @@
 |------|--------|---------|------------|
 | [[BUSINESS.md]] | `current` | Business model, pricing strategy (Free/Pro/Enterprise), cost analysis (Hetzner infra at ₹5,242/mo), margin analysis (63% at 100 customers, 80% at 500), competitor pricing benchmarks (LaunchDarkly $8.33/seat vs FeatureSignals ₹999/mo unlimited), self-hosting cost comparisons across 4 providers (Hetzner/DigitalOcean/AWS/GCP), Open Core feature boundaries | high |
 | [[COMPETITIVE.md]] | `current` | Competitive intelligence — 4 competitors (LaunchDarkly, ConfigCat, Flagsmith, Unleash), feature comparison, pricing comparison, key differentiators (sub-ms eval, OpenFeature, single Go binary, transparent pricing), known competitor weaknesses, migration patterns from each competitor | high |
-| [[ROADMAP.md]] | `current` | Product roadmap — what's built (flag lifecycle, toggle categories, agent/API, AI janitor, environment comparison, target inspector), what's in progress (IAM implementation), what's planned (compliance certifications, additional SDKs, SSO, horizontal scaling), architecture evolution path | medium |
+| [[ROADMAP.md]] | `current` | Product roadmap — what's built (flag lifecycle, toggle categories, agent/API, AI janitor, environment comparison, target inspector), what's in progress (IAM implementation), what's planned (compliance certifications, additional SDKs, SSO, Ops Portal, horizontal scaling), CI/CD pipeline verified working (ci.yml, cd.yml, cd-content.yml), multi-region DNS-based routing in long-term vision | medium |
 | [[SALES.md]] | `current` | Sales playbook — target customer profiles (startups, growing teams, enterprises), common objections with responses (placeholder - needs filling from real calls), sales process overview, links to competitive intelligence and pricing data | low |
 | [[CUSTOMERS.md]] | `current` | Customer insights — profiles, feedback, use cases, pain points (placeholder shell - to be filled from real customer interactions) | low |
 | [[FINANCIALS.md]] | `current` | Financial data — infrastructure costs (€47.47/mo for Hetzner Scale tier), margin analysis, pricing tiers revenue structure, self-hosting cost comparisons across 4 cloud providers | medium |
@@ -64,7 +64,7 @@
 
 | Page | Status | Summary | Confidence |
 |------|--------|---------|------------|
-| [[INFRASTRUCTURE.md]] | `current` | Internal infrastructure topology — single-node K3s cluster, provider configuration, secrets management approach, k3s cluster layout, load balancer config, firewall rules, DNS records, observability stack (SigNoz), backup infrastructure | medium |
+| [[INFRASTRUCTURE.md]] | `current` | Internal infrastructure topology — single-node K3s cluster (featuresignals-eu-001, Falkenstein CPX42), global router with hostNetwork (autocert TLS, WAF, rate limiting), cloud-init provisioning (zero SSH), CI/CD workflows (ci.yml, cd.yml, cd-content.yml), DNS records (all DNS-only), firewall rules, secrets management, Helm-based operators (CloudNative PG, SigNoz) | high |
 | [[RUNBOOKS.md]] | `current` | Operations runbooks — P1-P4 severity definitions, first response checklist, single-region API down recovery, multi-region failover, database recovery (RPO <24h, RTO <30min), backup verification, DNS changes, certificate renewal, security incident response (key rotation, credential revocation) | high |
 | [[INCIDENTS.md]] | `current` | Incident history & post-mortems — placeholder shell ready for incident documentation | low |
 | [[COMPLIANCE_GAPS.md]] | `current` | Compliance gaps & remediation — which certifications are claimed vs aspirational, what needs to be done for each (SOC 2 Type II audit, ISO 27001 certification, ISO 27701 PIMS, HIPAA BAAs, CSA STAR Level 2), current status of each, remediation priorities | medium |

@@ -21,7 +21,7 @@ related:
   - [[Development]]
   - [[Deployment]]
   - [[Performance]]
-last_updated: 2026-04-28
+last_updated: 2026-04-29
 maintainer: llm
 review_status: current
 confidence: high
@@ -32,6 +32,8 @@ confidence: high
 FeatureSignals is a multi-tenant feature flag platform built in Go (chi router) with a Next.js management dashboard, PostgreSQL persistence, and SDKs across 8+ languages. The architecture follows hexagonal (ports & adapters) design principles and uses a shared-database, shared-schema multi-tenancy model enforced at the middleware layer. The platform implements an Open Core business model where Community Edition features are free while Pro/Enterprise capabilities are gated behind plan enforcement. The evaluation hot path serves sub-millisecond latencies through an in-memory ruleset cache with PostgreSQL LISTEN/NOTIFY invalidation and SSE-based real-time propagation.
 
 All services run on a single-node K3s cluster (or Docker Compose for simpler deployments), with PostgreSQL as the primary data store. The architecture is designed for operational simplicity — one binary, one database, zero external dependencies beyond optional observability (SigNoz).
+
+**April 2026 migration:** The architecture was migrated from a cell-based multi-region model to a single-node K3s deployment with a purpose-built global router (Go binary, hostNetwork, ~8-12MB). The global router replaces the previous Hetzner Load Balancer + Traefik + cert-manager stack with a single self-contained process handling TLS termination (Let's Encrypt autocert), reverse proxying, rate limiting, WAF, and security headers. Cloudflare is DNS-only — all edge services (WAF, CDN, bot management) have been removed. Infrastructure is provisioned entirely via cloud-init with zero SSH access.
 
 ---
 
@@ -410,37 +412,51 @@ FeatureSignals deploys as a **single-node stack** — all services run on one ma
 ```
                           Internet
                               │
-          ┌───────────────────┼───────────────────┐
-          │                   │                   │
-          ▼                   ▼                   ▼
-  ┌──────────────┐   ┌──────────────┐   ┌──────────────────┐
-  │  Website      │   │  API Server  │   │  Dashboard        │
-  │  featuresign  │   │  api.feature │   │  app.featuresign  │
-  │  als.com      │   │  signals.com │   │  als.com          │
-  │               │   │              │   │                   │
-  │  Static/CDN   │   │  Go binary   │   │  Next.js SSR      │
-  │  (Cloudflare) │   │  + chi       │   │                   │
-  │               │   │  (port 8080) │   │  (port 3000)      │
-  │  Build:       │   │              │   │                   │
-  │  Next.js SSG  │   │  All in one  │   │  (deployed to     │
-  └──────────────┘   │  server:     │   │   same K3s)       │
-                      │  auth, eval, │   └──────────────────┘
-                      │  CRUD, admin │
-                      └──────┬───────┘
+                      Cloudflare (DNS only)
+                              │
+                              ▼
+                    ┌───────────────────┐
+                    │   Global Router   │
+                    │   (hostNetwork)   │
+                    │                   │
+                    │  Let's Encrypt    │
+                    │  autocert (TLS)   │
+                    │  Rate limiting    │
+                    │  WAF (SQLi/XSS)   │
+                    │  Security headers │
+                    │  Path awareness   │
+                    └────────┬──────────┘
                              │
-                    ┌────────▼────────┐
-                    │    PostgreSQL   │
-                    │     (local)     │
-                    │                 │
-                    │  One database   │
-                    │  One schema     │
-                    │  Multi-tenant   │
-                    │  via org_id     │
-                    │                 │
-                    │  + Cache        │
-                    │  (in-process)   │
-                    └─────────────────┘
+                    ┌────────┴────────┐
+                    │   K3s (single)   │
+                    │                  │
+          ┌─────────┼─────────┬────────┼─────────┐
+          │         │         │        │         │
+          ▼         ▼         ▼        ▼         ▼
+  ┌──────────┐ ┌────────┐ ┌──────┐ ┌──────┐ ┌────────┐
+  │ Website   │ │  API   │ │ Dash │ │SigNoz│ │ Docs   │
+  │ features  │ │ api.fs │ │ app  │ │ sign │ │ docs.fs│
+  │ ignals.com│ │ .com   │ │.fs.co│ │oz.fs.│ │ .com   │
+  │           │ │        │ │ m    │ │ com  │ │        │
+  │ Static    │ │ Go     │ │Next. │ │Obs.  │ │ Static │
+  │ (K3s pod) │ │ (8080) │ │(3000)│ │stack │ │(K3s pod)│
+  └──────────┘ └────┬───┘ └──────┘ └──────┘ └────────┘
+                    │
+           ┌────────▼────────┐
+           │  PostgreSQL 16  │
+           │  (CloudNative   │
+           │   PG via Helm)  │
+           │  Shared schema  │
+           │  multi-tenant   │
+           └─────────────────┘
 ```
+
+**Key provisioning details:**
+- **Cloud-init** (`deploy/cloud-init/k3s-single-node.yaml`) handles all provisioning — installs K3s, Helm, clones repo, applies Kustomize, waits for readiness, installs GitHub Actions self-hosted runner. Zero SSH access required.
+- **Global router** runs on the host network (`hostNetwork: true`) with ports 80/443 bound directly to the host. This is the industry standard pattern for edge TLS termination on single-node deployments — no intermediate load balancer needed.
+- **SigNoz** installed via Helm chart (`signoz/signoz`), not manual YAML. ClickHouse, OTEL Collector, Query Service, and Frontend all managed by Helm with values overrides.
+- **CloudNative PG** installed via Helm (`cloudnative-pg`) for PostgreSQL operator-based management with automated backup support.
+- **GitHub Actions runner** runs as a systemd service on the K3s node, configured via cloud-init token registration. All deployments are triggered by `workflow_dispatch` with SHA parameter pinning.
 
 ### Deployment Options
 
@@ -452,11 +468,12 @@ FeatureSignals deploys as a **single-node stack** — all services run on one ma
 
 ### Key Simplifications
 
-- **No cell router** — all evaluation happens in-process. There is no proxy layer between the API and evaluation logic.
+- **Global router replaces cell router** — a single Go binary (hostNetwork) handles TLS, rate limiting, WAF, and proxy. No intermediate load balancer, Traefik, or cert-manager.
 - **No edge workers** — evaluation runs in the same process as the API server. The in-memory cache is local to the process.
 - **No multi-region routing** — all tenants are served from a single deployment. DNS points to one IP.
-- **Single PostgreSQL** — one database, one schema. No schema-per-tenant or per-region sharding.
+- **Single PostgreSQL** — one database, one schema. Managed by CloudNative PG operator. No schema-per-tenant or per-region sharding.
 - **All handlers in one binary** — no separate cell router or edge worker processes. The Go server binary handles auth, evaluation, CRUD, admin, SSE, and webhooks.
+- **Cloud-init provisioning** — zero SSH access. The VPS is provisioned entirely through cloud-init on first boot.
 
 **When to scale horizontally:** If the single node becomes a bottleneck, scale by running multiple instances behind a load balancer. All instances share the same PostgreSQL database. Cache invalidation uses LISTEN/NOTIFY. There is no cell-level isolation — scaling is purely horizontal replication of stateless API servers.
 
@@ -464,36 +481,30 @@ FeatureSignals deploys as a **single-node stack** — all services run on one ma
 
 ## Security Architecture
 
-Five-layer defense-in-depth model. Each layer validates independently — no trust between layers.
+Four-layer defense-in-depth model. Each layer validates independently — no trust between layers.
 
 ```
- Layer 1:  Cloudflare (CDN/Edge)
- Layer 2:  Load Balancer → API Server
- Layer 3:  API Server (JWT auth, API key auth, RBAC, org scoping)
- Layer 4:  PostgreSQL (SSL enforced, parameterized queries, least-privilege user)
- Layer 5:  CI/CD Pipeline (build → scan → deploy)
+ Layer 1:  Global Router (hostNetwork — TLS, WAF, rate limiting, security headers)
+ Layer 2:  API Server (JWT auth, API key auth, RBAC, org scoping, CSP enforcement)
+ Layer 3:  PostgreSQL (SSL enforced, parameterized queries, least-privilege user)
+ Layer 4:  CI/CD Pipeline (build → scan → deploy)
 ```
 
-### Layer 1: CDN / Edge (Cloudflare)
+**Migration note (April 2026):** Cloudflare edge services (WAF, DDoS protection, bot management, CDN) have been removed. Cloudflare is DNS-only. The global router handles all edge security — TLS termination via Let's Encrypt autocert, WAF (SQLi, XSS, path traversal), per-IP rate limiting with path awareness, connection limiting, and strict security headers (HSTS, CSP, X-Frame-Options, etc.). This simplifies the architecture and eliminates Cloudflare as a dependency for production traffic.
+
+### Layer 1: Global Router (hostNetwork)
 
 | Control | Detail |
 |---|---|
-| **WAF** | Blocks SQLi, XSS, path traversal, bot attacks before they reach origin |
-| **DDoS** | Cloudflare absorbs L3/L4/L7 attacks at the edge |
-| **Rate limiting** | 100 req/min per IP on API routes, 1000 req/min on evaluation routes |
-| **TLS** | Cloudflare manages certs, enforces TLS 1.3, redirects HTTP → HTTPS |
-| **Bot management** | Bot score check on login/signup endpoints |
-| **Geo-blocking** | Optional — block traffic from non-service regions |
+| **TLS termination** | Let's Encrypt via autocert (built into the Go global router). HTTP-01 challenge on port 80. TLS 1.2+ with modern cipher suites. No cert-manager, no Caddy, no external ACME client. |
+| **WAF** | Built-in regex patterns for SQLi, XSS, path traversal, directory traversal. Blocks matching requests before they reach upstream services. |
+| **Rate limiting** | Per-IP sliding window rate limiter. Path-aware: static assets (`.css`, `.js`, `.svg`, `.png`, `.ico`, `.woff2`) bypass rate limits entirely. API routes get strict limits (20/min auth, 100/min mutations, 1000/min eval). |
+| **Connection limiting** | Max 100 concurrent connections per IP. Prevents connection exhaustion attacks. |
+| **Security headers** | `Strict-Transport-Security` (max-age=31536000, includeSubDomains), `Content-Security-Policy` (restrictive per-service), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`. All set by the global router before proxying. |
+| **Host-based routing** | Routes requests to correct upstream service by domain: `api.featuresignals.com` → Go server (8080), `app.featuresignals.com` → Next.js SSR (3000), `signoz.featuresignals.com` → SigNoz UI (3301), `featuresignals.com` and `docs.featuresignals.com` → static file serving (website/docs). |
+| **Health monitoring** | `/ops/health` endpoint returns JSON with upstream service health checks. |
 
-### Layer 2: Load Balancer → API Server
-
-| Control | Detail |
-|---|---|
-| **TLS termination** | Let's Encrypt via cert-manager (k3s) or Caddy (Docker Compose) |
-| **Rate limiting** | Basic connection-level rate limiting |
-| **Health checks** | LB health checks against /health endpoint |
-
-### Layer 3: API Server
+### Layer 2: API Server
 
 | Control | Detail |
 |---|---|
@@ -502,7 +513,7 @@ Five-layer defense-in-depth model. Each layer validates independently — no tru
 | **RBAC** | Owner, admin, developer, viewer — enforced per-route via `middleware.RequireRole` |
 | **Input validation** | `DisallowUnknownFields()` on all JSON decoders — prevents mass-assignment |
 | **Body size limit** | 1MB max via `middleware.MaxBodySize` |
-| **Rate limiting** | Per-route: 20/min auth, 1000/min eval, 100/min mutations |
+| **Rate limiting** | Per-route: 20/min auth, 1000/min eval, 100/min mutations (second layer behind global router) |
 | **CORS** | Strict origin allowlist — registered early in middleware chain. No wildcards |
 | **Tenant isolation** | All queries scoped by `org_id`. Cross-tenant access returns 404 |
 | **Audit logging** | All mutating operations logged with user, action, target |
@@ -524,16 +535,17 @@ var allowedOrigins = map[string]bool{
 }
 ```
 
-### Layer 4: PostgreSQL
+### Layer 3: PostgreSQL
 
 | Control | Detail |
 |---|---|
 | **SSL enforced** | All connections require TLS |
 | **Parameterized queries** | No raw string interpolation — pgx parameterized queries exclusively |
 | **Least-privilege user** | Application user has only the permissions it needs |
-| **No public access** | PostgreSQL listens on internal network only (ClusterIP in k3s, Docker network in compose) |
+| **No public access** | PostgreSQL listens on internal network only (ClusterIP in k3s) |
+| **CloudNative PG operator** | Managed via Helm. Automated backups, PVC management, health monitoring |
 
-### Layer 5: CI/CD Pipeline
+### Layer 4: CI/CD Pipeline
 
 | Control | Detail |
 |---|---|
@@ -543,15 +555,19 @@ var allowedOrigins = map[string]bool{
 | **Secret scanning** | `trufflehog` / `git secrets` in CI — fail if secrets detected |
 | **Supply chain** | Base images pinned by digest, not tag (e.g., `golang:1.23-alpine@sha256:...`) |
 | **SBOM generation** | SPDX SBOM per image, attached to GitHub release |
+| **Self-hosted runner** | GitHub Actions runner installed on the K3s node via cloud-init. All deployment workflows use this runner for direct `kubectl` and SSH access. |
 
 ### DNS Records (set once manually)
 
 | Record | Type | Proxy | Value |
 |---|---|---|---|
-| `featuresignals.com` | A | Proxied (Cloudflare) | CDN |
-| `docs.featuresignals.com` | A | Proxied (Cloudflare) | CDN |
-| `api.featuresignals.com` | A | DNS only (grey) | Server static IP |
-| `app.featuresignals.com` | A | DNS only (grey) | Server static IP |
+| `featuresignals.com` | A | DNS only | `95.217.167.243` |
+| `docs.featuresignals.com` | A | DNS only | `95.217.167.243` |
+| `api.featuresignals.com` | A | DNS only | `95.217.167.243` |
+| `app.featuresignals.com` | A | DNS only | `95.217.167.243` |
+| `signoz.featuresignals.com` | A | DNS only | `95.217.167.243` |
+
+All records are DNS-only (grey cloud). No Cloudflare edge proxying. All TLS is handled by the global router's autocert (Let's Encrypt). The global router listens on ports 80 (HTTP-01 challenge) and 443 (TLS).
 
 SDKs default to `https://api.featuresignals.com`.
 
@@ -569,13 +585,18 @@ SDKs default to `https://api.featuresignals.com`.
 
 ### ADR-002: Single-Node Deployment with Horizontal Scaling Path
 
-**Decision**: Deploy as a single-node stack (K3s or Docker Compose) with all services co-located. Scale horizontally by running multiple stateless API instances behind a load balancer when needed.
+**Decision**: Deploy as a single-node stack (K3s with global router) with all services co-located. Scale horizontally by running multiple stateless API instances behind a load balancer when needed.
 
 **Rationale**: Single-node deployments are:
 - **Operationally simple** — one machine to manage, one PostgreSQL instance, no distributed coordination
 - **Cost-effective** — a single VPS handles thousands of evaluations per second
 - **Easy to debug** — all logs, metrics, and traces in one place
-- **Simple to deploy** — Docker Compose or minimal K3s, no cell provisioning or multi-region routing
+- **Simple to deploy** — cloud-init handles everything from bare OS to running cluster, no SSH required
+
+**Architecture decisions**:
+- **Global router with hostNetwork** (`deploy/k8s/global-router.yaml`) replaces the need for an external load balancer, Traefik, cert-manager, or Caddy. The router runs on the host network binding ports 80/443 directly, providing TLS termination via autocert, WAF, rate limiting, and security headers — all in a single ~8-12MB binary.
+- **Cloud-init** (`deploy/cloud-init/k3s-single-node.yaml`) provisions the entire node: installs K3s, Helm, cloudnative-pg operator, SigNoz Helm chart, applies Kustomize manifests, installs GitHub Actions self-hosted runner. Zero SSH access.
+- **Helm-based operators**: CloudNative PG (PostgreSQL operator) and SigNoz (observability stack) are deployed via Helm charts, not manual YAML. This ensures upgradeable, configurable infrastructure.
 
 **Horizontal scaling path**: When the single node is insufficient, add more API server instances behind a load balancer. All instances share the same PostgreSQL. Cache invalidation via LISTEN/NOTIFY keeps all instances in sync. No cell-level routing or tenant sharding is needed.
 
@@ -640,13 +661,15 @@ Raw SQL with pgx gives complete control over query plans, enables `EXPLAIN ANALY
 - [[Performance]] — Evaluation latency benchmarks, cache hit rates, p99 targets
 - [[SDK]] — Client library patterns, OpenFeature compliance, SSE integration
 - [[Testing]] — Test pyramid, store tests, handler tests, integration test patterns
-
----
+- [[Infrastructure]] — Internal infrastructure topology, secrets management
 
 ## Sources
 
 - `featuresignals/ARCHITECTURE_IMPLEMENTATION.md` — Full architecture implementation with 5-layer security model, DNS records, CORS middleware, CI/CD change detection, firewall rules, and load balancer setup
-- `featuresignals/.claude/INFRA_DEPLOYMENT_IMPLEMENTATION.md` — 10-phase infrastructure plan: SSH bootstrap, cell heartbeat, ops-portal real-time feedback, tenant→cell assignment, Dagger CI/CD, cell routing, observability, edge worker, self-onboarding, production hardening
+- `featuresignals/.claude/INFRA_DEPLOYMENT_IMPLEMENTATION.md` — 10-phase infrastructure plan (superseded by single-node K3s migration)
+- `featuresignals/deploy/k8s/` — Kustomize manifests for global router, server, dashboard, PostgreSQL, SigNoz
+- `featuresignals/deploy/global-router/` — Global router Go source (config, router, security, TLS, health)
+- `featuresignals/deploy/cloud-init/k3s-single-node.yaml` — Cloud-init provisioning script
 - `featuresignals/docs/docs/architecture/overview.md` — System architecture diagram, component descriptions (API server, Flag Engine, PostgreSQL, SDKs, Relay Proxy), data flow diagrams
 - `featuresignals/docs/docs/architecture/evaluation-engine.md` — 9-step evaluation chain, MurmurHash3 consistent hashing, condition evaluation with 13 operators, percentage rollouts in basis points, A/B variant assignment, mutual exclusion via lowest-bucket-wins
 - `featuresignals/docs/docs/architecture/real-time-updates.md` — SSE pipeline (NOTIFY → cache eviction → broadcast → SDK refetch), connection management with buffered channels, event types, latency benchmarks
@@ -659,3 +682,6 @@ Raw SQL with pgx gives complete control over query plans, enables `EXPLAIN ANALY
 - `featuresignals/server/internal/domain/store.go` — Complete Store interface composition with 35+ focused sub-interfaces and ISP documentation
 - `featuresignals/server/internal/api/router.go` — Full route table with middleware stack, handler constructors, route group organization, feature gates, CORS registration
 - `featuresignals/server/internal/domain/features.go` — Feature gating model with plan ranking, feature→plan mapping, IsFeatureEnabled function, PlanFeatures enumeration, AllFeatures lookup
+- `.github/workflows/ci.yml` — Docker image build workflow
+- `.github/workflows/cd.yml` — Application deploy workflow (SSH + kubectl)
+- `.github/workflows/cd-content.yml` — Static content deploy workflow (SCP)
