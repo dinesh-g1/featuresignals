@@ -87,7 +87,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: global-router
-          image: ghcr.io/featuresignals/global-router:latest
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:6c87466ae00d408a0498a4d23edbaec7a7e88c38
           ports:
             - containerPort: 443
               hostPort: 443

@@ -63,7 +63,7 @@ jobs:
           file: ./deploy/docker/Dockerfile.server
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/featuresignals/server:${{ github.sha }},ghcr.io/featuresignals/server:latest
+          tags: ghcr.io/dinesh-g1/featuresignals-server:${{ github.sha }}
       - name: Build and push dashboard
         if: needs.detect.outputs.dashboard == 'true'
         uses: docker/build-push-action@v6
@@ -72,7 +72,7 @@ jobs:
           file: ./deploy/docker/Dockerfile.dashboard
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/featuresignals/dashboard:${{ github.sha }},ghcr.io/featuresignals/dashboard:latest
+          tags: ghcr.io/dinesh-g1/featuresignals-dashboard:${{ github.sha }}
       - name: Build and push global-router
         uses: docker/build-push-action@v6
         with:
@@ -80,4 +80,4 @@ jobs:
           file: ./deploy/global-router/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/featuresignals/global-router:${{ github.sha }},ghcr.io/featuresignals/global-router:latest
+          tags: ghcr.io/dinesh-g1/featuresignals-global-router:${{ github.sha }}
