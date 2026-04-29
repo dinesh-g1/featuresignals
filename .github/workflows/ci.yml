@@ -4,7 +4,7 @@
 # Images are tagged with the full commit SHA and pushed to GHCR.
 #
 # Usage:
-#   gh workflow run ci.yml -f sha=6cc7fdb34190 -f services=all
+#   gh workflow run ci.yml -f sha=<commit-sha> -f services=all
 #
 # Required secrets:
 #   GHCR_TOKEN — GitHub PAT with write:packages scope
@@ -148,15 +148,15 @@ jobs:
           if [ "$INPUT" = "all" ]; then
             echo 'services=["server","dashboard","router","website","docs"]' >> "$GITHUB_OUTPUT"
           else
-            echo -n 'services=[' > /tmp/svc.txt
+            JSON="["
             FIRST=true
             for s in $(echo "$INPUT" | tr ',' ' '); do
               s=$(echo "$s" | xargs)
-              [ "$FIRST" = true ] && FIRST=false || echo -n ',' >> /tmp/svc.txt
-              echo -n "\"$s\"" >> /tmp/svc.txt
+              [ "$FIRST" = true ] && FIRST=false || JSON="$JSON,"
+              JSON="$JSON\"$s\""
             done
-            echo ']' >> /tmp/svc.txt
-            echo "services=$(cat /tmp/svc.txt)" >> "$GITHUB_OUTPUT"
+            JSON="$JSON]"
+            echo "services=$JSON" >> "$GITHUB_OUTPUT"
           fi
 
   verify:
