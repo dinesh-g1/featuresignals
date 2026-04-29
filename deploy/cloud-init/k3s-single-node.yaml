@@ -21,9 +21,8 @@ runcmd:
     curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
   - |
-    # 4. Install CloudNative PG operator
-    curl -sL https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml | grep -v 'name: poolers' > /tmp/cnpg.yaml
-    kubectl apply -f /tmp/cnpg.yaml
+    # 4. Install CloudNative PG operator (full manifest — poolers CRD required by operator)
+    kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml
     kubectl wait --for=condition=available deployment/cnpg-controller-manager -n cnpg-system --timeout=180s
     kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=60s
 
