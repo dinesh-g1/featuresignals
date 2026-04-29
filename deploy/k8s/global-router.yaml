@@ -85,7 +85,7 @@ spec:
     spec:
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:f8f777de1ad58d69556e54333cadb42434e46b5e
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:acc89dce47bca645dc0840736adb75024d15fb02
           ports:
             - containerPort: 443
               name: https
