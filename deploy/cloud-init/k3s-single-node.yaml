@@ -15,16 +15,20 @@ runcmd:
   # 3. Install Helm (for SigNoz if needed)
   - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-  # 4. Clone deployment manifests from GitHub
+  # 4. Install CloudNative PG operator
+  - kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml
+  - kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=120s
+
+  # 5. Clone deployment manifests from GitHub
   - git clone https://github.com/featuresignals/featuresignals.git /opt/featuresignals --depth 1
 
-  # 5. Deploy everything via kubectl
+  # 6. Deploy everything via kubectl
   - kubectl apply -k /opt/featuresignals/deploy/k8s/
 
-  # 6. Wait for all pods to be ready
+  # 7. Wait for all pods to be ready
   - kubectl wait --for=condition=Ready pods --all -n featuresignals --timeout=120s
 
-  # 7. Install GitHub Actions self-hosted runner
+  # 8. Install GitHub Actions self-hosted runner
   - mkdir -p /opt/actions-runner && cd /opt/actions-runner
   - curl -o actions-runner-linux-x64.tar.gz -L https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64-2.322.0.tar.gz
   - tar xzf actions-runner-linux-x64.tar.gz
@@ -32,4 +36,4 @@ runcmd:
   - ./svc.sh install && ./svc.sh start
 
 output:
-  all: '| tee -a /var/log/cloud-init-output.log'
+  all: "| tee -a /var/log/cloud-init-output.log"

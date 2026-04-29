@@ -18,7 +18,7 @@ INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
 VALUES (
   'user-seed-001',
   'admin@acme.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC',
   'Acme Admin',
   NOW(), NOW()
 )
@@ -80,7 +80,7 @@ INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
 VALUES (
   'user-ops-001',
   'ops@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC',
   'Ops Admin',
   NOW(), NOW()
 )
@@ -104,7 +104,7 @@ INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
 VALUES (
   'ops-user-001',
   'ops@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC'
 )
 ON CONFLICT (ops_user_id, email) DO NOTHING;
 
@@ -113,7 +113,7 @@ INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
 VALUES (
   'user-ops-002',
   'engineer@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC',
   'Ops Engineer',
   NOW(), NOW()
 )
@@ -135,7 +135,7 @@ INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
 VALUES (
   'ops-user-002',
   'engineer@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC'
 )
 ON CONFLICT (ops_user_id, email) DO NOTHING;
 
@@ -144,7 +144,7 @@ INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
 VALUES (
   'user-ops-003',
   'success@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC',
   'Customer Success',
   NOW(), NOW()
 )
@@ -166,7 +166,7 @@ INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
 VALUES (
   'ops-user-003',
   'success@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC'
 )
 ON CONFLICT (ops_user_id, email) DO NOTHING;
 
@@ -175,7 +175,7 @@ INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
 VALUES (
   'user-ops-004',
   'demo@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC',
   'Demo Team',
   NOW(), NOW()
 )
@@ -197,7 +197,7 @@ INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
 VALUES (
   'ops-user-004',
   'demo@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC'
 )
 ON CONFLICT (ops_user_id, email) DO NOTHING;
 
@@ -206,7 +206,7 @@ INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
 VALUES (
   'user-ops-005',
   'finance@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC',
   'Finance',
   NOW(), NOW()
 )
@@ -228,7 +228,7 @@ INSERT INTO ops_portal_credentials (ops_user_id, email, password_hash)
 VALUES (
   'ops-user-005',
   'finance@featuresignals.com',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+  '$2a$10$gc5GgwIdQGHQRheVhdIGS.H1sRrAWE85.0WmiBFAsV5DPNCks3QmC'
 )
 ON CONFLICT (ops_user_id, email) DO NOTHING;
 

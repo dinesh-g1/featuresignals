@@ -47,8 +47,18 @@ spec:
             - configMapRef:
                 name: server-config
           env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: featuresignals-db-app
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: featuresignals-db-app
+                  key: password
             - name: DATABASE_URL
-              value: postgres://featuresignals:featuresignals@postgres:5432/featuresignals?sslmode=disable
+              value: "postgres://$(DB_USER):$(DB_PASSWORD)@featuresignals-db-rw:5432/featuresignals?sslmode=disable"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
