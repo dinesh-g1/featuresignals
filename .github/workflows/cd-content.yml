@@ -1,0 +1,114 @@
+# CD - Content Deployment
+#
+# Builds website and docs static content from source on ubuntu-latest,
+# then deploys them to the K3s VM via SCP (no Docker needed).
+#
+# Usage:
+#   gh workflow run cd-content.yml -f run_website=true -f run_docs=true
+#
+# Required secrets:
+#   SSH_HOST       — VM public IP
+#   SSH_USER       — VM SSH user (root)
+#   SSH_PRIVATE_KEY— SSH private key for VM access
+#   GHCR_TOKEN     — only needed if content images are used as fallback
+
+name: CD - Content
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_website:
+        description: "Build and deploy website (true/false)"
+        required: true
+        default: "true"
+        type: string
+      run_docs:
+        description: "Build and deploy docs (true/false)"
+        required: true
+        default: "true"
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  deploy:
+    name: Build & deploy content
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy-key
+          chmod 600 ~/.ssh/deploy-key
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "✅ SSH key installed to ${{ secrets.SSH_HOST }}"
+
+      # ── Website ─────────────────────────────────────────────────
+      - name: Build website (Next.js static export)
+        if: ${{ inputs.run_website == 'true' }}
+        run: |
+          cd website
+          npm ci --no-optional 2>&1 | tail -3
+          npm run build 2>&1 | tail -3
+          echo "✅ Website built ($(ls out/ | wc -l) top-level items)"
+
+      - name: Deploy website to VM
+        if: ${{ inputs.run_website == 'true' }}
+        run: |
+          # Clean old content
+          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "rm -rf /data/www/website/*" 2>/dev/null || true
+
+          # Upload new content
+          scp -i ~/.ssh/deploy-key -rq website/out/* \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/data/www/website/
+          echo "✅ Website deployed to /data/www/website/"
+
+      - name: Verify website
+        if: ${{ inputs.run_website == 'true' }}
+        run: |
+          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "ls -la /data/www/website/index.html && echo '✅ website/index.html OK'"
+
+      # ── Docs ────────────────────────────────────────────────────
+      - name: Build docs (Docusaurus)
+        if: ${{ inputs.run_docs == 'true' }}
+        run: |
+          cd docs
+          npm ci --no-optional 2>&1 | tail -3
+          npm run build 2>&1 | tail -3
+          echo "✅ Docs built ($(ls build/ | wc -l) top-level items)"
+
+      - name: Deploy docs to VM
+        if: ${{ inputs.run_docs == 'true' }}
+        run: |
+          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "rm -rf /data/www/docs/*" 2>/dev/null || true
+
+          scp -i ~/.ssh/deploy-key -rq docs/build/* \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/data/www/docs/
+          echo "✅ Docs deployed to /data/www/docs/"
+
+      - name: Verify docs
+        if: ${{ inputs.run_docs == 'true' }}
+        run: |
+          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "ls -la /data/www/docs/index.html && echo '✅ docs/index.html OK'"
+
+      # ── Summary ─────────────────────────────────────────────────
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║           CONTENT DEPLOY COMPLETE                         ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  Website: ${{ inputs.run_website }}"
+          echo "  Docs:    ${{ inputs.run_docs }}"
+          echo "  Host:    ${{ secrets.SSH_HOST }}"
+          echo ""
