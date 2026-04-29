@@ -27,6 +27,9 @@ jobs:
   deploy:
     name: Deploy
     runs-on: self-hosted
+    env:
+      KUBECONFIG: /home/runner/.kube/config
+      PATH: /usr/local/bin:/usr/local/sbin:/usr/bin:/bin
     steps:
       # ── Auth ────────────────────────────────────────────────────
       - name: Update GHCR pull secret
