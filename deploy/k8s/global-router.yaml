@@ -32,7 +32,7 @@ data:
         - name: signoz.featuresignals.com
           type: proxy
           target: http://signoz.observability.svc.cluster.local:8080
-          rate_limit: 200/min
+          rate_limit: 10000/min
           auth: ops
       rate_limit:
         default: 1000/min
@@ -67,7 +67,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:7a3a9812f86c539ce995a708cb1593401eacb35d
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:d23b16ba56e5ee9f567d8a68a5c7b018291b6a05
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml

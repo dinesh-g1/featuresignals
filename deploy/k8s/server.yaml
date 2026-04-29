@@ -17,10 +17,11 @@ data:
   ROUTER_DOMAIN: "featuresignals.com"
   ROUTER_EMAIL: "admin@featuresignals.com"
   OTEL_ENABLED: "true"
-  OTEL_EXPORTER_OTLP_ENDPOINT: "http://signoz-otel-collector.observability.svc.cluster.local:4318"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "signoz-otel-collector.observability.svc.cluster.local:4318"
   OTEL_SERVICE_NAME: "featuresignals-api"
   OTEL_TRACES_ENABLED: "true"
   OTEL_METRICS_ENABLED: "true"
+  OTEL_LOGS_ENABLED: "true"
   EMAIL_PROVIDER: "none"
 ---
 apiVersion: apps/v1
@@ -42,7 +43,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: server
-          image: ghcr.io/dinesh-g1/featuresignals-server:7a3a9812f86c539ce995a708cb1593401eacb35d
+          image: ghcr.io/dinesh-g1/featuresignals-server:d23b16ba56e5ee9f567d8a68a5c7b018291b6a05
           ports:
             - containerPort: 8080
           envFrom:
