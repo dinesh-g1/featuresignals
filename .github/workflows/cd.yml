@@ -24,6 +24,8 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.version }}
     runs-on: self-hosted
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
     steps:
       - name: Update GHCR pull secret
         run: |
