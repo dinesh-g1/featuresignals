@@ -179,6 +179,8 @@ spec:
             - containerPort: 8080
               name: http
           env:
+            - name: STORAGE
+              value: clickhouse
             - name: ClickHouseUrl
               value: tcp://signoz-clickhouse:9000
             - name: ALERTMANAGER_API_PREFIX
