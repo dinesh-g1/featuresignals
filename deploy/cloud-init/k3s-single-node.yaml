@@ -5,11 +5,12 @@ packages:
   - curl
   - git
   - htop
+  - file
 
 runcmd:
   - |
-    # 1. Install K3s single-node (increased etcd request size for CNPG CRDs)
-    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0 --etcd-arg max-request-bytes=1048576" sh -
+    # 1. Install K3s single-node (increased request size for CNPG CRDs)
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0 --kube-apiserver-arg max-request-bytes=10485760" sh -
 
   - |
     # 2. Wait for K3s to be ready
@@ -20,17 +21,26 @@ runcmd:
     curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
   - |
-    # 4. Install CloudNative PG operator
-    kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml
-    kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=120s
+    # 4. Install CloudNative PG operator (skip poolers CRD - too large for K3s default, not needed for single-node)
+    curl -sL https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml | grep -v 'name: poolers' > /tmp/cnpg.yaml
+    kubectl apply -f /tmp/cnpg.yaml
+    # The poolers CRD is large; apply it separately with server-side apply if needed later
+    kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=180s
 
   - |
-    # 5. Clone deployment manifests from GitHub
-    git clone https://github.com/dinesh-g1/featuresignals.git /opt/featuresignals --depth 1
+    # 5. Clone deployment manifests from GitHub (retry on failure)
+    for i in 1 2 3; do
+      git clone https://github.com/dinesh-g1/featuresignals.git /opt/featuresignals --depth 1 && break
+      sleep 5
+    done
 
   - |
-    # 6. Deploy everything via kubectl
-    kubectl apply -k /opt/featuresignals/deploy/k8s/
+    # 6. Deploy everything via kubectl (retry once if webhook not ready)
+    kubectl apply -k /opt/featuresignals/deploy/k8s/ || {
+      echo "First apply failed (webhook not ready). Retrying in 30s..."
+      sleep 30
+      kubectl apply -k /opt/featuresignals/deploy/k8s/
+    }
 
   - |
     # 7. Wait for all pods to be ready
