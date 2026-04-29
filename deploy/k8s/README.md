@@ -1,26 +1,22 @@
-# K3s Deployment
+# FeatureSignals K3s Deployment
 
 ## Prerequisites
 
 1. **CloudNative PG Operator** — install before applying manifests:
    ```bash
-   kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml
-   ```
-   
-   Wait for the operator to be ready:
-   ```bash
-   kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=120s
+   helm repo add cnpg https://cloudnative-pg.github.io/charts
+   helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait --timeout 5m
    ```
 
-2. **Apply the stack:**
+2. **SigNoz** — observability stack:
+   ```bash
+   helm repo add signoz https://charts.signoz.io
+   helm upgrade --install signoz signoz/signoz --namespace observability --create-namespace --wait --timeout 10m --set global.storageClass=local-path
+   ```
+
+3. **FeatureSignals stack:**
    ```bash
    kubectl apply -k deploy/k8s/
-   ```
-
-3. **Verify:**
-   ```bash
-   kubectl get clusters.postgresql.cnpg.io -n featuresignals
-   kubectl get pods -n featuresignals
    ```
 
 ## Services
@@ -28,7 +24,8 @@
 | Service | Endpoint | Description |
 |---------|----------|-------------|
 | PostgreSQL (RW) | `featuresignals-db-rw:5432` | Read-write database endpoint |
-| PostgreSQL (RO) | `featuresignals-db-ro:5432` | Read-only database endpoint |
 | Server API | `featuresignals-server:8080` | Go API server |
 | Dashboard | `featuresignals-dashboard:3000` | Next.js dashboard |
-| Global Router | `global-router:443` | TLS edge router |
+| Global Router | `(hostNetwork) :80/:443` | TLS edge router |
+| SigNoz | `signoz.observability:8080` | Observability UI |
+| SigNoz OTEL | `signoz-otel-collector.observability:4318` | OTLP telemetry ingestion |

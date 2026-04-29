@@ -31,7 +31,7 @@ data:
           rate_limit: 100/min
         - name: signoz.featuresignals.com
           type: proxy
-          target: http://signoz-frontend:3301
+          target: http://signoz.observability:8080
           rate_limit: 20/min
           auth: ops
       rate_limit:
@@ -67,7 +67,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:616bffa89b9fed383eb97a5f90d06bf82b54b1c6
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:ea878d7d6daa6da75ef01c051406b68f463daeaf
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml

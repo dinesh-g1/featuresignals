@@ -6,4 +6,3 @@ resources:
   - server.yaml
   - dashboard.yaml
   - global-router.yaml
-  - signoz.yaml

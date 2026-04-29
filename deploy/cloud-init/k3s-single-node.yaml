@@ -49,7 +49,13 @@ runcmd:
     helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait --timeout 5m
 
   - |
-    # 5. Create GHCR pull secret (required for private images)
+    # 5. Install SigNoz observability stack via Helm
+    helm repo add signoz https://charts.signoz.io
+    helm repo update
+    helm upgrade --install signoz signoz/signoz --namespace observability --create-namespace --wait --timeout 10m --set global.storageClass=local-path
+
+  - |
+    # 6. Create GHCR pull secret (required for private images)
     # Note: GHCR_TOKEN must be set as a cloud-init variable at deployment time
     kubectl create namespace featuresignals --dry-run=client -o yaml | kubectl apply -f -
     kubectl create secret docker-registry ghcr-pull \
@@ -60,31 +66,31 @@ runcmd:
       --dry-run=client -o yaml | kubectl apply -f -
 
   - |
-    # 6. Clone deployment manifests
+    # 7. Clone deployment manifests
     for i in 1 2 3; do
       git clone https://github.com/dinesh-g1/featuresignals.git /opt/featuresignals --depth 1 && break
       sleep 5
     done
 
   - |
-    # 7. Deploy everything
+    # 8. Deploy everything
     for i in 1 2 3; do
       kubectl apply -k /opt/featuresignals/deploy/k8s/ && break
       sleep 15
     done
 
   - |
-    # 8. Wait for all pods to be ready
+    # 9. Wait for all pods to be ready
     kubectl wait --for=condition=Ready pods --all -n featuresignals --timeout=180s
 
   - |
-    # 9. Setup static content volumes
+    # 10. Setup static content volumes
     mkdir -p /data/www/website /data/www/docs
     echo '<h1>FeatureSignals</h1><p>Coming soon.</p>' > /data/www/website/index.html
     echo '<h1>FeatureSignals Docs</h1><p>Coming soon.</p>' > /data/www/docs/index.html
 
   - |
-    # 10. Install GitHub Actions self-hosted runner
+    # 11. Install GitHub Actions self-hosted runner
     useradd -m -s /bin/bash runner 2>/dev/null || true
     mkdir -p /opt/actions-runner
     cd /opt/actions-runner
