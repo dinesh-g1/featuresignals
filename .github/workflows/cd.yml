@@ -25,6 +25,16 @@ jobs:
     name: Deploy ${{ inputs.version }}
     runs-on: self-hosted
     steps:
+      - name: Update GHCR pull secret
+        run: |
+          kubectl delete secret ghcr-pull -n featuresignals --ignore-not-found
+          kubectl create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username=dinesh-g1 \
+            --docker-password="${{ secrets.GHCR_TOKEN }}" \
+            --namespace=featuresignals
+          echo "✅ GHCR pull secret updated"
+
       - name: Update server deployment
         run: |
           kubectl set image deployment/server \

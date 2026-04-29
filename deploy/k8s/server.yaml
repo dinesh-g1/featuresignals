@@ -42,7 +42,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: server
-          image: ghcr.io/dinesh-g1/featuresignals-server:ea878d7d6daa6da75ef01c051406b68f463daeaf
+          image: ghcr.io/dinesh-g1/featuresignals-server:f4e81e31fd72e9ef3762dbb7e27bacf5297aecd8
           ports:
             - containerPort: 8080
           envFrom:
