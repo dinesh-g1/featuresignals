@@ -1,14 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   postgres:
     image: postgres:16-alpine
     ports:
@@ -34,22 +24,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       DATABASE_URL: postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: dev-secret-change-in-production
       PORT: "8080"
-      REDIS_ADDR: redis:6379
       CORS_ENABLED: "true"
-      ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost"
       DEPLOYMENT_MODE: cloud
       EMAIL_PROVIDER: none
       APP_BASE_URL: http://localhost:8080
       DASHBOARD_URL: http://localhost:3000
+      CLUSTER_NAME: local-dev
+      LOCAL_REGION: local
+      ROUTER_DOMAIN: localhost
+      ROUTER_EMAIL: dev@localhost
       PAYU_MODE: test
       STRIPE_MODE: test
-      SALES_NOTIFY_EMAIL: dineshreddy@featuresignals.com
+      SALES_NOTIFY_EMAIL: dev@featuresignals.com
       SUPER_MODE_DOMAIN: featuresignals.com
     healthcheck:
       test:
@@ -72,9 +63,10 @@ services:
     depends_on:
       server:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    # ports: disabled temporarily for Docker for Mac port conflict
+    # Access via Docker internal network through router
     environment:
+      PORT: "3000"
       HOSTNAME: "0.0.0.0"
       NEXT_PUBLIC_API_URL: http://localhost:8080
     healthcheck:
@@ -86,32 +78,6 @@ services:
           "--tries=1",
           "--spider",
           "http://127.0.0.1:3000/api/health",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-
-  ops:
-    build:
-      context: ./ops
-      dockerfile: ../deploy/docker/Dockerfile.ops
-    depends_on:
-      server:
-        condition: service_healthy
-    ports:
-      - "3001:3001"
-    environment:
-      HOSTNAME: "0.0.0.0"
-      NEXT_PUBLIC_API_URL: http://localhost:8080
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://127.0.0.1:3001/login",
         ]
       interval: 10s
       timeout: 5s

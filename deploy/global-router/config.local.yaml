@@ -1,0 +1,42 @@
+# Global Router — Local Development Configuration
+# Overrides config.yaml for local dev. No TLS, no DNS, HTTP only.
+router:
+  domain: localhost
+  email: dev@localhost
+
+  tls:
+    enabled: false # No TLS in local dev
+    cache_dir: /tmp/router-certs
+    port: 443
+
+  dns:
+    enabled: false
+    port: 53
+
+  domains:
+    - name: localhost
+      type: proxy
+      target: http://127.0.0.1:8080
+      rate_limit: 9999/min
+
+    - name: app.localhost
+      type: proxy
+      target: http://127.0.0.1:3000
+      rate_limit: 9999/min
+
+    - name: api.localhost
+      type: proxy
+      target: http://127.0.0.1:8080
+      rate_limit: 9999/min
+
+  rate_limit:
+    default: 9999/min
+    burst: 9999
+    window: 60s
+
+  cluster:
+    name: local-dev
+    region: local
+    public_ip: "127.0.0.1"
+
+  peer_clusters: []

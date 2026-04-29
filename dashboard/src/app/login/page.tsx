@@ -640,54 +640,6 @@ function LoginForm() {
                     Sign up
                   </Link>
                 </p>
-
-                {/* ===== DEMO MODE (development only) ===== */}
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-stone-200" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-3 text-stone-400">
-                      developer quick-start
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const { useAppStore } = await import("@/stores/app-store");
-                    useAppStore.getState().setAuth(
-                      "demo-token-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                      "demo-refresh-token",
-                      {
-                        id: "user_demo_001",
-                        email: "demo@featuresignals.com",
-                        name: "Demo User",
-                        email_verified: true,
-                        tour_completed: true,
-                        created_at: new Date().toISOString(),
-                      },
-                      {
-                        id: "org_demo_001",
-                        name: "Acme Corp",
-                        slug: "acme-corp",
-                        plan: "pro",
-                        data_region: "us-east",
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      },
-                      Date.now() + 86400000,
-                      true,
-                    );
-                    window.location.href = "/dashboard";
-                  }}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-accent/30 bg-accent/[0.03] py-3 text-sm font-semibold text-accent-dark shadow-sm transition-all hover:bg-accent/10 hover:border-accent/60 hover:shadow-md"
-                >
-                  <Sparkles className="h-4 w-4" strokeWidth={1.5} />
-                  Continue as Demo
-                  <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-                </button>
               </>
             )}
           </div>

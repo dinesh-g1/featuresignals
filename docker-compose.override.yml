@@ -1,4 +1,4 @@
-# Local full-stack development overrides.
+# Local development overrides.
 # Automatically applied by `docker compose up` (Docker Compose convention).
 # Usage: make local-up  (or: docker compose up --build -d)
 #
@@ -7,7 +7,6 @@
 #
 # Optional profiles:
 #   --profile seed   : Pre-load demo data (org, project, flags, environments)
-#   --profile caddy  : Caddy reverse proxy at http://localhost (API + dashboard)
 
 services:
   postgres:
@@ -31,15 +30,14 @@ services:
       ZEPTOMAIL_BASE_URL: ${ZEPTOMAIL_BASE_URL:-https://api.zeptomail.in}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
       DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
-      OTEL_ENABLED: ${OTEL_ENABLED:-true}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-ingest.in2.signoz.cloud:443}
-      OTEL_INGESTION_KEY: ${OTEL_INGESTION_KEY:-}
+      CLUSTER_NAME: ${CLUSTER_NAME:-local-dev}
+      ROUTER_DOMAIN: ${ROUTER_DOMAIN:-localhost}
+      ROUTER_EMAIL: ${ROUTER_EMAIL:-dev@localhost}
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-featuresignals-api-local}
-      OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-true}
-      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-true}
-      OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-true}
-      OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-debug}
-      OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-1.0}
+      OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-false}
+      OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED:-false}
 
   dashboard:
     env_file:
@@ -66,16 +64,3 @@ services:
         "PGPASSWORD=fsdev psql -h postgres -U fs -d featuresignals -f /seed.sql",
       ]
     profiles: ["seed"]
-
-  caddy:
-    image: caddy:2-alpine
-    depends_on:
-      server:
-        condition: service_healthy
-      dashboard:
-        condition: service_healthy
-    ports:
-      - "80:80"
-    volumes:
-      - ./deploy/Caddyfile.local:/etc/caddy/Caddyfile:ro
-    profiles: ["caddy"]
