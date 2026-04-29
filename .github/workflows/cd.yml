@@ -62,6 +62,38 @@ jobs:
           kubectl rollout status deployment/global-router -n featuresignals --timeout=120s
           echo "✅ Global Router updated"
 
+      - name: Deploy website content
+        run: |
+          VERSION="${{ inputs.version }}"
+          echo "Extracting website content for $VERSION..."
+          docker run --rm \
+            -v /data/www/website:/target \
+            --entrypoint sh \
+            ghcr.io/dinesh-g1/featuresignals-website:$VERSION \
+            -c "tar xzf /content.tar.gz -C /target" 2>/dev/null || {
+            echo "Content image not found — building from source..."
+            cd /opt/featuresignals/website
+            npm ci && npm run build
+            cp -r out/* /data/www/website/
+          }
+          echo "✅ Website content updated"
+
+      - name: Deploy docs content
+        run: |
+          VERSION="${{ inputs.version }}"
+          echo "Extracting docs content for $VERSION..."
+          docker run --rm \
+            -v /data/www/docs:/target \
+            --entrypoint sh \
+            ghcr.io/dinesh-g1/featuresignals-docs:$VERSION \
+            -c "tar xzf /content.tar.gz -C /target" 2>/dev/null || {
+            echo "Content image not found — building from source..."
+            cd /opt/featuresignals/docs
+            npm ci && npm run build
+            cp -r build/* /data/www/docs/
+          }
+          echo "✅ Docs content updated"
+
       - name: Smoke test — server health
         run: |
           echo "Checking server health..."

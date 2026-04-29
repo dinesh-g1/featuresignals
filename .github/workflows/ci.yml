@@ -1,11 +1,18 @@
 name: CI
 on: [push, pull_request]
+
+env:
+  REGISTRY: ghcr.io/dinesh-g1
+
 jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
       server: ${{ steps.changes.outputs.server }}
       dashboard: ${{ steps.changes.outputs.dashboard }}
+      website: ${{ steps.changes.outputs.website }}
+      docs: ${{ steps.changes.outputs.docs }}
+      router: ${{ steps.changes.outputs.router }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -16,45 +23,83 @@ jobs:
               - 'server/**'
             dashboard:
               - 'dashboard/**'
+            website:
+              - 'website/**'
+            docs:
+              - 'docs/**'
+            router:
+              - 'deploy/global-router/**'
+
   validate:
     needs: detect
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate Go
+
+      - name: Validate Go (server)
         if: needs.detect.outputs.server == 'true'
         run: |
           cd server && go vet ./... && go build ./...
+
+      - name: Validate Go (router)
+        if: needs.detect.outputs.router == 'true'
+        run: |
+          cd deploy/global-router && go vet ./... && go build ./...
+
       - name: Validate Dashboard
         if: needs.detect.outputs.dashboard == 'true'
         run: |
           cd dashboard && npm ci && npm run lint
+
+      - name: Validate Website
+        if: needs.detect.outputs.website == 'true'
+        run: |
+          cd website && npm ci && npm run lint
+
+      - name: Validate Docs
+        if: needs.detect.outputs.docs == 'true'
+        run: |
+          cd docs && npm ci && npm run build
+
   test:
     needs: detect
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
-      - name: Run Go tests
+
+      - name: Run Go tests (server)
         if: needs.detect.outputs.server == 'true'
         run: |
           cd server && go test ./... -count=1 -timeout 120s -race -coverprofile=coverage.out
+
       - name: Run Dashboard tests
         if: needs.detect.outputs.dashboard == 'true'
         run: |
           cd dashboard && npm ci && npm run test -- --run
+
+      - name: Run Website tests
+        if: needs.detect.outputs.website == 'true'
+        run: |
+          cd website && npm ci && npm run test -- --run
+
   build-and-push:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [validate, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Login to GHCR
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dinesh-g1 --password-stdin
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      # ── Server ──────────────────────────────────────────────
       - name: Build and push server
         if: needs.detect.outputs.server == 'true'
         uses: docker/build-push-action@v6
@@ -63,7 +108,9 @@ jobs:
           file: ./deploy/docker/Dockerfile.server
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/dinesh-g1/featuresignals-server:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/featuresignals-server:${{ github.sha }}
+
+      # ── Dashboard ───────────────────────────────────────────
       - name: Build and push dashboard
         if: needs.detect.outputs.dashboard == 'true'
         uses: docker/build-push-action@v6
@@ -72,12 +119,67 @@ jobs:
           file: ./deploy/docker/Dockerfile.dashboard
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/dinesh-g1/featuresignals-dashboard:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/featuresignals-dashboard:${{ github.sha }}
+
+      # ── Global Router ───────────────────────────────────────
       - name: Build and push global-router
+        if: needs.detect.outputs.router == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./deploy/global-router
           file: ./deploy/global-router/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/dinesh-g1/featuresignals-global-router:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/featuresignals-global-router:${{ github.sha }}
+
+      # ── Website (static export) ─────────────────────────────
+      - name: Build website
+        if: needs.detect.outputs.website == 'true'
+        run: |
+          cd website
+          npm ci
+          npm run build
+          # Package static export as a deployable artifact
+          tar czf /tmp/website.tar.gz -C out .
+
+      - name: Push website content
+        if: needs.detect.outputs.website == 'true'
+        run: |
+          # Build minimal nginx image with static content for GHCR
+          mkdir -p /tmp/website-image
+          cp /tmp/website.tar.gz /tmp/website-image/
+          cat > /tmp/website-image/Dockerfile << 'DOCKEREOF'
+          FROM scratch
+          COPY website.tar.gz /content.tar.gz
+          DOCKEREOF
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/featuresignals-website:${{ github.sha }} \
+            -f /tmp/website-image/Dockerfile \
+            --push \
+            /tmp/website-image
+
+      # ── Docs (Docusaurus) ───────────────────────────────────
+      - name: Build docs
+        if: needs.detect.outputs.docs == 'true'
+        run: |
+          cd docs
+          npm ci
+          npm run build
+          tar czf /tmp/docs.tar.gz -C build .
+
+      - name: Push docs content
+        if: needs.detect.outputs.docs == 'true'
+        run: |
+          mkdir -p /tmp/docs-image
+          cp /tmp/docs.tar.gz /tmp/docs-image/
+          cat > /tmp/docs-image/Dockerfile << 'DOCKEREOF'
+          FROM scratch
+          COPY docs.tar.gz /content.tar.gz
+          DOCKEREOF
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/featuresignals-docs:${{ github.sha }} \
+            -f /tmp/docs-image/Dockerfile \
+            --push \
+            /tmp/docs-image

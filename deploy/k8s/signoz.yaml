@@ -16,25 +16,28 @@ data:
       batch:
         timeout: 1s
         send_batch_size: 1024
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
     exporters:
-      otlp/clickhouse:
-        endpoint: signoz-clickhouse:9000
-        tls:
-          insecure: true
+      clickhouse:
+        endpoint: tcp://signoz-clickhouse:9000
+        ttl: 72h
+        database: signoz_traces
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [otlp/clickhouse]
+          processors: [memory_limiter, batch]
+          exporters: [clickhouse]
         metrics:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [otlp/clickhouse]
+          processors: [memory_limiter, batch]
+          exporters: [clickhouse]
         logs:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [otlp/clickhouse]
+          processors: [memory_limiter, batch]
+          exporters: [clickhouse]
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -182,6 +185,8 @@ spec:
               value: http://localhost:9093
             - name: SIGNOZ_LOCAL_DB_PATH
               value: /var/lib/signoz/sqlite
+            - name: STORAGE_PATH
+              value: /var/lib/signoz
           resources:
             limits:
               cpu: "500m"
@@ -189,6 +194,25 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
+          volumeMounts:
+            - name: query-service-data
+              mountPath: /var/lib/signoz
+      volumes:
+        - name: query-service-data
+          persistentVolumeClaim:
+            claimName: signoz-query-service-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: signoz-query-service-data
+  namespace: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
