@@ -84,7 +84,7 @@ spec:
         app: global-router
     spec:
       hostNetwork: true
-      dnsPolicy: Default
+      dnsPolicy: ClusterFirstWithHostNet
       imagePullSecrets:
         - name: ghcr-pull
       containers:
