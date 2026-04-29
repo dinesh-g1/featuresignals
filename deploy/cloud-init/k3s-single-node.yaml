@@ -9,61 +9,93 @@ packages:
 
 runcmd:
   - |
-    # 1. Install K3s single-node (with retry)
+    # 1. Install K3s (disable traefik and servicelb - we use our own global router)
     for i in 1 2 3 4 5; do
-      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0 --disable traefik" sh - && break
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0 --disable traefik --disable servicelb" sh - && break
       echo "K3s install attempt $i failed, retrying in 10s..."
       sleep 10
     done
 
   - |
-    # 2. Wait for K3s to be ready
+    # 2. Wait for K3s readiness
     until kubectl get nodes 2>/dev/null; do sleep 2; done
+    until kubectl get pods -n kube-system -l k8s-app=kube-dns 2>/dev/null | grep Running; do sleep 2; done
 
   - |
     # 3. Install Helm
     curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
   - |
-    # 4. Install CloudNative PG operator via Helm (avoids kubectl apply annotation size limit on CRDs)
+    # 4. Install CloudNative PG operator via Helm
     helm repo add cnpg https://cloudnative-pg.github.io/charts
     helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait --timeout 5m
 
   - |
-    # 5. Clone deployment manifests from GitHub (retry on failure)
+    # 5. Create GHCR pull secret (required for private images)
+    # Note: GHCR_TOKEN must be set as a cloud-init variable at deployment time
+    kubectl create namespace featuresignals --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create secret docker-registry ghcr-pull \
+      --docker-server=ghcr.io \
+      --docker-username=dinesh-g1 \
+      --docker-password=${GHCR_TOKEN} \
+      --namespace=featuresignals \
+      --dry-run=client -o yaml | kubectl apply -f -
+
+  - |
+    # 6. Clone deployment manifests
     for i in 1 2 3; do
       git clone https://github.com/dinesh-g1/featuresignals.git /opt/featuresignals --depth 1 && break
       sleep 5
     done
 
   - |
-    # 6. Deploy everything via kubectl (with retry for webhook readiness)
+    # 7. Deploy everything
     for i in 1 2 3; do
       kubectl apply -k /opt/featuresignals/deploy/k8s/ && break
-      echo "kubectl apply attempt $i failed, retrying in 15s..."
       sleep 15
     done
 
   - |
-    # 7. Wait for all pods to be ready
+    # 8. Wait for all pods to be ready
     kubectl wait --for=condition=Ready pods --all -n featuresignals --timeout=180s
 
   - |
-    # 8. Mount static content volumes and install placeholder pages
-    mkdir -p /data/www/website /data/www/docs /opt/actions-runner
+    # 9. Setup static content volumes
+    mkdir -p /data/www/website /data/www/docs
     echo '<h1>FeatureSignals</h1><p>Coming soon.</p>' > /data/www/website/index.html
     echo '<h1>FeatureSignals Docs</h1><p>Coming soon.</p>' > /data/www/docs/index.html
 
   - |
-    # 9. Install GitHub Actions self-hosted runner (with retry)
+    # 10. Install GitHub Actions self-hosted runner
+    useradd -m -s /bin/bash runner 2>/dev/null || true
+    mkdir -p /opt/actions-runner
     cd /opt/actions-runner
     RUNNER_VERSION="2.322.0"
     for i in 1 2 3; do
       curl -sL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
       if [ -f runner.tar.gz ] && file runner.tar.gz | grep -q gzip; then
         tar xzf runner.tar.gz
-        ./config.sh --url https://github.com/dinesh-g1/featuresignals --token ${RUNNER_TOKEN} --labels self-hosted --unattended
-        ./svc.sh install && ./svc.sh start
+        chown -R runner:runner /opt/actions-runner
+        su - runner -c "cd /opt/actions-runner && ./config.sh --url https://github.com/dinesh-g1/featuresignals --token ${RUNNER_TOKEN} --labels self-hosted --unattended --replace"
+        cat > /etc/systemd/system/actions.runner.service << 'SERVICEEOF'
+[Unit]
+Description=GitHub Actions Runner (dinesh-g1/featuresignals)
+After=network.target
+[Service]
+ExecStart=/opt/actions-runner/run.sh
+User=runner
+WorkingDirectory=/opt/actions-runner
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+Restart=always
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
+        systemctl daemon-reload
+        systemctl enable actions.runner.service
+        systemctl start actions.runner.service
         echo "Runner installed successfully"
         break
       else
@@ -72,17 +104,6 @@ runcmd:
         sleep 10
       fi
     done
-    if [ ! -f /opt/actions-runner/config.sh ]; then
-      echo "Runner download failed after 3 attempts - will retry later via CI/CD"
-    fi
 
 output:
-  all: "| tee -a /var/log/cloud-init-output.log"
-
-  - |
-    # 10. Set up port forwarding from host 80/443 to global-router NodePorts
-    sleep 30  # Wait for router to be ready
-    NODEPORT_80=$(kubectl get svc global-router -n featuresignals -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}')
-    NODEPORT_443=$(kubectl get svc global-router -n featuresignals -o jsonpath='{.spec.ports[?(@.port==443)].nodePort}')
-    iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port $NODEPORT_80 2>/dev/null || true
-    iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port $NODEPORT_443 2>/dev/null || true
+  all: '| tee -a /var/log/cloud-init-output.log'
