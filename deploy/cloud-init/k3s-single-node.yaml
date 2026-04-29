@@ -84,7 +84,7 @@ runcmd:
     kubectl wait --for=condition=Ready pods --all -n featuresignals --timeout=180s
 
   - |
-    # 10. Setup static content volumes
+    # 10. Setup static content volumes (placeholder HTML - CD workflow deploys real content from GHCR)
     mkdir -p /data/www/website /data/www/docs
     echo '<h1>FeatureSignals</h1><p>Coming soon.</p>' > /data/www/website/index.html
     echo '<h1>FeatureSignals Docs</h1><p>Coming soon.</p>' > /data/www/docs/index.html
