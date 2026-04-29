@@ -74,6 +74,8 @@ metadata:
   name: global-router
   namespace: featuresignals
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:
