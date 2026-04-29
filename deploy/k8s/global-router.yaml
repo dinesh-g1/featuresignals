@@ -83,14 +83,11 @@ spec:
       labels:
         app: global-router
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: global-router
           image: ghcr.io/dinesh-g1/featuresignals-global-router:ebf64c478986a590cd0dcec265c1701082003de9
-          ports:
-            - containerPort: 443
-              name: https
-            - containerPort: 80
-              name: http
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml
