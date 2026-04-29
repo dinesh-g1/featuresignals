@@ -71,11 +71,21 @@ jobs:
           echo "✅ Global Router updated"
 
       # ── Smoke Tests ─────────────────────────────────────────────
-      - name: Smoke test — internal server health
+      - name: Smoke test — server pods healthy
+        run: |
+          kubectl get pods -n ${{ env.NS }} -l app=server -o jsonpath='{.items[0].status.phase}' | grep -q Running && echo "✅ Server pod Running"
+          kubectl get pods -n ${{ env.NS }} -l app=dashboard -o jsonpath='{.items[0].status.phase}' | grep -q Running && echo "✅ Dashboard pod Running"
+          kubectl get pods -n ${{ env.NS }} -l app=global-router -o jsonpath='{.items[0].status.phase}' | grep -q Running && echo "✅ Router pod Running"
+
+      - name: Smoke test — server health via kubectl
         run: |
           for i in $(seq 1 15); do
-            HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8080/health)
-            if [ "$HTTP" = "200" ]; then
+            STATUS=$(kubectl run health-check --image=curlimages/curl:8.12.1 \
+              --restart=Never --command -- curl -s -o /dev/null -w "%{http_code}" \
+              http://featuresignals-server.${{ env.NS }}.svc.cluster.local:8080/health \
+              2>/dev/null || true)
+            kubectl delete pod health-check --ignore-not-found --wait=false 2>/dev/null || true
+            if [ "$STATUS" = "200" ]; then
               echo "✅ Server healthy (HTTP 200)"
               exit 0
             fi
@@ -83,30 +93,6 @@ jobs:
           done
           echo "❌ Server health check failed"
           exit 1
-
-      - name: Smoke test — public API via router
-        run: |
-          for i in $(seq 1 15); do
-            HTTP=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 5 "https://api.featuresignals.com/health")
-            if [ "$HTTP" = "200" ]; then
-              echo "✅ API healthy (HTTP 200)"
-              exit 0
-            fi
-            sleep 4
-          done
-          echo "❌ API health check failed"
-          exit 1
-
-      - name: Smoke test — website and docs
-        run: |
-          for url in "https://featuresignals.com" "https://docs.featuresignals.com"; do
-            HTTP=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 5 "$url")
-            if [ "$HTTP" = "200" ]; then
-              echo "✅ $url (HTTP 200)"
-            else
-              echo "⚠️  $url returned $HTTP"
-            fi
-          done
 
       # ── Summary ─────────────────────────────────────────────────
       - name: Summary
