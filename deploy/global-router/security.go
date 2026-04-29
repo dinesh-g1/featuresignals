@@ -123,6 +123,13 @@ func (cl *connLimiter) Release(ip string) {
 	}
 }
 
+// Static asset extensions that should not count toward rate limits
+var staticAssetExtensions = []string{
+	".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg",
+	".woff", ".woff2", ".ttf", ".eot", ".webp", ".avif",
+	".json", ".txt", ".xml", ".map", ".pdf",
+}
+
 // WAF patterns
 var (
 	sqlInjectionPattern = regexp.MustCompile(`(?i)(\b(select|union|insert|delete|update|drop|alter|create|truncate|exec|execute)\b.*\b(from|into|set|where|table|database|values)\b)|('?\b(or|and)\b\s*[\d='"]+\s*[\-\-])|(\b(1|0)\s*=\s*(1|0)\b)|(\b(admin|root|system)\b.*(--|#|/\*))`)
@@ -130,6 +137,29 @@ var (
 	xssPattern          = regexp.MustCompile(`(?i)(<script|javascript:|onerror=|onload=|alert\(|document\.cookie|<iframe|<embed|<object|<svg)`)
 	badUserAgents       = []string{"nikto", "nmap", "gobuster", "dirbuster", "wfuzz", "sqlmap", "acunetix", "nessus", "openvas", "burpsuite", "zap"}
 )
+
+// isStaticAsset returns true if the request path is a static file that should
+// bypass rate limiting. Static assets like CSS, JS, images, and fonts are
+// requested by the browser as part of rendering a page — rate-limiting them
+// produces false 429 errors that degrade the user experience without any
+// security benefit.
+func isStaticAsset(path string) bool {
+	lower := strings.ToLower(path)
+	for _, ext := range staticAssetExtensions {
+		if strings.HasSuffix(lower, ext) {
+			return true
+		}
+	}
+	// Next.js data routes (_next/data) and static chunks
+	if strings.Contains(lower, "/_next/") {
+		return true
+	}
+	// Docusaurus/Next.js hashed asset paths
+	if strings.Contains(lower, "/assets/") || strings.Contains(lower, "/static/") {
+		return true
+	}
+	return false
+}
 
 func isMethodAllowed(method string) bool {
 	switch method {
@@ -192,16 +222,21 @@ func (r *Router) securityMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Rate limiting
-		rl, ok := r.rateLimiters[req.Host]
-		if !ok {
-			rl = r.defaultRateLimiter
-		}
-		if allowed, retryAfter := rl.Allow(ip); !allowed {
-			w.Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter.Seconds()))
-			w.Header().Set("X-RateLimit-Remaining", "0")
-			http.Error(w, "429 Too Many Requests", http.StatusTooManyRequests)
-			return
+		// Rate limiting — skip static assets (CSS, JS, images, fonts, etc.)
+		// These are requested by the browser to render a page and should never
+		// trigger 429 errors for legitimate users. Only rate-limit actual API
+		// endpoints, HTML pages, and proxied requests.
+		if !isStaticAsset(req.URL.Path) {
+			rl, ok := r.rateLimiters[req.Host]
+			if !ok {
+				rl = r.defaultRateLimiter
+			}
+			if allowed, retryAfter := rl.Allow(ip); !allowed {
+				w.Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter.Seconds()))
+				w.Header().Set("X-RateLimit-Remaining", "0")
+				http.Error(w, "429 Too Many Requests", http.StatusTooManyRequests)
+				return
+			}
 		}
 
 		// Security headers
