@@ -9,8 +9,12 @@ packages:
 
 runcmd:
   - |
-    # 1. Install K3s single-node
-    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0" sh -
+    # 1. Install K3s single-node (with retry)
+    for i in 1 2 3 4 5; do
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0" sh - && break
+      echo "K3s install attempt $i failed, retrying in 10s..."
+      sleep 10
+    done
 
   - |
     # 2. Wait for K3s to be ready
@@ -33,8 +37,12 @@ runcmd:
     done
 
   - |
-    # 6. Deploy everything via kubectl
-    kubectl apply -k /opt/featuresignals/deploy/k8s/
+    # 6. Deploy everything via kubectl (with retry for webhook readiness)
+    for i in 1 2 3; do
+      kubectl apply -k /opt/featuresignals/deploy/k8s/ && break
+      echo "kubectl apply attempt $i failed, retrying in 15s..."
+      sleep 15
+    done
 
   - |
     # 7. Wait for all pods to be ready
@@ -47,17 +55,25 @@ runcmd:
     echo '<h1>FeatureSignals Docs</h1><p>Coming soon.</p>' > /data/www/docs/index.html
 
   - |
-    # 9. Install GitHub Actions self-hosted runner
+    # 9. Install GitHub Actions self-hosted runner (with retry)
     cd /opt/actions-runner
     RUNNER_VERSION="2.322.0"
-    curl -sL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
-    if [ -f runner.tar.gz ] && file runner.tar.gz | grep -q gzip; then
-      tar xzf runner.tar.gz
-      ./config.sh --url https://github.com/dinesh-g1/featuresignals --token ${RUNNER_TOKEN} --labels self-hosted --unattended
-      ./svc.sh install && ./svc.sh start
-    else
-      echo "Runner download failed - will retry later via CI/CD"
-      rm -f runner.tar.gz
+    for i in 1 2 3; do
+      curl -sL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
+      if [ -f runner.tar.gz ] && file runner.tar.gz | grep -q gzip; then
+        tar xzf runner.tar.gz
+        ./config.sh --url https://github.com/dinesh-g1/featuresignals --token ${RUNNER_TOKEN} --labels self-hosted --unattended
+        ./svc.sh install && ./svc.sh start
+        echo "Runner installed successfully"
+        break
+      else
+        echo "Runner download attempt $i failed, retrying in 10s..."
+        rm -f runner.tar.gz
+        sleep 10
+      fi
+    done
+    if [ ! -f /opt/actions-runner/config.sh ]; then
+      echo "Runner download failed after 3 attempts - will retry later via CI/CD"
     fi
 
 output:
