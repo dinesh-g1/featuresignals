@@ -124,19 +124,14 @@ func (r *Router) serveStatic(w http.ResponseWriter, req *http.Request, d Domain)
 		filePath = filepath.Join(d.Root, "index.html")
 	}
 
-	info, err := os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// Next.js static export generates .html files but serves them without
-			// the extension (e.g., /features → features.html). Fall back to appending
-			// .html before returning 404.
-			htmlPath := filePath + ".html"
-			if htmlInfo, htmlErr := os.Stat(htmlPath); htmlErr == nil {
-				filePath = htmlPath
-				info = htmlInfo
-				err = nil
-			}
-		}
+	// Next.js static export generates both features.html and features/ directory.
+	// When /features is requested, prefer features.html over the features/ directory.
+	htmlPath := filePath + ".html"
+	if htmlInfo, htmlErr := os.Stat(htmlPath); htmlErr == nil {
+		filePath = htmlPath
+		info = htmlInfo
+	} else {
+		info, err = os.Stat(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				http.Error(w, "404 Not Found", http.StatusNotFound)
@@ -145,14 +140,14 @@ func (r *Router) serveStatic(w http.ResponseWriter, req *http.Request, d Domain)
 			http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 			return
 		}
-	}
 
-	// If directory, serve index.html
-	if info.IsDir() {
-		filePath = filepath.Join(filePath, "index.html")
-		if _, err := os.Stat(filePath); err != nil {
-			http.Error(w, "404 Not Found", http.StatusNotFound)
-			return
+		// If directory, serve index.html
+		if info.IsDir() {
+			filePath = filepath.Join(filePath, "index.html")
+			if _, err := os.Stat(filePath); err != nil {
+				http.Error(w, "404 Not Found", http.StatusNotFound)
+				return
+			}
 		}
 	}
 
