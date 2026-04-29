@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/dinesh-g1/featuresignals-server:26b31f94b7abe834b89d89ad15fce91b23876eda
+          image: ghcr.io/dinesh-g1/featuresignals-server:1bcf0ea04db17e281cec9aa7550c83f1a81dde53
           ports:
             - containerPort: 8080
           envFrom:
