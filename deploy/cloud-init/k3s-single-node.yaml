@@ -7,6 +7,24 @@ packages:
   - htop
   - file
 
+write_files:
+  - path: /etc/systemd/system/actions.runner.service
+    content: |
+      [Unit]
+      Description=GitHub Actions Runner (dinesh-g1/featuresignals)
+      After=network.target
+      [Service]
+      ExecStart=/opt/actions-runner/run.sh
+      User=runner
+      WorkingDirectory=/opt/actions-runner
+      KillMode=process
+      KillSignal=SIGTERM
+      TimeoutStopSec=5min
+      Restart=always
+      RestartSec=10
+      [Install]
+      WantedBy=multi-user.target
+
 runcmd:
   - |
     # 1. Install K3s (disable traefik and servicelb - we use our own global router)
@@ -77,22 +95,6 @@ runcmd:
         tar xzf runner.tar.gz
         chown -R runner:runner /opt/actions-runner
         su - runner -c "cd /opt/actions-runner && ./config.sh --url https://github.com/dinesh-g1/featuresignals --token ${RUNNER_TOKEN} --labels self-hosted --unattended --replace"
-        cat > /etc/systemd/system/actions.runner.service << 'SERVICEEOF'
-[Unit]
-Description=GitHub Actions Runner (dinesh-g1/featuresignals)
-After=network.target
-[Service]
-ExecStart=/opt/actions-runner/run.sh
-User=runner
-WorkingDirectory=/opt/actions-runner
-KillMode=process
-KillSignal=SIGTERM
-TimeoutStopSec=5min
-Restart=always
-RestartSec=10
-[Install]
-WantedBy=multi-user.target
-SERVICEEOF
         systemctl daemon-reload
         systemctl enable actions.runner.service
         systemctl start actions.runner.service
@@ -106,4 +108,4 @@ SERVICEEOF
     done
 
 output:
-  all: '| tee -a /var/log/cloud-init-output.log'
+  all: "| tee -a /var/log/cloud-init-output.log"
