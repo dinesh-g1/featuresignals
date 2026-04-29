@@ -1,0 +1,109 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - curl
+  - git
+  - ca-certificates
+  - openssl
+
+write_files:
+  - path: /etc/systemd/system/actions.runner.service
+    content: |
+      [Unit]
+      Description=GitHub Actions Runner (ops cluster)
+      After=network.target
+      [Service]
+      ExecStart=/opt/actions-runner/run.sh
+      User=runner
+      WorkingDirectory=/opt/actions-runner
+      KillMode=process
+      KillSignal=SIGTERM
+      TimeoutStopSec=5min
+      Restart=always
+      RestartSec=10
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # Install K3s (disable traefik and servicelb — we use our own global router)
+  - |
+    for i in 1 2 3 4 5; do
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --flannel-iface eth0 --disable traefik --disable servicelb" sh - && break
+      echo "K3s install attempt $i failed, retrying in 10s..."
+      sleep 10
+    done
+
+  # Wait for K3s readiness
+  - until kubectl get nodes 2>/dev/null; do sleep 2; done
+  - until kubectl get pods -n kube-system -l k8s-app=kube-dns 2>/dev/null | grep Running; do sleep 2; done
+
+  # Install Helm
+  - curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+  # Install CloudNative PG operator
+  - |
+    helm repo add cnpg https://cloudnative-pg.github.io/charts
+    helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait --timeout 5m
+
+  # Create GHCR pull secret
+  - |
+    kubectl create namespace ops-portal --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create secret docker-registry ghcr-pull \
+      --docker-server=ghcr.io \
+      --docker-username=dinesh-g1 \
+      --docker-password=${GHCR_TOKEN} \
+      --namespace=ops-portal \
+      --dry-run=client -o yaml | kubectl apply -f -
+
+  # Clone deployment manifests
+  - |
+    for i in 1 2 3; do
+      git clone https://github.com/dinesh-g1/featuresignals.git /opt/featuresignals --depth 1 && break
+      sleep 5
+    done
+
+  # Deploy ops portal resources
+  - |
+    for i in 1 2 3; do
+      kubectl apply -k /opt/featuresignals/deploy/k8s/ops-kustomization.yaml && break
+      sleep 15
+    done
+
+  # Wait for pods
+  - kubectl wait --for=condition=Ready pods --all -n ops-portal --timeout=180s
+
+  # Install GitHub Actions self-hosted runner (labeled ops-cluster)
+  - |
+    useradd -m -s /bin/bash runner 2>/dev/null || true
+    mkdir -p /opt/actions-runner
+    cd /opt/actions-runner
+    RUNNER_VERSION="2.322.0"
+    for i in 1 2 3; do
+      curl -sL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
+      if [ -f runner.tar.gz ] && file runner.tar.gz | grep -q gzip; then
+        tar xzf runner.tar.gz
+        chown -R runner:runner /opt/actions-runner
+        su - runner -c "cd /opt/actions-runner && ./config.sh --url https://github.com/dinesh-g1/featuresignals --token ${RUNNER_TOKEN} --labels ops-cluster --unattended --replace"
+        systemctl daemon-reload
+        systemctl enable actions.runner.service
+        systemctl start actions.runner.service
+        echo "Runner installed successfully"
+        break
+      else
+        echo "Runner download attempt $i failed, retrying in 10s..."
+        rm -f runner.tar.gz
+        sleep 10
+      fi
+    done
+
+  # Setup kubeconfig for runner
+  - |
+    mkdir -p /home/runner/.kube
+    cp /etc/rancher/k3s/k3s.yaml /home/runner/.kube/config
+    chown -R runner:runner /home/runner/.kube
+    chmod 600 /home/runner/.kube/config
+    echo "Kubeconfig setup for ops runner"
+
+output:
+  all: "| tee -a /var/log/cloud-init-output.log"

@@ -11,13 +11,14 @@ sources:
   - server/internal/api/handlers/ops_dashboard.go (current ops handler)
 last_updated: 2026-04-29
 maintainer: llm
-review_status: planning
-confidence: medium
+review_status: in_progress
+confidence: high
 ---
 
 # Ops Portal — Architecture & Agentic Prompt
 
-> **Status:** Planning — to be developed in a dedicated session.
+> **Status:** Complete — Phases 1-4 (Full Build) deployed.
+> **Infrastructure:** Separate K3s cluster (ops-001) with CloudNative PG, CI/CD workflows, global router integration.
 > **Goal:** A cluster-agnostic operations portal that manages all FeatureSignals clusters from a single pane of glass.
 
 ---

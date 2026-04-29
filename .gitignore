@@ -107,3 +107,9 @@ sdks/java/target/
 
 # Ops portal sensitive docs (internal procedures, infra details)
 ops/docs/*.md
+
+# Ops Portal
+ops-portal/ops-portal
+ops-portal/*.db
+ops-portal/*.db-*
+/tmp/*

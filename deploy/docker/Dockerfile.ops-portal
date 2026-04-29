@@ -1,15 +1,29 @@
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY ops-portal/package*.json ./
-RUN npm ci
-COPY ops-portal/ .
-RUN npm run build
+# syntax=docker/dockerfile:1
+FROM golang:1.23-alpine AS builder
 
-FROM node:22-alpine AS runner
+RUN apk add --no-cache git
+
 WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/static ./.next/static
-EXPOSE 3000
-ENTRYPOINT ["node", "server.js"]
+
+# Layer 1: Download dependencies (cached unless go.mod/go.sum change)
+COPY ops-portal/go.mod ops-portal/go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download -x
+
+# Layer 2: Build (uses cached dependencies and Go build cache)
+# Only copy source files needed for compilation
+COPY ops-portal/cmd/ cmd/
+COPY ops-portal/internal/ internal/
+COPY ops-portal/web/ web/
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /ops-portal ./cmd/ops-portal
+
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
+COPY --from=builder /ops-portal /usr/local/bin/ops-portal
+
+USER appuser
+EXPOSE 8082
+ENTRYPOINT ["ops-portal"]

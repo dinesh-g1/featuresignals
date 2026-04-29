@@ -1,0 +1,63 @@
+{{define "title"}}Clusters{{end}}
+{{define "content"}}
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="page-title">Clusters</h1>
+    <button class="btn btn-primary" onclick="showRegisterForm()">Register Cluster</button>
+  </div>
+  <div id="registerForm" style="display:none" class="card mb-6">
+    <form id="clusterForm" class="grid grid-cols-2 gap-4">
+      <div class="form-group"><label>Name</label><input type="text" id="clusterName" class="form-input" required></div>
+      <div class="form-group"><label>Region</label><input type="text" id="clusterRegion" class="form-input" placeholder="eu"></div>
+      <div class="form-group"><label>Public IP</label><input type="text" id="clusterIP" class="form-input" required></div>
+      <div class="form-group"><label>API Token</label><input type="password" id="clusterToken" class="form-input" required></div>
+      <div class="form-group"><label>Provider</label><input type="text" id="clusterProvider" class="form-input" value="hetzner"></div>
+      <div class="form-group"><label>Server Type</label><input type="text" id="clusterServerType" class="form-input" value="cpx42"></div>
+      <div class="col-span-2"><div id="clusterResult"></div></div>
+      <div class="col-span-2 flex gap-2">
+        <button type="submit" class="btn btn-primary">Create</button>
+        <button type="button" class="btn btn-outline" onclick="hideRegisterForm()">Cancel</button>
+      </div>
+    </form>
+  </div>
+  <div id="clusterList" class="card"><p class="text-gray-500">Loading...</p></div>
+</div>
+<script>
+function showRegisterForm() { document.getElementById('registerForm').style.display = 'block'; }
+function hideRegisterForm() { document.getElementById('registerForm').style.display = 'none'; }
+function loadClusters() {
+  fetch('/api/v1/clusters').then(function(r) { return r.json(); }).then(function(data) {
+    var html = '<table class="table"><thead><tr><th>Name</th><th>Region</th><th>IP</th><th>Status</th><th>Version</th><th>Actions</th></tr></thead><tbody>';
+    data.forEach(function(c) {
+      html += '<tr><td><a href="/clusters/' + c.id + '">' + c.name + '</a></td><td>' + c.region + '</td><td class="mono">' + c.public_ip + '</td><td><span class="status-badge status-badge-' + c.status + '">' + c.status + '</span></td><td class="mono">' + (c.version ? c.version.substring(0,7) : '-') + '</td>';
+      html += '<td><button class="btn btn-sm btn-outline" onclick="deleteCluster(\'' + c.id + '\')">Delete</button></td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('clusterList').innerHTML = html;
+  });
+}
+function deleteCluster(id) {
+  if (!confirm('Delete this cluster?')) return;
+  fetch('/api/v1/clusters/' + id, { method: 'DELETE' }).then(function(r) {
+    if (r.ok) loadClusters(); else alert('Delete failed');
+  });
+}
+document.getElementById('clusterForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var body = JSON.stringify({
+    name: document.getElementById('clusterName').value,
+    region: document.getElementById('clusterRegion').value,
+    public_ip: document.getElementById('clusterIP').value,
+    api_token: document.getElementById('clusterToken').value,
+    provider: document.getElementById('clusterProvider').value,
+    server_type: document.getElementById('clusterServerType').value
+  });
+  fetch('/api/v1/clusters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+  .then(function(r) {
+    if (r.ok) { hideRegisterForm(); loadClusters(); }
+    else { r.json().then(function(d) { document.getElementById('clusterResult').innerHTML = '<div class="alert alert-error">' + (d.error || 'Error') + '</div>'; }); }
+  });
+});
+loadClusters();
+</script>
+{{end}}

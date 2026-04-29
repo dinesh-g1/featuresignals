@@ -1,0 +1,74 @@
+# CD — Deploy Ops Portal to K3s
+#
+# Runs on the self-hosted GitHub Actions runner inside the ops K3s cluster.
+# The runner user has kubectl configured at ~/.kube/config (set up by cloud-init).
+#
+# Usage:
+#   gh workflow run cd-ops.yml -f version=<full-commit-sha>
+#
+# Required secrets:
+#   GHCR_TOKEN — GitHub PAT with read:packages
+
+name: CD - Deploy Ops Portal to K3s
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag (commit SHA) to deploy. Must exist in GHCR."
+        required: true
+        type: string
+
+env:
+  NS: ops-portal
+  REGISTRY: ghcr.io/dinesh-g1
+
+jobs:
+  deploy:
+    name: Deploy Ops Portal
+    runs-on: [self-hosted, Linux, X64, ops-cluster]
+    env:
+      KUBECONFIG: /home/runner/.kube/config
+    steps:
+      # ── Auth ────────────────────────────────────────────────────
+      - name: Update GHCR pull secret
+        run: |
+          kubectl delete secret ghcr-pull -n ${{ env.NS }} --ignore-not-found
+          kubectl create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username=dinesh-g1 \
+            --docker-password="${{ secrets.GHCR_TOKEN }}" \
+            --namespace=${{ env.NS }}
+          echo "✅ GHCR pull secret updated"
+
+      # ── Ops Portal Deployment ───────────────────────────────────
+      - name: Update ops-portal deployment
+        run: |
+          kubectl set image deployment/ops-portal \
+            -n ${{ env.NS }} \
+            ops-portal=${{ env.REGISTRY }}/featuresignals-ops-portal:${{ inputs.version }}
+          kubectl rollout status deployment/ops-portal -n ${{ env.NS }} --timeout=120s
+          echo "✅ Ops Portal updated"
+
+      # ── Smoke Tests ─────────────────────────────────────────────
+      - name: Smoke test — health endpoint
+        run: |
+          kubectl wait --for=condition=Available deployment/ops-portal -n ${{ env.NS }} --timeout=120s
+          kubectl port-forward -n ${{ env.NS }} deployment/ops-portal 8082:8082 &
+          PF_PID=$!
+          sleep 3
+          curl -sf http://localhost:8082/health | grep '"status":"ok"'
+          kill $PF_PID
+          echo "✅ Ops Portal health check passed"
+
+      # ── Summary ─────────────────────────────────────────────────
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║           OPS PORTAL DEPLOY COMPLETE                       ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  Version: ${{ inputs.version }}"
+          kubectl get pods -n ${{ env.NS }} -o wide
+          echo ""

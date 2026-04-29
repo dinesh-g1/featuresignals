@@ -1,0 +1,72 @@
+{{define "title"}}New Deployment{{end}}
+{{define "content"}}
+<div class="p-6">
+  <a href="/deployments" class="text-link mb-4 inline-block">&larr; Back to Deployments</a>
+  <h1 class="page-title mb-6">New Deployment</h1>
+  <div id="deploy-form-container">
+    <div class="card"><p class="text-gray-500">Loading...</p></div>
+  </div>
+</div>
+<script>
+async function loadForm() {
+  var container = document.getElementById('deploy-form-container');
+  try {
+    var resp = await fetch('/api/v1/clusters');
+    if (!resp.ok) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Failed to load clusters. <button class="btn btn-primary" onclick="loadForm()">Retry</button></p></div></div>';
+      return;
+    }
+    var clusters = await resp.json();
+    if (clusters.length === 0) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-title">No clusters registered</p><p class="empty-text">Register a cluster first before deploying.</p><a href="/clusters" class="btn btn-primary">Register Cluster</a></div></div>';
+      return;
+    }
+    var clusterOptions = clusters.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name) + ' (' + escapeHtml(c.region) + ')</option>'; }).join('');
+    var html = '<form id="deployForm" class="card"><div id="deployResult"></div>';
+    html += '<div class="form-group"><label>Cluster</label><select id="deployCluster" class="form-input" required>' + clusterOptions + '</select></div>';
+    html += '<div class="form-group"><label>Version (SHA)</label><input type="text" id="deployVersion" class="form-input mono" placeholder="abc1234" required minlength="6"></div>';
+    html += '<div class="form-group"><label>Services</label><div class="flex gap-4"><label class="flex items-center gap-2"><input type="checkbox" value="server" checked> Server</label><label class="flex items-center gap-2"><input type="checkbox" value="dashboard" checked> Dashboard</label><label class="flex items-center gap-2"><input type="checkbox" value="router" checked> Router</label></div></div>';
+    html += '<button type="submit" id="deploySubmit" class="btn btn-primary mt-3">Deploy</button>';
+    html += '</form>';
+    container.innerHTML = html;
+    document.getElementById('deployForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var submitBtn = document.getElementById('deploySubmit');
+      var resultDiv = document.getElementById('deployResult');
+      var clusterId = document.getElementById('deployCluster').value;
+      var version = document.getElementById('deployVersion').value.trim();
+      var checkboxes = document.querySelectorAll('#deployForm input[type=checkbox]:checked');
+      var services = Array.from(checkboxes).map(function(cb) { return cb.value; });
+      if (!clusterId) { resultDiv.innerHTML = '<div class="alert alert-error">Cluster is required</div>'; return; }
+      if (!version || version.length < 6) { resultDiv.innerHTML = '<div class="alert alert-error">Version must be at least 6 characters</div>'; return; }
+      if (services.length === 0) { resultDiv.innerHTML = '<div class="alert alert-error">At least one service is required</div>'; return; }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Deploying...';
+      resultDiv.innerHTML = '';
+      try {
+        var resp = await fetch('/api/v1/deployments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cluster_id: clusterId, version: version, services: services })
+        });
+        if (resp.ok) {
+          window.location.href = '/deployments';
+        } else {
+          var err = await resp.json();
+          resultDiv.innerHTML = '<div class="alert alert-error">' + escapeHtml(err.error || 'Deployment failed') + '</div>';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Deploy';
+        }
+      } catch (err) {
+        resultDiv.innerHTML = '<div class="alert alert-error">Connection failed</div>';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Deploy';
+      }
+    });
+  } catch (err) {
+    container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Connection failed. <button class="btn btn-primary" onclick="loadForm()">Retry</button></p></div></div>';
+  }
+}
+loadForm();
+</script>
+{{end}}

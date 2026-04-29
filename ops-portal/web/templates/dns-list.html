@@ -1,0 +1,108 @@
+{{define "title"}}DNS Management{{end}}
+{{define "content"}}
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="page-title">DNS Records</h1>
+    <div class="flex gap-2">
+      <button class="btn btn-outline btn-sm" onclick="syncDNS()">Sync DNS</button>
+      <button class="btn btn-primary btn-sm" onclick="showAddRecord()">Add Record</button>
+    </div>
+  </div>
+  <div id="dnsModal" class="modal-overlay" style="display:none">
+    <div class="modal-content card" style="max-width:500px;margin:4rem auto">
+      <h3 class="mb-4">Add DNS Record</h3>
+      <form id="dnsForm">
+        <div id="dnsFormResult"></div>
+        <div class="form-group"><label>Type</label><select id="dnsType" class="form-input"><option value="A">A</option><option value="CNAME">CNAME</option></select></div>
+        <div class="form-group"><label>Name</label><input type="text" id="dnsName" class="form-input" placeholder="e.g., api"></div>
+        <div class="form-group"><label>Content (IP or target)</label><input type="text" id="dnsContent" class="form-input" placeholder="e.g., 1.2.3.4"></div>
+        <div class="form-group"><label>TTL</label><input type="number" id="dnsTTL" class="form-input" value="300"></div>
+        <div class="form-group"><label class="flex items-center gap-2"><input type="checkbox" id="dnsProxied"> Proxied (Cloudflare proxy)</label></div>
+        <div class="flex gap-2 mt-3">
+          <button type="submit" id="dnsSubmitBtn" class="btn btn-primary">Create</button>
+          <button type="button" class="btn btn-outline" onclick="hideDNSModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="dnsContainer">
+    <div class="card"><p class="text-gray-500">Loading DNS records...</p></div>
+  </div>
+</div>
+<script>
+function showAddRecord() { document.getElementById('dnsModal').style.display = 'block'; document.getElementById('dnsForm').reset(); document.getElementById('dnsFormResult').innerHTML = ''; }
+function hideDNSModal() { document.getElementById('dnsModal').style.display = 'none'; }
+
+async function loadDNS() {
+  var container = document.getElementById('dnsContainer');
+  container.innerHTML = '<div class="card"><p class="text-gray-500">Loading DNS records...</p></div>';
+  try {
+    var resp = await fetch('/api/v1/dns/records');
+    if (resp.status === 501) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Cloudflare is not configured. Set CLOUDFLARE_TOKEN and CLOUDFLARE_ZONE_ID to enable DNS management.</p></div></div>';
+      return;
+    }
+    if (!resp.ok) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Failed to load DNS records. <button class="btn btn-primary" onclick="loadDNS()">Retry</button></p></div></div>';
+      return;
+    }
+    var records = await resp.json();
+    if (records.length === 0) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-title">No DNS records found</p><p class="empty-text">Add a DNS record or sync with cluster IPs.</p></div></div>';
+      return;
+    }
+    var html = '<div class="card" style="overflow-x:auto"><table class="table"><thead><tr><th>Type</th><th>Name</th><th>Content</th><th>TTL</th><th>Proxied</th></tr></thead><tbody>';
+    records.forEach(function(r) {
+      html += '<tr><td>' + escapeHtml(r.type) + '</td><td>' + escapeHtml(r.name) + '</td><td class="mono">' + escapeHtml(r.content) + '</td><td>' + (r.ttl === 1 ? 'Auto' : r.ttl) + '</td><td>' + (r.proxied ? 'Yes' : 'No') + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Connection failed. <button class="btn btn-primary" onclick="loadDNS()">Retry</button></p></div></div>';
+  }
+}
+
+async function syncDNS() {
+  var container = document.getElementById('dnsContainer');
+  container.innerHTML = '<div class="card"><p class="text-gray-500">Syncing DNS records...</p></div>';
+  try {
+    var resp = await fetch('/api/v1/dns/sync', { method: 'POST' });
+    var result = await resp.json();
+    if (resp.ok) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">DNS sync complete: ' + (result.created||0) + ' created, ' + (result.updated||0) + ' updated, ' + (result.deleted||0) + ' deleted.</p><button class="btn btn-primary" onclick="loadDNS()">View Records</button></div></div>';
+    } else {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">' + escapeHtml(result.error || 'Sync failed') + '</p><button class="btn btn-primary" onclick="loadDNS()">Retry</button></div></div>';
+    }
+  } catch(e) {
+    container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Connection failed. <button class="btn btn-primary" onclick="loadDNS()">Retry</button></p></div></div>';
+  }
+}
+
+document.getElementById('dnsForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var resultDiv = document.getElementById('dnsFormResult');
+  var submitBtn = document.getElementById('dnsSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating...';
+  try {
+    var resp = await fetch('/api/v1/dns/records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: document.getElementById('dnsType').value,
+        name: document.getElementById('dnsName').value + '.featuresignals.com',
+        content: document.getElementById('dnsContent').value,
+        ttl: parseInt(document.getElementById('dnsTTL').value) || 300,
+        proxied: document.getElementById('dnsProxied').checked
+      })
+    });
+    if (resp.ok) { hideDNSModal(); loadDNS(); }
+    else { var err = await resp.json(); resultDiv.innerHTML = '<div class="alert alert-error">' + escapeHtml(err.error || 'Create failed') + '</div>'; }
+  } catch(e) { resultDiv.innerHTML = '<div class="alert alert-error">Connection failed</div>'; }
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Create';
+});
+
+loadDNS();
+</script>
+{{end}}

@@ -1,0 +1,31 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ops-portal-db
+  namespace: ops-portal
+spec:
+  instances: 1
+
+  storage:
+    size: 5Gi
+
+  bootstrap:
+    initdb:
+      database: ops-portal
+      owner: ops-portal
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  monitoring:
+    enablePodMonitor: false
+
+  postgresql:
+    parameters:
+      max_connections: "50"
+      shared_buffers: "128MB"

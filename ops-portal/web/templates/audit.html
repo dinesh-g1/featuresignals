@@ -1,0 +1,54 @@
+{{define "title"}}Audit Log{{end}}
+{{define "content"}}
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="page-title">Audit Log</h1>
+    <a href="/api/v1/audit/export" class="btn btn-outline btn-sm">Export CSV</a>
+  </div>
+  <div id="auditContainer">
+    <div class="card"><p class="text-gray-500">Loading audit entries...</p></div>
+  </div>
+</div>
+<script>
+var auditOffset = 0;
+var auditLimit = 50;
+var auditTotal = 0;
+
+async function loadAudit() {
+  var container = document.getElementById('auditContainer');
+  container.innerHTML = '<div class="card"><p class="text-gray-500">Loading audit entries...</p></div>';
+  try {
+    var resp = await fetch('/api/v1/audit?limit=' + auditLimit + '&offset=' + auditOffset);
+    if (!resp.ok) {
+      var err = await resp.json();
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">' + escapeHtml(err.error || 'Failed to load audit log') + '</p><button class="btn btn-primary" onclick="loadAudit()">Retry</button></div></div>';
+      return;
+    }
+    var data = await resp.json();
+    var entries = data.data || [];
+    auditTotal = data.total || 0;
+    if (entries.length === 0) {
+      container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-title">No audit entries yet</p><p class="empty-text">Actions will be recorded here as you use the portal.</p></div></div>';
+      return;
+    }
+    var html = '<div class="card" style="overflow-x:auto"><table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Target</th><th>IP</th></tr></thead><tbody>';
+    entries.forEach(function(e) {
+      html += '<tr><td class="text-sm">' + (e.created_at ? new Date(e.created_at).toLocaleString() : '-') + '</td><td class="mono">' + (e.user_id ? e.user_id.substring(0,8) : '-') + '</td><td>' + escapeHtml(e.action || '-') + '</td><td>' + (e.target_type || '') + (e.target_id ? '/' + e.target_id.substring(0,8) : '') + '</td><td class="mono text-xs">' + escapeHtml(e.ip || '-') + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    var totalPages = Math.ceil(auditTotal / auditLimit);
+    var currentPage = Math.floor(auditOffset / auditLimit) + 1;
+    html += '<div class="flex items-center justify-between mt-4"><span class="text-sm text-gray-500">Showing ' + (auditOffset + 1) + '-' + Math.min(auditOffset + entries.length, auditTotal) + ' of ' + auditTotal + ' entries</span>';
+    html += '<div class="flex gap-2">';
+    if (auditOffset > 0) html += '<button class="btn btn-outline btn-sm" onclick="auditOffset=Math.max(0,auditOffset-auditLimit);loadAudit()">Previous</button>';
+    html += '<span class="text-sm text-gray-500 self-center">Page ' + currentPage + ' of ' + totalPages + '</span>';
+    if (auditOffset + auditLimit < auditTotal) html += '<button class="btn btn-outline btn-sm" onclick="auditOffset+=auditLimit;loadAudit()">Next</button>';
+    html += '</div></div>';
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<div class="card"><div class="empty-state"><p class="empty-text">Connection failed. Check your network and try again.</p><button class="btn btn-primary" onclick="loadAudit()">Retry</button></div></div>';
+  }
+}
+loadAudit();
+</script>
+{{end}}

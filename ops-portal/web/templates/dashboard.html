@@ -1,0 +1,53 @@
+{{define "title"}}Dashboard{{end}}
+{{define "content"}}
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="page-title">Dashboard</h1>
+    <span class="text-sm text-gray-500">Last refreshed: <span id="refresh-time">{{.LastChecked}}</span></span>
+  </div>
+  {{if not .Clusters}}
+  <div class="empty-state">
+    <p class="empty-title">No clusters registered</p>
+    <p class="empty-text">Register a cluster to get started monitoring your infrastructure.</p>
+    <a href="/clusters" class="btn btn-primary">Register Cluster</a>
+  </div>
+  {{else}}
+  <div class="summary-cards">
+    <div class="summary-card summary-card-total"><span class="summary-label">Total</span><span class="summary-value">{{.Total}}</span></div>
+    <div class="summary-card summary-card-ok"><span class="summary-label">Online</span><span class="summary-value summary-value-ok">{{.Online}}</span></div>
+    <div class="summary-card summary-card-warn"><span class="summary-label">Degraded</span><span class="summary-value summary-value-warn">{{.Degraded}}</span></div>
+    <div class="summary-card summary-card-err"><span class="summary-label">Offline</span><span class="summary-value summary-value-err">{{.Offline}}</span></div>
+  </div>
+  <div class="cluster-grid">
+    {{range .Clusters}}
+    <div class="cluster-card">
+      <div class="cluster-card-header">
+        <span class="status-dot {{statusClass .Status}}"></span>
+        <h3>{{.Name}}</h3>
+        <span class="status-badge status-badge-{{.Status}}">{{statusLabel .Status}}</span>
+      </div>
+      <div class="cluster-card-body">
+        <div class="cluster-info"><span>Region</span><span>{{.Region}}</span></div>
+        <div class="cluster-info"><span>Provider</span><span>{{.Provider}}</span></div>
+        <div class="cluster-info"><span>Server</span><span>{{.ServerType}}</span></div>
+        <div class="cluster-info"><span>IP</span><span class="mono">{{.PublicIP}}</span></div>
+        <div class="cluster-info"><span>Version</span><span class="mono">{{if .Version}}{{slice .Version 0 7}}{{else}}-{{end}}</span></div>
+        <div class="cluster-info"><span>Cost</span><span>${{printf "%.2f" .CostPerMonth}}/mo</span></div>
+      </div>
+      {{if .ServiceStatus}}
+      <div class="cluster-card-footer">
+        {{range $name, $status := .ServiceStatus}}
+        <span class="service-badge service-badge-{{$status}}">{{$name}}</span>
+        {{end}}
+      </div>
+      {{end}}
+      <div class="cluster-card-actions">
+        <span class="text-xs text-gray-400">Checked: {{.LastChecked}}</span>
+        <a href="/clusters/{{.ID}}" class="text-link">Details</a>
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+{{end}}

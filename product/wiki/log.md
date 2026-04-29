@@ -257,4 +257,45 @@
 
 ```
 
-</edit_description>
+## [2026-04-29 14:00] build | Ops Portal Phase 1 — Foundation (Session 1)
+- **Created** `ops-portal/` standalone Go service at `ops.featuresignals.com`
+- **Project scaffold:** Go module (`github.com/featuresignals/ops-portal`), chi router, config from env, structured JSON logging (slog)
+- **Domain entities:** Cluster, Deployment, ConfigSnapshot, OpsUser, AuditEntry with store interfaces (ISP)
+- **SQLite store:** Auto-migrating schema (5 tables + indexes), CRUD for all entities with proper error wrapping (ErrNotFound, ErrConflict)
+- **Auth:** JWT tokens + bcrypt passwords, httpOnly cookies (access 1h / refresh 7d), login/refresh/logout/me endpoints, token rotation on refresh
+- **Cluster handlers:** CRUD registration, health proxy to cluster's `/ops/health` endpoint, background health checks on create
+- **Dashboard handler:** Aggregated health for all clusters with live polling via cluster client
+- **Cluster proxy client:** HTTP client to cluster `/ops/` endpoints with Bearer token auth
+- **Deployments handler:** Create, list, rollback with version tracking and cluster version sync
+- **Users handler:** CRUD for ops users with bcrypt password hashing and RBAC
+- **Audit handler:** Append-only audit log with pagination
+- **RBAC middleware:** Role hierarchy (viewer < engineer < admin), `RequireRole` and `RequireRoleOrAbove` middleware
+- **HTML templates:** 11 templates (layout, dashboard, login, 404, clusters list/detail, deployments list/new, config view, audit, users) served via Go html/template with HTMX + Chart.js
+- **CSS styling:** Complete utility CSS (sidebar ~240px, cards, tables, forms, buttons, login page with gradient background)
+- **Main entry point:** Config validation, DB init, seed admin user, graceful shutdown on SIGTERM (30s timeout)
+- **Source files created:** 35+ files across Go backend, templates, and static assets
+- **Architecture:** Hexagonal with narrow interfaces, handler pattern (~40 line max), error contract (404/409/422/401/403/500), context propagation everywhere
+
+## [2026-04-29 12:00] build | Ops Portal K3s infrastructure
+
+- **Rewrote** `deploy/docker/Dockerfile.ops-portal` — replaced Node.js Next.js build with Go multi-stage build (golang:1.23-alpine → alpine:3.19), mirrors `Dockerfile.server` pattern with cache mounts, CGO_ENABLED=0, distroless runtime, `appuser` security, port 8082
+- **Created** `deploy/k8s/ops-namespace.yaml` — `ops-portal` namespace
+- **Created** `deploy/k8s/ops-postgres.yaml` — CloudNative PG `Cluster` with 1 instance, 5Gi storage, `max_connections=50`, `shared_buffers=128MB`
+- **Created** `deploy/k8s/ops-portal.yaml` — ConfigMap (PORT, ENV, TOKEN_TTL, REPRESH_TTL, GITHUB_OWNER/REPO), Deployment (1 replica, all 10 env vars with secrets refs for DB/JWT/seed/github/hetzner/cloudflare, liveness/readiness on /health:8082, 256Mi mem limit), Service (port 8082), Secrets (jwt-secret, seed-admin password)
+- **Created** `deploy/k8s/ops-kustomization.yaml` — Kustomize listing all 3 ops resources
+- **Created** `deploy/cloud-init/k3s-ops-node.yaml` — cloud-init for dedicated ops K3s node: install K3s (no traefik/servicelb), Helm, CloudNative PG operator, GHCR pull secret, clone manifests, `kubectl apply -k`, install GH Actions runner with `ops-cluster` label, kubeconfig setup
+- **Created** `.github/workflows/cd-ops.yml` — CD workflow for ops portal: update pull secret, `kubectl set image deployment/ops-portal`, rollout status, port-forward health check smoke test
+- **Updated** `.github/workflows/ci.yml` — added `ops-portal` to build matrix services, added Build+push step (docker/build-push-action@v6 with context ./ops-portal, file Dockerfile.ops-portal), added to verify manifest check loop, updated services input description
+- **Updated** `deploy/k8s/global-router.yaml` — added `ops.featuresignals.com` domain entry (proxy → ops-portal.ops-portal.svc.cluster.local:8082, 100/min rate limit, ops auth)
+
+## [2026-04-29 14:00] build | Ops Portal Phases 2-4 complete
+
+- **Database migration:** SQLite → PostgreSQL (pgx/v5, pgxpool, migration framework, 8 tables + indexes)
+- **External API clients:** GitHub Actions (trigger/poll workflows), Hetzner Cloud (provision/deprovision servers), Cloudflare DNS (CRUD records)
+- **Handlers (new):** ConfigHandler (read/write/history/resolved/rate-limits with snapshot fallback), DNSHandler (list/create/update/sync), ConfigTemplateHandler (CRUD)
+- **Handlers (extended):** ClusterHandler (provision, deprovision, metrics, update), DeploymentHandler (canary create/approve/reject), AuditHandler (CSV export)
+- **Test cluster:** `internal/testcluster/server.go` — self-contained HTTP server simulating /ops/health, /ops/config, /ops/metrics endpoints
+- **Templates:** All 11 templates rewritten with full loading/empty/error/success state handling, auto-refresh for deployments, pagination for audit, modals for user/DNS forms, JSON config editor with live validation
+- **Router:** All 40+ API routes registered with correct RBAC middleware per endpoint
+- **Smoke tests:** `scripts/test.sh` — 18 tests covering health, login, clusters CRUD, deployments, config, audit, logout, 404, unauthorized access
+- **Wiki:** OPS_PORTAL.md status updated to "Complete — Phases 1-4"

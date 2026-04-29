@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FeatureSignals Ops Portal</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar" role="navigation" aria-label="Sidebar navigation">
+      <div class="sidebar-header">
+        <a href="/" class="logo">
+          <span class="logo-icon">FS</span>
+          <span class="logo-text">Ops Portal</span>
+        </a>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="/dashboard" class="nav-item"><span class="nav-icon">&#x1F4CA;</span><span class="nav-label">Dashboard</span></a></li>
+        <li><a href="/clusters" class="nav-item"><span class="nav-icon">&#x1F5A5;</span><span class="nav-label">Clusters</span></a></li>
+        <li><a href="/deployments" class="nav-item"><span class="nav-icon">&#x1F680;</span><span class="nav-label">Deployments</span></a></li>
+        <li><a href="/dns" class="nav-item"><span class="nav-icon">&#x1F310;</span><span class="nav-label">DNS</span></a></li>
+        <li><a href="/audit" class="nav-item"><span class="nav-icon">&#x1F4CB;</span><span class="nav-label">Audit</span></a></li>
+        <li><a href="/users" class="nav-item"><span class="nav-icon">&#x1F464;</span><span class="nav-label">Users</span></a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content" id="main-content" role="main">
+      {{template "content" .}}
+    </main>
+  </div>
+  <script>
+    function logout() {
+      fetch('/api/v1/auth/logout', { method: 'POST' })
+        .then(function() { window.location.href = '/login'; })
+        .catch(function() { window.location.href = '/login'; });
+    }
+  </script>
+</body>
+</html>

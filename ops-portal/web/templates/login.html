@@ -1,0 +1,42 @@
+{{define "title"}}Login{{end}}
+{{define "content"}}
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>FeatureSignals</h1>
+      <p>Ops Portal</p>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="admin@featuresignals.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+      </div>
+      <div id="loginResult"></div>
+      <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+    </form>
+  </div>
+</div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var email = document.getElementById('email').value;
+  var password = document.getElementById('password').value;
+  fetch('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: password })
+  }).then(function(r) {
+    if (r.ok) { window.location.href = '/dashboard'; }
+    else { r.json().then(function(d) {
+      document.getElementById('loginResult').innerHTML = '<div class="alert alert-error">' + (d.error || 'Login failed') + '</div>';
+    }); }
+  }).catch(function() {
+    document.getElementById('loginResult').innerHTML = '<div class="alert alert-error">Connection error</div>';
+  });
+});
+</script>
+{{end}}

@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ops-portal-config
+  namespace: ops-portal
+data:
+  PORT: "8082"
+  ENV: "production"
+  TOKEN_TTL: "1h"
+  REFRESH_TTL: "168h"
+  GITHUB_OWNER: "featuresignals"
+  GITHUB_REPO: "featuresignals"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ops-portal
+  namespace: ops-portal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ops-portal
+  template:
+    metadata:
+      labels:
+        app: ops-portal
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: ops-portal
+          image: ghcr.io/dinesh-g1/featuresignals-ops-portal:LATEST
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: ops-portal-config
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-db-app
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-db-app
+                  key: password
+            - name: DATABASE_URL
+              value: "postgres://$(DB_USER):$(DB_PASSWORD)@ops-portal-db-rw:5432/ops-portal?sslmode=disable"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-jwt-secret
+                  key: jwt-secret
+            - name: SEED_EMAIL
+              value: "admin@featuresignals.com"
+            - name: SEED_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-seed-admin
+                  key: password
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-github-token
+                  key: token
+            - name: HETZNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-hetzner-token
+                  key: token
+            - name: CLOUDFLARE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-cloudflare-token
+                  key: token
+            - name: CLOUDFLARE_ZONE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ops-portal-cloudflare-token
+                  key: zone_id
+          resources:
+            limits:
+              cpu: "1"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ops-portal
+  namespace: ops-portal
+spec:
+  selector:
+    app: ops-portal
+  ports:
+    - port: 8082
+      targetPort: 8082
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ops-portal-jwt-secret
+  namespace: ops-portal
+type: Opaque
+stringData:
+  jwt-secret: "change-this-in-production-use-a-random-64-char-string"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ops-portal-seed-admin
+  namespace: ops-portal
+type: Opaque
+stringData:
+  password: "ops-admin-initial-password"

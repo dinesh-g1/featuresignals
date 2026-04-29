@@ -34,6 +34,11 @@ data:
           target: http://signoz.observability.svc.cluster.local:8080
           rate_limit: 10000/min
           auth: ops
+        - name: ops.featuresignals.com
+          type: proxy
+          target: http://ops-portal.ops-portal.svc.cluster.local:8082
+          rate_limit: 100/min
+          auth: ops
       rate_limit:
         default: 1000/min
         burst: 200
