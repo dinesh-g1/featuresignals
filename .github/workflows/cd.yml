@@ -73,33 +73,41 @@ jobs:
       - name: Deploy website content
         run: |
           mkdir -p /data/www/website
-          rm -rf /data/www/website/*
-          docker run --rm \
-            -v /data/www/website:/target \
-            --entrypoint sh \
+          # Clear old content with permission handling (files may be owned by different user)
+          find /data/www/website -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+          rm -rf /data/www/website/* 2>/dev/null || true
+          # Try content image first, fall back to source build
+          if docker run --rm -v /data/www/website:/target --entrypoint sh \
             ${{ env.REGISTRY }}/featuresignals-website:${{ inputs.version }} \
-            -c "tar xzf /content.tar.gz -C /target" 2>/dev/null || {
-              echo "Website content image not available, building from source..."
-              cd /opt/featuresignals/website && npm ci && npm run build
-              cp -r out/* /data/www/website/
-            }
-          echo "✅ Website content updated"
+            -c "tar xzf /content.tar.gz -C /target" 2>/dev/null; then
+            echo "✅ Website content updated from image"
+          else
+            echo "Building website from source..."
+            cd /opt/featuresignals/website
+            npm ci --no-optional 2>/dev/null
+            npm run build 2>/dev/null
+            cp -r out/* /data/www/website/ 2>/dev/null || true
+            echo "✅ Website content built from source"
+          fi
 
       # ── Docs Content ────────────────────────────────────────────
       - name: Deploy docs content
         run: |
           mkdir -p /data/www/docs
-          rm -rf /data/www/docs/*
-          docker run --rm \
-            -v /data/www/docs:/target \
-            --entrypoint sh \
+          find /data/www/docs -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+          rm -rf /data/www/docs/* 2>/dev/null || true
+          if docker run --rm -v /data/www/docs:/target --entrypoint sh \
             ${{ env.REGISTRY }}/featuresignals-docs:${{ inputs.version }} \
-            -c "tar xzf /content.tar.gz -C /target" 2>/dev/null || {
-              echo "Docs content image not available, building from source..."
-              cd /opt/featuresignals/docs && npm ci && npm run build
-              cp -r build/* /data/www/docs/
-            }
-          echo "✅ Docs content updated"
+            -c "tar xzf /content.tar.gz -C /target" 2>/dev/null; then
+            echo "✅ Docs content updated from image"
+          else
+            echo "Building docs from source..."
+            cd /opt/featuresignals/docs
+            npm ci --no-optional 2>/dev/null
+            npm run build 2>/dev/null
+            cp -r build/* /data/www/docs/ 2>/dev/null || true
+            echo "✅ Docs content built from source"
+          fi
 
       # ── Smoke Tests ─────────────────────────────────────────────
       - name: Smoke test — internal server health
