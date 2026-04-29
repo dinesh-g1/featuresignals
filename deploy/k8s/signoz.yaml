@@ -97,6 +97,26 @@ spec:
     requests:
       storage: 5Gi
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-users-config
+  namespace: observability
+data:
+  signoz-user.xml: |
+    <clickhouse>
+      <users>
+        <signoz>
+          <password>signoz</password>
+          <networks>
+            <ip>::/0</ip>
+          </networks>
+          <profile>default</profile>
+          <quota>default</quota>
+        </signoz>
+      </users>
+    </clickhouse>
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -121,6 +141,18 @@ spec:
               name: native
             - containerPort: 8123
               name: http
+          env:
+            - name: CLICKHOUSE_USER
+              value: signoz
+            - name: CLICKHOUSE_PASSWORD
+              value: signoz
+            - name: CLICKHOUSE_DB
+              value: signoz_traces
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: clickhouse-users
+              mountPath: /etc/clickhouse-server/users.d
           resources:
             limits:
               cpu: "1"
@@ -128,9 +160,10 @@ spec:
             requests:
               cpu: 500m
               memory: 1Gi
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/clickhouse
+      volumes:
+        - name: clickhouse-users
+          configMap:
+            name: clickhouse-users-config
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -172,6 +205,8 @@ spec:
       labels:
         app: signoz-query-service
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: query-service
           image: signoz/query-service:0.56.0
@@ -183,6 +218,10 @@ spec:
               value: clickhouse
             - name: ClickHouseUrl
               value: tcp://signoz-clickhouse:9000
+            - name: ClickHouseUser
+              value: signoz
+            - name: ClickHousePassword
+              value: signoz
             - name: ALERTMANAGER_API_PREFIX
               value: http://localhost:9093
             - name: SIGNOZ_LOCAL_DB_PATH
