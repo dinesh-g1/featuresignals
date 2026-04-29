@@ -48,12 +48,12 @@ jobs:
 
   build:
     name: Build ${{ matrix.service }}
-    needs: resolve
+    needs: [resolve, matrix]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(needs.resolve.outputs.services) }}
+        service: ${{ fromJSON(needs.matrix.outputs.services) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,7 +160,7 @@ jobs:
 
   verify:
     name: Verify
-    needs: [resolve, build]
+    needs: [matrix, build]
     if: always()
     runs-on: ubuntu-latest
     steps:
