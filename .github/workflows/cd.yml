@@ -1,14 +1,13 @@
 # CD — Deploy to K3s Cluster
 #
-# Triggers deployment on the self-hosted GitHub Actions runner that runs
-# inside the K3s cluster. The runner was registered by cloud-init during
-# initial VM provisioning.
+# Runs on the self-hosted GitHub Actions runner inside the K3s cluster.
+# The runner user has kubectl configured at ~/.kube/config (set up by cloud-init).
 #
 # Usage:
-#   gh workflow run cd.yml -f version=b57a6aa37900db1a2b8db3e640a453f83c8b4155
+#   gh workflow run cd.yml -f version=<full-commit-sha>
 #
 # Required secrets:
-#   GHCR_TOKEN — GitHub PAT with read:packages (for image pull from GHCR)
+#   GHCR_TOKEN — GitHub PAT with read:packages
 
 name: CD - Deploy to K3s
 
@@ -20,111 +19,124 @@ on:
         required: true
         type: string
 
+env:
+  NS: featuresignals
+  REGISTRY: ghcr.io/dinesh-g1
+
 jobs:
   deploy:
-    name: Deploy ${{ inputs.version }}
+    name: Deploy
     runs-on: self-hosted
-    env:
-      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
     steps:
+      # ── Auth ────────────────────────────────────────────────────
       - name: Update GHCR pull secret
         run: |
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml delete secret ghcr-pull -n featuresignals --ignore-not-found
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml create secret docker-registry ghcr-pull \
+          kubectl delete secret ghcr-pull -n ${{ env.NS }} --ignore-not-found
+          kubectl create secret docker-registry ghcr-pull \
             --docker-server=ghcr.io \
             --docker-username=dinesh-g1 \
             --docker-password="${{ secrets.GHCR_TOKEN }}" \
-            --namespace=featuresignals
+            --namespace=${{ env.NS }}
           echo "✅ GHCR pull secret updated"
 
-      - name: Update server deployment
+      # ── Server ──────────────────────────────────────────────────
+      - name: Update server
         run: |
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml set image deployment/server \
-            -n featuresignals \
-            server=ghcr.io/dinesh-g1/featuresignals-server:${{ inputs.version }}
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status deployment/server -n featuresignals --timeout=120s
+          kubectl set image deployment/server \
+            -n ${{ env.NS }} \
+            server=${{ env.REGISTRY }}/featuresignals-server:${{ inputs.version }}
+          kubectl rollout status deployment/server -n ${{ env.NS }} --timeout=120s
           echo "✅ Server updated"
 
-      - name: Update dashboard deployment
+      # ── Dashboard ───────────────────────────────────────────────
+      - name: Update dashboard
         run: |
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml set image deployment/dashboard \
-            -n featuresignals \
-            dashboard=ghcr.io/dinesh-g1/featuresignals-dashboard:${{ inputs.version }}
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status deployment/dashboard -n featuresignals --timeout=120s
+          kubectl set image deployment/dashboard \
+            -n ${{ env.NS }} \
+            dashboard=${{ env.REGISTRY }}/featuresignals-dashboard:${{ inputs.version }}
+          kubectl rollout status deployment/dashboard -n ${{ env.NS }} --timeout=120s
           echo "✅ Dashboard updated"
 
-      - name: Update global-router deployment
+      # ── Global Router ───────────────────────────────────────────
+      - name: Update global-router
         run: |
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml set image deployment/global-router \
-            -n featuresignals \
-            global-router=ghcr.io/dinesh-g1/featuresignals-global-router:${{ inputs.version }}
-          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status deployment/global-router -n featuresignals --timeout=120s
+          kubectl set image deployment/global-router \
+            -n ${{ env.NS }} \
+            global-router=${{ env.REGISTRY }}/featuresignals-global-router:${{ inputs.version }}
+          kubectl rollout status deployment/global-router -n ${{ env.NS }} --timeout=120s
           echo "✅ Global Router updated"
 
+      # ── Website Content ─────────────────────────────────────────
       - name: Deploy website content
         run: |
-          VERSION="${{ inputs.version }}"
-          echo "Extracting website content for $VERSION..."
+          mkdir -p /data/www/website
+          rm -rf /data/www/website/*
           docker run --rm \
             -v /data/www/website:/target \
             --entrypoint sh \
-            ghcr.io/dinesh-g1/featuresignals-website:$VERSION \
+            ${{ env.REGISTRY }}/featuresignals-website:${{ inputs.version }} \
             -c "tar xzf /content.tar.gz -C /target" 2>/dev/null || {
-            echo "Content image not found — building from source..."
-            cd /opt/featuresignals/website
-            npm ci && npm run build
-            cp -r out/* /data/www/website/
-          }
+              echo "Website content image not available, building from source..."
+              cd /opt/featuresignals/website && npm ci && npm run build
+              cp -r out/* /data/www/website/
+            }
           echo "✅ Website content updated"
 
+      # ── Docs Content ────────────────────────────────────────────
       - name: Deploy docs content
         run: |
-          VERSION="${{ inputs.version }}"
-          echo "Extracting docs content for $VERSION..."
+          mkdir -p /data/www/docs
+          rm -rf /data/www/docs/*
           docker run --rm \
             -v /data/www/docs:/target \
             --entrypoint sh \
-            ghcr.io/dinesh-g1/featuresignals-docs:$VERSION \
+            ${{ env.REGISTRY }}/featuresignals-docs:${{ inputs.version }} \
             -c "tar xzf /content.tar.gz -C /target" 2>/dev/null || {
-            echo "Content image not found — building from source..."
-            cd /opt/featuresignals/docs
-            npm ci && npm run build
-            cp -r build/* /data/www/docs/
-          }
+              echo "Docs content image not available, building from source..."
+              cd /opt/featuresignals/docs && npm ci && npm run build
+              cp -r build/* /data/www/docs/
+            }
           echo "✅ Docs content updated"
 
-      - name: Smoke test — server health
+      # ── Smoke Tests ─────────────────────────────────────────────
+      - name: Smoke test — internal server health
         run: |
-          echo "Checking server health..."
           for i in $(seq 1 15); do
-            HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-              --max-time 5 http://localhost:8080/health)
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8080/health)
             if [ "$HTTP" = "200" ]; then
               echo "✅ Server healthy (HTTP 200)"
               exit 0
             fi
-            echo "  Waiting... ($i/15, HTTP $HTTP)"
             sleep 4
           done
           echo "❌ Server health check failed"
           exit 1
 
-      - name: Smoke test — public API
+      - name: Smoke test — public API via router
         run: |
-          echo "Checking https://api.featuresignals.com/health..."
           for i in $(seq 1 15); do
-            HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-              --max-time 5 "https://api.featuresignals.com/health")
+            HTTP=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 5 "https://api.featuresignals.com/health")
             if [ "$HTTP" = "200" ]; then
               echo "✅ API healthy (HTTP 200)"
               exit 0
             fi
-            echo "  Waiting... ($i/15, HTTP $HTTP)"
             sleep 4
           done
           echo "❌ API health check failed"
           exit 1
 
+      - name: Smoke test — website and docs
+        run: |
+          for url in "https://featuresignals.com" "https://docs.featuresignals.com"; do
+            HTTP=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 5 "$url")
+            if [ "$HTTP" = "200" ]; then
+              echo "✅ $url (HTTP 200)"
+            else
+              echo "⚠️  $url returned $HTTP"
+            fi
+          done
+
+      # ── Summary ─────────────────────────────────────────────────
       - name: Summary
         run: |
           echo ""
@@ -133,9 +145,5 @@ jobs:
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
           echo "  Version: ${{ inputs.version }}"
-          echo "  Cluster: featuresignals-eu-001 (Falkenstein, CPX42)"
-          echo "  Pods:"
-          kubectl get pods -n featuresignals -o wide
+          kubectl get pods -n ${{ env.NS }} -o wide
           echo ""
-          echo "  https://api.featuresignals.com/health"
-          echo "  https://app.featuresignals.com"

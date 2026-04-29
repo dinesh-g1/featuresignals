@@ -113,5 +113,13 @@ runcmd:
       fi
     done
 
+  - |
+    # 12. Setup kubeconfig for runner user (required for CD workflow kubectl access)
+    mkdir -p /home/runner/.kube
+    cp /etc/rancher/k3s/k3s.yaml /home/runner/.kube/config
+    chown -R runner:runner /home/runner/.kube
+    chmod 600 /home/runner/.kube/config
+    echo "Kubeconfig setup for runner user"
+
 output:
   all: "| tee -a /var/log/cloud-init-output.log"
