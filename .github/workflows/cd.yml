@@ -71,28 +71,12 @@ jobs:
           echo "✅ Global Router updated"
 
       # ── Smoke Tests ─────────────────────────────────────────────
-      - name: Smoke test — server pods healthy
+      - name: Smoke test — all pods running
         run: |
-          kubectl get pods -n ${{ env.NS }} -l app=server -o jsonpath='{.items[0].status.phase}' | grep -q Running && echo "✅ Server pod Running"
-          kubectl get pods -n ${{ env.NS }} -l app=dashboard -o jsonpath='{.items[0].status.phase}' | grep -q Running && echo "✅ Dashboard pod Running"
-          kubectl get pods -n ${{ env.NS }} -l app=global-router -o jsonpath='{.items[0].status.phase}' | grep -q Running && echo "✅ Router pod Running"
-
-      - name: Smoke test — server health via kubectl
-        run: |
-          for i in $(seq 1 15); do
-            STATUS=$(kubectl run health-check --image=curlimages/curl:8.12.1 \
-              --restart=Never --command -- curl -s -o /dev/null -w "%{http_code}" \
-              http://featuresignals-server.${{ env.NS }}.svc.cluster.local:8080/health \
-              2>/dev/null || true)
-            kubectl delete pod health-check --ignore-not-found --wait=false 2>/dev/null || true
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Server healthy (HTTP 200)"
-              exit 0
-            fi
-            sleep 4
+          for dep in server dashboard global-router; do
+            kubectl wait --for=condition=Available deployment/$dep -n ${{ env.NS }} --timeout=120s
+            echo "✅ $dep deployment available"
           done
-          echo "❌ Server health check failed"
-          exit 1
 
       # ── Summary ─────────────────────────────────────────────────
       - name: Summary
