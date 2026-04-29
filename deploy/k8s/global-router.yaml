@@ -85,9 +85,11 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:ebf64c478986a590cd0dcec265c1701082003de9
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:0f14ee0e7bc825c06b860075dba480c81bffd329
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml

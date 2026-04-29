@@ -4,6 +4,8 @@ metadata:
   name: dashboard
   namespace: featuresignals
 spec:
+      imagePullSecrets:
+        - name: ghcr-pull
   replicas: 1
   selector:
     matchLabels:
@@ -15,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: ghcr.io/dinesh-g1/featuresignals-dashboard:ebf64c478986a590cd0dcec265c1701082003de9
+          image: ghcr.io/dinesh-g1/featuresignals-dashboard:0f14ee0e7bc825c06b860075dba480c81bffd329
           ports:
             - containerPort: 3000
           env:
@@ -49,6 +51,8 @@ metadata:
   name: featuresignals-dashboard
   namespace: featuresignals
 spec:
+      imagePullSecrets:
+        - name: ghcr-pull
   selector:
     app: dashboard
   ports:
