@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
 
 vi.mock("next/navigation", () => ({
@@ -23,13 +29,21 @@ vi.mock("@/components/toast", () => ({
 }));
 
 vi.mock("@/components/ui/select", () => ({
-  Select: ({ value, onValueChange, options }: any) => (
+  Select: ({
+    value,
+    onValueChange,
+    options,
+  }: {
+    value?: string;
+    onValueChange?: (v: string) => void;
+    options?: Array<{ value: string; label: string }>;
+  }) => (
     <select
       data-testid="mock-select"
       value={value}
-      onChange={(e) => onValueChange(e.target.value)}
+      onChange={(e) => onValueChange?.(e.target.value)}
     >
-      {options?.map((o: any) => (
+      {options?.map((o: { value: string; label: string }) => (
         <option key={o.value} value={o.value}>
           {o.label}
         </option>
@@ -78,8 +92,23 @@ describe("EnvComparisonPage", () => {
       .setAuth(
         "test-token",
         "test-refresh",
-        { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
-        { id: "org-1", name: "Test Org", slug: "test-org", plan: "pro", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" },
+        {
+          id: "u1",
+          name: "Test",
+          email: "test@test.com",
+          email_verified: true,
+          created_at: "2025-01-01T00:00:00Z",
+          updated_at: "2025-01-01T00:00:00Z",
+        },
+        {
+          id: "org-1",
+          name: "Test Org",
+          slug: "test-org",
+          plan: "pro",
+          data_region: "us",
+          created_at: "2025-01-01T00:00:00Z",
+          updated_at: "2025-01-01T00:00:00Z",
+        },
         9999999999,
       );
     useAppStore.getState().setCurrentProject("proj-1");
@@ -118,7 +147,10 @@ describe("EnvComparisonPage", () => {
     render(<EnvComparisonPage />);
 
     await waitFor(() => {
-      expect(mockApi.listEnvironments).toHaveBeenCalledWith("test-token", "proj-1");
+      expect(mockApi.listEnvironments).toHaveBeenCalledWith(
+        "test-token",
+        "proj-1",
+      );
     });
   });
 
@@ -136,7 +168,12 @@ describe("EnvComparisonPage", () => {
       fireEvent.click(screen.getByText("Compare"));
     });
 
-    expect(mockApi.compareEnvironments).toHaveBeenCalledWith("test-token", "proj-1", "env-1", "env-2");
+    expect(mockApi.compareEnvironments).toHaveBeenCalledWith(
+      "test-token",
+      "proj-1",
+      "env-1",
+      "env-2",
+    );
   });
 
   it("displays diff results", async () => {
@@ -174,7 +211,9 @@ describe("EnvComparisonPage", () => {
       fireEvent.click(screen.getByText("Compare"));
     });
     await flushEffects();
-    await waitFor(() => expect(screen.getByText("enable-feature")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("enable-feature")).toBeInTheDocument(),
+    );
 
     const checkboxes = screen.getAllByRole("checkbox");
     fireEvent.click(checkboxes[1]);
@@ -182,11 +221,15 @@ describe("EnvComparisonPage", () => {
       fireEvent.click(screen.getByText("Apply 1 Change"));
     });
 
-    expect(mockApi.syncEnvironments).toHaveBeenCalledWith("test-token", "proj-1", {
-      source_env_id: "env-1",
-      target_env_id: "env-2",
-      flag_keys: ["enable-feature"],
-    });
+    expect(mockApi.syncEnvironments).toHaveBeenCalledWith(
+      "test-token",
+      "proj-1",
+      {
+        source_env_id: "env-1",
+        target_env_id: "env-2",
+        flag_keys: ["enable-feature"],
+      },
+    );
   });
 
   it("shows empty state before comparison", () => {

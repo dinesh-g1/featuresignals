@@ -14,9 +14,22 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@/components/ui/select", () => ({
-  Select: ({ value, onValueChange, options }: any) => (
-    <select value={value} onChange={(e: any) => onValueChange(e.target.value)}>
-      {(options || []).map((o: any) => (
+  Select: ({
+    value,
+    onValueChange,
+    options,
+  }: {
+    value?: string;
+    onValueChange?: (v: string) => void;
+    options?: Array<{ value: string; label: string }>;
+  }) => (
+    <select
+      value={value}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+        onValueChange?.(e.target.value)
+      }
+    >
+      {(options || []).map((o: { value: string; label: string }) => (
         <option key={o.value} value={o.value}>
           {o.label}
         </option>
@@ -56,12 +69,41 @@ describe("SegmentsPage", () => {
     vi.clearAllMocks();
 
     const store = useAppStore.getState();
-    store.setAuth("test-token", "test-refresh", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "org-1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
+    store.setAuth(
+      "test-token",
+      "test-refresh",
+      {
+        id: "u1",
+        name: "Test",
+        email: "test@test.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      {
+        id: "org-1",
+        name: "Test Org",
+        slug: "test-org",
+        plan: "free",
+        data_region: "us",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+    );
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
     vi.mocked(api.listSegments).mockResolvedValue(mockSegments);
-    vi.mocked(api.createSegment).mockResolvedValue({ id: "s2", key: "new-segment", name: "New Segment", description: "", match_type: "all", rules: [], created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
+    vi.mocked(api.createSegment).mockResolvedValue({
+      id: "s2",
+      key: "new-segment",
+      name: "New Segment",
+      description: "",
+      match_type: "all",
+      rules: [],
+      created_at: "2025-01-01T00:00:00Z",
+      updated_at: "2025-01-01T00:00:00Z",
+    });
     vi.mocked(api.deleteSegment).mockResolvedValue(undefined as never);
     vi.mocked(api.updateSegment).mockResolvedValue(undefined as never);
   });

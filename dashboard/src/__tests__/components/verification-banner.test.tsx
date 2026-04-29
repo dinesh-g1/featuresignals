@@ -15,7 +15,7 @@ vi.mock("@/components/toast", () => ({
 let mockUser: any = null;
 
 vi.mock("@/stores/app-store", () => ({
-  useAppStore: (selector: any) => {
+  useAppStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       token: "test-token",
       user: mockUser,

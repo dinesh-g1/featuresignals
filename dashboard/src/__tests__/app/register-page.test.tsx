@@ -44,21 +44,37 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => (
-    <button {...props}>{children}</button>
-  ),
+  Button: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <button {...props}>{children}</button>,
 }));
 
 vi.mock("@/components/ui/input", () => ({
-  Input: (props: any) => <input {...props} />,
+  Input: (props: Record<string, unknown>) => <input {...props} />,
 }));
 
 vi.mock("@/components/ui/label", () => ({
-  Label: ({ children, ...props }: any) => <label {...props}>{children}</label>,
+  Label: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <label {...props}>{children}</label>,
 }));
 
 vi.mock("@/components/ui/card", () => ({
-  Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Card: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <div {...props}>{children}</div>,
 }));
 
 import RegisterPage from "@/app/register/page";
@@ -317,7 +333,6 @@ describe("RegisterPage", () => {
 
     expect(screen.getByText("Please select a data region")).toBeInTheDocument();
   });
-
 
   it("hides password strength when password is empty", () => {
     render(<RegisterPage />);

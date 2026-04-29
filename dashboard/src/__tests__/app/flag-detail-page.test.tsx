@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
 
 vi.mock("@/lib/api", () => ({
@@ -32,11 +26,28 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/flags/enable-feature",
 }));
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface SelectProps {
+  value?: string;
+  onValueChange?: (v: string) => void;
+  options?: SelectOption[];
+  placeholder?: string;
+}
+
 vi.mock("@/components/ui/select", () => ({
-  Select: ({ value, onValueChange, options, placeholder }: any) => (
-    <select value={value} onChange={(e: any) => onValueChange(e.target.value)}>
+  Select: ({ value, onValueChange, options, placeholder }: SelectProps) => (
+    <select
+      value={value}
+      onChange={(e: { target: { value: string } }) =>
+        onValueChange?.(e.target.value)
+      }
+    >
       {placeholder && <option value="">{placeholder}</option>}
-      {(options || []).map((o: any) => (
+      {(options || []).map((o: SelectOption) => (
         <option key={o.value} value={o.value}>
           {o.label}
         </option>
@@ -50,21 +61,31 @@ vi.mock("@/components/toast", () => ({
 }));
 
 vi.mock("@radix-ui/react-tabs", () => {
-  const { useState } = require("react");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const react = require("react");
+  const { useState } = react;
   return {
-    Root: ({ value, onValueChange, children }: any) => {
+    Root: ({
+      value,
+      onValueChange,
+      children,
+    }: {
+      value?: string;
+      onValueChange?: (v: string) => void;
+      children?: React.ReactNode;
+    }) => {
       const [val, setVal] = useState(value);
       return (
         <div data-testid="tabs-root" data-value={val}>
           {typeof children === "function"
             ? children
-            : require("react").Children.map(children, (child: any) =>
+            : react.Children.map(children as unknown, (child: unknown) =>
                 child
-                  ? require("react").cloneElement(child, {
+                  ? react.cloneElement(child as React.ReactElement, {
                       __tabValue: val,
-                      __setTabValue: (v: string) => {
+                      __setTabValue: (v: string | undefined) => {
                         setVal(v);
-                        onValueChange?.(v);
+                        if (v !== undefined) onValueChange?.(v);
                       },
                     })
                   : null,
@@ -72,11 +93,21 @@ vi.mock("@radix-ui/react-tabs", () => {
         </div>
       );
     },
-    List: ({ children, __tabValue, __setTabValue, ...props }: any) => (
+    List: ({
+      children,
+      __tabValue,
+      __setTabValue,
+      ...props
+    }: {
+      children?: React.ReactNode;
+      __tabValue?: string;
+      __setTabValue?: (v: string | undefined) => void;
+      [key: string]: unknown;
+    }) => (
       <div role="tablist" {...props}>
-        {require("react").Children.map(children, (child: any) =>
+        {react.Children.map(children as unknown, (child: unknown) =>
           child
-            ? require("react").cloneElement(child, {
+            ? react.cloneElement(child as React.ReactElement, {
                 __tabValue,
                 __setTabValue,
               })
@@ -90,7 +121,13 @@ vi.mock("@radix-ui/react-tabs", () => {
       __tabValue,
       __setTabValue,
       ...props
-    }: any) => (
+    }: {
+      value?: string;
+      children?: React.ReactNode;
+      __tabValue?: string;
+      __setTabValue?: (v: string | undefined) => void;
+      [key: string]: unknown;
+    }) => (
       <button
         role="tab"
         data-state={__tabValue === value ? "active" : "inactive"}
@@ -100,7 +137,17 @@ vi.mock("@radix-ui/react-tabs", () => {
         {children}
       </button>
     ),
-    Content: ({ value, children, __tabValue, ...props }: any) =>
+    Content: ({
+      value,
+      children,
+      __tabValue,
+      ...props
+    }: {
+      value?: string;
+      children?: React.ReactNode;
+      __tabValue?: string;
+      [key: string]: unknown;
+    }) =>
       __tabValue === value ? (
         <div role="tabpanel" {...props}>
           {children}
@@ -110,7 +157,7 @@ vi.mock("@radix-ui/react-tabs", () => {
 });
 
 vi.mock("@/components/targeting-rules-editor", () => ({
-  TargetingRulesEditor: ({ rules }: any) => (
+  TargetingRulesEditor: ({ rules }: { rules?: unknown[] }) => (
     <div data-testid="targeting-rules-editor">
       Targeting Rules ({rules?.length ?? 0} rules)
     </div>
@@ -203,9 +250,15 @@ describe("FlagDetailPage", () => {
       rules: [],
       updated_at: "2025-01-01T00:00:00Z",
     });
-    vi.mocked(api.updateFlagState).mockResolvedValue(undefined as never);
+    vi.mocked(api.updateFlagState).mockResolvedValue({
+      id: "fs-1",
+      enabled: true,
+      percentage_rollout: 0,
+      rules: [],
+      updated_at: "2025-01-01T00:00:00Z",
+    });
     vi.mocked(api.updateFlag).mockResolvedValue(mockFlag);
-    vi.mocked(api.deleteFlag).mockResolvedValue(undefined as any);
+    vi.mocked(api.deleteFlag).mockResolvedValue(undefined);
     vi.mocked(api.listAudit).mockResolvedValue(mockAuditEntries);
     vi.mocked(api.listFlagVersions).mockResolvedValue({
       data: [

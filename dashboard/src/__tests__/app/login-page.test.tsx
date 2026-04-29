@@ -26,33 +26,53 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@/stores/app-store", () => ({
-  useAppStore: vi.fn((selector: any) => {
-    const state = {
-      setAuth: vi.fn(),
-      token: null,
-      refreshToken: null,
-      expiresAt: null,
-      user: null,
-      organization: null,
-    };
-    return selector(state);
-  }),
+  useAppStore: vi.fn(
+    (selector: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        setAuth: vi.fn(),
+        token: null,
+        refreshToken: null,
+        expiresAt: null,
+        user: null,
+        organization: null,
+      };
+      return selector(state);
+    },
+  ),
 }));
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <button {...props}>{children}</button>,
 }));
 
 vi.mock("@/components/ui/input", () => ({
-  Input: (props: any) => <input {...props} />,
+  Input: (props: Record<string, unknown>) => <input {...props} />,
 }));
 
 vi.mock("@/components/ui/label", () => ({
-  Label: ({ children, ...props }: any) => <label {...props}>{children}</label>,
+  Label: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <label {...props}>{children}</label>,
 }));
 
 vi.mock("@/components/ui/card", () => ({
-  Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Card: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <div {...props}>{children}</div>,
 }));
 
 describe("LoginPage", () => {
@@ -67,7 +87,9 @@ describe("LoginPage", () => {
     const { default: LoginPage } = await import("@/app/login/page");
     render(<LoginPage />);
 
-    expect(screen.getByText("Your session has expired. Please sign in again.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your session has expired. Please sign in again."),
+    ).toBeInTheDocument();
   });
 
   it("does not show session expired banner normally", async () => {
@@ -76,7 +98,9 @@ describe("LoginPage", () => {
     const { default: LoginPage } = await import("@/app/login/page");
     render(<LoginPage />);
 
-    expect(screen.queryByText("Your session has expired. Please sign in again.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Your session has expired. Please sign in again."),
+    ).not.toBeInTheDocument();
   });
 
   it("renders login form with email and password fields", async () => {

@@ -19,7 +19,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/stores/app-store", () => ({
-  useAppStore: (selector: any) => {
+  useAppStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       user: { name: "Test User", email: "test@example.com" },
       organization: { plan: "free" },
@@ -31,7 +31,7 @@ vi.mock("@/stores/app-store", () => ({
 }));
 
 vi.mock("@/stores/sidebar-store", () => ({
-  useSidebarStore: (selector: any) => {
+  useSidebarStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = {
       isOpen: true,
       close: mockClose,

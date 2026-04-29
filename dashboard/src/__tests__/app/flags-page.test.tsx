@@ -47,9 +47,22 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/components/ui/select", () => ({
-  Select: ({ value, onValueChange, options }: any) => (
-    <select value={value} onChange={(e: any) => onValueChange(e.target.value)}>
-      {(options || []).map((o: any) => (
+  Select: ({
+    value,
+    onValueChange,
+    options,
+  }: {
+    value?: string;
+    onValueChange?: (v: string) => void;
+    options?: Array<{ value: string; label: string }>;
+  }) => (
+    <select
+      value={value}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+        onValueChange?.(e.target.value)
+      }
+    >
+      {(options || []).map((o: { value: string; label: string }) => (
         <option key={o.value} value={o.value}>
           {o.label}
         </option>

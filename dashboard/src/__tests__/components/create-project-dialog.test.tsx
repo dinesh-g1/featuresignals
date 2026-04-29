@@ -10,7 +10,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@/stores/app-store", () => ({
-  useAppStore: (selector: any) => {
+  useAppStore: (selector: (state: Record<string, unknown>) => unknown) => {
     const state = { token: "test-token" };
     return selector(state);
   },
