@@ -47,7 +47,7 @@ runcmd:
     echo '<h1>FeatureSignals Docs</h1><p>Coming soon.</p>' > /data/www/docs/index.html
 
   - |
-    # 8. Install GitHub Actions self-hosted runner
+    # 9. Install GitHub Actions self-hosted runner
     cd /opt/actions-runner
     RUNNER_VERSION="2.322.0"
     curl -sL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
