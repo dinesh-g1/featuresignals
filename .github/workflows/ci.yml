@@ -52,12 +52,12 @@ jobs:
 
   build:
     name: Build ${{ matrix.service }}
-    needs: resolve-sha
+    needs: generate-matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(needs.resolve-sha.outputs.services_json) }}
+        service: ${{ fromJSON(needs.generate-matrix.outputs.services_json) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -173,7 +173,7 @@ jobs:
 
   verify:
     name: Verify images exist
-    needs: [resolve-sha, build]
+    needs: [generate-matrix, build]
     if: always()
     runs-on: ubuntu-latest
     steps:
