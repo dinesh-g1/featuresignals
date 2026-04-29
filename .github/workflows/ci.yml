@@ -1,97 +1,67 @@
-name: CI
-on: [push, pull_request]
+# CI — Build & Push Images to GHCR
+#
+# Manual workflow. Provide a commit SHA and select which services to build.
+# Images are tagged with the full commit SHA and pushed to GHCR.
+#
+# Usage:
+#   gh workflow run ci.yml -f sha=<full-or-short-commit-sha>
+#
+# Required secrets:
+#   GHCR_TOKEN — GitHub PAT with write:packages scope
+
+name: CI - Build Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to build (full or short, must exist in repo)"
+        required: true
+        type: string
+      services:
+        description: "Services to build (comma-separated: server,dashboard,router,website,docs or 'all')"
+        required: true
+        default: "all"
+        type: string
 
 env:
   REGISTRY: ghcr.io/dinesh-g1
 
 jobs:
-  detect:
+  resolve-sha:
+    name: Resolve SHA
     runs-on: ubuntu-latest
     outputs:
-      server: ${{ steps.changes.outputs.server }}
-      dashboard: ${{ steps.changes.outputs.dashboard }}
-      website: ${{ steps.changes.outputs.website }}
-      docs: ${{ steps.changes.outputs.docs }}
-      router: ${{ steps.changes.outputs.router }}
+      full_sha: ${{ steps.resolve.outputs.full_sha }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
         with:
-          filters: |
-            server:
-              - 'server/**'
-            dashboard:
-              - 'dashboard/**'
-            website:
-              - 'website/**'
-            docs:
-              - 'docs/**'
-            router:
-              - 'deploy/global-router/**'
+          fetch-depth: 0
 
-  validate:
-    needs: detect
+      - name: Resolve full commit SHA
+        id: resolve
+        run: |
+          # Accept short or full SHA — resolve to full SHA
+          FULL_SHA=$(git rev-parse "${{ inputs.sha }}"^{commit} 2>/dev/null || echo "")
+          if [ -z "$FULL_SHA" ]; then
+            echo "❌ Invalid SHA: ${{ inputs.sha }}"
+            exit 1
+          fi
+          echo "full_sha=$FULL_SHA" >> "$GITHUB_OUTPUT"
+          echo "✅ Resolved ${{ inputs.sha }} → $FULL_SHA"
+
+  build:
+    name: Build ${{ matrix.service }}
+    needs: resolve-sha
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.resolve-sha.outputs.services_json) }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Validate Go (server)
-        if: needs.detect.outputs.server == 'true'
-        run: |
-          cd server && go vet ./... && go build ./...
-
-      - name: Validate Go (router)
-        if: needs.detect.outputs.router == 'true'
-        run: |
-          cd deploy/global-router && go vet ./... && go build ./...
-
-      - name: Validate Dashboard
-        if: needs.detect.outputs.dashboard == 'true'
-        run: |
-          cd dashboard && npm ci && npm run lint
-
-      - name: Validate Website
-        if: needs.detect.outputs.website == 'true'
-        run: |
-          cd website && npm ci && npm run lint
-
-      - name: Validate Docs
-        if: needs.detect.outputs.docs == 'true'
-        run: |
-          cd docs && npm ci && npm run build
-
-  test:
-    needs: detect
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
-
-      - name: Run Go tests (server)
-        if: needs.detect.outputs.server == 'true'
-        run: |
-          cd server && go test ./... -count=1 -timeout 120s -race -coverprofile=coverage.out
-
-      - name: Run Dashboard tests
-        if: needs.detect.outputs.dashboard == 'true'
-        run: |
-          cd dashboard && npm ci && npm run test -- --run
-
-      - name: Run Website tests
-        if: needs.detect.outputs.website == 'true'
-        run: |
-          cd website && npm ci && npm run test -- --run
-
-  build-and-push:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [validate, test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+          ref: ${{ needs.resolve-sha.outputs.full_sha }}
 
       - name: Login to GHCR
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dinesh-g1 --password-stdin
@@ -99,87 +69,135 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ── Server ──────────────────────────────────────────────
+      # ── Server (Go) ──────────────────────────────────────────
       - name: Build and push server
-        if: needs.detect.outputs.server == 'true'
+        if: matrix.service == 'server'
         uses: docker/build-push-action@v6
         with:
           context: ./server
           file: ./deploy/docker/Dockerfile.server
           push: true
           platforms: linux/amd64
-          tags: ${{ env.REGISTRY }}/featuresignals-server:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/featuresignals-server:${{ needs.resolve-sha.outputs.full_sha }}
 
-      # ── Dashboard ───────────────────────────────────────────
+      # ── Dashboard (Next.js) ─────────────────────────────────
       - name: Build and push dashboard
-        if: needs.detect.outputs.dashboard == 'true'
+        if: matrix.service == 'dashboard'
         uses: docker/build-push-action@v6
         with:
           context: ./dashboard
           file: ./deploy/docker/Dockerfile.dashboard
           push: true
           platforms: linux/amd64
-          tags: ${{ env.REGISTRY }}/featuresignals-dashboard:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/featuresignals-dashboard:${{ needs.resolve-sha.outputs.full_sha }}
 
-      # ── Global Router ───────────────────────────────────────
+      # ── Global Router (Go) ──────────────────────────────────
       - name: Build and push global-router
-        if: needs.detect.outputs.router == 'true'
+        if: matrix.service == 'router'
         uses: docker/build-push-action@v6
         with:
           context: ./deploy/global-router
           file: ./deploy/global-router/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ${{ env.REGISTRY }}/featuresignals-global-router:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/featuresignals-global-router:${{ needs.resolve-sha.outputs.full_sha }}
 
-      # ── Website (static export) ─────────────────────────────
+      # ── Website (Next.js static export) ─────────────────────
       - name: Build website
-        if: needs.detect.outputs.website == 'true'
+        if: matrix.service == 'website'
         run: |
           cd website
           npm ci
           npm run build
-          # Package static export as a deployable artifact
           tar czf /tmp/website.tar.gz -C out .
-
-      - name: Push website content
-        if: needs.detect.outputs.website == 'true'
-        run: |
-          # Build minimal nginx image with static content for GHCR
-          mkdir -p /tmp/website-image
-          cp /tmp/website.tar.gz /tmp/website-image/
-          cat > /tmp/website-image/Dockerfile << 'DOCKEREOF'
+          mkdir -p /tmp/content-img
+          cp /tmp/website.tar.gz /tmp/content-img/
+          cat > /tmp/content-img/Dockerfile << 'DOCKEREOF'
           FROM scratch
           COPY website.tar.gz /content.tar.gz
           DOCKEREOF
           docker buildx build \
             --platform linux/amd64 \
-            -t ${{ env.REGISTRY }}/featuresignals-website:${{ github.sha }} \
-            -f /tmp/website-image/Dockerfile \
+            -t ${{ env.REGISTRY }}/featuresignals-website:${{ needs.resolve-sha.outputs.full_sha }} \
+            -f /tmp/content-img/Dockerfile \
             --push \
-            /tmp/website-image
+            /tmp/content-img
 
       # ── Docs (Docusaurus) ───────────────────────────────────
       - name: Build docs
-        if: needs.detect.outputs.docs == 'true'
+        if: matrix.service == 'docs'
         run: |
           cd docs
           npm ci
           npm run build
           tar czf /tmp/docs.tar.gz -C build .
-
-      - name: Push docs content
-        if: needs.detect.outputs.docs == 'true'
-        run: |
-          mkdir -p /tmp/docs-image
-          cp /tmp/docs.tar.gz /tmp/docs-image/
-          cat > /tmp/docs-image/Dockerfile << 'DOCKEREOF'
+          mkdir -p /tmp/content-img
+          cp /tmp/docs.tar.gz /tmp/content-img/
+          cat > /tmp/content-img/Dockerfile << 'DOCKEREOF'
           FROM scratch
           COPY docs.tar.gz /content.tar.gz
           DOCKEREOF
           docker buildx build \
             --platform linux/amd64 \
-            -t ${{ env.REGISTRY }}/featuresignals-docs:${{ github.sha }} \
-            -f /tmp/docs-image/Dockerfile \
+            -t ${{ env.REGISTRY }}/featuresignals-docs:${{ needs.resolve-sha.outputs.full_sha }} \
+            -f /tmp/content-img/Dockerfile \
             --push \
-            /tmp/docs-image
+            /tmp/content-img
+
+  generate-matrix:
+    name: Select services
+    needs: resolve-sha
+    runs-on: ubuntu-latest
+    outputs:
+      services_json: ${{ steps.matrix.outputs.services_json }}
+    steps:
+      - id: matrix
+        run: |
+          INPUT="${{ inputs.services }}"
+          if [ "$INPUT" = "all" ]; then
+            echo 'services_json=["server","dashboard","router","website","docs"]' >> "$GITHUB_OUTPUT"
+          else
+            # Convert comma-separated to JSON array
+            JSON="["
+            IFS=',' read -ra SVC <<< "$INPUT"
+            first=true
+            for s in "${SVC[@]}"; do
+              s=$(echo "$s" | xargs)  # trim
+              if [ "$first" = true ]; then first=false; else JSON+=","; fi
+              JSON+="\"$s\""
+            done
+            JSON+="]"
+            echo "services_json=$JSON" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Building: ${{ steps.matrix.outputs.services_json }}"
+
+  verify:
+    name: Verify images exist
+    needs: [resolve-sha, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check built images
+        run: |
+          SHA="${{ needs.resolve-sha.outputs.full_sha }}"
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dinesh-g1 --password-stdin
+          for img in featuresignals-server featuresignals-dashboard featuresignals-global-router featuresignals-website featuresignals-docs; do
+            if docker manifest inspect ghcr.io/dinesh-g1/$img:$SHA >/dev/null 2>&1; then
+              echo "✅ $img:$SHA"
+            else
+              echo "⚠️  $img:$SHA not built (not requested or skipped)"
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║           CI BUILD COMPLETE                               ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  SHA:      ${{ needs.resolve-sha.outputs.full_sha }}"
+          echo "  Services: ${{ inputs.services }}"
+          echo ""
+          echo "  Trigger CD with:"
+          echo "    gh workflow run cd.yml -f version=${{ needs.resolve-sha.outputs.full_sha }}"

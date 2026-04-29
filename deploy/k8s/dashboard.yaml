@@ -17,7 +17,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: dashboard
-          image: ghcr.io/dinesh-g1/featuresignals-dashboard:6b4e87ca5560abfcb6e46a55349e922ac7aa0c63
+          image: ghcr.io/dinesh-g1/featuresignals-dashboard:43c82af74ef787f8d28de992c5f9d8ca1fbcb79e
           ports:
             - containerPort: 3000
           env:
