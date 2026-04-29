@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: ghcr.io/dinesh-g1/featuresignals-dashboard:6c87466ae00d408a0498a4d23edbaec7a7e88c38
+          image: ghcr.io/dinesh-g1/featuresignals-dashboard:b57a6aa37900db1a2b8db3e640a453f83c8b4155
           ports:
             - containerPort: 3000
           env:
