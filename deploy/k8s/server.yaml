@@ -17,7 +17,7 @@ data:
   ROUTER_DOMAIN: "featuresignals.com"
   ROUTER_EMAIL: "admin@featuresignals.com"
   OTEL_ENABLED: "true"
-  OTEL_EXPORTER_OTLP_ENDPOINT: "http://signoz-otel-collector.observability:4318"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://signoz-otel-collector.observability.svc.cluster.local:4318"
   OTEL_SERVICE_NAME: "featuresignals-api"
   OTEL_TRACES_ENABLED: "true"
   OTEL_METRICS_ENABLED: "true"
