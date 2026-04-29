@@ -21,10 +21,9 @@ runcmd:
     curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
   - |
-    # 4. Install CloudNative PG operator (full manifest — poolers CRD required by operator)
-    kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.1.yaml
-    kubectl wait --for=condition=available deployment/cnpg-controller-manager -n cnpg-system --timeout=180s
-    kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=60s
+    # 4. Install CloudNative PG operator via Helm (avoids kubectl apply annotation size limit on CRDs)
+    helm repo add cnpg https://cloudnative-pg.github.io/charts
+    helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait --timeout 5m
 
   - |
     # 5. Clone deployment manifests from GitHub (retry on failure)
@@ -34,12 +33,8 @@ runcmd:
     done
 
   - |
-    # 6. Deploy everything via kubectl (retry once if webhook not ready)
-    kubectl apply -k /opt/featuresignals/deploy/k8s/ || {
-      echo "First apply failed (webhook not ready). Retrying in 30s..."
-      sleep 30
-      kubectl apply -k /opt/featuresignals/deploy/k8s/
-    }
+    # 6. Deploy everything via kubectl
+    kubectl apply -k /opt/featuresignals/deploy/k8s/
 
   - |
     # 7. Wait for all pods to be ready
@@ -52,7 +47,7 @@ runcmd:
     echo '<h1>FeatureSignals Docs</h1><p>Coming soon.</p>' > /data/www/docs/index.html
 
   - |
-    # 9. Install GitHub Actions self-hosted runner
+    # 8. Install GitHub Actions self-hosted runner
     cd /opt/actions-runner
     RUNNER_VERSION="2.322.0"
     curl -sL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz"
