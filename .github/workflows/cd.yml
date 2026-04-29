@@ -29,8 +29,8 @@ jobs:
     steps:
       - name: Update GHCR pull secret
         run: |
-          kubectl delete secret ghcr-pull -n featuresignals --ignore-not-found
-          kubectl create secret docker-registry ghcr-pull \
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml delete secret ghcr-pull -n featuresignals --ignore-not-found
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml create secret docker-registry ghcr-pull \
             --docker-server=ghcr.io \
             --docker-username=dinesh-g1 \
             --docker-password="${{ secrets.GHCR_TOKEN }}" \
@@ -39,26 +39,26 @@ jobs:
 
       - name: Update server deployment
         run: |
-          kubectl set image deployment/server \
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml set image deployment/server \
             -n featuresignals \
             server=ghcr.io/dinesh-g1/featuresignals-server:${{ inputs.version }}
-          kubectl rollout status deployment/server -n featuresignals --timeout=120s
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status deployment/server -n featuresignals --timeout=120s
           echo "✅ Server updated"
 
       - name: Update dashboard deployment
         run: |
-          kubectl set image deployment/dashboard \
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml set image deployment/dashboard \
             -n featuresignals \
             dashboard=ghcr.io/dinesh-g1/featuresignals-dashboard:${{ inputs.version }}
-          kubectl rollout status deployment/dashboard -n featuresignals --timeout=120s
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status deployment/dashboard -n featuresignals --timeout=120s
           echo "✅ Dashboard updated"
 
       - name: Update global-router deployment
         run: |
-          kubectl set image deployment/global-router \
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml set image deployment/global-router \
             -n featuresignals \
             global-router=ghcr.io/dinesh-g1/featuresignals-global-router:${{ inputs.version }}
-          kubectl rollout status deployment/global-router -n featuresignals --timeout=120s
+          /usr/local/bin/kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status deployment/global-router -n featuresignals --timeout=120s
           echo "✅ Global Router updated"
 
       - name: Deploy website content
