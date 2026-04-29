@@ -67,7 +67,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:d7828462915749e38ca110e8bfae9d0cca27642f
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:dc92d6f1a8040a2f660001f533213f4d07b0afba
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml
