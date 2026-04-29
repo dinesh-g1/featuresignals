@@ -25,19 +25,6 @@ jobs:
     name: Deploy ${{ inputs.version }}
     runs-on: self-hosted
     steps:
-      - name: Authenticate GHCR
-        run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dinesh-g1 --password-stdin
-          echo "✅ Logged in to GHCR"
-
-      - name: Pull new images
-        run: |
-          VERSION="${{ inputs.version }}"
-          ctr image pull ghcr.io/dinesh-g1/featuresignals-server:$VERSION
-          ctr image pull ghcr.io/dinesh-g1/featuresignals-dashboard:$VERSION
-          ctr image pull ghcr.io/dinesh-g1/featuresignals-global-router:$VERSION
-          echo "✅ Images pulled for $VERSION"
-
       - name: Update server deployment
         run: |
           kubectl set image deployment/server \
