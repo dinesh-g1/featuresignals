@@ -1,99 +1,84 @@
-# CD — Deploy to Cell
+# CD — Deploy to K3s Cluster
 #
-# Manual trigger. Connects to the cell VPS via the CELL_SSH_KEY (stored
-# during bootstrap), pulls the specified image versions from GHCR, and
-# restarts the stack with zero downtime.
+# Triggers deployment on the self-hosted GitHub Actions runner that runs
+# inside the K3s cluster. The runner was registered by cloud-init during
+# initial VM provisioning.
 #
 # Usage:
-#   gh workflow run cd.yml -f version=v1.0.0
+#   gh workflow run cd.yml -f version=b57a6aa37900db1a2b8db3e640a453f83c8b4155
 #
 # Required secrets:
-#   GHCR_TOKEN   — GitHub PAT with read:packages
-#   CELL_SSH_KEY — Base64-encoded SSH private key (stored by bootstrap)
+#   GHCR_TOKEN — GitHub PAT with read:packages (for image pull from GHCR)
 
-name: CD - Deploy to Cell
+name: CD - Deploy to K3s
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Image version to deploy (must already exist in GHCR)"
+        description: "Image tag (commit SHA) to deploy. Must exist in GHCR."
         required: true
         type: string
 
-env:
-  CELL_IP: 46.224.31.37
-  CELL_NAME: prod-eu-001
-  GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
 jobs:
   deploy:
-    name: Deploy ${{ inputs.version }} to ${{ env.CELL_NAME }}
-    runs-on: ubuntu-latest
+    name: Deploy ${{ inputs.version }}
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install SSH key
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Authenticate GHCR
         run: |
-          mkdir -p /root/.ssh /tmp/ssh-key
-          gh variable get CELL_SSH_KEY --repo ${{ github.repository }} 2>/dev/null \
-            | base64 -d > /tmp/ssh-key/deploy-key
-          chmod 600 /tmp/ssh-key/deploy-key
-          echo "✅ SSH key installed from CELL_SSH_KEY variable"
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dinesh-g1 --password-stdin
+          echo "✅ Logged in to GHCR"
 
-      - name: Wait for SSH to be ready
+      - name: Pull new images
         run: |
-          echo "Waiting for SSH on ${{ env.CELL_IP }}..."
+          VERSION="${{ inputs.version }}"
+          ctr image pull ghcr.io/dinesh-g1/featuresignals-server:$VERSION
+          ctr image pull ghcr.io/dinesh-g1/featuresignals-dashboard:$VERSION
+          ctr image pull ghcr.io/dinesh-g1/featuresignals-global-router:$VERSION
+          echo "✅ Images pulled for $VERSION"
+
+      - name: Update server deployment
+        run: |
+          kubectl set image deployment/server \
+            -n featuresignals \
+            server=ghcr.io/dinesh-g1/featuresignals-server:${{ inputs.version }}
+          kubectl rollout status deployment/server -n featuresignals --timeout=120s
+          echo "✅ Server updated"
+
+      - name: Update dashboard deployment
+        run: |
+          kubectl set image deployment/dashboard \
+            -n featuresignals \
+            dashboard=ghcr.io/dinesh-g1/featuresignals-dashboard:${{ inputs.version }}
+          kubectl rollout status deployment/dashboard -n featuresignals --timeout=120s
+          echo "✅ Dashboard updated"
+
+      - name: Update global-router deployment
+        run: |
+          kubectl set image deployment/global-router \
+            -n featuresignals \
+            global-router=ghcr.io/dinesh-g1/featuresignals-global-router:${{ inputs.version }}
+          kubectl rollout status deployment/global-router -n featuresignals --timeout=120s
+          echo "✅ Global Router updated"
+
+      - name: Smoke test — server health
+        run: |
+          echo "Checking server health..."
           for i in $(seq 1 15); do
-            if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-              -o ConnectTimeout=5 -i /tmp/ssh-key/deploy-key \
-              "root@${{ env.CELL_IP }}" "echo ready" >/dev/null 2>&1; then
-              echo "✅ SSH ready after ${i}s"
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 5 http://localhost:8080/health)
+            if [ "$HTTP" = "200" ]; then
+              echo "✅ Server healthy (HTTP 200)"
               exit 0
             fi
-            echo "  Waiting... ($i/15)"
-            sleep 5
+            echo "  Waiting... ($i/15, HTTP $HTTP)"
+            sleep 4
           done
-          echo "❌ SSH not ready after 75s"
+          echo "❌ Server health check failed"
           exit 1
 
-      - name: Deploy application
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            -i /tmp/ssh-key/deploy-key "root@${{ env.CELL_IP }}" \
-            "GHCR_TOKEN=$GHCR_TOKEN FEATURESIGNALS_VERSION=${{ inputs.version }}" bash -s << 'REMOTE'
-            set -eux
-
-            # Log in to GHCR
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u dinesh-g1 --password-stdin
-
-            # Pull new images
-            docker pull ghcr.io/dinesh-g1/featuresignals-server:$FEATURESIGNALS_VERSION
-            docker pull ghcr.io/dinesh-g1/featuresignals-dashboard:$FEATURESIGNALS_VERSION
-
-            # Update and restart stack
-            cd /opt/featuresignals
-            export FEATURESIGNALS_VERSION
-            docker compose up -d
-
-            # Wait for health
-            for i in $(seq 1 30); do
-              if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
-                echo "✅ Stack is healthy"
-                exit 0
-              fi
-              sleep 2
-            done
-            echo "❌ Stack did not become healthy"
-            exit 1
-          REMOTE
-
-      - name: Smoke test via public API
+      - name: Smoke test — public API
         run: |
           echo "Checking https://api.featuresignals.com/health..."
           for i in $(seq 1 15); do
@@ -109,6 +94,17 @@ jobs:
           echo "❌ API health check failed"
           exit 1
 
-      - name: Cleanup SSH key
-        if: always()
-        run: rm -rf /tmp/ssh-key
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║           DEPLOY COMPLETE                                  ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  Version: ${{ inputs.version }}"
+          echo "  Cluster: featuresignals-eu-001 (Falkenstein, CPX42)"
+          echo "  Pods:"
+          kubectl get pods -n featuresignals -o wide
+          echo ""
+          echo "  https://api.featuresignals.com/health"
+          echo "  https://app.featuresignals.com"
