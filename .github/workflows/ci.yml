@@ -161,7 +161,7 @@ jobs:
 
   verify:
     name: Verify
-    needs: [matrix, build]
+    needs: [resolve, matrix, build]
     if: always()
     runs-on: ubuntu-latest
     steps:
