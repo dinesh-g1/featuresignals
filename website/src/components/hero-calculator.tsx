@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRightIcon,
@@ -14,18 +14,15 @@ import {
   formatUSD,
   formatINR,
 } from "@/lib/pricing";
-import { useCalculatorContext } from "@/lib/calculator-context";
 
 function CountingNumber({
   value,
   prefix = "",
   suffix = "",
-  duration = 0.6,
 }: {
   value: number;
   prefix?: string;
   suffix?: string;
-  duration?: number;
 }) {
   return (
     <motion.span
@@ -50,8 +47,8 @@ const PROVIDER_OPTIONS: { value: CompetitorProvider; label: string }[] = [
 ];
 
 export function HeroCalculator() {
-  const { teamSize, provider, setTeamSize, setProvider } =
-    useCalculatorContext();
+  const [teamSize, setTeamSize] = useState(50);
+  const [provider, setProvider] = useState<CompetitorProvider>("launchdarkly");
 
   const result = useMemo(
     () => calculateSavings({ teamSize, provider }),
@@ -64,7 +61,6 @@ export function HeroCalculator() {
       className="relative overflow-hidden bg-white"
       aria-labelledby="hero-heading"
     >
-      {/* Background grid pattern */}
       <div
         className="absolute inset-0 bg-grid-subtle opacity-60"
         aria-hidden="true"
@@ -98,12 +94,12 @@ export function HeroCalculator() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         >
-          Your feature flags are bleeding money.
+          The complete feature flag lifecycle platform.
           <br />
-          <span className="text-[var(--fgColor-danger)]">
-            {formatUSD(result.competitor.monthly)}/month
+          <span className="text-[var(--fgColor-accent)]">
+            Sub-millisecond evaluation.
           </span>{" "}
-          for {teamSize} engineers?!
+          Transparent pricing.
         </motion.h1>
 
         <motion.p
@@ -112,11 +108,10 @@ export function HeroCalculator() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          We&apos;ll prove it. Right here. In 60 seconds. No signup. No demo
-          call. No salesperson named Chad. Just real math with real competitor
-          pricing. FeatureSignals is a flat {formatINR(999)}/month (~
-          {formatUSD(12)}). Unlimited flags. Unlimited seats. The only thing
-          unlimited at LaunchDarkly is their pricing page.
+          Manage the entire lifecycle of every feature flag — from creation to
+          rollout to automated cleanup. Open source. Self-host or cloud. Pay
+          only for what you use. See how much you could save compared to your
+          current provider.
         </motion.p>
 
         {/* Calculator card */}
@@ -131,7 +126,6 @@ export function HeroCalculator() {
             style={{ boxShadow: "var(--shadow-floating-medium)" }}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-              {/* Team Size Slider */}
               <CalculatorSlider
                 value={teamSize}
                 onChange={setTeamSize}
@@ -143,7 +137,6 @@ export function HeroCalculator() {
                 formatValue={(v) => `${v}`}
               />
 
-              {/* Provider Dropdown */}
               <div>
                 <label
                   className="text-sm font-semibold text-[var(--fgColor-default)] block mb-3"
@@ -181,12 +174,11 @@ export function HeroCalculator() {
 
             {/* Results */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-[var(--borderColor-muted)]">
-              {/* Competitor cost */}
               <div className="text-center sm:text-left">
                 <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-1">
                   {result.competitor.name}
                 </div>
-                <div className="text-2xl font-bold text-[var(--fgColor-danger)] tabular-nums">
+                <div className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
                   <CountingNumber
                     value={result.competitor.monthly}
                     prefix="$"
@@ -202,16 +194,15 @@ export function HeroCalculator() {
                 </div>
               </div>
 
-              {/* FeatureSignals cost */}
               <div className="text-center sm:text-right">
                 <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-1">
-                  FeatureSignals Pro
+                  FeatureSignals Cloud
                 </div>
                 <div className="text-2xl font-bold text-[var(--fgColor-success)] tabular-nums">
-                  {formatINR(999)}/mo
+                  ~{formatUSD(7)}/mo
                 </div>
                 <div className="text-xs text-[var(--fgColor-subtle)] mt-0.5">
-                  ~{formatUSD(12)}/mo · unlimited seats
+                  pay-as-you-go · transparent pricing
                 </div>
               </div>
             </div>
@@ -225,7 +216,7 @@ export function HeroCalculator() {
               }}
             >
               <div className="text-sm font-semibold text-[var(--fgColor-muted)] mb-1">
-                Annual Savings
+                Estimated Annual Savings
               </div>
               <div className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-success)] tabular-nums">
                 <CountingNumber
@@ -238,11 +229,6 @@ export function HeroCalculator() {
                 {result.savings.percent}% less than {result.competitor.name}
               </div>
             </div>
-
-            {/* Formula hint */}
-            <p className="text-xs text-[var(--fgColor-subtle)] mt-3 text-center">
-              {result.formula}
-            </p>
           </div>
         </motion.div>
 
@@ -258,7 +244,7 @@ export function HeroCalculator() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] active:bg-[#197935] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
-            See the math
+            See it in action
             <ArrowRightIcon size={16} />
           </a>
           <a
@@ -269,7 +255,7 @@ export function HeroCalculator() {
             style={{ boxShadow: "0 1px 0 0 #1f23280a" }}
           >
             <DownloadIcon size={16} />
-            Self-host in 3 min
+            Self-host in 3 minutes
           </a>
         </motion.div>
       </div>
