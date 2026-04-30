@@ -65,7 +65,7 @@ export default function APIKeysPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) {
-      setFieldError("KeyIcon name is required");
+      setFieldError("Key name is required");
       return;
     }
     setFieldError("");
@@ -187,7 +187,7 @@ export default function APIKeysPage() {
             setFieldError("");
             setForm({ ...form, name: e.target.value });
           }}
-          placeholder="KeyIcon name"
+          placeholder="Key name"
           required
           aria-invalid={!!fieldError}
           aria-describedby={fieldError ? "api-key-name-error" : undefined}
@@ -217,7 +217,7 @@ export default function APIKeysPage() {
           className="sm:w-auto"
         />
         <Button type="submit" className="shrink-0">
-          Create KeyIcon
+          Create Key
         </Button>
       </form>
 

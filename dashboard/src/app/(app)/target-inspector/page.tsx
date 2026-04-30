@@ -120,7 +120,7 @@ export default function TargetInspectorPage() {
         className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 space-y-4 sm:p-6"
       >
         <div>
-          <Label>Target KeyIcon</Label>
+          <Label>Target Key</Label>
           <Input
             value={targetKey}
             onChange={(e) => {

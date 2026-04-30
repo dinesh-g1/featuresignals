@@ -195,7 +195,7 @@ function LDImporterCard() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-[var(--fgColor-default)] mb-1">
-              LaunchDarkly Project KeyIcon
+              LaunchDarkly Project Key
             </label>
             <div className="relative">
               <GlobeIcon
@@ -211,7 +211,7 @@ function LDImporterCard() {
               />
             </div>
             <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
-              Found in LaunchDarkly Project Settings under the &ldquo;KeyIcon&rdquo;
+              Found in LaunchDarkly Project Settings under the &ldquo;KeyIcon&rdquo;ldquo;Key&ldquo;KeyIcon&rdquo;rdquo;
               field.
             </p>
           </div>
@@ -460,7 +460,7 @@ docker run -d \\
   );
 }
 
-// ─── API KeyIcon Helper ─────────────────────────────────────────────────
+// ─── API Key Helper ─────────────────────────────────────────────────
 
 function APIKeyHelper() {
   return (

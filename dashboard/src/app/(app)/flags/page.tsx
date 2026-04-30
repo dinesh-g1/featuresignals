@@ -274,7 +274,7 @@ function FlagsInner() {
     }
     const errors: { key?: string; name?: string; default_value?: string } = {};
     if (!newFlag.key.trim()) {
-      errors.key = "KeyIcon is required";
+      errors.key = "Key is required";
     }
     if (!newFlag.name.trim()) {
       errors.name = "Name is required";
@@ -640,7 +640,7 @@ function FlagsWithData({
       return;
     }
     const errors: { key?: string; name?: string; default_value?: string } = {};
-    if (!newFlag.key.trim()) errors.key = "KeyIcon is required";
+    if (!newFlag.key.trim()) errors.key = "Key is required";
     if (!newFlag.name.trim()) errors.name = "Name is required";
     if (newFlag.flag_type === "json") {
       try {
@@ -941,7 +941,7 @@ function FlagsContent({
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label>KeyIcon</Label>
+              <Label>Key</Label>
               <Input
                 value={newFlag.key}
                 onChange={(e) => {

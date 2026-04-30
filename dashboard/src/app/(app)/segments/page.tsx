@@ -69,7 +69,7 @@ export default function SegmentsPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     const errors: { key?: string; name?: string } = {};
-    if (!form.key.trim()) errors.key = "KeyIcon is required";
+    if (!form.key.trim()) errors.key = "Key is required";
     if (!form.name.trim()) errors.name = "Name is required";
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -233,7 +233,7 @@ function SegmentsContent({
           <form onSubmit={handleCreate} noValidate className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <Label>KeyIcon</Label>
+                <Label>Key</Label>
                 <Input
                   value={form.key}
                   onChange={(e) => {
@@ -271,7 +271,7 @@ function SegmentsContent({
                     if (fieldErrors.name)
                       setFieldErrors({ ...fieldErrors, name: undefined });
                   }}
-                  placeholder="Beta UsersIcon"
+                  placeholder="Beta users"
                   required
                   className="mt-1"
                   aria-invalid={!!fieldErrors.name}
@@ -295,7 +295,7 @@ function SegmentsContent({
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="UsersIcon enrolled in beta program"
+                placeholder="Users enrolled in beta program"
                 className="mt-1"
               />
             </div>

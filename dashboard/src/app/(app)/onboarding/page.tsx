@@ -61,7 +61,7 @@ client := fs.NewClient("${key}",
     fs.WithBaseURL("${apiUrl}"))
 defer client.Close()
 
-enabled := client.IsEnabled("my-flag", fs.User{KeyIcon: "user-123"})
+enabled := client.IsEnabled("my-flag", fs.User{Key: "user-123"})
 if enabled {
     // new feature code
 }`,
@@ -96,7 +96,7 @@ var client = new FSClient("${key}",
     new FSOptions { BaseUrl = "${apiUrl}" });
 
 bool enabled = client.IsEnabled("my-flag",
-    new User { KeyIcon = "user-123" });`,
+    new User { Key = "user-123" });`,
     ruby: `require "featuresignals"
 
 client = FeatureSignals::Client.new("${key}",

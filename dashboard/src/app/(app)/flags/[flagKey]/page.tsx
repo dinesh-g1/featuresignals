@@ -984,7 +984,7 @@ export default function FlagDetailPage() {
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
                   <div className="flex-1">
-                    <Label htmlFor="test-target-key">Target KeyIcon</Label>
+                    <Label htmlFor="test-target-key">Target Key</Label>
                     <Input
                       id="test-target-key"
                       type="text"

@@ -108,7 +108,7 @@ export default function AnalyticsPage() {
               color="accent"
             />
             <StatCard
-              label="Active UsersIcon"
+              label="Active Users"
               value={data.active_users}
               icon={UsersIcon}
               color="emerald"

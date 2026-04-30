@@ -187,7 +187,7 @@ export default function SSOSettingsPage() {
     if (
       !token ||
       !confirm(
-        "Remove SSO configuration? UsersIcon will need to use email/password login.",
+        "Remove SSO configuration? Users will need to use email/password login.",
       )
     )
       return;
@@ -419,7 +419,7 @@ export default function SSOSettingsPage() {
             <div className="mt-3 space-y-3">
               <div>
                 <Label htmlFor="default_role">
-                  Default Role for New SSO UsersIcon
+                  Default Role for New SSO Users
                 </Label>
                 <select
                   id="default_role"
