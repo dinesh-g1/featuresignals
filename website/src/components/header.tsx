@@ -25,31 +25,26 @@ import { cn } from "@/lib/utils";
  * No mega-menus, no complexity.
  */
 
-const demoLinks = [
+const productLinks = [
   {
-    label: "Cost Calculator",
-    href: "/#hero",
-    description: "See how much you'd save",
-  },
-  {
-    label: "Live Evaluation",
-    href: "/#live-demo",
-    description: "Sub-millisecond flag eval in your browser",
-  },
-  {
-    label: "Migration Preview",
-    href: "/#migration",
-    description: "See your flags migrate in real time",
+    label: "Feature Flag Lifecycle",
+    href: "/create",
+    description: "Create, target, rollout, and clean up feature flags",
   },
   {
     label: "AI Janitor",
-    href: "/#ai-janitor",
-    description: "Stale flag detection simulator",
+    href: "/cleanup",
+    description: "Automated stale flag detection and cleanup",
+  },
+  {
+    label: "Migrate from other platforms",
+    href: "/migrate",
+    description: "Import your flags from LaunchDarkly, ConfigCat, and more",
   },
 ];
 
 export function Header() {
-  const [demoOpen, setDemoOpen] = useState(false);
+  const [productOpen, setProductOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
@@ -81,45 +76,45 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
-            {/* Try Demo dropdown */}
+            {/* Product dropdown */}
             <div className="relative">
               <button
-                onClick={() => setDemoOpen(!demoOpen)}
+                onClick={() => setProductOpen(!productOpen)}
                 onBlur={(e) => {
                   // Delay to allow click on dropdown items
-                  setTimeout(() => setDemoOpen(false), 150);
+                  setTimeout(() => setProductOpen(false), 150);
                 }}
                 className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors duration-150 hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-default)]"
-                aria-expanded={demoOpen}
+                aria-expanded={productOpen}
               >
-                Try Demo
+                Product
                 <ChevronDownIcon
                   size={14}
                   className={cn(
                     "text-[var(--fgColor-subtle)] transition-transform duration-200",
-                    demoOpen && "rotate-180",
+                    productOpen && "rotate-180",
                   )}
                   aria-hidden
                 />
               </button>
 
               <AnimatePresence>
-                {demoOpen && (
+                {productOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 4, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 4, scale: 0.98 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute left-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] py-1.5"
+                    className="absolute left-0 top-full mt-1.5 w-72 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] py-1.5"
                     style={{
                       boxShadow: "var(--shadow-floating-medium)",
                     }}
                   >
-                    {demoLinks.map((link) => (
+                    {productLinks.map((link) => (
                       <a
                         key={link.label}
                         href={link.href}
-                        onClick={() => setDemoOpen(false)}
+                        onClick={() => setProductOpen(false)}
                         className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-[var(--bgColor-inset)]"
                       >
                         <div>
@@ -245,9 +240,9 @@ export function Header() {
                   <div className="flex-1 overflow-y-auto px-4 py-6">
                     <div className="space-y-1">
                       <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
-                        Try Demo
+                        Product
                       </p>
-                      {demoLinks.map((link) => (
+                      {productLinks.map((link) => (
                         <a
                           key={link.label}
                           href={link.href}

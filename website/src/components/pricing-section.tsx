@@ -49,7 +49,7 @@ export function PricingSection() {
   return (
     <section
       id="pricing"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
       aria-labelledby="pricing-heading"
     >
       <div className="mx-auto max-w-6xl px-6">

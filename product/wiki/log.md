@@ -3,6 +3,23 @@
 > Chronological record of all wiki operations. Append-only.
 > Format: `## [YYYY-MM-DD HH:MM] operation | description`
 
+## [2026-05-02 11:00] design | Website lifecycle redesign — 5-step feature flag lifecycle pages
+
+- **Redesigned website to SHOW the complete feature flag lifecycle step by step.**
+- **6 new pages:** `/create`, `/target`, `/rollout`, `/cleanup`, `/migrate` — each with side-by-side text+demo layout
+- **Files created (11):**
+  - `flag-creator.tsx` — interactive flag creation with type selector, default values, success state
+  - `targeting-builder.tsx` — rule builder with live evaluation using existing eval-engine.ts
+  - `rollout-slider.tsx` — percentage slider with ring deployment visualization
+  - `lifecycle-cards.tsx` — homepage card grid showing 5 lifecycle steps
+  - 5 page directories with `page.tsx` + `content.tsx` each (server + client split)
+- **Files modified (2):**
+  - `page.tsx` — replaced inline sections with LifecycleCards component
+  - `header.tsx` — "Try Demo" → "Product" dropdown linking to lifecycle pages
+- **Architecture:** Left/right alternating layout. Text on one side, interactive demo on the other.
+- **Reused:** hero-calculator, ai-janitor-simulator, migration-preview, pricing-section, final-cta, eval-engine
+- **Verification:** `tsc --noEmit` passed, `next build` passed (14 static pages), zero new errors
+
 ## [2026-05-01 10:00] build | Phase 1 — Website Hero Calculator + Live Eval Demo + Migration Preview
 
 - **Phase 1 of FINAL_PROMPT.md complete.** All three interactive sections implemented.

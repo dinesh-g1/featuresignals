@@ -1,27 +1,17 @@
 import { CalculatorProvider } from "@/lib/calculator-context";
 import { HeroCalculator } from "@/components/hero-calculator";
-import { LiveEvalDemo } from "@/components/live-eval-demo";
-import { MigrationPreview } from "@/components/migration-preview";
-import { AiJanitorSimulator } from "@/components/ai-janitor-simulator";
+import { LifecycleCards } from "@/components/lifecycle-cards";
 import { PricingSection } from "@/components/pricing-section";
 import { FinalCta } from "@/components/final-cta";
 
 /**
- * FeatureSignals Homepage — The Only Page That Matters
- *
- * Architecture: One scrollable experience. No separate pages.
- * Each section proves a claim through interaction — no static card grids.
+ * FeatureSignals Homepage — The Complete Feature Flag Lifecycle Platform
  *
  * Flow:
  *   1. Hero — live cost calculator (value before signup)
- *   2. Live Demo — sub-millisecond eval in your browser
- *   3. Migration Preview — connect your provider, see real savings
- *   4. AI Janitor — stale flag detection simulator
- *   5. Pricing — personalized savings from calculator state
- *   6. Final CTA — ready to ship faster
- *
- * CalculatorProvider lifts hero calculator state so the pricing section
- * can display personalized savings reflecting user selections above.
+ *   2. Lifecycle Cards — Create → Target → Rollout → Clean Up → Migrate
+ *   3. Pricing — transparent pricing, no lock-in
+ *   4. Final CTA — ready to ship faster
  */
 export default function HomePage() {
   return (
@@ -29,19 +19,13 @@ export default function HomePage() {
       {/* 1. Hero: Stop overpaying for feature flags */}
       <HeroCalculator />
 
-      {/* 2. Live Demo: See sub-millisecond evaluation */}
-      <LiveEvalDemo />
+      {/* 2. Lifecycle Cards: The complete feature flag lifecycle */}
+      <LifecycleCards />
 
-      {/* 3. Migration Preview: Migrate from LaunchDarkly in minutes */}
-      <MigrationPreview />
-
-      {/* 4. AI Janitor: The AI Janitor */}
-      <AiJanitorSimulator />
-
-      {/* 5. Pricing: Pay for infrastructure, not per seat */}
+      {/* 3. Pricing: Transparent pricing */}
       <PricingSection />
 
-      {/* 6. Final CTA: Ready to ship faster? */}
+      {/* 4. Final CTA: Ready to ship faster? */}
       <FinalCta />
     </CalculatorProvider>
   );
