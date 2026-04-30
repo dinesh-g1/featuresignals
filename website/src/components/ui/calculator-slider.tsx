@@ -28,7 +28,7 @@ export function CalculatorSlider({
   disabled = false,
 }: CalculatorSliderProps) {
   const id = useId();
-  const percentage = ((value - min) / (max - min)) * 100;
+  const pct = ((value - min) / (max - min)) * 100;
 
   return (
     <div className="w-full">
@@ -48,64 +48,40 @@ export function CalculatorSlider({
         </output>
       </div>
 
-      <div className="relative">
-        {/* Track background */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1.5 rounded-full bg-[var(--borderColor-default)]" />
-
-        {/* Filled track */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 rounded-full bg-[var(--fgColor-accent)] transition-[width] duration-100"
-          style={{ width: `${percentage}%` }}
-        />
-
-        <input
-          id={id}
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          disabled={disabled}
-          className="relative w-full appearance-none bg-transparent cursor-pointer
-            [&::-webkit-slider-thumb]:appearance-none
-            [&::-webkit-slider-thumb]:h-5
-            [&::-webkit-slider-thumb]:w-5
-            [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-[var(--fgColor-accent)]
-            [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-white
-            [&::-webkit-slider-thumb]:shadow-[var(--shadow-resting-small)]
-            [&::-webkit-slider-thumb]:cursor-pointer
-            [&::-webkit-slider-thumb]:transition-shadow
-            [&::-webkit-slider-thumb]:duration-150
-            [&::-webkit-slider-thumb]:mt-[-6px]
-            hover:[&::-webkit-slider-thumb]:shadow-[var(--shadow-floating-small)]
-            focus:[&::-webkit-slider-thumb]:shadow-[0_0_0_3px_var(--borderColor-accent-muted)]
-            focus:outline-none
-            [&::-moz-range-thumb]:h-5
-            [&::-moz-range-thumb]:w-5
-            [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:bg-[var(--fgColor-accent)]
-            [&::-moz-range-thumb]:border-2
-            [&::-moz-range-thumb]:border-white
-            [&::-moz-range-thumb]:shadow-[var(--shadow-resting-small)]
-            [&::-moz-range-thumb]:cursor-pointer
-            [&::-moz-range-thumb]:border-none
-            hover:[&::-moz-range-thumb]:shadow-[var(--shadow-floating-small)]
-            focus:[&::-moz-range-thumb]:shadow-[0_0_0_3px_var(--borderColor-accent-muted)]
-            [&::-moz-range-track]:bg-transparent
-            [&::-moz-range-track]:h-1.5
-            [&::-moz-range-track]:rounded-full
-            aria-disabled:opacity-50
-            aria-disabled:cursor-not-allowed"
-          aria-label={label}
-          aria-valuemin={min}
-          aria-valuemax={max}
-          aria-valuenow={value}
-          aria-valuetext={formatValue(value)}
-        />
-      </div>
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        disabled={disabled}
+        style={{
+          background: `linear-gradient(to right, var(--fgColor-accent) 0%, var(--fgColor-accent) ${pct}%, var(--borderColor-default) ${pct}%, var(--borderColor-default) 100%)`,
+        }}
+        className="w-full h-1.5 rounded-full appearance-none cursor-pointer
+          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5
+          [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full
+          [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2
+          [&::-webkit-slider-thumb]:border-[var(--fgColor-accent)]
+          [&::-webkit-slider-thumb]:shadow-[var(--shadow-resting-small)]
+          [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:-mt-1.5
+          hover:[&::-webkit-slider-thumb]:shadow-[var(--shadow-floating-small)]
+          focus:[&::-webkit-slider-thumb]:ring-2 focus:[&::-webkit-slider-thumb]:ring-[var(--borderColor-accent-muted)]
+          focus:outline-none
+          [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5
+          [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
+          [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--fgColor-accent)]
+          [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none
+          [&::-moz-range-track]:bg-transparent [&::-moz-range-track]:h-1.5
+          disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label={label}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-valuetext={formatValue(value)}
+      />
 
       <div className="flex justify-between text-xs text-[var(--fgColor-subtle)] mt-2">
         <span>{minLabel}</span>
