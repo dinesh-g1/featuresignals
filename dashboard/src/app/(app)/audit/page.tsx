@@ -9,13 +9,23 @@ import {
   Button,
   Input,
   Badge,
-  EmptyState,
   Select,
   type SelectOption,
 } from "@/components/ui";
-import { ClipboardList, Download, Search, ShieldCheck } from "lucide-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui";
+import {
+  ClipboardIcon, DownloadIcon, SearchIcon, ShieldIcon
+} from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
-import type { AuditEntry } from "@/lib/types";
+import { Blankslate } from "@/components/blankslate";
+import { AuditLogIcon } from "@/components/icons/nav-icons";
 import { timeAgo } from "@/lib/utils";
 import { api } from "@/lib/api";
 
@@ -52,7 +62,7 @@ export default function AuditPage() {
       ...new Set(entries.map((e) => e.actor_type).filter(Boolean)),
     ].sort();
     return [
-      { value: "", label: "All Users" },
+      { value: "", label: "All UsersIcon" },
       ...actors.map((a) => ({ value: a!, label: a! })),
     ];
   }, [entries]);
@@ -156,12 +166,12 @@ export default function AuditPage() {
           >
             {verifying ? (
               <>
-                <ShieldCheck className="mr-1.5 h-4 w-4 animate-pulse" />
+                <ShieldIcon className="mr-1.5 h-4 w-4 animate-pulse" />
                 Verifying...
               </>
             ) : (
               <>
-                <ShieldCheck className="mr-1.5 h-4 w-4" />
+                <ShieldIcon className="mr-1.5 h-4 w-4" />
                 Verify Integrity
               </>
             )}
@@ -173,7 +183,7 @@ export default function AuditPage() {
               onClick={() => setShowExportMenu(!showExportMenu)}
               disabled={exporting !== null || entries.length === 0}
             >
-              <Download className="mr-1.5 h-4 w-4" />
+              <DownloadIcon className="mr-1.5 h-4 w-4" />
               {exporting ? "Exporting..." : "Export"}
             </Button>
             {showExportMenu && entries.length > 0 && (
@@ -182,9 +192,9 @@ export default function AuditPage() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowExportMenu(false)}
                 />
-                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-[var(--borderColor-default)] bg-white py-1 shadow-lg">
                   <button
-                    className="w-full px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
                     onClick={() => {
                       setShowExportMenu(false);
                       handleExport("csv");
@@ -194,7 +204,7 @@ export default function AuditPage() {
                     Export CSV
                   </button>
                   <button
-                    className="w-full px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
                     onClick={() => {
                       setShowExportMenu(false);
                       handleExport("json");
@@ -216,7 +226,7 @@ export default function AuditPage() {
           className={`rounded-lg px-4 py-3 text-sm font-medium ${
             integrityResult.ok
               ? "border border-green-200 bg-green-50 text-green-700"
-              : "border border-red-200 bg-red-50 text-red-700"
+              : "border border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700"
           }`}
         >
           {integrityResult.ok
@@ -226,7 +236,7 @@ export default function AuditPage() {
       )}
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
         <Input
           type="text"
           placeholder="Search by action or resource type..."
@@ -242,7 +252,7 @@ export default function AuditPage() {
           value={filterActor}
           onValueChange={setFilterActor}
           options={actorOptions}
-          placeholder="All Users"
+          placeholder="All UsersIcon"
           className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
           size="sm"
         />
@@ -278,11 +288,11 @@ export default function AuditPage() {
         )}
       </div>
 
-      <Card className="hover:shadow-lg hover:border-slate-300">
+      <Card className="hover:shadow-lg hover:border-[var(--borderColor-emphasis)]">
         <div className="divide-y divide-slate-100">
           {filtered.length === 0 ? (
-            <EmptyState
-              icon={ClipboardList}
+            <Blankslate
+              icon={AuditLogIcon}
               title={
                 entries.length === 0
                   ? "No audit entries yet"
@@ -293,33 +303,39 @@ export default function AuditPage() {
                   ? "Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
                   : "Try adjusting your search or filters to find what you're looking for."
               }
-              docsUrl={DOCS_LINKS.audit}
-              docsLabel="About the audit log"
+              learnMoreUrl={DOCS_LINKS.audit}
+              learnMoreLabel="About the audit log"
+              variant="bordered"
             />
           ) : (
-            filtered.map((entry) => (
-              <div
-                key={entry.id}
-                className="px-4 py-3 transition-colors hover:bg-accent-glass sm:px-6 sm:py-4"
-              >
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <Badge variant="primary">{entry.action}</Badge>
-                    <span className="text-sm text-slate-600">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Resource</TableHead>
+                  <TableHead>Actor</TableHead>
+                  <TableHead className="text-right">When</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell>
+                      <Badge variant="primary">{entry.action}</Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
                       {entry.resource_type}
-                    </span>
-                    {entry.actor_type && (
-                      <span className="text-xs text-slate-400">
-                        by {entry.actor_type}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-slate-400">
-                    {timeAgo(entry.created_at)}
-                  </span>
-                </div>
-              </div>
-            ))
+                    </TableCell>
+                    <TableCell className="text-xs text-[var(--fgColor-muted)]">
+                      {entry.actor_type || "—"}
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-[var(--fgColor-subtle)]">
+                      {timeAgo(entry.created_at)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
       </Card>
@@ -334,7 +350,7 @@ export default function AuditPage() {
           >
             Previous
           </Button>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[var(--fgColor-muted)]">
             Showing {filtered.length === 0 ? 0 : offset + 1} -{" "}
             {offset + filtered.length} of {entries.length}
           </span>

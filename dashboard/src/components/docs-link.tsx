@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLinkIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
 import { DOCS_URL } from "@/lib/external-urls";
 
@@ -57,12 +57,12 @@ export function DocsLink({ href, label = "Docs", className }: DocsLinkProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-1 text-xs text-stone-400 transition-colors hover:text-accent",
+        "inline-flex items-center gap-1 text-xs text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-accent)]",
         className,
       )}
     >
       {label}
-      <ExternalLink className="h-3 w-3" />
+      <ExternalLinkIcon className="h-3 w-3" />
     </a>
   );
 }

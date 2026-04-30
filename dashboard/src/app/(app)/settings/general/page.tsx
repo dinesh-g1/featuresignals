@@ -18,15 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Building2,
-  FolderOpen,
-  Plus,
-  Pencil,
-  Trash2,
-  ArrowRight,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+  BuildingIcon, FolderOpenIcon, PlusIcon, PencilIcon, TrashIcon, ArrowRightIcon, AlertIcon, LoaderIcon
+} from "@/components/icons/nav-icons";
 import { toast } from "@/components/toast";
 import Link from "next/link";
 import type { Project } from "@/lib/types";
@@ -176,25 +169,25 @@ export default function SettingsGeneralPage() {
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/5 text-accent">
-              <Building2 className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]">
+              <BuildingIcon className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
+              <h2 className="text-sm font-semibold text-[var(--fgColor-default)]">
                 Organization
               </h2>
-              <p className="text-xs text-slate-500">Your workspace details</p>
+              <p className="text-xs text-[var(--fgColor-muted)]">Your workspace details</p>
             </div>
           </div>
           <dl className="space-y-3">
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-slate-500">Name</dt>
-              <dd className="text-sm font-medium text-slate-900">
+              <dt className="text-sm text-[var(--fgColor-muted)]">Name</dt>
+              <dd className="text-sm font-medium text-[var(--fgColor-default)]">
                 {organization?.name || "—"}
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-slate-500">Plan</dt>
+              <dt className="text-sm text-[var(--fgColor-muted)]">Plan</dt>
               <dd>
                 <Badge
                   variant={planVariant}
@@ -205,8 +198,8 @@ export default function SettingsGeneralPage() {
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-slate-500">Projects</dt>
-              <dd className="text-sm font-medium text-slate-900">
+              <dt className="text-sm text-[var(--fgColor-muted)]">Projects</dt>
+              <dd className="text-sm font-medium text-[var(--fgColor-default)]">
                 {projects.length}
               </dd>
             </div>
@@ -216,13 +209,13 @@ export default function SettingsGeneralPage() {
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-              <FolderOpen className="h-5 w-5" />
+              <FolderOpenIcon className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
+              <h2 className="text-sm font-semibold text-[var(--fgColor-default)]">
                 Current Project
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--fgColor-muted)]">
                 Selected in the context bar
               </p>
             </div>
@@ -230,20 +223,20 @@ export default function SettingsGeneralPage() {
           {currentProject ? (
             <dl className="space-y-3">
               <div className="flex items-center justify-between">
-                <dt className="text-sm text-slate-500">Name</dt>
-                <dd className="text-sm font-medium text-slate-900">
+                <dt className="text-sm text-[var(--fgColor-muted)]">Name</dt>
+                <dd className="text-sm font-medium text-[var(--fgColor-default)]">
                   {currentProject.name}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-sm text-slate-500">Slug</dt>
-                <dd className="font-mono text-sm text-slate-600">
+                <dt className="text-sm text-[var(--fgColor-muted)]">Slug</dt>
+                <dd className="font-mono text-sm text-[var(--fgColor-muted)]">
                   {currentProject.slug}
                 </dd>
               </div>
             </dl>
           ) : (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[var(--fgColor-subtle)]">
               No project selected. Use the context bar above to pick one.
             </p>
           )}
@@ -254,24 +247,24 @@ export default function SettingsGeneralPage() {
       <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Projects</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-base font-semibold text-[var(--fgColor-default)]">Projects</h2>
+            <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
               Manage all projects in your organization. Deleting a project
               removes all environments, flags, and segments within it.
             </p>
           </div>
           <Button size="sm" onClick={openCreateDialog}>
-            <Plus className="mr-1.5 h-4 w-4" />
+            <PlusIcon className="mr-1.5 h-4 w-4" />
             New Project
           </Button>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-accent" />
+            <LoaderIcon className="h-5 w-5 animate-spin text-[var(--fgColor-accent)]" />
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-slate-400 py-8 text-center">
+          <p className="text-sm text-[var(--fgColor-subtle)] py-8 text-center">
             No projects yet. Create your first one to get started.
           </p>
         ) : (
@@ -283,24 +276,24 @@ export default function SettingsGeneralPage() {
                   key={project.id}
                   className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
                     isActive
-                      ? "border-accent/20 bg-accent-glass"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-emphasis)]-glass"
+                      : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-teal-700 text-white shadow-sm">
-                      <FolderOpen className="h-4 w-4" />
+                      <FolderOpenIcon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
+                      <p className="text-sm font-semibold text-[var(--fgColor-default)] truncate">
                         {project.name}
                         {isActive && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent-dark">
+                          <span className="ml-2 inline-flex items-center rounded-full bg-[var(--bgColor-accent-muted)] px-2 py-0.5 text-[11px] font-medium text-[var(--fgColor-accent)]">
                             Active
                           </span>
                         )}
                       </p>
-                      <p className="font-mono text-xs text-slate-500">
+                      <p className="font-mono text-xs text-[var(--fgColor-muted)]">
                         {project.slug}
                       </p>
                     </div>
@@ -312,16 +305,16 @@ export default function SettingsGeneralPage() {
                       onClick={() => openEditDialog(project)}
                       title="Rename project"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <PencilIcon className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => openDeleteDialog(project)}
-                      className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                      className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
                       title="Delete project"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <TrashIcon className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -335,17 +328,17 @@ export default function SettingsGeneralPage() {
       <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold text-slate-900">
+            <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
               Manage Environments
             </h3>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-[var(--fgColor-muted)] mt-1">
               Create, edit, and delete environments for the current project.
             </p>
           </div>
           <Link href="/environments">
             <Button>
               Open Environments
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRightIcon className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -390,7 +383,7 @@ export default function SettingsGeneralPage() {
                 placeholder="auto-generated from name"
                 className="mt-1"
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[var(--fgColor-muted)] mt-1">
                 Leave blank to auto-generate
               </p>
             </div>
@@ -406,12 +399,12 @@ export default function SettingsGeneralPage() {
               <Button type="submit" disabled={submitting}>
                 {submitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <PlusIcon className="mr-2 h-4 w-4" />
                     Create Project
                   </>
                 )}
@@ -469,7 +462,7 @@ export default function SettingsGeneralPage() {
               <Button type="submit" disabled={submitting}>
                 {submitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
@@ -486,16 +479,16 @@ export default function SettingsGeneralPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-red-600 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
+              <AlertIcon className="h-5 w-5" />
               Delete Project
             </DialogTitle>
             <DialogDescription asChild>
               <div className="mt-3 space-y-3">
-                <p className="font-semibold text-slate-900">
+                <p className="font-semibold text-[var(--fgColor-default)]">
                   Are you sure you want to delete &ldquo;{deletingProject?.name}
                   &rdquo;?
                 </p>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+                <div className="bg-[var(--bgColor-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
                   <p className="font-semibold text-red-800 mb-1">
                     This action will permanently delete:
                   </p>
@@ -525,18 +518,18 @@ export default function SettingsGeneralPage() {
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="danger"
               onClick={handleDeleteProject}
               disabled={submitting}
             >
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (
                 <>
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <TrashIcon className="mr-2 h-4 w-4" />
                   Delete Project
                 </>
               )}

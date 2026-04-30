@@ -180,7 +180,7 @@ describe("FlagsPage", () => {
     vi.mocked(api.createFlag).mockResolvedValue({
       id: "f3",
       key: "new-flag",
-      name: "New Flag",
+      name: "New FlagIcon",
       description: "",
       flag_type: "boolean",
       default_value: false,
@@ -237,7 +237,7 @@ describe("FlagsPage", () => {
     render(<FlagsPage />);
     await screen.findByText("Feature Flags");
 
-    fireEvent.click(screen.getByText("Create Flag"));
+    fireEvent.click(screen.getByText("Create FlagIcon"));
 
     expect(
       screen.getByPlaceholderText("new-checkout-flow"),

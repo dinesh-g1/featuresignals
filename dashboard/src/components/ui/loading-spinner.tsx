@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const spinnerVariants = cva(
-  "animate-spin rounded-full border-2 border-accent/20 border-t-accent",
+  "animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent",
   {
     variants: {
       size: {

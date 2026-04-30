@@ -13,7 +13,9 @@ import {
   Badge,
   EmptyState,
 } from "@/components/ui";
-import { UserSearch, X, Search, Globe, FolderOpen } from "lucide-react";
+import {
+  UserSearchIcon, XIcon, SearchIcon, GlobeIcon, FolderOpenIcon
+} from "@/components/icons/nav-icons";
 import type { InspectTargetResult } from "@/lib/types";
 
 export default function TargetInspectorPage() {
@@ -79,7 +81,7 @@ export default function TargetInspectorPage() {
           description="Evaluate all flags for a specific target to see exactly what they would receive"
         />
         <EmptyState
-          icon={FolderOpen}
+          icon={FolderOpenIcon}
           title="No project selected"
           description="Select a project using the context bar above to inspect target evaluations."
           className="py-16"
@@ -96,7 +98,7 @@ export default function TargetInspectorPage() {
           description="Evaluate all flags for a specific target to see exactly what they would receive"
         />
         <EmptyState
-          icon={Globe}
+          icon={GlobeIcon}
           title="No environment selected"
           description="Select an environment using the context bar above to inspect target evaluations."
           className="py-16"
@@ -115,10 +117,10 @@ export default function TargetInspectorPage() {
       <form
         onSubmit={handleInspect}
         noValidate
-        className="rounded-xl border border-slate-200 bg-white p-4 space-y-4 sm:p-6"
+        className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 space-y-4 sm:p-6"
       >
         <div>
-          <Label>Target Key</Label>
+          <Label>Target KeyIcon</Label>
           <Input
             value={targetKey}
             onChange={(e) => {
@@ -147,7 +149,7 @@ export default function TargetInspectorPage() {
             <button
               type="button"
               onClick={addAttr}
-              className="text-xs text-accent hover:text-accent-dark"
+              className="text-xs text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
             >
               + Add attribute
             </button>
@@ -176,9 +178,9 @@ export default function TargetInspectorPage() {
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => removeAttr(i)}
-                    className="text-slate-400 hover:text-red-500 self-end sm:self-auto"
+                    className="text-[var(--fgColor-subtle)] hover:text-red-500 self-end sm:self-auto"
                   >
-                    <X className="h-4 w-4" />
+                    <XIcon className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -195,7 +197,7 @@ export default function TargetInspectorPage() {
         <>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
               <Input
                 placeholder="Filter results..."
                 value={search}
@@ -203,7 +205,7 @@ export default function TargetInspectorPage() {
                 className="pl-10"
               />
             </div>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-[var(--fgColor-muted)]">
               {filtered?.length} flag{filtered?.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -212,8 +214,8 @@ export default function TargetInspectorPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-4 py-3 sm:px-6">Flag Key</th>
+                  <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+                    <th className="px-4 py-3 sm:px-6">FlagIcon KeyIcon</th>
                     <th className="px-4 py-3">Value</th>
                     <th className="hidden px-4 py-3 sm:table-cell">Reason</th>
                     <th className="hidden px-4 py-3 md:table-cell">Variant</th>
@@ -224,9 +226,9 @@ export default function TargetInspectorPage() {
                   {filtered?.map((r) => (
                     <tr
                       key={r.flag_key}
-                      className="transition-colors hover:bg-accent-glass"
+                      className="transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass"
                     >
-                      <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
+                      <td className="px-4 py-3 font-mono font-medium text-[var(--fgColor-default)] sm:px-6">
                         {r.flag_key}
                       </td>
                       <td className="px-4 py-3">
@@ -242,10 +244,10 @@ export default function TargetInspectorPage() {
                           {String(r.value)}
                         </Badge>
                       </td>
-                      <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
+                      <td className="hidden px-4 py-3 text-[var(--fgColor-muted)] sm:table-cell">
                         {r.reason}
                       </td>
-                      <td className="hidden px-4 py-3 text-slate-500 md:table-cell">
+                      <td className="hidden px-4 py-3 text-[var(--fgColor-muted)] md:table-cell">
                         {r.variant_key || "—"}
                       </td>
                       <td className="hidden px-4 py-3 md:table-cell">
@@ -260,7 +262,7 @@ export default function TargetInspectorPage() {
             </div>
             {filtered?.length === 0 && (
               <EmptyState
-                icon={UserSearch}
+                icon={UserSearchIcon}
                 title="No results match the filter."
                 className="py-8"
               />

@@ -20,7 +20,7 @@ describe("PageHeader", () => {
   it("renders actions slot", () => {
     render(
       <PageHeader
-        title="Users"
+        title="UsersIcon"
         actions={<button>Add user</button>}
       />,
     );

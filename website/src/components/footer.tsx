@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckCircleFillIcon } from "@primer/octicons-react";
 
 const footerSections = [
   {
@@ -112,39 +113,25 @@ function DiscordIcon() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-stone-200 bg-stone-900">
+    <footer
+      className="border-t border-[var(--borderColor-default)]"
+      style={{ backgroundColor: "#25292e" }}
+    >
       <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
         {/* Top section */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-10 mb-12">
           {/* Brand */}
           <div className="max-w-xs">
             <div className="flex items-center space-x-2 mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 32 32"
-                fill="none"
-                className="h-6 w-6"
-                aria-hidden="true"
-              >
-                <rect width="32" height="32" rx="7" fill="#0d9488" />
-                <path
-                  d="M7 3
-                     C7 3, 7 18, 7 29
-                     C7 18, 23 8, 17 14
-                     C13 18, 25 22, 25 29"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-                <circle cx="24.5" cy="26" r="1.8" fill="white" opacity="0.85" />
-              </svg>
+              <CheckCircleFillIcon size={24} fill="#0969da" aria-hidden="true" />
               <span className="font-bold tracking-tight text-white text-lg">
                 FeatureSignals
               </span>
             </div>
-            <p className="text-stone-400 text-sm leading-relaxed mb-6">
+            <p
+              className="text-sm leading-relaxed mb-6"
+              style={{ color: "#8b949e" }}
+            >
               The control plane for software delivery. Sub-millisecond latency.
               Automated tech-debt cleanup. OpenFeature native.
             </p>
@@ -153,7 +140,8 @@ export function Footer() {
                 href="https://github.com/dinesh-g1/featuresignals"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-stone-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
+                style={{ color: "#8b949e" }}
                 aria-label="GitHub"
               >
                 <GitHubIcon />
@@ -162,7 +150,8 @@ export function Footer() {
                 href="https://linkedin.com/company/featuresignals"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-stone-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
+                style={{ color: "#8b949e" }}
                 aria-label="LinkedIn"
               >
                 <LinkedInIcon />
@@ -171,7 +160,8 @@ export function Footer() {
                 href="https://x.com/featuresignals"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-stone-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
+                style={{ color: "#8b949e" }}
                 aria-label="X (Twitter)"
               >
                 <XIcon />
@@ -180,7 +170,8 @@ export function Footer() {
                 href="https://discord.gg/featuresignals"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-stone-400 hover:text-white transition-colors"
+                className="hover:text-white transition-colors"
+                style={{ color: "#8b949e" }}
                 aria-label="Discord"
               >
                 <DiscordIcon />
@@ -192,7 +183,10 @@ export function Footer() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 lg:gap-12 flex-1">
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">
+                <h3
+                  className="text-xs font-semibold uppercase tracking-widest mb-4"
+                  style={{ color: "#8b949e" }}
+                >
                   {section.title}
                 </h3>
                 <ul className="space-y-3">
@@ -203,14 +197,16 @@ export function Footer() {
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-stone-400 hover:text-white transition-colors"
+                          className="text-sm hover:text-white transition-colors"
+                          style={{ color: "#8b949e" }}
                         >
                           {link.label}
                         </a>
                       ) : (
                         <Link
                           href={link.href}
-                          className="text-sm text-stone-400 hover:text-white transition-colors"
+                          className="text-sm hover:text-white transition-colors"
+                          style={{ color: "#8b949e" }}
                         >
                           {link.label}
                         </Link>
@@ -224,33 +220,42 @@ export function Footer() {
         </div>
 
         {/* Operational status bar */}
-        <div className="border-t border-stone-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div
+          className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
+          style={{ borderColor: "#373e47", borderTopWidth: "1px" }}
+        >
           <div className="flex items-center space-x-3">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
             </span>
-            <span className="font-mono text-sm font-medium text-stone-400">
+            <span
+              className="font-mono text-sm font-medium"
+              style={{ color: "#8b949e" }}
+            >
               All Edge Nodes Operational
             </span>
           </div>
 
-          <div className="flex gap-6 text-sm text-stone-500">
+          <div className="flex gap-6 text-sm">
             <Link
               href="/features/security"
-              className="hover:text-stone-300 transition-colors font-mono text-xs"
+              className="hover:text-white transition-colors font-mono text-xs"
+              style={{ color: "#8b949e" }}
             >
               SOC 2 Type II
             </Link>
             <Link
               href="/features/integrations"
-              className="hover:text-stone-300 transition-colors font-mono text-xs"
+              className="hover:text-white transition-colors font-mono text-xs"
+              style={{ color: "#8b949e" }}
             >
               OpenFeature Native
             </Link>
             <Link
               href="/status"
-              className="hover:text-stone-300 transition-colors font-mono text-xs"
+              className="hover:text-white transition-colors font-mono text-xs"
+              style={{ color: "#8b949e" }}
             >
               Uptime 99.95%
             </Link>
@@ -258,7 +263,14 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-6 pt-6 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-600">
+        <div
+          className="mt-6 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs"
+          style={{
+            borderColor: "#373e47",
+            borderTopWidth: "1px",
+            color: "#59636e",
+          }}
+        >
           <p>
             &copy; {new Date().getFullYear()} Vivekananda Technology Labs,
             trading as FeatureSignals. Apache-2.0 License.

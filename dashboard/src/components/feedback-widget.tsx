@@ -5,21 +5,15 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { toast } from "@/components/toast";
 import {
-  MessageSquarePlus,
-  X,
-  Send,
-  Loader2,
-  ThumbsUp,
-  ThumbsDown,
-  Minus,
-} from "lucide-react";
+  MessageSquarePlus, XIcon, SendIcon, LoaderIcon, ThumbsUp, ThumbsDown, Minus
+} from "@/components/icons/nav-icons";
 
 type FeedbackType = "bug" | "feature" | "general";
 type Sentiment = "positive" | "neutral" | "negative";
 
 const TYPES: { value: FeedbackType; label: string }[] = [
   { value: "general", label: "General" },
-  { value: "bug", label: "Bug Report" },
+  { value: "bug", label: "BugIcon Report" },
   { value: "feature", label: "Feature Request" },
 ];
 
@@ -58,23 +52,23 @@ export function FeedbackWidget() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-16 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white shadow-lg transition-all hover:bg-accent-dark hover:shadow-xl sm:bottom-6"
+        className="fixed bottom-16 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bgColor-accent-emphasis)] text-white shadow-lg transition-all hover:bg-[var(--bgColor-accent-emphasis)]-dark hover:shadow-xl sm:bottom-6"
         aria-label="Send feedback"
       >
         {open ? (
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         ) : (
           <MessageSquarePlus className="h-4 w-4" />
         )}
       </button>
 
       {open && (
-        <div className="fixed bottom-28 right-4 z-40 w-80 rounded-xl border border-slate-200 bg-white shadow-2xl sm:bottom-18">
+        <div className="fixed bottom-28 right-4 z-40 w-80 rounded-xl border border-[var(--borderColor-default)] bg-white shadow-2xl sm:bottom-18">
           <div className="border-b border-slate-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-slate-900">
+            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
               Send Feedback
             </h3>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
               Help us improve FeatureSignals
             </p>
           </div>
@@ -88,8 +82,8 @@ export function FeedbackWidget() {
                   onClick={() => setType(t.value)}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                     type === t.value
-                      ? "bg-accent/10 text-accent-dark"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                      : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]"
                   }`}
                 >
                   {t.label}
@@ -98,7 +92,7 @@ export function FeedbackWidget() {
             </div>
 
             <div className="flex items-center gap-1">
-              <span className="mr-1 text-xs text-slate-500">
+              <span className="mr-1 text-xs text-[var(--fgColor-muted)]">
                 How do you feel?
               </span>
               {(
@@ -106,7 +100,7 @@ export function FeedbackWidget() {
                   {
                     value: "positive",
                     Icon: ThumbsUp,
-                    activeColor: "text-emerald-600 bg-emerald-50",
+                    activeColor: "text-[var(--fgColor-success)] bg-emerald-50",
                   },
                   {
                     value: "neutral",
@@ -116,7 +110,7 @@ export function FeedbackWidget() {
                   {
                     value: "negative",
                     Icon: ThumbsDown,
-                    activeColor: "text-red-600 bg-red-50",
+                    activeColor: "text-red-600 bg-[var(--bgColor-danger-muted)]",
                   },
                 ] as const
               ).map((s) => (
@@ -129,7 +123,7 @@ export function FeedbackWidget() {
                   className={`rounded-md p-1.5 transition-colors ${
                     sentiment === s.value
                       ? s.activeColor
-                      : "text-slate-400 hover:bg-slate-100"
+                      : "text-[var(--fgColor-subtle)] hover:bg-[var(--bgColor-muted)]"
                   }`}
                 >
                   <s.Icon className="h-4 w-4" aria-hidden="true" />
@@ -152,18 +146,18 @@ export function FeedbackWidget() {
                     : "Tell us what's on your mind..."
               }
               rows={3}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-accent/30 focus:outline-none focus:ring-1 focus:ring-accent/20"
+              className="w-full rounded-lg border border-[var(--borderColor-default)] px-3 py-2 text-sm text-[var(--fgColor-default)] placeholder-slate-400 focus:border-[var(--borderColor-accent-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
             />
 
             <button
               type="submit"
               disabled={sending || !message.trim()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--bgColor-accent-emphasis)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-dark disabled:opacity-50"
             >
               {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <LoaderIcon className="h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-4 w-4" />
+                <SendIcon className="h-4 w-4" />
               )}
               Send Feedback
             </button>

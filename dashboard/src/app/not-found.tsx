@@ -7,7 +7,7 @@ export default function NotFound() {
     <ErrorDisplay
       statusCode={404}
       title="Page not found"
-      message="The page you're looking for doesn't exist or has been moved. Check the URL or head back to the dashboard."
+      message="The page you're looking for doesn't exist or has been moved. CheckIcon the URL or head back to the dashboard."
       fullPage
       showHomeLink
     />

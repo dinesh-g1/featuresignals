@@ -5,7 +5,9 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, CardHeader, Button } from "@/components/ui";
-import { Bell, Mail, Loader2 } from "lucide-react";
+import {
+  BellIcon, MailIcon, LoaderIcon
+} from "@/components/icons/nav-icons";
 
 const PREFS = [
   {
@@ -64,8 +66,8 @@ export default function NotificationsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-slate-500" />
-            <h2 className="font-semibold text-slate-900">Email Preferences</h2>
+            <MailIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
+            <h2 className="font-semibold text-[var(--fgColor-default)]">Email Preferences</h2>
           </div>
         </CardHeader>
         <div className="space-y-4 px-4 pb-6 sm:px-6">
@@ -75,11 +77,11 @@ export default function NotificationsPage() {
               id="email-consent"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
+              className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
             />
             <label
               htmlFor="email-consent"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-medium text-[var(--fgColor-default)]"
             >
               I agree to receive emails from FeatureSignals
             </label>
@@ -92,8 +94,8 @@ export default function NotificationsPage() {
                   key={p.value}
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all ${
                     preference === p.value
-                      ? "border-accent/30 bg-accent/10 ring-1 ring-accent/20"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] ring-1 ring-[var(--borderColor-accent-muted)]"
+                      : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]"
                   }`}
                 >
                   <input
@@ -102,13 +104,13 @@ export default function NotificationsPage() {
                     value={p.value}
                     checked={preference === p.value}
                     onChange={() => setPreference(p.value)}
-                    className="mt-0.5 h-4 w-4 border-slate-300 text-accent focus:ring-accent"
+                    className="mt-0.5 h-4 w-4 border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
                   />
                   <div>
-                    <span className="text-sm font-medium text-slate-700">
+                    <span className="text-sm font-medium text-[var(--fgColor-default)]">
                       {p.label}
                     </span>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
                       {p.description}
                     </p>
                   </div>
@@ -120,9 +122,9 @@ export default function NotificationsPage() {
           <div className="mt-4 flex items-center gap-3 pt-2">
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <LoaderIcon className="h-4 w-4 animate-spin" />
               ) : (
-                <Bell className="h-4 w-4" />
+                <BellIcon className="h-4 w-4" />
               )}
               Save Preferences
             </Button>

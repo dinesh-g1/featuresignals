@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { LoaderIcon } from "@/components/icons/nav-icons";
 import { EVENTS, ENVIRONMENT_COLORS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
@@ -132,7 +132,7 @@ export function CreateEnvironmentDialog({
             <Button type="submit" disabled={creating || !name.trim()}>
               {creating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (

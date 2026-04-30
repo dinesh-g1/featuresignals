@@ -354,6 +354,13 @@ func (noopStore) GetComponentHistory(context.Context, int) ([]domain.DailyCompon
 	return nil, nil
 }
 
+func (noopStore) CreateSession(context.Context, *domain.PublicSession) error { return errNoop }
+func (noopStore) GetSession(context.Context, string) (*domain.PublicSession, error) {
+	return nil, errNoop
+}
+func (noopStore) DeleteSession(context.Context, string) error          { return errNoop }
+func (noopStore) CleanExpiredSessions(context.Context) (int, error) { return 0, errNoop }
+
 type noopOTPEmail struct{}
 
 func (noopOTPEmail) SendOTP(context.Context, string, string, string) error              { return nil }

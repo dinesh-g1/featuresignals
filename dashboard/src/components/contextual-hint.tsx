@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { X, Lightbulb } from "lucide-react";
+import { XIcon, LightbulbIcon } from "@/components/icons/nav-icons";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -62,21 +62,21 @@ export function ContextualHint({ hint, className }: ContextualHintProps) {
   return (
     <div
       className={cn(
-        "animate-fade-in rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 shadow-sm",
+        "animate-fade-in rounded-lg border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] px-4 py-3 shadow-sm",
         className,
       )}
       role="status"
     >
       <div className="flex items-start gap-3">
-        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-        <div className="flex-1 text-sm text-accent-dark">
+        <LightbulbIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fgColor-accent)]" />
+        <div className="flex-1 text-sm text-[var(--fgColor-accent)]">
           <p>{hint.message}</p>
           {hint.docsUrl && (
             <a
               href={hint.docsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-block text-xs font-medium text-accent underline underline-offset-2 hover:text-accent-dark"
+              className="mt-1 inline-block text-xs font-medium text-[var(--fgColor-accent)] underline underline-offset-2 hover:text-[var(--fgColor-accent)]"
             >
               {hint.docsLabel ?? "Learn more"}
             </a>
@@ -84,10 +84,10 @@ export function ContextualHint({ hint, className }: ContextualHintProps) {
         </div>
         <button
           onClick={dismiss}
-          className="shrink-0 rounded-md p-1 text-accent/60 transition-colors hover:bg-accent/10 hover:text-accent"
+          className="shrink-0 rounded-md p-1 text-[var(--fgColor-accent)]/60 transition-colors hover:bg-[var(--bgColor-accent-muted)] hover:text-[var(--fgColor-accent)]"
           aria-label="Dismiss hint"
         >
-          <X className="h-3.5 w-3.5" />
+          <XIcon className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

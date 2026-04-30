@@ -15,7 +15,6 @@ import {
   Badge,
   CategoryBadge,
   StatusBadge,
-  EmptyState,
   Label,
   Switch,
   FormField,
@@ -26,17 +25,21 @@ import { Textarea } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import {
-  Flag,
-  Search,
-  ChevronRight,
-  Trash2,
-  Loader2,
-  SlidersHorizontal,
-} from "lucide-react";
+  FlagIcon,
+  SearchIcon,
+  ChevronRightIcon,
+  TrashIcon,
+  LoaderIcon,
+  SlidersHorizontalIcon,
+} from "@/components/icons/nav-icons";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { FlagSlideOver } from "@/components/flag-slide-over";
+import { Blankslate } from "@/components/blankslate";
+import { UnderlineNav } from "@/components/underline-nav";
+import { FlagIcon as NavFlagIcon } from "@/components/icons/nav-icons";
+import { Breadcrumb } from "@/components/breadcrumb";
 import {
   useFlags,
   useEnvironments,
@@ -271,7 +274,7 @@ export default function FlagsPage() {
     }
     const errors: { key?: string; name?: string; default_value?: string } = {};
     if (!newFlag.key.trim()) {
-      errors.key = "Key is required";
+      errors.key = "KeyIcon is required";
     }
     if (!newFlag.name.trim()) {
       errors.name = "Name is required";
@@ -314,7 +317,7 @@ export default function FlagsPage() {
         default_value: "false",
       });
       EventBus.dispatch("flags:changed");
-      toast("Flag created", "success");
+      toast("FlagIcon created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
     }
@@ -325,7 +328,7 @@ export default function FlagsPage() {
     setDeleting(null);
     if (result !== undefined) {
       EventBus.dispatch("flags:changed");
-      toast("Flag deleted", "success");
+      toast("FlagIcon deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
     }
@@ -637,7 +640,7 @@ function FlagsWithData({
       return;
     }
     const errors: { key?: string; name?: string; default_value?: string } = {};
-    if (!newFlag.key.trim()) errors.key = "Key is required";
+    if (!newFlag.key.trim()) errors.key = "KeyIcon is required";
     if (!newFlag.name.trim()) errors.name = "Name is required";
     if (newFlag.flag_type === "json") {
       try {
@@ -677,7 +680,7 @@ function FlagsWithData({
         default_value: "false",
       });
       EventBus.dispatch("flags:changed");
-      toast("Flag created", "success");
+      toast("FlagIcon created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
     }
@@ -688,7 +691,7 @@ function FlagsWithData({
     setDeleting(null);
     if (result !== undefined) {
       EventBus.dispatch("flags:changed");
-      toast("Flag deleted", "success");
+      toast("FlagIcon deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
     }
@@ -922,8 +925,8 @@ function FlagsContent({
         description={`${(flags ?? []).length} flags in this project — Manage, toggle, and govern your feature rollout`}
       >
         <Button onClick={() => setShowCreate(!showCreate)}>
-          <Flag className="h-4 w-4" strokeWidth={1.5} />
-          Create Flag
+          <FlagIcon className="h-4 w-4" />
+          Create FlagIcon
         </Button>
       </PageHeader>
 
@@ -934,11 +937,11 @@ function FlagsContent({
         <form
           onSubmit={handleCreate}
           noValidate
-          className="rounded-xl border border-accent/20 bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
+          className="rounded-xl border border-[var(--borderColor-accent-muted)] bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label>Key</Label>
+              <Label>KeyIcon</Label>
               <Input
                 value={newFlag.key}
                 onChange={(e) => {
@@ -979,7 +982,7 @@ function FlagsContent({
                 </p>
               )}
               {suggestedKey && !fieldErrors.name && (
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
                   Suggested key:{" "}
                   <code className="font-mono">{suggestedKey}</code>
                 </p>
@@ -1023,7 +1026,7 @@ function FlagsContent({
           </div>
           <div>
             <Label>Default Value</Label>
-            <p className="text-xs text-slate-500 mt-0.5 mb-1">
+            <p className="text-xs text-[var(--fgColor-muted)] mt-0.5 mb-1">
               {newFlag.flag_type === "boolean" &&
                 "The value returned when the flag is disabled."}
               {newFlag.flag_type === "string" &&
@@ -1046,7 +1049,7 @@ function FlagsContent({
                     })
                   }
                 />
-                <span className="text-sm font-mono text-slate-700">
+                <span className="text-sm font-mono text-[var(--fgColor-default)]">
                   {newFlag.default_value}
                 </span>
               </div>
@@ -1111,7 +1114,7 @@ function FlagsContent({
               disabled={createFlag.loading}
               loading={createFlag.loading}
             >
-              {createFlag.loading ? "Creating..." : "Create Flag"}
+              {createFlag.loading ? "Creating..." : "Create FlagIcon"}
             </Button>
             <Button
               type="button"
@@ -1125,10 +1128,10 @@ function FlagsContent({
       )}
 
       {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-stone-200/60 bg-white/80 p-3 shadow-sm sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--borderColor-default)]/60 bg-white/80 p-3 shadow-sm sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:w-auto">
-          <Search
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+          <SearchIcon
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]"
             aria-hidden="true"
           />
           <Input
@@ -1177,14 +1180,14 @@ function FlagsContent({
       </div>
 
       {/* Sort controls */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--fgColor-muted)]">
         <span>Sort by:</span>
         {(["key", "name", "created_at", "updated_at"] as SortKey[]).map(
           (key) => (
             <button
               key={key}
               onClick={() => handleSort(key)}
-              className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-accent/10 text-accent-dark font-medium shadow-sm ring-1 ring-accent/20" : "hover:bg-stone-100 text-stone-500"}`}
+              className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium shadow-sm ring-1 ring-[var(--borderColor-accent-muted)]" : "hover:bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]"}`}
             >
               {key.replace(/_/g, " ")}
               {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
@@ -1196,13 +1199,15 @@ function FlagsContent({
       <Card>
         <div className="divide-y divide-stone-100">
           {filtered.length === 0 ? (
-            <EmptyState
-              icon={Flag}
-              emoji="⚑"
-              title="No flags yet"
-              description="Flags let you control which features your users see. Create your first flag to start shipping safely."
-              docsUrl={DOCS_LINKS.flags}
-              docsLabel="What are feature flags?"
+            <Blankslate
+              icon={NavFlagIcon}
+              title="You haven't created any flags yet"
+              description="A feature flag lets you toggle features on/off for specific users, segments, or percentages of your audience."
+              actionLabel="Create your first flag"
+              onAction={() => setShowCreate(true)}
+              learnMoreUrl={DOCS_LINKS.flags}
+              learnMoreLabel="Learn more about flags"
+              variant="bordered"
             />
           ) : (
             filtered.map((flag) => {
@@ -1210,13 +1215,13 @@ function FlagsContent({
               return (
                 <div
                   key={flag.id}
-                  className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-accent/5 cursor-pointer sm:px-6 sm:py-4"
+                  className="group/row relative px-4 py-3 transition-all duration-150 hover:bg-[var(--bgColor-accent-muted)] cursor-pointer sm:px-6 sm:py-4"
                   onClick={() => onFlagClick(flag.key)}
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-mono text-sm font-medium text-stone-900 group-hover/row:text-accent-dark transition-colors">
+                        <p className="font-mono text-sm font-medium text-[var(--fgColor-default)] group-hover/row:text-[var(--fgColor-accent)] transition-colors">
                           {flag.key}
                         </p>
                         <Badge>
@@ -1229,7 +1234,7 @@ function FlagsContent({
                           <StatusBadge status={flag.status} />
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-stone-500">
+                      <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
                         {flag.name}
                       </p>
                     </div>
@@ -1253,19 +1258,19 @@ function FlagsContent({
                             }
                           />
                           {toggling === flag.key && (
-                            <Loader2 className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin text-stone-500" />
+                            <LoaderIcon className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin text-[var(--fgColor-muted)]" />
                           )}
                         </span>
                       )}
 
-                      <span className="hidden text-xs text-stone-400 sm:inline">
+                      <span className="hidden text-xs text-[var(--fgColor-subtle)] sm:inline">
                         {new Date(flag.created_at).toLocaleDateString()}
                       </span>
                       {deleting === flag.key ? (
                         <div className="flex items-center gap-1">
                           <Button
                             size="sm"
-                            variant="destructive-ghost"
+                            variant="danger-ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(flag.key);
@@ -1293,15 +1298,12 @@ function FlagsContent({
                             setDeleting(flag.key);
                           }}
                           title="Delete flag"
-                          className="text-stone-400 hover:text-red-500 hover:bg-red-50"
+                          className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <TrashIcon className="h-4 w-4" />
                         </Button>
                       )}
-                      <ChevronRight
-                        className="h-4 w-4 text-stone-300 group-hover/row:text-accent transition-colors shrink-0"
-                        strokeWidth={1.5}
-                      />
+                      <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)] group-hover/row:text-[var(--fgColor-accent)] transition-colors shrink-0" />
                     </div>
                   </div>
                 </div>

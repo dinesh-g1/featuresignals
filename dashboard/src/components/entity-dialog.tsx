@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { LoaderIcon } from "@/components/icons/nav-icons";
 import { ENVIRONMENT_COLORS } from "@/lib/constants";
 import type { Environment } from "@/lib/types";
 
@@ -142,7 +142,7 @@ export function CreateEnvironmentDialog({
             <Button type="submit" disabled={submitting}>
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
@@ -278,7 +278,7 @@ export function EditEnvironmentDialog({
             <Button type="submit" disabled={submitting}>
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
@@ -334,10 +334,10 @@ export function DeleteDialog({
           <DialogTitle className="text-red-600">{title}</DialogTitle>
           <DialogDescription className="space-y-3">
             {description && (
-              <p className="font-semibold text-slate-900">{description}</p>
+              <p className="font-semibold text-[var(--fgColor-default)]">{description}</p>
             )}
             {consequences.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+              <div className="bg-[var(--bgColor-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
                 <p className="font-semibold text-red-800 mb-1">This will:</p>
                 <ul className="list-disc list-inside space-y-1 text-red-700">
                   {consequences.map((c, i) => (
@@ -360,13 +360,13 @@ export function DeleteDialog({
             Cancel
           </Button>
           <Button
-            variant="destructive"
+            variant="danger"
             onClick={handleDelete}
             disabled={submitting}
           >
             {submitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                 Deleting...
               </>
             ) : (

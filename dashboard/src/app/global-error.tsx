@@ -16,7 +16,7 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="min-h-full bg-slate-50 text-slate-900 font-sans antialiased">
+      <body className="min-h-full bg-[var(--bgColor-muted)] text-[var(--fgColor-default)] font-sans antialiased">
         <ErrorDisplay
           title="Something went wrong"
           message={error.message || "An unexpected error occurred. Please try again or return to the dashboard."}

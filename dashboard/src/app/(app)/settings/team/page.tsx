@@ -12,7 +12,9 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Trash2, ChevronDown, Users, Mail } from "lucide-react";
+import {
+  TrashIcon, ChevronDownIcon, UsersIcon, MailIcon
+} from "@/components/icons/nav-icons";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import type { OrgMember, EnvPermission, Environment } from "@/lib/types";
 
@@ -231,7 +233,7 @@ export default function TeamPage() {
       <UpgradeNudge context="seats" />
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Team Members</h2>
+          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">Team Members</h2>
           <Button size="sm" onClick={() => setShowInvite(!showInvite)}>
             Invite Member
           </Button>
@@ -241,7 +243,7 @@ export default function TeamPage() {
           <form
             onSubmit={handleInvite}
             noValidate
-            className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3"
+            className="mb-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4 space-y-3"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -317,32 +319,32 @@ export default function TeamPage() {
         <div className="space-y-2">
           {members.length === 0 ? (
             <EmptyState
-              icon={Users}
+              icon={UsersIcon}
               title="No team members"
-              className="rounded-lg border border-dashed border-slate-300"
+              className="rounded-lg border border-dashed border-[var(--borderColor-emphasis)]"
             />
           ) : (
             members.map((member) => (
               <div key={member.id}>
                 <div
-                  className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-100 transition-colors hover:bg-accent-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-lg bg-[var(--bgColor-muted)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
                   onClick={() => toggleExpand(member.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent-dark shrink-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bgColor-accent-muted)] text-xs font-bold text-[var(--fgColor-accent)] shrink-0">
                       {member.name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-700">
+                      <p className="text-sm font-medium text-[var(--fgColor-default)]">
                         {member.name}
                       </p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="text-xs text-[var(--fgColor-muted)] truncate">
                         {member.email}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0 flex-wrap">
-                    <span className="text-xs text-slate-400 hidden sm:inline">
+                    <span className="text-xs text-[var(--fgColor-subtle)] hidden sm:inline">
                       {formatRelativeTime(
                         (member as unknown as Record<string, string>)
                           .last_active_at ??
@@ -386,7 +388,7 @@ export default function TeamPage() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Button
-                            variant="destructive-ghost"
+                            variant="danger-ghost"
                             size="sm"
                             onClick={() => handleRemove(member.id)}
                             className="h-auto px-2 py-1 text-xs"
@@ -410,16 +412,16 @@ export default function TeamPage() {
                             e.stopPropagation();
                             setRemoving(member.id);
                           }}
-                          className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
                           title="Remove member"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <TrashIcon className="h-4 w-4" />
                         </Button>
                       ))}
 
-                    <ChevronDown
+                    <ChevronDownIcon
                       className={cn(
-                        "h-4 w-4 text-slate-400 transition-transform duration-200",
+                        "h-4 w-4 text-[var(--fgColor-subtle)] transition-transform duration-200",
                         expandedPerms === member.id && "rotate-180",
                       )}
                     />
@@ -427,26 +429,26 @@ export default function TeamPage() {
                 </div>
 
                 {expandedPerms === member.id && envs.length > 0 && (
-                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-slate-200 bg-white p-3 animate-fade-in">
-                    <p className="text-xs font-semibold text-slate-600 mb-2">
+                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--borderColor-default)] bg-white p-3 animate-fade-in">
+                    <p className="text-xs font-semibold text-[var(--fgColor-muted)] mb-2">
                       Environment Permissions
                     </p>
                     <div className="space-y-1">
                       {envs.map((env) => (
                         <div
                           key={env.id}
-                          className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-[var(--bgColor-muted)] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex items-center gap-2">
                             <div
                               className={`h-2.5 w-2.5 rounded-full shrink-0 bg-[${env.color}]`}
                             />
-                            <span className="text-xs font-medium text-slate-700">
+                            <span className="text-xs font-medium text-[var(--fgColor-default)]">
                               {env.name}
                             </span>
                           </div>
                           <div className="flex items-center gap-4 ml-4 sm:ml-0">
-                            <label className="flex items-center gap-1.5 text-xs text-slate-600">
+                            <label className="flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
                               <input
                                 type="checkbox"
                                 checked={getPermValue(
@@ -461,11 +463,11 @@ export default function TeamPage() {
                                     "can_toggle",
                                   )
                                 }
-                                className="h-3.5 w-3.5 rounded border-slate-300 text-accent focus:ring-accent"
+                                className="h-3.5 w-3.5 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
                               />
                               Toggle
                             </label>
-                            <label className="flex items-center gap-1.5 text-xs text-slate-600">
+                            <label className="flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
                               <input
                                 type="checkbox"
                                 checked={getPermValue(
@@ -480,7 +482,7 @@ export default function TeamPage() {
                                     "can_edit_rules",
                                   )
                                 }
-                                className="h-3.5 w-3.5 rounded border-slate-300 text-accent focus:ring-accent"
+                                className="h-3.5 w-3.5 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
                               />
                               Edit Rules
                             </label>
@@ -497,8 +499,8 @@ export default function TeamPage() {
 
         {pendingInvites.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-              <Mail className="h-4 w-4" />
+            <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-3 flex items-center gap-2">
+              <MailIcon className="h-4 w-4" />
               Pending Invitations ({pendingInvites.length})
             </h3>
             <div className="space-y-2">
@@ -512,10 +514,10 @@ export default function TeamPage() {
                       {invite.email.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-700 truncate">
+                      <p className="text-sm font-medium text-[var(--fgColor-default)] truncate">
                         {invite.email}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[var(--fgColor-muted)]">
                         Invited {formatRelativeTime(invite.invited_at)}
                       </p>
                     </div>

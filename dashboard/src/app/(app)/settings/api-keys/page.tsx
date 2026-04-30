@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { KeyRound, Copy } from "lucide-react";
+import { KeyIcon, CopyIcon } from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { APIKey, APIKeyCreateResponse, Environment } from "@/lib/types";
 
@@ -65,7 +65,7 @@ export default function APIKeysPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) {
-      setFieldError("Key name is required");
+      setFieldError("KeyIcon name is required");
       return;
     }
     setFieldError("");
@@ -150,12 +150,12 @@ export default function APIKeysPage() {
       </div>
 
       {newKey && (
-        <Card className="border-emerald-200 bg-emerald-50 p-4 ring-1 ring-emerald-100">
-          <p className="text-sm font-medium text-emerald-800">
+        <Card className="border-[var(--borderColor-success-muted)] bg-emerald-50 p-4 ring-1 ring-emerald-100">
+          <p className="text-sm font-medium text-[var(--fgColor-success)]">
             API key created. Copy it now — it won&apos;t be shown again.
           </p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="flex-1 rounded-lg bg-emerald-100 p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">
+            <code className="flex-1 rounded-lg bg-[var(--bgColor-success-muted)] p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">
               {newKey}
             </code>
             <Button
@@ -163,13 +163,13 @@ export default function APIKeysPage() {
               onClick={() => copyToClipboard(newKey)}
               className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
             >
-              <Copy className="h-3.5 w-3.5" />
+              <CopyIcon className="h-3.5 w-3.5" />
               Copy
             </Button>
           </div>
           <button
             onClick={() => setNewKey(null)}
-            className="mt-2 text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+            className="mt-2 text-xs font-medium text-[var(--fgColor-success)] transition-colors hover:text-emerald-700"
           >
             Dismiss
           </button>
@@ -187,7 +187,7 @@ export default function APIKeysPage() {
             setFieldError("");
             setForm({ ...form, name: e.target.value });
           }}
-          placeholder="Key name"
+          placeholder="KeyIcon name"
           required
           aria-invalid={!!fieldError}
           aria-describedby={fieldError ? "api-key-name-error" : undefined}
@@ -217,7 +217,7 @@ export default function APIKeysPage() {
           className="sm:w-auto"
         />
         <Button type="submit" className="shrink-0">
-          Create Key
+          Create KeyIcon
         </Button>
       </form>
 
@@ -225,7 +225,7 @@ export default function APIKeysPage() {
         <div className="divide-y divide-slate-100">
           {keys.length === 0 ? (
             <EmptyState
-              icon={KeyRound}
+              icon={KeyIcon}
               title="No API keys for this environment"
               description="API keys authenticate your SDK against this environment. Create a server key to start evaluating flags."
               docsUrl={DOCS_LINKS.apiKeys}
@@ -241,11 +241,11 @@ export default function APIKeysPage() {
               return (
                 <div
                   key={k.id}
-                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-accent-glass"}`}
+                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-[var(--bgColor-accent-emphasis)]-glass"}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm font-medium text-[var(--fgColor-default)]">
                         {k.name}
                       </p>
                       {isExpired && !isRevoked && (
@@ -257,10 +257,10 @@ export default function APIKeysPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
                       {k.key_prefix}... &middot; {k.type}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs text-[var(--fgColor-subtle)]">
                       {k.last_used_at ? (
                         `Last used ${formatRelativeTime(k.last_used_at)}`
                       ) : (
@@ -289,7 +289,7 @@ export default function APIKeysPage() {
                       (revoking === k.id ? (
                         <div className="flex items-center gap-1">
                           <Button
-                            variant="destructive-ghost"
+                            variant="danger-ghost"
                             size="sm"
                             onClick={() => handleRevoke(k.id)}
                             className="h-auto px-2 py-1 text-xs"
@@ -307,7 +307,7 @@ export default function APIKeysPage() {
                         </div>
                       ) : (
                         <Button
-                          variant="destructive-ghost"
+                          variant="danger-ghost"
                           size="sm"
                           onClick={() => setRevoking(k.id)}
                           className="h-auto px-2 py-1 text-xs"

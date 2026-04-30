@@ -5,23 +5,15 @@ import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, Button, Badge, EmptyState } from "@/components/ui";
+import { PageHeader, Card, Button, Badge } from "@/components/ui";
 import {
   CreateEnvironmentDialog,
   EditEnvironmentDialog,
   DeleteDialog,
 } from "@/components/entity-dialog";
 import {
-  Globe,
-  Plus,
-  Pencil,
-  Trash2,
-  ArrowLeftRight,
-  CheckCircle2,
-  Server,
-  Key,
-  Flag,
-} from "lucide-react";
+  GlobeIcon, PlusIcon, PencilIcon, TrashIcon, ArrowLeftRightIcon, CheckCircleFillIcon, ServerIcon, KeyIcon, FlagIcon
+} from "@/components/icons/nav-icons";
 import {
   PrerequisiteGate,
   usePrerequisites,
@@ -31,6 +23,8 @@ import type { Environment, Project } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import { useEnvironments, useProjects } from "@/hooks/use-data";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
+import { Blankslate } from "@/components/blankslate";
+import { EnvironmentIcon } from "@/components/icons/nav-icons";
 
 export default function EnvironmentsPage() {
   const {
@@ -209,7 +203,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
         description={`Manage deployment environments for ${currentProject?.name || "this project"}`}
         actions={
           <Button onClick={openCreateDialog}>
-            <Plus className="mr-2 h-4 w-4" />
+            <PlusIcon className="mr-2 h-4 w-4" />
             New Environment
           </Button>
         }
@@ -220,13 +214,13 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-teal-700 text-white shadow-sm">
-              <Globe className="h-5 w-5" />
+              <GlobeIcon className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-[var(--fgColor-default)]">
                 {currentProject?.name}
               </p>
-              <p className="text-xs text-slate-500 font-mono">
+              <p className="text-xs text-[var(--fgColor-muted)] font-mono">
                 {currentProject?.slug}
               </p>
             </div>
@@ -237,18 +231,15 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
 
       {/* Environments Grid */}
       {envs.length === 0 ? (
-        <EmptyState
-          icon={Server}
-          title="No environments yet"
-          description="Create your first environment to start managing flag states across deployment stages like development, staging, and production."
-          action={
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Environment
-            </Button>
-          }
-          docsUrl={DOCS_LINKS.quickstart}
-          docsLabel="Learn about environments"
+        <Blankslate
+          icon={EnvironmentIcon}
+          title="You haven't created any environments yet"
+          description="Environments let you manage flag states across deployment stages like development, staging, and production — each with its own targeting rules and rollouts."
+          actionLabel="Create your first environment"
+          onAction={openCreateDialog}
+          learnMoreUrl={DOCS_LINKS.quickstart}
+          learnMoreLabel="Learn about environments"
+          variant="bordered"
         />
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -259,15 +250,15 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                 key={env.id}
                 className={`group relative p-4 sm:p-5 transition-all hover:shadow-md ${
                   isActive
-                    ? "border-accent/20 bg-accent/5 ring-2 ring-accent/20"
-                    : "hover:border-accent/20"
+                    ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] ring-2 ring-[var(--borderColor-accent-muted)]"
+                    : "hover:border-[var(--borderColor-accent-muted)]"
                 }`}
               >
                 {/* Active indicator */}
                 {isActive && (
                   <div className="absolute -top-1.5 -right-1.5">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white shadow-sm">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--bgColor-accent-emphasis)] text-white shadow-sm">
+                      <CheckCircleFillIcon className="h-3.5 w-3.5" />
                     </div>
                   </div>
                 )}
@@ -278,29 +269,29 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                     className={`mt-0.5 h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow-sm bg-[${env.color}]`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-sm font-semibold text-[var(--fgColor-default)]">
                       {env.name}
                     </p>
-                    <p className="mt-0.5 font-mono text-xs text-slate-500">
+                    <p className="mt-0.5 font-mono text-xs text-[var(--fgColor-muted)]">
                       {env.slug}
                     </p>
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+                <div className="flex items-center gap-4 text-xs text-[var(--fgColor-muted)] mb-3">
                   <div className="flex items-center gap-1">
-                    <Key className="h-3.5 w-3.5" />
+                    <KeyIcon className="h-3.5 w-3.5" />
                     <span>API keys</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Flag className="h-3.5 w-3.5" />
-                    <span>Flag states</span>
+                    <FlagIcon className="h-3.5 w-3.5" />
+                    <span>FlagIcon states</span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t border-slate-200">
+                <div className="flex gap-2 pt-3 border-t border-[var(--borderColor-default)]">
                   {!isActive && (
                     <Button
                       variant="secondary"
@@ -308,7 +299,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                       className="flex-1 text-xs"
                       onClick={() => quickSelect(env)}
                     >
-                      <Globe className="mr-1.5 h-3.5 w-3.5" />
+                      <GlobeIcon className="mr-1.5 h-3.5 w-3.5" />
                       Switch
                     </Button>
                   )}
@@ -318,16 +309,16 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                     onClick={() => openEditDialog(env)}
                     title="Edit environment"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <PencilIcon className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => openDeleteDialog(env)}
-                    className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                    className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
                     title="Delete environment"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <TrashIcon className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </Card>

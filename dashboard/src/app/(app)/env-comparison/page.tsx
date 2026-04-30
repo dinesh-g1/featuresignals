@@ -14,7 +14,9 @@ import {
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeftRight, FolderOpen, Globe } from "lucide-react";
+import {
+  ArrowLeftRightIcon, FolderOpenIcon, GlobeIcon
+} from "@/components/icons/nav-icons";
 import type {
   Environment,
   EnvComparisonItem,
@@ -126,7 +128,7 @@ export default function EnvComparisonPage() {
           description="Compare flag states between two environments and sync differences"
         />
         <EmptyState
-          icon={FolderOpen}
+          icon={FolderOpenIcon}
           title="No project selected"
           description="Select a project using the context bar above to compare environments."
           className="py-16"
@@ -155,7 +157,7 @@ export default function EnvComparisonPage() {
           </div>
         </div>
         <div className="hidden items-center pb-2 sm:flex">
-          <ArrowLeftRight className="h-5 w-5 text-slate-400" />
+          <ArrowLeftRightIcon className="h-5 w-5 text-[var(--fgColor-subtle)]" />
         </div>
         <div className="flex-1">
           <Label>Target Environment</Label>
@@ -180,15 +182,15 @@ export default function EnvComparisonPage() {
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <Card className="p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
                 Total Flags
               </p>
-              <p className="mt-1 text-2xl font-bold text-slate-900">
+              <p className="mt-1 text-2xl font-bold text-[var(--fgColor-default)]">
                 {comparison.total}
               </p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
                 Differences
               </p>
               <p className="mt-1 text-2xl font-bold text-amber-600">
@@ -196,10 +198,10 @@ export default function EnvComparisonPage() {
               </p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
                 Identical
               </p>
-              <p className="mt-1 text-2xl font-bold text-emerald-600">
+              <p className="mt-1 text-2xl font-bold text-[var(--fgColor-success)]">
                 {comparison.total - comparison.diff_count}
               </p>
             </Card>
@@ -207,15 +209,15 @@ export default function EnvComparisonPage() {
 
           {(comparison.diffs ?? []).length > 0 && (
             <Card>
-              <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex flex-col gap-2 border-b border-[var(--borderColor-default)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
                     checked={selected.size === (comparison.diffs ?? []).length}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
+                    className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
                   />
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-[var(--fgColor-default)]">
                     {selected.size > 0
                       ? `${selected.size} selected`
                       : "Select flags to sync"}
@@ -232,9 +234,9 @@ export default function EnvComparisonPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
                       <th className="px-4 py-3 w-8 sm:px-6"></th>
-                      <th className="px-4 py-3 sm:px-6">Flag</th>
+                      <th className="px-4 py-3 sm:px-6">FlagIcon</th>
                       <th className="px-4 py-3">{sourceName} Enabled</th>
                       <th className="px-4 py-3">{targetName} Enabled</th>
                       <th className="hidden px-4 py-3 sm:table-cell">
@@ -250,17 +252,17 @@ export default function EnvComparisonPage() {
                     {(comparison.diffs ?? []).map((d) => (
                       <tr
                         key={d.flag_key}
-                        className="transition-colors hover:bg-accent-glass"
+                        className="transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass"
                       >
                         <td className="px-4 py-3 sm:px-6">
                           <input
                             type="checkbox"
                             checked={selected.has(d.flag_key)}
                             onChange={() => toggleSelect(d.flag_key)}
-                            className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
+                            className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
                           />
                         </td>
-                        <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
+                        <td className="px-4 py-3 font-mono font-medium text-[var(--fgColor-default)] sm:px-6">
                           {d.flag_key}
                         </td>
                         <td className="px-4 py-3">
@@ -277,12 +279,12 @@ export default function EnvComparisonPage() {
                             />
                           )}
                         </td>
-                        <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
+                        <td className="hidden px-4 py-3 text-[var(--fgColor-muted)] sm:table-cell">
                           {d.source_rollout != null
                             ? `${(d.source_rollout / 100).toFixed(0)}%`
                             : "—"}
                         </td>
-                        <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">
+                        <td className="hidden px-4 py-3 text-[var(--fgColor-muted)] sm:table-cell">
                           {d.target_rollout != null
                             ? `${(d.target_rollout / 100).toFixed(0)}%`
                             : "—"}
@@ -306,7 +308,7 @@ export default function EnvComparisonPage() {
 
           {(comparison.diffs ?? []).length === 0 && (
             <Card className="px-6 py-12 text-center">
-              <p className="text-sm font-medium text-emerald-600">
+              <p className="text-sm font-medium text-[var(--fgColor-success)]">
                 All flags are identical between these environments
               </p>
             </Card>

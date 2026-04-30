@@ -16,14 +16,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  FolderOpen,
-  Globe,
-  Flag,
-  ChevronRight,
-  CheckCircle2,
-  Plus,
-  Loader2,
-} from "lucide-react";
+  FolderOpenIcon, GlobeIcon, FlagIcon, ChevronRightIcon, CheckCircleFillIcon, PlusIcon, LoaderIcon
+} from "@/components/icons/nav-icons";
 import { ENVIRONMENT_COLORS } from "@/lib/constants";
 import type { Environment } from "@/lib/types";
 
@@ -128,10 +122,10 @@ export function PrerequisiteGate({
       {/* Hierarchy Progress */}
       <div className="mx-auto max-w-3xl pt-8">
         <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--fgColor-default)]">
             Set up your workspace
           </h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
             Follow these steps to get started with feature flags
           </p>
         </div>
@@ -142,36 +136,36 @@ export function PrerequisiteGate({
           <div
             className={`rounded-2xl border p-6 transition-all ${
               !state.hasProjects
-                ? "border-accent/20 bg-gradient-to-br from-accent/5 to-white shadow-lg shadow-accent/10"
-                : "border-slate-200 bg-white"
+                ? "border-[var(--borderColor-accent-muted)] bg-gradient-to-br from-accent/5 to-white shadow-lg shadow-accent/10"
+                : "border-[var(--borderColor-default)] bg-white"
             }`}
           >
             <div className="flex items-start gap-4">
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                   state.hasProjects
-                    ? "bg-emerald-100 text-emerald-600"
-                    : "bg-accent/10 text-accent"
+                    ? "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]"
+                    : "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
                 }`}
               >
                 {state.hasProjects ? (
-                  <CheckCircle2 className="h-6 w-6" />
+                  <CheckCircleFillIcon className="h-6 w-6" />
                 ) : (
-                  <FolderOpen className="h-5 w-5" />
+                  <FolderOpenIcon className="h-5 w-5" />
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-semibold text-slate-900">
+                  <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
                     Create a Project
                   </h3>
                   {state.hasProjects && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="rounded-full bg-[var(--bgColor-success-muted)] px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                       Done
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
                   Projects group your feature flags and environments together.
                   Think of them as separate applications or services.
                 </p>
@@ -181,7 +175,7 @@ export function PrerequisiteGate({
                       onClick={() => setShowProjectDialog(true)}
                       size="sm"
                     >
-                      <Plus className="mr-2 h-4 w-4" />
+                      <PlusIcon className="mr-2 h-4 w-4" />
                       Create Project
                     </Button>
                   </div>
@@ -192,54 +186,54 @@ export function PrerequisiteGate({
 
           {/* Connector */}
           <div className="flex justify-center">
-            <ChevronRight className="h-5 w-5 text-slate-300" />
+            <ChevronRightIcon className="h-5 w-5 text-slate-300" />
           </div>
 
           {/* Step 2: Create Environment */}
           <div
             className={`rounded-2xl border p-6 transition-all ${
               state.hasProjects && !state.hasEnvironments
-                ? "border-accent/20 bg-gradient-to-br from-accent/5 to-white shadow-lg shadow-accent/10"
+                ? "border-[var(--borderColor-accent-muted)] bg-gradient-to-br from-accent/5 to-white shadow-lg shadow-accent/10"
                 : state.hasEnvironments
-                  ? "border-slate-200 bg-white"
-                  : "border-slate-200 bg-slate-50/50 opacity-50"
+                  ? "border-[var(--borderColor-default)] bg-white"
+                  : "border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]/50 opacity-50"
             }`}
           >
             <div className="flex items-start gap-4">
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                   state.hasEnvironments
-                    ? "bg-emerald-100 text-emerald-600"
+                    ? "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]"
                     : state.hasProjects
-                      ? "bg-accent/10 text-accent"
-                      : "bg-slate-200 text-slate-400"
+                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                      : "bg-[var(--bgColor-muted)] text-[var(--fgColor-subtle)]"
                 }`}
               >
                 {state.hasEnvironments ? (
-                  <CheckCircle2 className="h-6 w-6" />
+                  <CheckCircleFillIcon className="h-6 w-6" />
                 ) : (
-                  <Globe className="h-5 w-5" />
+                  <GlobeIcon className="h-5 w-5" />
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-semibold text-slate-900">
+                  <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
                     Add Environments
                   </h3>
                   {state.hasEnvironments && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="rounded-full bg-[var(--bgColor-success-muted)] px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                       Done
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
                   Environments let you manage flags independently across
                   deployment stages (development, staging, production).
                 </p>
                 {state.hasProjects && !state.hasEnvironments && (
                   <div className="mt-4">
                     <Button onClick={() => setShowEnvDialog(true)} size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
+                      <PlusIcon className="mr-2 h-4 w-4" />
                       Create Environment
                     </Button>
                   </div>
@@ -251,27 +245,27 @@ export function PrerequisiteGate({
           {/* Connector */}
           {state.hasEnvironments && (
             <div className="flex justify-center">
-              <ChevronRight className="h-5 w-5 text-slate-300" />
+              <ChevronRightIcon className="h-5 w-5 text-slate-300" />
             </div>
           )}
 
           {/* Step 3: Create Flags (shown when ready) */}
           {state.hasEnvironments && (
-            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-white p-6 shadow-lg shadow-emerald-500/5">
+            <div className="rounded-2xl border border-[var(--borderColor-success-muted)] bg-gradient-to-br from-emerald-50/50 to-white p-6 shadow-lg shadow-emerald-500/5">
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                  <Flag className="h-5 w-5" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]">
+                  <FlagIcon className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Create Your First Flag
+                    <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
+                      Create Your First FlagIcon
                     </h3>
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="rounded-full bg-[var(--bgColor-success-muted)] px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                       Ready
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
                     You&apos;re all set! Navigate to the Flags page to create
                     your first feature flag.
                   </p>
@@ -303,7 +297,7 @@ export function PrerequisiteGate({
                 className="mt-1"
                 autoFocus
               />
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
                 This is how your project will appear in the dashboard
               </p>
             </div>
@@ -322,12 +316,12 @@ export function PrerequisiteGate({
             >
               {creating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <PlusIcon className="mr-2 h-4 w-4" />
                   Create Project
                 </>
               )}
@@ -381,12 +375,12 @@ export function PrerequisiteGate({
                     title={color.label}
                   >
                     {envColor === color.value && (
-                      <CheckCircle2 className="h-4 w-4 text-white drop-shadow" />
+                      <CheckCircleFillIcon className="h-4 w-4 text-white drop-shadow" />
                     )}
                   </button>
                 ))}
               </div>
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
                 Click a color to create environment instantly
               </p>
             </div>
@@ -405,12 +399,12 @@ export function PrerequisiteGate({
             >
               {creating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <PlusIcon className="mr-2 h-4 w-4" />
                   Create Environment
                 </>
               )}

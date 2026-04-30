@@ -1,26 +1,26 @@
+import type { Icon } from "@primer/octicons-react";
 import {
-  Flag,
-  FlaskConical,
-  Search,
-  ShieldCheck,
-  Cloud,
-  Layers,
-  Lock,
-  BookOpen,
-  Terminal,
-  Package,
-  GitBranch,
-  Rocket,
-  Brain,
-  Webhook,
-  type LucideIcon,
-} from "lucide-react";
+  IterationsIcon,
+  BeakerIcon,
+  ShieldCheckIcon,
+  CloudIcon,
+  StackIcon,
+  BookIcon,
+  TerminalIcon,
+  PackageIcon,
+  GitBranchIcon,
+  RocketIcon,
+  LightBulbIcon,
+  WebhookIcon,
+  SearchIcon,
+  LockIcon,
+} from "@primer/octicons-react";
 
 export interface NavItem {
   title: string;
   description: string;
   href: string;
-  icon: LucideIcon;
+  icon: Icon;
   external?: boolean;
   badge?: string;
 }
@@ -30,32 +30,32 @@ export const platformItems: NavItem[] = [
     title: "Core Features",
     description: "Flag engine, targeting, rollouts, A/B testing",
     href: "/features",
-    icon: Flag,
+    icon: IterationsIcon,
   },
   {
     title: "AI Janitor",
     description: "Autonomous stale flag detection & PR generation",
     href: "/features/ai",
-    icon: Brain,
+    icon: LightBulbIcon,
     badge: "New",
   },
   {
     title: "Security & Governance",
     description: "RBAC, audit logs, SSO, CAB approvals, compliance",
     href: "/features/security",
-    icon: ShieldCheck,
+    icon: ShieldCheckIcon,
   },
   {
     title: "Integrations",
     description: "Terraform, Slack, GitHub, Jira, Datadog, webhooks",
     href: "/features/integrations",
-    icon: Webhook,
+    icon: WebhookIcon,
   },
   {
     title: "Use Cases",
     description: "CI/CD, canary releases, kill switches, experimentation",
     href: "/use-cases",
-    icon: Layers,
+    icon: StackIcon,
   },
 ];
 
@@ -64,13 +64,13 @@ export const learnMoreItems: NavItem[] = [
     title: "Pricing",
     description: "Flat-rate pricing. Unlimited MAUs. Never per-seat.",
     href: "/pricing",
-    icon: Layers,
+    icon: StackIcon,
   },
   {
     title: "Documentation",
     description: "Getting started, GitOps, OpenFeature guides",
     href: "https://docs.featuresignals.com",
-    icon: BookOpen,
+    icon: BookIcon,
     external: true,
   },
 ];
@@ -80,35 +80,35 @@ export const developerItems: NavItem[] = [
     title: "Documentation",
     description: "Getting started, concepts, architecture guides",
     href: "https://docs.featuresignals.com",
-    icon: BookOpen,
+    icon: BookIcon,
     external: true,
   },
   {
     title: "API Reference",
     description: "REST API & OpenAPI playground",
     href: "https://docs.featuresignals.com/api-playground",
-    icon: Terminal,
+    icon: TerminalIcon,
     external: true,
   },
   {
     title: "SDKs (8 Languages)",
     description: "Go, Node, Python, Java, C#, Ruby, React, Vue",
     href: "https://docs.featuresignals.com/sdks/overview",
-    icon: Package,
+    icon: PackageIcon,
     external: true,
   },
   {
     title: "Terraform Provider",
     description: "Manage flags as infrastructure code",
     href: "https://registry.terraform.io/providers/featuresignals",
-    icon: Cloud,
+    icon: CloudIcon,
     external: true,
   },
   {
     title: "GitHub",
     description: "Source code, issues, contributions welcome",
     href: "https://github.com/dinesh-g1/featuresignals",
-    icon: GitBranch,
+    icon: GitBranchIcon,
     external: true,
   },
 ];

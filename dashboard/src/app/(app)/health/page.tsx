@@ -12,7 +12,7 @@ import {
   LoadingSpinner,
   EmptyState,
 } from "@/components/ui";
-import { ChevronRight, FolderOpen } from "lucide-react";
+import { ChevronRightIcon, FolderOpenIcon } from "@/components/icons/nav-icons";
 import type { Flag } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +87,7 @@ export default function FlagHealthPage() {
 
   const scoreColor =
     healthScore >= 80
-      ? "text-emerald-600"
+      ? "text-[var(--fgColor-success)]"
       : healthScore >= 50
         ? "text-amber-600"
         : "text-red-600";
@@ -96,17 +96,17 @@ export default function FlagHealthPage() {
       ? "bg-emerald-50 ring-emerald-100"
       : healthScore >= 50
         ? "bg-amber-50 ring-amber-100"
-        : "bg-red-50 ring-red-100";
+        : "bg-[var(--bgColor-danger-muted)] ring-red-100";
 
   if (!projectId) {
     return (
       <div className="space-y-6 sm:space-y-8">
         <PageHeader
-          title="Flag Health"
+          title="FlagIcon Health"
           description="Monitor technical debt and flag hygiene"
         />
         <EmptyState
-          icon={FolderOpen}
+          icon={FolderOpenIcon}
           title="No project selected"
           description="Select a project using the context bar above to view your flag health metrics."
           className="py-16"
@@ -122,24 +122,24 @@ export default function FlagHealthPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
-        title="Flag Health"
+        title="FlagIcon Health"
         description="Monitor technical debt and flag hygiene"
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6">
         <div
           className={cn(
-            "rounded-xl border border-slate-200 bg-white p-4 text-center ring-1 sm:p-6",
+            "rounded-xl border border-[var(--borderColor-default)] bg-white p-4 text-center ring-1 sm:p-6",
             scoreBg,
           )}
         >
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
             Health Score
           </p>
           <p className={cn("mt-2 text-3xl font-bold sm:text-5xl", scoreColor)}>
             {healthScore}
           </p>
-          <p className="mt-1 text-xs text-slate-500">out of 100</p>
+          <p className="mt-1 text-xs text-[var(--fgColor-muted)]">out of 100</p>
         </div>
         <HealthStatCard
           label="Total Flags"
@@ -238,7 +238,7 @@ export default function FlagHealthPage() {
         title="No Expiration Set"
         subtitle={`${noExpiration.length} of ${flags.length} flags have no expiration date. Consider adding one to prevent flag debt.`}
       >
-        <div className="text-sm text-slate-500 px-4 py-4 sm:px-6">
+        <div className="text-sm text-[var(--fgColor-muted)] px-4 py-4 sm:px-6">
           {noExpiration.length === 0
             ? "All flags have expiration dates set."
             : `${noExpiration.length} flag${noExpiration.length > 1 ? "s" : ""} without expiration.`}
@@ -258,20 +258,20 @@ function HealthStatCard({
   color: string;
 }) {
   const colors: Record<string, string> = {
-    accent: "text-accent",
-    emerald: "text-emerald-600",
+    accent: "text-[var(--fgColor-accent)]",
+    emerald: "text-[var(--fgColor-success)]",
     amber: "text-amber-600",
     red: "text-red-600",
   };
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 text-center transition-all hover:shadow-lg hover:border-slate-300 sm:p-6">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 text-center transition-all hover:shadow-lg hover:border-[var(--borderColor-emphasis)] sm:p-6">
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
         {label}
       </p>
       <p
         className={cn(
           "mt-2 text-2xl font-bold sm:text-3xl",
-          colors[color] || "text-slate-900",
+          colors[color] || "text-[var(--fgColor-default)]",
         )}
       >
         {value}
@@ -290,10 +290,10 @@ function HealthSection({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="hover:shadow-lg hover:border-slate-300">
+    <Card className="hover:shadow-lg hover:border-[var(--borderColor-emphasis)]">
       <CardHeader>
-        <h2 className="font-semibold text-slate-900">{title}</h2>
-        <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+        <h2 className="font-semibold text-[var(--fgColor-default)]">{title}</h2>
+        <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">{subtitle}</p>
       </CardHeader>
       <div className="divide-y divide-slate-100">{children}</div>
     </Card>
@@ -312,17 +312,19 @@ function FlagRow({
   return (
     <Link
       href={`/flags/${flag.key}`}
-      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent-glass sm:px-6"
+      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass sm:px-6"
     >
       <div className="min-w-0">
-        <p className="font-mono text-sm font-medium text-slate-900">
+        <p className="font-mono text-sm font-medium text-[var(--fgColor-default)]">
           {flag.key}
         </p>
-        <p className="text-xs text-slate-500 truncate">{flag.name}</p>
+        <p className="text-xs text-[var(--fgColor-muted)] truncate">
+          {flag.name}
+        </p>
       </div>
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <Badge variant={variant}>{badge}</Badge>
-        <ChevronRight className="h-4 w-4 text-slate-400" />
+        <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
       </div>
     </Link>
   );

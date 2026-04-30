@@ -5,7 +5,9 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { PageHeader, Card, CardHeader, StatCard } from "@/components/ui";
 import { ErrorDisplay } from "@/components/ui";
-import { BarChart3, Users, Building2, TrendingUp } from "lucide-react";
+import {
+  BarChartIcon, UsersIcon, BuildingIcon, TrendingUpIcon
+} from "@/components/icons/nav-icons";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import type { AnalyticsOverview } from "@/lib/types";
 
@@ -19,7 +21,7 @@ const PERIODS = [
 const FUNNEL_LABELS: Record<string, string> = {
   "auth.signup_completed": "Signups",
   "onboarding.completed": "Onboarding Done",
-  "flag.created": "First Flag",
+  "flag.created": "First FlagIcon",
   "evaluation.first": "First Eval",
   "billing.checkout_completed": "Checkout",
 };
@@ -66,15 +68,15 @@ export default function AnalyticsPage() {
           title="Analytics"
           description="Internal KPI dashboard — product health at a glance"
         />
-        <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+        <div className="flex gap-1 rounded-lg border border-[var(--borderColor-default)] bg-white p-1">
           {PERIODS.map((p) => (
             <button
               key={p.value}
               onClick={() => setPeriod(p.value)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 period === p.value
-                  ? "bg-accent text-white shadow-sm"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                  ? "bg-[var(--bgColor-accent-emphasis)] text-white shadow-sm"
+                  : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]"
               }`}
             >
               {p.label}
@@ -102,32 +104,32 @@ export default function AnalyticsPage() {
             <StatCard
               label="Active Workspaces"
               value={data.active_workspaces}
-              icon={Building2}
+              icon={BuildingIcon}
               color="accent"
             />
             <StatCard
-              label="Active Users"
+              label="Active UsersIcon"
               value={data.active_users}
-              icon={Users}
+              icon={UsersIcon}
               color="emerald"
             />
             <StatCard
               label="Auth Events"
               value={data.event_counts?.auth ?? 0}
-              icon={TrendingUp}
+              icon={TrendingUpIcon}
               color="amber"
             />
             <StatCard
-              label="Flag Events"
+              label="FlagIcon Events"
               value={data.event_counts?.flag ?? 0}
-              icon={BarChart3}
+              icon={BarChartIcon}
               color="accent"
             />
           </div>
 
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-[var(--fgColor-default)]">
                 Acquisition Funnel
               </h2>
             </CardHeader>
@@ -142,13 +144,13 @@ export default function AnalyticsPage() {
                   const pct = Math.round((count / maxCount) * 100);
                   return (
                     <div key={event} className="flex items-center gap-3">
-                      <span className="w-32 shrink-0 text-sm text-slate-600">
+                      <span className="w-32 shrink-0 text-sm text-[var(--fgColor-muted)]">
                         {label}
                       </span>
                       <div className="flex-1">
-                        <div className="h-7 overflow-hidden rounded-md bg-slate-100">
+                        <div className="h-7 overflow-hidden rounded-md bg-[var(--bgColor-muted)]">
                           <div
-                            className={`flex h-full items-center rounded-md bg-accent px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
+                            className={`flex h-full items-center rounded-md bg-[var(--bgColor-accent-emphasis)] px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
                           >
                             {count}
                           </div>
@@ -164,7 +166,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="font-semibold text-[var(--fgColor-default)]">
                   Plan Distribution
                 </h2>
               </CardHeader>
@@ -175,17 +177,17 @@ export default function AnalyticsPage() {
                       key={plan}
                       className="flex items-center justify-between px-4 py-3 sm:px-6"
                     >
-                      <span className="text-sm font-medium capitalize text-slate-700">
+                      <span className="text-sm font-medium capitalize text-[var(--fgColor-default)]">
                         {plan}
                       </span>
-                      <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent-dark">
+                      <span className="rounded-full bg-[var(--bgColor-accent-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--fgColor-accent)]">
                         {count}
                       </span>
                     </div>
                   ),
                 )}
                 {Object.keys(data.plan_distribution ?? {}).length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-slate-400">
+                  <p className="px-4 py-6 text-center text-sm text-[var(--fgColor-subtle)]">
                     No data yet
                   </p>
                 )}
@@ -194,7 +196,7 @@ export default function AnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="font-semibold text-[var(--fgColor-default)]">
                   Event Volume by Category
                 </h2>
               </CardHeader>
@@ -204,10 +206,10 @@ export default function AnalyticsPage() {
                     key={cat}
                     className="flex items-center justify-between px-4 py-3 sm:px-6"
                   >
-                    <span className="text-sm font-medium capitalize text-slate-700">
+                    <span className="text-sm font-medium capitalize text-[var(--fgColor-default)]">
                       {cat}
                     </span>
-                    <span className="text-sm tabular-nums text-slate-600">
+                    <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">
                       {count.toLocaleString()}
                     </span>
                   </div>

@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import type { Flag, Segment } from "@/lib/types";
 import { DOCS_LINKS } from "@/components/docs-link";
-import { Search, Command } from "lucide-react";
+import { SearchIcon, CommandIcon } from "@/components/icons/nav-icons";
 
 // Shared open state for external triggers
 let externalOpenSetter: ((open: boolean) => void) | null = null;
@@ -71,7 +71,7 @@ const NAV_ITEMS: PaletteItem[] = [
   },
   {
     id: "nav-health",
-    label: "Flag Health",
+    label: "FlagIcon Health",
     category: "navigation",
     href: "/health",
   },
@@ -134,7 +134,7 @@ const NAV_ITEMS: PaletteItem[] = [
 const CREATE_ITEMS: PaletteItem[] = [
   {
     id: "create-flag",
-    label: "Create Flag",
+    label: "Create FlagIcon",
     description: "Create a new feature flag",
     category: "create",
     href: "/flags?create=true",
@@ -155,7 +155,7 @@ const CREATE_ITEMS: PaletteItem[] = [
   },
   {
     id: "create-api-key",
-    label: "Create API Key",
+    label: "Create API KeyIcon",
     description: "Generate a new API key",
     category: "create",
     href: "/settings/api-keys",
@@ -497,14 +497,13 @@ export function CommandPalette() {
         onClick={() => setOpen(false)}
         role="presentation"
       />
-      <div className="relative w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-center border-b border-slate-200 px-4">
+      <div className="relative w-full max-w-lg rounded-xl border border-[var(--borderColor-default)] bg-white shadow-2xl">
+        <div className="flex items-center border-b border-[var(--borderColor-default)] px-4">
           <svg
-            className="h-5 w-5 text-slate-400 shrink-0"
+            className="h-5 w-5 text-[var(--fgColor-subtle)] shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth={2}
             aria-hidden="true"
             focusable="false"
           >
@@ -524,9 +523,9 @@ export function CommandPalette() {
             onKeyDown={handleKeyDown}
             placeholder={getPlaceholder(query)}
             aria-label="Search commands, flags, and segments"
-            className="flex-1 border-0 bg-transparent px-3 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+            className="flex-1 border-0 bg-transparent px-3 py-3.5 text-sm text-[var(--fgColor-default)] placeholder-slate-400 focus:outline-none"
           />
-          <kbd className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+          <kbd className="rounded bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--fgColor-muted)]">
             ESC
           </kbd>
         </div>
@@ -539,7 +538,7 @@ export function CommandPalette() {
                 setQuery("create:");
                 inputRef.current?.focus();
               }}
-              className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+              className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-[var(--bgColor-success-muted)]"
             >
               create:
             </button>
@@ -552,7 +551,7 @@ export function CommandPalette() {
             >
               help:
             </button>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-[var(--fgColor-subtle)]">
               Type a prefix to filter
             </span>
           </div>
@@ -560,7 +559,7 @@ export function CommandPalette() {
 
         <div className="max-h-80 overflow-y-auto p-2">
           {flatFiltered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-slate-400">
+            <div className="px-4 py-8 text-center text-sm text-[var(--fgColor-subtle)]">
               {query.startsWith("help:")
                 ? "No matching docs found."
                 : "No results found."}
@@ -568,7 +567,7 @@ export function CommandPalette() {
           ) : (
             Object.entries(grouped).map(([category, categoryItems]) => (
               <div key={category} className="mb-1">
-                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
                   {categoryLabels[category] || category}
                 </p>
                 {categoryItems.map((item) => {
@@ -580,11 +579,11 @@ export function CommandPalette() {
                       onMouseEnter={() => setSelected(idx)}
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
                         selected === idx
-                          ? "bg-accent/5 text-accent-dark"
-                          : "text-slate-700 hover:bg-slate-50"
+                          ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                          : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
                       }`}
                     >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-xs text-slate-500">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--bgColor-muted)] text-xs text-[var(--fgColor-muted)]">
                         {categoryIcons[item.category] || "#"}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -592,18 +591,18 @@ export function CommandPalette() {
                           {item.label}
                         </p>
                         {item.description && (
-                          <p className="text-xs text-slate-400 truncate">
+                          <p className="text-xs text-[var(--fgColor-subtle)] truncate">
                             {item.description}
                           </p>
                         )}
                       </div>
                       {item.external && (
-                        <span className="shrink-0 text-[10px] text-slate-400">
+                        <span className="shrink-0 text-[10px] text-[var(--fgColor-subtle)]">
                           \u2197
                         </span>
                       )}
                       {selected === idx && (
-                        <kbd className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                        <kbd className="rounded bg-[var(--bgColor-accent-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--fgColor-accent)]">
                           &crarr;
                         </kbd>
                       )}
@@ -615,24 +614,24 @@ export function CommandPalette() {
           )}
         </div>
 
-        <div className="flex items-center gap-4 border-t border-slate-200 px-4 py-2 text-[10px] text-slate-400">
+        <div className="flex items-center gap-4 border-t border-[var(--borderColor-default)] px-4 py-2 text-[10px] text-[var(--fgColor-subtle)]">
           <span>
-            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+            <kbd className="rounded bg-[var(--bgColor-muted)] px-1 py-0.5 font-medium">
               &uarr;
             </kbd>{" "}
-            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+            <kbd className="rounded bg-[var(--bgColor-muted)] px-1 py-0.5 font-medium">
               &darr;
             </kbd>{" "}
             navigate
           </span>
           <span>
-            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+            <kbd className="rounded bg-[var(--bgColor-muted)] px-1 py-0.5 font-medium">
               &crarr;
             </kbd>{" "}
             select
           </span>
           <span>
-            <kbd className="rounded bg-slate-100 px-1 py-0.5 font-medium">
+            <kbd className="rounded bg-[var(--bgColor-muted)] px-1 py-0.5 font-medium">
               esc
             </kbd>{" "}
             close
@@ -647,18 +646,18 @@ export function CommandPaletteButton() {
   return (
     <button
       onClick={() => openCommandPalette()}
-      className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+      className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[var(--fgColor-subtle)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-muted)]"
       aria-label="Open command palette"
       title="Quick actions — navigate, create, search docs"
     >
-      <Command className="h-3.5 w-3.5 transition-colors group-hover:text-accent" />
-      <span className="hidden xl:inline transition-colors group-hover:text-accent-dark">
+      <CommandIcon className="h-3.5 w-3.5 transition-colors group-hover:text-[var(--fgColor-accent)]" />
+      <span className="hidden xl:inline transition-colors group-hover:text-[var(--fgColor-accent)]">
         Quick actions
       </span>
-      <span className="hidden lg:inline xl:hidden transition-colors group-hover:text-accent-dark">
+      <span className="hidden lg:inline xl:hidden transition-colors group-hover:text-[var(--fgColor-accent)]">
         Actions
       </span>
-      <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+      <kbd className="rounded border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--fgColor-subtle)]">
         K
       </kbd>
     </button>

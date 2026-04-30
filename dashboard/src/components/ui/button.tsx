@@ -4,28 +4,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fgColor-accent)]/40 focus-visible:ring-offset-2 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         primary:
-          "bg-accent text-white shadow-md shadow-accent/25 hover:bg-accent-dark hover:shadow-lg hover:shadow-accent/30 hover:-translate-y-px",
+          "bg-[#1f883d] text-white shadow-[var(--shadow-resting-small)] hover:bg-[#1a7431] hover:-translate-y-px",
+        default:
+          "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] shadow-[var(--shadow-resting-xsmall)] hover:bg-[#e8eaed] hover:-translate-y-px",
         secondary:
-          "border border-stone-200/80 bg-white text-stone-700 shadow-sm hover:bg-stone-50 hover:text-stone-900 hover:border-stone-300 hover:shadow-md hover:-translate-y-px",
-        tertiary:
-          "bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900",
-        ghost: "text-stone-500 hover:bg-stone-100 hover:text-stone-900",
-        destructive:
-          "bg-gradient-to-b from-red-500 to-red-600 text-white shadow-md shadow-red-500/25 hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:shadow-red-500/30 hover:-translate-y-px",
-        "destructive-ghost": "text-red-600 hover:bg-red-50 hover:text-red-700",
-        link: "text-accent underline-offset-4 hover:underline hover:text-accent-dark",
-        outline:
-          "border-2 border-accent/30 bg-white text-accent-dark hover:bg-accent-subtle hover:border-accent",
-        "accent-ghost":
-          "text-accent-dark hover:bg-accent-subtle hover:text-accent",
+          "bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] border border-[var(--borderColor-default)] shadow-[var(--shadow-resting-xsmall)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]",
+        danger:
+          "bg-[var(--bgColor-danger-emphasis)] text-white shadow-[var(--shadow-resting-small)] hover:bg-[#a40e26] hover:-translate-y-px",
+        "danger-ghost":
+          "text-[var(--fgColor-danger)] hover:bg-[var(--bgColor-danger-muted)]",
+        ghost:
+          "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]",
+        link: "text-[var(--fgColor-accent)] underline-offset-4 hover:underline",
       },
       size: {
-        xs: "h-7 px-2.5 text-[11px] gap-1.5",
+        xs: "h-7 px-2.5 text-[11px] gap-1.5 rounded-sm",
         sm: "h-8 px-3 text-xs",
         md: "h-9 px-4 text-sm",
         lg: "h-10 px-5 text-sm",
@@ -39,7 +37,7 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "primary",
+      variant: "default",
       size: "md",
     },
   },
@@ -70,14 +68,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : "button";
 
+    // Primer pattern: never disabled, use aria-disabled + inactive visual state
+    const isAriaDisabled = disabled || loading;
+
     if (asChild) {
       return (
         <Comp
+          data-slot="button"
           className={cn(
             buttonVariants({ variant, size, fullWidth, className }),
+            isAriaDisabled && "opacity-50 pointer-events-none",
           )}
           ref={ref}
-          disabled={disabled || loading}
+          aria-disabled={isAriaDisabled || undefined}
           {...rest}
         >
           {children}
@@ -87,9 +90,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, fullWidth, className }))}
+        data-slot="button"
+        className={cn(
+          buttonVariants({ variant, size, fullWidth, className }),
+          isAriaDisabled && "opacity-50 pointer-events-none",
+        )}
         ref={ref}
-        disabled={disabled || loading}
+        aria-disabled={isAriaDisabled || undefined}
         {...rest}
       >
         {loading && (

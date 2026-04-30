@@ -1,4 +1,4 @@
-import { Check, X } from "lucide-react";
+import { CheckIcon, XIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -56,8 +56,8 @@ export function PasswordStrengthInline({
   if (!password) return null;
 
   const levelColors: Record<string, string> = {
-    none: "bg-slate-200",
-    weak: "bg-red-500",
+    none: "bg-[var(--bgColor-muted)]",
+    weak: "bg-[var(--bgColor-danger-muted)]0",
     fair: "bg-amber-500",
     good: "bg-yellow-500",
     strong: "bg-emerald-500",
@@ -66,7 +66,7 @@ export function PasswordStrengthInline({
   return (
     <div className="mt-2 space-y-2">
       {/* Progress bar */}
-      <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100">
+      <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--bgColor-muted)]">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-300",
@@ -82,10 +82,10 @@ export function PasswordStrengthInline({
             key={c.label}
             className={cn(
               "flex items-center gap-1.5 text-xs transition-colors",
-              c.met ? "text-emerald-600" : "text-slate-400",
+              c.met ? "text-[var(--fgColor-success)]" : "text-[var(--fgColor-subtle)]",
             )}
           >
-            {c.met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+            {c.met ? <CheckIcon className="h-3 w-3" /> : <XIcon className="h-3 w-3" />}
             <span className="truncate">{c.label}</span>
           </div>
         ))}

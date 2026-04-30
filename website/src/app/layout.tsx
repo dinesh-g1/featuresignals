@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://featuresignals.com"),
@@ -65,12 +58,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} scroll-smooth`}
-      data-scroll-behavior="smooth"
-    >
-      <body className="min-h-screen flex flex-col bg-stone-50 text-stone-900 font-sans antialiased selection:bg-accent selection:text-white">
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
+      <head />
+      <body className="min-h-screen flex flex-col bg-[var(--bgColor-default)] text-[var(--fgColor-default)] font-sans antialiased">
         {/* JSON-LD Structured Data for Google Rich Results */}
         <script
           type="application/ld+json"

@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
 const colorMap = {
   accent: {
@@ -37,7 +36,7 @@ type StatColor = keyof typeof colorMap;
 interface StatCardProps {
   label: string;
   value: string | number;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   color?: StatColor;
   className?: string;
 }
@@ -53,7 +52,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm ring-1 ring-slate-100/50 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg sm:p-6",
+        "rounded-xl border border-[var(--borderColor-default)]/60 bg-white p-4 shadow-sm ring-1 ring-slate-100/50 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg sm:p-6",
         c.hoverShadow,
         className,
       )}
@@ -62,14 +61,14 @@ export function StatCard({
         <div className={cn("rounded-xl p-2.5 shadow-sm sm:p-3", c.iconBg)}>
           <Icon
             className="h-4 w-4 text-white sm:h-5 sm:w-5"
-            strokeWidth={1.5}
+           
           />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-slate-500 sm:text-sm">
+          <p className="text-xs font-medium text-[var(--fgColor-muted)] sm:text-sm">
             {label}
           </p>
-          <p className="text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-3xl">
+          <p className="text-2xl font-bold tabular-nums tracking-tight text-[var(--fgColor-default)] sm:text-3xl">
             {value}
           </p>
         </div>

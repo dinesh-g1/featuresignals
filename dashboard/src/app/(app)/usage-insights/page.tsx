@@ -16,7 +16,9 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui";
-import { BarChart3, Search, Globe } from "lucide-react";
+import {
+  BarChartIcon, SearchIcon, GlobeIcon
+} from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { FlagInsight } from "@/lib/types";
 
@@ -84,7 +86,7 @@ export default function UsageInsightsPage() {
           description="Per-flag evaluation distribution for the selected environment"
         />
         <EmptyState
-          icon={Globe}
+          icon={GlobeIcon}
           title="No environment selected"
           description="Select an environment using the context bar above to view usage insights and evaluation distribution."
           className="py-16"
@@ -102,7 +104,7 @@ export default function UsageInsightsPage() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
           <Input
             placeholder="Search by flag key..."
             value={search}
@@ -110,7 +112,7 @@ export default function UsageInsightsPage() {
             className="pl-10"
           />
         </div>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-[var(--fgColor-muted)]">
           {filtered.length} flag{filtered.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -118,7 +120,7 @@ export default function UsageInsightsPage() {
       {insights.length === 0 ? (
         <Card>
           <EmptyState
-            icon={BarChart3}
+            icon={BarChartIcon}
             title="No evaluation data yet"
             description="Connect an SDK to your application and start evaluating flags. Usage data will appear here in real-time."
             docsUrl={DOCS_LINKS.sdks}
@@ -132,15 +134,15 @@ export default function UsageInsightsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className="cursor-pointer hover:text-slate-700"
+                  className="cursor-pointer hover:text-[var(--fgColor-default)]"
                   onClick={() => handleSort("flag_key")}
                 >
-                  Flag Key{" "}
+                  FlagIcon KeyIcon{" "}
                   {sortBy === "flag_key" &&
                     (sortDir === "asc" ? "\u2191" : "\u2193")}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer hover:text-slate-700"
+                  className="cursor-pointer hover:text-[var(--fgColor-default)]"
                   onClick={() => handleSort("true_percentage")}
                 >
                   True %{" "}
@@ -154,7 +156,7 @@ export default function UsageInsightsPage() {
                   False Count
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer hover:text-slate-700"
+                  className="cursor-pointer hover:text-[var(--fgColor-default)]"
                   onClick={() => handleSort("total_count")}
                 >
                   Total{" "}
@@ -166,28 +168,28 @@ export default function UsageInsightsPage() {
             <TableBody>
               {filtered.map((ins) => (
                 <TableRow key={ins.flag_key}>
-                  <TableCell className="font-mono font-medium text-slate-900">
+                  <TableCell className="font-mono font-medium text-[var(--fgColor-default)]">
                     {ins.flag_key}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-16 rounded-full bg-slate-200 overflow-hidden sm:w-24">
+                      <div className="h-2 w-16 rounded-full bg-[var(--bgColor-muted)] overflow-hidden sm:w-24">
                         <div
                           className={`h-full rounded-full bg-emerald-500 transition-all w-[${Math.min(ins.true_percentage ?? 0, 100)}%]`}
                         />
                       </div>
-                      <span className="text-xs font-medium text-slate-600">
+                      <span className="text-xs font-medium text-[var(--fgColor-muted)]">
                         {(ins.true_percentage ?? 0).toFixed(1)}%
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden text-emerald-600 font-medium sm:table-cell">
+                  <TableCell className="hidden text-[var(--fgColor-success)] font-medium sm:table-cell">
                     {(ins.true_count ?? 0).toLocaleString()}
                   </TableCell>
-                  <TableCell className="hidden text-slate-500 sm:table-cell">
+                  <TableCell className="hidden text-[var(--fgColor-muted)] sm:table-cell">
                     {(ins.false_count ?? 0).toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-slate-700 font-medium">
+                  <TableCell className="text-[var(--fgColor-default)] font-medium">
                     {(ins.total_count ?? 0).toLocaleString()}
                   </TableCell>
                 </TableRow>
@@ -196,7 +198,7 @@ export default function UsageInsightsPage() {
           </Table>
           {filtered.length === 0 && (
             <EmptyState
-              icon={BarChart3}
+              icon={BarChartIcon}
               title="No flags match the search."
               className="py-8"
             />

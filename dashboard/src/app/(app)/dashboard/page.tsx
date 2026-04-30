@@ -20,22 +20,8 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonCard, PageSkeleton } from "@/components/ui/skeleton";
 import {
-  Flag,
-  Globe,
-  Activity,
-  Shield,
-  ChevronRight,
-  Plus,
-  ArrowUpRight,
-  GitPullRequest,
-  Clock,
-  Sparkles,
-  TrendingUp,
-  Users,
-  CheckCircle,
-  AlertTriangle,
-  ArrowRight,
-} from "lucide-react";
+  FlagIcon, GlobeIcon, ActivityIcon, ShieldIcon, ChevronRightIcon, PlusIcon, ArrowUpRightIcon, GitPullRequestIcon, ClockIcon, SparklesIcon, TrendingUpIcon, UsersIcon, CheckCircleFillIcon, AlertIcon, ArrowRightIcon
+} from "@/components/icons/nav-icons";
 import Link from "next/link";
 import type {
   Project,
@@ -66,7 +52,7 @@ function UpgradeCalloutCard() {
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
-              <Sparkles className="h-5 w-5 text-amber-600" strokeWidth={1.5} />
+              <SparklesIcon className="h-5 w-5 text-amber-600" />
             </div>
             <div>
               <CardTitle className="text-amber-900">
@@ -86,7 +72,7 @@ function UpgradeCalloutCard() {
             className="shrink-0 rounded-xl bg-amber-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-800 hover:shadow-md inline-flex items-center gap-1.5"
           >
             {plan === "trial" ? "Subscribe" : "Upgrade"}
-            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
+            <ArrowUpRightIcon className="h-3.5 w-3.5" />
           </Link>
         </div>
       </CardContent>
@@ -132,13 +118,13 @@ function CreateFirstProject() {
     <div className="mx-auto max-w-lg mt-12">
       <Card>
         <CardContent className="p-8 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">
-            <Flag className="h-8 w-8 text-accent" strokeWidth={1.5} />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)] ring-1 ring-[var(--borderColor-accent-muted)]">
+            <FlagIcon className="h-8 w-8 text-[var(--fgColor-accent)]" />
           </div>
-          <h2 className="text-xl font-bold text-stone-900 mb-2">
+          <h2 className="text-xl font-bold text-[var(--fgColor-default)] mb-2">
             Welcome to FeatureSignals
           </h2>
-          <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto leading-relaxed">
+          <p className="text-sm text-[var(--fgColor-muted)] mb-6 max-w-sm mx-auto leading-relaxed">
             Create your first project to start managing feature flags across
             environments.
           </p>
@@ -147,7 +133,7 @@ function CreateFirstProject() {
             <div>
               <label
                 htmlFor="project-name"
-                className="block text-sm font-semibold text-stone-700 mb-1"
+                className="block text-sm font-semibold text-[var(--fgColor-default)] mb-1"
               >
                 Project Name
               </label>
@@ -167,14 +153,14 @@ function CreateFirstProject() {
                   setError("");
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="w-full rounded-xl border border-[var(--borderColor-default)] bg-white px-4 py-2.5 text-sm text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] shadow-sm transition-all focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
                 autoFocus
               />
             </div>
             <div>
               <label
                 htmlFor="project-slug"
-                className="block text-sm font-semibold text-stone-700 mb-1"
+                className="block text-sm font-semibold text-[var(--fgColor-default)] mb-1"
               >
                 Slug
               </label>
@@ -188,7 +174,7 @@ function CreateFirstProject() {
                   setError("");
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 font-mono"
+                className="w-full rounded-xl border border-[var(--borderColor-default)] bg-white px-4 py-2.5 text-sm text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] shadow-sm transition-all focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] font-mono"
               />
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
@@ -224,7 +210,7 @@ function OverviewStats({
       <StatCard label="Environments" value={envCount} icon="🌐" />
       <StatCard label="Team Members" value={memberCount} icon="👥" />
       <StatCard
-        label="Flag Health"
+        label="FlagIcon Health"
         value="98%"
         change="+2%"
         trend="up"
@@ -291,19 +277,19 @@ function SetupChecklist({
               key={i}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-4 py-3 transition-colors",
-                step.done ? "opacity-60" : "hover:bg-stone-50",
+                step.done ? "opacity-60" : "hover:bg-[var(--bgColor-default)]",
               )}
             >
               <div
                 className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                   step.done
-                    ? "bg-emerald-100 text-emerald-600"
-                    : "bg-stone-100 text-stone-500",
+                    ? "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]"
+                    : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
                 )}
               >
                 {step.done ? (
-                  <CheckCircle className="h-4 w-4" strokeWidth={2.5} />
+                  <CheckCircleFillIcon className="h-4 w-4" />
                 ) : (
                   i + 1
                 )}
@@ -312,20 +298,20 @@ function SetupChecklist({
                 <p
                   className={cn(
                     "text-sm font-medium",
-                    step.done ? "text-stone-500" : "text-stone-800",
+                    step.done ? "text-[var(--fgColor-muted)]" : "text-[var(--fgColor-default)]",
                   )}
                 >
                   {step.label}
                 </p>
-                <p className="text-xs text-stone-400">{step.desc}</p>
+                <p className="text-xs text-[var(--fgColor-subtle)]">{step.desc}</p>
               </div>
               {!step.done && (
                 <Link
                   href={step.href}
-                  className="shrink-0 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent-dark hover:bg-accent/20 transition-colors inline-flex items-center gap-1"
+                  className="shrink-0 rounded-lg bg-[var(--bgColor-accent-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)] transition-colors inline-flex items-center gap-1"
                 >
                   Start
-                  <ChevronRight className="h-3 w-3" />
+                  <ChevronRightIcon className="h-3 w-3" />
                 </Link>
               )}
             </div>
@@ -364,42 +350,42 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
           </div>
           <Link
             href="/audit"
-            className="text-xs font-semibold text-accent hover:text-accent-dark transition-colors inline-flex items-center gap-1"
+            className="text-xs font-semibold text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors inline-flex items-center gap-1"
           >
             View all
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRightIcon className="h-3 w-3" />
           </Link>
         </div>
       </CardHeader>
       <CardContent>
         {audit.length === 0 ? (
           <div className="py-6 text-center">
-            <p className="text-xs text-stone-400">No recent activity</p>
+            <p className="text-xs text-[var(--fgColor-subtle)]">No recent activity</p>
           </div>
         ) : (
           <div className="space-y-1">
             {audit.slice(0, 8).map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-stone-50 transition-colors"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--bgColor-default)] transition-colors"
               >
                 <span className="text-base leading-none shrink-0">
                   {actionIcons[entry.action] || "📌"}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-stone-700 truncate">
+                  <p className="text-sm text-[var(--fgColor-default)] truncate">
                     <span className="font-medium capitalize">
                       {entry.action.replace(/_/g, " ")}
                     </span>
                     {entry.resource_type && (
-                      <span className="text-stone-400">
+                      <span className="text-[var(--fgColor-subtle)]">
                         {" "}
                         on {entry.resource_type}
                       </span>
                     )}
                   </p>
                 </div>
-                <span className="text-xs text-stone-400 shrink-0">
+                <span className="text-xs text-[var(--fgColor-subtle)] shrink-0">
                   {timeAgo(entry.created_at)}
                 </span>
               </div>
@@ -411,7 +397,7 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
   );
 }
 
-// ─── Flag Health Widget ─────────────────────────────────────────────
+// ─── FlagIcon Health Widget ─────────────────────────────────────────────
 
 function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
   const activeFlags = flags.filter((f) => f.status === "active");
@@ -428,22 +414,22 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>❤️ Flag Health</CardTitle>
+        <CardTitle>❤️ FlagIcon Health</CardTitle>
         <CardDescription>
           Cleanliness and rot assessment of your flags.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-end gap-3">
-          <span className="text-3xl font-bold text-stone-900">
+          <span className="text-3xl font-bold text-[var(--fgColor-default)]">
             {healthScore}%
           </span>
-          <span className="text-xs font-medium text-emerald-600 mb-1.5">
+          <span className="text-xs font-medium text-[var(--fgColor-success)] mb-1.5">
             Healthy
           </span>
         </div>
 
-        <div className="w-full h-2 rounded-full bg-stone-100 overflow-hidden">
+        <div className="w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
@@ -451,21 +437,21 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
                 ? "bg-emerald-500"
                 : healthScore > 70
                   ? "bg-amber-500"
-                  : "bg-red-500",
+                  : "bg-[var(--bgColor-danger-muted)]0",
             )}
             style={{ width: `${healthScore}%` }}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="rounded-xl bg-stone-50 border border-stone-200 p-3">
-            <p className="text-xs text-stone-500 mb-0.5">Active</p>
-            <p className="text-lg font-bold text-emerald-600">
+          <div className="rounded-xl bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] p-3">
+            <p className="text-xs text-[var(--fgColor-muted)] mb-0.5">Active</p>
+            <p className="text-lg font-bold text-[var(--fgColor-success)]">
               {activeFlags.length}
             </p>
           </div>
-          <div className="rounded-xl bg-stone-50 border border-stone-200 p-3">
-            <p className="text-xs text-stone-500 mb-0.5">Stale / Rot</p>
+          <div className="rounded-xl bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] p-3">
+            <p className="text-xs text-[var(--fgColor-muted)] mb-0.5">Stale / Rot</p>
             <p className="text-lg font-bold text-amber-600">
               {staleFlags.length}
             </p>
@@ -475,7 +461,7 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
         {staleFlags.length > 0 && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <AlertIcon className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-semibold text-amber-800">
                   {staleFlags.length} flag{staleFlags.length > 1 ? "s" : ""}{" "}
@@ -487,7 +473,7 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
               </div>
             </div>
             <button className="mt-2 w-full rounded-lg bg-white border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition-colors inline-flex items-center justify-center gap-1.5">
-              <GitPullRequest className="h-3.5 w-3.5" />
+              <GitPullRequestIcon className="h-3.5 w-3.5" />
               Generate Cleanup PRs
             </button>
           </div>
@@ -502,7 +488,7 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
 function QuickActions() {
   const actions = [
     {
-      label: "Create Flag",
+      label: "Create FlagIcon",
       icon: "⚑",
       href: "/flags",
       desc: "Add a new feature flag",
@@ -541,13 +527,13 @@ function QuickActions() {
             <Link
               key={action.label}
               href={action.href}
-              className="flex flex-col items-center gap-1.5 rounded-xl border border-stone-200 bg-white p-3.5 text-center transition-all hover:border-accent/30 hover:bg-accent/5 hover:shadow-sm"
+              className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--borderColor-default)] bg-white p-3.5 text-center transition-all hover:border-[var(--borderColor-accent-muted)] hover:bg-[var(--bgColor-accent-muted)] hover:shadow-sm"
             >
               <span className="text-xl">{action.icon}</span>
-              <span className="text-xs font-semibold text-stone-700">
+              <span className="text-xs font-semibold text-[var(--fgColor-default)]">
                 {action.label}
               </span>
-              <span className="text-[10px] text-stone-400 leading-tight">
+              <span className="text-[10px] text-[var(--fgColor-subtle)] leading-tight">
                 {action.desc}
               </span>
             </Link>
@@ -649,10 +635,10 @@ export default function DashboardPage() {
   if (projectsError) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center max-w-md">
-          <AlertTriangle
+        <div className="rounded-2xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-6 text-center max-w-md">
+          <AlertIcon
             className="h-8 w-8 text-red-400 mx-auto mb-3"
-            strokeWidth={1.5}
+           
           />
           <h2 className="text-lg font-bold text-red-800 mb-1">
             Failed to load
@@ -720,11 +706,11 @@ export default function DashboardPage() {
       >
         <Link
           href="/flags"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-accent-dark hover:shadow-md"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--bgColor-accent-emphasis)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--bgColor-accent-emphasis)]-dark hover:shadow-md"
         >
-          <Flag className="h-4 w-4" strokeWidth={1.5} />
+          <FlagIcon className="h-4 w-4" />
           View Flags
-          <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+          <ArrowRightIcon className="h-4 w-4" />
         </Link>
       </PageHeader>
 
@@ -748,7 +734,7 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="space-y-6">
-          {/* Flag Health */}
+          {/* FlagIcon Health */}
           <FlagHealthWidget flags={flags} />
 
           {/* Quick Actions */}
@@ -757,23 +743,23 @@ export default function DashboardPage() {
       </div>
 
       {/* Footer stats */}
-      <div className="rounded-2xl border border-stone-200/70 bg-white/50 p-5 shadow-soft">
-        <div className="flex items-center justify-between text-xs text-stone-400">
+      <div className="rounded-2xl border border-[var(--borderColor-default)]/70 bg-white/50 p-5 shadow-soft">
+        <div className="flex items-center justify-between text-xs text-[var(--fgColor-subtle)]">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3 w-3" strokeWidth={1.5} />
+              <ClockIcon className="h-3 w-3" />
               Last evaluated: just now
             </span>
             <span className="flex items-center gap-1.5">
-              <Activity className="h-3 w-3" strokeWidth={1.5} />
+              <ActivityIcon className="h-3 w-3" />
               P99 latency: &lt;1ms
             </span>
           </div>
           <Link
             href="/usage-insights"
-            className="flex items-center gap-1 text-accent hover:text-accent-dark transition-colors"
+            className="flex items-center gap-1 text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
           >
-            <TrendingUp className="h-3 w-3" strokeWidth={1.5} />
+            <TrendingUpIcon className="h-3 w-3" />
             Usage Insights
           </Link>
         </div>

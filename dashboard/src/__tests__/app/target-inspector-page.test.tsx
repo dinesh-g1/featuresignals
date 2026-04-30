@@ -57,7 +57,7 @@ describe("TargetInspectorPage", () => {
     render(<TargetInspectorPage />);
 
     expect(screen.getByPlaceholderText("user-123")).toBeInTheDocument();
-    expect(screen.getByText("Target Key")).toBeInTheDocument();
+    expect(screen.getByText("Target KeyIcon")).toBeInTheDocument();
   });
 
   it("add attribute button adds a row", () => {

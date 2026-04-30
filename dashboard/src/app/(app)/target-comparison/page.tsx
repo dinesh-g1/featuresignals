@@ -13,7 +13,13 @@ import {
   Badge,
   EmptyState,
 } from "@/components/ui";
-import { UsersRound, X, Globe, FolderOpen } from "lucide-react";
+import {
+  UsersIcon,
+  XIcon,
+  GlobeIcon,
+  FolderOpenIcon,
+  UsersRoundIcon,
+} from "@/components/icons/nav-icons";
 import type { CompareTargetsResult } from "@/lib/types";
 
 function AttrEditor({
@@ -59,16 +65,16 @@ function AttrEditor({
               size="icon-sm"
               variant="ghost"
               onClick={() => setAttrs(attrs.filter((_, j) => j !== i))}
-              className="text-slate-400 hover:text-red-500 self-end sm:self-auto"
+              className="text-[var(--fgColor-subtle)] hover:text-red-500 self-end sm:self-auto"
             >
-              <X className="h-4 w-4" />
+              <XIcon className="h-4 w-4" />
             </Button>
           )}
         </div>
       ))}
       <button
         onClick={() => setAttrs([...attrs, { key: "", value: "" }])}
-        className="text-xs text-accent hover:text-accent-dark"
+        className="text-xs text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
       >
         + Add attribute
       </button>
@@ -141,7 +147,7 @@ export default function TargetComparisonPage() {
           description="Compare flag evaluations for two targets side by side"
         />
         <EmptyState
-          icon={FolderOpen}
+          icon={FolderOpenIcon}
           title="No project selected"
           description="Select a project using the context bar above to compare target evaluations."
           className="py-16"
@@ -158,7 +164,7 @@ export default function TargetComparisonPage() {
           description="Compare flag evaluations for two targets side by side"
         />
         <EmptyState
-          icon={Globe}
+          icon={GlobeIcon}
           title="No environment selected"
           description="Select an environment using the context bar above to compare target evaluations."
           className="py-16"
@@ -177,11 +183,13 @@ export default function TargetComparisonPage() {
       <form
         onSubmit={handleCompare}
         noValidate
-        className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6"
+        className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 sm:p-6"
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">Target A</h3>
+            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+              Target A
+            </h3>
             <Input
               value={keyA}
               onChange={(e) => {
@@ -201,7 +209,9 @@ export default function TargetComparisonPage() {
             <AttrEditor attrs={attrsA} setAttrs={setAttrsA} />
           </div>
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">Target B</h3>
+            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+              Target B
+            </h3>
             <Input
               value={keyB}
               onChange={(e) => {
@@ -235,21 +245,21 @@ export default function TargetComparisonPage() {
         <>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-[var(--fgColor-muted)]">
                 {results.length} flags evaluated
               </span>
               <span
-                className={`text-sm font-medium ${diffCount > 0 ? "text-amber-600" : "text-emerald-600"}`}
+                className={`text-sm font-medium ${diffCount > 0 ? "text-amber-600" : "text-[var(--fgColor-success)]"}`}
               >
                 {diffCount} difference{diffCount !== 1 ? "s" : ""}
               </span>
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-[var(--fgColor-muted)]">
               <input
                 type="checkbox"
                 checked={showDiffOnly}
                 onChange={(e) => setShowDiffOnly(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
+                className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
               />
               Show differences only
             </label>
@@ -259,8 +269,8 @@ export default function TargetComparisonPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-4 py-3 sm:px-6">Flag Key</th>
+                  <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+                    <th className="px-4 py-3 sm:px-6">FlagIcon KeyIcon</th>
                     <th className="px-4 py-3">{keyA || "Target A"} Value</th>
                     <th className="px-4 py-3">{keyB || "Target B"} Value</th>
                     <th className="px-4 py-3">Status</th>
@@ -270,9 +280,9 @@ export default function TargetComparisonPage() {
                   {filtered?.map((r) => (
                     <tr
                       key={r.flag_key}
-                      className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-accent-glass"}`}
+                      className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-[var(--bgColor-accent-emphasis)]-glass"}`}
                     >
-                      <td className="px-4 py-3 font-mono font-medium text-slate-900 sm:px-6">
+                      <td className="px-4 py-3 font-mono font-medium text-[var(--fgColor-default)] sm:px-6">
                         {r.flag_key}
                       </td>
                       <td className="px-4 py-3">
@@ -313,7 +323,7 @@ export default function TargetComparisonPage() {
             </div>
             {filtered?.length === 0 && (
               <EmptyState
-                icon={UsersRound}
+                icon={UsersRoundIcon}
                 title={showDiffOnly ? "No differences found" : "No results."}
                 description={
                   showDiffOnly

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
-import { Loader2 } from "lucide-react";
+import { LoaderIcon } from "@/components/icons/nav-icons";
 
 function parseJWTPayload(token: string): Record<string, unknown> | null {
   try {
@@ -48,12 +48,12 @@ export default function SSOCallbackPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4">
         <div className="w-full max-w-md rounded-lg border border-red-200 bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-red-600">{error}</p>
           <a
             href="/login"
-            className="mt-4 inline-block text-sm font-medium text-accent hover:text-accent-dark"
+            className="mt-4 inline-block text-sm font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
           >
             Back to login
           </a>
@@ -63,10 +63,10 @@ export default function SSOCallbackPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)]">
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
-        <p className="text-sm text-slate-500">Completing SSO login...</p>
+        <LoaderIcon className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]" />
+        <p className="text-sm text-[var(--fgColor-muted)]">Completing SSO login...</p>
       </div>
     </div>
   );

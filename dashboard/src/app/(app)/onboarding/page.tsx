@@ -4,16 +4,8 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Check,
-  Sparkles,
-  Copy,
-  ClipboardCheck,
-  Key,
-  ArrowRight,
-  FolderOpen,
-  Layers,
-  Flag,
-} from "lucide-react";
+  CheckIcon, SparklesIcon, CopyIcon, ClipboardIcon, KeyIcon, ArrowRightIcon, FolderOpenIcon, LayersIcon, FlagIcon
+} from "@/components/icons/nav-icons";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -27,9 +19,9 @@ import { Card } from "@/components/ui/card";
 import type { Project, Environment } from "@/lib/types";
 
 const STEPS = [
-  { key: "project_setup", label: "Project", icon: FolderOpen },
-  { key: "env_setup", label: "Environment", icon: Layers },
-  { key: "first_flag_created", label: "Create Flag", icon: Flag },
+  { key: "project_setup", label: "Project", icon: FolderOpenIcon },
+  { key: "env_setup", label: "Environment", icon: LayersIcon },
+  { key: "first_flag_created", label: "Create FlagIcon", icon: FlagIcon },
   { key: "first_sdk_connected", label: "Connect SDK" },
   { key: "first_evaluation", label: "All Set!" },
 ];
@@ -69,7 +61,7 @@ client := fs.NewClient("${key}",
     fs.WithBaseURL("${apiUrl}"))
 defer client.Close()
 
-enabled := client.IsEnabled("my-flag", fs.User{Key: "user-123"})
+enabled := client.IsEnabled("my-flag", fs.User{KeyIcon: "user-123"})
 if enabled {
     // new feature code
 }`,
@@ -104,7 +96,7 @@ var client = new FSClient("${key}",
     new FSOptions { BaseUrl = "${apiUrl}" });
 
 bool enabled = client.IsEnabled("my-flag",
-    new User { Key = "user-123" });`,
+    new User { KeyIcon = "user-123" });`,
     ruby: `require "featuresignals"
 
 client = FeatureSignals::Client.new("${key}",
@@ -390,8 +382,8 @@ function OnboardingContent() {
       return;
     }
     const errors: { key?: string; name?: string } = {};
-    if (!flagForm.key.trim()) errors.key = "Flag key is required";
-    if (!flagForm.name.trim()) errors.name = "Flag name is required";
+    if (!flagForm.key.trim()) errors.key = "FlagIcon key is required";
+    if (!flagForm.name.trim()) errors.name = "FlagIcon name is required";
     if (Object.keys(errors).length > 0) {
       setFlagFieldErrors(errors);
       return;
@@ -404,7 +396,7 @@ function OnboardingContent() {
         name: flagForm.name,
         flag_type: "boolean",
       });
-      toast("Flag created successfully!", "success");
+      toast("FlagIcon created successfully!", "success");
       setFlagForm({ key: "", name: "" });
       await markStepComplete("first_flag_created");
     } catch (err: unknown) {
@@ -436,7 +428,7 @@ function OnboardingContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
       </div>
     );
   }
@@ -446,31 +438,31 @@ function OnboardingContent() {
   return (
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
       <div className="text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/5 px-4 py-1.5 text-xs font-medium text-accent-dark ring-1 ring-accent/10">
-          <Sparkles className="h-3.5 w-3.5" />
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[var(--bgColor-accent-muted)] px-4 py-1.5 text-xs font-medium text-[var(--fgColor-accent)] ring-1 ring-accent/10">
+          <SparklesIcon className="h-3.5 w-3.5" />
           AI-Powered Feature Management
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--fgColor-default)]">
           Welcome{greeting} to{" "}
-          <span className="text-accent">FeatureSignals</span>
+          <span className="text-[var(--fgColor-accent)]">FeatureSignals</span>
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
           Your workspace is ready. Let&apos;s get your first flag live in under
           5 minutes. Open-source, AI-powered cleanup, and predictable pricing.
         </p>
       </div>
 
       {hasPlanIntent && (
-        <div className="rounded-lg bg-gradient-to-r from-accent/5 to-purple-50 border border-accent/20 px-4 py-3 text-center">
-          <p className="text-sm text-accent-dark">
+        <div className="rounded-lg bg-gradient-to-r from-accent/5 to-purple-50 border border-[var(--borderColor-accent-muted)] px-4 py-3 text-center">
+          <p className="text-sm text-[var(--fgColor-accent)]">
             Your <span className="font-bold">Pro trial</span> is active.
             Complete onboarding, then subscribe to keep all Pro features.
           </p>
           <Link
             href="/settings/billing"
-            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-dark"
+            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
           >
-            Subscribe now <ArrowRight className="h-3.5 w-3.5" />
+            Subscribe now <ArrowRightIcon className="h-3.5 w-3.5" />
           </Link>
         </div>
       )}
@@ -490,20 +482,20 @@ function OnboardingContent() {
                     done
                       ? "bg-emerald-500 text-white shadow-sm"
                       : active
-                        ? "bg-accent text-white shadow-md ring-4 ring-accent/10"
-                        : "bg-slate-200 text-slate-500",
+                        ? "bg-[var(--bgColor-accent-emphasis)] text-white shadow-md ring-4 ring-accent/10"
+                        : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
                   )}
                 >
-                  {done ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : idx + 1}
+                  {done ? <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5" /> : idx + 1}
                 </button>
                 <span
                   className={cn(
                     "mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium whitespace-nowrap",
                     active
-                      ? "text-accent-dark"
+                      ? "text-[var(--fgColor-accent)]"
                       : done
                         ? "text-emerald-700"
-                        : "text-slate-400",
+                        : "text-[var(--fgColor-subtle)]",
                   )}
                 >
                   {step.label}
@@ -513,7 +505,7 @@ function OnboardingContent() {
                 <div
                   className={cn(
                     "mx-1 sm:mx-2 h-0.5 w-6 sm:w-10 md:w-16",
-                    done ? "bg-emerald-400" : "bg-slate-200",
+                    done ? "bg-emerald-400" : "bg-[var(--bgColor-muted)]",
                   )}
                 />
               )}
@@ -575,15 +567,15 @@ function OnboardingContent() {
       <div className="flex items-center justify-center gap-6">
         <button
           onClick={() => router.push("/dashboard")}
-          className="text-sm font-medium text-slate-400 transition-colors hover:text-slate-600"
+          className="text-sm font-medium text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-muted)]"
         >
           Skip onboarding
         </button>
         <Link
           href="/settings/billing"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent-dark"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
         >
-          View plans & pricing <ArrowRight className="h-3.5 w-3.5" />
+          View plans & pricing <ArrowRightIcon className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>
@@ -595,7 +587,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
         </div>
       }
     >
@@ -635,13 +627,13 @@ function StepProjectSetup({
     const chosen = projects.find((p) => p.id === selectedId);
     return (
       <div className="text-center py-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <Check className="h-8 w-8 text-emerald-600" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bgColor-success-muted)]">
+          <CheckIcon className="h-8 w-8 text-[var(--fgColor-success)]" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">
+        <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">
           Project selected!
         </p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
           {chosen ? `Working with "${chosen.name}"` : "Your project is ready."}
         </p>
       </div>
@@ -650,10 +642,10 @@ function StepProjectSetup({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">
+      <h2 className="text-xl font-semibold text-[var(--fgColor-default)]">
         Set Up Your Project
       </h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
         A project groups your feature flags and environments together. Create a
         new project or select an existing one to get started.
       </p>
@@ -669,14 +661,14 @@ function StepProjectSetup({
                 className={cn(
                   "flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all",
                   selectedId === p.id
-                    ? "border-accent bg-accent/5 ring-2 ring-accent/20"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                    ? "border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] ring-2 ring-[var(--borderColor-accent-muted)]"
+                    : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)] hover:bg-[var(--bgColor-muted)]",
                 )}
               >
-                <FolderOpen
+                <FolderOpenIcon
                   className={cn(
                     "h-5 w-5",
-                    selectedId === p.id ? "text-accent" : "text-slate-400",
+                    selectedId === p.id ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-subtle)]",
                   )}
                 />
                 <div>
@@ -684,13 +676,13 @@ function StepProjectSetup({
                     className={cn(
                       "text-sm font-medium",
                       selectedId === p.id
-                        ? "text-accent-dark"
-                        : "text-slate-700",
+                        ? "text-[var(--fgColor-accent)]"
+                        : "text-[var(--fgColor-default)]",
                     )}
                   >
                     {p.name}
                   </p>
-                  <p className="text-xs text-slate-400">{p.slug}</p>
+                  <p className="text-xs text-[var(--fgColor-subtle)]">{p.slug}</p>
                 </div>
               </button>
             ))}
@@ -699,7 +691,7 @@ function StepProjectSetup({
       )}
 
       <div className="mt-6 border-t border-slate-100 pt-4">
-        <p className="text-xs font-medium text-slate-500 mb-2">
+        <p className="text-xs font-medium text-[var(--fgColor-muted)] mb-2">
           Or create a new project
         </p>
         <form
@@ -755,7 +747,7 @@ function StepProjectSetup({
 const ENV_COLOR_MAP: Record<string, string> = {
   "#22C55E": "bg-green-500",
   "#EAB308": "bg-yellow-500",
-  "#EF4444": "bg-red-500",
+  "#EF4444": "bg-[var(--bgColor-danger-muted)]0",
 };
 
 function StepEnvSetup({
@@ -775,13 +767,13 @@ function StepEnvSetup({
     const chosen = environments.find((e) => e.id === selectedId);
     return (
       <div className="text-center py-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <Check className="h-8 w-8 text-emerald-600" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bgColor-success-muted)]">
+          <CheckIcon className="h-8 w-8 text-[var(--fgColor-success)]" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">
+        <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">
           Environment selected!
         </p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
           {chosen
             ? `Using "${chosen.name}" environment`
             : "Your environment is ready."}
@@ -792,10 +784,10 @@ function StepEnvSetup({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">
+      <h2 className="text-xl font-semibold text-[var(--fgColor-default)]">
         Choose Your Environment
       </h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
         Environments let you manage separate flag configurations for
         development, staging, and production. Select the environment you want to
         start with.
@@ -812,8 +804,8 @@ function StepEnvSetup({
                 className={cn(
                   "flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all",
                   selectedId === env.id
-                    ? "border-accent bg-accent/5 ring-2 ring-accent/20"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                    ? "border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] ring-2 ring-[var(--borderColor-accent-muted)]"
+                    : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)] hover:bg-[var(--bgColor-muted)]",
                 )}
               >
                 <div className={cn("h-3 w-3 rounded-full", colorClass)} />
@@ -822,13 +814,13 @@ function StepEnvSetup({
                     className={cn(
                       "text-sm font-medium",
                       selectedId === env.id
-                        ? "text-accent-dark"
-                        : "text-slate-700",
+                        ? "text-[var(--fgColor-accent)]"
+                        : "text-[var(--fgColor-default)]",
                     )}
                   >
                     {env.name}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[var(--fgColor-subtle)]">
                     {env.slug || env.name.toLowerCase()}
                   </p>
                 </div>
@@ -837,12 +829,12 @@ function StepEnvSetup({
           })}
         </div>
       ) : (
-        <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-          <Layers className="mx-auto h-8 w-8 text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">
+        <div className="mt-6 rounded-lg border border-dashed border-[var(--borderColor-emphasis)] bg-[var(--bgColor-muted)] p-6 text-center">
+          <LayersIcon className="mx-auto h-8 w-8 text-[var(--fgColor-subtle)]" />
+          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
             No environments found. They should have been created automatically.
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
             Go back and verify your project, or contact support.
           </p>
         </div>
@@ -857,7 +849,7 @@ function StepEnvSetup({
   );
 }
 
-/* ── Step 3: Create Flag ────────────────────────────────────────────── */
+/* ── Step 3: Create FlagIcon ────────────────────────────────────────────── */
 
 function StepCreateFlag({
   form,
@@ -881,13 +873,13 @@ function StepCreateFlag({
   if (completed) {
     return (
       <div className="text-center py-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <Check className="h-8 w-8 text-emerald-600" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bgColor-success-muted)]">
+          <CheckIcon className="h-8 w-8 text-[var(--fgColor-success)]" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">
-          Flag created!
+        <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">
+          FlagIcon created!
         </p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
           You can manage flags from the Flags page.
         </p>
       </div>
@@ -896,17 +888,17 @@ function StepCreateFlag({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">
-        Create Your First Flag
+      <h2 className="text-xl font-semibold text-[var(--fgColor-default)]">
+        Create Your First FlagIcon
       </h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
         Feature flags let you toggle functionality without redeploying. Try
         creating one now.
       </p>
 
       <form noValidate onSubmit={onSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">
-          <Label>Flag Key</Label>
+          <Label>FlagIcon KeyIcon</Label>
           <Input
             value={form.key}
             onChange={(e) => {
@@ -929,7 +921,7 @@ function StepCreateFlag({
               {fieldErrors.key}
             </p>
           )}
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--fgColor-subtle)]">
             Lowercase letters, numbers, dashes, and underscores only.
           </p>
         </div>
@@ -957,7 +949,7 @@ function StepCreateFlag({
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button type="submit" disabled={creating}>
-            {creating ? "Creating..." : "Create Flag"}
+            {creating ? "Creating..." : "Create FlagIcon"}
           </Button>
           <Button type="button" variant="secondary" onClick={onSkip}>
             Skip this step
@@ -994,11 +986,11 @@ function StepInstallSdk({
   if (completed) {
     return (
       <div className="text-center py-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <Check className="h-8 w-8 text-emerald-600" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bgColor-success-muted)]">
+          <CheckIcon className="h-8 w-8 text-[var(--fgColor-success)]" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-slate-900">SDK ready!</p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">SDK ready!</p>
+        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
           You&apos;re all set to start using feature flags in your app.
         </p>
       </div>
@@ -1009,15 +1001,15 @@ function StepInstallSdk({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-slate-900">Connect Your App</h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <h2 className="text-xl font-semibold text-[var(--fgColor-default)]">Connect Your App</h2>
+      <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
         Install the SDK in your language and start evaluating flags.
       </p>
 
       {apiKey && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-accent/10 bg-accent/5 px-3 py-2">
-          <Key className="h-4 w-4 shrink-0 text-accent" />
-          <span className="text-xs font-medium text-accent-dark">
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-[var(--fgColor-accent)]/10 bg-[var(--bgColor-accent-muted)] px-3 py-2">
+          <KeyIcon className="h-4 w-4 shrink-0 text-[var(--fgColor-accent)]" />
+          <span className="text-xs font-medium text-[var(--fgColor-accent)]">
             Your API key is pre-filled in the snippets below
           </span>
         </div>
@@ -1031,8 +1023,8 @@ function StepInstallSdk({
             className={cn(
               "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               selectedSdk === tab.id
-                ? "bg-accent text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                ? "bg-[var(--bgColor-accent-emphasis)] text-white"
+                : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]",
             )}
           >
             {tab.label}
@@ -1043,20 +1035,20 @@ function StepInstallSdk({
       <div className="mt-4 space-y-3">
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-[var(--fgColor-muted)]">
               Installation
             </span>
             <button
               onClick={() => copyText(SDK_INSTALL[selectedSdk], "install")}
-              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-dark"
+              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
             >
               {copied === "install" ? (
                 <>
-                  <ClipboardCheck className="h-3 w-3" /> Copied!
+                  <ClipboardIcon className="h-3 w-3" /> Copied!
                 </>
               ) : (
                 <>
-                  <Copy className="h-3 w-3" /> Copy
+                  <CopyIcon className="h-3 w-3" /> Copy
                 </>
               )}
             </button>
@@ -1068,20 +1060,20 @@ function StepInstallSdk({
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-[var(--fgColor-muted)]">
               Quick Start
             </span>
             <button
               onClick={() => copyText(snippet, "snippet")}
-              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-dark"
+              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
             >
               {copied === "snippet" ? (
                 <>
-                  <ClipboardCheck className="h-3 w-3" /> Copied!
+                  <ClipboardIcon className="h-3 w-3" /> Copied!
                 </>
               ) : (
                 <>
-                  <Copy className="h-3 w-3" /> Copy
+                  <CopyIcon className="h-3 w-3" /> Copy
                 </>
               )}
             </button>
@@ -1114,13 +1106,13 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
   return (
     <div className="text-center py-8">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-purple-100">
-        <Sparkles className="h-10 w-10 text-accent" />
+        <SparklesIcon className="h-10 w-10 text-[var(--fgColor-accent)]" />
       </div>
 
-      <h2 className="mt-6 text-2xl font-bold text-slate-900">
+      <h2 className="mt-6 text-2xl font-bold text-[var(--fgColor-default)]">
         You&apos;re All Set!
       </h2>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
         Your workspace is ready. Start managing feature flags and ship
         confidently.
       </p>
@@ -1138,7 +1130,7 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
       </div>
 
       <Button onClick={onFinish} className="mt-6" size="lg">
-        Go to Flag Engine
+        Go to FlagIcon Engine
       </Button>
     </div>
   );

@@ -12,22 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Skeleton, SettingsPageSkeleton } from "@/components/ui/skeleton";
 import {
-  Check,
-  CreditCard,
-  ExternalLink,
-  ShieldCheck,
-  Lock,
-  Sparkles,
-  PartyPopper,
-  Clock,
-  ArrowRight,
-  Zap,
-  ChevronDown,
-  AlertTriangle,
-  FileText,
-  Calendar,
-  X,
-} from "lucide-react";
+  CheckIcon, CreditCardIcon, ExternalLinkIcon, ShieldIcon, LockIcon, SparklesIcon, ClockIcon, ArrowRightIcon, ZapIcon, ChevronDownIcon, AlertIcon, ClipboardIcon, CalendarIcon, XIcon
+} from "@/components/icons/nav-icons";
 import type { BillingInfo, UsageInfo } from "@/lib/types";
 
 const planBadgeVariant: Record<
@@ -250,7 +236,7 @@ function BillingContent() {
       {loading ? (
         <div className="space-y-6">
           {/* Upgrade card skeleton */}
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-soft">
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white overflow-hidden shadow-soft">
             <div className="bg-gradient-to-br from-accent/20 via-accent/10 to-teal-800/20 p-6 sm:p-8">
               <Skeleton className="h-4 w-48 bg-white/30 mb-4" />
               <Skeleton className="h-6 w-64 bg-white/30 mb-2" />
@@ -270,10 +256,10 @@ function BillingContent() {
           <SettingsPageSkeleton />
         </div>
       ) : error ? (
-        <Card className="border-red-200 bg-red-50 p-4 sm:p-6 text-center">
+        <Card className="border-red-200 bg-[var(--bgColor-danger-muted)] p-4 sm:p-6 text-center">
           <p className="text-sm font-medium text-red-700">{error}</p>
           <Button
-            variant="destructive-ghost"
+            variant="danger-ghost"
             size="sm"
             onClick={() => window.location.reload()}
             className="mt-2"
@@ -290,7 +276,7 @@ function BillingContent() {
                 <div className="relative">
                   {plan === "trial" && trialDaysLeft !== null && (
                     <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
-                      <Clock className="h-4 w-4" />
+                      <ClockIcon className="h-4 w-4" />
                       {trialDaysLeft === 0
                         ? "Trial expires today"
                         : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial`}
@@ -315,7 +301,7 @@ function BillingContent() {
                           key={f}
                           className="inline-flex items-center gap-1.5 text-xs text-teal-200"
                         >
-                          <Check className="h-3 w-3" /> {f}
+                          <CheckIcon className="h-3 w-3" /> {f}
                         </span>
                       ))}
                     </div>
@@ -328,13 +314,13 @@ function BillingContent() {
                 {/* Price + Gateway row */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-3xl font-bold text-slate-900">
+                    <p className="text-3xl font-bold text-[var(--fgColor-default)]">
                       {proPrice}
-                      <span className="text-base font-normal text-slate-500">
+                      <span className="text-base font-normal text-[var(--fgColor-muted)]">
                         /{proPeriod}
                       </span>
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs text-[var(--fgColor-subtle)]">
                       Cancel anytime &middot; 14-day money-back guarantee
                     </p>
                   </div>
@@ -343,13 +329,13 @@ function BillingContent() {
                   <div className="relative">
                     <button
                       onClick={() => setShowGatewayPicker(!showGatewayPicker)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                      className="inline-flex items-center gap-2 rounded-lg border border-[var(--borderColor-default)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--fgColor-default)] shadow-sm transition-colors hover:bg-[var(--bgColor-muted)]"
                     >
-                      <CreditCard className="h-4 w-4 text-slate-400" />
+                      <CreditCardIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
                       Pay via {currentGatewayLabel}
-                      <ChevronDown
+                      <ChevronDownIcon
                         className={cn(
-                          "h-4 w-4 text-slate-400 transition-transform",
+                          "h-4 w-4 text-[var(--fgColor-subtle)] transition-transform",
                           showGatewayPicker && "rotate-180",
                         )}
                       />
@@ -361,7 +347,7 @@ function BillingContent() {
                           className="fixed inset-0 z-10"
                           onClick={() => setShowGatewayPicker(false)}
                         />
-                        <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                        <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-[var(--borderColor-default)] bg-white p-1 shadow-lg">
                           {GATEWAYS.map((gw) => (
                             <button
                               key={gw.id}
@@ -372,20 +358,20 @@ function BillingContent() {
                               className={cn(
                                 "flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors",
                                 selectedGateway === gw.id
-                                  ? "bg-accent/5"
-                                  : "hover:bg-slate-50",
+                                  ? "bg-[var(--bgColor-accent-muted)]"
+                                  : "hover:bg-[var(--bgColor-muted)]",
                               )}
                             >
                               <div
                                 className={cn(
                                   "mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center",
                                   selectedGateway === gw.id
-                                    ? "border-accent"
-                                    : "border-slate-300",
+                                    ? "border-[var(--fgColor-accent)]"
+                                    : "border-[var(--borderColor-emphasis)]",
                                 )}
                               >
                                 {selectedGateway === gw.id && (
-                                  <div className="h-2 w-2 rounded-full bg-accent" />
+                                  <div className="h-2 w-2 rounded-full bg-[var(--bgColor-accent-emphasis)]" />
                                 )}
                               </div>
                               <div>
@@ -393,13 +379,13 @@ function BillingContent() {
                                   className={cn(
                                     "text-sm font-medium",
                                     selectedGateway === gw.id
-                                      ? "text-accent-dark"
-                                      : "text-slate-700",
+                                      ? "text-[var(--fgColor-accent)]"
+                                      : "text-[var(--fgColor-default)]",
                                   )}
                                 >
                                   {gw.label}
                                 </p>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-[var(--fgColor-subtle)]">
                                   {gw.desc}
                                 </p>
                               </div>
@@ -416,32 +402,32 @@ function BillingContent() {
                   onClick={handleUpgrade}
                   disabled={upgrading}
                   size="lg"
-                  className="w-full bg-accent hover:bg-accent-dark text-white shadow-md"
+                  className="w-full bg-[var(--bgColor-accent-emphasis)] hover:bg-[var(--bgColor-accent-emphasis)]-dark text-white shadow-md"
                 >
-                  <Zap className="mr-2 h-4 w-4" />
+                  <ZapIcon className="mr-2 h-4 w-4" />
                   {upgrading
                     ? "Redirecting to checkout..."
                     : plan === "trial"
                       ? `Subscribe to ${proPlan?.name ?? "Pro"} — ${proPrice}/${proPeriod}`
                       : `Upgrade to ${proPlan?.name ?? "Pro"} — ${proPrice}/${proPeriod}`}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRightIcon className="ml-2 h-4 w-4" />
                 </Button>
 
                 {/* Trust signals */}
                 <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 pt-1">
-                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                    <Lock className="h-3.5 w-3.5" /> 256-bit SSL
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[var(--fgColor-subtle)]">
+                    <LockIcon className="h-3.5 w-3.5" /> 256-bit SSL
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> PCI
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[var(--fgColor-subtle)]">
+                    <ShieldIcon className="h-3.5 w-3.5 text-emerald-500" /> PCI
                     DSS compliant
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                    <CreditCard className="h-3.5 w-3.5" /> Processed by{" "}
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[var(--fgColor-subtle)]">
+                    <CreditCardIcon className="h-3.5 w-3.5" /> Processed by{" "}
                     {currentGatewayLabel}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />{" "}
+                  <span className="inline-flex items-center gap-1.5 text-xs text-[var(--fgColor-subtle)]">
+                    <SparklesIcon className="h-3.5 w-3.5 text-amber-500" />{" "}
                     Money-back guarantee
                   </span>
                 </div>
@@ -453,10 +439,10 @@ function BillingContent() {
           <Card className="p-4 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
                   Current Plan
                 </h2>
-                <p className="mt-0.5 text-sm text-slate-500">
+                <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">
                   Manage your subscription and billing
                 </p>
               </div>
@@ -479,12 +465,12 @@ function BillingContent() {
             </div>
 
             {subscription?.current_period_end && (
-              <p className="mb-3 text-xs text-slate-500">
+              <p className="mb-3 text-xs text-[var(--fgColor-muted)]">
                 {status === "canceled" || subscription?.cancel_at_period_end
                   ? "Access expires"
                   : "Next billing date"}
                 :{" "}
-                <span className="font-medium text-slate-700">
+                <span className="font-medium text-[var(--fgColor-default)]">
                   {new Date(subscription.current_period_end).toLocaleDateString(
                     "en-US",
                     { month: "long", day: "numeric", year: "numeric" },
@@ -507,13 +493,13 @@ function BillingContent() {
                 {canManage && (
                   <>
                     <Button variant="secondary" onClick={handleManageBilling}>
-                      <CreditCard className="mr-2 h-4 w-4" />
+                      <CreditCardIcon className="mr-2 h-4 w-4" />
                       Manage Payment Method
-                      <ExternalLink className="ml-2 h-3 w-3" />
+                      <ExternalLinkIcon className="ml-2 h-3 w-3" />
                     </Button>
                     {!subscription?.cancel_at_period_end && (
                       <Button
-                        variant="destructive-ghost"
+                        variant="danger-ghost"
                         size="sm"
                         onClick={handleCancel}
                         disabled={canceling}
@@ -524,11 +510,11 @@ function BillingContent() {
                   </>
                 )}
                 {!canManage && (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-[var(--fgColor-muted)]">
                     To manage or cancel your subscription, please contact{" "}
                     <a
                       href="mailto:support@featuresignals.com"
-                      className="font-medium text-accent hover:text-accent-dark"
+                      className="font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
                     >
                       support@featuresignals.com
                     </a>
@@ -543,30 +529,30 @@ function BillingContent() {
             <Card className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
                     Payment Method
                   </h2>
-                  <p className="mt-0.5 text-sm text-slate-500">
+                  <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">
                     Card on file for billing charges
                   </p>
                 </div>
                 <button
                   onClick={handleManageBilling}
-                  className="text-sm font-medium text-accent hover:text-accent-dark inline-flex items-center gap-1"
+                  className="text-sm font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] inline-flex items-center gap-1"
                 >
                   Update
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLinkIcon className="h-3 w-3" />
                 </button>
               </div>
-              <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
-                  <CreditCard className="h-6 w-6 text-accent" />
+              <div className="flex items-center gap-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--bgColor-accent-muted)]">
+                  <CreditCardIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-[var(--fgColor-default)]">
                     •••• {subscription?.card_last4 ?? "4242"}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[var(--fgColor-muted)]">
                     Expires {subscription?.card_exp_date ?? "12/2027"}
                   </p>
                 </div>
@@ -581,9 +567,9 @@ function BillingContent() {
           {usage && (
             <Card className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Usage</h2>
+                <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">Usage</h2>
                 {isUpgradeable && (
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-[var(--fgColor-subtle)]">
                     Limits apply to free/trial plans
                   </span>
                 )}
@@ -613,7 +599,7 @@ function BillingContent() {
             <Card className="border-amber-200 bg-amber-50/50 p-4 sm:p-6">
               <div className="flex items-start gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <AlertIcon className="h-5 w-5 text-amber-600" />
                 </div>
                 <div className="flex-1">
                   <h2 className="text-base font-semibold text-amber-900">
@@ -635,9 +621,9 @@ function BillingContent() {
                         key={feature}
                         className="flex items-start gap-2 text-sm text-amber-800"
                       >
-                        <X
+                        <XIcon
                           className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
-                          strokeWidth={2}
+                         
                         />
                         {feature}
                       </li>
@@ -670,23 +656,23 @@ function BillingContent() {
           {isPaid && (
             <Card className="p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-4">
-                <FileText className="h-5 w-5 text-slate-400" />
+                <ClipboardIcon className="h-5 w-5 text-[var(--fgColor-subtle)]" />
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
                     Invoice History
                   </h2>
-                  <p className="mt-0.5 text-sm text-slate-500">
+                  <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">
                     Past invoices and billing records
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 py-10 text-center">
-                <Calendar className="mb-3 h-10 w-10 text-slate-300" />
-                <p className="text-sm font-medium text-slate-500">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--borderColor-emphasis)] py-10 text-center">
+                <CalendarIcon className="mb-3 h-10 w-10 text-slate-300" />
+                <p className="text-sm font-medium text-[var(--fgColor-muted)]">
                   Invoice history will appear here once you have billing
                   activity.
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
                   After your first payment, past invoices will be listed here
                   with download links.
                 </p>
@@ -697,7 +683,7 @@ function BillingContent() {
           {/* ── Plan Comparison ──────────────────────────────────────── */}
           {pricing && (
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
+              <h2 className="text-lg font-semibold text-[var(--fgColor-default)] mb-4">
                 Compare Plans
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -785,17 +771,17 @@ function UsageCard({
   const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
   const isNearLimit = pct >= 80;
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">
+    <div className="rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4">
+      <p className="text-xs font-medium text-[var(--fgColor-muted)]">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-[var(--fgColor-default)]">
         {used}{" "}
-        <span className="text-sm font-normal text-slate-400">/ {limit}</span>
+        <span className="text-sm font-normal text-[var(--fgColor-subtle)]">/ {limit}</span>
       </p>
-      <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200">
+      <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--bgColor-muted)]">
         <div
           className={cn(
             "h-1.5 rounded-full transition-all",
-            isNearLimit ? "bg-amber-500" : "bg-accent",
+            isNearLimit ? "bg-amber-500" : "bg-[var(--bgColor-accent-emphasis)]",
             `w-[${pct}%]`,
           )}
         />
@@ -831,12 +817,12 @@ function PlanCard({
       className={cn(
         "p-4 sm:p-6",
         highlighted
-          ? "border-accent/30 bg-accent-glass ring-1 ring-accent/10 shadow-sm"
-          : "hover:shadow-lg hover:border-slate-300",
+          ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-emphasis)]-glass ring-1 ring-accent/10 shadow-sm"
+          : "hover:shadow-lg hover:border-[var(--borderColor-emphasis)]",
       )}
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">{name}</h3>
+        <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">{name}</h3>
         {current && (
           <Badge variant="primary" className="px-2.5 py-0.5 text-xs">
             Current
@@ -844,15 +830,15 @@ function PlanCard({
         )}
       </div>
       <div className="mt-2">
-        <span className="text-3xl font-bold text-slate-900">{price}</span>
-        {period && <span className="text-sm text-slate-500">{period}</span>}
+        <span className="text-3xl font-bold text-[var(--fgColor-default)]">{price}</span>
+        {period && <span className="text-sm text-[var(--fgColor-muted)]">{period}</span>}
       </div>
       <ul className="mt-4 space-y-2">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
-            <Check
-              className="mt-0.5 h-4 w-4 shrink-0 text-accent"
-              strokeWidth={2}
+          <li key={f} className="flex items-start gap-2 text-sm text-[var(--fgColor-muted)]">
+            <CheckIcon
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fgColor-accent)]"
+             
             />
             {f}
           </li>
@@ -885,10 +871,10 @@ function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fade-in">
       <div className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-teal-100">
-          <PartyPopper className="h-8 w-8 text-accent" />
+          <SparklesIcon className="h-8 w-8 text-[var(--fgColor-accent)]" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900">Welcome to Pro!</h2>
-        <p className="mt-2 text-sm text-slate-600">
+        <h2 className="text-2xl font-bold text-[var(--fgColor-default)]">Welcome to Pro!</h2>
+        <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
           Your upgrade is complete. You now have unlimited projects,
           environments, and team members. All Pro features are unlocked and
           ready to use.
@@ -904,16 +890,16 @@ function CelebrationModal({ onDismiss }: { onDismiss: () => void }) {
           ].map((f) => (
             <span
               key={f}
-              className="inline-flex items-center gap-1 rounded-full bg-accent/5 px-2.5 py-1 text-xs font-medium text-accent-dark"
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--bgColor-accent-muted)] px-2.5 py-1 text-xs font-medium text-[var(--fgColor-accent)]"
             >
-              <Check className="h-3 w-3" />
+              <CheckIcon className="h-3 w-3" />
               {f}
             </span>
           ))}
         </div>
         <button
           onClick={onDismiss}
-          className="mt-6 w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-dark transition-colors"
+          className="mt-6 w-full rounded-lg bg-[var(--bgColor-accent-emphasis)] py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--bgColor-accent-emphasis)]-dark transition-colors"
         >
           Start Exploring
         </button>

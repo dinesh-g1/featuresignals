@@ -26,6 +26,7 @@ import (
 	"github.com/featuresignals/server/internal/integrations"
 	"github.com/featuresignals/server/internal/integrations/flagsmith"
 	"github.com/featuresignals/server/internal/integrations/iac"
+	"github.com/featuresignals/server/internal/integrations/launchdarkly"
 	"github.com/featuresignals/server/internal/integrations/unleash"
 	"github.com/featuresignals/server/internal/janitor"
 	"github.com/featuresignals/server/internal/janitor/bitbucket"
@@ -617,6 +618,7 @@ func (m *multiHandler) WithGroup(name string) slog.Handler {
 // Called explicitly from main() — no init() functions with side effects.
 func initProviders() {
 	// ─── 1. Migration Importers (feature flag providers) ──────────────
+	integrations.Register("launchdarkly", launchdarkly.NewImporter)
 	integrations.Register("unleash", unleash.NewImporter)
 	integrations.Register("flagsmith", flagsmith.NewImporter)
 

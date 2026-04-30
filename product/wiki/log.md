@@ -3,6 +3,35 @@
 > Chronological record of all wiki operations. Append-only.
 > Format: `## [YYYY-MM-DD HH:MM] operation | description`
 
+## [2026-05-01 10:00] build | Phase 1 — Website Hero Calculator + Live Eval Demo + Migration Preview
+
+- **Phase 1 of FINAL_PROMPT.md complete.** All three interactive sections implemented.
+- **Files created (8):** pricing.ts, eval-engine.ts, calculator-slider.tsx, code-editor.tsx, hero-calculator.tsx, live-eval-demo.tsx, migration-preview.tsx, ui/ directory
+- **Files modified (3):** page.tsx (replaced 1635-line Lucide homepage), nav-links.ts (Lucide→Octicons), header.tsx (Lucide→Octicons)
+- **Standards:** Zero Lucide imports, zero TS errors, zero build errors, all Primer tokens, all Octicons
+
+
+## [2026-04-29 14:30] design | Complete product redesign implementation prompt
+
+- **Created comprehensive agentic implementation prompt** at `FINAL_PROMPT.md` (replaced previous infra-focused prompt)
+- **Sources ingested:**
+  - `product/wiki/private/COMPETITIVE.md` — verified competitor pricing data (LaunchDarkly $8.33/seat, ConfigCat $26/seat, Flagsmith $45/mo, Unleash $80/mo)
+  - `product/wiki/private/BUSINESS.md` — pricing tiers, INR/USD exchange rate (₹84/$1), margin analysis
+  - `product/wiki/public/SDK.md` — all 8 language code snippets for live demo and contextual panels
+  - `product/wiki/public/DEVELOPMENT.md` — handler patterns, dashboard standards
+  - `product/wiki/public/PERFORMANCE.md` — evaluation engine design, sub-ms latency architecture
+  - `product/wiki/private/ROADMAP.md` — what's built vs planned
+- **Prompt covers 6 phases:**
+  1. Website — Hero Calculator + Live Demo (interactive) — detailed execution spec with file paths, state management, pricing data, acceptance criteria
+  2. Website — Migration + AI Janitor (interactive comparison + simulation)
+  3. Website — Trust, Pricing, Final CTA (polish + contextual state carry-through)
+  4. Dashboard — Primer Redesign (UnderlineNav, NavList, empty states, skeletons, ActionList, DataTable)
+  5. APIs — Public Endpoints (calculator, migration preview, anonymous evaluation, session storage, gradual signup)
+  6. SDK + Docs Integration (contextual snippets in dashboard, cross-linking)
+- **Design system:** 100% GitHub Primer — exact CSS tokens, shadows, typography, radius, component patterns, animations
+- **Project context:** Existing website at `website/` (Next.js 16, Tailwind v4, framer-motion, Primer tokens already configured), dashboard at `dashboard/`, server at `server/`
+- **Phase 1 is immediately executable** — all file paths, component specs, test requirements, pricing data, and acceptance criteria are specified
+
 ## [2026-04-28 12:00] delete | Cell architecture removed from codebase
 
 - **Deleted 35+ files** from cell/tenant provisioning architecture:
@@ -299,3 +328,10 @@
 - **Router:** All 40+ API routes registered with correct RBAC middleware per endpoint
 - **Smoke tests:** `scripts/test.sh` — 18 tests covering health, login, clusters CRUD, deployments, config, audit, logout, 404, unauthorized access
 - **Wiki:** OPS_PORTAL.md status updated to "Complete — Phases 1-4"
+
+## [2026-05-01 12:00] build | Phases 2-4 complete
+
+**Phase 2 (Website):** AI Janitor Simulator + Pricing Section + Final CTA — 4 files created, 2 modified.
+**Phase 3 (Dashboard):** Primer NavList sidebar, UnderlineNav, Blankslate, Loading Skeletons — 5 files created, 6 modified.
+**Phase 4 (Backend):** 4 public API endpoints + session storage — 7 files created, 7 modified.
+**Verification:** Website tsc/build pass, Dashboard tsc pass, Server go build/vet/test pass.

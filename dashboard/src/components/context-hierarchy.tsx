@@ -6,14 +6,8 @@ import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import {
-  FolderOpen,
-  Globe,
-  ChevronRight,
-  Plus,
-  Settings2,
-  ArrowUpDown,
-  Check,
-} from "lucide-react";
+  FolderOpenIcon, GlobeIcon, ChevronRightIcon, PlusIcon, Settings2, ArrowUpDown, CheckIcon
+} from "@/components/icons/nav-icons";
 import Link from "next/link";
 import type { Project, Environment } from "@/lib/types";
 
@@ -58,26 +52,26 @@ function ProjectDropdown({
         className={cn(
           "flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200",
           open
-            ? "border-accent/30 bg-accent/5 shadow-sm ring-2 ring-accent/20"
-            : "border-slate-200 bg-white hover:border-accent/20 hover:shadow-md",
+            ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] shadow-sm ring-2 ring-[var(--borderColor-accent-muted)]"
+            : "border-[var(--borderColor-default)] bg-white hover:border-[var(--borderColor-accent-muted)] hover:shadow-md",
         )}
       >
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-violet-600 text-white shadow-sm">
-          <FolderOpen className="h-4 w-4" />
+          <FolderOpenIcon className="h-4 w-4" />
         </div>
         <div className="min-w-0 text-left">
-          <p className="truncate text-sm font-semibold text-slate-900">
+          <p className="truncate text-sm font-semibold text-[var(--fgColor-default)]">
             {selectedProject?.name || "Select project"}
           </p>
           {selectedProject && (
-            <p className="truncate text-[11px] font-medium text-slate-500">
+            <p className="truncate text-[11px] font-medium text-[var(--fgColor-muted)]">
               {selectedProject.slug}
             </p>
           )}
         </div>
-        <ChevronRight
+        <ChevronRightIcon
           className={cn(
-            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+            "h-4 w-4 shrink-0 text-[var(--fgColor-subtle)] transition-transform duration-200",
             open && "rotate-90",
           )}
         />
@@ -88,7 +82,7 @@ function ProjectDropdown({
         <>
           {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 ring-1 ring-slate-100/50">
+          <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-[var(--borderColor-default)] bg-white shadow-2xl shadow-slate-900/10 ring-1 ring-slate-100/50">
             {/* Search */}
             <div className="border-b border-slate-100 p-2">
               <input
@@ -96,7 +90,7 @@ function ProjectDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search projects..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-accent/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="w-full rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-3 py-1.5 text-sm text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--borderColor-accent-muted)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
                 autoFocus
               />
             </div>
@@ -104,7 +98,7 @@ function ProjectDropdown({
             {/* Project List */}
             <div className="max-h-64 overflow-y-auto p-1.5">
               {filtered.length === 0 ? (
-                <p className="px-3 py-4 text-center text-xs text-slate-400">
+                <p className="px-3 py-4 text-center text-xs text-[var(--fgColor-subtle)]">
                   No projects found
                 </p>
               ) : (
@@ -119,23 +113,23 @@ function ProjectDropdown({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                       selectedProject?.id === project.id
-                        ? "bg-accent/5 text-accent-dark"
-                        : "hover:bg-slate-50",
+                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                        : "hover:bg-[var(--bgColor-muted)]",
                     )}
                   >
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600">
-                      <FolderOpen className="h-4 w-4" />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[var(--fgColor-muted)]">
+                      <FolderOpenIcon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-[var(--fgColor-default)]">
                         {project.name}
                       </p>
-                      <p className="truncate text-[11px] text-slate-500">
+                      <p className="truncate text-[11px] text-[var(--fgColor-muted)]">
                         {project.slug}
                       </p>
                     </div>
                     {selectedProject?.id === project.id && (
-                      <Check className="h-4 w-4 shrink-0 text-accent" />
+                      <CheckIcon className="h-4 w-4 shrink-0 text-[var(--fgColor-accent)]" />
                     )}
                   </button>
                 ))
@@ -149,15 +143,15 @@ function ProjectDropdown({
                   onCreateNew();
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:bg-[var(--bgColor-accent-muted)]"
               >
-                <Plus className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4" />
                 Create new project
               </button>
               <Link
                 href="/environments"
                 onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
               >
                 <Settings2 className="h-4 w-4" />
                 Manage environments
@@ -222,8 +216,8 @@ function EnvironmentDropdown({
         className={cn(
           "flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200",
           open
-            ? "border-accent/30 bg-accent/5 shadow-sm ring-2 ring-accent/20"
-            : "border-slate-200 bg-white hover:border-accent/20 hover:shadow-md",
+            ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] shadow-sm ring-2 ring-[var(--borderColor-accent-muted)]"
+            : "border-[var(--borderColor-default)] bg-white hover:border-[var(--borderColor-accent-muted)] hover:shadow-md",
         )}
       >
         <div
@@ -234,21 +228,21 @@ function EnvironmentDropdown({
               : "from-slate-400 to-slate-500",
           )}
         >
-          <Globe className="h-4 w-4" />
+          <GlobeIcon className="h-4 w-4" />
         </div>
         <div className="min-w-0 text-left">
-          <p className="truncate text-sm font-semibold text-slate-900">
+          <p className="truncate text-sm font-semibold text-[var(--fgColor-default)]">
             {selectedEnv?.name || "All environments"}
           </p>
           {selectedEnv && (
-            <p className="truncate text-[11px] font-medium text-slate-500">
+            <p className="truncate text-[11px] font-medium text-[var(--fgColor-muted)]">
               {selectedEnv.slug}
             </p>
           )}
         </div>
-        <ChevronRight
+        <ChevronRightIcon
           className={cn(
-            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+            "h-4 w-4 shrink-0 text-[var(--fgColor-subtle)] transition-transform duration-200",
             open && "rotate-90",
           )}
         />
@@ -259,7 +253,7 @@ function EnvironmentDropdown({
         <>
           {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 ring-1 ring-slate-100/50">
+          <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-[var(--borderColor-default)] bg-white shadow-2xl shadow-slate-900/10 ring-1 ring-slate-100/50">
             {/* Search */}
             <div className="border-b border-slate-100 p-2">
               <input
@@ -267,7 +261,7 @@ function EnvironmentDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search environments..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-accent/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20"
+                className="w-full rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-3 py-1.5 text-sm text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--borderColor-accent-muted)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
                 autoFocus
               />
             </div>
@@ -283,23 +277,23 @@ function EnvironmentDropdown({
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                   !selectedEnv
-                    ? "bg-accent/5 text-accent-dark"
-                    : "hover:bg-slate-50",
+                    ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                    : "hover:bg-[var(--bgColor-muted)]",
                 )}
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-400 to-slate-500 text-white">
                   <ArrowUpDown className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-[var(--fgColor-default)]">
                     All environments
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-[var(--fgColor-muted)]">
                     View across all environments
                   </p>
                 </div>
                 {!selectedEnv && (
-                  <Check className="h-4 w-4 shrink-0 text-accent" />
+                  <CheckIcon className="h-4 w-4 shrink-0 text-[var(--fgColor-accent)]" />
                 )}
               </button>
             </div>
@@ -307,7 +301,7 @@ function EnvironmentDropdown({
             {/* Environment List */}
             <div className="border-t border-slate-100 p-1.5">
               {filtered.length === 0 ? (
-                <p className="px-3 py-4 text-center text-xs text-slate-400">
+                <p className="px-3 py-4 text-center text-xs text-[var(--fgColor-subtle)]">
                   No environments found
                 </p>
               ) : (
@@ -322,8 +316,8 @@ function EnvironmentDropdown({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                       selectedEnv?.id === env.id
-                        ? "bg-accent/5 text-accent-dark"
-                        : "hover:bg-slate-50",
+                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                        : "hover:bg-[var(--bgColor-muted)]",
                     )}
                   >
                     <div
@@ -332,18 +326,18 @@ function EnvironmentDropdown({
                         getEnvColor(env),
                       )}
                     >
-                      <Globe className="h-4 w-4" />
+                      <GlobeIcon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-[var(--fgColor-default)]">
                         {env.name}
                       </p>
-                      <p className="truncate text-[11px] text-slate-500">
+                      <p className="truncate text-[11px] text-[var(--fgColor-muted)]">
                         {env.slug}
                       </p>
                     </div>
                     {selectedEnv?.id === env.id && (
-                      <Check className="h-4 w-4 shrink-0 text-accent" />
+                      <CheckIcon className="h-4 w-4 shrink-0 text-[var(--fgColor-accent)]" />
                     )}
                   </button>
                 ))
@@ -357,9 +351,9 @@ function EnvironmentDropdown({
                   onCreateNew();
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:bg-[var(--bgColor-accent-muted)]"
               >
-                <Plus className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4" />
                 Create new environment
               </button>
             </div>
@@ -457,9 +451,9 @@ export function ContextHierarchy({
   if (loading) {
     return (
       <div className="flex items-center gap-3 px-4 py-3">
-        <div className="h-10 w-40 animate-pulse rounded-xl bg-slate-200" />
+        <div className="h-10 w-40 animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
         <div className="h-5 w-5 text-slate-300">›</div>
-        <div className="h-10 w-40 animate-pulse rounded-xl bg-slate-200" />
+        <div className="h-10 w-40 animate-pulse rounded-xl bg-[var(--bgColor-muted)]" />
       </div>
     );
   }
@@ -479,7 +473,7 @@ export function ContextHierarchy({
 
       {/* Hierarchy Separator */}
       <div className="flex items-center gap-2">
-        <ChevronRight className="h-4 w-4 text-slate-300" />
+        <ChevronRightIcon className="h-4 w-4 text-slate-300" />
       </div>
 
       {/* Environment Selector */}
@@ -491,8 +485,8 @@ export function ContextHierarchy({
           onCreateNew={onCreateEnvironment}
         />
       ) : (
-        <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3.5 py-2.5 text-sm text-slate-400">
-          <Globe className="h-4 w-4" />
+        <div className="flex items-center gap-2 rounded-xl border border-dashed border-[var(--borderColor-emphasis)] px-3.5 py-2.5 text-sm text-[var(--fgColor-subtle)]">
+          <GlobeIcon className="h-4 w-4" />
           <span>Select a project first</span>
         </div>
       )}

@@ -13,7 +13,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { toast } from "@/components/toast";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircleFillIcon, ClockIcon } from "@/components/icons/nav-icons";
 import type { ApprovalRequest } from "@/lib/types";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -84,7 +84,7 @@ function SlaProgress({ ar, now }: { ar: ApprovalRequest; now: number }) {
 
   const barColor =
     urgencyColor === "red"
-      ? "bg-red-500"
+      ? "bg-[var(--bgColor-danger-muted)]0"
       : urgencyColor === "yellow"
         ? "bg-amber-400"
         : "bg-emerald-500";
@@ -94,11 +94,11 @@ function SlaProgress({ ar, now }: { ar: ApprovalRequest; now: number }) {
       ? "text-red-600"
       : urgencyColor === "yellow"
         ? "text-amber-600"
-        : "text-slate-500";
+        : "text-[var(--fgColor-muted)]";
 
   return (
     <div className="flex items-center gap-2 mt-1">
-      <Clock className={cn("h-3.5 w-3.5 flex-shrink-0", textColor)} />
+      <ClockIcon className={cn("h-3.5 w-3.5 flex-shrink-0", textColor)} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span
@@ -109,11 +109,11 @@ function SlaProgress({ ar, now }: { ar: ApprovalRequest; now: number }) {
           >
             {dueLabel}
           </span>
-          <span className="text-xs text-slate-400 flex-shrink-0">
+          <span className="text-xs text-[var(--fgColor-subtle)] flex-shrink-0">
             Requested {slaInfo(ar.created_at, now).elapsedLabel}
           </span>
         </div>
-        <div className="mt-1 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="mt-1 h-1 w-full rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-1000",
@@ -187,8 +187,8 @@ export default function ApprovalsPage() {
             className={cn(
               "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               filter === s
-                ? "bg-accent/10 text-accent-dark ring-1 ring-accent/20"
-                : "text-slate-500 hover:bg-slate-100",
+                ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] ring-1 ring-[var(--borderColor-accent-muted)]"
+                : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]",
             )}
           >
             {s || "All"}
@@ -197,7 +197,7 @@ export default function ApprovalsPage() {
       </div>
 
       {/* Tabs: All Requests / My Requests */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-[var(--borderColor-default)]">
         {[
           { key: "all" as const, label: "All Requests" },
           { key: "mine" as const, label: "My Requests" },
@@ -208,8 +208,8 @@ export default function ApprovalsPage() {
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
               tab === key
-                ? "border-accent text-accent"
-                : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300",
+                ? "border-[var(--fgColor-accent)] text-[var(--fgColor-accent)]"
+                : "border-transparent text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-emphasis)]",
             )}
           >
             {label}
@@ -217,10 +217,10 @@ export default function ApprovalsPage() {
         ))}
       </div>
 
-      <Card className="hover:shadow-lg hover:border-slate-300">
+      <Card className="hover:shadow-lg hover:border-[var(--borderColor-emphasis)]">
         {filteredByTab.length === 0 ? (
           <EmptyState
-            icon={CheckCircle}
+            icon={CheckCircleFillIcon}
             title={
               tab === "mine" ? "No requests from you" : "No approval requests"
             }
@@ -244,15 +244,15 @@ export default function ApprovalsPage() {
                       <Badge variant={STATUS_VARIANT[ar.status] || "default"}>
                         {ar.status}
                       </Badge>
-                      <span className="text-sm font-medium text-slate-700">
+                      <span className="text-sm font-medium text-[var(--fgColor-default)]">
                         {ar.change_type}
                       </span>
-                      <span className="text-xs text-slate-400">
-                        Flag: {ar.flag_id?.slice(0, 8)}&hellip;
+                      <span className="text-xs text-[var(--fgColor-subtle)]">
+                        FlagIcon: {ar.flag_id?.slice(0, 8)}&hellip;
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-[var(--fgColor-subtle)]">
                         {timeAgo(ar.created_at)}
                       </span>
                       {ar.status === "pending" && !isReviewing && (
@@ -267,14 +267,14 @@ export default function ApprovalsPage() {
                   <SlaProgress ar={ar} now={now} />
 
                   {ar.review_note && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-[var(--fgColor-muted)]">
                       <span className="font-medium">Review note:</span>{" "}
                       {ar.review_note}
                     </p>
                   )}
 
                   {isReviewing && (
-                    <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 mt-2 space-y-3 sm:p-4">
+                    <div className="rounded-lg border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] p-3 mt-2 space-y-3 sm:p-4">
                       <Textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
@@ -292,7 +292,7 @@ export default function ApprovalsPage() {
                         </Button>
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="danger"
                           onClick={() => handleReview(ar.id, "reject")}
                           disabled={loading}
                         >

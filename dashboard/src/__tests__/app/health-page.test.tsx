@@ -37,7 +37,7 @@ const mockFlags = [
   {
     id: "f1",
     key: "stale-flag",
-    name: "Stale Flag",
+    name: "Stale FlagIcon",
     flag_type: "boolean",
     default_value: false,
     category: "release",
@@ -50,7 +50,7 @@ const mockFlags = [
   {
     id: "f2",
     key: "fresh-flag",
-    name: "Fresh Flag",
+    name: "Fresh FlagIcon",
     flag_type: "boolean",
     default_value: false,
     category: "release",
@@ -63,7 +63,7 @@ const mockFlags = [
   {
     id: "f3",
     key: "expired-flag",
-    name: "Expired Flag",
+    name: "Expired FlagIcon",
     flag_type: "boolean",
     default_value: false,
     category: "release",
@@ -107,7 +107,7 @@ describe("FlagHealthPage", () => {
 
     // Assert
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
-    expect(screen.queryByText("Flag Health")).not.toBeInTheDocument();
+    expect(screen.queryByText("FlagIcon Health")).not.toBeInTheDocument();
   });
 
   it("displays health score", async () => {

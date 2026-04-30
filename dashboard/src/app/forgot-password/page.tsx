@@ -10,21 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
-  ArrowLeft,
-  Loader2,
-  Mail,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  Check,
-  X,
-} from "lucide-react";
+  ArrowLeftIcon,
+  LoaderIcon,
+  MailIcon,
+  EyeIcon,
+  EyeOffIcon,
+  XIcon,
+  CheckCircleFillIcon,
+} from "@/components/icons/nav-icons";
 
 type Step = "email" | "otp" | "newPassword" | "success";
 
-function CheckIcon({ met }: { met: boolean }) {
-  if (met) return <Check className="h-3.5 w-3.5 text-emerald-500" />;
-  return <X className="h-3.5 w-3.5 text-slate-300" />;
+function StepCheckIcon({ met }: { met: boolean }) {
+  if (met)
+    return <CheckCircleFillIcon className="h-3.5 w-3.5 text-emerald-500" />;
+  return <XIcon className="h-3.5 w-3.5 text-slate-300" />;
 }
 
 function PasswordStrength({ password }: { password: string }) {
@@ -41,10 +41,12 @@ function PasswordStrength({ password }: { password: string }) {
       {checks.map((c) => (
         <div
           key={c.label}
-          className="flex items-center gap-2 text-xs text-slate-500"
+          className="flex items-center gap-2 text-xs text-[var(--fgColor-muted)]"
         >
-          <CheckIcon met={c.met} />
-          <span className={c.met ? "text-emerald-600" : ""}>{c.label}</span>
+          <StepCheckIcon met={c.met} />
+          <span className={c.met ? "text-[var(--fgColor-success)]" : ""}>
+            {c.label}
+          </span>
         </div>
       ))}
     </div>
@@ -195,7 +197,7 @@ export default function ForgotPasswordPage() {
   if (loadingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
       </div>
     );
   }
@@ -205,7 +207,7 @@ export default function ForgotPasswordPage() {
     return (
       <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/7 blur-3xl" />
+          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--bgColor-accent-emphasis)]/7 blur-3xl" />
         </div>
         <Card className="relative w-full max-w-md space-y-6 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
           <div className="text-center">
@@ -214,11 +216,13 @@ export default function ForgotPasswordPage() {
             </h1>
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
-            <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-            <h2 className="text-lg font-semibold text-slate-900">
+            <CheckCircleFillIcon className="h-12 w-12 text-emerald-500" />
+            <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
               Password reset successful
             </h2>
-            <p className="text-sm text-slate-600">Redirecting to sign in...</p>
+            <p className="text-sm text-[var(--fgColor-muted)]">
+              Redirecting to sign in...
+            </p>
           </div>
           <Link href="/login">
             <Button className="w-full">Sign in now</Button>
@@ -231,7 +235,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/7 blur-3xl" />
+        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--bgColor-accent-emphasis)]/7 blur-3xl" />
         <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-purple-400/[0.05] blur-3xl" />
       </div>
       <Card className="relative w-full max-w-md space-y-6 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
@@ -239,15 +243,15 @@ export default function ForgotPasswordPage() {
           <h1 className="bg-gradient-to-r from-accent-dark to-accent bg-clip-text text-2xl font-bold tracking-tight text-transparent">
             FeatureSignals
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
             {step === "email" && "Reset your password"}
-            {step === "otp" && `Check your email — ${email}`}
+            {step === "otp" && `CheckIcon your email — ${email}`}
             {step === "newPassword" && "Set new password"}
           </p>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-100">
+          <div className="rounded-lg bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100">
             {error}
           </div>
         )}
@@ -258,7 +262,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-1.5">
               <Label htmlFor="email">Email address</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
                 <Input
                   id="email"
                   name="email"
@@ -283,7 +287,7 @@ export default function ForgotPasswordPage() {
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
                   Sending...
                 </>
               ) : (
@@ -297,7 +301,7 @@ export default function ForgotPasswordPage() {
         {step === "otp" && (
           <form onSubmit={handleOTPSubmit} noValidate className="space-y-5">
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-[var(--fgColor-default)]">
                 Verification code
               </label>
               <div className="flex gap-2 justify-center">
@@ -313,10 +317,10 @@ export default function ForgotPasswordPage() {
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
                     onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent ${
+                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fgColor-accent)] focus:border-[var(--fgColor-accent)] ${
                       fieldErrors.otp
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-200 bg-white"
+                        ? "border-red-300 bg-[var(--bgColor-danger-muted)]"
+                        : "border-[var(--borderColor-default)] bg-white"
                     }`}
                     aria-label={`Digit ${index + 1}`}
                   />
@@ -327,8 +331,8 @@ export default function ForgotPasswordPage() {
                   {fieldErrors.otp}
                 </p>
               )}
-              <p className="text-xs text-slate-500 text-center mt-2">
-                Code expires in 15 minutes. Check your spam folder.
+              <p className="text-xs text-[var(--fgColor-muted)] text-center mt-2">
+                Code expires in 15 minutes. CheckIcon your spam folder.
               </p>
             </div>
 
@@ -355,13 +359,13 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
                     tabIndex={-1}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOffIcon className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <EyeIcon className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -394,13 +398,13 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
                     tabIndex={-1}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOffIcon className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <EyeIcon className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -415,7 +419,7 @@ export default function ForgotPasswordPage() {
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
                   Resetting...
                 </>
               ) : (
@@ -451,10 +455,10 @@ export default function ForgotPasswordPage() {
                     value={digit}
                     onChange={(e) => handleOTPChange(index, e.target.value)}
                     onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent ${
+                    className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fgColor-accent)] focus:border-[var(--fgColor-accent)] ${
                       fieldErrors.otp
-                        ? "border-red-300 bg-red-50"
-                        : "border-slate-200 bg-white"
+                        ? "border-red-300 bg-[var(--bgColor-danger-muted)]"
+                        : "border-[var(--borderColor-default)] bg-white"
                     }`}
                     aria-label={`Digit ${index + 1}`}
                   />
@@ -488,13 +492,13 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
                   tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOffIcon className="h-4 w-4" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <EyeIcon className="h-4 w-4" />
                   )}
                 </button>
               </div>
@@ -527,13 +531,13 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
                   tabIndex={-1}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOffIcon className="h-4 w-4" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <EyeIcon className="h-4 w-4" />
                   )}
                 </button>
               </div>
@@ -547,7 +551,7 @@ export default function ForgotPasswordPage() {
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
                   Resetting...
                 </>
               ) : (
@@ -568,9 +572,9 @@ export default function ForgotPasswordPage() {
         <Link href="/login">
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-700"
+            className="flex w-full items-center justify-center gap-1.5 text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
             Back to login
           </button>
         </Link>

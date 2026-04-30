@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRightIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
 
 // Define the breadcrumb segment structure
@@ -49,7 +49,7 @@ const ROUTE_BREADCRUMBS: Array<{
   },
   {
     pattern: /^\/health$/,
-    build: () => [{ label: "Flag Health" }],
+    build: () => [{ label: "FlagIcon Health" }],
   },
   {
     pattern: /^\/env-comparison$/,
@@ -171,12 +171,12 @@ export function Breadcrumb() {
             return (
               <li key={idx} className="flex items-center gap-1">
                 {idx > 0 && (
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-[var(--fgColor-subtle)]" />
                 )}
                 {segment.href && !isLast ? (
                   <Link
                     href={segment.href}
-                    className="truncate text-sm text-slate-500 transition-colors hover:text-slate-700"
+                    className="truncate text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
                   >
                     {segment.label}
                   </Link>
@@ -185,8 +185,8 @@ export function Breadcrumb() {
                     className={cn(
                       "truncate text-sm",
                       isLast
-                        ? "font-semibold text-slate-900"
-                        : "text-slate-500",
+                        ? "font-semibold text-[var(--fgColor-default)]"
+                        : "text-[var(--fgColor-muted)]",
                     )}
                   >
                     {segment.label}

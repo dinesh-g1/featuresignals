@@ -3,14 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  GitFork,
-  GitBranch,
-  GitPullRequest,
-  Settings,
-  ExternalLink,
-  Trash2,
-  RefreshCw,
-} from "lucide-react";
+  GitFork, GitBranch, GitPullRequestIcon, SettingsIcon, ExternalLinkIcon, TrashIcon, RefreshIcon
+} from "@/components/icons/nav-icons";
 import { cn, timeAgo } from "@/lib/utils";
 
 interface GitProviderCardProps {
@@ -39,7 +33,7 @@ const providerConfig = {
   },
   bitbucket: {
     name: "Bitbucket",
-    icon: GitPullRequest,
+    icon: GitPullRequestIcon,
     color: "bg-blue-600 text-white",
     lightColor: "bg-blue-50 text-blue-700",
   },
@@ -59,7 +53,7 @@ export function GitProviderCard({
   const Icon = config.icon;
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-5 transition-all hover:shadow-soft">
+    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-5 transition-all hover:shadow-soft">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -72,7 +66,7 @@ export function GitProviderCard({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-stone-800">
+              <h4 className="text-sm font-bold text-[var(--fgColor-default)]">
                 {config.name}
               </h4>
               {connected ? (
@@ -82,16 +76,16 @@ export function GitProviderCard({
               ) : (
                 <Badge
                   variant="default"
-                  className="text-[10px] bg-stone-100 text-stone-500"
+                  className="text-[10px] bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]"
                 >
                   Not connected
                 </Badge>
               )}
             </div>
             {connected && name && (
-              <p className="text-xs text-stone-500 mt-0.5">
+              <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
                 Connected as "
-                <span className="font-medium text-stone-700">{name}</span>"
+                <span className="font-medium text-[var(--fgColor-default)]">{name}</span>"
                 {repoCount !== undefined && (
                   <span> — {repoCount} repos linked</span>
                 )}
@@ -101,16 +95,16 @@ export function GitProviderCard({
         </div>
         {connected && (
           <button
-            className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100"
+            className="rounded-lg p-1.5 text-[var(--fgColor-subtle)] hover:bg-[var(--bgColor-muted)]"
             title="Settings"
           >
-            <Settings className="h-4 w-4" strokeWidth={1.5} />
+            <SettingsIcon className="h-4 w-4" />
           </button>
         )}
       </div>
 
       {connected && lastScanned && (
-        <p className="mt-3 text-xs text-stone-400">
+        <p className="mt-3 text-xs text-[var(--fgColor-subtle)]">
           Last scanned: {timeAgo(lastScanned)}
         </p>
       )}
@@ -121,11 +115,11 @@ export function GitProviderCard({
             {onManage && (
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 className="text-xs"
                 onClick={onManage}
               >
-                <ExternalLink className="h-3 w-3 mr-1" />
+                <ExternalLinkIcon className="h-3 w-3 mr-1" />
                 Manage Repos
               </Button>
             )}
@@ -133,10 +127,10 @@ export function GitProviderCard({
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-xs text-red-600 hover:text-red-700 hover:bg-[var(--bgColor-danger-muted)]"
                 onClick={onDisconnect}
               >
-                <Trash2 className="h-3 w-3 mr-1" />
+                <TrashIcon className="h-3 w-3 mr-1" />
                 Disconnect
               </Button>
             )}

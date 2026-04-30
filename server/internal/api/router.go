@@ -161,6 +161,24 @@ func NewRouter(
 		r.Get("/oidc/callback/{orgSlug}", ssoAuthH.OIDCCallback)
 	})
 
+	// Public (no-auth) marketing/demo endpoints
+	publicH := NewPublicHandler(store, jwtMgr, logger)
+	r.Route("/v1/public", func(r chi.Router) {
+		r.Use(middleware.CacheControl("no-store"))
+
+		// Migration preview — 5 req/hr ≈ 1 req/min (conservative)
+		r.With(middleware.RateLimit(ctx, 1)).Post("/migration/preview", publicH.MigrationPreview)
+
+		// Calculator — 30 req/hr ≈ 1 req/min (conservative)
+		r.With(middleware.RateLimit(ctx, 1)).Post("/calculator", publicH.Calculator)
+
+		// Live eval demo — 100 req/hr ≈ 2 req/min
+		r.With(middleware.RateLimit(ctx, 2)).Get("/evaluate/{flagKey}", publicH.PublicEvaluate)
+
+		// Migration save — 3 req/day ≈ 1 req/min (extremely conservative)
+		r.With(middleware.RateLimit(ctx, 1)).Post("/migration/save", publicH.MigrationSave)
+	})
+
 	// Feature gate middleware constructors — each wraps a route group to
 	// enforce plan requirements without touching handler code.
 	scimH := handlers.NewSCIMHandler(store)

@@ -1,20 +1,21 @@
 "use client";
 
-import { Shield, Lock, Eye, Users, Key } from "lucide-react";
+import {
+  ShieldIcon, LockIcon, EyeIcon, UsersIcon, KeyIcon
+} from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
 interface ComplianceBadge {
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const badges: ComplianceBadge[] = [
-  { label: "Tamper-Evident Audit", icon: Eye },
-  { label: "End-to-End Encryption", icon: Lock },
-  { label: "RBAC & MFA", icon: Users },
-  { label: "SSO (SAML / OIDC)", icon: Key },
-  { label: "OpenFeature (CNCF)", icon: Shield },
+  { label: "Tamper-Evident Audit", icon: EyeIcon },
+  { label: "End-to-End Encryption", icon: LockIcon },
+  { label: "RBAC & MFA", icon: UsersIcon },
+  { label: "SSO (SAML / OIDC)", icon: KeyIcon },
+  { label: "OpenFeature (CNCF)", icon: ShieldIcon },
 ];
 
 interface ComplianceBadgesProps {
@@ -37,9 +38,9 @@ export function ComplianceBadges({
         {badges.map((badge) => (
           <span
             key={badge.label}
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--bgColor-muted)] px-2 py-0.5 text-[10px] font-medium text-[var(--fgColor-muted)]"
           >
-            <badge.icon className="h-2.5 w-2.5 shrink-0" strokeWidth={2} />
+            <badge.icon className="h-2.5 w-2.5 shrink-0" />
             {badge.label}
           </span>
         ))}
@@ -52,13 +53,13 @@ export function ComplianceBadges({
       {badges.map((badge) => (
         <div
           key={badge.label}
-          className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+          className="flex items-start gap-3 rounded-lg border border-[var(--borderColor-default)] bg-white p-4 shadow-sm"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/5">
-            <badge.icon className="h-4.5 w-4.5 text-accent" strokeWidth={1.5} />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bgColor-accent-muted)]">
+            <badge.icon className="h-4.5 w-4.5 text-[var(--fgColor-accent)]" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-800">{badge.label}</p>
+            <p className="text-sm font-medium text-[var(--fgColor-default)]">{badge.label}</p>
           </div>
         </div>
       ))}

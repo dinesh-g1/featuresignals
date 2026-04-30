@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import {
+  CheckCircleFillIcon,
+  AlertIcon,
+  InfoFillIcon,
+} from "@/components/icons/nav-icons";
 
 interface Toast {
   id: number;
@@ -10,28 +14,36 @@ interface Toast {
   exiting?: boolean;
 }
 
-let addToast: (message: string, type: "error" | "success" | "info") => void = () => {};
+let addToast: (
+  message: string,
+  type: "error" | "success" | "info",
+) => void = () => {};
 
-export function toast(message: string, type: "error" | "success" | "info" = "error") {
+export function toast(
+  message: string,
+  type: "error" | "success" | "info" = "error",
+) {
   addToast(message, type);
 }
 
 const iconMap = {
-  success: CheckCircle2,
-  error: AlertTriangle,
-  info: Info,
+  success: CheckCircleFillIcon,
+  error: AlertIcon,
+  info: InfoFillIcon,
 } as const;
 
 const styleMap = {
-  error: "bg-red-50 text-red-700 ring-red-200/80 shadow-red-100/50",
-  info: "bg-blue-50 text-blue-700 ring-blue-200/80 shadow-blue-100/50",
-  success: "bg-emerald-50 text-emerald-700 ring-emerald-200/80 shadow-emerald-100/50",
+  error:
+    "bg-[var(--bgColor-danger-muted)] text-[var(--fgColor-danger)] ring-[var(--borderColor-danger-emphasis)]/30 shadow-[var(--shadow-resting-small)]",
+  info: "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] ring-[var(--borderColor-accent-muted)] shadow-[var(--shadow-resting-small)]",
+  success:
+    "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] ring-[var(--borderColor-success-muted)] shadow-[var(--shadow-resting-small)]",
 } as const;
 
 const iconStyleMap = {
-  error: "text-red-500",
-  info: "text-blue-500",
-  success: "text-emerald-500",
+  error: "text-[var(--fgColor-danger)]",
+  info: "text-[var(--fgColor-accent)]",
+  success: "text-[var(--fgColor-success)]",
 } as const;
 
 export function ToastContainer() {
@@ -44,7 +56,9 @@ export function ToastContainer() {
       setCounter((c) => c + 1);
       setToasts((prev) => [...prev, { id, message, type }]);
       setTimeout(() => {
-        setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
+        setToasts((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)),
+        );
         setTimeout(() => {
           setToasts((prev) => prev.filter((t) => t.id !== id));
         }, 200);
@@ -67,10 +81,12 @@ export function ToastContainer() {
           <div
             key={t.id}
             className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium shadow-xl ring-1 transition-all duration-200 ${
-              t.exiting ? "opacity-0 translate-x-4 scale-95" : "animate-bounce-in"
+              t.exiting
+                ? "opacity-0 translate-x-4 scale-95"
+                : "animate-bounce-in"
             } ${styleMap[t.type]}`}
           >
-            <Icon className={`h-4 w-4 shrink-0 ${iconStyleMap[t.type]}`} strokeWidth={2} />
+            <Icon className={`h-4 w-4 shrink-0 ${iconStyleMap[t.type]}`} />
             {t.message}
           </div>
         );

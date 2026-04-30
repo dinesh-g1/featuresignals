@@ -611,3 +611,10 @@ func (s *tierMockStore) GetOpsSessionByRefreshToken(context.Context, string) (*d
 func (s *tierMockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
 func (s *tierMockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
 
+func (s *tierMockStore) CreateSession(context.Context, *domain.PublicSession) error { return nil }
+func (s *tierMockStore) GetSession(context.Context, string) (*domain.PublicSession, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) DeleteSession(context.Context, string) error          { return nil }
+func (s *tierMockStore) CleanExpiredSessions(context.Context) (int, error) { return 0, nil }
+

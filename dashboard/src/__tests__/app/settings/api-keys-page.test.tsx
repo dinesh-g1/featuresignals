@@ -61,7 +61,7 @@ const mockApi = api as unknown as {
 const mockKeys = [
   {
     id: "k1",
-    name: "Server Key",
+    name: "Server KeyIcon",
     type: "server",
     key: "fs_srv_xxx",
     key_prefix: "fs_srv",
@@ -104,7 +104,7 @@ describe("APIKeysPage", () => {
     render(<APIKeysPage />);
 
     // Assert
-    expect(screen.getByText("Create Key")).toBeInTheDocument();
+    expect(screen.getByText("Create KeyIcon")).toBeInTheDocument();
     expect(mockApi.listAPIKeys).toHaveBeenCalled();
   });
 
@@ -114,7 +114,7 @@ describe("APIKeysPage", () => {
 
     // Assert
     await waitFor(() => {
-      expect(screen.getByText("Server Key")).toBeInTheDocument();
+      expect(screen.getByText("Server KeyIcon")).toBeInTheDocument();
       expect(screen.getByText(/fs_srv/)).toBeInTheDocument();
       expect(screen.getByText(/server/)).toBeInTheDocument();
     });
@@ -125,27 +125,27 @@ describe("APIKeysPage", () => {
     render(<APIKeysPage />);
 
     // Assert
-    expect(screen.getByText("Create Key")).toBeInTheDocument();
+    expect(screen.getByText("Create KeyIcon")).toBeInTheDocument();
   });
 
   it("create form submits with name and type", async () => {
     // Arrange
     render(<APIKeysPage />);
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Key name")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("KeyIcon name")).toBeInTheDocument();
     });
 
     // Act
-    fireEvent.change(screen.getByPlaceholderText("Key name"), {
-      target: { value: "Test Key" },
+    fireEvent.change(screen.getByPlaceholderText("KeyIcon name"), {
+      target: { value: "Test KeyIcon" },
     });
     await act(async () => {
-      fireEvent.click(screen.getByText("Create Key"));
+      fireEvent.click(screen.getByText("Create KeyIcon"));
     });
 
     // Assert
     expect(mockApi.createAPIKey).toHaveBeenCalledWith("test-token", "env-1", {
-      name: "Test Key",
+      name: "Test KeyIcon",
       type: "server",
     });
   });
@@ -154,7 +154,7 @@ describe("APIKeysPage", () => {
     // Arrange
     render(<APIKeysPage />);
     await waitFor(() => {
-      expect(screen.getByText("Server Key")).toBeInTheDocument();
+      expect(screen.getByText("Server KeyIcon")).toBeInTheDocument();
     });
 
     // Act — click revoke to show confirmation

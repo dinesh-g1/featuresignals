@@ -6,14 +6,8 @@ import { api } from "@/lib/api";
 import type { Project, Environment } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
-  FolderOpen,
-  Globe,
-  Plus,
-  Search,
-  ChevronDown,
-  X,
-  Clock,
-} from "lucide-react";
+  FolderOpenIcon, GlobeIcon, PlusIcon, SearchIcon, ChevronDownIcon, XIcon, ClockIcon
+} from "@/components/icons/nav-icons";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
 
@@ -60,7 +54,7 @@ const ENV_COLORS: Record<string, string> = {
 
 function getEnvBadgeClass(slug: string): string {
   const key = slug?.toLowerCase() || "";
-  return ENV_COLORS[key] || "bg-slate-100 text-slate-600 border-slate-200";
+  return ENV_COLORS[key] || "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] border-[var(--borderColor-default)]";
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -192,14 +186,14 @@ function Combobox({
           setOpen(!open);
           if (!open) setTimeout(() => inputRef.current?.focus(), 50);
         }}
-        className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+        className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="shrink-0 text-slate-400">{icon}</span>
+        <span className="shrink-0 text-[var(--fgColor-subtle)]">{icon}</span>
         {selectedItem ? (
           <span className="flex items-center gap-1.5 truncate">
-            <span className="truncate text-slate-700">
+            <span className="truncate text-[var(--fgColor-default)]">
               {selectedItem.label}
             </span>
             {selectedItem.badgeText && (
@@ -214,11 +208,11 @@ function Combobox({
             )}
           </span>
         ) : (
-          <span className="text-slate-400">{placeholder}</span>
+          <span className="text-[var(--fgColor-subtle)]">{placeholder}</span>
         )}
-        <ChevronDown
+        <ChevronDownIcon
           className={cn(
-            "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform",
+            "h-3.5 w-3.5 shrink-0 text-[var(--fgColor-subtle)] transition-transform",
             open && "rotate-180",
           )}
         />
@@ -227,18 +221,18 @@ function Combobox({
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute left-0 z-[9999] w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl top-full translate-y-1"
+          className="absolute left-0 z-[9999] w-56 overflow-hidden rounded-lg border border-[var(--borderColor-default)] bg-white shadow-xl top-full translate-y-1"
           role="listbox"
         >
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-slate-100 px-2 py-1.5">
-            <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <SearchIcon className="h-3.5 w-3.5 shrink-0 text-[var(--fgColor-subtle)]" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search…"
-              className="flex-1 border-0 bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none"
+              className="flex-1 border-0 bg-transparent text-xs text-[var(--fgColor-default)] placeholder-slate-400 focus:outline-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && filteredItems.length === 1) {
                   onValueChange(filteredItems[0].value);
@@ -250,9 +244,9 @@ function Combobox({
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-600"
+                className="shrink-0 rounded p-0.5 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
               >
-                <X className="h-3 w-3" />
+                <XIcon className="h-3 w-3" />
               </button>
             )}
           </div>
@@ -261,7 +255,7 @@ function Combobox({
           <div ref={listRef} className="max-h-48 overflow-y-auto py-1">
             {recentItems.length > 0 && !debouncedQuery && (
               <div>
-                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
                   Recent
                 </p>
                 {recentItems.map((item, idx) => (
@@ -276,16 +270,16 @@ function Combobox({
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
                       item.value === value
-                        ? "bg-accent/5 text-accent-dark"
-                        : "text-slate-700 hover:bg-slate-50",
+                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                        : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
                     )}
                     role="option"
                     aria-selected={item.value === value}
                   >
-                    <Clock className="h-3 w-3 shrink-0 text-slate-400" />
+                    <ClockIcon className="h-3 w-3 shrink-0 text-[var(--fgColor-subtle)]" />
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.value === value && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--bgColor-accent-emphasis)]" />
                     )}
                   </button>
                 ))}
@@ -293,7 +287,7 @@ function Combobox({
             )}
 
             {displayItems.length === 0 ? (
-              <div className="px-3 py-4 text-center text-xs text-slate-400">
+              <div className="px-3 py-4 text-center text-xs text-[var(--fgColor-subtle)]">
                 {emptyLabel}
               </div>
             ) : (
@@ -316,17 +310,17 @@ function Combobox({
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
                       highlighted === globalIdx
-                        ? "bg-accent/5 text-accent-dark"
+                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
                         : item.value === value
-                          ? "bg-slate-50 text-slate-900"
-                          : "text-slate-700 hover:bg-slate-50",
+                          ? "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]"
+                          : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
                     )}
                     role="option"
                     aria-selected={item.value === value}
                   >
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.value === value && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--bgColor-accent-emphasis)]" />
                     )}
                   </button>
                 );
@@ -343,9 +337,9 @@ function Combobox({
                     onEmptyAction();
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
                 >
-                  <Plus className="h-3 w-3" />
+                  <PlusIcon className="h-3 w-3" />
                   {emptyLabel.includes("Create") ? emptyLabel : `Create new`}
                 </button>
               )}
@@ -355,9 +349,9 @@ function Combobox({
                     onCreate();
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
                 >
-                  <Plus className="h-3 w-3" />
+                  <PlusIcon className="h-3 w-3" />
                   Create new…
                 </button>
               )}
@@ -468,9 +462,9 @@ export function ContextSelector() {
           {projects.length === 0 ? (
             <button
               onClick={() => setProjectDialogOpen(true)}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:bg-[var(--bgColor-accent-muted)]"
             >
-              <Plus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" />
               Create Project
             </button>
           ) : (
@@ -479,7 +473,7 @@ export function ContextSelector() {
               value={projectId || ""}
               onValueChange={handleProjectChange}
               placeholder="Select project…"
-              icon={<FolderOpen className="h-4 w-4" strokeWidth={1.5} />}
+              icon={<FolderOpenIcon className="h-4 w-4" />}
               onCreate={() => setProjectDialogOpen(true)}
               recentIds={recentProjects}
             />
@@ -497,9 +491,9 @@ export function ContextSelector() {
             {envs.length === 0 ? (
               <button
                 onClick={() => setEnvDialogOpen(true)}
-                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-accent transition-colors hover:bg-accent/5"
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:bg-[var(--bgColor-accent-muted)]"
               >
-                <Plus className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4" />
                 Create Environment
               </button>
             ) : (
@@ -508,7 +502,7 @@ export function ContextSelector() {
                 value={currentEnvId || ""}
                 onValueChange={handleEnvChange}
                 placeholder="Select environment…"
-                icon={<Globe className="h-4 w-4" strokeWidth={1.5} />}
+                icon={<GlobeIcon className="h-4 w-4" />}
                 onCreate={() => setEnvDialogOpen(true)}
                 recentIds={recentEnvs}
               />

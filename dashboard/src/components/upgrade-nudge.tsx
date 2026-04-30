@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { X, ArrowRight, Sparkles, AlertTriangle } from "lucide-react";
+import {
+  XIcon,
+  ArrowRightIcon,
+  SparklesIcon,
+  AlertIcon,
+} from "@/components/icons/nav-icons";
 import { useUpgradeNudge } from "@/hooks/use-upgrade-nudge";
 import { cn } from "@/lib/utils";
 
@@ -24,47 +29,55 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
       className={cn(
         "relative rounded-lg border p-4",
         isUrgent
-          ? "border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50"
-          : "border-accent/10 bg-gradient-to-r from-accent/5 to-purple-50/60",
+          ? "border-[var(--borderColor-attention-muted)] bg-[var(--bgColor-attention-muted)]/60"
+          : "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]/60",
         className,
       )}
     >
       <button
         onClick={() => dismiss(nudgeId)}
-        className="absolute right-2 top-2 rounded p-1 text-slate-400 transition-colors hover:bg-white/60 hover:text-slate-600"
+        className="absolute right-2 top-2 rounded p-1 text-[var(--fgColor-subtle)] transition-colors hover:bg-white/60 hover:text-[var(--fgColor-muted)]"
         aria-label="Dismiss"
       >
-        <X className="h-3.5 w-3.5" />
+        <XIcon className="h-3.5 w-3.5" />
       </button>
       <div className="flex items-start gap-3 pr-6">
         <div
           className={cn(
             "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-            isUrgent ? "bg-amber-100" : "bg-accent/10",
+            isUrgent
+              ? "bg-[var(--bgColor-attention-muted)]"
+              : "bg-[var(--bgColor-accent-muted)]",
           )}
         >
           {isUrgent ? (
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />
           ) : (
-            <Sparkles className="h-4 w-4 text-accent" />
+            <SparklesIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-slate-800">{nudge.title}</p>
-          <p className="mt-0.5 text-sm text-slate-600">{nudge.message}</p>
+          <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+            {nudge.title}
+          </p>
+          <p className="mt-0.5 text-sm text-[var(--fgColor-muted)]">
+            {nudge.message}
+          </p>
 
           {nudge.current !== undefined && nudge.limit !== undefined && (
             <div className="mt-2.5 flex items-center gap-2">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--bgColor-muted)]">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    isUrgent ? "bg-amber-500" : "bg-accent",
+                    isUrgent
+                      ? "bg-[var(--bgColor-attention-emphasis)]"
+                      : "bg-[var(--bgColor-accent-emphasis)]",
                     `w-[${Math.min(100, (nudge.current / nudge.limit) * 100)}%]`,
                   )}
                 />
               </div>
-              <span className="shrink-0 text-xs tabular-nums text-slate-500">
+              <span className="shrink-0 text-xs tabular-nums text-[var(--fgColor-muted)]">
                 {nudge.current}/{nudge.limit}
               </span>
             </div>
@@ -75,12 +88,12 @@ export function UpgradeNudge({ context, className }: UpgradeNudgeProps) {
             className={cn(
               "mt-3 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
               isUrgent
-                ? "bg-amber-600 text-white hover:bg-amber-700"
-                : "bg-accent text-white hover:bg-accent-dark",
+                ? "bg-[var(--bgColor-attention-emphasis)] text-white hover:bg-[#7a4e00]"
+                : "bg-[var(--bgColor-accent-emphasis)] text-white hover:bg-[#0757ba]",
             )}
           >
             Upgrade to Pro
-            <ArrowRight className="h-3 w-3" />
+            <ArrowRightIcon className="h-3 w-3" />
           </Link>
         </div>
       </div>
@@ -102,26 +115,26 @@ export function FeatureLockedNudge({
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/50 p-6 text-center",
+        "rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-6 text-center",
         className,
       )}
     >
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
-        <Sparkles className="h-5 w-5 text-accent" />
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bgColor-accent-muted)]">
+        <SparklesIcon className="h-5 w-5 text-[var(--fgColor-accent)]" />
       </div>
-      <h3 className="text-sm font-semibold text-slate-800">
+      <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
         {feature} requires {requiredPlan}
       </h3>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
         Upgrade your plan to unlock {feature.toLowerCase()} and other advanced
         capabilities.
       </p>
       <Link
         href="/settings/billing"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-[var(--bgColor-accent-emphasis)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0757ba]"
       >
         View Plans
-        <ArrowRight className="h-3.5 w-3.5" />
+        <ArrowRightIcon className="h-3.5 w-3.5" />
       </Link>
     </div>
   );

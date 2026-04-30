@@ -9,18 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-  Shield,
-  ArrowLeft,
-  Mail,
-  Lock,
-  AlertTriangle,
-  Clock,
-  Eye,
-  EyeOff,
-  Sparkles,
-  Building2,
-  ChevronRight,
-} from "lucide-react";
+  ShieldIcon, ArrowLeftIcon, MailIcon, LockIcon, AlertIcon, ClockIcon, EyeIcon, EyeOffIcon, SparklesIcon, BuildingIcon, ChevronRightIcon
+} from "@/components/icons/nav-icons";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -207,7 +197,7 @@ function LoginForm() {
         }
       } catch {
         setError(
-          "Failed to discover SSO configuration. Check your organization slug.",
+          "Failed to discover SSO configuration. CheckIcon your organization slug.",
         );
         setSsoLoading(false);
       }
@@ -231,10 +221,10 @@ function LoginForm() {
 
   if (loadingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-default)]">
         <div className="flex flex-col items-center gap-3">
           <svg
-            className="h-8 w-8 animate-spin text-accent"
+            className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]"
             viewBox="0 0 24 24"
             fill="none"
           >
@@ -252,52 +242,34 @@ function LoginForm() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span className="text-sm text-stone-400">Loading...</span>
+          <span className="text-sm text-[var(--fgColor-subtle)]">Loading...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-stone-50 px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--bgColor-default)] px-4 py-12">
       {/* Background decorative elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/4 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-accent/[0.04] blur-3xl" />
-        <div className="absolute -right-32 top-1/3 h-[400px] w-[400px] rounded-full bg-accent/[0.03] blur-3xl" />
-        <div className="absolute -left-32 bottom-1/4 h-[350px] w-[350px] rounded-full bg-stone-200/30 blur-3xl" />
+        <div className="absolute left-1/2 top-1/4 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[var(--bgColor-accent-emphasis)]/[0.04] blur-3xl" />
+        <div className="absolute -right-32 top-1/3 h-[400px] w-[400px] rounded-full bg-[var(--bgColor-accent-emphasis)]/[0.03] blur-3xl" />
+        <div className="absolute -left-32 bottom-1/4 h-[350px] w-[350px] rounded-full bg-[var(--bgColor-muted)]/30 blur-3xl" />
       </div>
 
       {/* Login Card */}
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent shadow-lg shadow-accent/20">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect width="32" height="32" rx="7" fill="white" />
-              <path
-                d="M7 3
-                 C7 3, 7 18, 7 29
-                 C7 18, 23 8, 17 14
-                 C13 18, 25 22, 25 29"
-                stroke="#0d9488"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-              <circle cx="24.5" cy="26" r="1.8" fill="#0d9488" opacity="0.85" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-emphasis)] shadow-lg shadow-accent/20">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z" clip-rule="evenodd"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-default)]">
             FeatureSignals
           </h1>
-          <p className="mt-1.5 text-sm text-stone-500">
+          <p className="mt-1.5 text-sm text-[var(--fgColor-muted)]">
             {ssoMode
               ? "Sign in with your identity provider"
               : "Sign in to the enterprise control plane"}
@@ -305,7 +277,7 @@ function LoginForm() {
         </div>
 
         {/* Main Card */}
-        <div className="rounded-2xl border border-stone-200/80 bg-white/90 shadow-xl shadow-stone-900/5 backdrop-blur-xl">
+        <div className="rounded-2xl border border-[var(--borderColor-default)]/80 bg-white/90 shadow-xl shadow-stone-900/5 backdrop-blur-xl">
           <div className="p-6 sm:p-8">
             {/* ===== SUCCESS MESSAGES ===== */}
             {sessionExpired && (
@@ -314,12 +286,12 @@ function LoginForm() {
               </div>
             )}
             {emailVerified && (
-              <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <div className="mb-5 rounded-xl border border-[var(--borderColor-success-muted)] bg-emerald-50 px-4 py-3 text-sm text-[var(--fgColor-success)]">
                 Email verified successfully! You can now sign in.
               </div>
             )}
             {ssoError && (
-              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mb-5 rounded-xl border border-red-200 bg-[var(--bgColor-danger-muted)] px-4 py-3 text-sm text-red-700">
                 {decodeURIComponent(ssoError)}
               </div>
             )}
@@ -332,18 +304,18 @@ function LoginForm() {
                   errorType === "credentials" &&
                     "border-amber-200 bg-amber-50 text-amber-800",
                   errorType === "account_locked" &&
-                    "border-red-200 bg-red-50 text-red-700",
+                    "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
                   errorType === "sso_enforced" &&
-                    "border-accent/20 bg-accent/5 text-accent-dark",
+                    "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]",
                   !["credentials", "account_locked", "sso_enforced"].includes(
                     errorType,
-                  ) && "border-red-200 bg-red-50 text-red-700",
+                  ) && "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
                 )}
               >
                 <div className="flex items-start gap-2.5">
                   {(errorType === "credentials" ||
                     errorType === "account_locked") && (
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
                   )}
                   <div className="flex-1">
                     <p>{error}</p>
@@ -356,7 +328,7 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={switchToSSO}
-                        className="mt-2 font-semibold text-accent underline hover:text-accent-dark"
+                        className="mt-2 font-semibold text-[var(--fgColor-accent)] underline hover:text-[var(--fgColor-accent)]"
                       >
                         Sign in with SSO instead
                       </button>
@@ -370,7 +342,7 @@ function LoginForm() {
             {attemptsUsed > 0 && attemptsUsed < attemptsAllowed && (
               <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0" />
+                  <ClockIcon className="h-4 w-4 shrink-0" />
                   <span>
                     {Math.max(0, attemptsAllowed - attemptsUsed)} attempt
                     {attemptsAllowed - attemptsUsed !== 1 ? "s" : ""} remaining.
@@ -391,12 +363,12 @@ function LoginForm() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="orgSlug"
-                      className="text-sm font-semibold text-stone-700"
+                      className="text-sm font-semibold text-[var(--fgColor-default)]"
                     >
                       Organization Slug
                     </label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                      <BuildingIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
                       <Input
                         id="orgSlug"
                         type="text"
@@ -415,7 +387,7 @@ function LoginForm() {
                         {ssoFieldError}
                       </p>
                     )}
-                    <p className="text-xs text-stone-400">
+                    <p className="text-xs text-[var(--fgColor-subtle)]">
                       Enter your organization&apos;s slug to discover your
                       identity provider.
                     </p>
@@ -452,7 +424,7 @@ function LoginForm() {
                       </>
                     ) : (
                       <>
-                        <Shield className="h-4 w-4" />
+                        <ShieldIcon className="h-4 w-4" />
                         Continue with SSO
                       </>
                     )}
@@ -462,9 +434,9 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={switchToEmail}
-                  className="mt-5 flex w-full items-center justify-center gap-1.5 text-sm text-stone-500 transition-colors hover:text-stone-700"
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <ArrowLeftIcon className="h-3.5 w-3.5" />
                   Back to email login
                 </button>
               </>
@@ -480,12 +452,12 @@ function LoginForm() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="email"
-                      className="text-sm font-semibold text-stone-700"
+                      className="text-sm font-semibold text-[var(--fgColor-default)]"
                     >
                       Email
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                      <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
                       <Input
                         id="email"
                         name="email"
@@ -517,19 +489,19 @@ function LoginForm() {
                     <div className="flex items-center justify-between">
                       <label
                         htmlFor="password"
-                        className="text-sm font-semibold text-stone-700"
+                        className="text-sm font-semibold text-[var(--fgColor-default)]"
                       >
                         Password
                       </label>
                       <Link
                         href="/forgot-password"
-                        className="text-xs font-medium text-accent hover:text-accent-dark transition-colors"
+                        className="text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
                       >
                         Forgot password?
                       </Link>
                     </div>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                      <LockIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
                       <Input
                         id="password"
                         name="password"
@@ -551,13 +523,13 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] transition-colors"
                         tabIndex={-1}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOffIcon className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <EyeIcon className="h-4 w-4" />
                         )}
                       </button>
                     </div>
@@ -602,7 +574,7 @@ function LoginForm() {
                     ) : (
                       <>
                         Sign in
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRightIcon className="h-4 w-4" />
                       </>
                     )}
                   </Button>
@@ -611,10 +583,10 @@ function LoginForm() {
                 {/* ===== DIVIDER ===== */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-stone-200" />
+                    <div className="w-full border-t border-[var(--borderColor-default)]" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-3 text-stone-400">
+                    <span className="bg-white px-3 text-[var(--fgColor-subtle)]">
                       or continue with
                     </span>
                   </div>
@@ -624,18 +596,18 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={switchToSSO}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-stone-200 bg-white py-3 text-sm font-semibold text-stone-700 shadow-sm transition-all hover:bg-stone-50 hover:border-stone-300 hover:shadow-md"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--borderColor-default)] bg-white py-3 text-sm font-semibold text-[var(--fgColor-default)] shadow-sm transition-all hover:bg-[var(--bgColor-default)] hover:border-[var(--borderColor-emphasis)] hover:shadow-md"
                 >
-                  <Shield className="h-4 w-4 text-accent" />
+                  <ShieldIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />
                   Sign in with SSO
                 </button>
 
                 {/* ===== SIGN UP LINK ===== */}
-                <p className="mt-6 text-center text-sm text-stone-500">
+                <p className="mt-6 text-center text-sm text-[var(--fgColor-muted)]">
                   Don&apos;t have an account?{" "}
                   <Link
                     href="/register"
-                    className="font-semibold text-accent transition-colors hover:text-accent-dark"
+                    className="font-semibold text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
                   >
                     Sign up
                   </Link>
@@ -646,14 +618,14 @@ function LoginForm() {
         </div>
 
         {/* ===== Trust Signals ===== */}
-        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-stone-400">
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-[var(--fgColor-subtle)]">
           <span className="flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 text-accent" strokeWidth={2} />
+            <SparklesIcon className="h-3 w-3 text-[var(--fgColor-accent)]" />
             TLS Encrypted
           </span>
           <span className="text-stone-300">·</span>
           <span className="flex items-center gap-1.5">
-            <Shield className="h-3 w-3 text-accent" strokeWidth={2} />
+            <ShieldIcon className="h-3 w-3 text-[var(--fgColor-accent)]" />
             RBAC
           </span>
           <span className="text-stone-300">·</span>
@@ -661,7 +633,7 @@ function LoginForm() {
         </div>
 
         {/* ===== Footer ===== */}
-        <p className="mt-4 text-center text-xs text-stone-400">
+        <p className="mt-4 text-center text-xs text-[var(--fgColor-subtle)]">
           &copy; {new Date().getFullYear()} FeatureSignals. All rights reserved.
         </p>
       </div>
@@ -673,10 +645,10 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-default)]">
           <div className="flex flex-col items-center gap-3">
             <svg
-              className="h-8 w-8 animate-spin text-accent"
+              className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -694,7 +666,7 @@ export default function LoginPage() {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span className="text-sm text-stone-400">Loading...</span>
+            <span className="text-sm text-[var(--fgColor-subtle)]">Loading...</span>
           </div>
         </div>
       }

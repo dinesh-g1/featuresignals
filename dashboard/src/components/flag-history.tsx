@@ -23,13 +23,13 @@ import {
 import { toast } from "@/components/toast";
 import { cn, timeAgo } from "@/lib/utils";
 import {
-  Clock,
-  RotateCcw,
-  User,
-  ChevronDown,
-  ChevronRight,
-  AlertTriangle,
-} from "lucide-react";
+  ClockIcon,
+  RotateCcwIcon,
+  UsersIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  AlertIcon,
+} from "@/components/icons/nav-icons";
 
 export interface FlagVersion {
   id: string;
@@ -89,13 +89,13 @@ function DiffRow({
 
   return (
     <div className="grid grid-cols-3 gap-2 text-sm sm:gap-4">
-      <div className="text-slate-500">{field.label}</div>
+      <div className="text-[var(--fgColor-muted)]">{field.label}</div>
       <div
         className={cn(
           "rounded px-2 py-1 font-mono text-xs",
           hasChanged
-            ? "bg-red-50 text-red-700 line-through"
-            : "bg-slate-50 text-slate-600",
+            ? "bg-[var(--bgColor-danger-muted)] text-red-700 line-through"
+            : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
         )}
       >
         {formatValue(oldValue)}
@@ -105,7 +105,7 @@ function DiffRow({
           "rounded px-2 py-1 font-mono text-xs",
           hasChanged
             ? "bg-emerald-50 text-emerald-700"
-            : "bg-slate-50 text-slate-600",
+            : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
         )}
       >
         {formatValue(newValue)}
@@ -176,7 +176,7 @@ export function FlagHistory({
         rollbackTarget,
         rollbackReason || `Rollback to version ${rollbackTarget}`,
       );
-      toast(`Flag rolled back to version ${rollbackTarget}`, "success");
+      toast(`FlagIcon rolled back to version ${rollbackTarget}`, "success");
       setRollbackTarget(null);
       setRollbackReason("");
       onRollback?.(rollbackTarget);
@@ -212,7 +212,7 @@ export function FlagHistory({
       <Card>
         <CardContent className="py-8">
           <EmptyState
-            icon={AlertTriangle}
+            icon={AlertIcon}
             title="Failed to load version history"
             description={error}
             action={
@@ -229,7 +229,7 @@ export function FlagHistory({
       <Card>
         <CardContent className="py-8">
           <EmptyState
-            icon={Clock}
+            icon={ClockIcon}
             title="No version history yet"
             description="Changes to this flag will be tracked here automatically."
           />
@@ -243,14 +243,14 @@ export function FlagHistory({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4 text-slate-500" />
+            <ClockIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
             Version History
             <Badge variant="default">{versions.length} versions</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {/* Header row for diff columns — desktop only */}
-          <div className="hidden grid-cols-3 gap-2 border-b border-slate-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-400 sm:grid sm:gap-4 sm:px-6">
+          <div className="hidden grid-cols-3 gap-2 border-b border-slate-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-[var(--fgColor-subtle)] sm:grid sm:gap-4 sm:px-6">
             <div>Field</div>
             <div>Previous</div>
             <div>Current</div>
@@ -269,14 +269,14 @@ export function FlagHistory({
                     <button
                       type="button"
                       onClick={() => toggleDiff(v.version)}
-                      className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-accent"
+                      className="flex items-center gap-2 text-sm font-medium text-[var(--fgColor-default)] hover:text-[var(--fgColor-accent)]"
                       aria-expanded={expanded}
                       aria-label={`Version ${v.version}`}
                     >
                       {expanded ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                        <ChevronDownIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                        <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
                       )}
                       <Badge
                         variant={isLatest ? "success" : "default"}
@@ -286,13 +286,13 @@ export function FlagHistory({
                       </Badge>
                     </button>
 
-                    <div className="flex-1 text-xs text-slate-500">
+                    <div className="flex-1 text-xs text-[var(--fgColor-muted)]">
                       {timeAgo(v.created_at)}
                     </div>
 
                     {v.changed_by && (
-                      <div className="hidden items-center gap-1 text-xs text-slate-500 sm:flex">
-                        <User className="h-3 w-3" />
+                      <div className="hidden items-center gap-1 text-xs text-[var(--fgColor-muted)] sm:flex">
+                        <UsersIcon className="h-3 w-3" />
                         {v.changed_by}
                       </div>
                     )}
@@ -304,21 +304,21 @@ export function FlagHistory({
                         onClick={() => setRollbackTarget(v.version)}
                         className="hidden gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100 sm:flex"
                       >
-                        <RotateCcw className="h-3 w-3" />
+                        <RotateCcwIcon className="h-3 w-3" />
                         Rollback
                       </Button>
                     )}
                   </div>
 
                   {v.change_reason && (
-                    <div className="ml-7 mt-1 text-xs italic text-slate-400">
+                    <div className="ml-7 mt-1 text-xs italic text-[var(--fgColor-subtle)]">
                       {v.change_reason}
                     </div>
                   )}
 
                   {/* Inline diff */}
                   {expanded && v.previous_config && (
-                    <div className="mt-3 space-y-1 rounded-lg bg-slate-50 p-3 text-xs sm:p-4">
+                    <div className="mt-3 space-y-1 rounded-lg bg-[var(--bgColor-muted)] p-3 text-xs sm:p-4">
                       {DIFF_FIELDS.map((field) => (
                         <DiffRow
                           key={field.key}
@@ -339,7 +339,7 @@ export function FlagHistory({
                         onClick={() => setRollbackTarget(v.version)}
                         className="w-full gap-1 text-xs"
                       >
-                        <RotateCcw className="h-3 w-3" />
+                        <RotateCcwIcon className="h-3 w-3" />
                         Rollback to v{v.version}
                       </Button>
                     </div>
@@ -374,7 +374,7 @@ export function FlagHistory({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <AlertIcon className="h-5 w-5 text-amber-500" />
               Confirm Rollback
             </DialogTitle>
             <DialogDescription>
@@ -397,7 +397,7 @@ export function FlagHistory({
 
             <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">
                     This will create a new version entry
@@ -434,7 +434,7 @@ export function FlagHistory({
                 </>
               ) : (
                 <>
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcwIcon className="h-4 w-4" />
                   Rollback to v{rollbackTarget}
                 </>
               )}

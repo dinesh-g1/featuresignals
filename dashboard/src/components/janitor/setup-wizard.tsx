@@ -16,15 +16,8 @@ interface ConnectRepoResult {
   repositories?: { name: string; full_name: string }[];
 }
 import {
-  GitFork,
-  GitBranch,
-  GitPullRequest,
-  ArrowRight,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  ChevronLeft,
-} from "lucide-react";
+  GitFork, GitBranch, GitPullRequestIcon, ArrowRightIcon, LoaderIcon, AlertIcon, CheckCircleFillIcon, ChevronLeft
+} from "@/components/icons/nav-icons";
 
 interface RepositoryOption {
   name: string;
@@ -75,7 +68,7 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
     {
       id: "bitbucket" as const,
       name: "Bitbucket",
-      icon: GitPullRequest,
+      icon: GitPullRequestIcon,
       color: "bg-blue-600 text-white hover:bg-blue-700",
       tokenHint: "App password with repository and pullrequest access",
     },
@@ -162,21 +155,21 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
   };
 
   return (
-    <Card className="border-2 border-dashed border-stone-300">
+    <Card className="border-2 border-dashed border-[var(--borderColor-emphasis)]">
       <CardContent className="p-8">
         <div className="text-center max-w-md mx-auto">
           {/* Icon */}
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
-            <JanitorIcon className="h-8 w-8 text-accent" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)]">
+            <JanitorIcon className="h-8 w-8 text-[var(--fgColor-accent)]" />
           </div>
 
           {/* Step: Select Provider */}
           {step === "select-provider" && (
             <>
-              <h3 className="text-lg font-bold text-stone-800 mb-2">
+              <h3 className="text-lg font-bold text-[var(--fgColor-default)] mb-2">
                 Connect Your Git Provider
               </h3>
-              <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+              <p className="text-sm text-[var(--fgColor-muted)] mb-6 leading-relaxed">
                 The AI Janitor needs access to your repositories to scan for
                 stale feature flags and generate cleanup pull requests.
               </p>
@@ -197,7 +190,7 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
               <div className="mt-6">
                 <button
                   onClick={onCancel}
-                  className="text-xs text-stone-400 hover:text-stone-600 underline"
+                  className="text-xs text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] underline"
                 >
                   Skip — I&apos;ll do this later
                 </button>
@@ -211,22 +204,22 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
               <div className="flex items-center justify-center gap-2 mb-4">
                 <button
                   onClick={() => setStep("select-provider")}
-                  className="text-stone-400 hover:text-stone-600"
+                  className="text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <h3 className="text-lg font-bold text-stone-800">
+                <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
                   Connect {providers.find((p) => p.id === provider)?.name}
                 </h3>
               </div>
 
-              <p className="text-sm text-stone-500 mb-4 leading-relaxed">
+              <p className="text-sm text-[var(--fgColor-muted)] mb-4 leading-relaxed">
                 {providers.find((p) => p.id === provider)?.tokenHint}
               </p>
 
               <div className="space-y-4">
                 <div className="text-left">
-                  <label className="block text-xs font-medium text-stone-600 mb-1">
+                  <label className="block text-xs font-medium text-[var(--fgColor-muted)] mb-1">
                     Personal Access Token
                   </label>
                   <input
@@ -234,12 +227,12 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                     value={gitToken}
                     onChange={(e) => setGitToken(e.target.value)}
                     placeholder={"ghp_..."}
-                    className="w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 autofill:bg-white"
+                    className="w-full rounded-xl border border-[var(--borderColor-emphasis)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] autofill:bg-white"
                   />
                 </div>
 
                 <div className="text-left">
-                  <label className="block text-xs font-medium text-stone-600 mb-1">
+                  <label className="block text-xs font-medium text-[var(--fgColor-muted)] mb-1">
                     GitHub Organization (optional)
                   </label>
                   <input
@@ -247,16 +240,16 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="e.g., my-org"
-                    className="w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    className="w-full rounded-xl border border-[var(--borderColor-emphasis)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
                   />
-                  <p className="text-xs text-stone-400 mt-1">
+                  <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
                     Scope to a specific org. Leave empty to list repos from all
                     orgs and your personal account.
                   </p>
                 </div>
 
                 <div className="text-left">
-                  <label className="block text-xs font-medium text-stone-600 mb-1">
+                  <label className="block text-xs font-medium text-[var(--fgColor-muted)] mb-1">
                     Repository Name (optional)
                   </label>
                   <input
@@ -264,11 +257,11 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                     value={repoName}
                     onChange={(e) => setRepoName(e.target.value)}
                     placeholder="e.g., owner/ChatBot"
-                    className="w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    className="w-full rounded-xl border border-[var(--borderColor-emphasis)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
                   />
-                  <p className="text-xs text-stone-400 mt-1">
+                  <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
                     Use{" "}
-                    <code className="text-xs bg-stone-100 px-1 rounded">
+                    <code className="text-xs bg-[var(--bgColor-muted)] px-1 rounded">
                       owner/repo-name
                     </code>{" "}
                     format when org is empty. If org is set, just the repo name
@@ -277,8 +270,8 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                 </div>
 
                 {errorMsg && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-left">
-                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                  <div className="flex items-center gap-2 rounded-lg bg-[var(--bgColor-danger-muted)] border border-red-200 p-3 text-left">
+                    <AlertIcon className="h-4 w-4 text-red-500 shrink-0" />
                     <p className="text-xs text-red-700">{errorMsg}</p>
                   </div>
                 )}
@@ -290,13 +283,13 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                 >
                   {connecting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <LoaderIcon className="h-4 w-4 animate-spin mr-2" />
                       Validating...
                     </>
                   ) : (
                     <>
                       Validate & Connect
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <ArrowRightIcon className="h-4 w-4 ml-2" />
                     </>
                   )}
                 </Button>
@@ -307,16 +300,16 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
           {/* Step: Select Repository */}
           {step === "select-repo" && provider && (
             <>
-              <h3 className="text-lg font-bold text-stone-800 mb-2">
+              <h3 className="text-lg font-bold text-[var(--fgColor-default)] mb-2">
                 Select Repository
               </h3>
-              <p className="text-sm text-stone-500 mb-4 leading-relaxed">
+              <p className="text-sm text-[var(--fgColor-muted)] mb-4 leading-relaxed">
                 Multiple repositories are available. Choose one to connect:
               </p>
 
               {errorMsg && (
                 <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 mb-4 text-left">
-                  <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                  <AlertIcon className="h-4 w-4 text-amber-500 shrink-0" />
                   <p className="text-xs text-amber-700">{errorMsg}</p>
                 </div>
               )}
@@ -327,18 +320,18 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                     key={r.full_name}
                     onClick={() => handleSelectRepo(r)}
                     disabled={connecting}
-                    className="w-full flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 text-sm hover:border-accent hover:bg-accent/5 transition-colors text-left"
+                    className="w-full flex items-center justify-between rounded-xl border border-[var(--borderColor-default)] px-4 py-3 text-sm hover:border-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)] transition-colors text-left"
                   >
                     <div className="flex items-center gap-2">
-                      <GitFork className="h-4 w-4 text-stone-400" />
-                      <span className="font-medium text-stone-700">
+                      <GitFork className="h-4 w-4 text-[var(--fgColor-subtle)]" />
+                      <span className="font-medium text-[var(--fgColor-default)]">
                         {r.full_name}
                       </span>
                     </div>
                     {connecting ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-stone-400" />
+                      <LoaderIcon className="h-4 w-4 animate-spin text-[var(--fgColor-subtle)]" />
                     ) : (
-                      <ArrowRight className="h-4 w-4 text-stone-400" />
+                      <ArrowRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
                     )}
                   </button>
                 ))}
@@ -346,7 +339,7 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
 
               <button
                 onClick={reset}
-                className="mt-4 text-xs text-stone-400 hover:text-stone-600 underline"
+                className="mt-4 text-xs text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] underline"
               >
                 Start over
               </button>
@@ -356,8 +349,8 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
           {/* Step: Connecting */}
           {step === "connecting" && (
             <div className="py-8">
-              <Loader2 className="h-10 w-10 animate-spin text-accent mx-auto mb-4" />
-              <p className="text-sm text-stone-600">Connecting repository...</p>
+              <LoaderIcon className="h-10 w-10 animate-spin text-[var(--fgColor-accent)] mx-auto mb-4" />
+              <p className="text-sm text-[var(--fgColor-muted)]">Connecting repository...</p>
             </div>
           )}
 
@@ -365,12 +358,12 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
           {step === "connected" && (
             <div className="py-8">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50">
-                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                <CheckCircleFillIcon className="h-8 w-8 text-emerald-500" />
               </div>
-              <h3 className="text-lg font-bold text-stone-800 mb-2">
+              <h3 className="text-lg font-bold text-[var(--fgColor-default)] mb-2">
                 Repository Connected!
               </h3>
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-[var(--fgColor-muted)]">
                 You can now scan for stale flags.
               </p>
             </div>
@@ -379,15 +372,15 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
           {/* Step: Error */}
           {step === "error" && (
             <>
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
-                <AlertCircle className="h-8 w-8 text-red-500" />
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-danger-muted)]">
+                <AlertIcon className="h-8 w-8 text-red-500" />
               </div>
-              <h3 className="text-lg font-bold text-stone-800 mb-2">
+              <h3 className="text-lg font-bold text-[var(--fgColor-default)] mb-2">
                 Connection Failed
               </h3>
               <p className="text-sm text-red-600 mb-4">{errorMsg}</p>
               <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={reset}>
+                <Button variant="default" onClick={reset}>
                   Try Again
                 </Button>
                 <Button

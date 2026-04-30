@@ -54,14 +54,13 @@ export function TrialBanner() {
 
   if (showDowngradeInterstitial) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
-        <div className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#25292e]/80 backdrop-blur-sm">
+        <div className="mx-4 max-w-md rounded-[var(--radius-large)] bg-[var(--bgColor-default)] p-8 shadow-[var(--shadow-floating-large)]">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bgColor-attention-muted)]">
             <svg
-              className="h-7 w-7 text-amber-600"
+              className="h-7 w-7 text-[var(--fgColor-attention)]"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
               stroke="currentColor"
             >
               <path
@@ -71,10 +70,10 @@ export function TrialBanner() {
               />
             </svg>
           </div>
-          <h2 className="text-center text-xl font-bold text-slate-900">
+          <h2 className="text-center text-xl font-bold text-[var(--fgColor-default)]">
             Your trial has ended
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-[var(--fgColor-muted)]">
             Your 14-day Pro trial has expired. You&apos;ve been moved to the
             Free plan. Upgrade anytime to unlock unlimited projects,
             environments, and team members.
@@ -83,13 +82,13 @@ export function TrialBanner() {
             <Link
               href="/settings/billing"
               onClick={dismissDowngradeInterstitial}
-              className="block w-full rounded-lg bg-accent py-2.5 text-center text-sm font-semibold text-white hover:bg-accent-dark"
+              className="block w-full rounded-lg bg-[var(--bgColor-accent-emphasis)] py-2.5 text-center text-sm font-semibold text-white hover:bg-[#0757ba]"
             >
               Upgrade to Pro
             </Link>
             <button
               onClick={dismissDowngradeInterstitial}
-              className="rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="rounded-lg border border-[var(--borderColor-default)] py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]"
             >
               Continue with Free Plan
             </button>
@@ -103,14 +102,13 @@ export function TrialBanner() {
 
   if (daysRemaining <= 0) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
-        <div className="mx-4 max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#25292e]/80 backdrop-blur-sm">
+        <div className="mx-4 max-w-md rounded-[var(--radius-large)] bg-[var(--bgColor-default)] p-8 shadow-[var(--shadow-floating-large)]">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bgColor-attention-muted)]">
             <svg
-              className="h-7 w-7 text-amber-600"
+              className="h-7 w-7 text-[var(--fgColor-attention)]"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
               stroke="currentColor"
             >
               <path
@@ -120,27 +118,27 @@ export function TrialBanner() {
               />
             </svg>
           </div>
-          <h2 className="text-center text-xl font-bold text-slate-900">
+          <h2 className="text-center text-xl font-bold text-[var(--fgColor-default)]">
             Your trial has expired
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-[var(--fgColor-muted)]">
             Your 14-day Pro trial is over. Upgrade to keep all Pro features, or
             continue with the free plan.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <Link
               href="/settings/billing"
-              className="block w-full rounded-lg bg-accent py-2.5 text-center text-sm font-semibold text-white hover:bg-accent-dark"
+              className="block w-full rounded-lg bg-[var(--bgColor-accent-emphasis)] py-2.5 text-center text-sm font-semibold text-white hover:bg-[#0757ba]"
             >
               Upgrade to Pro
             </Link>
-            <p className="text-center text-xs text-slate-400">
+            <p className="text-center text-xs text-[var(--fgColor-subtle)]">
               Your account has been downgraded to the Free plan. All your data
               is preserved.
             </p>
             <button
               onClick={logout}
-              className="text-sm text-slate-400 hover:text-slate-600"
+              className="text-sm text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
             >
               Sign out
             </button>
@@ -152,13 +150,12 @@ export function TrialBanner() {
 
   if (daysRemaining <= 3) {
     return (
-      <div className="flex items-center justify-between bg-amber-500 px-4 py-2.5 text-sm text-white">
+      <div className="flex items-center justify-between bg-[var(--bgColor-attention-emphasis)] px-4 py-2.5 text-sm text-white">
         <div className="flex items-center gap-2">
           <svg
             className="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
-            strokeWidth={2}
             stroke="currentColor"
           >
             <path
@@ -177,7 +174,7 @@ export function TrialBanner() {
         </div>
         <Link
           href="/settings/billing"
-          className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-50"
+          className="rounded-md bg-white/20 px-3 py-1 text-xs font-medium text-white hover:bg-white/30"
         >
           Upgrade Now
         </Link>
@@ -186,13 +183,12 @@ export function TrialBanner() {
   }
 
   return (
-    <div className="flex items-center justify-between bg-accent px-4 py-2 text-sm text-white">
+    <div className="flex items-center justify-between bg-[var(--bgColor-accent-emphasis)] px-4 py-2 text-sm text-white">
       <div className="flex items-center gap-2">
         <svg
           className="h-4 w-4"
           fill="none"
           viewBox="0 0 24 24"
-          strokeWidth={2}
           stroke="currentColor"
         >
           <path

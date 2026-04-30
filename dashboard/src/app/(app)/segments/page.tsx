@@ -10,17 +10,12 @@ import {
 } from "@/hooks/use-data";
 import { SegmentRulesEditor } from "@/components/segment-rules-editor";
 import { toast } from "@/components/toast";
-import {
-  PageHeader,
-  Card,
-  Button,
-  Input,
-  Label,
-  EmptyState,
-} from "@/components/ui";
+import { PageHeader, Card, Button, Input, Label } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { InlineCreateForm } from "@/components/ui/inline-create-form";
-import { Users, Trash2, ChevronDown } from "lucide-react";
+import {
+  UsersIcon, TrashIcon, ChevronDownIcon
+} from "@/components/icons/nav-icons";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { DOCS_LINKS } from "@/components/docs-link";
@@ -29,6 +24,8 @@ import {
   usePrerequisites,
 } from "@/components/prerequisite-gate";
 import type { Segment, Condition } from "@/lib/types";
+import { Blankslate } from "@/components/blankslate";
+import { SegmentIcon } from "@/components/icons/nav-icons";
 import { cn, suggestSlug } from "@/lib/utils";
 
 interface SegmentFormState {
@@ -72,7 +69,7 @@ export default function SegmentsPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     const errors: { key?: string; name?: string } = {};
-    if (!form.key.trim()) errors.key = "Key is required";
+    if (!form.key.trim()) errors.key = "KeyIcon is required";
     if (!form.name.trim()) errors.name = "Name is required";
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -236,7 +233,7 @@ function SegmentsContent({
           <form onSubmit={handleCreate} noValidate className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <Label>Key</Label>
+                <Label>KeyIcon</Label>
                 <Input
                   value={form.key}
                   onChange={(e) => {
@@ -274,7 +271,7 @@ function SegmentsContent({
                     if (fieldErrors.name)
                       setFieldErrors({ ...fieldErrors, name: undefined });
                   }}
-                  placeholder="Beta Users"
+                  placeholder="Beta UsersIcon"
                   required
                   className="mt-1"
                   aria-invalid={!!fieldErrors.name}
@@ -298,7 +295,7 @@ function SegmentsContent({
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="Users enrolled in beta program"
+                placeholder="UsersIcon enrolled in beta program"
                 className="mt-1"
               />
             </div>
@@ -329,12 +326,15 @@ function SegmentsContent({
       <Card>
         <div className="divide-y divide-slate-100">
           {segments.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="No segments yet"
-              description="Segments let you define reusable audiences (e.g., beta testers, enterprise customers) and target them across multiple flags."
-              docsUrl={DOCS_LINKS.segments}
-              docsLabel="Learn about segments"
+            <Blankslate
+              icon={SegmentIcon}
+              title="You haven't created any segments yet"
+              description="A segment defines a reusable audience (e.g., beta testers, enterprise customers) that you can target across multiple flags — write the rules once, use them everywhere."
+              actionLabel="Create your first segment"
+              onAction={() => setShowCreate(true)}
+              learnMoreUrl={DOCS_LINKS.segments}
+              learnMoreLabel="Learn about segments"
+              variant="bordered"
             />
           ) : (
             segments.map((seg) => {
@@ -344,20 +344,20 @@ function SegmentsContent({
                   <div
                     className={cn(
                       "flex flex-col gap-2 px-4 py-3 transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4",
-                      isExpanded ? "bg-accent/5" : "hover:bg-accent/5",
+                      isExpanded ? "bg-[var(--bgColor-accent-muted)]" : "hover:bg-[var(--bgColor-accent-muted)]",
                     )}
                     onClick={() => setExpanded(isExpanded ? null : seg.key)}
                   >
                     <div className="min-w-0">
-                      <p className="font-mono text-sm font-medium text-slate-900">
+                      <p className="font-mono text-sm font-medium text-[var(--fgColor-default)]">
                         {seg.key}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
                         {seg.name} &middot; Match {seg.match_type} &middot;{" "}
                         {seg.rules?.length || 0} rules
                       </p>
                       {seg.description && (
-                        <p className="mt-0.5 text-xs text-slate-400">
+                        <p className="mt-0.5 text-xs text-[var(--fgColor-subtle)]">
                           {seg.description}
                         </p>
                       )}
@@ -370,7 +370,7 @@ function SegmentsContent({
                         >
                           <Button
                             size="sm"
-                            variant="destructive-ghost"
+                            variant="danger-ghost"
                             onClick={() => handleDelete(seg.key)}
                           >
                             Confirm
@@ -392,21 +392,21 @@ function SegmentsContent({
                             setDeleting(seg.key);
                           }}
                           title="Delete segment"
-                          className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <TrashIcon className="h-4 w-4" />
                         </Button>
                       )}
-                      <ChevronDown
+                      <ChevronDownIcon
                         className={cn(
-                          "h-4 w-4 text-slate-400 transition-transform duration-200",
+                          "h-4 w-4 text-[var(--fgColor-subtle)] transition-transform duration-200",
                           isExpanded && "rotate-180",
                         )}
                       />
                     </div>
                   </div>
                   {isExpanded && (
-                    <div className="border-t border-slate-100 px-4 py-4 bg-slate-50/50 sm:px-6 animate-fade-in">
+                    <div className="border-t border-slate-100 px-4 py-4 bg-[var(--bgColor-muted)]/50 sm:px-6 animate-fade-in">
                       <SegmentRulesEditor
                         rules={seg.rules ?? []}
                         matchType={seg.match_type}

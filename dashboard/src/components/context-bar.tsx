@@ -9,7 +9,9 @@ import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
-import { Search, ChevronDown, Plus, Check } from "lucide-react";
+import {
+  SearchIcon, ChevronDownIcon, PlusIcon, CheckIcon
+} from "@/components/icons/nav-icons";
 import { useEffect, useRef } from "react";
 import type { Project, Environment } from "@/lib/types";
 
@@ -89,43 +91,43 @@ function ProjectDropdown() {
         className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all",
           open
-            ? "bg-accent/10 text-accent-dark border border-accent/20"
-            : "bg-stone-50 text-stone-700 border border-stone-200 hover:bg-stone-100 hover:border-stone-300",
+            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)]"
+            : "bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] hover:border-[var(--borderColor-emphasis)]",
         )}
       >
         <span>{selected?.name || "Select Project"}</span>
-        <ChevronDown
+        <ChevronDownIcon
           className={cn(
             "h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
-            open ? "text-accent" : "text-stone-400",
+            open ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-subtle)]",
           )}
         />
       </button>
 
       {open && (
         <div className="absolute left-0 top-full mt-1.5 w-64 z-50 animate-slide-up">
-          <div className="rounded-xl border border-stone-200 bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
             {/* Search */}
             <div className="relative mb-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400" />
+              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--fgColor-subtle)]" />
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 pl-8 pr-3 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
+                className="w-full rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] pl-8 pr-3 py-1.5 text-xs text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
               />
             </div>
 
             <div className="max-h-48 overflow-y-auto space-y-0.5">
               {filtered.length === 0 && !search && (
-                <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
                   No projects yet. Create one below.
                 </p>
               )}
               {filtered.length === 0 && search && (
-                <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
                   No projects match "{search}"
                 </p>
               )}
@@ -139,19 +141,19 @@ function ProjectDropdown() {
                   className={cn(
                     "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                     p.id === currentProjectId
-                      ? "bg-accent/10 text-accent-dark font-medium"
-                      : "text-stone-600 hover:bg-stone-50",
+                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium"
+                      : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]",
                   )}
                 >
                   <span className="truncate">{p.name}</span>
                   {p.id === currentProjectId && (
-                    <Check className="h-3.5 w-3.5 text-accent shrink-0" />
+                    <CheckIcon className="h-3.5 w-3.5 text-[var(--fgColor-accent)] shrink-0" />
                   )}
                 </button>
               ))}
             </div>
 
-            <div className="mt-1.5 pt-1.5 border-t border-stone-100">
+            <div className="mt-1.5 pt-1.5 border-t border-[var(--borderColor-muted)]">
               <div className="flex items-center gap-1.5">
                 <input
                   type="text"
@@ -161,14 +163,14 @@ function ProjectDropdown() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleCreate();
                   }}
-                  className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
+                  className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-2 py-1.5 text-xs text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
                 />
                 <button
                   onClick={handleCreate}
                   disabled={creating || !name.trim()}
-                  className="shrink-0 rounded-lg bg-accent px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark transition-colors disabled:opacity-50"
+                  className="shrink-0 rounded-lg bg-[var(--bgColor-accent-emphasis)] px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--bgColor-accent-emphasis)]-dark transition-colors disabled:opacity-50"
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <PlusIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -271,8 +273,8 @@ function EnvironmentDropdown() {
         className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all",
           open
-            ? "bg-accent/10 text-accent-dark border border-accent/20"
-            : "bg-stone-50 text-stone-700 border border-stone-200 hover:bg-stone-100 hover:border-stone-300",
+            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)]"
+            : "bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] hover:border-[var(--borderColor-emphasis)]",
         )}
       >
         {selected && (
@@ -284,21 +286,21 @@ function EnvironmentDropdown() {
           />
         )}
         <span>{selected?.name || "Select Environment"}</span>
-        <ChevronDown
+        <ChevronDownIcon
           className={cn(
             "h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
-            open ? "text-accent" : "text-stone-400",
+            open ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-subtle)]",
           )}
         />
       </button>
 
       {open && (
         <div className="absolute left-0 top-full mt-1.5 w-56 z-50 animate-slide-up">
-          <div className="rounded-xl border border-stone-200 bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
             <div className="max-h-48 overflow-y-auto space-y-0.5">
               {envs.length === 0 && (
-                <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
                   No environments yet.
                 </p>
               )}
@@ -312,8 +314,8 @@ function EnvironmentDropdown() {
                   className={cn(
                     "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                     e.id === currentEnvId
-                      ? "bg-accent/10 text-accent-dark font-medium"
-                      : "text-stone-600 hover:bg-stone-50",
+                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium"
+                      : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]",
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -326,13 +328,13 @@ function EnvironmentDropdown() {
                     <span className="truncate">{e.name}</span>
                   </div>
                   {e.id === currentEnvId && (
-                    <Check className="h-3.5 w-3.5 text-accent shrink-0" />
+                    <CheckIcon className="h-3.5 w-3.5 text-[var(--fgColor-accent)] shrink-0" />
                   )}
                 </button>
               ))}
             </div>
 
-            <div className="mt-1.5 pt-1.5 border-t border-stone-100">
+            <div className="mt-1.5 pt-1.5 border-t border-[var(--borderColor-muted)]">
               <div className="flex items-center gap-1.5">
                 <input
                   type="text"
@@ -342,14 +344,14 @@ function EnvironmentDropdown() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleCreate();
                   }}
-                  className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20"
+                  className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-2 py-1.5 text-xs text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
                 />
                 <button
                   onClick={handleCreate}
                   disabled={creating || !name.trim()}
-                  className="shrink-0 rounded-lg bg-accent px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-accent-dark transition-colors disabled:opacity-50"
+                  className="shrink-0 rounded-lg bg-[var(--bgColor-accent-emphasis)] px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--bgColor-accent-emphasis)]-dark transition-colors disabled:opacity-50"
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <PlusIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -364,12 +366,12 @@ function EnvironmentDropdown() {
 
 function OmniSearchButton() {
   return (
-    <button className="flex items-center gap-2 bg-stone-50 border border-stone-200 text-stone-400 hover:text-stone-600 hover:border-stone-300 hover:bg-stone-100 px-3 py-1.5 rounded-lg text-sm transition-all w-56">
-      <Search className="h-3.5 w-3.5 shrink-0" />
+    <button className="flex items-center gap-2 bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] hover:border-[var(--borderColor-emphasis)] hover:bg-[var(--bgColor-muted)] px-3 py-1.5 rounded-lg text-sm transition-all w-56">
+      <SearchIcon className="h-3.5 w-3.5 shrink-0" />
       <span className="flex-1 text-left text-xs">
         Search flags, segments...
       </span>
-      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded text-stone-400">
+      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-white border border-[var(--borderColor-default)] px-1.5 py-0.5 rounded text-[var(--fgColor-subtle)]">
         <span className="text-[9px]">⌘</span>K
       </kbd>
     </button>
@@ -389,7 +391,7 @@ function ProfileAvatar() {
 
   return (
     <div
-      className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center text-xs font-bold shadow-sm shrink-0"
+      className="h-8 w-8 rounded-full bg-[var(--bgColor-accent-emphasis)] text-white flex items-center justify-center text-xs font-bold shadow-sm shrink-0"
       title={user?.name || "User"}
     >
       {initials}
@@ -410,11 +412,11 @@ export function ContextBar() {
     pathname?.startsWith("/approvals");
 
   return (
-    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-stone-200/60 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
+    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--borderColor-default)]/60 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
       {/* Left: Breadcrumb-style hierarchy */}
       <div className="flex items-center gap-2 text-sm min-w-0">
         {/* Org name */}
-        <span className="text-stone-400 font-medium hidden sm:block truncate max-w-[120px]">
+        <span className="text-[var(--fgColor-subtle)] font-medium hidden sm:block truncate max-w-[120px]">
           {organization?.name || "Workspace"}
         </span>
 
@@ -435,7 +437,7 @@ export function ContextBar() {
         {isSettingsPage && (
           <>
             <span className="text-stone-300">/</span>
-            <span className="text-stone-600 font-medium text-sm capitalize">
+            <span className="text-[var(--fgColor-muted)] font-medium text-sm capitalize">
               {pathname?.split("/").pop()?.replace(/-/g, " ") || "Settings"}
             </span>
           </>

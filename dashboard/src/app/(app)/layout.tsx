@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/sidebar";
+import { NavList } from "@/components/nav-list";
 import { ContextBar } from "@/components/context-bar";
 import { AuthGuard } from "@/components/auth-guard";
 import { CommandPalette } from "@/components/command-palette";
@@ -16,7 +16,7 @@ import { FeedbackWidget } from "@/components/feedback-widget";
 import { SuperMode } from "@/components/super-mode";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
-import { Menu } from "lucide-react";
+// Inline SVG menu icon — replacing lucide-react Menu
 import { Logo } from "@/components/logo";
 
 // ─── Upgrade Required Event Listener ─────────────────────────────────
@@ -41,13 +41,21 @@ function UpgradeRequiredListener() {
 function MobileHeader() {
   const open = useSidebarStore((s) => s.open);
   return (
-    <div className="flex h-14 items-center border-b border-stone-200/60 bg-white/90 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
+    <div className="flex h-14 items-center border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)]/90 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
       <button
         onClick={open}
-        className="rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
+        className="rounded-md p-1.5 text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]"
         aria-label="Open sidebar"
       >
-        <Menu className="h-5 w-5" strokeWidth={1.5} />
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H1.75Z" />
+        </svg>
       </button>
       <Logo size="sm" variant="minimal" className="ml-2" />
     </div>
@@ -95,9 +103,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <VerificationBanner />
 
       {/* Main shell: sidebar + content */}
-      <div className="flex h-screen flex-col md:flex-row bg-stone-50">
-        {/* Sidebar */}
-        <Sidebar />
+      <div className="flex h-screen flex-col md:flex-row bg-[var(--bgColor-inset)]">
+        {/* Sidebar — Primer NavList */}
+        <NavList />
 
         {/* Right panel: context bar + main content + footer */}
         <div className="flex min-h-0 flex-1 flex-col">

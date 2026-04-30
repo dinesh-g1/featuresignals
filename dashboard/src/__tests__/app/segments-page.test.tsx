@@ -55,7 +55,7 @@ const mockSegments = [
   {
     id: "s1",
     key: "beta-users",
-    name: "Beta Users",
+    name: "Beta UsersIcon",
     description: "Beta testers",
     match_type: "all",
     rules: [],
@@ -124,7 +124,7 @@ describe("SegmentsPage", () => {
     render(<SegmentsPage />);
 
     expect(await screen.findByText("beta-users")).toBeInTheDocument();
-    expect(screen.getByText(/Beta Users/)).toBeInTheDocument();
+    expect(screen.getByText(/Beta UsersIcon/)).toBeInTheDocument();
   });
 
   it("create button opens form", () => {
@@ -133,9 +133,9 @@ describe("SegmentsPage", () => {
     fireEvent.click(screen.getByText("Create Segment"));
 
     expect(screen.getByPlaceholderText("beta-users")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Beta Users")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Beta UsersIcon")).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText("Users enrolled in beta program"),
+      screen.getByPlaceholderText("UsersIcon enrolled in beta program"),
     ).toBeInTheDocument();
   });
 
@@ -147,7 +147,7 @@ describe("SegmentsPage", () => {
     fireEvent.change(screen.getByPlaceholderText("beta-users"), {
       target: { value: "new-segment" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Beta Users"), {
+    fireEvent.change(screen.getByPlaceholderText("Beta UsersIcon"), {
       target: { value: "New Segment" },
     });
 

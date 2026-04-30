@@ -5,14 +5,8 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
-  Activity,
-  Check,
-  AlertTriangle,
-  Flag,
-  Users,
-  Key,
-  Shield,
-} from "lucide-react";
+  ActivityIcon, CheckIcon, AlertIcon, FlagIcon, UsersIcon, KeyIcon, ShieldIcon
+} from "@/components/icons/nav-icons";
 import type { UsageInfo } from "@/lib/types";
 
 interface HealthCheck {
@@ -30,7 +24,7 @@ function computeHealthChecks(
 
   checks.push({
     label: "Feature flags",
-    icon: Flag,
+    icon: FlagIcon,
     status: flagCount > 0 ? "pass" : "fail",
     detail:
       flagCount > 0 ? `${flagCount} flags configured` : "No flags created yet",
@@ -39,7 +33,7 @@ function computeHealthChecks(
   if (usage) {
     checks.push({
       label: "Team setup",
-      icon: Users,
+      icon: UsersIcon,
       status: usage.seats_used > 1 ? "pass" : "warn",
       detail:
         usage.seats_used > 1
@@ -49,7 +43,7 @@ function computeHealthChecks(
 
     checks.push({
       label: "Environments",
-      icon: Key,
+      icon: KeyIcon,
       status: usage.environments_used >= 2 ? "pass" : "warn",
       detail:
         usage.environments_used >= 2
@@ -60,7 +54,7 @@ function computeHealthChecks(
 
   checks.push({
     label: "SDK connected",
-    icon: Shield,
+    icon: ShieldIcon,
     status: flagCount > 0 ? "pass" : "warn",
     detail:
       flagCount > 0
@@ -90,26 +84,23 @@ const StatusIcon = ({ status }: { status: "pass" | "warn" | "fail" }) => {
         : "Action required";
   if (status === "pass")
     return (
-      <Check
+      <CheckIcon
         className="h-3.5 w-3.5 text-emerald-500"
         aria-label={label}
-        role="img"
-      />
+        />
     );
   if (status === "warn")
     return (
-      <AlertTriangle
+      <AlertIcon
         className="h-3.5 w-3.5 text-amber-500"
         aria-label={label}
-        role="img"
-      />
+        />
     );
   return (
-    <AlertTriangle
+    <AlertIcon
       className="h-3.5 w-3.5 text-red-500"
       aria-label={label}
-      role="img"
-    />
+      />
   );
 };
 
@@ -139,11 +130,11 @@ export function WorkspaceHealth() {
   const score = getOverallScore(checks);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-slate-900">
+          <ActivityIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
+          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
             Workspace Health
           </h3>
         </div>
@@ -154,7 +145,7 @@ export function WorkspaceHealth() {
               ? "bg-emerald-50 text-emerald-700"
               : score >= 50
                 ? "bg-amber-50 text-amber-700"
-                : "bg-red-50 text-red-700",
+                : "bg-[var(--bgColor-danger-muted)] text-red-700",
           )}
         >
           {score}%
@@ -162,8 +153,7 @@ export function WorkspaceHealth() {
       </div>
 
       <div
-        className="h-1.5 w-full rounded-full bg-slate-100 mb-4"
-        role="progressbar"
+        className="h-1.5 w-full rounded-full bg-[var(--bgColor-muted)] mb-4"
         aria-valuenow={score}
         aria-valuemin={0}
         aria-valuemax={100}
@@ -176,7 +166,7 @@ export function WorkspaceHealth() {
               ? "bg-emerald-500"
               : score >= 50
                 ? "bg-amber-500"
-                : "bg-red-500",
+                : "bg-[var(--bgColor-danger-muted)]0",
             `w-[${score}%]`,
           )}
         />
@@ -187,11 +177,11 @@ export function WorkspaceHealth() {
           <div key={check.label} className="flex items-center gap-2.5">
             <StatusIcon status={check.status} />
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-medium text-slate-700">
+              <span className="text-xs font-medium text-[var(--fgColor-default)]">
                 {check.label}
               </span>
               <span className="mx-1 text-slate-300">·</span>
-              <span className="text-xs text-slate-500">{check.detail}</span>
+              <span className="text-xs text-[var(--fgColor-muted)]">{check.detail}</span>
             </div>
           </div>
         ))}

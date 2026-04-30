@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLinkIcon } from "@/components/icons/nav-icons";
 
 interface PageHeaderProps {
   title: string | ReactNode;
@@ -42,14 +42,14 @@ export function PageHeader({
       <div className="min-w-0 space-y-1">
         <h1
           className={cn(
-            "font-bold tracking-tight text-stone-900",
+            "font-bold tracking-tight text-[var(--fgColor-default)]",
             compact ? "text-lg" : "text-2xl",
           )}
         >
           {title}
         </h1>
         {description && (
-          <p className="text-sm text-stone-500 leading-relaxed max-w-2xl">
+          <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed max-w-2xl">
             {description}
           </p>
         )}
@@ -63,11 +63,11 @@ export function PageHeader({
               href={docsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-stone-400 transition-colors hover:bg-stone-100 hover:text-accent"
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[var(--fgColor-subtle)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-accent)]"
               title={`${docsLabel} — opens in new tab`}
             >
               {docsLabel}
-              <ExternalLink className="h-2.5 w-2.5" />
+              <ExternalLinkIcon className="h-2.5 w-2.5" />
             </a>
           )}
         </div>
@@ -96,7 +96,7 @@ export function PageHeaderTabs({
   return (
     <div
       className={cn(
-        "flex border-b border-stone-200 -mx-6 px-6 mb-6 overflow-x-auto scrollbar-hide",
+        "flex border-b border-[var(--borderColor-default)] -mx-6 px-6 mb-6 overflow-x-auto scrollbar-hide",
         className,
       )}
     >
@@ -107,8 +107,8 @@ export function PageHeaderTabs({
           className={cn(
             "relative flex items-center gap-1.5 py-3 px-4 text-sm font-medium transition-colors whitespace-nowrap border-b-2 -mb-px",
             activeTab === tab.value
-              ? "border-accent text-accent"
-              : "border-transparent text-stone-500 hover:text-stone-800",
+              ? "border-[var(--fgColor-accent)] text-[var(--fgColor-accent)]"
+              : "border-transparent text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)]",
           )}
         >
           {tab.label}
@@ -117,8 +117,8 @@ export function PageHeaderTabs({
               className={cn(
                 "inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                 activeTab === tab.value
-                  ? "bg-accent text-white"
-                  : "bg-stone-200 text-stone-600",
+                  ? "bg-[var(--bgColor-accent-emphasis)] text-white"
+                  : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
               )}
             >
               {tab.badge}
@@ -161,31 +161,31 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-stone-200 bg-white p-4 shadow-soft transition-all duration-200 hover:shadow-float",
+        "rounded-xl border border-[var(--borderColor-default)] bg-white p-4 shadow-soft transition-all duration-200 hover:shadow-float",
         className,
       )}
       title={tooltip}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+        <span className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider">
           {label}
         </span>
         {emojiIcon && <span className="text-lg leading-none">{emojiIcon}</span>}
         {IconComponent && (
-          <IconComponent className="h-5 w-5 text-stone-400" strokeWidth={1.5} />
+          <IconComponent className="h-5 w-5 text-[var(--fgColor-subtle)]" />
         )}
       </div>
       <div className="flex items-end gap-2">
-        <span className="text-2xl font-bold text-stone-900 tracking-tight">
+        <span className="text-2xl font-bold text-[var(--fgColor-default)] tracking-tight">
           {value}
         </span>
         {change && (
           <span
             className={cn(
               "text-xs font-semibold mb-1",
-              trend === "up" && "text-emerald-600",
+              trend === "up" && "text-[var(--fgColor-success)]",
               trend === "down" && "text-red-500",
-              trend === "neutral" && "text-stone-400",
+              trend === "neutral" && "text-[var(--fgColor-subtle)]",
             )}
           >
             {change}

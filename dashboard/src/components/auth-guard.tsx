@@ -74,8 +74,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!hydrated || !token) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+      <div className="flex h-screen items-center justify-center bg-[var(--bgColor-muted)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
       </div>
     );
   }

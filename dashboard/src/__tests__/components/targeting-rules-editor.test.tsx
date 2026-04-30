@@ -43,7 +43,7 @@ describe("TargetingRulesEditor", () => {
   let onSave: ReturnType<typeof vi.fn> & ((rules: TargetingRule[]) => Promise<void>);
   const segments = [
     { key: "beta-segment", name: "Beta Testers" },
-    { key: "vip-segment", name: "VIP Users" },
+    { key: "vip-segment", name: "VIP UsersIcon" },
   ];
 
   beforeEach(() => {
@@ -135,6 +135,6 @@ describe("TargetingRulesEditor", () => {
 
     // Assert
     expect(screen.getByText("Beta Testers")).toBeInTheDocument();
-    expect(screen.getByText("VIP Users")).toBeInTheDocument();
+    expect(screen.getByText("VIP UsersIcon")).toBeInTheDocument();
   });
 });

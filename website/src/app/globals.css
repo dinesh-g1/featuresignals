@@ -1,115 +1,275 @@
 @import "tailwindcss";
 
+/* ================================================================
+   GitHub Primer Design System — CSS Custom Properties
+   Based on @primer/css v22 & primer.style foundations
+   ================================================================ */
+
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
+    /* --- Foreground --- */
+    --fgColor-default: #1f2328;
+    --fgColor-muted: #59636e;
+    --fgColor-subtle: #818b98;
+    --fgColor-accent: #0969da;
+    --fgColor-success: #1a7f37;
+    --fgColor-attention: #9a6700;
+    --fgColor-danger: #d1242f;
+    --fgColor-done: #8250df;
+    --fgColor-onEmphasis: #ffffff;
+    --fgColor-link: #0969da;
+
+    /* --- Background --- */
+    --bgColor-default: #ffffff;
+    --bgColor-inset: #f6f8fa;
+    --bgColor-muted: #f6f8fa;
+    --bgColor-emphasis: #25292e;
+    --bgColor-inverse: #25292e;
+    --bgColor-accent-emphasis: #0969da;
+    --bgColor-accent-muted: #ddf4ff;
+    --bgColor-success-emphasis: #1f883d;
+    --bgColor-success-muted: #dafbe1;
+    --bgColor-attention-emphasis: #9a6700;
+    --bgColor-attention-muted: #fff8c5;
+    --bgColor-danger-emphasis: #cf222e;
+    --bgColor-danger-muted: #ffebe9;
+    --bgColor-done-emphasis: #8250df;
+    --bgColor-done-muted: #fbefff;
+
+    /* --- Border --- */
+    --borderColor-default: #d1d9e0;
+    --borderColor-muted: #d1d9e0b3;
+    --borderColor-emphasis: #818b98;
+    --borderColor-accent-emphasis: #0969da;
+    --borderColor-accent-muted: #54aeff66;
+    --borderColor-success-emphasis: #1a7f37;
+    --borderColor-success-muted: #4ac26b66;
+    --borderColor-attention-emphasis: #9a6700;
+    --borderColor-attention-muted: #d4a72c66;
+    --borderColor-danger-emphasis: #cf222e;
+
+    /* --- Shadows (Primer resting & floating) --- */
+    --shadow-resting-xsmall: 0 1px 1px 0 #1f23280d;
+    --shadow-resting-small: 0 1px 1px 0 #1f23280a, 0 1px 2px 0 #1f232808;
+    --shadow-resting-medium: 0 1px 1px 0 #25292e1a, 0 3px 6px 0 #25292e1f;
+    --shadow-floating-small:
+        0 0 0 1px #d1d9e080, 0 6px 12px -3px #25292e0a, 0 6px 18px 0 #25292e1f;
+    --shadow-floating-medium:
+        0 0 0 1px #d1d9e000, 0 8px 16px -4px #25292e14,
+        0 4px 32px -4px #25292e14, 0 24px 48px -12px #25292e14,
+        0 48px 96px -24px #25292e14;
+    --shadow-floating-large: 0 0 0 1px #d1d9e000, 0 40px 80px 0 #25292e3d;
+    --shadow-floating-xlarge: 0 0 0 1px #d1d9e000, 0 56px 112px 0 #25292e52;
+
+    /* --- Radius --- */
+    --radius-small: 6px;
+    --radius-medium: 8px;
+    --radius-large: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+
+    /* --- Typography --- */
+    --fontStack-system:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --fontStack-monospace:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
 }
+
+/* ================================================================
+   Tailwind v4 Theme — Primer Tokens
+   ================================================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+    --color-background: var(--bgColor-default);
+    --color-foreground: var(--fgColor-default);
+    --font-sans: var(--fontStack-system);
+    --font-mono: var(--fontStack-monospace);
 
-  --color-accent: #0d9488;
-  --color-accent-dark: #0f766e;
-  --color-accent-light: #4fd1c5;
+    /* Accent (GitHub Blue) */
+    --color-accent: #0969da;
+    --color-accent-dark: #0757ba;
+    --color-accent-light: #54aeff;
+    --color-accent-muted: #ddf4ff;
+    --color-accent-fg: #0969da;
 
-  --color-stone-50: #fafaf9;
-  --color-stone-100: #f5f5f4;
-  --color-stone-200: #e7e5e4;
-  --color-stone-300: #d6d3d1;
-  --color-stone-400: #a8a29e;
-  --color-stone-500: #78716c;
-  --color-stone-600: #57534e;
-  --color-stone-700: #44403c;
-  --color-stone-800: #292524;
-  --color-stone-900: #1c1917;
+    /* Neutral scale (Primer grays) */
+    --color-neutral-0: #ffffff;
+    --color-neutral-50: #f6f8fa;
+    --color-neutral-100: #eff2f5;
+    --color-neutral-200: #d1d9e0;
+    --color-neutral-300: #818b98;
+    --color-neutral-400: #59636e;
+    --color-neutral-500: #25292e;
+    --color-neutral-600: #1f2328;
 
-  --animate-fade-in: fade-in 0.2s ease-out;
-  --animate-slide-up: slide-up 0.25s ease-out;
-  --animate-scale-in: scale-in 0.15s ease-out;
-  --animate-slide-in-left: slide-in-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-slide-in-right: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Semantic */
+    --color-success: #1f883d;
+    --color-success-muted: #dafbe1;
+    --color-attention: #9a6700;
+    --color-attention-muted: #fff8c5;
+    --color-danger: #cf222e;
+    --color-danger-muted: #ffebe9;
+    --color-done: #8250df;
+    --color-done-muted: #fbefff;
+
+    /* Shadows as Tailwind-compatible */
+    --shadow-primer-resting: var(--shadow-resting-small);
+    --shadow-primer-floating: var(--shadow-floating-small);
+    --shadow-primer-floating-md: var(--shadow-floating-medium);
+    --shadow-primer-floating-lg: var(--shadow-floating-large);
+
+    /* Border radius */
+    --radius-primer: var(--radius-medium);
+    --radius-primer-lg: var(--radius-large);
+    --radius-primer-xl: var(--radius-xl);
+
+    /* Animations */
+    --animate-fade-in: fade-in 0.3s ease-out;
+    --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --animate-slide-up-delayed: slide-up 0.5s 0.1s cubic-bezier(0.16, 1, 0.3, 1)
+        both;
+    --animate-scale-in: scale-in 0.25s ease-out;
+    --animate-reveal: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ================================================================
+   Keyframes
+   ================================================================ */
+
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
-@keyframes slide-in-left {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+@keyframes reveal {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+        clip-path: inset(0 0 100% 0);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        clip-path: inset(0 0 0 0);
+    }
 }
 
-@keyframes slide-in-right {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
+/* ================================================================
+   Dark Mode — Primer Token Overrides
+   ================================================================ */
+
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    background: var(--bgColor-default);
+    color: var(--fgColor-default);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern";
+    text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background-color: #0d9488;
-  color: white;
+    background-color: #0969da33;
+    color: var(--fgColor-default);
 }
 
-/* Custom Range Slider for Flag Rot Calculator */
-input[type=range] {
+/* Primer dotted pattern for dark sections */
+.bg-dotted-dark {
+    background-image: radial-gradient(
+        circle at 1px 1px,
+        rgba(255, 255, 255, 0.08) 1px,
+        transparent 0
+    );
+    background-size: 24px 24px;
+}
+
+/* Primer grid pattern */
+.bg-grid-subtle {
+    background-image:
+        linear-gradient(rgba(31, 35, 40, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31, 35, 40, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* Smooth scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Custom range slider for Flag Rot Calculator (Primer-styled) */
+input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
     cursor: pointer;
     width: 100%;
 }
-input[type=range]::-webkit-slider-thumb {
+input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    height: 20px;
-    width: 20px;
+    height: 16px;
+    width: 16px;
     border-radius: 50%;
-    background: #0d9488;
+    background: var(--bgColor-accent-emphasis);
     cursor: pointer;
-    margin-top: -8px;
-    box-shadow: 0 0 10px rgba(13,148,136,0.3);
+    margin-top: -5px;
+    box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
+    transition: box-shadow 0.15s ease;
 }
-input[type=range]::-webkit-slider-runnable-track {
+input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 1px 6px rgba(9, 105, 218, 0.5);
+}
+input[type="range"]::-webkit-slider-runnable-track {
     width: 100%;
-    height: 4px;
+    height: 6px;
     cursor: pointer;
-    background: #e7e5e4;
-    border-radius: 2px;
+    background: var(--borderColor-default);
+    border-radius: 3px;
 }
-input[type=range]::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
+input[type="range"]::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
     border-radius: 50%;
-    background: #0d9488;
+    background: var(--bgColor-accent-emphasis);
     cursor: pointer;
     border: none;
-    box-shadow: 0 0 10px rgba(13,148,136,0.3);
+    box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
 }
-input[type=range]::-moz-range-track {
+input[type="range"]::-moz-range-track {
     width: 100%;
-    height: 4px;
+    height: 6px;
     cursor: pointer;
-    background: #e7e5e4;
-    border-radius: 2px;
+    background: var(--borderColor-default);
+    border-radius: 3px;
 }
-
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scroll-width: none; }

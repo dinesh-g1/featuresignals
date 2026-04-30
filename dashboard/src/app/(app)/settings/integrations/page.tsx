@@ -16,23 +16,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/toast";
 import {
-  ArrowLeftRight,
-  Cloud,
-  Server,
-  CheckCircle,
-  Loader2,
-  ExternalLink,
-  Copy,
-  ChevronRight,
-  AlertTriangle,
-  Shield,
-  GitPullRequest,
-  Check,
-  Terminal,
-  Key,
-  Globe,
-  Zap,
-} from "lucide-react";
+  ArrowLeftRightIcon, CloudIcon, ServerIcon, CheckCircleFillIcon, LoaderIcon, ExternalLinkIcon, CopyIcon, ChevronRightIcon, AlertIcon, ShieldIcon, GitPullRequestIcon, CheckIcon, TerminalIcon, KeyIcon, GlobeIcon, ZapIcon
+} from "@/components/icons/nav-icons";
 
 // ─── Copy Button ────────────────────────────────────────────────────
 
@@ -46,13 +31,13 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="shrink-0 rounded-lg bg-stone-100 hover:bg-stone-200 p-1.5 text-stone-400 hover:text-stone-600 transition-all"
+      className="shrink-0 rounded-lg bg-[var(--bgColor-muted)] hover:bg-[var(--bgColor-muted)] p-1.5 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] transition-all"
       title="Copy to clipboard"
     >
       {copied ? (
-        <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+        <CheckIcon className="h-3.5 w-3.5 text-emerald-500" />
       ) : (
-        <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
+        <CopyIcon className="h-3.5 w-3.5" />
       )}
     </button>
   );
@@ -68,9 +53,9 @@ function CodeBlock({
   language?: string;
 }) {
   return (
-    <div className="group relative rounded-xl border border-stone-200 bg-stone-900 overflow-hidden">
+    <div className="group relative rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-emphasis)] overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 border-b border-stone-700/50 bg-stone-800/50">
-        <span className="text-[10px] font-mono font-medium text-stone-400 uppercase tracking-wider">
+        <span className="text-[10px] font-mono font-medium text-[var(--fgColor-subtle)] uppercase tracking-wider">
           {language}
         </span>
         <CopyButton text={code} />
@@ -146,9 +131,9 @@ function LDImporterCard() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 shrink-0">
-            <ArrowLeftRight
+            <ArrowLeftRightIcon
               className="h-5 w-5 text-amber-600"
-              strokeWidth={1.5}
+             
             />
           </div>
           <div>
@@ -163,9 +148,9 @@ function LDImporterCard() {
       <CardContent className="space-y-4">
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-start gap-2.5">
-            <AlertTriangle
+            <AlertIcon
               className="h-4 w-4 text-amber-600 shrink-0 mt-0.5"
-              strokeWidth={1.5}
+             
             />
             <div>
               <p className="text-xs font-semibold text-amber-800">
@@ -187,13 +172,13 @@ function LDImporterCard() {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1">
+            <label className="block text-sm font-semibold text-[var(--fgColor-default)] mb-1">
               LaunchDarkly API Token
             </label>
             <div className="relative">
-              <Key
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400"
-                strokeWidth={1.5}
+              <KeyIcon
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fgColor-subtle)]"
+               
               />
               <Input
                 type="password"
@@ -203,19 +188,19 @@ function LDImporterCard() {
                 className="pl-9"
               />
             </div>
-            <p className="text-xs text-stone-400 mt-1">
+            <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
               Generate a <strong>Service Token</strong> from LaunchDarkly
               Settings &rarr; Authorizations.
             </p>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1">
-              LaunchDarkly Project Key
+            <label className="block text-sm font-semibold text-[var(--fgColor-default)] mb-1">
+              LaunchDarkly Project KeyIcon
             </label>
             <div className="relative">
-              <Globe
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400"
-                strokeWidth={1.5}
+              <GlobeIcon
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fgColor-subtle)]"
+               
               />
               <Input
                 type="text"
@@ -225,8 +210,8 @@ function LDImporterCard() {
                 className="pl-9"
               />
             </div>
-            <p className="text-xs text-stone-400 mt-1">
-              Found in LaunchDarkly Project Settings under the &ldquo;Key&rdquo;
+            <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
+              Found in LaunchDarkly Project Settings under the &ldquo;KeyIcon&rdquo;
               field.
             </p>
           </div>
@@ -247,20 +232,20 @@ function LDImporterCard() {
             className={cn(
               "rounded-xl border p-4 text-sm",
               result.success
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-red-200 bg-red-50 text-red-700",
+                ? "border-[var(--borderColor-success-muted)] bg-emerald-50 text-[var(--fgColor-success)]"
+                : "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
             )}
           >
             <div className="flex items-start gap-2.5">
               {result.success ? (
-                <CheckCircle
+                <CheckCircleFillIcon
                   className="h-4 w-4 shrink-0 mt-0.5 text-emerald-500"
-                  strokeWidth={2}
+                 
                 />
               ) : (
-                <AlertTriangle
+                <AlertIcon
                   className="h-4 w-4 shrink-0 mt-0.5 text-red-500"
-                  strokeWidth={2}
+                 
                 />
               )}
               <p>{result.message}</p>
@@ -318,8 +303,8 @@ resource "featuresignals_flag" "example" {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 shrink-0">
-            <Cloud className="h-5 w-5 text-accent" strokeWidth={1.5} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)] shrink-0">
+            <CloudIcon className="h-5 w-5 text-[var(--fgColor-accent)]" />
           </div>
           <div>
             <CardTitle>Terraform Provider</CardTitle>
@@ -338,7 +323,7 @@ resource "featuresignals_flag" "example" {
           <Badge variant="success">Apache 2.0</Badge>
         </div>
 
-        <p className="text-sm text-stone-600 leading-relaxed">
+        <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
           The official Terraform provider enables full GitOps workflows — manage
           flags, environments, and targeting rules alongside your
           infrastructure. Supports import, drift detection, and JSON validation.
@@ -351,18 +336,18 @@ resource "featuresignals_flag" "example" {
             href="https://registry.terraform.io/providers/featuresignals"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3.5 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--borderColor-default)] px-3.5 py-2 text-sm font-semibold text-[var(--fgColor-default)] hover:bg-[var(--bgColor-default)] transition-colors"
           >
-            <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <ExternalLinkIcon className="h-3.5 w-3.5" />
             Terraform Registry
           </a>
           <a
             href="https://github.com/featuresignals/terraform-fs"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3.5 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--borderColor-default)] px-3.5 py-2 text-sm font-semibold text-[var(--fgColor-default)] hover:bg-[var(--bgColor-default)] transition-colors"
           >
-            <GitPullRequest className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <GitPullRequestIcon className="h-3.5 w-3.5" />
             GitHub
           </a>
         </div>
@@ -390,8 +375,8 @@ docker run -d \\
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 shrink-0">
-            <Server className="h-5 w-5 text-emerald-600" strokeWidth={1.5} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bgColor-success-muted)] shrink-0">
+            <ServerIcon className="h-5 w-5 text-[var(--fgColor-success)]" />
           </div>
           <div>
             <CardTitle>Edge Data Plane</CardTitle>
@@ -403,7 +388,7 @@ docker run -d \\
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+        <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="relative flex h-3 w-3">
@@ -420,17 +405,17 @@ docker run -d \\
                     "relative inline-flex h-3 w-3 rounded-full",
                     status === "operational" && "bg-emerald-500",
                     status === "degraded" && "bg-amber-500",
-                    status === "offline" && "bg-red-500",
+                    status === "offline" && "bg-[var(--bgColor-danger-muted)]0",
                   )}
                 />
               </span>
               <div>
-                <p className="text-sm font-semibold text-stone-800 capitalize">
+                <p className="text-sm font-semibold text-[var(--fgColor-default)] capitalize">
                   {status}
                 </p>
-                <p className="text-xs text-stone-400">
+                <p className="text-xs text-[var(--fgColor-subtle)]">
                   P99 latency:{" "}
-                  <span className="font-mono text-emerald-600 font-semibold">
+                  <span className="font-mono text-[var(--fgColor-success)] font-semibold">
                     &lt;1ms
                   </span>
                 </p>
@@ -440,22 +425,22 @@ docker run -d \\
           </div>
         </div>
 
-        <p className="text-sm text-stone-600 leading-relaxed">
+        <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
           Edge Relay nodes cache feature flag rulesets in-memory and subscribe
           to real-time updates via Redis{" "}
-          <code className="text-accent font-mono text-xs">LISTEN/NOTIFY</code>.
+          <code className="text-[var(--fgColor-accent)] font-mono text-xs">LISTEN/NOTIFY</code>.
           No database dependency on the evaluation hot path — every evaluation
           is served from RAM.
         </p>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-stone-200 bg-white p-3 text-center">
-            <p className="text-lg font-bold text-emerald-600">0 ms</p>
-            <p className="text-xs text-stone-500">DB Hit Latency</p>
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-3 text-center">
+            <p className="text-lg font-bold text-[var(--fgColor-success)]">0 ms</p>
+            <p className="text-xs text-[var(--fgColor-muted)]">DB Hit Latency</p>
           </div>
-          <div className="rounded-xl border border-stone-200 bg-white p-3 text-center">
-            <p className="text-lg font-bold text-accent">Redis</p>
-            <p className="text-xs text-stone-500">Stream Replication</p>
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-3 text-center">
+            <p className="text-lg font-bold text-[var(--fgColor-accent)]">Redis</p>
+            <p className="text-xs text-[var(--fgColor-muted)]">Stream Replication</p>
           </div>
         </div>
 
@@ -465,25 +450,25 @@ docker run -d \\
           href="https://docs.featuresignals.com/architecture/edge-relay"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-accent-dark transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
         >
           Edge Relay Documentation
-          <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <ExternalLinkIcon className="h-3.5 w-3.5" />
         </a>
       </CardContent>
     </Card>
   );
 }
 
-// ─── API Key Helper ─────────────────────────────────────────────────
+// ─── API KeyIcon Helper ─────────────────────────────────────────────────
 
 function APIKeyHelper() {
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 shrink-0">
-            <Key className="h-5 w-5 text-accent" strokeWidth={1.5} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)] shrink-0">
+            <KeyIcon className="h-5 w-5 text-[var(--fgColor-accent)]" />
           </div>
           <div>
             <CardTitle>Quick Access</CardTitle>
@@ -494,23 +479,23 @@ function APIKeyHelper() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center justify-between rounded-lg bg-stone-50 border border-stone-200 px-3.5 py-2.5">
-          <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+        <div className="flex items-center justify-between rounded-lg bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] px-3.5 py-2.5">
+          <span className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider">
             API Base URL
           </span>
           <div className="flex items-center gap-2">
-            <code className="text-sm font-mono text-accent">
+            <code className="text-sm font-mono text-[var(--fgColor-accent)]">
               https://api.featuresignals.com
             </code>
             <CopyButton text="https://api.featuresignals.com" />
           </div>
         </div>
-        <div className="flex items-center justify-between rounded-lg bg-stone-50 border border-stone-200 px-3.5 py-2.5">
-          <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+        <div className="flex items-center justify-between rounded-lg bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] px-3.5 py-2.5">
+          <span className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider">
             SDK Endpoint
           </span>
           <div className="flex items-center gap-2">
-            <code className="text-sm font-mono text-accent">
+            <code className="text-sm font-mono text-[var(--fgColor-accent)]">
               https://sdk.featuresignals.com
             </code>
             <CopyButton text="https://sdk.featuresignals.com" />
@@ -518,10 +503,10 @@ function APIKeyHelper() {
         </div>
         <a
           href="/settings/api-keys"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-dark transition-colors mt-1"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors mt-1"
         >
           Manage API keys
-          <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <ChevronRightIcon className="h-3.5 w-3.5" />
         </a>
       </CardContent>
     </Card>
@@ -535,10 +520,10 @@ export default function IntegrationsPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-default)] flex items-center gap-2">
           🧩 Integrations
         </h1>
-        <p className="text-sm text-stone-500 mt-1 max-w-2xl leading-relaxed">
+        <p className="text-sm text-[var(--fgColor-muted)] mt-1 max-w-2xl leading-relaxed">
           Connect FeatureSignals with your existing toolchain — import from
           other providers, manage flags as code, or deploy edge nodes for
           sub-millisecond evaluation.

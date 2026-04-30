@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, ExternalLink, Code2 } from "lucide-react";
+import {
+  ActivityIcon, ExternalLinkIcon, CodeIcon
+} from "@/components/icons/nav-icons";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
@@ -18,16 +20,16 @@ export function DashboardFooter() {
   }, [token]);
 
   return (
-    <footer className="border-t border-slate-200/40 bg-white/60 backdrop-blur-sm px-4 py-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+    <footer className="border-t border-[var(--borderColor-default)]/40 bg-white/60 backdrop-blur-sm px-4 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--fgColor-subtle)]">
         <div className="flex items-center gap-4">
           <a
             href={`${WEBSITE_URL}/status`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"
+            className="inline-flex items-center gap-1 transition-colors hover:text-[var(--fgColor-muted)]"
           >
-            <Activity className="h-3 w-3 animate-pulse text-emerald-500" />
+            <ActivityIcon className="h-3 w-3 animate-pulse text-emerald-500" />
             System Status
           </a>
           {evalCount !== null && evalCount > 0 && (
@@ -42,19 +44,19 @@ export function DashboardFooter() {
             href="https://github.com/dinesh-g1/featuresignals"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"
+            className="inline-flex items-center gap-1 transition-colors hover:text-[var(--fgColor-muted)]"
           >
-            <Code2 className="h-3 w-3" />
+            <CodeIcon className="h-3 w-3" />
             Source
           </a>
           <a
             href={DOCS_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 transition-colors hover:text-slate-600"
+            className="inline-flex items-center gap-1 transition-colors hover:text-[var(--fgColor-muted)]"
           >
             Docs
-            <ExternalLink className="h-2.5 w-2.5" />
+            <ExternalLinkIcon className="h-2.5 w-2.5" />
           </a>
           <span>FeatureSignals</span>
         </div>

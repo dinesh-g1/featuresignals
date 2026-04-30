@@ -145,7 +145,7 @@ describe("OnboardingPage", () => {
     render(<OnboardingPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
+      expect(screen.getByText("Create Your First FlagIcon")).toBeInTheDocument();
     });
   });
 
@@ -215,7 +215,7 @@ describe("OnboardingPage", () => {
     render(<OnboardingPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Create Your First Flag")).toBeInTheDocument();
+      expect(screen.getByText("Create Your First FlagIcon")).toBeInTheDocument();
     });
 
     const skipBtn = screen.getByText("Skip this step");

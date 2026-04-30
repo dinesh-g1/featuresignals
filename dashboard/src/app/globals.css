@@ -1,49 +1,141 @@
 @import "tailwindcss";
 
+/* ================================================================
+   GitHub Primer Design System — CSS Custom Properties
+   Based on @primer/css v22 & primer.style foundations
+   Mirrors website/src/app/globals.css pattern
+   ================================================================ */
+
 :root {
-    --background: #fafaf9;
-    --foreground: #1c1917;
-    --accent: #0d9488;
-    --accent-dark: #0f766e;
-    --accent-light: #4fd1c5;
-    --accent-subtle: rgba(13, 148, 136, 0.08);
-    --accent-glow: rgba(13, 148, 136, 0.25);
-    --accent-glass: rgba(13, 148, 136, 0.06);
+    /* --- Foreground --- */
+    --fgColor-default: #1f2328;
+    --fgColor-muted: #59636e;
+    --fgColor-subtle: #818b98;
+    --fgColor-accent: #0969da;
+    --fgColor-success: #1a7f37;
+    --fgColor-attention: #9a6700;
+    --fgColor-danger: #d1242f;
+    --fgColor-done: #8250df;
+    --fgColor-onEmphasis: #ffffff;
+    --fgColor-link: #0969da;
+
+    /* --- Background --- */
+    --bgColor-default: #ffffff;
+    --bgColor-inset: #f6f8fa;
+    --bgColor-muted: #f6f8fa;
+    --bgColor-emphasis: #25292e;
+    --bgColor-inverse: #25292e;
+    --bgColor-accent-emphasis: #0969da;
+    --bgColor-accent-muted: #ddf4ff;
+    --bgColor-success-emphasis: #1f883d;
+    --bgColor-success-muted: #dafbe1;
+    --bgColor-attention-emphasis: #9a6700;
+    --bgColor-attention-muted: #fff8c5;
+    --bgColor-danger-emphasis: #cf222e;
+    --bgColor-danger-muted: #ffebe9;
+    --bgColor-done-emphasis: #8250df;
+    --bgColor-done-muted: #fbefff;
+
+    /* --- Border --- */
+    --borderColor-default: #d1d9e0;
+    --borderColor-muted: #d1d9e0b3;
+    --borderColor-emphasis: #818b98;
+    --borderColor-accent-emphasis: #0969da;
+    --borderColor-accent-muted: #54aeff66;
+    --borderColor-success-emphasis: #1a7f37;
+    --borderColor-success-muted: #4ac26b66;
+    --borderColor-attention-emphasis: #9a6700;
+    --borderColor-attention-muted: #d4a72c66;
+    --borderColor-danger-emphasis: #cf222e;
+
+    /* --- Shadows (Primer resting & floating) --- */
+    --shadow-resting-xsmall: 0 1px 1px 0 #1f23280d;
+    --shadow-resting-small: 0 1px 1px 0 #1f23280a, 0 1px 2px 0 #1f232808;
+    --shadow-resting-medium: 0 1px 1px 0 #25292e1a, 0 3px 6px 0 #25292e1f;
+    --shadow-floating-small:
+        0 0 0 1px #d1d9e080, 0 6px 12px -3px #25292e0a, 0 6px 18px 0 #25292e1f;
+    --shadow-floating-medium:
+        0 0 0 1px #d1d9e000, 0 8px 16px -4px #25292e14,
+        0 4px 32px -4px #25292e14, 0 24px 48px -12px #25292e14,
+        0 48px 96px -24px #25292e14;
+    --shadow-floating-large: 0 0 0 1px #d1d9e000, 0 40px 80px 0 #25292e3d;
+    --shadow-floating-xlarge: 0 0 0 1px #d1d9e000, 0 56px 112px 0 #25292e52;
+
+    /* --- Radius --- */
+    --radius-small: 6px;
+    --radius-medium: 8px;
+    --radius-large: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+
+    /* --- Typography --- */
+    --fontStack-system:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --fontStack-monospace:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
 }
+
+/* ================================================================
+   Tailwind v4 Theme — Primer Tokens
+   ================================================================ */
 
 @theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+    --color-background: var(--bgColor-default);
+    --color-foreground: var(--fgColor-default);
+    --font-sans: var(--fontStack-system);
+    --font-mono: var(--fontStack-monospace);
 
-    --color-accent: #0d9488;
-    --color-accent-dark: #0f766e;
-    --color-accent-light: #4fd1c5;
+    /* Accent (GitHub Blue) */
+    --color-accent: #0969da;
+    --color-accent-dark: #0757ba;
+    --color-accent-light: #54aeff;
+    --color-accent-muted: #ddf4ff;
+    --color-accent-fg: #0969da;
 
-    --color-stone-50: #fafaf9;
-    --color-stone-100: #f5f5f4;
-    --color-stone-200: #e7e5e4;
-    --color-stone-300: #d6d3d1;
-    --color-stone-400: #a8a29e;
-    --color-stone-500: #78716c;
-    --color-stone-600: #57534e;
-    --color-stone-700: #44403c;
-    --color-stone-800: #292524;
-    --color-stone-900: #1c1917;
+    /* Neutral scale (Primer grays) */
+    --color-neutral-0: #ffffff;
+    --color-neutral-50: #f6f8fa;
+    --color-neutral-100: #eff2f5;
+    --color-neutral-200: #d1d9e0;
+    --color-neutral-300: #818b98;
+    --color-neutral-400: #59636e;
+    --color-neutral-500: #25292e;
+    --color-neutral-600: #1f2328;
 
+    /* Semantic */
+    --color-success: #1f883d;
+    --color-success-muted: #dafbe1;
+    --color-attention: #9a6700;
+    --color-attention-muted: #fff8c5;
+    --color-danger: #cf222e;
+    --color-danger-muted: #ffebe9;
+    --color-done: #8250df;
+    --color-done-muted: #fbefff;
+
+    /* Shadows as Tailwind-compatible */
+    --shadow-primer-resting: var(--shadow-resting-small);
+    --shadow-primer-floating: var(--shadow-floating-small);
+    --shadow-primer-floating-md: var(--shadow-floating-medium);
+    --shadow-primer-floating-lg: var(--shadow-floating-large);
+
+    /* Border radius */
+    --radius-primer: var(--radius-medium);
+    --radius-primer-lg: var(--radius-large);
+    --radius-primer-xl: var(--radius-xl);
+
+    /* Animations */
     --animate-fade-in: fade-in 0.2s ease-out;
-    --animate-fade-out: fade-out 0.15s ease-in forwards;
     --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    --animate-slide-down: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     --animate-scale-in: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    --animate-slide-in-left: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    --animate-slide-in-right: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    --animate-bounce-in: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
     --animate-shimmer: shimmer 2s linear infinite;
-    --animate-accordion-down: accordion-down 0.2s ease-out;
-    --animate-accordion-up: accordion-up 0.2s ease-out;
 }
+
+/* ================================================================
+   Keyframes
+   ================================================================ */
 
 @keyframes fade-in {
     from {
@@ -116,6 +208,15 @@
     }
 }
 
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
 @keyframes bounce-in {
     0% {
         opacity: 0;
@@ -131,116 +232,26 @@
     }
 }
 
-@keyframes glow-pulse {
-    0%,
-    100% {
-        box-shadow: 0 0 8px 0 var(--accent-glow);
-    }
-    50% {
-        box-shadow: 0 0 20px 4px var(--accent-glow);
-    }
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-@keyframes accordion-down {
-    from {
-        height: 0;
-    }
-    to {
-        height: var(--radix-accordion-content-height);
-    }
-}
-
-@keyframes accordion-up {
-    from {
-        height: var(--radix-accordion-content-height);
-    }
-    to {
-        height: 0;
-    }
-}
+/* ================================================================
+   Base Styles
+   ================================================================ */
 
 body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-sans);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background: var(--bgColor-default);
+    color: var(--fgColor-default);
+    font-family: var(--fontStack-system);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-    background-color: var(--accent);
-    color: white;
+    background-color: #0969da33;
+    color: var(--fgColor-default);
 }
 
-.animate-in {
-    animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.shimmer-bg {
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(168, 162, 158, 0.08) 40%,
-        rgba(168, 162, 158, 0.15) 50%,
-        rgba(168, 162, 158, 0.08) 60%,
-        transparent 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s linear infinite;
-}
-
-/* Glassmorphism utilities */
-.glass-panel {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(231, 229, 228, 0.5);
-}
-
-.glass-panel-strong {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(231, 229, 228, 0.6);
-}
-
-.glass-sidebar {
-    background: rgba(250, 250, 249, 0.75);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-right: 1px solid rgba(231, 229, 228, 0.6);
-}
-
-/* Custom scrollbar — refined stone tones */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-::-webkit-scrollbar-thumb {
-    background: #d6d3d1;
-    border-radius: 3px;
-    transition: background 0.15s ease;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #a8a29e;
-}
-
-/* Focus visible — teal accent */
+/* Focus visible — Primer blue accent */
 *:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--fgColor-accent);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -252,46 +263,20 @@ button:focus-visible {
     outline: none;
 }
 
-/* Teal range slider (for flag rot calculator, etc.) */
-input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
+/* Custom scrollbar — Primer tones */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
     background: transparent;
-    cursor: pointer;
-    width: 100%;
 }
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    margin-top: -8px;
-    box-shadow: 0 0 10px var(--accent-glow);
+::-webkit-scrollbar-thumb {
+    background: var(--borderColor-default);
+    border-radius: 3px;
 }
-input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    cursor: pointer;
-    background: #e7e5e4;
-    border-radius: 2px;
-}
-input[type="range"]::-moz-range-thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 0 10px var(--accent-glow);
-}
-input[type="range"]::-moz-range-track {
-    width: 100%;
-    height: 4px;
-    cursor: pointer;
-    background: #e7e5e4;
-    border-radius: 2px;
+::-webkit-scrollbar-thumb:hover {
+    background: var(--borderColor-emphasis);
 }
 
 /* Hide scrollbar utility */
@@ -301,4 +286,71 @@ input[type="range"]::-moz-range-track {
 .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+/* Primer range slider (for flag rot calculator, etc.) */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--bgColor-accent-emphasis);
+    cursor: pointer;
+    margin-top: -5px;
+    box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
+    transition: box-shadow 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 1px 6px rgba(9, 105, 218, 0.5);
+}
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: var(--borderColor-default);
+    border-radius: 3px;
+}
+input[type="range"]::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--bgColor-accent-emphasis);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
+}
+input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: var(--borderColor-default);
+    border-radius: 3px;
+}
+
+/* ================================================================
+   Utility Classes
+   ================================================================ */
+
+.animate-in {
+    animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shimmer-bg {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(209, 217, 224, 0.2) 40%,
+        rgba(209, 217, 224, 0.3) 50%,
+        rgba(209, 217, 224, 0.2) 60%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
 }

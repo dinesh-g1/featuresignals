@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://app.featuresignals.com"),
   title: {
     template: "%s | FeatureSignals",
-    default: "FeatureSignals | Enterprise Feature Flag Control Plane",
+    default: "FeatureSignals | Enterprise Feature FlagIcon Control Plane",
   },
   description:
     "The enterprise control plane for mission-critical feature flags. Sub-millisecond evaluation, automated tech-debt cleanup, OpenFeature native, Terraform-integrated.",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "FeatureSignals — Enterprise Feature Flag Platform",
+        alt: "FeatureSignals — Enterprise Feature FlagIcon Platform",
       },
     ],
   },
@@ -52,7 +52,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full scroll-smooth`}>
-      <body className="min-h-full flex flex-col bg-stone-50 text-stone-900 font-sans antialiased selection:bg-accent selection:text-white">
+      <head />
+      <body className="min-h-full flex flex-col bg-[var(--bgColor-default)] text-[var(--fgColor-default)] font-sans antialiased selection:bg-[var(--bgColor-accent-emphasis)] selection:text-white">
         {children}
       </body>
     </html>

@@ -30,7 +30,7 @@ const TOUR_STEPS: TourStep[] = [
     targetSelector: '[data-tour="context-bar"]',
   },
   {
-    title: "Create Your First Flag",
+    title: "Create Your First FlagIcon",
     description:
       "This is your workspace. Create feature flags, set up targeting rules, and manage rollouts all from this central area.",
     targetSelector: '[data-tour="main-content"]',
@@ -222,18 +222,18 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
         ref={tooltipRef}
         className={
           hasTarget
-            ? "absolute z-10 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-slate-200 bg-white p-4 shadow-2xl transition-all duration-300 sm:p-5"
-            : "fixed left-1/2 top-1/2 z-10 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5"
+            ? "absolute z-10 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-[var(--borderColor-default)] bg-white p-4 shadow-2xl transition-all duration-300 sm:p-5"
+            : "fixed left-1/2 top-1/2 z-10 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--borderColor-default)] bg-white p-4 shadow-2xl sm:p-5"
         }
         style={hasTarget ? tooltipPos : undefined}
       >
         <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
-          <span className="text-xs text-slate-400">
+          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">{step.title}</h3>
+          <span className="text-xs text-[var(--fgColor-subtle)]">
             {currentStep + 1} of {TOUR_STEPS.length}
           </span>
         </div>
-        <p className="mb-3 text-sm leading-relaxed text-slate-500 sm:mb-4">
+        <p className="mb-3 text-sm leading-relaxed text-[var(--fgColor-muted)] sm:mb-4">
           {step.description}
         </p>
 
@@ -244,10 +244,10 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
               key={i}
               className={`h-1.5 rounded-full transition-all ${
                 i === currentStep
-                  ? "w-6 bg-accent"
+                  ? "w-6 bg-[var(--bgColor-accent-emphasis)]"
                   : i < currentStep
-                    ? "w-1.5 bg-accent/40"
-                    : "w-1.5 bg-slate-200"
+                    ? "w-1.5 bg-[var(--bgColor-accent-emphasis)]/40"
+                    : "w-1.5 bg-[var(--bgColor-muted)]"
               }`}
             />
           ))}
@@ -256,7 +256,7 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
         <div className="flex items-center justify-between">
           <button
             onClick={finish}
-            className="text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
+            className="text-xs font-medium text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-muted)]"
           >
             Skip tour
           </button>
@@ -264,14 +264,14 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
             {currentStep > 0 && (
               <button
                 onClick={() => setCurrentStep((s) => s - 1)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                className="rounded-lg border border-[var(--borderColor-default)] px-3 py-1.5 text-xs font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
               >
                 Back
               </button>
             )}
             <button
               onClick={handleNext}
-              className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-accent-dark"
+              className="rounded-lg bg-[var(--bgColor-accent-emphasis)] px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-[var(--bgColor-accent-emphasis)]-dark"
             >
               {isLast ? "Finish" : "Next"}
             </button>

@@ -2480,3 +2480,52 @@ func (s *Store) ConsumeMagicLinkToken(ctx context.Context, token string) (string
 	}
 	return userID, orgID, nil
 }
+
+// ─── SessionStore implementation ─────────────────────────────────────────────
+
+// CreateSession inserts a new public session.
+func (s *Store) CreateSession(ctx context.Context, sess *domain.PublicSession) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO public_sessions (id, session_token, provider, data, email, expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		sess.ID, sess.SessionToken, sess.Provider, sess.Data, nilIfEmpty(sess.Email), sess.ExpiresAt)
+	return wrapConflict(err, "public session")
+}
+
+// GetSession retrieves a public session by its session token. Returns
+// domain.ErrNotFound if the token does not exist or has expired.
+func (s *Store) GetSession(ctx context.Context, token string) (*domain.PublicSession, error) {
+	var sess domain.PublicSession
+	var email *string
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, session_token, provider, data, email, created_at, expires_at
+		 FROM public_sessions WHERE session_token = $1`, token).
+		Scan(&sess.ID, &sess.SessionToken, &sess.Provider, &sess.Data, &email, &sess.CreatedAt, &sess.ExpiresAt)
+	if err != nil {
+		return nil, wrapNotFound(err, "public session")
+	}
+	if time.Now().After(sess.ExpiresAt) {
+		return nil, domain.WrapExpired("public session")
+	}
+	if email != nil {
+		sess.Email = *email
+	}
+	return &sess, nil
+}
+
+// DeleteSession removes a public session by its session token.
+func (s *Store) DeleteSession(ctx context.Context, token string) error {
+	_, err := s.pool.Exec(ctx,
+		`DELETE FROM public_sessions WHERE session_token = $1`, token)
+	return err
+}
+
+// CleanExpiredSessions removes all expired public sessions and returns the count.
+func (s *Store) CleanExpiredSessions(ctx context.Context) (int, error) {
+	tag, err := s.pool.Exec(ctx,
+		`DELETE FROM public_sessions WHERE expires_at < now()`)
+	if err != nil {
+		return 0, err
+	}
+	return int(tag.RowsAffected()), nil
+}

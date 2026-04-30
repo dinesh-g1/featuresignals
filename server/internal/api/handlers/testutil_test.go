@@ -1557,3 +1557,10 @@ func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domai
 func (s *mockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
 func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
 
+func (s *mockStore) CreateSession(_ context.Context, _ *domain.PublicSession) error { return nil }
+func (s *mockStore) GetSession(_ context.Context, _ string) (*domain.PublicSession, error) {
+	return nil, fmt.Errorf("not found")
+}
+func (s *mockStore) DeleteSession(_ context.Context, _ string) error          { return nil }
+func (s *mockStore) CleanExpiredSessions(_ context.Context) (int, error) { return 0, nil }
+

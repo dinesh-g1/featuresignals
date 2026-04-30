@@ -44,14 +44,14 @@ function ExchangeContent() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4">
         <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
             <svg
               className="h-6 w-6 text-red-600"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
+             
               stroke="currentColor"
             >
               <path
@@ -61,20 +61,20 @@ function ExchangeContent() {
               />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
             Authentication Failed
           </h2>
-          <p className="mt-2 text-sm text-slate-500">{error}</p>
+          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">{error}</p>
           <div className="mt-6 flex flex-col gap-2">
             <a
               href="/login"
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
+              className="rounded-lg bg-[var(--bgColor-accent-emphasis)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--bgColor-accent-emphasis)]-dark"
             >
               Go to Login
             </a>
             <a
               href="/register"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-[var(--borderColor-emphasis)] px-4 py-2 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
             >
               Sign Up
             </a>
@@ -85,10 +85,10 @@ function ExchangeContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)]">
       <div className="text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-accent/10 border-t-accent" />
-        <p className="text-sm text-slate-500">Setting up your account...</p>
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-[var(--fgColor-accent)]/10 border-t-accent" />
+        <p className="text-sm text-[var(--fgColor-muted)]">Setting up your account...</p>
       </div>
     </div>
   );
@@ -98,8 +98,8 @@ export default function TokenExchangePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-accent/10 border-t-accent" />
+        <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)]">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[var(--fgColor-accent)]/10 border-t-accent" />
         </div>
       }
     >

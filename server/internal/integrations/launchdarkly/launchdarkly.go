@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/integrations"
 )
 
 // Client is a stub LaunchDarkly API client.
@@ -74,4 +75,62 @@ func MapLDFlagToDomain(flag LDFlag, envs []LDEnvironment) (*FlagImport, error) {
 type FlagImport struct {
 	Flag   domain.Flag
 	States map[string]*domain.FlagState
+}
+
+// NewImporter creates a new LaunchDarkly importer implementing integrations.Importer.
+func NewImporter(cfg integrations.ImporterConfig) integrations.Importer {
+	return &ldImporter{
+		client: NewClient(cfg.APIKey, cfg.BaseURL),
+	}
+}
+
+type ldImporter struct {
+	client *Client
+}
+
+func (i *ldImporter) Name() string         { return "launchdarkly" }
+func (i *ldImporter) DisplayName() string   { return "LaunchDarkly" }
+func (i *ldImporter) Capabilities() []string { return []string{"flags", "environments", "segments"} }
+
+func (i *ldImporter) ValidateConnection(ctx context.Context) error {
+	if i.client.apiKey == "" {
+		return fmt.Errorf("launchdarkly API key is required")
+	}
+	return nil
+}
+
+func (i *ldImporter) FetchFlags(ctx context.Context) ([]integrations.Flag, error) {
+	ldFlags, err := i.client.FetchFlags(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	flags := make([]integrations.Flag, 0, len(ldFlags))
+	for _, f := range ldFlags {
+		flags = append(flags, integrations.Flag{
+			Key:         f.Key,
+			Name:        f.Name,
+			Description: f.Description,
+			Enabled:     !f.Archived,
+		})
+	}
+	return flags, nil
+}
+
+func (i *ldImporter) FetchEnvironments(ctx context.Context) ([]integrations.Environment, error) {
+	ldEnvs, err := i.client.FetchEnvironments(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	envs := make([]integrations.Environment, 0, len(ldEnvs))
+	for _, e := range ldEnvs {
+		envs = append(envs, integrations.Environment{
+			Key:  e.Key,
+			Name: e.Name,
+		})
+	}
+	return envs, nil
+}
+
+func (i *ldImporter) FetchSegments(ctx context.Context) ([]integrations.Segment, error) {
+	return nil, nil
 }

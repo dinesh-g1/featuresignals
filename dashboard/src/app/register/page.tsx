@@ -10,7 +10,9 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, X, Mail, AlertCircle, ArrowLeft } from "lucide-react";
+import {
+  CheckIcon, XIcon, MailIcon, AlertIcon, ArrowLeftIcon
+} from "@/components/icons/nav-icons";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
@@ -183,13 +185,13 @@ function OTPInput({
             onPaste={handlePaste}
             onFocus={() => setFocusedIdx(i)}
             className={cn(
-              "w-10 h-12 sm:w-12 sm:h-14 rounded-lg border-2 text-center text-lg sm:text-2xl font-bold text-slate-800 transition-all select-none bg-white",
-              "focus:outline-none focus:ring-[3px] focus:ring-accent/10",
+              "w-10 h-12 sm:w-12 sm:h-14 rounded-lg border-2 text-center text-lg sm:text-2xl font-bold text-[var(--fgColor-default)] transition-all select-none bg-white",
+              "focus:outline-none focus:ring-[3px] focus:ring-[var(--fgColor-accent)]/10",
               isFocused && !isFilled
-                ? "border-accent shadow-[0_0_0_3px_rgba(13,148,136,0.15)]"
+                ? "border-[var(--fgColor-accent)] shadow-[0_0_0_3px_rgba(13,148,136,0.15)]"
                 : isFilled
-                  ? "border-accent/30 bg-accent/5"
-                  : "border-slate-300 shadow-sm",
+                  ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]"
+                  : "border-[var(--borderColor-emphasis)] shadow-sm",
             )}
             aria-label={`Digit ${i + 1}`}
           />
@@ -232,12 +234,12 @@ function ResendCooldown({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="h-1 w-32 overflow-hidden rounded-full bg-slate-100">
+      <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--bgColor-muted)]">
         <div
-          className={`h-full rounded-full bg-accent transition-all duration-1000 w-[${progress}%]`}
+          className={`h-full rounded-full bg-[var(--bgColor-accent-emphasis)] transition-all duration-1000 w-[${progress}%]`}
         />
       </div>
-      <p className="text-xs text-slate-400">Resend code in {countdown}s</p>
+      <p className="text-xs text-[var(--fgColor-subtle)]">Resend code in {countdown}s</p>
     </div>
   );
 }
@@ -263,8 +265,8 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+        <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4 py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
         </div>
       }
     >
@@ -437,7 +439,7 @@ function RegisterForm() {
         lowerMsg.includes("wrong")
       ) {
         setOtpError({
-          message: "Invalid code. Check your email and try again.",
+          message: "Invalid code. CheckIcon your email and try again.",
           type: "invalid",
         });
       } else {
@@ -473,20 +475,20 @@ function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4 py-8">
       <Card className="w-full max-w-2xl space-y-6 p-6 sm:p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-accent">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-accent)]">
             FeatureSignals
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
             {step === "form" ? "Create your account" : "Verify your email"}
           </p>
         </div>
 
         {planIntent === "pro" && step === "form" && (
-          <div className="rounded-lg bg-accent/5 border border-accent/20 px-4 py-3 text-center">
-            <p className="text-sm font-medium text-accent-dark">
+          <div className="rounded-lg bg-[var(--bgColor-accent-muted)] border border-[var(--borderColor-accent-muted)] px-4 py-3 text-center">
+            <p className="text-sm font-medium text-[var(--fgColor-accent)]">
               Start your <span className="font-bold">14-day Pro trial</span> —
               subscribe anytime during or after
             </p>
@@ -506,8 +508,8 @@ function RegisterForm() {
                     className={cn(
                       "h-0.5 w-12 sm:w-16",
                       isCompleted || isCurrent
-                        ? "bg-accent/60"
-                        : "bg-slate-200",
+                        ? "bg-[var(--bgColor-accent-emphasis)]/60"
+                        : "bg-[var(--bgColor-muted)]",
                     )}
                   />
                 )}
@@ -518,20 +520,20 @@ function RegisterForm() {
                       isCompleted
                         ? "bg-emerald-500 text-white"
                         : isCurrent
-                          ? "bg-accent text-white ring-4 ring-accent/10"
-                          : "bg-slate-200 text-slate-500",
+                          ? "bg-[var(--bgColor-accent-emphasis)] text-white ring-4 ring-accent/10"
+                          : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
                     )}
                   >
-                    {isCompleted ? <Check className="h-4 w-4" /> : i + 1}
+                    {isCompleted ? <CheckIcon className="h-4 w-4" /> : i + 1}
                   </div>
                   <span
                     className={cn(
                       "text-xs font-medium",
                       isCurrent
-                        ? "text-accent"
+                        ? "text-[var(--fgColor-accent)]"
                         : isCompleted
-                          ? "text-emerald-600"
-                          : "text-slate-400",
+                          ? "text-[var(--fgColor-success)]"
+                          : "text-[var(--fgColor-subtle)]",
                     )}
                   >
                     {label}
@@ -544,10 +546,10 @@ function RegisterForm() {
 
         {error && (
           <div
-            className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-100"
+            className="flex items-start gap-2 rounded-lg bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
             role="alert"
           >
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
@@ -697,10 +699,10 @@ function RegisterForm() {
 
             {/* Data region - full width */}
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-slate-700">
+              <legend className="text-sm font-medium text-[var(--fgColor-default)]">
                 Data Region <span className="text-red-500">*</span>
               </legend>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--fgColor-subtle)]">
                 Choose where your data is stored for compliance
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -710,8 +712,8 @@ function RegisterForm() {
                     className={cn(
                       "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all",
                       form.data_region === region.code
-                        ? "border-accent bg-accent/5 shadow-sm"
-                        : "border-slate-200 hover:border-slate-300",
+                        ? "border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] shadow-sm"
+                        : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]",
                     )}
                   >
                     <input
@@ -734,8 +736,8 @@ function RegisterForm() {
                       className={cn(
                         "text-xs font-medium",
                         form.data_region === region.code
-                          ? "text-accent-dark"
-                          : "text-slate-600",
+                          ? "text-[var(--fgColor-accent)]"
+                          : "text-[var(--fgColor-muted)]",
                       )}
                     >
                       {region.name}
@@ -759,13 +761,13 @@ function RegisterForm() {
             </Button>
 
             <div className="text-center">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--fgColor-subtle)]">
                 By signing up you agree to our Terms of Service and Privacy
                 Policy.
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
                 You will start with a{" "}
-                <span className="font-semibold text-accent">
+                <span className="font-semibold text-[var(--fgColor-accent)]">
                   14-day free trial
                 </span>{" "}
                 with full Pro features.
@@ -778,21 +780,21 @@ function RegisterForm() {
         {step === "otp" && (
           <div className="space-y-5">
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
-                <Mail className="h-7 w-7 text-accent" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bgColor-accent-muted)]">
+                <MailIcon className="h-7 w-7 text-[var(--fgColor-accent)]" />
               </div>
-              <p className="mt-4 text-sm text-slate-500">
+              <p className="mt-4 text-sm text-[var(--fgColor-muted)]">
                 We sent a 6-digit verification code to
                 <br />
-                <span className="font-medium text-slate-700">{form.email}</span>
+                <span className="font-medium text-[var(--fgColor-default)]">{form.email}</span>
               </p>
               {/* Wrong email? Go back — preserves form data */}
               <button
                 onClick={handleBackToForm}
-                className="mt-1 inline-flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-accent-dark"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-accent)]"
                 type="button"
               >
-                <ArrowLeft className="h-3 w-3" />
+                <ArrowLeftIcon className="h-3 w-3" />
                 Wrong email? Go back
               </button>
             </div>
@@ -802,10 +804,10 @@ function RegisterForm() {
             {/* OTP error message */}
             {otpError && (
               <div
-                className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-100"
+                className="flex items-start gap-2 rounded-lg bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
                 role="alert"
               >
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{otpError.message}</span>
               </div>
             )}
@@ -829,11 +831,11 @@ function RegisterForm() {
         )}
 
         {step === "form" && (
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-[var(--fgColor-muted)]">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-accent transition-colors hover:text-accent-dark"
+              className="font-medium text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
             >
               Sign in
             </Link>
@@ -841,13 +843,13 @@ function RegisterForm() {
         )}
 
         {/* Trust signals */}
-        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-slate-400">
+        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-[var(--fgColor-subtle)]">
           <svg
             className="h-3 w-3 text-emerald-500"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth={2.5}
+           
             strokeLinecap="round"
             strokeLinejoin="round"
           >

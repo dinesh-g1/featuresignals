@@ -1,10 +1,9 @@
 import { cn } from "@/lib/utils";
-import { ExternalLink } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ExternalLinkIcon } from "@/components/icons/nav-icons";
 
 interface EmptyStateProps {
   icon:
-    | LucideIcon
+    | React.ComponentType<{ className?: string }>
     | React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string | React.ReactNode;
   description?: string;
@@ -37,16 +36,16 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20 shadow-sm">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)] ring-1 ring-[var(--borderColor-accent-muted)] shadow-sm">
         {emoji ? (
           <span className="text-xl leading-none">{emoji}</span>
         ) : (
-          <Icon className="h-7 w-7 text-accent" strokeWidth={1.5} />
+          <Icon className="h-7 w-7 text-[var(--fgColor-accent)]" />
         )}
       </div>
-      <p className="mt-4 text-sm font-semibold text-stone-700">{title}</p>
+      <p className="mt-4 text-sm font-semibold text-[var(--fgColor-default)]">{title}</p>
       {description && (
-        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-stone-400">
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-[var(--fgColor-subtle)]">
           {description}
         </p>
       )}
@@ -56,10 +55,10 @@ export function EmptyState({
           href={docsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-xs text-accent hover:text-accent-dark transition-colors"
+          className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
         >
           {docsLabel || "Learn more in docs"}
-          <ExternalLink className="h-3 w-3" />
+          <ExternalLinkIcon className="h-3 w-3" />
         </a>
       )}
     </div>
