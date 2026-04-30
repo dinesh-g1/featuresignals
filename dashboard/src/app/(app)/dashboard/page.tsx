@@ -20,7 +20,28 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonCard, PageSkeleton } from "@/components/ui/skeleton";
 import {
-  FlagIcon, GlobeIcon, ActivityIcon, ShieldIcon, ChevronRightIcon, PlusIcon, ArrowUpRightIcon, GitPullRequestIcon, ClockIcon, SparklesIcon, TrendingUpIcon, UsersIcon, CheckCircleFillIcon, AlertIcon, ArrowRightIcon
+  AuditLogIcon,
+  FlagIcon,
+  GlobeIcon,
+  ActivityIcon,
+  ShieldIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  ArrowUpRightIcon,
+  GitPullRequestIcon,
+  ClockIcon,
+  SparklesIcon,
+  TrendingUpIcon,
+  UsersIcon,
+  CheckCircleFillIcon,
+  AlertIcon,
+  ArrowRightIcon,
+  CheckIcon,
+  PencilIcon,
+  TrashIcon,
+  PersonIcon,
+  GitBranchIcon,
+  ShieldCheckIcon,
 } from "@/components/icons/nav-icons";
 import Link from "next/link";
 import type {
@@ -298,12 +319,16 @@ function SetupChecklist({
                 <p
                   className={cn(
                     "text-sm font-medium",
-                    step.done ? "text-[var(--fgColor-muted)]" : "text-[var(--fgColor-default)]",
+                    step.done
+                      ? "text-[var(--fgColor-muted)]"
+                      : "text-[var(--fgColor-default)]",
                   )}
                 >
                   {step.label}
                 </p>
-                <p className="text-xs text-[var(--fgColor-subtle)]">{step.desc}</p>
+                <p className="text-xs text-[var(--fgColor-subtle)]">
+                  {step.desc}
+                </p>
               </div>
               {!step.done && (
                 <Link
@@ -325,17 +350,17 @@ function SetupChecklist({
 // ─── Recent Activity ────────────────────────────────────────────────
 
 function RecentActivity({ audit }: { audit: AuditEntry[] }) {
-  const actionIcons: Record<string, string> = {
-    flag_created: "⚑",
-    flag_toggled: "🔀",
-    flag_deleted: "🗑️",
-    rule_created: "📝",
-    rule_updated: "✏️",
-    env_created: "🌐",
-    member_invited: "👤",
-    member_removed: "🚫",
-    approval_requested: "🛡️",
-    approval_reviewed: "✅",
+  const actionIcons: Record<string, React.ReactNode> = {
+    flag_created: <FlagIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />,
+    flag_toggled: <GitBranchIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />,
+    flag_deleted: <TrashIcon className="h-4 w-4 text-[var(--fgColor-danger)]" />,
+    rule_created: <PencilIcon className="h-4 w-4 text-[var(--fgColor-done)]" />,
+    rule_updated: <PencilIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />,
+    env_created: <GlobeIcon className="h-4 w-4 text-[var(--fgColor-success)]" />,
+    member_invited: <PersonIcon className="h-4 w-4 text-[var(--fgColor-success)]" />,
+    member_removed: <PersonIcon className="h-4 w-4 text-[var(--fgColor-danger)]" />,
+    approval_requested: <ShieldCheckIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />,
+    approval_reviewed: <CheckIcon className="h-4 w-4 text-[var(--fgColor-success)]" />,
   };
 
   return (
@@ -343,7 +368,7 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>📋 Recent Activity</CardTitle>
+            <CardTitle><AuditLogIcon className="h-5 w-5 mr-2 inline text-[var(--fgColor-muted)]" />Recent Activity</CardTitle>
             <CardDescription>
               The latest changes across your workspace.
             </CardDescription>
@@ -360,7 +385,9 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
       <CardContent>
         {audit.length === 0 ? (
           <div className="py-6 text-center">
-            <p className="text-xs text-[var(--fgColor-subtle)]">No recent activity</p>
+            <p className="text-xs text-[var(--fgColor-subtle)]">
+              No recent activity
+            </p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -370,7 +397,7 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--bgColor-default)] transition-colors"
               >
                 <span className="text-base leading-none shrink-0">
-                  {actionIcons[entry.action] || "📌"}
+                  {actionIcons[entry.action] || <AuditLogIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--fgColor-default)] truncate">
@@ -451,7 +478,9 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
             </p>
           </div>
           <div className="rounded-xl bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] p-3">
-            <p className="text-xs text-[var(--fgColor-muted)] mb-0.5">Stale / Rot</p>
+            <p className="text-xs text-[var(--fgColor-muted)] mb-0.5">
+              Stale / Rot
+            </p>
             <p className="text-lg font-bold text-amber-600">
               {staleFlags.length}
             </p>
@@ -636,10 +665,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="rounded-2xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-6 text-center max-w-md">
-          <AlertIcon
-            className="h-8 w-8 text-red-400 mx-auto mb-3"
-           
-          />
+          <AlertIcon className="h-8 w-8 text-red-400 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-red-800 mb-1">
             Failed to load
           </h2>
