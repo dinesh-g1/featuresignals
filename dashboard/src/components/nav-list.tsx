@@ -26,6 +26,7 @@ import {
   CreditCardIcon,
   ChevronDownIcon,
   LogOutIcon,
+  BuildingIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ interface NavGroupDef {
 
 const coreItems: NavItemDef[] = [
   { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
+  { href: "/projects", label: "Projects", icon: BuildingIcon },
   { href: "/flags", label: "Flags", icon: FlagIcon },
   { href: "/segments", label: "Segments", icon: SegmentIcon },
   { href: "/environments", label: "Environments", icon: EnvironmentIcon },
