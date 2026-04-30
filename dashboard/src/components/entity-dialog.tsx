@@ -16,6 +16,18 @@ import { LoaderIcon } from "@/components/icons/nav-icons";
 import { ENVIRONMENT_COLORS } from "@/lib/constants";
 import type { Environment } from "@/lib/types";
 
+const COLOR_MAP: Record<string, string> = {
+  "#64748b": "bg-slate-500",
+  "#ef4444": "bg-red-500",
+  "#f97316": "bg-orange-500",
+  "#eab308": "bg-yellow-500",
+  "#22c55e": "bg-green-500",
+  "#06b6d4": "bg-cyan-500",
+  "#3b82f6": "bg-blue-500",
+  "#8b5cf6": "bg-violet-500",
+  "#ec4899": "bg-pink-500",
+};
+
 // ── Create Environment Dialog ──────────────────────────────────────────────
 
 interface CreateEnvironmentDialogProps {
@@ -82,7 +94,7 @@ export function CreateEnvironmentDialog({
         if (!submitting) onOpenChange(v);
       }}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Environment</DialogTitle>
           <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
@@ -116,7 +128,7 @@ export function CreateEnvironmentDialog({
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 bg-[${c.value}] ${
+                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${COLOR_MAP[c.value] || "bg-slate-500"} ${
                     color === c.value
                       ? "border-slate-900 shadow-md"
                       : "border-transparent"
@@ -222,7 +234,7 @@ export function EditEnvironmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Environment</DialogTitle>
           <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
@@ -255,7 +267,7 @@ export function EditEnvironmentDialog({
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 bg-[${c.value}] ${
+                  className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${COLOR_MAP[c.value] || "bg-slate-500"} ${
                     color === c.value
                       ? "border-slate-900 shadow-md"
                       : "border-transparent"
@@ -329,12 +341,14 @@ export function DeleteDialog({
         if (!submitting) onOpenChange(v);
       }}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-red-600">{title}</DialogTitle>
           <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
             {description && (
-              <p className="font-semibold text-[var(--fgColor-default)]">{description}</p>
+              <p className="font-semibold text-[var(--fgColor-default)]">
+                {description}
+              </p>
             )}
             {consequences.length > 0 && (
               <div className="bg-[var(--bgColor-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
@@ -359,11 +373,7 @@ export function DeleteDialog({
           >
             Cancel
           </Button>
-          <Button
-            variant="danger"
-            onClick={handleDelete}
-            disabled={submitting}
-          >
+          <Button variant="danger" onClick={handleDelete} disabled={submitting}>
             {submitting ? (
               <>
                 <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
