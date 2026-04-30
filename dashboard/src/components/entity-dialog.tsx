@@ -85,10 +85,10 @@ export function CreateEnvironmentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Environment</DialogTitle>
-          <DialogDescription>
+          <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
             Add a new deployment environment for managing flag states
             independently.
-          </DialogDescription>
+          </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
@@ -225,10 +225,10 @@ export function EditEnvironmentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Environment</DialogTitle>
-          <DialogDescription>
+          <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
             Update environment details. Changes may affect API keys and flag
             states.
-          </DialogDescription>
+          </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
@@ -332,7 +332,7 @@ export function DeleteDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-red-600">{title}</DialogTitle>
-          <DialogDescription className="space-y-3">
+          <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
             {description && (
               <p className="font-semibold text-[var(--fgColor-default)]">{description}</p>
             )}
@@ -349,7 +349,7 @@ export function DeleteDialog({
             <p className="text-sm font-semibold text-red-600">
               This action cannot be undone.
             </p>
-          </DialogDescription>
+          </div>
         </DialogHeader>
         <DialogFooter>
           <Button

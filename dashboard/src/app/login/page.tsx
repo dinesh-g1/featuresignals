@@ -9,7 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-  ShieldIcon, ArrowLeftIcon, MailIcon, LockIcon, AlertIcon, ClockIcon, EyeIcon, EyeOffIcon, SparklesIcon, BuildingIcon, ChevronRightIcon
+  ShieldIcon,
+  ArrowLeftIcon,
+  MailIcon,
+  LockIcon,
+  AlertIcon,
+  ClockIcon,
+  EyeIcon,
+  EyeOffIcon,
+  SparklesIcon,
+  BuildingIcon,
+  ChevronRightIcon,
 } from "@/components/icons/nav-icons";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -242,7 +252,9 @@ function LoginForm() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span className="text-sm text-[var(--fgColor-subtle)]">Loading...</span>
+          <span className="text-sm text-[var(--fgColor-subtle)]">
+            Loading...
+          </span>
         </div>
       </div>
     );
@@ -262,8 +274,18 @@ function LoginForm() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-emphasis)] shadow-lg shadow-accent/20">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z" clip-rule="evenodd"/>
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="white"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-default)]">
@@ -309,7 +331,8 @@ function LoginForm() {
                     "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]",
                   !["credentials", "account_locked", "sso_enforced"].includes(
                     errorType,
-                  ) && "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+                  ) &&
+                    "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
                 )}
               >
                 <div className="flex items-start gap-2.5">
@@ -666,7 +689,9 @@ export default function LoginPage() {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span className="text-sm text-[var(--fgColor-subtle)]">Loading...</span>
+            <span className="text-sm text-[var(--fgColor-subtle)]">
+              Loading...
+            </span>
           </div>
         </div>
       }

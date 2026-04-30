@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -123,7 +123,7 @@ interface FieldErrors {
   default_value?: string;
 }
 
-export default function FlagsPage() {
+function FlagsInner() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
@@ -1313,5 +1313,18 @@ function FlagsContent({
         </div>
       </Card>
     </div>
+  );
+}
+
+
+export default function FlagsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
+      </div>
+    }>
+      <FlagsInner />
+    </Suspense>
   );
 }
