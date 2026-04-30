@@ -1,284 +1,788 @@
+/* ================================================================
+   FeatureSignals Docs — GitHub Primer Design System
+   Matches website (featuresignals.com), dashboard (app.featuresignals.com),
+   and GitHub design philosophy for a consistent brand experience.
+   ================================================================ */
+
+/* ================================================================
+   1. Primer Design Tokens
+   ================================================================ */
+
 :root {
-    --ifm-color-primary: #0d9488;
-    --ifm-color-primary-dark: #0f766e;
-    --ifm-color-primary-darker: #115e59;
-    --ifm-color-primary-darkest: #134e4a;
-    --ifm-color-primary-light: #14b8a6;
-    --ifm-color-primary-lighter: #2dd4bf;
-    --ifm-color-primary-lightest: #5eead4;
-    --ifm-code-font-size: 95%;
-    --ifm-font-family-base: "Inter", system-ui, -apple-system, sans-serif;
-    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-    --ifm-background-color: #fafaf9;
+    /* --- Accent (GitHub Blue) --- */
+    --primer-accent: #0969da;
+    --primer-accent-dark: #0757ba;
+    --primer-accent-light: #54aeff;
+    --primer-accent-muted: #ddf4ff;
+
+    /* --- Foreground --- */
+    --primer-fg-default: #1f2328;
+    --primer-fg-muted: #59636e;
+    --primer-fg-subtle: #818b98;
+    --primer-fg-onEmphasis: #ffffff;
+
+    /* --- Background --- */
+    --primer-bg-default: #ffffff;
+    --primer-bg-inset: #f6f8fa;
+    --primer-bg-emphasis: #25292e;
+    --primer-bg-success: #1f883d;
+    --primer-bg-success-muted: #dafbe1;
+    --primer-bg-attention: #9a6700;
+    --primer-bg-attention-muted: #fff8c5;
+    --primer-bg-danger: #cf222e;
+    --primer-bg-danger-muted: #ffebe9;
+    --primer-bg-done: #8250df;
+    --primer-bg-done-muted: #fbefff;
+
+    /* --- Border --- */
+    --primer-border-default: #d1d9e0;
+    --primer-border-muted: #d1d9e0b3;
+    --primer-border-emphasis: #818b98;
+
+    /* --- Shadows --- */
+    --primer-shadow-resting: 0 1px 1px 0 #1f23280a, 0 1px 2px 0 #1f232808;
+    --primer-shadow-floating:
+        0 0 0 1px #d1d9e080, 0 6px 12px -3px #25292e0a, 0 6px 18px 0 #25292e1f;
+    --primer-shadow-floating-md:
+        0 0 0 1px #d1d9e000, 0 8px 16px -4px #25292e14,
+        0 4px 32px -4px #25292e14, 0 24px 48px -12px #25292e14,
+        0 48px 96px -24px #25292e14;
+
+    /* --- Radius --- */
+    --primer-radius-sm: 6px;
+    --primer-radius-md: 8px;
+    --primer-radius-lg: 12px;
+    --primer-radius-xl: 16px;
+
+    /* ================================================================
+       Docusaurus Variable Mapping
+       ================================================================ */
+
+    --ifm-color-primary: #0969da;
+    --ifm-color-primary-dark: #0757ba;
+    --ifm-color-primary-darker: #0548a0;
+    --ifm-color-primary-darkest: #043a85;
+    --ifm-color-primary-light: #1a7de5;
+    --ifm-color-primary-lighter: #3b92eb;
+    --ifm-color-primary-lightest: #5ca7f0;
+
+    --ifm-font-family-base:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --ifm-font-family-monospace:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+    --ifm-code-font-size: 94%;
+
+    --ifm-background-color: #ffffff;
     --ifm-background-surface-color: #ffffff;
-    --ifm-heading-color: #1c1917;
-    --ifm-font-color-base: #1c1917;
-    --ifm-navbar-background-color: #ffffff;
-    --ifm-navbar-link-color: #1c1917;
-    --ifm-navbar-link-hover-color: #0d9488;
-    --ifm-footer-background-color: #1c1917;
-    --ifm-footer-color: #a8a29e;
-    --ifm-footer-link-color: #a8a29e;
-    --ifm-footer-link-hover-color: #fafaf9;
-    --ifm-footer-title-color: #fafaf9;
-    --ifm-toc-border-color: #e7e5e4;
-    --ifm-table-border-color: #e7e5e4;
-    --ifm-hr-border-color: #e7e5e4;
-    --ifm-color-emphasis-300: #d6d3d1;
-    --ifm-color-emphasis-600: #57534e;
-    --ifm-color-emphasis-700: #44403c;
-    --ifm-color-emphasis-900: #1c1917;
+    --ifm-heading-color: #1f2328;
+    --ifm-font-color-base: #1f2328;
+    --ifm-font-color-secondary: #59636e;
+
+    --ifm-navbar-background-color: rgba(255, 255, 255, 0.92);
+    --ifm-navbar-link-color: #59636e;
+    --ifm-navbar-link-hover-color: #0969da;
+
+    --ifm-footer-background-color: #25292e;
+    --ifm-footer-color: #8b949e;
+    --ifm-footer-link-color: #8b949e;
+    --ifm-footer-link-hover-color: #e6edf3;
+    --ifm-footer-title-color: #e6edf3;
+
+    --ifm-toc-border-color: #d1d9e0;
+    --ifm-table-border-color: #d1d9e0;
+    --ifm-hr-border-color: #d1d9e0b3;
+    --ifm-color-emphasis-300: #d1d9e0;
+    --ifm-color-emphasis-600: #59636e;
+    --ifm-color-emphasis-700: #1f2328;
+    --ifm-color-emphasis-900: #1f2328;
+
+    --docusaurus-highlighted-code-line-bg: rgba(9, 105, 218, 0.08);
+    --ifm-menu-color-active: #0969da;
+    --ifm-link-color: #0969da;
+    --ifm-link-hover-color: #0757ba;
+
+    --ifm-card-background-color: #ffffff;
+    --ifm-dropdown-background-color: #ffffff;
+    --ifm-dropdown-link-color: #1f2328;
+    --ifm-dropdown-hover-background-color: #f6f8fa;
 }
+
+/* ================================================================
+   2. Dark Mode
+   ================================================================ */
 
 [data-theme="dark"] {
-    --ifm-color-primary: #2dd4bf;
-    --ifm-color-primary-dark: #14b8a6;
-    --ifm-color-primary-darker: #0d9488;
-    --ifm-color-primary-darkest: #0f766e;
-    --ifm-color-primary-light: #5eead4;
-    --ifm-color-primary-lighter: #99f6e4;
-    --ifm-color-primary-lightest: #ccfbf1;
-    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
-    --ifm-background-color: #1c1917;
-    --ifm-background-surface-color: #292524;
-    --ifm-heading-color: #fafaf9;
-    --ifm-font-color-base: #d6d3d1;
-    --ifm-navbar-background-color: #292524;
-    --ifm-navbar-link-color: #d6d3d1;
-    --ifm-navbar-link-hover-color: #2dd4bf;
-    --ifm-footer-background-color: #0c0a09;
-    --ifm-footer-color: #a8a29e;
-    --ifm-footer-link-color: #a8a29e;
-    --ifm-footer-link-hover-color: #fafaf9;
-    --ifm-footer-title-color: #fafaf9;
-    --ifm-toc-border-color: #44403c;
-    --ifm-table-border-color: #44403c;
-    --ifm-hr-border-color: #44403c;
-    --ifm-color-emphasis-300: #44403c;
-    --ifm-color-emphasis-600: #a8a29e;
-    --ifm-color-emphasis-700: #d6d3d1;
-    --ifm-color-emphasis-900: #fafaf9;
-    --ifm-card-background-color: #292524;
-    --ifm-dropdown-background-color: #292524;
-    --ifm-dropdown-link-color: #d6d3d1;
-    --ifm-dropdown-hover-background-color: #44403c;
+    --primer-fg-default: #e6edf3;
+    --primer-fg-muted: #8b949e;
+    --primer-fg-subtle: #6e7681;
+    --primer-bg-default: #0d1117;
+    --primer-bg-inset: #161b22;
+    --primer-border-default: #30363d;
+    --primer-border-muted: #21262d;
+
+    --ifm-color-primary: #58a6ff;
+    --ifm-color-primary-dark: #3b92eb;
+    --ifm-color-primary-darker: #1a7de5;
+    --ifm-color-primary-darkest: #0969da;
+    --ifm-color-primary-light: #79b8ff;
+    --ifm-color-primary-lighter: #a5d0ff;
+    --ifm-color-primary-lightest: #c8e1ff;
+
+    --ifm-background-color: #0d1117;
+    --ifm-background-surface-color: #161b22;
+    --ifm-heading-color: #e6edf3;
+    --ifm-font-color-base: #e6edf3;
+    --ifm-font-color-secondary: #8b949e;
+
+    --ifm-navbar-background-color: rgba(13, 17, 23, 0.92);
+    --ifm-navbar-link-color: #8b949e;
+    --ifm-navbar-link-hover-color: #58a6ff;
+
+    --ifm-toc-border-color: #30363d;
+    --ifm-table-border-color: #30363d;
+    --ifm-hr-border-color: #21262d;
+    --ifm-color-emphasis-300: #30363d;
+    --ifm-color-emphasis-600: #8b949e;
+    --ifm-color-emphasis-700: #c9d1d9;
+    --ifm-color-emphasis-900: #e6edf3;
+
+    --docusaurus-highlighted-code-line-bg: rgba(88, 166, 255, 0.1);
+    --ifm-menu-color-active: #58a6ff;
+    --ifm-link-color: #58a6ff;
+    --ifm-link-hover-color: #79b8ff;
+
+    --ifm-card-background-color: #161b22;
+    --ifm-dropdown-background-color: #161b22;
+    --ifm-dropdown-link-color: #e6edf3;
+    --ifm-dropdown-hover-background-color: #21262d;
 }
 
-/* Smooth page background */
+/* ================================================================
+   3. Base Styles
+   ================================================================ */
+
 body {
-    background-color: #fafaf9;
-}
-[data-theme="dark"] body {
-    background-color: #1c1917;
+    background-color: var(--ifm-background-color);
+    color: var(--primer-fg-default);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
-/* Navbar refinements */
+::selection {
+    background-color: rgba(9, 105, 218, 0.2);
+    color: inherit;
+}
+
+*:focus-visible {
+    outline: 2px solid var(--primer-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ================================================================
+   4. Navbar — Primer header pattern
+   ================================================================ */
+
 .navbar {
-    border-bottom: 1px solid #e7e5e4;
-    box-shadow: none;
-}
-[data-theme="dark"] .navbar {
-    border-bottom: 1px solid #44403c;
-    box-shadow: none;
-}
-.navbar__item.navbar__link:hover {
-    color: var(--ifm-navbar-link-hover-color);
-}
-.navbar__brand:hover {
-    color: var(--ifm-color-primary);
+    border-bottom: 1px solid var(--ifm-toc-border-color);
+    box-shadow: var(--primer-shadow-resting);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
-/* Sidebar refinements */
-.menu__link--active:not(.menu__link--sublist) {
-    background-color: rgba(13, 148, 136, 0.08);
-    color: var(--ifm-color-primary);
-    font-weight: 600;
-}
-.menu__link:hover {
-    color: var(--ifm-color-primary);
-}
-[data-theme="dark"] .menu__link--active:not(.menu__link--sublist) {
-    background-color: rgba(45, 212, 191, 0.1);
+.navbar__title {
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
-/* Table of contents */
-.table-of-contents__link--active {
-    color: var(--ifm-color-primary);
+.navbar__link {
     font-weight: 500;
+    font-size: 0.875rem;
 }
-.table-of-contents__link:hover {
+
+.navbar__link--active {
     color: var(--ifm-color-primary);
 }
 
-/* Pagination links */
-.pagination-nav__link:hover {
-    border-color: var(--ifm-color-primary);
-}
-.pagination-nav__sublabel {
-    color: var(--ifm-color-primary);
-}
-
-/* Breadcrumbs */
-.breadcrumbs__item--active .breadcrumbs__link {
-    background-color: rgba(13, 148, 136, 0.08);
-    color: var(--ifm-color-primary);
-}
-[data-theme="dark"] .breadcrumbs__item--active .breadcrumbs__link {
-    background-color: rgba(45, 212, 191, 0.1);
-}
-
-/* Hash link hover */
-.hash-link:hover {
-    color: var(--ifm-color-primary);
-}
-
-/* Link colors */
-a {
-    color: var(--ifm-color-primary);
-}
-a:hover {
-    color: var(--ifm-color-primary-dark);
-}
-
-/* Code blocks */
-code {
-    color: #0f766e;
-    background-color: rgba(13, 148, 136, 0.06);
-    border-color: rgba(13, 148, 136, 0.15);
-}
-[data-theme="dark"] code {
-    color: #2dd4bf;
-    background-color: rgba(45, 212, 191, 0.08);
-    border-color: rgba(45, 212, 191, 0.2);
-}
-
-/* Blockquotes */
-blockquote {
-    border-left-color: var(--ifm-color-primary);
-    background-color: rgba(13, 148, 136, 0.04);
-    padding: 0.75rem 1.25rem;
-    border-radius: 0 6px 6px 0;
-}
-[data-theme="dark"] blockquote {
-    background-color: rgba(45, 212, 191, 0.06);
-}
-
-/* Admonition / alert overrides */
-.alert.alert--info {
-    --ifm-alert-background-color: rgba(13, 148, 136, 0.08);
-    --ifm-alert-border-color: var(--ifm-color-primary);
-    color: var(--ifm-font-color-base);
-}
-[data-theme="dark"] .alert.alert--info {
-    --ifm-alert-background-color: rgba(45, 212, 191, 0.08);
-}
-
-/* Tabs */
-.tabs__item--active {
-    border-bottom-color: var(--ifm-color-primary);
-    color: var(--ifm-color-primary);
-}
-
-/* -- Navbar sign-up button -- */
+/* Sign up button — matches website green CTA */
 .navbar-signup-btn {
-    background-color: var(--ifm-color-primary);
-    color: white !important;
-    border-radius: 8px;
-    padding: 6px 16px !important;
-    font-weight: 600;
-    transition: all 0.2s;
+    color: var(--primer-fg-onEmphasis) !important;
+    background-color: var(--primer-bg-success) !important;
+    border-radius: var(--primer-radius-sm) !important;
+    padding: 0.4rem 1rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    box-shadow: 0 1px 0 0 #1f232826;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease !important;
 }
+
 .navbar-signup-btn:hover {
-    background-color: var(--ifm-color-primary-dark);
-    color: white !important;
+    background-color: #1c8139 !important;
+    color: var(--primer-fg-onEmphasis) !important;
+}
+
+/* GitHub icon link */
+.header-github-link::before {
+    content: "";
+    display: flex;
+    width: 22px;
+    height: 22px;
+    background-color: var(--ifm-navbar-link-color);
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E");
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    transition: background-color 0.15s ease;
+}
+
+.header-github-link:hover::before {
+    background-color: var(--ifm-navbar-link-hover-color);
+}
+
+/* ================================================================
+   5. Sidebar
+   ================================================================ */
+
+.menu__link {
+    font-size: 0.875rem;
+    border-radius: var(--primer-radius-sm);
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.menu__link:hover {
+    background-color: var(--primer-bg-inset);
+}
+
+[data-theme="dark"] .menu__link:hover {
+    background-color: #21262d;
+}
+
+.menu__link--active {
+    font-weight: 600;
+}
+
+.menu__list-item-collapsible:hover {
+    background-color: var(--primer-bg-inset);
+    border-radius: var(--primer-radius-sm);
+}
+
+[data-theme="dark"] .menu__list-item-collapsible:hover {
+    background-color: #21262d;
+}
+
+/* ================================================================
+   6. Typography
+   ================================================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+article h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+}
+
+article h2 {
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+article h3 {
+    font-size: 1.2rem;
+    margin-top: 2rem;
+}
+
+article p {
+    line-height: 1.7;
+}
+
+/* ================================================================
+   7. Code Blocks
+   ================================================================ */
+
+code {
+    border-radius: var(--primer-radius-sm);
+    font-size: 0.875rem;
+    padding: 0.15em 0.4em;
+    background-color: var(--primer-bg-inset);
+    border: 1px solid var(--primer-border-muted);
+}
+
+pre {
+    border-radius: var(--primer-radius-md);
+    border: 1px solid var(--ifm-toc-border-color);
+    box-shadow: var(--primer-shadow-resting);
+}
+
+pre code {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* ================================================================
+   8. Tables
+   ================================================================ */
+
+table {
+    border-radius: var(--primer-radius-md);
+    overflow: hidden;
+    font-size: 0.875rem;
+    border: 1px solid var(--ifm-toc-border-color);
+}
+
+table thead tr {
+    border-bottom: 2px solid var(--ifm-toc-border-color);
+}
+
+/* ================================================================
+   9. Admonitions / Alerts
+   ================================================================ */
+
+.alert {
+    border-radius: var(--primer-radius-md);
+    border: 1px solid var(--ifm-toc-border-color);
+    font-size: 0.875rem;
+    box-shadow: var(--primer-shadow-resting);
+}
+
+/* ================================================================
+   10. Footer — matches website footer
+   ================================================================ */
+
+.footer {
+    border-top: 1px solid #30363d;
+}
+
+.footer__title {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.footer__link-item {
+    font-size: 0.875rem;
+}
+
+.footer__link-item:hover {
     text-decoration: none;
 }
 
-/* -- GitHub header link icon -- */
-.header-github-link::before {
-    content: "";
-    width: 24px;
-    height: 24px;
-    display: flex;
-    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12' fill='%231c1917'/%3E%3C/svg%3E")
-        no-repeat;
-}
-[data-theme="dark"] .header-github-link::before {
-    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12' fill='%23d6d3d1'/%3E%3C/svg%3E")
-        no-repeat;
+/* ================================================================
+   11. Scrollbar
+   ================================================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
-/* -- Hide Scalar branding in API Playground -- */
-.scalar-app .powered-by,
-.scalar-app [class*="powered-by"],
-.scalar-app a[href*="scalar.com"],
-.scalar-app .scalar-logo,
-.scalar-app [class*="scalar-logo"],
-.scalar-app footer a[href*="scalar"],
-.scalar-app .t-doc__footer,
-.scalar-app [class*="footer-link"],
-.scalar-app .darklight-reference-promo,
-[class*="scalar"] a[href*="scalar.com"],
-a.powered-by-scalar {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    overflow: hidden !important;
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-/* -- Landing page styles -- */
+::-webkit-scrollbar-thumb {
+    background: var(--primer-border-default);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primer-border-emphasis);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #30363d;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}
+
+/* ================================================================
+   12. Search (DocSearch / Algolia)
+   ================================================================ */
+
+.DocSearch-Button {
+    border-radius: var(--primer-radius-md) !important;
+    border: 1px solid var(--ifm-toc-border-color) !important;
+    background: var(--ifm-background-color) !important;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease !important;
+}
+
+.DocSearch-Button:hover {
+    border-color: var(--primer-border-emphasis) !important;
+    box-shadow: var(--primer-shadow-resting) !important;
+}
+
+/* ================================================================
+   13. Smooth Transitions — matches website interaction model
+   ================================================================ */
+
+a,
+button,
+.menu__link,
+.navbar__link,
+.table-of-contents__link,
+.pagination-nav__link {
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        opacity 0.15s ease;
+}
+
+/* ================================================================
+   14. CSS Keyframe Animations — matches website animation primitives
+   ================================================================ */
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-up-sm {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes reveal {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+        clip-path: inset(0 0 100% 0);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* ================================================================
+   15. Animation Utility Classes
+   ================================================================ */
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out both;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Staggered children — progressive reveal */
+.stagger-1 {
+    animation: slide-up 0.45s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-2 {
+    animation: slide-up 0.45s 0.12s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-3 {
+    animation: slide-up 0.45s 0.19s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-4 {
+    animation: slide-up 0.45s 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-5 {
+    animation: slide-up 0.45s 0.33s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ================================================================
+   16. Docs Landing Page — matches website card patterns
+   ================================================================ */
+
 .docs-landing {
-    max-width: 960px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 4rem 1.5rem;
+    padding: 3rem 1.5rem 5rem;
 }
-.docs-landing h1 {
+
+/* Hero section */
+.docs-landing-hero {
+    text-align: center;
+    margin-bottom: 3.5rem;
+    padding-top: 1.5rem;
+}
+
+.docs-landing-hero h1 {
     font-size: 2.5rem;
-    font-weight: 800;
-    text-align: center;
-    margin-bottom: 0.5rem;
-    color: var(--ifm-heading-color);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--primer-fg-default);
+    margin-bottom: 0.75rem;
 }
-.docs-landing .subtitle {
-    text-align: center;
-    color: var(--ifm-color-emphasis-600);
+
+.docs-landing-hero .subtitle {
     font-size: 1.15rem;
-    margin-bottom: 3rem;
+    color: var(--primer-fg-muted);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
 }
-.docs-landing .cards {
+
+/* Card grid */
+.docs-card-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
 }
-@media (max-width: 640px) {
-    .docs-landing .cards {
+
+/* Individual card — matches lifecycle cards from website */
+.docs-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 1.5rem;
+    border-radius: var(--primer-radius-lg);
+    border: 1px solid var(--primer-border-default);
+    background-color: var(--primer-bg-default);
+    text-decoration: none !important;
+    color: var(--primer-fg-default);
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.docs-card:hover {
+    border-color: var(--primer-border-emphasis);
+    box-shadow: var(--primer-shadow-floating);
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: var(--primer-fg-default);
+}
+
+/* Card icon container */
+.docs-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--primer-radius-md);
+    background-color: var(--primer-accent-muted);
+    color: var(--primer-accent);
+    flex-shrink: 0;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.docs-card:hover .docs-card-icon {
+    transform: scale(1.05);
+}
+
+/* Card icon color variants */
+.docs-card-icon--success {
+    background-color: var(--primer-bg-success-muted);
+    color: var(--primer-bg-success);
+}
+
+.docs-card-icon--attention {
+    background-color: var(--primer-bg-attention-muted);
+    color: var(--primer-bg-attention);
+}
+
+.docs-card-icon--danger {
+    background-color: var(--primer-bg-danger-muted);
+    color: var(--primer-bg-danger);
+}
+
+.docs-card-icon--done {
+    background-color: var(--primer-bg-done-muted);
+    color: var(--primer-bg-done);
+}
+
+/* Card title */
+.docs-card h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+    color: var(--primer-fg-default);
+}
+
+/* Card description */
+.docs-card p {
+    font-size: 0.875rem;
+    color: var(--primer-fg-muted);
+    margin: 0;
+    line-height: 1.55;
+}
+
+/* Card arrow — revealed on hover (matches website pattern) */
+.docs-card-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--primer-accent);
+    margin-top: auto;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.docs-card:hover .docs-card-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ================================================================
+   17. Pagination (prev/next)
+   ================================================================ */
+
+.pagination-nav__link {
+    border-radius: var(--primer-radius-md);
+    border: 1px solid var(--ifm-toc-border-color);
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.pagination-nav__link:hover {
+    border-color: var(--primer-border-emphasis);
+    box-shadow: var(--primer-shadow-resting);
+}
+
+/* ================================================================
+   18. TOC (Table of Contents)
+   ================================================================ */
+
+.table-of-contents__link {
+    font-size: 0.8125rem;
+    border-radius: var(--primer-radius-sm);
+}
+
+.table-of-contents__link--active {
+    font-weight: 600;
+    color: var(--ifm-color-primary);
+}
+
+/* ================================================================
+   19. Tabs
+   ================================================================ */
+
+.tabs__item {
+    border-radius: var(--primer-radius-sm) var(--primer-radius-sm) 0 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+/* ================================================================
+   20. Buttons
+   ================================================================ */
+
+.button--primary {
+    background-color: var(--primer-accent);
+    border-color: var(--primer-accent);
+    border-radius: var(--primer-radius-sm);
+    font-weight: 600;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.button--primary:hover {
+    background-color: var(--primer-accent-dark);
+    border-color: var(--primer-accent-dark);
+}
+
+/* ================================================================
+   21. Responsive
+   ================================================================ */
+
+@media (max-width: 768px) {
+    .docs-landing {
+        padding: 2rem 1rem 3rem;
+    }
+
+    .docs-landing-hero h1 {
+        font-size: 2rem;
+    }
+
+    .docs-landing-hero .subtitle {
+        font-size: 1rem;
+    }
+
+    .docs-card-grid {
         grid-template-columns: 1fr;
     }
 }
-.docs-landing .card {
-    border: 1px solid var(--ifm-color-emphasis-300);
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.2s;
-    text-decoration: none;
-    color: inherit;
-    display: block;
-}
-.docs-landing .card:hover {
-    border-color: var(--ifm-color-primary);
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
-    text-decoration: none;
-    color: inherit;
-}
-[data-theme="dark"] .docs-landing .card:hover {
-    box-shadow: 0 4px 12px rgba(45, 212, 191, 0.15);
-}
-.docs-landing .card h3 {
-    margin-top: 0.75rem;
-    margin-bottom: 0.5rem;
-}
-.docs-landing .card p {
-    color: var(--ifm-color-emphasis-600);
-    font-size: 0.9rem;
-    margin: 0;
+
+@media (max-width: 480px) {
+    .docs-landing-hero h1 {
+        font-size: 1.65rem;
+    }
 }
