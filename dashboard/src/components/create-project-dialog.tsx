@@ -7,13 +7,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LoaderIcon } from "@/components/icons/nav-icons";
+import { BuildingIcon, LoaderIcon } from "@/components/icons/nav-icons";
 import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
@@ -74,17 +73,19 @@ export function CreateProjectDialog({
         if (!creating) onOpenChange(v);
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create Project</DialogTitle>
-          <DialogDescription>
-            Give your project a name to get started. You can always rename it
-            later.
-          </DialogDescription>
+      <DialogContent className="sm:max-w-md">
+        {/* Icon header */}
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
+          <BuildingIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
+        </div>
+
+        <DialogHeader className="text-center">
+          <DialogTitle>Create project</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <Label htmlFor="create-project-name">Project Name</Label>
+            <Label htmlFor="create-project-name">Project name</Label>
             <Input
               id="create-project-name"
               value={name}
@@ -92,15 +93,21 @@ export function CreateProjectDialog({
                 setName(e.target.value);
                 setFieldError("");
               }}
-              placeholder="e.g. My Awesome App"
-              className="mt-1"
+              placeholder="My Awesome App"
+              className="mt-1.5"
               autoFocus
             />
             {fieldError && (
-              <p className="text-xs text-red-500 mt-1">{fieldError}</p>
+              <p className="mt-1.5 text-xs text-[var(--fgColor-danger)]">
+                {fieldError}
+              </p>
             )}
+            <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
+              Projects group your flags, environments, and segments together.
+            </p>
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="!justify-between">
             <Button
               type="button"
               variant="secondary"
@@ -109,14 +116,18 @@ export function CreateProjectDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={creating || !name.trim()}>
+            <Button
+              type="submit"
+              disabled={creating || !name.trim()}
+              variant="primary"
+            >
               {creating ? (
                 <>
                   <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
-                "Create Project"
+                "Create project"
               )}
             </Button>
           </DialogFooter>
