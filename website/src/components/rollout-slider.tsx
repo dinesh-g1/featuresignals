@@ -20,10 +20,30 @@ interface RingStage {
 const TOTAL_USERS = 10_000;
 
 const RING_STAGES: RingStage[] = [
-  { label: "Canary", percentage: 5, description: "Internal team + early adopters", users: 500 },
-  { label: "Ring 1", percentage: 25, description: "Beta users, 25% of production", users: 2500 },
-  { label: "Ring 2", percentage: 50, description: "Half of all users", users: 5000 },
-  { label: "Ring 3", percentage: 100, description: "Full rollout — 100% of users", users: 10000 },
+  {
+    label: "Canary",
+    percentage: 5,
+    description: "Internal team + early adopters",
+    users: 500,
+  },
+  {
+    label: "Ring 1",
+    percentage: 25,
+    description: "Beta users, 25% of production",
+    users: 2500,
+  },
+  {
+    label: "Ring 2",
+    percentage: 50,
+    description: "Half of all users",
+    users: 5000,
+  },
+  {
+    label: "Ring 3",
+    percentage: 100,
+    description: "Full rollout — 100% of users",
+    users: 10000,
+  },
 ];
 
 export function RolloutSlider() {
@@ -91,15 +111,6 @@ export function RolloutSlider() {
       {/* Slider */}
       <div className="mb-6">
         <div className="relative mb-3">
-          {/* Track background */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-2 rounded-full bg-[var(--borderColor-default)]" />
-
-          {/* Filled track */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 left-0 h-2 rounded-full bg-[var(--fgColor-accent)] transition-[width] duration-150"
-            style={{ width: `${percentage}%` }}
-          />
-
           <input
             id={sliderId}
             type="range"
@@ -111,7 +122,10 @@ export function RolloutSlider() {
               setPercentage(Number(e.target.value));
               setIsRollingOut(true);
             }}
-            className="relative w-full appearance-none bg-transparent cursor-pointer
+            style={{
+              background: `linear-gradient(to right, var(--fgColor-accent) 0%, var(--fgColor-accent) ${percentage}%, var(--borderColor-default) ${percentage}%, var(--borderColor-default) 100%)`,
+            }}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-transparent
               [&::-webkit-slider-thumb]:appearance-none
               [&::-webkit-slider-thumb]:h-5
               [&::-webkit-slider-thumb]:w-5
@@ -240,9 +254,7 @@ export function RolloutSlider() {
           )}
           <div className="h-full flex items-center justify-center text-[10px] text-[var(--fgColor-subtle)] flex-1">
             {percentage < 92 && (
-              <span>
-                {usersNotReceiving.toLocaleString()} excluded
-              </span>
+              <span>{usersNotReceiving.toLocaleString()} excluded</span>
             )}
           </div>
         </div>
