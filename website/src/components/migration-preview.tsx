@@ -150,13 +150,11 @@ export function MigrationPreview() {
             id="migration-heading"
             className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
           >
-            Dump your current provider. We&apos;ll do the heavy lifting.
+            Migrate from your current provider. We handle the heavy lifting.
           </h2>
           <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
-            No migration scripts. No weekend cutovers. No &ldquo;we&apos;ll
-            circle back on that.&rdquo; Pick your provider, drop in your API
-            key, and see exactly what ports over. We never store your data —
-            this preview is read-only and runs in your browser.
+            Connect your provider to see exactly what ports over.
+            Your data is never stored — this preview is read-only.
           </p>
         </div>
 

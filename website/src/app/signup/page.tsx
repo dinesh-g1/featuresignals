@@ -148,7 +148,7 @@ function SignupRight() {
             Start your free trial
           </h2>
           <p className="text-sm text-[var(--fgColor-muted)]">
-            No credit card. No sales call. No Chad.
+            No credit card required. 14-day trial included.
           </p>
         </div>
 

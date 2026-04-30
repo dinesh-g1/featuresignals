@@ -17,7 +17,7 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(
-      screen.getByText(/Your feature flags are bleeding money/i),
+      screen.getByText(/The complete feature flag lifecycle platform/i),
     ).toBeInTheDocument();
   });
 
@@ -51,7 +51,7 @@ describe("HomePage", () => {
     const { default: HomePage } = await import("@/app/page");
     render(<HomePage />);
 
-    expect(screen.getByText(/Dump your current provider/i)).toBeInTheDocument();
+    expect(screen.getByText(/Migrate from your current provider/i)).toBeInTheDocument();
   });
 
   it("renders the AI janitor section", async () => {
