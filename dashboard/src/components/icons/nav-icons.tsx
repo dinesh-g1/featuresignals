@@ -63,6 +63,7 @@ import {
   QuestionIcon as _O_QuestionIcon,
   ReplyIcon as _O_ReplyIcon,
   RepoForkedIcon as _O_RepoForkedIcon,
+  RepoIcon as _O_RepoIcon,
   RocketIcon as _O_RocketIcon,
   SearchIcon as _O_SearchIcon,
   ServerIcon as _O_ServerIcon,
@@ -191,3 +192,4 @@ export const WebhookIcon = _O_WebhookIcon;
 export const XCircleFillIcon = _O_XCircleFillIcon;
 export const XIcon = _O_XIcon;
 export const ZapIcon = _O_ZapIcon;
+export const ProjectIcon = _O_RepoIcon;
