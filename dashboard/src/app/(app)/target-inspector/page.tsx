@@ -215,7 +215,7 @@ export default function TargetInspectorPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
-                    <th className="px-4 py-3 sm:px-6">FlagIcon KeyIcon</th>
+                    <th className="px-4 py-3 sm:px-6">Flag Key</th>
                     <th className="px-4 py-3">Value</th>
                     <th className="hidden px-4 py-3 sm:table-cell">Reason</th>
                     <th className="hidden px-4 py-3 md:table-cell">Variant</th>

@@ -6,7 +6,7 @@ import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import {
-  FolderOpenIcon, GlobeIcon, ChevronRightIcon, PlusIcon, Settings2, ArrowUpDown, CheckIcon
+  FolderOpenIcon, GlobeIcon, ChevronRightIcon, PlusIcon, Settings2Icon, ArrowUpDownIcon, CheckIcon
 } from "@/components/icons/nav-icons";
 import Link from "next/link";
 import type { Project, Environment } from "@/lib/types";
@@ -153,7 +153,7 @@ function ProjectDropdown({
                 onClick={() => setOpen(false)}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
               >
-                <Settings2 className="h-4 w-4" />
+                <Settings2Icon className="h-4 w-4" />
                 Manage environments
               </Link>
             </div>
@@ -282,7 +282,7 @@ function EnvironmentDropdown({
                 )}
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-slate-400 to-slate-500 text-white">
-                  <ArrowUpDown className="h-4 w-4" />
+                  <ArrowUpDownIcon className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[var(--fgColor-default)]">

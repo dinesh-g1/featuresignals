@@ -93,7 +93,7 @@ export default function MetricsPage() {
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
         title="Evaluation Metrics"
-        description={`FlagIcon evaluation counts since ${data ? formatDate(data.window_start) : "—"}`}
+        description={`Flag evaluation counts since ${data ? formatDate(data.window_start) : "—"}`}
         actions={
           <Button
             variant="secondary"

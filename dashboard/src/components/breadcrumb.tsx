@@ -49,7 +49,7 @@ const ROUTE_BREADCRUMBS: Array<{
   },
   {
     pattern: /^\/health$/,
-    build: () => [{ label: "FlagIcon Health" }],
+    build: () => [{ label: "Flag Health" }],
   },
   {
     pattern: /^\/env-comparison$/,

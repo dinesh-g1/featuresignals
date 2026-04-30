@@ -16,7 +16,7 @@ interface ConnectRepoResult {
   repositories?: { name: string; full_name: string }[];
 }
 import {
-  GitFork, GitBranch, GitPullRequestIcon, ArrowRightIcon, LoaderIcon, AlertIcon, CheckCircleFillIcon, ChevronLeft
+  GitForkIcon, GitBranchIcon, GitPullRequestIcon, ArrowRightIcon, LoaderIcon, AlertIcon, CheckCircleFillIcon, ChevronLeftIcon
 } from "@/components/icons/nav-icons";
 
 interface RepositoryOption {
@@ -54,14 +54,14 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
     {
       id: "github" as const,
       name: "GitHub",
-      icon: GitFork,
+      icon: GitForkIcon,
       color: "bg-gray-900 text-white hover:bg-gray-800",
       tokenHint: "Personal Access Token with repo and pull_requests scopes",
     },
     {
       id: "gitlab" as const,
       name: "GitLab",
-      icon: GitBranch,
+      icon: GitBranchIcon,
       color: "bg-orange-500 text-white hover:bg-orange-600",
       tokenHint: "Personal Access Token with api scope",
     },
@@ -206,7 +206,7 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                   onClick={() => setStep("select-provider")}
                   className="text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeftIcon className="h-4 w-4" />
                 </button>
                 <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
                   Connect {providers.find((p) => p.id === provider)?.name}
@@ -323,7 +323,7 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                     className="w-full flex items-center justify-between rounded-xl border border-[var(--borderColor-default)] px-4 py-3 text-sm hover:border-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)] transition-colors text-left"
                   >
                     <div className="flex items-center gap-2">
-                      <GitFork className="h-4 w-4 text-[var(--fgColor-subtle)]" />
+                      <GitForkIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
                       <span className="font-medium text-[var(--fgColor-default)]">
                         {r.full_name}
                       </span>

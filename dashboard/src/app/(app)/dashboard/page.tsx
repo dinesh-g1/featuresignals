@@ -210,7 +210,7 @@ function OverviewStats({
       <StatCard label="Environments" value={envCount} icon="🌐" />
       <StatCard label="Team Members" value={memberCount} icon="👥" />
       <StatCard
-        label="FlagIcon Health"
+        label="Flag Health"
         value="98%"
         change="+2%"
         trend="up"
@@ -397,7 +397,7 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
   );
 }
 
-// ─── FlagIcon Health Widget ─────────────────────────────────────────────
+// ─── Flag Health Widget ─────────────────────────────────────────────
 
 function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
   const activeFlags = flags.filter((f) => f.status === "active");
@@ -414,7 +414,7 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>❤️ FlagIcon Health</CardTitle>
+        <CardTitle>❤️ Flag Health</CardTitle>
         <CardDescription>
           Cleanliness and rot assessment of your flags.
         </CardDescription>
@@ -488,7 +488,7 @@ function FlagHealthWidget({ flags }: { flags: FlagType[] }) {
 function QuickActions() {
   const actions = [
     {
-      label: "Create FlagIcon",
+      label: "Create Flag",
       icon: "⚑",
       href: "/flags",
       desc: "Add a new feature flag",
@@ -734,7 +734,7 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="space-y-6">
-          {/* FlagIcon Health */}
+          {/* Flag Health */}
           <FlagHealthWidget flags={flags} />
 
           {/* Quick Actions */}

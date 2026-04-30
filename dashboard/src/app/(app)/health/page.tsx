@@ -102,7 +102,7 @@ export default function FlagHealthPage() {
     return (
       <div className="space-y-6 sm:space-y-8">
         <PageHeader
-          title="FlagIcon Health"
+          title="Flag Health"
           description="Monitor technical debt and flag hygiene"
         />
         <EmptyState
@@ -122,7 +122,7 @@ export default function FlagHealthPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
-        title="FlagIcon Health"
+        title="Flag Health"
         description="Monitor technical debt and flag hygiene"
       />
 

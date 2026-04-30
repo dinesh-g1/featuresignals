@@ -317,7 +317,7 @@ function FlagsInner() {
         default_value: "false",
       });
       EventBus.dispatch("flags:changed");
-      toast("FlagIcon created", "success");
+      toast("Flag created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
     }
@@ -328,7 +328,7 @@ function FlagsInner() {
     setDeleting(null);
     if (result !== undefined) {
       EventBus.dispatch("flags:changed");
-      toast("FlagIcon deleted", "success");
+      toast("Flag deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
     }
@@ -680,7 +680,7 @@ function FlagsWithData({
         default_value: "false",
       });
       EventBus.dispatch("flags:changed");
-      toast("FlagIcon created", "success");
+      toast("Flag created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
     }
@@ -691,7 +691,7 @@ function FlagsWithData({
     setDeleting(null);
     if (result !== undefined) {
       EventBus.dispatch("flags:changed");
-      toast("FlagIcon deleted", "success");
+      toast("Flag deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
     }
@@ -926,7 +926,7 @@ function FlagsContent({
       >
         <Button onClick={() => setShowCreate(!showCreate)}>
           <FlagIcon className="h-4 w-4" />
-          Create FlagIcon
+          Create Flag
         </Button>
       </PageHeader>
 
@@ -1114,7 +1114,7 @@ function FlagsContent({
               disabled={createFlag.loading}
               loading={createFlag.loading}
             >
-              {createFlag.loading ? "Creating..." : "Create FlagIcon"}
+              {createFlag.loading ? "Creating..." : "Create Flag"}
             </Button>
             <Button
               type="button"

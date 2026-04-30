@@ -137,7 +137,7 @@ export default function UsageInsightsPage() {
                   className="cursor-pointer hover:text-[var(--fgColor-default)]"
                   onClick={() => handleSort("flag_key")}
                 >
-                  FlagIcon KeyIcon{" "}
+                  Flag Key{" "}
                   {sortBy === "flag_key" &&
                     (sortDir === "asc" ? "\u2191" : "\u2193")}
                 </TableHead>

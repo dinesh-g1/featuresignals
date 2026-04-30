@@ -5,7 +5,13 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { toast } from "@/components/toast";
 import {
-  MessageSquarePlus, XIcon, SendIcon, LoaderIcon, ThumbsUp, ThumbsDown, Minus
+  MessageSquarePlusIcon,
+  XIcon,
+  SendIcon,
+  LoaderIcon,
+  ThumbsUpIcon,
+  ThumbsDownIcon,
+  MinusIcon,
 } from "@/components/icons/nav-icons";
 
 type FeedbackType = "bug" | "feature" | "general";
@@ -58,7 +64,7 @@ export function FeedbackWidget() {
         {open ? (
           <XIcon className="h-4 w-4" />
         ) : (
-          <MessageSquarePlus className="h-4 w-4" />
+          <MessageSquarePlusIcon className="h-4 w-4" />
         )}
       </button>
 
@@ -99,18 +105,19 @@ export function FeedbackWidget() {
                 [
                   {
                     value: "positive",
-                    Icon: ThumbsUp,
+                    Icon: ThumbsUpIcon,
                     activeColor: "text-[var(--fgColor-success)] bg-emerald-50",
                   },
                   {
                     value: "neutral",
-                    Icon: Minus,
+                    Icon: MinusIcon,
                     activeColor: "text-amber-600 bg-amber-50",
                   },
                   {
                     value: "negative",
-                    Icon: ThumbsDown,
-                    activeColor: "text-red-600 bg-[var(--bgColor-danger-muted)]",
+                    Icon: ThumbsDownIcon,
+                    activeColor:
+                      "text-red-600 bg-[var(--bgColor-danger-muted)]",
                   },
                 ] as const
               ).map((s) => (

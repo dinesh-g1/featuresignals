@@ -29,7 +29,15 @@ import { api } from "@/lib/api";
 import { toast } from "@/components/toast";
 import { cn } from "@/lib/utils";
 import {
-  BugIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon, FlaskConicalIcon, BeakerIcon, RotateCcwIcon, SparklesIcon, ToggleLeftIcon, XIcon
+  BugIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  EyeIcon,
+  BeakerIcon,
+  RotateCcwIcon,
+  SparklesIcon,
+  ToggleLeftIcon,
+  XIcon,
 } from "@/components/icons/nav-icons";
 
 const PLANS = ["free", "trial", "pro", "enterprise"] as const;
@@ -41,7 +49,9 @@ export function SuperMode() {
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [simulatedPlan, setSimulatedPlan] = useState<string | null>(null);
-  const [featureOverrides, setFeatureOverrides] = useState<Record<string, boolean>>({});
+  const [featureOverrides, setFeatureOverrides] = useState<
+    Record<string, boolean>
+  >({});
 
   const isInternal = user?.tier === "internal";
 
@@ -51,7 +61,11 @@ export function SuperMode() {
     if (stored) setSimulatedPlan(stored);
     const overrides = sessionStorage.getItem("fs-super-mode-overrides");
     if (overrides) {
-      try { setFeatureOverrides(JSON.parse(overrides)); } catch { /* ignore */ }
+      try {
+        setFeatureOverrides(JSON.parse(overrides));
+      } catch {
+        /* ignore */
+      }
     }
   }, [isInternal]);
 
@@ -88,7 +102,10 @@ export function SuperMode() {
     }
     setFeatureOverrides(next);
     sessionStorage.setItem("fs-super-mode-overrides", JSON.stringify(next));
-    toast(`Feature override ${next[feature] !== undefined ? "enabled" : "cleared"}: ${feature}`, "success");
+    toast(
+      `Feature override ${next[feature] !== undefined ? "enabled" : "cleared"}: ${feature}`,
+      "success",
+    );
   };
 
   if (!open) {
@@ -108,13 +125,27 @@ export function SuperMode() {
       <div className="flex items-center justify-between border-b border-purple-100 bg-purple-50 px-3 py-2 rounded-t-xl">
         <div className="flex items-center gap-2">
           <BugIcon className="h-3.5 w-3.5 text-purple-600" />
-          <span className="text-xs font-semibold text-purple-800">Super Mode</span>
+          <span className="text-xs font-semibold text-purple-800">
+            Super Mode
+          </span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setMinimized(!minimized)} className="p-0.5 text-purple-400 hover:text-purple-600" aria-label={minimized ? "Expand panel" : "Minimize panel"}>
-            {minimized ? <ChevronUpIcon className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDownIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+          <button
+            onClick={() => setMinimized(!minimized)}
+            className="p-0.5 text-purple-400 hover:text-purple-600"
+            aria-label={minimized ? "Expand panel" : "Minimize panel"}
+          >
+            {minimized ? (
+              <ChevronUpIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <ChevronDownIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
           </button>
-          <button onClick={() => setOpen(false)} className="p-0.5 text-purple-400 hover:text-purple-600" aria-label="Close Super Mode">
+          <button
+            onClick={() => setOpen(false)}
+            className="p-0.5 text-purple-400 hover:text-purple-600"
+            aria-label="Close Super Mode"
+          >
             <XIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
@@ -124,11 +155,28 @@ export function SuperMode() {
         <div className="max-h-80 overflow-y-auto p-3 space-y-4">
           {/* Current State */}
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1">Current State</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1">
+              Current State
+            </p>
             <div className="space-y-1 text-xs text-[var(--fgColor-muted)]">
-              <p>Plan: <span className="font-semibold text-[var(--fgColor-default)]">{organization?.plan ?? "unknown"}</span></p>
-              <p>User: <span className="font-mono text-[var(--fgColor-default)]">{user?.email}</span></p>
-              <p>Tier: <span className="font-semibold text-purple-600">{user?.tier ?? "standard"}</span></p>
+              <p>
+                Plan:{" "}
+                <span className="font-semibold text-[var(--fgColor-default)]">
+                  {organization?.plan ?? "unknown"}
+                </span>
+              </p>
+              <p>
+                User:{" "}
+                <span className="font-mono text-[var(--fgColor-default)]">
+                  {user?.email}
+                </span>
+              </p>
+              <p>
+                Tier:{" "}
+                <span className="font-semibold text-purple-600">
+                  {user?.tier ?? "standard"}
+                </span>
+              </p>
             </div>
           </div>
 
@@ -155,7 +203,8 @@ export function SuperMode() {
             </div>
             {simulatedPlan && (
               <p className="mt-1 text-[10px] text-amber-600">
-                Simulating <span className="font-semibold">{simulatedPlan}</span> plan
+                Simulating{" "}
+                <span className="font-semibold">{simulatedPlan}</span> plan
               </p>
             )}
           </div>
@@ -163,10 +212,18 @@ export function SuperMode() {
           {/* Feature Gate Overrides */}
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1.5">
-              <ToggleLeftIcon className="inline h-3 w-3 mr-0.5" /> Feature Overrides
+              <ToggleLeftIcon className="inline h-3 w-3 mr-0.5" /> Feature
+              Overrides
             </p>
             <div className="space-y-1">
-              {["approvals", "webhooks", "sso", "scheduling", "ab_experiments", "relay_proxy"].map((feat) => (
+              {[
+                "approvals",
+                "webhooks",
+                "sso",
+                "scheduling",
+                "ab_experiments",
+                "relay_proxy",
+              ].map((feat) => (
                 <button
                   key={feat}
                   onClick={() => toggleFeatureOverride(feat)}
@@ -178,7 +235,9 @@ export function SuperMode() {
                   )}
                 >
                   <span>{feat}</span>
-                  <span className="text-[10px]">{featureOverrides[feat] !== undefined ? "ON" : "off"}</span>
+                  <span className="text-[10px]">
+                    {featureOverrides[feat] !== undefined ? "ON" : "off"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -187,7 +246,7 @@ export function SuperMode() {
           {/* Actions */}
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1.5">
-              <FlaskConicalIcon className="inline h-3 w-3 mr-0.5" /> Actions
+              <BeakerIcon className="inline h-3 w-3 mr-0.5" /> Actions
             </p>
             <div className="space-y-1.5">
               <button
@@ -218,9 +277,16 @@ export function SuperMode() {
               <BeakerIcon className="inline h-3 w-3 mr-0.5" /> A/B Experiments
             </p>
             <div className="space-y-2">
-              {["onboarding_flow", "dashboard_layout", "upgrade_cta_copy", "empty_state_style"].map((expName) => (
+              {[
+                "onboarding_flow",
+                "dashboard_layout",
+                "upgrade_cta_copy",
+                "empty_state_style",
+              ].map((expName) => (
                 <div key={expName} className="text-xs">
-                  <span className="font-medium text-[var(--fgColor-muted)]">{expName}</span>
+                  <span className="font-medium text-[var(--fgColor-muted)]">
+                    {expName}
+                  </span>
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {["control", "variant_a", "variant_b"].map((v) => (
                       <button

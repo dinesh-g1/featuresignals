@@ -71,7 +71,7 @@ const NAV_ITEMS: PaletteItem[] = [
   },
   {
     id: "nav-health",
-    label: "FlagIcon Health",
+    label: "Flag Health",
     category: "navigation",
     href: "/health",
   },
@@ -134,7 +134,7 @@ const NAV_ITEMS: PaletteItem[] = [
 const CREATE_ITEMS: PaletteItem[] = [
   {
     id: "create-flag",
-    label: "Create FlagIcon",
+    label: "Create Flag",
     description: "Create a new feature flag",
     category: "create",
     href: "/flags?create=true",

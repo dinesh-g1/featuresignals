@@ -62,7 +62,7 @@ export default function AuditPage() {
       ...new Set(entries.map((e) => e.actor_type).filter(Boolean)),
     ].sort();
     return [
-      { value: "", label: "All UsersIcon" },
+      { value: "", label: "All Users" },
       ...actors.map((a) => ({ value: a!, label: a! })),
     ];
   }, [entries]);
@@ -252,7 +252,7 @@ export default function AuditPage() {
           value={filterActor}
           onValueChange={setFilterActor}
           options={actorOptions}
-          placeholder="All UsersIcon"
+          placeholder="All Users"
           className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
           size="sm"
         />

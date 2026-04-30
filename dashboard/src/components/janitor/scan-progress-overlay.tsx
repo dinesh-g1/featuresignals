@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import {
-  XIcon, CheckCircleFillIcon, LoaderIcon, AlertIcon, ClockIcon, BrainIcon, FileCode
+  XIcon, CheckCircleFillIcon, LoaderIcon, AlertIcon, ClockIcon, BrainIcon, FileCodeIcon
 } from "@/components/icons/nav-icons";
 
 interface ScanProgressOverlayProps {
@@ -141,7 +141,7 @@ export function ScanProgressOverlay({
                       flag.safeToRemove ? (
                         <CheckCircleFillIcon className="h-3.5 w-3.5 text-emerald-500" />
                       ) : (
-                        <FileCode className="h-3.5 w-3.5 text-amber-500" />
+                        <FileCodeIcon className="h-3.5 w-3.5 text-amber-500" />
                       )
                     ) : flag.status === "analyzing" ? (
                       <BrainIcon className="h-3.5 w-3.5 text-purple-500 animate-pulse" />

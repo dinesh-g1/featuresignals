@@ -286,7 +286,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                   </div>
                   <div className="flex items-center gap-1">
                     <FlagIcon className="h-3.5 w-3.5" />
-                    <span>FlagIcon states</span>
+                    <span>Flag states</span>
                   </div>
                 </div>
 

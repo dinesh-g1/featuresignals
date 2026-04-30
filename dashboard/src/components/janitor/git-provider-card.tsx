@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  GitFork, GitBranch, GitPullRequestIcon, SettingsIcon, ExternalLinkIcon, TrashIcon, RefreshIcon
+  GitForkIcon, GitBranchIcon, GitPullRequestIcon, SettingsIcon, ExternalLinkIcon, TrashIcon, RefreshIcon
 } from "@/components/icons/nav-icons";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -21,13 +21,13 @@ interface GitProviderCardProps {
 const providerConfig = {
   github: {
     name: "GitHub",
-    icon: GitFork,
+    icon: GitForkIcon,
     color: "bg-gray-900 text-white",
     lightColor: "bg-gray-100 text-gray-700",
   },
   gitlab: {
     name: "GitLab",
-    icon: GitBranch,
+    icon: GitBranchIcon,
     color: "bg-orange-500 text-white",
     lightColor: "bg-orange-50 text-orange-700",
   },

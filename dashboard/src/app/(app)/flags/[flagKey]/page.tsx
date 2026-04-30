@@ -80,7 +80,7 @@ export default function FlagDetailPage() {
 
     Promise.all([
       api.getFlag(token, projectId, flagKey).then((f) => {
-        if (!f) throw new Error("FlagIcon not found");
+        if (!f) throw new Error("Flag not found");
         setFlag(f);
         setEditForm({ name: f.name ?? "", description: f.description || "" });
         setPrereqs(f.prerequisites || []);
@@ -192,7 +192,7 @@ export default function FlagDetailPage() {
         enabled: !state?.enabled,
       });
       api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
-      toast(state?.enabled ? "FlagIcon disabled" : "FlagIcon enabled", "success");
+      toast(state?.enabled ? "Flag disabled" : "Flag enabled", "success");
     } catch {
       toast("Failed to toggle flag", "error");
     }
@@ -213,7 +213,7 @@ export default function FlagDetailPage() {
       const updated = await api.updateFlag(token, projectId, flagKey, editForm);
       setFlag(updated);
       setEditing(false);
-      toast("FlagIcon updated", "success");
+      toast("Flag updated", "success");
     } catch {
       toast("Failed to update flag", "error");
     }
@@ -238,7 +238,7 @@ export default function FlagDetailPage() {
       );
       setShowPromote(false);
       setPromoteTarget("");
-      toast("FlagIcon promoted successfully", "success");
+      toast("Flag promoted successfully", "success");
     } catch {
       toast("Failed to promote flag", "error");
     } finally {
@@ -322,7 +322,7 @@ export default function FlagDetailPage() {
         <div className="rounded-2xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-6 text-center max-w-md">
           <AlertIcon className="h-8 w-8 text-red-400 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-red-800 mb-1">
-            FlagIcon not found
+            Flag not found
           </h2>
           <p className="text-sm text-red-600 mb-4">
             {fetchError ||
@@ -502,7 +502,7 @@ export default function FlagDetailPage() {
 
             <div className="mt-4 flex gap-2">
               <Button variant="danger" onClick={handleDelete}>
-                Delete FlagIcon
+                Delete Flag
               </Button>
               <Button
                 variant="secondary"
@@ -625,7 +625,7 @@ export default function FlagDetailPage() {
                         .then(setState);
                     }}
                   >
-                    Kill FlagIcon Now
+                    Kill Flag Now
                   </Button>
                 </CardContent>
               </Card>

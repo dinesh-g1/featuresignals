@@ -248,7 +248,7 @@ export default function ApprovalsPage() {
                         {ar.change_type}
                       </span>
                       <span className="text-xs text-[var(--fgColor-subtle)]">
-                        FlagIcon: {ar.flag_id?.slice(0, 8)}&hellip;
+                        Flag: {ar.flag_id?.slice(0, 8)}&hellip;
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
               color="amber"
             />
             <StatCard
-              label="FlagIcon Events"
+              label="Flag Events"
               value={data.event_counts?.flag ?? 0}
               icon={BarChartIcon}
               color="accent"

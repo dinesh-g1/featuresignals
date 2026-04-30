@@ -6,7 +6,7 @@ import { cn, timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  GitPullRequestIcon, CheckCircleFillIcon, FileCode, ClockIcon, ExternalLinkIcon, TrashIcon, BrainIcon, AlertIcon
+  GitPullRequestIcon, CheckCircleFillIcon, FileCodeIcon, ClockIcon, ExternalLinkIcon, TrashIcon, BrainIcon, AlertIcon
 } from "@/components/icons/nav-icons";
 
 interface StaleFlagRowProps {
@@ -63,7 +63,7 @@ export function StaleFlagRow({
           ) : flag.pr_status === "open" ? (
             <GitPullRequestIcon className="h-4 w-4" />
           ) : flag.safe_to_remove ? (
-            <FileCode className="h-4 w-4" />
+            <FileCodeIcon className="h-4 w-4" />
           ) : (
             <ClockIcon className="h-4 w-4" />
           )}

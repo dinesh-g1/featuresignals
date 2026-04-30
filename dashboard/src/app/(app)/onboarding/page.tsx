@@ -21,7 +21,7 @@ import type { Project, Environment } from "@/lib/types";
 const STEPS = [
   { key: "project_setup", label: "Project", icon: FolderOpenIcon },
   { key: "env_setup", label: "Environment", icon: LayersIcon },
-  { key: "first_flag_created", label: "Create FlagIcon", icon: FlagIcon },
+  { key: "first_flag_created", label: "Create Flag", icon: FlagIcon },
   { key: "first_sdk_connected", label: "Connect SDK" },
   { key: "first_evaluation", label: "All Set!" },
 ];
@@ -382,8 +382,8 @@ function OnboardingContent() {
       return;
     }
     const errors: { key?: string; name?: string } = {};
-    if (!flagForm.key.trim()) errors.key = "FlagIcon key is required";
-    if (!flagForm.name.trim()) errors.name = "FlagIcon name is required";
+    if (!flagForm.key.trim()) errors.key = "Flag key is required";
+    if (!flagForm.name.trim()) errors.name = "Flag name is required";
     if (Object.keys(errors).length > 0) {
       setFlagFieldErrors(errors);
       return;
@@ -396,7 +396,7 @@ function OnboardingContent() {
         name: flagForm.name,
         flag_type: "boolean",
       });
-      toast("FlagIcon created successfully!", "success");
+      toast("Flag created successfully!", "success");
       setFlagForm({ key: "", name: "" });
       await markStepComplete("first_flag_created");
     } catch (err: unknown) {
@@ -849,7 +849,7 @@ function StepEnvSetup({
   );
 }
 
-/* ── Step 3: Create FlagIcon ────────────────────────────────────────────── */
+/* ── Step 3: Create Flag ────────────────────────────────────────────── */
 
 function StepCreateFlag({
   form,
@@ -877,7 +877,7 @@ function StepCreateFlag({
           <CheckIcon className="h-8 w-8 text-[var(--fgColor-success)]" />
         </div>
         <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">
-          FlagIcon created!
+          Flag created!
         </p>
         <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
           You can manage flags from the Flags page.
@@ -898,7 +898,7 @@ function StepCreateFlag({
 
       <form noValidate onSubmit={onSubmit} className="mt-6 space-y-4">
         <div className="space-y-1.5">
-          <Label>FlagIcon KeyIcon</Label>
+          <Label>Flag Key</Label>
           <Input
             value={form.key}
             onChange={(e) => {
@@ -949,7 +949,7 @@ function StepCreateFlag({
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button type="submit" disabled={creating}>
-            {creating ? "Creating..." : "Create FlagIcon"}
+            {creating ? "Creating..." : "Create Flag"}
           </Button>
           <Button type="button" variant="secondary" onClick={onSkip}>
             Skip this step

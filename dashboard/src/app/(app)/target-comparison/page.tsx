@@ -270,7 +270,7 @@ export default function TargetComparisonPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
-                    <th className="px-4 py-3 sm:px-6">FlagIcon KeyIcon</th>
+                    <th className="px-4 py-3 sm:px-6">Flag Key</th>
                     <th className="px-4 py-3">{keyA || "Target A"} Value</th>
                     <th className="px-4 py-3">{keyB || "Target B"} Value</th>
                     <th className="px-4 py-3">Status</th>
