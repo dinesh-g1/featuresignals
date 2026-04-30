@@ -21,7 +21,10 @@ import {
   TableCell,
 } from "@/components/ui";
 import {
-  ClipboardIcon, DownloadIcon, SearchIcon, ShieldIcon
+  ClipboardIcon,
+  DownloadIcon,
+  SearchIcon,
+  ShieldIcon,
 } from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { Blankslate } from "@/components/blankslate";
@@ -253,7 +256,7 @@ export default function AuditPage() {
           onValueChange={setFilterActor}
           options={actorOptions}
           placeholder="All Users"
-          className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
+          className="min-w-[140px] w-auto"
           size="sm"
         />
         <Select
@@ -261,7 +264,7 @@ export default function AuditPage() {
           onValueChange={setFilterAction}
           options={actionOptions}
           placeholder="All Actions"
-          className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
+          className="min-w-[140px] w-auto"
           size="sm"
         />
         <Select
@@ -269,7 +272,7 @@ export default function AuditPage() {
           onValueChange={setFilterResource}
           options={resourceOptions}
           placeholder="All Resources"
-          className="min-w-[140px] flex-1 sm:flex-none sm:min-w-[160px]"
+          className="min-w-[140px] w-auto"
           size="sm"
         />
         {hasActiveFilters && (
