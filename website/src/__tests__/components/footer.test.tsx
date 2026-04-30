@@ -9,13 +9,7 @@ describe("Footer", () => {
 
   it("renders all link section headings", () => {
     render(<Footer />);
-    const sections = [
-      "Product",
-      "Get Started",
-      "Developers",
-      "Resources",
-      "Legal",
-    ];
+    const sections = ["Product", "Get Started", "Developers", "Legal"];
     for (const title of sections) {
       expect(screen.getByText(title)).toBeInTheDocument();
     }
@@ -24,11 +18,10 @@ describe("Footer", () => {
   it("renders product links", () => {
     render(<Footer />);
     const links = [
-      "Core Features",
+      "Cost Calculator",
+      "Live Demo",
+      "Migration Preview",
       "AI Janitor",
-      "Security & Governance",
-      "Integrations",
-      "Use Cases",
       "Pricing",
     ];
     for (const label of links) {
@@ -38,13 +31,7 @@ describe("Footer", () => {
 
   it("renders Get Started links", () => {
     render(<Footer />);
-    const links = [
-      "Deploy in 3 Minutes",
-      "Migrate from LaunchDarkly",
-      "Migrate from Unleash",
-      "Migrate from Flagsmith",
-      "Log in",
-    ];
+    const links = ["Deploy in 3 Minutes", "Sign Up Free", "Log in", "Contact"];
     for (const label of links) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
@@ -54,24 +41,10 @@ describe("Footer", () => {
     render(<Footer />);
     const links = [
       "Documentation",
-      "API Playground",
+      "API Reference",
       "SDKs (8 Languages)",
-      "Terraform Registry",
+      "Terraform Provider",
       "GitHub",
-    ];
-    for (const label of links) {
-      expect(screen.getByText(label)).toBeInTheDocument();
-    }
-  });
-
-  it("renders Resources links", () => {
-    render(<Footer />);
-    const links = [
-      "Blog",
-      "Changelog",
-      "System Status",
-      "About",
-      "Contact Sales",
     ];
     for (const label of links) {
       expect(screen.getByText(label)).toBeInTheDocument();
@@ -80,16 +53,8 @@ describe("Footer", () => {
 
   it("renders Legal links", () => {
     render(<Footer />);
-    const links = [
-      "Terms & Conditions",
-      "Privacy Policy",
-      "Refund Policy",
-      "Cancellation Policy",
-      "Shipping Policy",
-    ];
-    for (const label of links) {
-      expect(screen.getByText(label)).toBeInTheDocument();
-    }
+    expect(screen.getByText("Terms of Service")).toBeInTheDocument();
+    expect(screen.getByText("Privacy Policy")).toBeInTheDocument();
   });
 
   it("renders the operational status indicator", () => {
@@ -136,39 +101,5 @@ describe("Footer", () => {
     const docsLink = screen.getByText("Documentation").closest("a");
     expect(docsLink).toHaveAttribute("target", "_blank");
     expect(docsLink).toHaveAttribute("rel", "noopener noreferrer");
-  });
-
-  it("migration links point to /use-cases#migration (not bare anchors)", () => {
-    render(<Footer />);
-    const launchdarklyLink = screen
-      .getByText("Migrate from LaunchDarkly")
-      .closest("a");
-    expect(launchdarklyLink).toHaveAttribute("href", "/use-cases#migration");
-
-    const unleashLink = screen.getByText("Migrate from Unleash").closest("a");
-    expect(unleashLink).toHaveAttribute("href", "/use-cases#migration");
-
-    const flagsmithLink = screen
-      .getByText("Migrate from Flagsmith")
-      .closest("a");
-    expect(flagsmithLink).toHaveAttribute("href", "/use-cases#migration");
-  });
-
-  it("status badges link to real pages (not #)", () => {
-    render(<Footer />);
-    const soc2Link = screen.getByText("SOC 2 Type II").closest("a");
-    expect(soc2Link).toHaveAttribute("href", "/features/security");
-
-    const ofLink = screen.getByText("OpenFeature Native").closest("a");
-    expect(ofLink).toHaveAttribute("href", "/features/integrations");
-
-    const uptimeLink = screen.getByText("Uptime 99.95%").closest("a");
-    expect(uptimeLink).toHaveAttribute("href", "/status");
-  });
-
-  it("shipping policy link points to the shipping policy page", () => {
-    render(<Footer />);
-    const shippingLink = screen.getByText("Shipping Policy").closest("a");
-    expect(shippingLink).toHaveAttribute("href", "/shipping-policy");
   });
 });

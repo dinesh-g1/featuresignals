@@ -66,9 +66,10 @@ export function FinalCta() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          Start a free trial with full Pro features for 14 days.
+          14-day Pro trial. Full features. No credit card.
           <br />
-          No credit card required.
+          If you don&apos;t like it, we&apos;ll help you migrate back. (You
+          won&apos;t want to.)
         </motion.p>
 
         {/* CTAs */}

@@ -29,10 +29,25 @@ interface StaleFlag {
 
 const SAMPLE_FILES: CodebaseFile[] = [
   { path: "src/auth/", name: "login.ts", hasStaleFlag: false },
-  { path: "src/checkout/", name: "payment.ts", hasStaleFlag: true, staleFlagIndex: 0 },
-  { path: "src/dashboard/", name: "widgets.ts", hasStaleFlag: true, staleFlagIndex: 1 },
+  {
+    path: "src/checkout/",
+    name: "payment.ts",
+    hasStaleFlag: true,
+    staleFlagIndex: 0,
+  },
+  {
+    path: "src/dashboard/",
+    name: "widgets.ts",
+    hasStaleFlag: true,
+    staleFlagIndex: 1,
+  },
   { path: "src/notifications/", name: "email.ts", hasStaleFlag: false },
-  { path: "src/profile/", name: "settings.ts", hasStaleFlag: true, staleFlagIndex: 2 },
+  {
+    path: "src/profile/",
+    name: "settings.ts",
+    hasStaleFlag: true,
+    staleFlagIndex: 2,
+  },
   { path: "src/search/", name: "backend.ts", hasStaleFlag: false },
   { path: "src/billing/", name: "invoice.ts", hasStaleFlag: false },
   { path: "src/teams/", name: "members.ts", hasStaleFlag: false },
@@ -49,7 +64,8 @@ const STALE_FLAGS: StaleFlag[] = [
     name: "old-search-backend",
     lastUsedDays: 365,
     prNumber: 285,
-    detail: "Deprecated after Elasticsearch migration. Zero traffic for 12 months.",
+    detail:
+      "Deprecated after Elasticsearch migration. Zero traffic for 12 months.",
   },
   {
     name: "beta-feature-gate",
@@ -137,11 +153,13 @@ export function AiJanitorSimulator() {
             id="janitor-heading"
             className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
           >
-            The AI Janitor — stale flag cleanup on autopilot
+            Your codebase has flags older than your last intern.
           </h2>
           <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
-            FeatureSignals scans your codebase, identifies stale feature flags, and
-            generates cleanup PRs — so your codebase stays lean without manual toil.
+            Stale flags are basically paying rent in your codebase. This
+            simulator scans a sample repo, finds flags nobody&apos;s touched
+            since the Obama administration, and shows you what automated cleanup
+            looks like. The real AI Janitor opens PRs for you. Yes, really.
           </p>
         </div>
 
@@ -171,7 +189,9 @@ export function AiJanitorSimulator() {
                 const isScanned = i < scannedFiles;
                 const flagIdx = file.staleFlagIndex;
                 const isFlagRevealed =
-                  isScanned && flagIdx !== undefined && foundFlagIndices.includes(flagIdx);
+                  isScanned &&
+                  flagIdx !== undefined &&
+                  foundFlagIndices.includes(flagIdx);
 
                 return (
                   <motion.div
@@ -185,7 +205,11 @@ export function AiJanitorSimulator() {
                     }`}
                     animate={
                       isScanned
-                        ? { backgroundColor: isFlagRevealed ? "var(--bgColor-attention-muted)" : "#ffffff" }
+                        ? {
+                            backgroundColor: isFlagRevealed
+                              ? "var(--bgColor-attention-muted)"
+                              : "#ffffff",
+                          }
                         : {}
                     }
                     transition={{ duration: 0.3 }}
@@ -206,7 +230,10 @@ export function AiJanitorSimulator() {
                         <motion.span
                           initial={{ scale: 0, rotate: -90 }}
                           animate={{ scale: 1, rotate: 0 }}
-                          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                          transition={{
+                            duration: 0.3,
+                            ease: [0.16, 1, 0.3, 1],
+                          }}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)] border border-[var(--borderColor-attention-muted)]"
                         >
                           <LightBulbIcon size={12} />
@@ -216,7 +243,10 @@ export function AiJanitorSimulator() {
                         <motion.span
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                          transition={{
+                            duration: 0.2,
+                            ease: [0.16, 1, 0.3, 1],
+                          }}
                         >
                           <CheckIcon size={16} fill="var(--fgColor-success)" />
                         </motion.span>
@@ -269,7 +299,8 @@ export function AiJanitorSimulator() {
                   className="mx-auto mb-3"
                 />
                 <p className="text-sm text-[var(--fgColor-muted)] mb-4">
-                  Run a scan to find stale feature flags in this sample codebase.
+                  Run a scan to find stale feature flags in this sample
+                  codebase.
                 </p>
                 <p className="text-xs text-[var(--fgColor-subtle)]">
                   No real repos connected — this is a local simulation.
@@ -287,7 +318,8 @@ export function AiJanitorSimulator() {
                       animate={{ opacity: 1, scale: 1 }}
                     >
                       <LightBulbIcon size={12} />
-                      {revealedFlags} stale flag{revealedFlags !== 1 ? "s" : ""} found
+                      {revealedFlags} stale flag{revealedFlags !== 1 ? "s" : ""}{" "}
+                      found
                     </motion.span>
                     <span className="text-xs text-[var(--fgColor-subtle)]">
                       {totalDeadLines} lines of dead code
@@ -318,7 +350,9 @@ export function AiJanitorSimulator() {
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-xs text-[var(--fgColor-muted)]">
                               <ClockIcon size={12} />
-                              <span>Last used: {flag.lastUsedDays} days ago</span>
+                              <span>
+                                Last used: {flag.lastUsedDays} days ago
+                              </span>
                             </div>
                             <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
                               {flag.detail}
@@ -369,19 +403,25 @@ export function AiJanitorSimulator() {
                       <span className="font-bold text-[var(--fgColor-default)]">
                         {revealedFlags}
                       </span>{" "}
-                      <span className="text-[var(--fgColor-muted)]">stale flags</span>
+                      <span className="text-[var(--fgColor-muted)]">
+                        stale flags
+                      </span>
                     </div>
                     <div>
                       <span className="font-bold text-[var(--fgColor-default)]">
                         {totalDeadLines}
                       </span>{" "}
-                      <span className="text-[var(--fgColor-muted)]">dead lines</span>
+                      <span className="text-[var(--fgColor-muted)]">
+                        dead lines
+                      </span>
                     </div>
                     <div>
                       <span className="font-bold text-[var(--fgColor-default)]">
                         {revealedFlags}
                       </span>{" "}
-                      <span className="text-[var(--fgColor-muted)]">PRs ready</span>
+                      <span className="text-[var(--fgColor-muted)]">
+                        PRs ready
+                      </span>
                     </div>
                   </div>
                 </motion.div>

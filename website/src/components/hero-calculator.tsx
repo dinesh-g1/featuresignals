@@ -98,12 +98,12 @@ export function HeroCalculator() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         >
-          Your feature flags are costing you
+          Your feature flags are bleeding money.
           <br />
           <span className="text-[var(--fgColor-danger)]">
             {formatUSD(result.competitor.monthly)}/month
           </span>{" "}
-          too much.
+          for {teamSize} engineers?!
         </motion.h1>
 
         <motion.p
@@ -112,9 +112,11 @@ export function HeroCalculator() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          FeatureSignals gives you unlimited feature flags, unlimited seats, and
-          sub-millisecond evaluation — at a flat rate of {formatINR(999)}/month
-          (~{formatUSD(12)}). No per-seat pricing. No per-MAU fees. Just ship.
+          We&apos;ll prove it. Right here. In 60 seconds. No signup. No demo
+          call. No salesperson named Chad. Just real math with real competitor
+          pricing. FeatureSignals is a flat {formatINR(999)}/month (~
+          {formatUSD(12)}). Unlimited flags. Unlimited seats. The only thing
+          unlimited at LaunchDarkly is their pricing page.
         </motion.p>
 
         {/* Calculator card */}
@@ -256,7 +258,7 @@ export function HeroCalculator() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] active:bg-[#197935] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
-            See how we do it
+            See the math
             <ArrowRightIcon size={16} />
           </a>
           <a
@@ -267,7 +269,7 @@ export function HeroCalculator() {
             style={{ boxShadow: "0 1px 0 0 #1f23280a" }}
           >
             <DownloadIcon size={16} />
-            Self-host in 3 minutes
+            Self-host in 3 min
           </a>
         </motion.div>
       </div>

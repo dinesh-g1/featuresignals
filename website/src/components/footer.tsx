@@ -5,12 +5,11 @@ const footerSections = [
   {
     title: "Product",
     links: [
-      { label: "Core Features", href: "/features" },
-      { label: "AI Janitor", href: "/features/ai" },
-      { label: "Security & Governance", href: "/features/security" },
-      { label: "Integrations", href: "/features/integrations" },
-      { label: "Use Cases", href: "/use-cases" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "Cost Calculator", href: "/#hero" },
+      { label: "Live Demo", href: "/#live-demo" },
+      { label: "Migration Preview", href: "/#migration" },
+      { label: "AI Janitor", href: "/#ai-janitor" },
+      { label: "Pricing", href: "/#pricing" },
     ],
   },
   {
@@ -21,10 +20,20 @@ const footerSections = [
         href: "https://docs.featuresignals.com/getting-started/quickstart",
         external: true,
       },
-      { label: "Migrate from LaunchDarkly", href: "/use-cases#migration" },
-      { label: "Migrate from Unleash", href: "/use-cases#migration" },
-      { label: "Migrate from Flagsmith", href: "/use-cases#migration" },
-      { label: "Log in", href: "https://app.featuresignals.com/login" },
+      {
+        label: "Sign Up Free",
+        href: "/signup",
+      },
+      {
+        label: "Log in",
+        href: "https://app.featuresignals.com/login",
+        external: true,
+      },
+      {
+        label: "Contact",
+        href: "mailto:sales@featuresignals.com",
+        external: true,
+      },
     ],
   },
   {
@@ -36,7 +45,7 @@ const footerSections = [
         external: true,
       },
       {
-        label: "API Playground",
+        label: "API Reference",
         href: "https://docs.featuresignals.com/api-playground",
         external: true,
       },
@@ -46,7 +55,7 @@ const footerSections = [
         external: true,
       },
       {
-        label: "Terraform Registry",
+        label: "Terraform Provider",
         href: "https://registry.terraform.io/providers/featuresignals",
         external: true,
       },
@@ -58,23 +67,18 @@ const footerSections = [
     ],
   },
   {
-    title: "Resources",
-    links: [
-      { label: "Blog", href: "/blog" },
-      { label: "Changelog", href: "/changelog" },
-      { label: "System Status", href: "/status" },
-      { label: "About", href: "/about" },
-      { label: "Contact Sales", href: "/contact" },
-    ],
-  },
-  {
     title: "Legal",
     links: [
-      { label: "Terms & Conditions", href: "/terms-and-conditions" },
-      { label: "Privacy Policy", href: "/privacy-policy" },
-      { label: "Refund Policy", href: "/refund-policy" },
-      { label: "Cancellation Policy", href: "/cancellation-policy" },
-      { label: "Shipping Policy", href: "/shipping-policy" },
+      {
+        label: "Terms of Service",
+        href: "https://featuresignals.com/terms",
+        external: true,
+      },
+      {
+        label: "Privacy Policy",
+        href: "https://featuresignals.com/privacy",
+        external: true,
+      },
     ],
   },
 ];
@@ -123,7 +127,11 @@ export function Footer() {
           {/* Brand */}
           <div className="max-w-xs">
             <div className="flex items-center space-x-2 mb-4">
-              <CheckCircleFillIcon size={24} fill="#0969da" aria-hidden="true" />
+              <CheckCircleFillIcon
+                size={24}
+                fill="#0969da"
+                aria-hidden="true"
+              />
               <span className="font-bold tracking-tight text-white text-lg">
                 FeatureSignals
               </span>
@@ -238,27 +246,21 @@ export function Footer() {
           </div>
 
           <div className="flex gap-6 text-sm">
-            <Link
-              href="/features/security"
-              className="hover:text-white transition-colors font-mono text-xs"
-              style={{ color: "#8b949e" }}
-            >
+            <span className="font-mono text-xs" style={{ color: "#8b949e" }}>
               SOC 2 Type II
-            </Link>
-            <Link
-              href="/features/integrations"
-              className="hover:text-white transition-colors font-mono text-xs"
-              style={{ color: "#8b949e" }}
-            >
+            </span>
+            <span className="font-mono text-xs" style={{ color: "#8b949e" }}>
               OpenFeature Native
-            </Link>
-            <Link
-              href="/status"
+            </span>
+            <a
+              href="https://status.featuresignals.com"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-white transition-colors font-mono text-xs"
               style={{ color: "#8b949e" }}
             >
               Uptime 99.95%
-            </Link>
+            </a>
           </div>
         </div>
 

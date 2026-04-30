@@ -7,36 +7,41 @@ import { PricingSection } from "@/components/pricing-section";
 import { FinalCta } from "@/components/final-cta";
 
 /**
- * FeatureSignals Homepage
+ * FeatureSignals Homepage — The Only Page That Matters
  *
- * Architecture: Each section proves a claim through interaction — no static card grids.
- * Phase 1: Hero Calculator + Live Eval Demo + Migration Preview
- * Phase 2: AI Janitor Simulator + Pricing + Final CTA
+ * Architecture: One scrollable experience. No separate pages.
+ * Each section proves a claim through interaction — no static card grids.
  *
- * CalculatorProvider lifts the hero calculator state so the pricing section
- * can display personalized savings that reflect the user's selections above.
+ * Flow:
+ *   1. Hero — live cost calculator (value before signup)
+ *   2. Live Demo — sub-millisecond eval in your browser
+ *   3. Migration Preview — connect your provider, see real savings
+ *   4. AI Janitor — stale flag detection simulator
+ *   5. Pricing — personalized savings from calculator state
+ *   6. Final CTA — ready to ship faster
  *
- * See FINAL_PROMPT.md Section 3 for the complete 60-second website spec.
+ * CalculatorProvider lifts hero calculator state so the pricing section
+ * can display personalized savings reflecting user selections above.
  */
 export default function HomePage() {
   return (
     <CalculatorProvider>
-      {/* Section 1: Hero with live cost calculator */}
+      {/* 1. Hero: Stop overpaying for feature flags */}
       <HeroCalculator />
 
-      {/* Section 2: Live flag evaluation demo */}
+      {/* 2. Live Demo: See sub-millisecond evaluation */}
       <LiveEvalDemo />
 
-      {/* Section 3: Real migration preview */}
+      {/* 3. Migration Preview: Migrate from LaunchDarkly in minutes */}
       <MigrationPreview />
 
-      {/* Section 4: AI Janitor Simulator — stale flag detection animation */}
+      {/* 4. AI Janitor: The AI Janitor */}
       <AiJanitorSimulator />
 
-      {/* Section 5: Pricing — personal savings carried through from calculator */}
+      {/* 5. Pricing: Pay for infrastructure, not per seat */}
       <PricingSection />
 
-      {/* Section 6: Final CTA with dark gradient and footer badges */}
+      {/* 6. Final CTA: Ready to ship faster? */}
       <FinalCta />
     </CalculatorProvider>
   );

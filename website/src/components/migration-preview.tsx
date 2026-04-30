@@ -68,7 +68,10 @@ const DEMO_INVENTORIES: Record<CompetitorProvider, MigrationInventory> = {
   },
 };
 
-const DEMO_SAVINGS: Record<CompetitorProvider, { annual: number; percent: number }> = {
+const DEMO_SAVINGS: Record<
+  CompetitorProvider,
+  { annual: number; percent: number }
+> = {
   launchdarkly: { annual: 143988, percent: 99.2 },
   configcat: { annual: 15456, percent: 97.3 },
   flagsmith: { annual: 12036, percent: 96.3 },
@@ -120,7 +123,9 @@ export function MigrationPreview() {
       setStatus("success");
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Failed to connect. Please try again.",
+        err instanceof Error
+          ? err.message
+          : "Failed to connect. Please try again.",
       );
       setStatus("error");
     }
@@ -145,11 +150,13 @@ export function MigrationPreview() {
             id="migration-heading"
             className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
           >
-            Migrate from {PROVIDER_OPTIONS.find((p) => p.value === provider)?.label} in under an hour
+            Dump your current provider. We&apos;ll do the heavy lifting.
           </h2>
           <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
-            Connect your provider to see exactly what changes. Your data is never
-            stored — this is a read-only preview.
+            No migration scripts. No weekend cutovers. No &ldquo;we&apos;ll
+            circle back on that.&rdquo; Pick your provider, drop in your API
+            key, and see exactly what ports over. We never store your data —
+            this preview is read-only and runs in your browser.
           </p>
         </div>
 
@@ -256,7 +263,8 @@ export function MigrationPreview() {
                   className="animate-spin mx-auto mb-4 text-[var(--fgColor-accent)]"
                 />
                 <p className="text-sm text-[var(--fgColor-muted)]">
-                  Fetching flag inventory from {PROVIDER_OPTIONS.find((p) => p.value === provider)?.label}...
+                  Fetching flag inventory from{" "}
+                  {PROVIDER_OPTIONS.find((p) => p.value === provider)?.label}...
                 </p>
               </div>
             </motion.div>
@@ -349,7 +357,11 @@ export function MigrationPreview() {
                       className="mx-auto text-[var(--fgColor-success)]"
                     />
                     <div className="text-xs text-[var(--fgColor-muted)] mt-1">
-                      ~{Math.ceil(result.inventory.estimatedMigrationTimeSec / 60)} min migration
+                      ~
+                      {Math.ceil(
+                        result.inventory.estimatedMigrationTimeSec / 60,
+                      )}{" "}
+                      min migration
                     </div>
                   </div>
                 </div>
@@ -407,7 +419,8 @@ export function MigrationPreview() {
                   {result.inventory.provider}
                 </div>
                 <div className="text-xs text-[var(--fgColor-muted)] mb-4">
-                  Migration time: ~{Math.ceil(result.inventory.estimatedMigrationTimeSec / 60)}{" "}
+                  Migration time: ~
+                  {Math.ceil(result.inventory.estimatedMigrationTimeSec / 60)}{" "}
                   minutes for {result.inventory.flags} flags
                 </div>
 

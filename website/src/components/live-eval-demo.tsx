@@ -116,11 +116,13 @@ export function LiveEvalDemo() {
             id="demo-heading"
             className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
           >
-            See it in action — sub-millisecond flag evaluation
+            Sub-millisecond. In your browser. Right now.
           </h2>
           <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
-            Real flag evaluation running in your browser. No server round-trip.
-            No API call. Just deterministic, sub-millisecond evaluation.
+            This is real flag evaluation. No server. No API call. No &ldquo;it
+            depends on your setup.&rdquo; Toggle the switch and watch the result
+            come back in under a millisecond. The same engine our SDKs run. The
+            same one your app would use.
           </p>
         </div>
 
