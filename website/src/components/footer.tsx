@@ -69,16 +69,11 @@ const footerSections = [
   {
     title: "Legal",
     links: [
-      {
-        label: "Terms of Service",
-        href: "https://featuresignals.com/terms",
-        external: true,
-      },
-      {
-        label: "Privacy Policy",
-        href: "https://featuresignals.com/privacy",
-        external: true,
-      },
+      { label: "Terms & Conditions", href: "/terms-and-conditions" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Refund Policy", href: "/refund-policy" },
+      { label: "Cancellation Policy", href: "/cancellation-policy" },
+      { label: "Shipping Policy", href: "/shipping-policy" },
     ],
   },
 ];
