@@ -45,6 +45,10 @@ router:
     burst: 50
     window: 60s
 
+  # Connection limiting & IP tracking bounds
+  conn_limit: 100
+  max_ips: 100000
+
   # Clusters
   cluster:
     name: us-001

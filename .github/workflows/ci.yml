@@ -47,9 +47,57 @@ jobs:
           fi
           echo "full_sha=$FULL" >> "$GITHUB_OUTPUT"
 
+  test:
+    name: Test ${{ matrix.service }}
+    needs: [resolve, matrix]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.matrix.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.full_sha }}
+
+      - name: Set up Go (router)
+        if: matrix.service == 'router'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: deploy/global-router/go.mod
+
+      - name: go vet (global-router)
+        if: matrix.service == 'router'
+        run: go vet ./...
+        working-directory: deploy/global-router
+
+      - name: go test (global-router)
+        if: matrix.service == 'router'
+        run: go test ./... -count=1 -timeout=120s -race -coverprofile=coverage.out
+        working-directory: deploy/global-router
+
+      - name: Set up Go (server)
+        if: matrix.service == 'server'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+
+      - name: go vet (server)
+        if: matrix.service == 'server'
+        run: go vet ./...
+        working-directory: server
+
+      - name: go test (server)
+        if: matrix.service == 'server'
+        run: go test ./... -short -count=1 -timeout=120s -race
+        working-directory: server
+
   build:
     name: Build ${{ matrix.service }}
-    needs: [resolve, matrix]
+    needs: [resolve, matrix, test]
+    if: |
+      always() &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

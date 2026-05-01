@@ -25,6 +25,8 @@ router:
     default: 9999/min
     burst: 9999
     window: 60s
+  conn_limit: 200
+  max_ips: 10000
   cluster:
     name: local-dev
     region: local

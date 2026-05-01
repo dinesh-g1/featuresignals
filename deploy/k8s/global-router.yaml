@@ -46,7 +46,7 @@ data:
       cluster:
         name: eu-001
         region: eu
-        public_ip: "138.201.154.133"
+        public_ip: "REPLACE_WITH_PUBLIC_IP"
       peer_clusters: []
 ---
 apiVersion: apps/v1
@@ -72,7 +72,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: global-router
-          image: ghcr.io/dinesh-g1/featuresignals-global-router:7814be9e0acfa9715dbb4fcf2cd899bfa311391d
+          image: ghcr.io/dinesh-g1/featuresignals-global-router:latest # Image tag injected by CI
           env:
             - name: CONFIG_PATH
               value: /etc/router/config.yaml

@@ -94,6 +94,7 @@ gh api -X PUT "repos/$REPO/branches/main/protection" \
       "Go Vulnerability Check",
       "npm Audit — JS Dependencies",
       "CodeQL — SAST Analysis",
+      "Global Router: Test & Vet",
       "Server: Test & Coverage",
       "Server: Lint & Vet",
       "Dashboard: Test, Build & Coverage"

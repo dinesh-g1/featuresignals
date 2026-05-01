@@ -57,9 +57,13 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      - name: Run govulncheck
+      - name: Run govulncheck (server)
         run: govulncheck ./...
         working-directory: server
+
+      - name: Run govulncheck (global-router)
+        run: govulncheck ./...
+        working-directory: deploy/global-router
 
   # ── npm Audit — Dashboard, Website & Docs ────────────────────────────────
 

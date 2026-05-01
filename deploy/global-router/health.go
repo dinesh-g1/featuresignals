@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -59,7 +59,7 @@ func (r *Router) checkService(target string) string {
 	// Try to connect to the service
 	resp, err := client.Get(fmt.Sprintf("%s/health", target))
 	if err != nil {
-		log.Printf("health check failed for %s: %v", target, err)
+		slog.Warn("health check failed", "target", target, "error", err)
 		return "down"
 	}
 	defer resp.Body.Close()

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"strings"
 )
@@ -18,7 +18,7 @@ func NewDNSServer(cfg *Config) *DNSServer {
 
 func (d *DNSServer) Start() error {
 	if !d.config.Router.DNS.Enabled {
-		log.Println("DNS server disabled")
+		slog.Info("DNS server disabled")
 		return nil
 	}
 
@@ -34,13 +34,13 @@ func (d *DNSServer) Start() error {
 	}
 	defer conn.Close()
 
-	log.Printf("DNS server listening on %s", addr)
+	slog.Info("DNS server listening", "addr", addr)
 
 	buf := make([]byte, 512)
 	for {
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			log.Printf("DNS read error: %v", err)
+			slog.Warn("DNS read error", "error", err)
 			continue
 		}
 
