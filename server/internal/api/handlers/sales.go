@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"net/http"
-	"time"
+	// "time"
 
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -85,24 +85,27 @@ func (h *SalesHandler) SubmitInquiry(w http.ResponseWriter, r *http.Request) {
 		if msg == "" {
 			msg = "(no message)"
 		}
-		go func() {
-			sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer sendCancel()
-			if err := h.notifier.Send(sendCtx, domain.EmailMessage{
-				To:       h.notifyTo,
-				Subject:  fmt.Sprintf("New Sales Inquiry from %s (%s)", req.ContactName, req.Company),
-				Template: domain.TemplateEnterpriseAck,
-				Data: map[string]string{
-					"ContactName": req.ContactName,
-					"Email":       req.Email,
-					"Company":     req.Company,
-					"TeamSize":    teamSize,
-					"Message":     msg,
-				},
-			}); err != nil {
-				log.Error("failed to send sales inquiry notification", "error", err, "to", h.notifyTo)
-			}
-		}()
+		// XXX(dr, 2026-05-02): Sales inquiry notification email temporarily disabled.
+		// Only signup, login, and password reset emails are active.
+		//
+		// go func() {
+		// 	sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		// 	defer sendCancel()
+		// 	if err := h.notifier.Send(sendCtx, domain.EmailMessage{
+		// 		To:       h.notifyTo,
+		// 		Subject:  fmt.Sprintf("New Sales Inquiry from %s (%s)", req.ContactName, req.Company),
+		// 		Template: domain.TemplateEnterpriseAck,
+		// 		Data: map[string]string{
+		// 			"ContactName": req.ContactName,
+		// 			"Email":       req.Email,
+		// 			"Company":     req.Company,
+		// 			"TeamSize":    teamSize,
+		// 			"Message":     msg,
+		// 		},
+		// 	}); err != nil {
+		// 		log.Error("failed to send sales inquiry notification", "error", err, "to", h.notifyTo)
+		// 	}
+		// }()
 	}
 
 	httputil.JSON(w, http.StatusCreated, map[string]string{

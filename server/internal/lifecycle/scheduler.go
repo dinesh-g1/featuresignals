@@ -106,16 +106,23 @@ func (s *Scheduler) Run(ctx context.Context) {
 }
 
 func (s *Scheduler) runOnce(ctx context.Context) {
-	s.sendTrialMidpoint(ctx)
-	s.sendTrialEnding(ctx)
-	s.sendTrialExpired(ctx)
-	s.sendReEngagement(ctx)
-	s.sendRenewalReminders(ctx)
-	s.sendFeatureSpotlight(ctx)
-
-	if isWeeklyDigestDay() {
-		s.sendWeeklyDigest(ctx)
-	}
+	// XXX(dr, 2026-05-02): All scheduled lifecycle emails are temporarily
+	// disabled while we develop a proper context-aware email strategy.
+	// Only signup welcome, login notifications, and password reset emails
+	// are currently active — those are sent directly from handlers, not
+	// via the scheduler. See PRODUCT_EVENT_EMAIL_STRATEGY.md (forthcoming).
+	//
+	// s.sendTrialMidpoint(ctx)
+	// s.sendTrialEnding(ctx)
+	// s.sendTrialExpired(ctx)
+	// s.sendReEngagement(ctx)
+	// s.sendRenewalReminders(ctx)
+	// s.sendFeatureSpotlight(ctx)
+	//
+	// if isWeeklyDigestDay() {
+	// 	s.sendWeeklyDigest(ctx)
+	// }
+	_ = ctx // keep ctx usage for when we re-enable
 }
 
 func (s *Scheduler) sendTrialMidpoint(ctx context.Context) {

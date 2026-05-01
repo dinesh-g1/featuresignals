@@ -287,21 +287,24 @@ func (h *BillingHandler) PayUCallback(w http.ResponseWriter, r *http.Request) {
 		}),
 	})
 
-	go func() {
-		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer sendCancel()
-		_ = h.lifecycle.Send(sendCtx, "", domain.EmailMessage{
-			To:       params["email"],
-			Template: domain.TemplatePaymentSuccess,
-			Subject:  "Payment confirmed — you're on FeatureSignals Pro",
-			Data: map[string]string{
-				"ToName":       params["firstname"],
-				"Plan":         "Pro",
-				"Amount":       params["amount"],
-				"DashboardURL": h.dashboardURL,
-			},
-		})
-	}()
+	// XXX(dr, 2026-05-02): Payment success email temporarily disabled.
+	// Only signup, login, and password reset emails are active.
+	//
+	// go func() {
+	// 	sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer sendCancel()
+	// 	_ = h.lifecycle.Send(sendCtx, "", domain.EmailMessage{
+	// 		To:       params["email"],
+	// 		Template: domain.TemplatePaymentSuccess,
+	// 		Subject:  "Payment confirmed — you're on FeatureSignals Pro",
+	// 		Data: map[string]string{
+	// 			"ToName":       params["firstname"],
+	// 			"Plan":         "Pro",
+	// 			"Amount":       params["amount"],
+	// 			"DashboardURL": h.dashboardURL,
+	// 		},
+	// 	})
+	// }()
 
 	http.Redirect(w, r, h.dashboardURL+"/settings/billing?status=success", http.StatusSeeOther)
 }
@@ -421,23 +424,26 @@ func (h *BillingHandler) handleStripeCheckoutCompleted(ctx context.Context, even
 		}),
 	})
 
-	go func() {
-		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer sendCancel()
-		email := event.Metadata["email"]
-		name := event.Metadata["name"]
-		_ = h.lifecycle.Send(sendCtx, "", domain.EmailMessage{
-			To:       email,
-			ToName:   name,
-			Template: domain.TemplatePaymentSuccess,
-			Subject:  "Payment confirmed — you're on FeatureSignals Pro",
-			Data: map[string]string{
-				"ToName":       name,
-				"Plan":         "Pro",
-				"DashboardURL": h.dashboardURL,
-			},
-		})
-	}()
+	// XXX(dr, 2026-05-02): Payment success email temporarily disabled.
+	// Only signup, login, and password reset emails are active.
+	//
+	// go func() {
+	// 	sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer sendCancel()
+	// 	email := event.Metadata["email"]
+	// 	name := event.Metadata["name"]
+	// 	_ = h.lifecycle.Send(sendCtx, "", domain.EmailMessage{
+	// 		To:       email,
+	// 		ToName:   name,
+	// 		Template: domain.TemplatePaymentSuccess,
+	// 		Subject:  "Payment confirmed — you're on FeatureSignals Pro",
+	// 		Data: map[string]string{
+	// 			"ToName":       name,
+	// 			"Plan":         "Pro",
+	// 			"DashboardURL": h.dashboardURL,
+	// 		},
+	// 	})
+	// }()
 }
 
 func (h *BillingHandler) handleStripeSubscriptionUpdated(ctx context.Context, event *payment.WebhookEvent) {
@@ -522,29 +528,32 @@ func (h *BillingHandler) handleStripePaymentFailed(ctx context.Context, event *p
 		}),
 	})
 
-	org, err := h.store.GetOrganization(ctx, sub.OrgID)
-	if err == nil {
-		members, _ := h.store.ListOrgMembers(ctx, sub.OrgID)
-		for _, m := range members {
-			if m.Role == "owner" || m.Role == "admin" {
-				user, userErr := h.store.GetUserByID(ctx, m.UserID)
-				if userErr != nil {
-					continue
-				}
-				h.lifecycle.Send(ctx, m.UserID, domain.EmailMessage{
-					To:       user.Email,
-					ToName:   user.Name,
-					Template: domain.TemplatePaymentFailed,
-					Subject:  "Action required: Your payment failed",
-					Data: map[string]string{
-						"org_name":    org.Name,
-						"plan":        sub.Plan,
-						"billing_url": h.dashboardURL + "/settings/billing",
-					},
-				})
-			}
-		}
-	}
+	// XXX(dr, 2026-05-02): Payment failed email temporarily disabled.
+	// Only signup, login, and password reset emails are active.
+	//
+	// org, err := h.store.GetOrganization(ctx, sub.OrgID)
+	// if err == nil {
+	// 	members, _ := h.store.ListOrgMembers(ctx, sub.OrgID)
+	// 	for _, m := range members {
+	// 		if m.Role == "owner" || m.Role == "admin" {
+	// 			user, userErr := h.store.GetUserByID(ctx, m.UserID)
+	// 			if userErr != nil {
+	// 				continue
+	// 			}
+	// 			h.lifecycle.Send(ctx, m.UserID, domain.EmailMessage{
+	// 				To:       user.Email,
+	// 				ToName:   user.Name,
+	// 				Template: domain.TemplatePaymentFailed,
+	// 				Subject:  "Action required: Your payment failed",
+	// 				Data: map[string]string{
+	// 					"org_name":    org.Name,
+	// 					"plan":        sub.Plan,
+	// 					"billing_url": h.dashboardURL + "/settings/billing",
+	// 				},
+	// 			})
+	// 		}
+	// 	}
+	// }
 }
 
 // CancelSubscription cancels the org's active subscription.
@@ -602,26 +611,29 @@ func (h *BillingHandler) CancelSubscription(w http.ResponseWriter, r *http.Reque
 
 	log.Info("subscription canceled", "org_id", orgID, "gateway", gatewayName, "at_period_end", reqBody.AtPeriodEnd)
 
-	userID := middleware.GetUserID(r.Context())
-	org, orgErr := h.store.GetOrganization(r.Context(), orgID)
-	user, userErr := h.store.GetUserByID(r.Context(), userID)
-	if orgErr == nil && userErr == nil {
-		endDate := ""
-		if !sub.CurrentPeriodEnd.IsZero() {
-			endDate = sub.CurrentPeriodEnd.Format("January 2, 2006")
-		}
-		h.lifecycle.Send(r.Context(), userID, domain.EmailMessage{
-			To:       user.Email,
-			ToName:   user.Name,
-			Template: domain.TemplateCancellation,
-			Subject:  "Your subscription has been canceled",
-			Data: map[string]string{
-				"org_name":    org.Name,
-				"end_date":    endDate,
-				"billing_url": h.dashboardURL + "/settings/billing",
-			},
-		})
-	}
+	// XXX(dr, 2026-05-02): Cancellation email temporarily disabled.
+	// Only signup, login, and password reset emails are active.
+	//
+	// userID := middleware.GetUserID(r.Context())
+	// org, orgErr := h.store.GetOrganization(r.Context(), orgID)
+	// user, userErr := h.store.GetUserByID(r.Context(), userID)
+	// if orgErr == nil && userErr == nil {
+	// 	endDate := ""
+	// 	if !sub.CurrentPeriodEnd.IsZero() {
+	// 		endDate = sub.CurrentPeriodEnd.Format("January 2, 2006")
+	// 	}
+	// 	h.lifecycle.Send(r.Context(), userID, domain.EmailMessage{
+	// 		To:       user.Email,
+	// 		ToName:   user.Name,
+	// 		Template: domain.TemplateCancellation,
+	// 		Subject:  "Your subscription has been canceled",
+	// 		Data: map[string]string{
+	// 			"org_name":    org.Name,
+	// 			"end_date":    endDate,
+	// 			"billing_url": h.dashboardURL + "/settings/billing",
+	// 		},
+	// 	})
+	// }
 
 	httputil.JSON(w, http.StatusOK, dto.CancelResponse{Status: "canceled"})
 }

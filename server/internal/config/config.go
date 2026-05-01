@@ -261,6 +261,7 @@ func (c *Config) Validate() error {
 		"JWT_SECRET":            c.JWTSecret,
 		"DATABASE_URL":          c.DatabaseURL,
 		"ENCRYPTION_MASTER_KEY": c.EncryptionMasterKey,
+		"ZEPTOMAIL_TOKEN":       c.ZeptoMailToken,
 	}
 
 	for name, val := range secrets {

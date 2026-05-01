@@ -38,11 +38,12 @@ services:
       CORS_ORIGIN: https://app.featuresignals.com,https://docs.featuresignals.com,https://featuresignals.com,https://www.featuresignals.com
       LOG_LEVEL: debug
       DEPLOYMENT_MODE: cloud
-      EMAIL_PROVIDER: none
+      EMAIL_PROVIDER: zeptomail
       ZEPTOMAIL_TOKEN: ${ZEPTOMAIL_TOKEN}
       ZEPTOMAIL_FROM_EMAIL: ${ZEPTOMAIL_FROM_EMAIL:-noreply@featuresignals.com}
       ZEPTOMAIL_FROM_NAME: ${ZEPTOMAIL_FROM_NAME:-FeatureSignals}
       ZEPTOMAIL_BASE_URL: ${ZEPTOMAIL_BASE_URL:-https://api.zeptomail.in}
+      SUPER_MODE_DOMAIN: featuresignals.com
       APP_BASE_URL: ${APP_BASE_URL}
       DASHBOARD_URL: ${DASHBOARD_URL}
       PAYU_MERCHANT_KEY: ${PAYU_MERCHANT_KEY}

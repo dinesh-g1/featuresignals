@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"context"
+	// "context"
 	"encoding/json"
 	"net/http"
-	"time"
+	// "time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -170,22 +170,25 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		}),
 	})
 
-	go func() {
-		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer sendCancel()
-		_ = h.lifecycle.Send(sendCtx, user.ID, domain.EmailMessage{
-			To:       req.Email,
-			ToName:   user.Name,
-			Template: domain.TemplateTeamInvite,
-			Subject:  "You've been invited to FeatureSignals",
-			Data: map[string]string{
-				"ToName":       user.Name,
-				"OrgName":      orgID,
-				"Role":         string(req.Role),
-				"DashboardURL": h.dashboardURL,
-			},
-		})
-	}()
+	// XXX(dr, 2026-05-02): Team invite email temporarily disabled.
+	// Only signup, login, and password reset emails are active.
+	//
+	// go func() {
+	// 	sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer sendCancel()
+	// 	_ = h.lifecycle.Send(sendCtx, user.ID, domain.EmailMessage{
+	// 		To:       req.Email,
+	// 		ToName:   user.Name,
+	// 		Template: domain.TemplateTeamInvite,
+	// 		Subject:  "You've been invited to FeatureSignals",
+	// 		Data: map[string]string{
+	// 			"ToName":       user.Name,
+	// 			"OrgName":      orgID,
+	// 			"Role":         string(req.Role),
+	// 			"DashboardURL": h.dashboardURL,
+	// 		},
+	// 	})
+	// }()
 
 	httputil.JSON(w, http.StatusCreated, dto.MemberResponse{
 		ID:    member.ID,

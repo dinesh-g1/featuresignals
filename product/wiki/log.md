@@ -3,6 +3,26 @@
 > Chronological record of all wiki operations. Append-only.
 > Format: `## [YYYY-MM-DD HH:MM] operation | description`
 
+## [2026-05-02 16:00] build | Email event emitter scoping + ZeptoMail production enablement
+
+- **Email strategy:** All scheduled lifecycle emails (trial reminders, re-engagement, weekly digest, renewals, feature spotlights) commented out. Only signup welcome, OTP/signup verification, and password reset emails remain active. These are sent directly from handlers (not via the scheduler).
+- **Files modified (handler sends commented out):** `server/internal/lifecycle/scheduler.go` (runOnce commented), `server/internal/api/handlers/billing.go` (payment success, payment failed, cancellation emails commented), `server/internal/api/handlers/team.go` (team invite email commented), `server/internal/api/handlers/sales.go` (sales inquiry notification commented)
+- **ZeptoMail production enablement:**
+  - `deploy/k8s/server.yaml`: ConfigMap EMAIL_PROVIDER changed from "none" to "zeptomail", added ZEPTOMAIL_FROM_EMAIL/FROM_NAME/BASE_URL, added SUPER_MODE_DOMAIN=featuresignals.com, added zeptomail-secret K8s Secret (placeholder), added ZEPTOMAIL_TOKEN env var to deployment referencing the secret
+  - `docker-compose.prod.yml`: EMAIL_PROVIDER changed from "none" to "zeptomail", added SUPER_MODE_DOMAIN=featuresignals.com
+  - `server/internal/config/config.go`: Added ZEPTOMAIL_TOKEN to critical secrets placeholder validation (prevents startup with insecure defaults)
+- **Super Mode:** SUPER_MODE_DOMAIN set to "featuresignals.com" in both K8s and Docker Compose prod configs, ensuring @featuresignals.com users get internal dev tool access
+- **Secrets management:** ZEPTOMAIL_TOKEN is injected into the cluster via K8s Secret (zeptomail-secret), created by GitHub Actions during deploy or manually via `kubectl`. The actual token never appears in ConfigMaps or committed files.
+
+## [2026-05-02 14:30] security | Secrets scanning & pre-commit hooks configuration
+
+- **Files created (2):** `.gitleaks.toml`, `lefthook.yml`
+- **Files modified (1):** `.github/scripts/setup-repo.sh` (added lefthook + gitleaks installation)
+- **Gitleaks rules (16 custom rules):** ZeptoMail tokens, Stripe live keys, GitHub PATs (fine-grained, classic, OAuth, App, refresh), Hetzner API tokens, database URLs with passwords, PEM private keys, SSH private keys, JWT secrets, generic secret assignments, AWS access/secret keys
+- **False-positive allowlist:** 21 stopwords (your-*, example, changeme, test-token, etc.), 30+ path globs (test files, mocks, examples, lockfiles, node_modules, wiki, private), 10 regex patterns (placeholders, localhost URLs, base64-encoded test strings)
+- **Lefthook pre-commit (parallel):** gitleaks protect --staged (all files), go vet (server/**/*.go), tsc --noEmit (dashboard/**/*.ts*), npm run lint (dashboard/**/*.ts*)
+- **Setup script:** Installs lefthook via brew → go install → npm (best-effort chain), then `lefthook install --force`, also installs gitleaks via brew on macOS
+
 ## [2026-05-02 11:00] design | Website lifecycle redesign — 5-step feature flag lifecycle pages
 
 - **Redesigned website to SHOW the complete feature flag lifecycle step by step.**
