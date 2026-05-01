@@ -694,7 +694,35 @@ var internalRoutes = map[string]bool{
 	"POST /api/v1/ops/users":                          true,
 	"PATCH /api/v1/ops/users/{id}":                    true,
 	"GET /api/v1/ops/audit":                           true,
-}
+
+		// Operations Portal — additional internal-only routes
+		"GET /api/v1/ops/auth/me":              true,
+		"POST /api/v1/ops/auth/forgot-password": true,
+		"GET /api/v1/ops/clusters":              true,
+		"GET /api/v1/ops/clusters/{name}/health": true,
+		"GET /ops":                               true,
+
+		// AI Janitor — internal code analysis tooling
+		"DELETE /v1/janitor/repositories/{id}":        true,
+		"GET /v1/janitor/config":                       true,
+		"GET /v1/janitor/flags":                         true,
+		"GET /v1/janitor/repositories":                  true,
+		"GET /v1/janitor/scans/{id}":                    true,
+		"GET /v1/janitor/scans/{scanId}/events":         true,
+		"GET /v1/janitor/stats":                         true,
+		"POST /v1/janitor/flags/{flagKey}/dismiss":      true,
+		"POST /v1/janitor/flags/{flagKey}/generate-pr":  true,
+		"POST /v1/janitor/repositories":                true,
+		"POST /v1/janitor/scan":                         true,
+		"POST /v1/janitor/scans/{id}/cancel":             true,
+		"PUT /v1/janitor/config":                        true,
+
+		// Public evaluation endpoints — documented via SDK docs
+		"GET /v1/public/evaluate/{flagKey}":     true,
+		"POST /v1/public/calculator":             true,
+		"POST /v1/public/migration/preview":      true,
+		"POST /v1/public/migration/save":         true,
+	}
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has
 // a corresponding entry in the OpenAPI spec, and vice versa. This prevents the
