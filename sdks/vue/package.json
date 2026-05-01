@@ -26,11 +26,11 @@
     "@openfeature/web-sdk": { "optional": true }
   },
   "devDependencies": {
-    "@vue/test-utils": "^2.4.0",
-    "jsdom": "^29.0.1",
-    "vitest": "^3.0.0",
-    "vue": "^3.5.0",
-    "typescript": "^5.0.0"
+    "@vue/test-utils": "^2.4.10",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.5",
+    "vue": "^3.5.33",
+    "typescript": "^6.0.3"
   },
   "license": "Apache-2.0"
 }
