@@ -98,11 +98,11 @@ func main() {
 
 	// Load .env file for local development (no-op in production).
 	// godotenv does NOT override existing env vars, so the OS environment
-	// always wins. .env contains safe defaults; .env.local overrides them
-	// with local secrets (gitignored).
-	_ = godotenv.Load()             // .env (committed defaults)
+	// always wins. Load .env.local FIRST (gitignored, local secrets), then
+	// .env (committed defaults) which won't override what .env.local set.
 	_ = godotenv.Load("../.env.local") // .env.local (gitignored, local secrets)
 	_ = godotenv.Load(".env.local")    // also try server/.env.local
+	_ = godotenv.Load()                 // .env (committed defaults — won't override)
 
 	cfg := config.Load()
 
