@@ -162,68 +162,60 @@ stopwords = [
     "fs_lic_test_",
 ]
 
-# Paths to skip entirely (glob patterns relative to repo root)
+# Paths to skip entirely (regex patterns relative to repo root)
 paths = [
     # Test files
-    "*_test.go",
-    "*.test.ts",
-    "*.test.tsx",
-    "*.spec.ts",
-    "*.spec.tsx",
-    "**/__tests__/**",
-    "**/__mocks__/**",
-    "**/testdata/**",
-    "**/fixtures/**",
+    '''_test\.go$''',
+    '''\.test\.tsx?$''',
+    '''\.spec\.tsx?$''',
+    '''__tests__/''',
+    '''__mocks__/''',
+    '''testdata/''',
+    '''fixtures/''',
 
     # Mock / generated files
-    "mock_*.go",
-    "*_mock.go",
-    "*.mock.ts",
-    "*.mock.tsx",
-    "**/mocks/**",
+    '''mock_.*\.go$''',
+    '''_mock\.go$''',
+    '''\.mock\.tsx?$''',
+    '''/mocks/''',
 
     # Example / template files
-    "*.example",
-    ".example.*",
-    "*.example.*",
-    "*.sample",
-    "*.template",
-    "**/.env.example",
-    "**/.env.example.*",
+    '''\.example''',
+    '''\.sample$''',
+    '''\.template$''',
 
-    # Documentation and config (specific known-safe files only)
-    "**/CHANGELOG.md",
-    "**/README.md",
-    "**/CLAUDE.md",
-    "**/SKILL.md",
-    "**/CONTRIBUTING.md",
-    "**/LICENSE",
+    # Documentation
+    '''CHANGELOG.md$''',
+    '''README.md$''',
+    '''CLAUDE.md$''',
+    '''SKILL.md$''',
+    '''CONTRIBUTING.md$''',
+    '''^LICENSE$''',
 
-    # Lockfiles and generated
-    "**/go.sum",
-    "**/package-lock.json",
-    "**/pnpm-lock.yaml",
-    "**/yarn.lock",
-    "**/bun.lockb",
-    "**/Cargo.lock",
+    # Lockfiles
+    '''go.sum$''',
+    '''package-lock.json$''',
+    '''pnpm-lock.yaml$''',
+    '''yarn.lock$''',
+    '''bun.lockb$''',
+    '''Cargo.lock$''',
 
     # CI output and vendored
-    "**/coverage.out",
-    "**/.nyc_output/**",
-    "**/dist/**",
-    "**/build/**",
-    "**/node_modules/**",
-    "**/vendor/**",
+    '''coverage.out$''',
+    '''dist/''',
+    '''build/''',
+    '''node_modules/''',
+    '''vendor/''',
 
-    # Wiki & internal docs (may contain example patterns)
-    "product/wiki/**",
-    "private/**",
+    # Wiki and internal docs
+    '''product/wiki/''',
+    '''private/''',
 
     # This config itself
-    ".gitleaks.toml",
+    '''^.gitleaks.toml$''',
 
-    # IDE and editor configs
-    ".zed/**",
+    # IDE configs
+    '''.zed/''',
 ]
 
 # Regex-based allowlist (patterns that, when matched, suppress the finding)

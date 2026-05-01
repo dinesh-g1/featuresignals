@@ -13,7 +13,36 @@
 pre-commit:
   parallel: true
   commands:
-    # ── Secrets Detection ────────────────────────────────────────────────────
+    # ── Block secret files (.env, .pem, .key, credentials) ──────────────────
+    block-secret-files:
+      label: "[secrets] block .env / .pem / .key files"
+      glob: "*"
+      run: |
+        STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+        BLOCKED=$(echo "$STAGED" | grep -E '\.env$|\.env\.[^e]|credentials|\.pem$|\.key$' | grep -vE '\.example$' || true)
+        if [ -n "$BLOCKED" ]; then
+          echo "ERROR: Potential secret file staged for commit:"
+          echo "$BLOCKED" | sed 's/^/       /'
+          echo "       Remove with: git reset HEAD <file>"
+          exit 1
+        fi
+
+    # ── Inline secret patterns ──────────────────────────────────────────────
+    inline-secrets:
+      label: "[secrets] inline pattern scan"
+      glob: "*"
+      run: |
+        STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+        PATTERN='(PRIVATE.KEY|BEGIN RSA|sk_live_|sk_test_|Zoho-enczapikey\s+[A-Za-z0-9+/=]{20,})'
+        for f in $STAGED; do
+          if [ -f "$f" ] && echo "$f" | grep -qvE '\.example$|\.toml$|gitleaks|_test\.(go|ts|tsx)$|mock|testdata|__tests__|node_modules|vendor'; then
+            if git show ":$f" 2>/dev/null | grep -qEi "$PATTERN"; then
+              echo "WARNING: Possible secret pattern in $f"
+            fi
+          fi
+        done
+
+    # ── Secrets Detection (gitleaks) ─────────────────────────────────────────
     gitleaks:
       label: "[secrets] gitleaks protect"
       glob: "*"
