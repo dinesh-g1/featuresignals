@@ -6,8 +6,11 @@
 # Usage:
 #   gh workflow run cd.yml -f version=<full-commit-sha>
 #
-# Required secrets:
-#   GHCR_TOKEN — GitHub PAT with read:packages
+# Required secrets (set in GitHub Settings → Secrets and variables → Actions):
+#   GHCR_TOKEN       — GitHub PAT with read:packages
+#   ZEPTOMAIL_TOKEN  — ZeptoMail API token (Zoho-enczapikey ...)
+#   JWT_SECRET       — JWT signing secret
+#   POSTGRES_PASSWORD — PostgreSQL superuser password
 
 name: CD - Deploy to K3s
 
@@ -32,6 +35,8 @@ jobs:
       KUBECONFIG: /home/runner/.kube/config
       PATH: /usr/local/bin:/usr/local/sbin:/usr/bin:/bin
     steps:
+      - uses: actions/checkout@v4
+
       # ── Auth ────────────────────────────────────────────────────
       - name: Update GHCR pull secret
         run: |
@@ -42,6 +47,19 @@ jobs:
             --docker-password="${{ secrets.GHCR_TOKEN }}" \
             --namespace=${{ env.NS }}
           echo "✅ GHCR pull secret updated"
+
+      - name: Sync ZeptoMail secret from GitHub Secrets
+        run: |
+          kubectl delete secret zeptomail-secret -n ${{ env.NS }} --ignore-not-found
+          kubectl create secret generic zeptomail-secret \
+            --from-literal=zeptomail-token="${{ secrets.ZEPTOMAIL_TOKEN }}" \
+            --namespace=${{ env.NS }}
+          echo "✅ ZeptoMail secret synced"
+
+      - name: Apply K8s manifests (ConfigMaps, etc.)
+        run: |
+          kubectl apply -f ${{ github.workspace }}/deploy/k8s/server.yaml
+          echo "✅ K8s manifests applied"
 
       # ── Server ──────────────────────────────────────────────────
       - name: Update server
