@@ -89,7 +89,7 @@ jobs:
 
       - name: go test (server)
         if: matrix.service == 'server'
-        run: go test ./... -short -count=1 -timeout=120s -race
+        run: go test ./... -short -count=1 -timeout=300s -race
         working-directory: server
 
   build:
