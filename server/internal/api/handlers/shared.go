@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"unicode"
 
 	"github.com/featuresignals/server/internal/domain"
@@ -103,10 +105,36 @@ func BootstrapEnvironments(ctx context.Context, store domain.EnvironmentWriter, 
 
 // ── API key hashing ─────────────────────────────────────────────────────────
 
-// HashAPIKey returns the SHA-256 hex digest of a raw API key.
+// hashAPIKeyPepper returns the pepper secret used for API key HMAC.
+// Uses ENCRYPTION_MASTER_KEY (32 bytes, hex-encoded) as the HMAC key.
+// If not set, falls back to a hardcoded value (development only — production
+// must set ENCRYPTION_MASTER_KEY).
+func hashAPIKeyPepper() []byte {
+	if k := os.Getenv("ENCRYPTION_MASTER_KEY"); k != "" {
+		// Decode hex to get the raw 32-byte key.
+		if raw, err := hex.DecodeString(k); err == nil && len(raw) == 32 {
+			return raw
+		}
+	}
+	// Development fallback — NOT for production use.
+	return []byte("featuresignals-dev-pepper-32byte!")
+}
+
+// HashAPIKey returns the HMAC-SHA-256 hex digest of a raw API key, keyed with
+// a server-side pepper (ENCRYPTION_MASTER_KEY). HMAC prevents rainbow table
+// attacks if the api_keys table is breached. API keys are high-entropy
+// (48 hex chars = ~192 bits), so a fast keyed hash is sufficient.
 func HashAPIKey(key string) string {
-	h := sha256.Sum256([]byte(key))
-	return fmt.Sprintf("%x", h[:])
+	return HashAPIKeyWithPepper(key, hashAPIKeyPepper())
+}
+
+// HashAPIKeyWithPepper returns the HMAC-SHA-256 hex digest of a raw API key
+// using the provided pepper secret. Exported for callers that already have
+// the pepper material available.
+func HashAPIKeyWithPepper(key string, pepper []byte) string {
+	mac := hmac.New(sha256.New, pepper)
+	mac.Write([]byte(key))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
 // ── Sample data seeding (used by both Register and Demo flows) ──────────────

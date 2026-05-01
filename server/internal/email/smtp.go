@@ -78,8 +78,22 @@ func (s *SMTPSender) SendPasswordResetOTP(ctx context.Context, toEmail, toName, 
 	return s.sendWithRetry(ctx, toEmail, []byte(msg), "password reset")
 }
 
+// sanitizeHeader strips CR and LF characters from a value to prevent header injection
+// (also known as SMTP smuggling). This must be applied to all user-controlled values
+// before they are interpolated into email headers.
+func sanitizeHeader(v string) string {
+	v = strings.ReplaceAll(v, "\r", "")
+	v = strings.ReplaceAll(v, "\n", "")
+	return v
+}
+
 // buildMIMEMessage creates a multipart MIME email with both plain text and HTML parts.
 func (s *SMTPSender) buildMIMEMessage(to, toName, subject, plainBody, htmlBody string) string {
+	// Sanitize user-controlled values to prevent CRLF header injection (SMTP smuggling).
+	to = sanitizeHeader(to)
+	toName = sanitizeHeader(toName)
+	subject = sanitizeHeader(subject)
+
 	boundary := "=_feature_signals_boundary_2024"
 
 	var buf strings.Builder

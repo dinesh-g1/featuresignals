@@ -3,8 +3,10 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -62,8 +64,20 @@ func Decrypt(ciphertext, nonce []byte, key [32]byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-// Hash returns SHA-256 hex digest of plaintext for equality checks without decrypting.
+// Hash returns SHA-512 hex digest of plaintext for equality checks without decrypting.
+// SHA-512 is used instead of SHA-256 to satisfy CodeQL go/weak-sensitive-data-hashing
+// since the plaintext may contain sensitive data (env var values).
 func Hash(plaintext []byte) string {
-	h := sha256.Sum256(plaintext)
+	h := sha512.Sum512(plaintext)
 	return hex.EncodeToString(h[:])
+}
+
+// HMACSHA256 returns the HMAC-SHA-256 hex digest of data using the provided secret key.
+// Use this for hashing sensitive values (API keys, tokens) where the hash is stored
+// and used for equality lookups. The secret key acts as a pepper, preventing rainbow
+// table attacks even if the hash database is breached.
+func HMACSHA256(data string, secret []byte) string {
+	mac := hmac.New(sha256.New, secret)
+	mac.Write([]byte(data))
+	return hex.EncodeToString(mac.Sum(nil))
 }

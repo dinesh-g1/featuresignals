@@ -29,6 +29,14 @@ func NewOpsAuthHandler(store domain.Store, jwtMgr auth.TokenManager, logger *slo
 	return &OpsAuthHandler{store: store, jwtMgr: jwtMgr, logger: logger}
 }
 
+// isReqTLS returns true if the request arrived over a TLS connection.
+// In local dev (HTTP), this returns false, so cookie Secure stays off.
+// In production behind a TLS-terminating proxy, the reverse proxy must forward
+// the TLS connection (e.g. via PROXY protocol) so r.TLS is populated.
+func isReqTLS(r *http.Request) bool {
+	return r.TLS != nil
+}
+
 // Login handles POST /api/v1/ops/auth/login
 func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "ops_auth_login")
@@ -79,13 +87,16 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// Clear password hash from response
 	user.PasswordHash = ""
 
-	// Set httpOnly cookie for server-side middleware/auth-server.ts
+	// Set httpOnly cookies for server-side middleware/auth-server.ts.
+	// Secure is derived from whether the request arrived over TLS — this
+	// automatically handles dev (HTTP, no Secure) and prod (HTTPS, Secure).
+	cookieSecure := isReqTLS(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "ops_access_token",
 		Value:    tokenPair.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // false in dev, change to true in production
+		Secure:   cookieSecure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   8 * 3600, // 8 hours
 	})
@@ -95,7 +106,7 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    tokenPair.RefreshToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   cookieSecure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   7 * 24 * 3600, // 7 days
 	})
@@ -166,13 +177,14 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set httpOnly cookie for server-side middleware/auth-server.ts
+	// Set httpOnly cookies for server-side middleware/auth-server.ts.
+	cookieSecure := isReqTLS(r)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "ops_access_token",
 		Value:    tokenPair.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // false in dev, change to true in production
+		Secure:   cookieSecure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   8 * 3600, // 8 hours
 	})
@@ -182,7 +194,7 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Value:    tokenPair.RefreshToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   cookieSecure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   7 * 24 * 3600, // 7 days
 	})

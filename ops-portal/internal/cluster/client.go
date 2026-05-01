@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
@@ -30,6 +31,50 @@ func NewClient() *Client {
 			},
 		},
 	}
+}
+
+// validateHost strips the port (if any) from the given address, parses the
+// remaining host as an IP, and returns an error if it is a loopback, private,
+// link-local, or otherwise non-global unicast address.  This prevents SSRF
+// attacks through a maliciously crafted cluster.PublicIP.
+func validateHost(addr string) error {
+	// Strip port if present (IPv6 addresses may contain colons).
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		// net.SplitHostPort fails when there is no port — that's fine, the
+		// whole string is the host.
+		host = addr
+	}
+
+	// Resolve the host to an IP.  If it's a hostname (e.g. "cluster.example.com")
+	// we look it up; if it's already an IP we get it back directly.
+	ip := net.ParseIP(host)
+	if ip == nil {
+		// Host is not a literal IP — resolve it.
+		ips, err := net.LookupIP(host)
+		if err != nil {
+			return fmt.Errorf("cluster host lookup failed: %w", err)
+		}
+		if len(ips) == 0 {
+			return fmt.Errorf("cluster host resolved to no addresses")
+		}
+		ip = ips[0]
+	}
+
+	if ip.IsLoopback() {
+		return fmt.Errorf("cluster host is a loopback address: %s", ip)
+	}
+	if ip.IsPrivate() {
+		return fmt.Errorf("cluster host is a private address: %s", ip)
+	}
+	if ip.IsLinkLocalUnicast() {
+		return fmt.Errorf("cluster host is a link-local address: %s", ip)
+	}
+	if ip.IsUnspecified() {
+		return fmt.Errorf("cluster host is the unspecified address: %s", ip)
+	}
+
+	return nil
 }
 
 // schemeForIP returns "http" for local addresses, "https" for public IPs.
@@ -57,9 +102,20 @@ func schemeForIP(ip string) string {
 	return "https"
 }
 
+// clusterURL builds and validates a URL for a cluster endpoint.
+func (c *Client) clusterURL(cluster *domain.Cluster, path string) (string, error) {
+	if err := validateHost(cluster.PublicIP); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s://%s%s", schemeForIP(cluster.PublicIP), cluster.PublicIP, path), nil
+}
+
 // Health fetches health status from a cluster's /ops/health endpoint.
 func (c *Client) Health(ctx context.Context, cluster *domain.Cluster) (*domain.ClusterHealth, error) {
-	url := fmt.Sprintf("%s://%s/ops/health", schemeForIP(cluster.PublicIP), cluster.PublicIP)
+	url, err := c.clusterURL(cluster, "/ops/health")
+	if err != nil {
+		return nil, fmt.Errorf("cluster health: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -95,7 +151,10 @@ func (c *Client) Health(ctx context.Context, cluster *domain.Cluster) (*domain.C
 
 // FetchConfig fetches the current configuration from a cluster's /ops/config endpoint.
 func (c *Client) FetchConfig(ctx context.Context, cluster *domain.Cluster) (string, error) {
-	url := fmt.Sprintf("%s://%s/ops/config", schemeForIP(cluster.PublicIP), cluster.PublicIP)
+	url, err := c.clusterURL(cluster, "/ops/config")
+	if err != nil {
+		return "", fmt.Errorf("cluster config: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -126,7 +185,10 @@ func (c *Client) FetchConfig(ctx context.Context, cluster *domain.Cluster) (stri
 
 // UpdateConfig pushes a configuration update to a cluster's /ops/config endpoint.
 func (c *Client) UpdateConfig(ctx context.Context, cluster *domain.Cluster, configJSON string) error {
-	url := fmt.Sprintf("%s://%s/ops/config", schemeForIP(cluster.PublicIP), cluster.PublicIP)
+	url, err := c.clusterURL(cluster, "/ops/config")
+	if err != nil {
+		return fmt.Errorf("cluster config update: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader([]byte(configJSON)))
 	if err != nil {
@@ -154,7 +216,10 @@ func (c *Client) UpdateConfig(ctx context.Context, cluster *domain.Cluster, conf
 
 // FetchMetrics fetches metrics from a cluster's /ops/metrics endpoint.
 func (c *Client) FetchMetrics(ctx context.Context, cluster *domain.Cluster) (*domain.ClusterMetric, error) {
-	url := fmt.Sprintf("%s://%s/ops/metrics", schemeForIP(cluster.PublicIP), cluster.PublicIP)
+	url, err := c.clusterURL(cluster, "/ops/metrics")
+	if err != nil {
+		return nil, fmt.Errorf("cluster metrics: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

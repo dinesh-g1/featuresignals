@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -41,8 +40,9 @@ func generateAPIKey(keyType domain.APIKeyType) (string, string, string) {
 	rand.Read(b)
 	rawKey := prefix + hex.EncodeToString(b)
 
-	h := sha256.Sum256([]byte(rawKey))
-	keyHash := fmt.Sprintf("%x", h[:])
+	// Use HMAC-SHA-256 with server-side pepper for API key hashing.
+	// See HashAPIKey for rationale.
+	keyHash := HashAPIKey(rawKey)
 
 	return rawKey, keyHash, rawKey[:12]
 }

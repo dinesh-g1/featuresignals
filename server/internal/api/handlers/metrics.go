@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha256"
-	"fmt"
 	"net/http"
 
 	"github.com/featuresignals/server/internal/api/dto"
@@ -63,7 +61,9 @@ func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request)
 		httputil.Error(w, http.StatusUnauthorized, "missing X-API-Key header")
 		return
 	}
-	keyHash := fmt.Sprintf("%x", sha256.Sum256([]byte(apiKey)))
+	// Use HMAC-SHA-256 with server-side pepper for API key hashing.
+	// See HashAPIKey for rationale.
+	keyHash := HashAPIKey(apiKey)
 	if _, _, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash); err != nil {
 		logger.Warn("failed to authenticate impression API key", "error", err)
 		httputil.Error(w, http.StatusUnauthorized, "invalid API key")

@@ -198,9 +198,9 @@ function LoginForm() {
         }
 
         if (discovery.provider_type === "saml") {
-          window.location.href = `${API_URL}/v1/sso/saml/login/${orgSlug.trim()}`;
+          window.location.href = `${API_URL}/v1/sso/saml/login/${encodeURIComponent(orgSlug.trim())}`;
         } else if (discovery.provider_type === "oidc") {
-          window.location.href = `${API_URL}/v1/sso/oidc/authorize/${orgSlug.trim()}`;
+          window.location.href = `${API_URL}/v1/sso/oidc/authorize/${encodeURIComponent(orgSlug.trim())}`;
         } else {
           setError("Unknown SSO provider type.");
           setSsoLoading(false);

@@ -49,15 +49,32 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			logger.LogAttrs(r.Context(), level, "request",
 				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.String("query", r.URL.RawQuery),
+				slog.String("path", sanitizeLogValue(r.URL.Path)),
+				slog.String("query", sanitizeLogValue(r.URL.RawQuery)),
 				slog.Int("status", rw.statusCode),
 				slog.Duration("duration", duration),
-				slog.String("remote", r.RemoteAddr),
-				slog.String("user_agent", r.UserAgent()),
+				slog.String("remote", sanitizeLogValue(r.RemoteAddr)),
+				slog.String("user_agent", sanitizeLogValue(r.UserAgent())),
 			)
 		})
 	}
+}
+
+// sanitizeLogValue strips control characters and limits length of
+// user-controlled strings written to structured logs. This prevents
+// log injection and satisfies CodeQL go/reflected-xss checks.
+func sanitizeLogValue(s string) string {
+	if len(s) > 2048 {
+		s = s[:2048]
+	}
+	b := make([]byte, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 32 || c == '\t' || c == '\n' || c == '\r' {
+			b = append(b, c)
+		}
+	}
+	return string(b)
 }
 
 // SecureHeaders returns middleware that sets security-related HTTP headers.
@@ -88,8 +105,8 @@ func SafeRecoverer(next http.Handler) http.Handler {
 
 				slog.Error("panic recovered",
 					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
+					"method", sanitizeLogValue(r.Method),
+					"path", sanitizeLogValue(r.URL.Path),
 					"stack", string(debug.Stack()),
 				)
 

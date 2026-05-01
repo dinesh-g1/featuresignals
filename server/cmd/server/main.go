@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
@@ -176,6 +177,10 @@ func main() {
 	pgxCfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("failed to parse database URL", "error", err)
+		os.Exit(1)
+	}
+	if cfg.DBMaxConns > math.MaxInt32 || cfg.DBMinConns > math.MaxInt32 {
+		logger.Error("database pool size exceeds max", "max_conns", cfg.DBMaxConns, "min_conns", cfg.DBMinConns, "max_allowed", math.MaxInt32)
 		os.Exit(1)
 	}
 	pgxCfg.MaxConns = int32(cfg.DBMaxConns)
