@@ -96,8 +96,13 @@ func printBanner() {
 func main() {
 	printBanner()
 
-	// Load .env file for local development (no-op in production)
-	_ = godotenv.Load()
+	// Load .env file for local development (no-op in production).
+	// godotenv does NOT override existing env vars, so the OS environment
+	// always wins. .env contains safe defaults; .env.local overrides them
+	// with local secrets (gitignored).
+	_ = godotenv.Load()             // .env (committed defaults)
+	_ = godotenv.Load("../.env.local") // .env.local (gitignored, local secrets)
+	_ = godotenv.Load(".env.local")    // also try server/.env.local
 
 	cfg := config.Load()
 

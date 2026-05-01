@@ -31,7 +31,7 @@ services:
       CORS_ENABLED: "true"
       ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost"
       DEPLOYMENT_MODE: cloud
-      EMAIL_PROVIDER: none
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-none}
       APP_BASE_URL: http://localhost:8080
       DASHBOARD_URL: http://localhost:3000
       CLUSTER_NAME: local-dev
