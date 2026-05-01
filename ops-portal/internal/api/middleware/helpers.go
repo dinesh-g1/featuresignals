@@ -31,6 +31,8 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 }
 
 // Logging returns middleware that logs every request with slog.
+// User-controlled values are truncated to 2KB and passed through slog.String
+// which applies JSON escaping, preventing injection (CodeQL go/reflected-xss).
 func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,32 +51,24 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			logger.LogAttrs(r.Context(), level, "request",
 				slog.String("method", r.Method),
-				slog.String("path", sanitizeLogValue(r.URL.Path)),
-				slog.String("query", sanitizeLogValue(r.URL.RawQuery)),
+				slog.String("path", truncateForLog(r.URL.Path)),
+				slog.String("query", truncateForLog(r.URL.RawQuery)),
 				slog.Int("status", rw.statusCode),
 				slog.Duration("duration", duration),
-				slog.String("remote", sanitizeLogValue(r.RemoteAddr)),
-				slog.String("user_agent", sanitizeLogValue(r.UserAgent())),
+				slog.String("remote", truncateForLog(r.RemoteAddr)),
+				slog.String("user_agent", truncateForLog(r.UserAgent())),
 			)
 		})
 	}
 }
 
-// sanitizeLogValue strips control characters and limits length of
-// user-controlled strings written to structured logs. This prevents
-// log injection and satisfies CodeQL go/reflected-xss checks.
-func sanitizeLogValue(s string) string {
+// truncateForLog limits a string to 2KB for use in structured log entries.
+// slog.String applies JSON escaping to the value, preventing injection in logs.
+func truncateForLog(s string) string {
 	if len(s) > 2048 {
-		s = s[:2048]
+		return s[:2048]
 	}
-	b := make([]byte, 0, len(s))
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= 32 || c == '\t' || c == '\n' || c == '\r' {
-			b = append(b, c)
-		}
-	}
-	return string(b)
+	return s
 }
 
 // SecureHeaders returns middleware that sets security-related HTTP headers.
@@ -105,8 +99,8 @@ func SafeRecoverer(next http.Handler) http.Handler {
 
 				slog.Error("panic recovered",
 					"error", err,
-					"method", sanitizeLogValue(r.Method),
-					"path", sanitizeLogValue(r.URL.Path),
+					"method", truncateForLog(r.Method),
+					"path", truncateForLog(r.URL.Path),
 					"stack", string(debug.Stack()),
 				)
 

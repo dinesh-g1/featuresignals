@@ -20,13 +20,21 @@ import (
 )
 
 type Store struct {
-	pool     *pgxpool.Pool
-	lockMu   sync.Mutex
-	lockConn *pgxpool.Conn
+	pool               *pgxpool.Pool
+	lockMu             sync.Mutex
+	lockConn           *pgxpool.Conn
+	auditIntegrityKey  string // HMAC key for audit log tamper-evidence chain
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
+}
+
+// SetAuditIntegrityKey sets the HMAC key used to compute audit log integrity
+// hashes. Must be called before any audit entries are created. Uses
+// ENCRYPTION_MASTER_KEY as the key material.
+func (s *Store) SetAuditIntegrityKey(key string) {
+	s.auditIntegrityKey = key
 }
 
 // Pool returns the underlying connection pool, allowing other stores
@@ -1035,7 +1043,7 @@ func (s *Store) CreateAuditEntry(ctx context.Context, entry *domain.AuditEntry) 
 	}
 
 	entry.CreatedAt = time.Now().UTC()
-	entry.IntegrityHash = entry.ComputeIntegrityHash(prevHash)
+	entry.IntegrityHash = entry.ComputeIntegrityHash(prevHash, s.auditIntegrityKey)
 
 	err = tx.QueryRow(ctx,
 		`INSERT INTO audit_logs (org_id, project_id, actor_id, actor_type, action, resource_type, resource_id, before_state, after_state, metadata, ip_address, user_agent, integrity_hash)

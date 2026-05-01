@@ -166,6 +166,10 @@ func (s *SMTPSender) sendWithRetry(ctx context.Context, to string, msg []byte, l
 }
 
 func (s *SMTPSender) dialAndSend(ctx context.Context, to string, msg []byte) error {
+	// Sanitize recipient to prevent SMTP header injection (defense-in-depth —
+	// callers also sanitize via buildMIMEMessage). CodeQL go/email-injection.
+	to = sanitizeHeader(to)
+
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
 
 	dialer := &net.Dialer{Timeout: otpDialTimeout}

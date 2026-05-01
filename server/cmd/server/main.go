@@ -217,6 +217,9 @@ func main() {
 
 	// Components
 	store := postgres.NewStore(pool)
+	if cfg.EncryptionMasterKey != "" {
+		store.SetAuditIntegrityKey(cfg.EncryptionMasterKey)
+	}
 	jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.TokenTTL, cfg.RefreshTTL)
 	evalMiddlewares := []eval.Middleware{eval.WithLogging(logger)}
 	if cfg.OTELEnabled && cfg.OTELTracesEnabled {

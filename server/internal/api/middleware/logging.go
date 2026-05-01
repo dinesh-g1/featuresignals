@@ -36,16 +36,25 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 // It also injects a request-scoped logger into the context so downstream
 // handlers can call httputil.LoggerFromContext(r.Context()) without needing
 // a logger field in their struct.
+//
+// All user-controlled values (path, remote addr, user agent) are truncated to
+// 2KB and passed through slog.String which JSON-escapes them in structured
+// output, preventing log injection and reflected XSS (CodeQL go/reflected-xss).
 func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			reqID := chimw.GetReqID(r.Context())
 
+			// Truncate user-controlled values to prevent log flooding.
+			safePath := truncateForLog(r.URL.Path)
+			safeRemote := truncateForLog(r.RemoteAddr)
+			safeUA := truncateForLog(r.UserAgent())
+
 			reqLogger := logger.With(
 				"request_id", reqID,
-				"method", r.Method,
-				"path", sanitizeLogValue(r.URL.Path),
+				"method", slog.StringValue(r.Method),
+				"path", slog.StringValue(safePath),
 			)
 
 			ctx := httputil.ContextWithLogger(r.Context(), reqLogger)
@@ -61,51 +70,28 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 				level = slog.LevelWarn
 			}
 
-			logAttrs := []any{
-				"status", rw.status,
-				"duration_ms", duration.Milliseconds(),
-				"bytes_out", rw.bytesOut,
-				"remote", sanitizeLogValue(r.RemoteAddr),
-				"user_agent", sanitizeLogValue(r.UserAgent()),
+			attrs := []slog.Attr{
+				slog.Int("status", rw.status),
+				slog.Int64("duration_ms", duration.Milliseconds()),
+				slog.Int("bytes_out", rw.bytesOut),
+				slog.String("remote", safeRemote),
+				slog.String("user_agent", safeUA),
 			}
 			if orgID, _ := r.Context().Value(OrgIDKey).(string); orgID != "" {
-				logAttrs = append(logAttrs, "org_id", sanitizeLogValue(orgID))
+				attrs = append(attrs, slog.String("org_id", truncateForLog(orgID)))
 			}
 
-			reqLogger.LogAttrs(r.Context(), level, "request completed", anyToAttrs(logAttrs)...)
+			reqLogger.LogAttrs(r.Context(), level, "request completed", attrs...)
 		})
 	}
 }
 
-// sanitizeLogValue strips control characters and limits length of
-// user-controlled strings written to structured logs. This prevents
-// log injection and satisfies CodeQL go/reflected-xss checks.
-func sanitizeLogValue(s string) string {
-	// Limit to 2KB to prevent log flooding.
+// truncateForLog limits a string to 2KB for use in structured log entries.
+// slog.String (used by all callers) applies JSON escaping to the value,
+// which prevents injection attacks in structured log output.
+func truncateForLog(s string) string {
 	if len(s) > 2048 {
-		s = s[:2048]
+		return s[:2048]
 	}
-	// Strip control characters (except space) that could be used for
-	// log injection in text-format handlers.
-	b := make([]byte, 0, len(s))
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= 32 || c == '\t' || c == '\n' || c == '\r' {
-			b = append(b, c)
-		}
-	}
-	return string(b)
-}
-
-// anyToAttrs converts a flat []any key-value slice to []slog.Attr.
-func anyToAttrs(kv []any) []slog.Attr {
-	if len(kv)%2 != 0 {
-		return nil
-	}
-	attrs := make([]slog.Attr, 0, len(kv)/2)
-	for i := 0; i < len(kv); i += 2 {
-		key, _ := kv[i].(string)
-		attrs = append(attrs, slog.Any(key, kv[i+1]))
-	}
-	return attrs
+	return s
 }

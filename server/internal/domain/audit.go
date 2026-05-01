@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
@@ -28,24 +29,26 @@ type AuditEntry struct {
 	CreatedAt     time.Time       `json:"created_at" db:"created_at"`
 }
 
-// ComputeIntegrityHash computes the SHA-512 chain hash for tamper evidence.
+// ComputeIntegrityHash computes an HMAC-SHA-512 chain hash for tamper evidence.
 // Each entry's hash includes the previous entry's hash to form a chain.
-// SHA-512 is used (over SHA-256) to satisfy CodeQL go/weak-sensitive-data-hashing
-// since the hashed data may contain PII (OrgID, ActorID, BeforeState/AfterState snapshots).
-func (e *AuditEntry) ComputeIntegrityHash(previousHash string) string {
-	h := sha512.New()
-	h.Write([]byte(previousHash))
-	h.Write([]byte(e.OrgID))
-	h.Write([]byte(e.Action))
-	h.Write([]byte(e.ResourceType))
+// HMAC-SHA-512 with a server-side key is used to satisfy CodeQL
+// go/weak-sensitive-data-hashing — the key material prevents brute-force
+// attacks on the hashed PII data (OrgID, ActorID, BeforeState/AfterState snapshots
+// which may contain passwords or other secrets).
+func (e *AuditEntry) ComputeIntegrityHash(previousHash string, keyMaterial string) string {
+	mac := hmac.New(sha512.New, []byte(keyMaterial))
+	mac.Write([]byte(previousHash))
+	mac.Write([]byte(e.OrgID))
+	mac.Write([]byte(e.Action))
+	mac.Write([]byte(e.ResourceType))
 	if e.ResourceID != nil {
-		h.Write([]byte(*e.ResourceID))
+		mac.Write([]byte(*e.ResourceID))
 	}
 	if e.ActorID != nil {
-		h.Write([]byte(*e.ActorID))
+		mac.Write([]byte(*e.ActorID))
 	}
-	h.Write(e.BeforeState)
-	h.Write(e.AfterState)
-	h.Write([]byte(e.CreatedAt.UTC().Format(time.RFC3339Nano)))
-	return hex.EncodeToString(h.Sum(nil))
+	mac.Write(e.BeforeState)
+	mac.Write(e.AfterState)
+	mac.Write([]byte(e.CreatedAt.UTC().Format(time.RFC3339Nano)))
+	return hex.EncodeToString(mac.Sum(nil))
 }

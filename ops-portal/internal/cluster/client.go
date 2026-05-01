@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/featuresignals/ops-portal/internal/domain"
@@ -102,12 +103,19 @@ func schemeForIP(ip string) string {
 	return "https"
 }
 
-// clusterURL builds and validates a URL for a cluster endpoint.
+// clusterURL builds a validated URL for a cluster endpoint using net/url
+// for safe URL construction (CodeQL go/request-forgery). The host is validated
+// by validateHost before URL construction.
 func (c *Client) clusterURL(cluster *domain.Cluster, path string) (string, error) {
 	if err := validateHost(cluster.PublicIP); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s://%s%s", schemeForIP(cluster.PublicIP), cluster.PublicIP, path), nil
+	u := &url.URL{
+		Scheme: schemeForIP(cluster.PublicIP),
+		Host:   cluster.PublicIP,
+		Path:   path,
+	}
+	return u.String(), nil
 }
 
 // Health fetches health status from a cluster's /ops/health endpoint.
