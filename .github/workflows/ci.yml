@@ -35,7 +35,7 @@ jobs:
     outputs:
       full_sha: ${{ steps.out.outputs.full_sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - id: out
@@ -56,13 +56,13 @@ jobs:
       matrix:
         service: ${{ fromJSON(needs.matrix.outputs.services) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.resolve.outputs.full_sha }}
 
       - name: Set up Go (router)
         if: matrix.service == 'router'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: deploy/global-router/go.mod
 
@@ -78,7 +78,7 @@ jobs:
 
       - name: Set up Go (server)
         if: matrix.service == 'server'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: server/go.mod
 
@@ -104,7 +104,7 @@ jobs:
       matrix:
         service: ${{ fromJSON(needs.matrix.outputs.services) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.resolve.outputs.full_sha }}
 
@@ -112,12 +112,12 @@ jobs:
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u dinesh-g1 --password-stdin
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # ── Server ──────────────────────────────────────────────
       - name: Build + push server
         if: matrix.service == 'server'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./server
           file: ./deploy/docker/Dockerfile.server
@@ -128,7 +128,7 @@ jobs:
       # ── Dashboard ───────────────────────────────────────────
       - name: Build + push dashboard
         if: matrix.service == 'dashboard'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./dashboard
           file: ./deploy/docker/Dockerfile.dashboard
@@ -139,7 +139,7 @@ jobs:
       # ── Global Router ───────────────────────────────────────
       - name: Build + push global-router
         if: matrix.service == 'router'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./deploy/global-router
           file: ./deploy/global-router/Dockerfile
