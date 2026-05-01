@@ -1,0 +1,245 @@
+# FeatureSignals — Gitleaks Configuration
+#
+# Detects secrets, tokens, and credentials before they enter version control.
+# Run manually:  gitleaks detect --config .gitleaks.toml
+# Run in CI:     gitleaks detect --config .gitleaks.toml --no-git
+#
+# Rules are ordered by category for readability. The allowlist at the bottom
+# prevents false positives from test files, examples, and placeholder values.
+# ---------------------------------------------------------------------------
+
+title = "FeatureSignals Gitleaks Configuration"
+
+# ── API Keys & Tokens ────────────────────────────────────────────────────────
+
+[[rules]]
+id = "zeptomail-token"
+description = "ZeptoMail API token (Zoho-enczapikey header)"
+regex = '''Zoho-enczapikey\s+[A-Za-z0-9+/=]{20,}'''
+keywords = ["zoho", "enczapikey", "zeptomail"]
+tags = ["api-key", "email", "zeptomail"]
+
+[[rules]]
+id = "stripe-access-token"
+description = "Stripe live secret key (sk_live_) or restricted key (rk_live_)"
+regex = '''(?i)(sk|rk)_live_[0-9a-zA-Z]{24,}'''
+keywords = ["sk_live", "rk_live", "stripe"]
+tags = ["api-key", "payment", "stripe"]
+
+[[rules]]
+id = "github-fine-grained-pat"
+description = "GitHub fine-grained personal access token"
+regex = '''github_pat_[0-9a-zA-Z_]{36,}'''
+keywords = ["github_pat", "github"]
+tags = ["api-key", "github"]
+
+[[rules]]
+id = "github-classic-pat"
+description = "GitHub classic personal access token (ghp_)"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+keywords = ["ghp_", "github"]
+tags = ["api-key", "github"]
+
+[[rules]]
+id = "github-oauth-token"
+description = "GitHub OAuth access token (gho_)"
+regex = '''gho_[0-9a-zA-Z]{36}'''
+keywords = ["gho_", "github"]
+tags = ["api-key", "github"]
+
+[[rules]]
+id = "github-app-token"
+description = "GitHub App installation token (ghu_) or server-to-server token (ghs_)"
+regex = '''gh[us]_[0-9a-zA-Z]{36}'''
+keywords = ["ghu_", "ghs_", "github"]
+tags = ["api-key", "github"]
+
+[[rules]]
+id = "github-refresh-token"
+description = "GitHub refresh token (ghr_)"
+regex = '''ghr_[0-9a-zA-Z]{36,}'''
+keywords = ["ghr_", "github"]
+tags = ["api-key", "github"]
+
+[[rules]]
+id = "hetzner-api-token"
+description = "Hetzner Cloud API token"
+regex = '''(?i)hetzner[_\s]*(api[_\s]*)?(token|key)[\s:=]+[A-Za-z0-9]{32,64}'''
+keywords = ["hetzner", "hcloud"]
+tags = ["api-key", "infra", "hetzner"]
+
+# ── Database & Connection Strings ────────────────────────────────────────────
+
+[[rules]]
+id = "database-url-with-password"
+description = "Database connection URL containing embedded password"
+regex = '''(?i)(postgres(ql)?|mysql|mongodb|redis|sqlserver)://[^:@\s]+:[^@\s]+@'''
+keywords = ["postgres", "mysql", "mongodb", "redis", "connection"]
+tags = ["database", "credentials"]
+
+[[rules]]
+id = "database-url-jdbc"
+description = "JDBC connection string with embedded credentials"
+regex = '''(?i)jdbc:(postgresql|mysql|mariadb|sqlserver|oracle)://[^:@\s]+:[^@\s]+@'''
+keywords = ["jdbc", "connection"]
+tags = ["database", "credentials"]
+
+# ── Cryptographic Material ───────────────────────────────────────────────────
+
+[[rules]]
+id = "private-key"
+description = "PEM-encoded private key (RSA, ECDSA, Ed25519, DSA)"
+regex = '''-----BEGIN\s+(RSA\s+)?(EC|DSA|ED25519|OPENSSH)\s+PRIVATE\s+(KEY|KEY\s+BLOCK)-----'''
+keywords = ["begin", "private", "key", "rsa", "ecdsa", "ed25519"]
+tags = ["crypto", "private-key"]
+
+[[rules]]
+id = "ssh-private-key"
+description = "SSH private key header (OpenSSH or PEM)"
+regex = '''-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----'''
+keywords = ["openssh", "private", "key"]
+tags = ["crypto", "ssh", "private-key"]
+
+[[rules]]
+id = "jwt-secret"
+description = "Long random string likely used as a JWT signing secret"
+regex = '''(?i)JWT_SECRET\s*[=:]\s*['"]?[A-Za-z0-9+/=_-]{32,}['"]?'''
+keywords = ["jwt", "secret", "signing"]
+tags = ["crypto", "jwt", "secret"]
+
+[[rules]]
+id = "generic-secret-assignment"
+description = "Generic secret/key assignment with a long random-looking value (potential credential)"
+regex = '''(?i)(secret|SECRET|api[_\s]?key|API[_\s]?KEY|token|TOKEN|auth[_\s]?token|AUTH[_\s]?TOKEN)\s*[=:]\s*['"]?[A-Za-z0-9+/=_-]{32,}['"]?'''
+keywords = ["secret", "api_key", "token", "auth"]
+tags = ["secret", "generic"]
+
+# ── Cloud Provider Credentials ───────────────────────────────────────────────
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS access key ID"
+regex = '''(?i)(aws[_\s]*(access[_\s]*)?key[_\s]*id|AWS_ACCESS_KEY_ID)[\s:=]+AKIA[0-9A-Z]{16}'''
+keywords = ["akia", "aws", "access"]
+tags = ["cloud", "aws"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS secret access key"
+regex = '''(?i)(aws[_\s]*(secret[_\s]*)?(access[_\s]*)?key|AWS_SECRET_ACCESS_KEY)[\s:=]+[A-Za-z0-9+/=]{40}'''
+keywords = ["aws", "secret", "access"]
+tags = ["cloud", "aws"]
+
+# ── Allowlist — False Positives ──────────────────────────────────────────────
+
+[allowlist]
+description = "Files and patterns that are safe (test data, examples, docs)"
+
+# Stopwords — values that look like secrets but are safe
+stopwords = [
+    "your-secret-key",
+    "your-api-key",
+    "your-jwt-secret",
+    "your-encryption-key",
+    "your-token-here",
+    "your-access-key",
+    "your-secret",
+    "example",
+    "changeme",
+    "changeme123",
+    "test-token",
+    "dev-secret-change-in-production",
+    "placeholder",
+    "xxxxxxxxxxxx",
+    "0000000000000000",
+    "sk_test_fake",
+    "sk_test_demo",
+    "postgres://user:password@localhost:5432/db",
+    "postgres://postgres:postgres@localhost:5432/featuresignals",
+    "REPLACE_ME",
+    "REPLACE_WITH_YOUR",
+    "YOUR_TOKEN_HERE",
+    "fs_lic_test_",
+]
+
+# Paths to skip entirely (glob patterns relative to repo root)
+paths = [
+    # Test files
+    "*_test.go",
+    "*.test.ts",
+    "*.test.tsx",
+    "*.spec.ts",
+    "*.spec.tsx",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/testdata/**",
+    "**/fixtures/**",
+
+    # Mock / generated files
+    "mock_*.go",
+    "*_mock.go",
+    "*.mock.ts",
+    "*.mock.tsx",
+    "**/mocks/**",
+
+    # Example / template files
+    "*.example",
+    ".example.*",
+    "*.example.*",
+    "*.sample",
+    "*.template",
+    "**/.env.example",
+    "**/.env.example.*",
+
+    # Documentation and config (specific known-safe files only)
+    "**/CHANGELOG.md",
+    "**/README.md",
+    "**/CLAUDE.md",
+    "**/SKILL.md",
+    "**/CONTRIBUTING.md",
+    "**/LICENSE",
+
+    # Lockfiles and generated
+    "**/go.sum",
+    "**/package-lock.json",
+    "**/pnpm-lock.yaml",
+    "**/yarn.lock",
+    "**/bun.lockb",
+    "**/Cargo.lock",
+
+    # CI output and vendored
+    "**/coverage.out",
+    "**/.nyc_output/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/node_modules/**",
+    "**/vendor/**",
+
+    # Wiki & internal docs (may contain example patterns)
+    "product/wiki/**",
+    "private/**",
+
+    # This config itself
+    ".gitleaks.toml",
+
+    # IDE and editor configs
+    ".zed/**",
+]
+
+# Regex-based allowlist (patterns that, when matched, suppress the finding)
+regexes = [
+    # Placeholder / example patterns
+    '''(?i)your[_\s-]*(secret|token|key|password|jwt)''',
+    '''(?i)(example|sample|demo|test|fake|dummy|placeholder|changeme|xxxx+)''',
+    '''(?i)(replace[_\s-]*me|replace[_\s-]*with[_\s-]*your)''',
+    '''(?i)fs_lic_test_''',
+    '''sk_test_[0-9a-zA-Z]{24,}''',
+    '''(?i)dev[_\s-]*secret[_\s-]*change[_\s-]*in[_\s-]*production''',
+
+    # Safe localhost database URLs
+    '''(?i)(postgres(ql)?|mysql|mongodb|redis)://(user|postgres|admin|root):(password|postgres|admin|root)@localhost''',
+
+    # Base64-encoded "test" or "example" strings
+    '''dGVzdA''',
+    '''ZXhhbXBsZQ''',
+]

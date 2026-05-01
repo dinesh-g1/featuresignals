@@ -48,6 +48,11 @@ pnpm-debug.log*
 /server/licensegen
 *.out
 
+# Build artifacts — never commit compiled binaries
+server/fs-server-linux
+deploy/global-router/global-router
+ops-portal/ops-portal
+
 # Generated documentation (build artifacts)
 server/internal/api/docs/swagger.html
 

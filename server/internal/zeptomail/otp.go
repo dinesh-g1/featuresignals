@@ -19,6 +19,10 @@ import (
 
 // OTPSender implements domain.OTPSender by sending a pre-rendered HTML OTP
 // email through ZeptoMail's REST API (no provider-side template needed).
+//
+// SECURITY: This sender does NOT implement rate limiting. Rate limits
+// MUST be enforced by the calling service/handler layer. See the email
+// service for per-org rate limiting (max 50 emails/minute/org).
 type OTPSender struct {
 	token     string
 	fromEmail string
@@ -239,10 +243,9 @@ func (s *OTPSender) doSend(ctx context.Context, to, toName, subject, html string
 
 	s.logger.Error("zeptomail api error",
 		"status_code", resp.StatusCode,
-		"raw_body", string(respBody),
 		"parsed_code", er.Error.Code,
-		"parsed_message", er.Error.Message,
 		"to", to,
+		"request_id", er.RequestID,
 	)
 
 	return er.RequestID, resp.StatusCode, fmt.Errorf("zeptomail %d: %s (code=%s)", resp.StatusCode, er.Error.Message, er.Error.Code)

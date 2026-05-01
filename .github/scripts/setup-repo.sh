@@ -90,6 +90,10 @@ gh api -X PUT "repos/$REPO/branches/main/protection" \
   "required_status_checks": {
     "strict": true,
     "contexts": [
+      "Gitleaks — Secret Detection",
+      "Go Vulnerability Check",
+      "npm Audit — JS Dependencies",
+      "CodeQL — SAST Analysis",
       "Server: Test & Coverage",
       "Server: Lint & Vet",
       "Dashboard: Test, Build & Coverage"
@@ -127,6 +131,59 @@ else
     echo "  Note: Create the project manually at https://github.com/users/$OWNER/projects"
 fi
 
+# ── Pre-commit Hooks ───────────────────────────────────────────────────────
+echo ""
+echo "==> Installing pre-commit hooks..."
+
+install_lefthook() {
+  if command -v lefthook >/dev/null 2>&1; then
+    echo "  lefthook found: $(lefthook version 2>/dev/null || echo 'unknown version')"
+    return 0
+  fi
+
+  echo "  lefthook not found — installing..."
+
+  if command -v brew >/dev/null 2>&1; then
+    brew install lefthook && { echo "  lefthook installed via Homebrew"; return 0; }
+  fi
+
+  if command -v go >/dev/null 2>&1; then
+    echo "  Installing via go install..."
+    go install github.com/evilmartians/lefthook@latest && {
+      echo "  lefthook installed via go install"
+      return 0
+    }
+  fi
+
+  if command -v npm >/dev/null 2>&1; then
+    echo "  Installing via npm..."
+    npm install -g lefthook && { echo "  lefthook installed via npm"; return 0; }
+  fi
+
+  echo "  ERROR: Could not install lefthook automatically."
+  echo "  Install manually: https://github.com/evilmartians/lefthook"
+  return 1
+}
+
+if install_lefthook; then
+  lefthook install --force 2>&1 | sed 's/^/  /'
+  echo "  Pre-commit hooks installed (gitleaks, go vet, tsc, lint)"
+else
+  echo "  WARNING: lefthook installation failed. Pre-commit hooks not configured."
+  echo "  Install manually: https://github.com/evilmartians/lefthook"
+fi
+
+# Also check for gitleaks (used by the pre-commit hook)
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "  gitleaks found: $(gitleaks version 2>/dev/null || echo 'unknown version')"
+elif [ "$(uname -s)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
+  echo "  Installing gitleaks..."
+  brew install gitleaks 2>&1 | sed 's/^/  /' || \
+    echo "  WARNING: gitleaks not installed. Install: brew install gitleaks"
+else
+  echo "  gitleaks not found — install from https://github.com/gitleaks/gitleaks"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo "==> Setup complete!"
@@ -145,6 +202,12 @@ echo "    - Dismiss stale reviews"
 echo "    - No force push, no deletion"
 echo ""
 echo "  Labels: type (epic/story/bug/task/docs/security), area (6), priority (4), status (4)"
+echo ""
+echo "  Pre-commit hooks (via lefthook):"
+echo "    - gitleaks protect — secrets scan on staged files"
+echo "    - go vet        — Go static analysis (server/**/*.go)"
+echo "    - tsc --noEmit  — TypeScript type check (dashboard/**/*.ts*)"
+echo "    - npm run lint  — ESLint (dashboard/**/*.ts*)"
 echo ""
 echo "  Next steps:"
 echo "    1. Create project views at: https://github.com/users/$OWNER/projects"

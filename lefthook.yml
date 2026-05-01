@@ -1,0 +1,58 @@
+# FeatureSignals — Lefthook Configuration
+#
+# Pre-commit hooks that run before every commit.
+# Install:  lefthook install
+# Run all:  lefthook run pre-commit
+# Skip:     LEFTHOOK=0 git commit -m "..."
+#
+# All commands run in parallel where possible. Each command is scoped to
+# the files it cares about (glob filter) so you don't pay for what you
+# didn't change.
+# ---------------------------------------------------------------------------
+
+pre-commit:
+  parallel: true
+  commands:
+    # ── Secrets Detection ────────────────────────────────────────────────────
+    gitleaks:
+      label: "[secrets] gitleaks protect"
+      glob: "*"
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --config .gitleaks.toml --verbose 2>&1 | sed 's/^/  /'
+        else
+          echo "  gitleaks not installed — skipping secret scan"
+          echo "  Install: brew install gitleaks  (or see https://github.com/gitleaks/gitleaks)"
+        fi
+
+    # ── Go: Static Analysis ──────────────────────────────────────────────────
+    go-vet:
+      label: "[server] go vet"
+      glob: "server/**/*.go"
+      run: |
+        echo "  go vet ./..."
+        (cd server && go vet ./...)
+
+    # ── TypeScript: Type Checking ────────────────────────────────────────────
+    dashboard-tsc:
+      label: "[dashboard] tsc --noEmit"
+      glob: "dashboard/**/*.{ts,tsx}"
+      run: |
+        echo "  tsc --noEmit"
+        (cd dashboard && npx tsc --noEmit)
+
+    # ── Dashboard: ESLint ────────────────────────────────────────────────────
+    dashboard-lint:
+      label: "[dashboard] npm run lint"
+      glob: "dashboard/**/*.{ts,tsx}"
+      run: |
+        echo "  npm run lint"
+        (cd dashboard && npm run lint)
+
+# ---------------------------------------------------------------------------
+# Future hooks (add as needed):
+#
+#   commit-msg:     Validate conventional commit format
+#   post-commit:    Notify CI, update changelog draft
+#   pre-push:       Run full test suite before pushing
+# ---------------------------------------------------------------------------

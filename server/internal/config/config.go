@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -231,6 +233,62 @@ func (c *Config) IsOnPrem() bool {
 
 func (c *Config) BillingEnabled() bool {
 	return !c.IsOnPrem() && (c.StripeSecretKey != "" || c.PayUMerchantKey != "")
+}
+
+// Validate checks configuration for security issues and returns a
+// multi-error of all problems found. This should be called at startup
+// and the server should refuse to start if any errors are returned.
+func (c *Config) Validate() error {
+	var errs []error
+
+	// Check for placeholder values in secret fields (production guard)
+	placeholderPrefixes := []string{"your-", "changeme", "replace-me", "example"}
+	isPlaceholder := func(v string) bool {
+		v = strings.ToLower(strings.TrimSpace(v))
+		if v == "" {
+			return false
+		}
+		for _, p := range placeholderPrefixes {
+			if strings.HasPrefix(v, p) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Critical secrets that must not be placeholders in production
+	secrets := map[string]string{
+		"JWT_SECRET":            c.JWTSecret,
+		"DATABASE_URL":          c.DatabaseURL,
+		"ENCRYPTION_MASTER_KEY": c.EncryptionMasterKey,
+	}
+
+	for name, val := range secrets {
+		if isPlaceholder(val) {
+			errs = append(errs, fmt.Errorf("config: %s is set to a placeholder value (%s) — refusing to start with insecure defaults", name, val))
+		}
+	}
+
+	// ZeptoMail-specific validation
+	if c.EmailProvider == "zeptomail" {
+		if c.ZeptoMailToken == "" {
+			errs = append(errs, fmt.Errorf("config: EMAIL_PROVIDER is zeptomail but ZEPTOMAIL_TOKEN is not set"))
+		}
+		if c.ZeptoMailToken != "" && !strings.HasPrefix(strings.TrimSpace(c.ZeptoMailToken), "Zoho-enczapikey") {
+			// Token may or may not have the prefix — both are valid depending on how stored
+			// Just warn, don't error
+		}
+	}
+
+	// Stripe validation
+	if c.StripeSecretKey != "" && isPlaceholder(c.StripeSecretKey) {
+		errs = append(errs, fmt.Errorf("config: STRIPE_SECRET_KEY is set to a placeholder value"))
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("configuration validation failed: %w", errors.Join(errs...))
+	}
+	return nil
 }
 
 func getEnv(key, fallback string) string {

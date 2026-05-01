@@ -1,0 +1,121 @@
+# Security Scan — Secrets, Vulnerabilities & SAST
+#
+# Runs on every push to main and every pull request targeting main.
+# All jobs run in parallel. Critical checks (gitleaks, govulncheck, npm-audit)
+# fail fast to block vulnerable code from reaching main.
+#
+# Required permissions:
+#   security-events: write — needed by CodeQL to upload SARIF results
+
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: security-scan-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ── Gitleaks — Secret Detection ──────────────────────────────────────────
+
+  gitleaks:
+    name: Gitleaks — Secret Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  # ── Go Vulnerability Scanning ────────────────────────────────────────────
+
+  govulncheck:
+    name: Go Vulnerability Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+        working-directory: server
+
+  # ── npm Audit — Dashboard, Website & Docs ────────────────────────────────
+
+  npm-audit:
+    name: npm Audit — JS Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+      matrix:
+        workspace:
+          - dashboard
+          - website
+          - docs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install & audit ${{ matrix.workspace }}
+        run: |
+          npm ci
+          npm audit --audit-level=high
+        working-directory: ${{ matrix.workspace }}
+
+  # ── CodeQL — SAST Analysis ───────────────────────────────────────────────
+
+  codeql:
+    name: CodeQL — SAST Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go, javascript-typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # ── Dependency Review — PR Dependency Audit ──────────────────────────────
+
+  dependency-review:
+    name: Dependency Review — PR Audit
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

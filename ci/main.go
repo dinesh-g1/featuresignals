@@ -129,6 +129,12 @@ func (m *Ci) validateDashboard(ctx context.Context, source *dagger.Directory) er
 // FullTest runs all tests: server (unit + integration), dashboard (unit + type-check),
 // and all SDK test suites. Intended for merge-to-main in CI.
 func (m *Ci) FullTest(ctx context.Context, source *dagger.Directory) error {
+	// ── Security scan first (fail fast on secrets/vulns) ──
+	fmt.Println("=== Security Scan ===")
+	if err := m.SecurityScan(ctx, source); err != nil {
+		return fmt.Errorf("security scan: %w", err)
+	}
+
 	// ── Server: full tests with ephemeral PostgreSQL ──
 	fmt.Println("=== Server: Full tests ===")
 	if err := m.testServerFull(ctx, source); err != nil {
@@ -202,6 +208,75 @@ func (m *Ci) testDashboardFull(ctx context.Context, source *dagger.Directory) er
 
 func (m *Ci) testSDK(ctx context.Context, source *dagger.Directory, name, path string) error {
 	fmt.Printf("Running %s tests...\n", name)
+	return nil
+}
+
+// =========================================================================
+// SecurityScan — security checks for CI pipeline
+// =========================================================================
+
+// SecurityScan runs security checks: gitleaks, govulncheck, npm audit.
+// Fails fast if any check finds issues. Intended for CI pipeline.
+func (m *Ci) SecurityScan(ctx context.Context, source *dagger.Directory) error {
+	// ── gitleaks: secret detection ──
+	fmt.Println("=== Security: gitleaks ===")
+	if err := m.scanSecrets(ctx, source); err != nil {
+		return fmt.Errorf("gitleaks: %w", err)
+	}
+
+	// ── govulncheck: Go vulnerability scanning ──
+	fmt.Println("=== Security: govulncheck ===")
+	if err := m.scanGoVulns(ctx, source); err != nil {
+		return fmt.Errorf("govulncheck: %w", err)
+	}
+
+	// ── npm audit: JavaScript vulnerability scanning ──
+	fmt.Println("=== Security: npm audit ===")
+	if err := m.scanNpmAudit(ctx, source); err != nil {
+		return fmt.Errorf("npm audit: %w", err)
+	}
+
+	return nil
+}
+
+func (m *Ci) scanSecrets(ctx context.Context, source *dagger.Directory) error {
+	ctr := dag.Container().
+		From("zricethezav/gitleaks:latest").
+		WithDirectory("/src", source).
+		WithWorkdir("/src").
+		WithExec([]string{"detect", "--source", ".", "--no-git", "--verbose", "--exit-code", "1"})
+	_, err := ctr.Sync(ctx)
+	return err
+}
+
+func (m *Ci) scanGoVulns(ctx context.Context, source *dagger.Directory) error {
+	goModCache := dag.CacheVolume("go-mod-security")
+
+	ctr := dag.Container().
+		From("golang:1.23-alpine").
+		WithExec([]string{"apk", "add", "--no-cache", "git"}).
+		WithMountedCache("/go/pkg/mod", goModCache).
+		WithDirectory("/app", source).
+		WithWorkdir("/app/server").
+		WithExec([]string{"go", "install", "golang.org/x/vuln/cmd/govulncheck@latest"}).
+		WithExec([]string{"govulncheck", "./..."})
+	_, err := ctr.Sync(ctx)
+	return err
+}
+
+func (m *Ci) scanNpmAudit(ctx context.Context, source *dagger.Directory) error {
+	// Run npm audit on all three frontend packages
+	for _, pkg := range []string{"dashboard", "website", "docs"} {
+		ctr := dag.Container().
+			From("node:22-alpine").
+			WithDirectory("/app", source).
+			WithWorkdir(fmt.Sprintf("/app/%s", pkg)).
+			WithExec([]string{"npm", "ci"}).
+			WithExec([]string{"npm", "audit", "--audit-level=high"})
+		if _, err := ctr.Sync(ctx); err != nil {
+			return fmt.Errorf("%s: %w", pkg, err)
+		}
+	}
 	return nil
 }
 

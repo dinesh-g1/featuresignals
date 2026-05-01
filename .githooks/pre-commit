@@ -9,20 +9,38 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 ERRORS=0
 
 # ── Secrets check ────────────────────────────────────────────────────────────
-if echo "$STAGED_FILES" | grep -qE '\.env$|\.env\.[^e]|credentials|\.pem$|\.key$'; then
-  echo "ERROR: Potential secret file staged for commit."
-  echo "       Remove it with: git reset HEAD <file>"
-  ERRORS=$((ERRORS + 1))
+# Skip example/config files that intentionally contain patterns
+is_excluded() {
+  local f="$1"
+  echo "$f" | grep -qE '\.example$|\.toml$|gitleaks|_test\.go$|_test\.ts$|_test\.tsx$|mock|testdata|__tests__|node_modules|vendor'
+}
+
+if echo "$STAGED_FILES" | grep -qE '\.env$|\.env\.[^e]|credentials|\.pem$|\.key$' | grep -qvE '\.example$'; then
+  SECRET_FILES=$(echo "$STAGED_FILES" | grep -E '\.env$|\.env\.[^e]|credentials|\.pem$|\.key$' | grep -vE '\.example$' || true)
+  if [ -n "$SECRET_FILES" ]; then
+    echo "ERROR: Potential secret file staged for commit:"
+    echo "$SECRET_FILES" | sed 's/^/       /'
+    echo "       Remove it with: git reset HEAD <file>"
+    ERRORS=$((ERRORS + 1))
+  fi
 fi
 
-SECRETS_PATTERN='(PRIVATE.KEY|BEGIN RSA|password\s*=\s*["\x27][^\x27"]+|sk_live_|sk_test_)'
+SECRETS_PATTERN='(PRIVATE.KEY|BEGIN RSA|password\s*=\s*["\x27][^\x27"]+|sk_live_|sk_test_|Zoho-enczapikey\s+[A-Za-z0-9+/=]{20,})'
 for f in $STAGED_FILES; do
-  if [ -f "$f" ] && echo "$f" | grep -qvE '\.md$|\.lock$|\.sum$|SKILL\.md$|CLAUDE\.md$'; then
+  if [ -f "$f" ] && ! is_excluded "$f"; then
     if git show ":$f" 2>/dev/null | grep -qEi "$SECRETS_PATTERN"; then
       echo "WARNING: Possible secret pattern in $f"
     fi
   fi
 done
+
+# ── gitleaks (if installed) ──────────────────────────────────────────────────
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --config .gitleaks.toml --verbose 2>&1 | sed 's/^/  /' || {
+    echo "ERROR: gitleaks detected secrets"
+    ERRORS=$((ERRORS + 1))
+  }
+fi
 
 # ── Go checks ────────────────────────────────────────────────────────────────
 GO_CHANGED=$(echo "$STAGED_FILES" | grep '\.go$' || true)

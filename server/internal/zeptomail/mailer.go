@@ -23,10 +23,17 @@ import (
 
 var tracer = otel.Tracer("featuresignals/zeptomail")
 
+// TODO(security): Add Prometheus counter for emails sent by template and status
+// to enable anomaly detection (spike alert if >100 emails/5min per org).
+
 const maxRetries = 3
 
 // Mailer implements domain.Mailer by rendering templates locally and
 // delivering pre-rendered HTML via ZeptoMail's REST API.
+//
+// SECURITY: This mailer does NOT implement rate limiting. Rate limits
+// MUST be enforced by the calling service/handler layer. See the email
+// service for per-org rate limiting (max 50 emails/minute/org).
 type Mailer struct {
 	renderer  *mailer.Renderer
 	token     string
@@ -278,11 +285,9 @@ func (m *Mailer) doSend(ctx context.Context, env sendEnvelope) (requestID string
 
 	m.logger.Error("zeptomail api error",
 		"status_code", resp.StatusCode,
-		"raw_body", string(respBody),
-		"parsed_code", er.Error.Code,
-		"parsed_message", er.Error.Message,
 		"template", env.template,
 		"to", env.to,
+		"request_id", er.RequestID,
 	)
 
 	return er.RequestID, resp.StatusCode, fmt.Errorf("zeptomail %d: %s (code=%s)", resp.StatusCode, er.Error.Message, er.Error.Code)
