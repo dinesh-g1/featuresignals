@@ -35,7 +35,7 @@ jobs:
       KUBECONFIG: /home/runner/.kube/config
       PATH: /usr/local/bin:/usr/local/sbin:/usr/bin:/bin
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ── Auth ────────────────────────────────────────────────────
       - name: Update GHCR pull secret
