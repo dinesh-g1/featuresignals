@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
@@ -12,14 +12,20 @@ import {
   DeleteDialog,
 } from "@/components/entity-dialog";
 import {
-  GlobeIcon, PlusIcon, PencilIcon, TrashIcon, ArrowLeftRightIcon, CheckCircleFillIcon, ServerIcon, KeyIcon, FlagIcon
+  GlobeIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  CheckCircleFillIcon,
+  KeyIcon,
+  FlagIcon,
 } from "@/components/icons/nav-icons";
 import {
   PrerequisiteGate,
   usePrerequisites,
 } from "@/components/prerequisite-gate";
 import { DOCS_LINKS } from "@/components/docs-link";
-import type { Environment, Project } from "@/lib/types";
+import type { Environment } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
 import { useEnvironments, useProjects } from "@/hooks/use-data";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";

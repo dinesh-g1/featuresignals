@@ -16,10 +16,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  FolderOpenIcon, GlobeIcon, FlagIcon, ChevronRightIcon, CheckCircleFillIcon, PlusIcon, LoaderIcon
+  FolderOpenIcon,
+  GlobeIcon,
+  FlagIcon,
+  ChevronRightIcon,
+  CheckCircleFillIcon,
+  PlusIcon,
+  LoaderIcon,
 } from "@/components/icons/nav-icons";
 import { ENVIRONMENT_COLORS } from "@/lib/constants";
-import type { Environment } from "@/lib/types";
 
 interface PrerequisiteState {
   hasProjects: boolean;
@@ -457,6 +462,7 @@ export function usePrerequisites() {
 
   useEffect(() => {
     checkPrerequisites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkPrerequisites recreated each render by design; stable deps are token/projectId
   }, [token, currentProjectId]);
 
   return { state, loading, refresh: checkPrerequisites };

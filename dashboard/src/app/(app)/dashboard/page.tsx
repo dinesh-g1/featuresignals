@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
-import { useWorkspace } from "@/hooks/use-workspace";
 import { api } from "@/lib/api";
 import { EventBus } from "@/lib/event-bus";
-import { EVENTS, CACHE_KEYS } from "@/lib/constants";
-import { cn, timeAgo, formatDate } from "@/lib/utils";
+import { EVENTS } from "@/lib/constants";
+import { cn, timeAgo } from "@/lib/utils";
 import { PageHeader, StatCard } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,22 +15,18 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { SkeletonCard, PageSkeleton } from "@/components/ui/skeleton";
+import { PageSkeleton } from "@/components/ui/skeleton";
 import {
   AuditLogIcon,
   FlagIcon,
   GlobeIcon,
   ActivityIcon,
-  ShieldIcon,
   ChevronRightIcon,
-  PlusIcon,
   ArrowUpRightIcon,
   GitPullRequestIcon,
   ClockIcon,
   SparklesIcon,
   TrendingUpIcon,
-  UsersIcon,
   CheckCircleFillIcon,
   AlertIcon,
   ArrowRightIcon,
@@ -352,15 +346,31 @@ function SetupChecklist({
 function RecentActivity({ audit }: { audit: AuditEntry[] }) {
   const actionIcons: Record<string, React.ReactNode> = {
     flag_created: <FlagIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />,
-    flag_toggled: <GitBranchIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />,
-    flag_deleted: <TrashIcon className="h-4 w-4 text-[var(--fgColor-danger)]" />,
+    flag_toggled: (
+      <GitBranchIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />
+    ),
+    flag_deleted: (
+      <TrashIcon className="h-4 w-4 text-[var(--fgColor-danger)]" />
+    ),
     rule_created: <PencilIcon className="h-4 w-4 text-[var(--fgColor-done)]" />,
-    rule_updated: <PencilIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />,
-    env_created: <GlobeIcon className="h-4 w-4 text-[var(--fgColor-success)]" />,
-    member_invited: <PersonIcon className="h-4 w-4 text-[var(--fgColor-success)]" />,
-    member_removed: <PersonIcon className="h-4 w-4 text-[var(--fgColor-danger)]" />,
-    approval_requested: <ShieldCheckIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />,
-    approval_reviewed: <CheckIcon className="h-4 w-4 text-[var(--fgColor-success)]" />,
+    rule_updated: (
+      <PencilIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />
+    ),
+    env_created: (
+      <GlobeIcon className="h-4 w-4 text-[var(--fgColor-success)]" />
+    ),
+    member_invited: (
+      <PersonIcon className="h-4 w-4 text-[var(--fgColor-success)]" />
+    ),
+    member_removed: (
+      <PersonIcon className="h-4 w-4 text-[var(--fgColor-danger)]" />
+    ),
+    approval_requested: (
+      <ShieldCheckIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />
+    ),
+    approval_reviewed: (
+      <CheckIcon className="h-4 w-4 text-[var(--fgColor-success)]" />
+    ),
   };
 
   return (
@@ -368,7 +378,10 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle><AuditLogIcon className="h-5 w-5 mr-2 inline text-[var(--fgColor-muted)]" />Recent Activity</CardTitle>
+            <CardTitle>
+              <AuditLogIcon className="h-5 w-5 mr-2 inline text-[var(--fgColor-muted)]" />
+              Recent Activity
+            </CardTitle>
             <CardDescription>
               The latest changes across your workspace.
             </CardDescription>
@@ -397,7 +410,9 @@ function RecentActivity({ audit }: { audit: AuditEntry[] }) {
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--bgColor-default)] transition-colors"
               >
                 <span className="text-base leading-none shrink-0">
-                  {actionIcons[entry.action] || <AuditLogIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />}
+                  {actionIcons[entry.action] || (
+                    <AuditLogIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
+                  )}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--fgColor-default)] truncate">
@@ -590,7 +605,6 @@ export default function DashboardPage() {
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [members, setMembers] = useState<unknown[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Fetch projects on mount
   useEffect(() => {
@@ -615,7 +629,6 @@ export default function DashboardPage() {
   // Fetch data when project is selected
   useEffect(() => {
     if (!token || !currentProjectId) return;
-    setLoading(true);
 
     Promise.all([
       api.listFlags(token, currentProjectId).catch(() => []),
@@ -627,7 +640,6 @@ export default function DashboardPage() {
       setEnvs(envsData as Environment[]);
       setAudit(auditData as AuditEntry[]);
       setMembers(membersData as unknown[]);
-      setLoading(false);
     });
   }, [token, currentProjectId]);
 

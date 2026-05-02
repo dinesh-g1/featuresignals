@@ -88,6 +88,8 @@ export default function ForgotPasswordPage() {
     }
   }, [step]);
 
+  // validatePassword kept for reference; used by PasswordStrength component
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function validatePassword(pw: string): string | undefined {
     if (pw.length < 8) return "Password must be at least 8 characters";
     if (!/[A-Z]/.test(pw)) return "Password must contain an uppercase letter";

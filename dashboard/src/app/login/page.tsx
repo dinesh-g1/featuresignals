@@ -103,7 +103,7 @@ function LoginForm() {
   const [attemptsUsed, setAttemptsUsed] = useState(0);
   const [attemptsAllowed, setAttemptsAllowed] = useState(10);
   const [retryAfter, setRetryAfter] = useState<Date | null>(null);
-  const [retryCountdown, setRetryCountdown] = useState("");
+  const [, setRetryCountdown] = useState("");
 
   // SSO state
   const [ssoMode, setSsoMode] = useState(false);

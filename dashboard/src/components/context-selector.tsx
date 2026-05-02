@@ -6,12 +6,16 @@ import { api } from "@/lib/api";
 import type { Project, Environment } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
-  FolderOpenIcon, GlobeIcon, PlusIcon, SearchIcon, ChevronDownIcon, XIcon, ClockIcon
+  FolderOpenIcon,
+  GlobeIcon,
+  PlusIcon,
+  SearchIcon,
+  ChevronDownIcon,
+  XIcon,
+  ClockIcon,
 } from "@/components/icons/nav-icons";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
-
-const MAX_RECENT = 5;
 
 function getRecentProjects(): string[] {
   try {
@@ -21,26 +25,12 @@ function getRecentProjects(): string[] {
   }
 }
 
-function setRecentProjects(ids: string[]) {
-  localStorage.setItem(
-    "fs:recent-projects",
-    JSON.stringify(ids.slice(0, MAX_RECENT)),
-  );
-}
-
 function getRecentEnvs(): string[] {
   try {
     return JSON.parse(localStorage.getItem("fs:recent-envs") || "[]");
   } catch {
     return [];
   }
-}
-
-function setRecentEnvs(ids: string[]) {
-  localStorage.setItem(
-    "fs:recent-envs",
-    JSON.stringify(ids.slice(0, MAX_RECENT)),
-  );
 }
 
 const ENV_COLORS: Record<string, string> = {
@@ -54,7 +44,10 @@ const ENV_COLORS: Record<string, string> = {
 
 function getEnvBadgeClass(slug: string): string {
   const key = slug?.toLowerCase() || "";
-  return ENV_COLORS[key] || "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] border-[var(--borderColor-default)]";
+  return (
+    ENV_COLORS[key] ||
+    "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] border-[var(--borderColor-default)]"
+  );
 }
 
 function useDebounce<T>(value: T, delay: number): T {

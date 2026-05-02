@@ -26,7 +26,6 @@ import {
   CreditCardIcon,
   ChevronDownIcon,
   LogOutIcon,
-  BuildingIcon,
   ProjectIcon,
 } from "@/components/icons/nav-icons";
 

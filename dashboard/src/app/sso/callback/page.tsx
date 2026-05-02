@@ -5,19 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { LoaderIcon } from "@/components/icons/nav-icons";
 
-function parseJWTPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(
-      atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
 export default function SSOCallbackPage() {
   const router = useRouter();
   const setAuth = useAppStore((s) => s.setAuth);
@@ -36,7 +23,6 @@ export default function SSOCallbackPage() {
       return;
     }
 
-    const claims = parseJWTPayload(accessToken);
     const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : undefined;
 
     setAuth(accessToken, refreshToken, null, null, expiresAt);
@@ -66,7 +52,9 @@ export default function SSOCallbackPage() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)]">
       <div className="flex flex-col items-center gap-3">
         <LoaderIcon className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]" />
-        <p className="text-sm text-[var(--fgColor-muted)]">Completing SSO login...</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">
+          Completing SSO login...
+        </p>
       </div>
     </div>
   );

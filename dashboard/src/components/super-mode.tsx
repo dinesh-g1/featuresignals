@@ -35,7 +35,6 @@ import {
   EyeIcon,
   BeakerIcon,
   RotateCcwIcon,
-  SparklesIcon,
   ToggleLeftIcon,
   XIcon,
 } from "@/components/icons/nav-icons";

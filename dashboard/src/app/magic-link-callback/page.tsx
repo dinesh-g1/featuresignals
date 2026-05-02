@@ -5,19 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { LoaderIcon } from "@/components/icons/nav-icons";
 
-function parseJWTPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(
-      atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
 export default function MagicLinkCallbackPage() {
   return (
     <Suspense

@@ -1,4 +1,4 @@
-import { type Page, type Locator, type Expect, expect } from '@playwright/test';
+import { type Page, type Locator, expect } from "@playwright/test";
 
 export class AuthPage {
   readonly page: Page;
@@ -13,18 +13,18 @@ export class AuthPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.getByTestId('email-input');
-    this.passwordInput = page.getByTestId('password-input');
-    this.loginButton = page.getByTestId('login-button');
-    this.forgotPasswordLink = page.getByTestId('forgot-password-link');
-    this.signupLink = page.getByTestId('signup-link');
-    this.errorMessage = page.getByTestId('login-error-message');
-    this.logoutButton = page.getByTestId('logout-button');
-    this.sessionExpiredBanner = page.getByTestId('session-expired-banner');
+    this.emailInput = page.getByTestId("email-input");
+    this.passwordInput = page.getByTestId("password-input");
+    this.loginButton = page.getByTestId("login-button");
+    this.forgotPasswordLink = page.getByTestId("forgot-password-link");
+    this.signupLink = page.getByTestId("signup-link");
+    this.errorMessage = page.getByTestId("login-error-message");
+    this.logoutButton = page.getByTestId("logout-button");
+    this.sessionExpiredBanner = page.getByTestId("session-expired-banner");
   }
 
   async goto() {
-    await this.page.goto('/login');
+    await this.page.goto("/login");
   }
 
   async login(email: string, password: string) {

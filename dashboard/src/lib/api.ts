@@ -5,7 +5,6 @@ import type {
   APIKeyCreateResponse,
   ApprovalRequest,
   AuditEntry,
-  AuthTokens,
   BillingInfo,
   CheckoutResponse,
   CompareTargetsResult,
@@ -60,7 +59,7 @@ export class APIError extends Error {
 let refreshPromise: Promise<boolean> | null = null;
 
 async function attemptTokenRefresh(): Promise<boolean> {
-  const { refreshToken, logout, setAuth } = useAppStore.getState();
+  const { refreshToken, setAuth } = useAppStore.getState();
   if (!refreshToken) return false;
 
   try {
@@ -972,7 +971,7 @@ export const api = {
       token,
     }),
 
-  getJanitorStats: (token: string, projectId: string) =>
+  getJanitorStats: (token: string, _projectId: string) =>
     request<JanitorStats>(`/v1/janitor/stats`, { token }),
 
   getJanitorConfig: (token: string) =>
@@ -981,7 +980,7 @@ export const api = {
   updateJanitorConfig: (token: string, config: UpdateJanitorConfigRequest) =>
     request(`/v1/janitor/config`, { method: "PUT", body: config, token }),
 
-  listRepositories: (token: string, projectId: string) =>
+  listRepositories: (token: string, _projectId: string) =>
     request<PaginatedResponse<Repository>>(`/v1/janitor/repositories`, {
       token,
     }),

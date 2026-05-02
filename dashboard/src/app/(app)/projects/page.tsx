@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,8 +20,6 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  FolderOpenIcon,
-  ArrowRightIcon,
   LoaderIcon,
   GlobeIcon,
   FlagIcon,
@@ -75,7 +72,8 @@ export default function ProjectsPage() {
       loadProjects();
     }
     window.addEventListener("fs:projects:changed", handleChange);
-    return () => window.removeEventListener("fs:projects:changed", handleChange);
+    return () =>
+      window.removeEventListener("fs:projects:changed", handleChange);
   }, [loadProjects]);
 
   function openCreate() {
@@ -128,7 +126,9 @@ export default function ProjectsPage() {
       setDialogOpen(false);
       loadProjects();
     } catch (err) {
-      setFieldError(err instanceof Error ? err.message : "Failed to save project");
+      setFieldError(
+        err instanceof Error ? err.message : "Failed to save project",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -148,7 +148,10 @@ export default function ProjectsPage() {
       setDeleting(null);
       loadProjects();
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Failed to delete project", "error");
+      toast(
+        err instanceof Error ? err.message : "Failed to delete project",
+        "error",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -166,7 +169,10 @@ export default function ProjectsPage() {
         <div className="mb-8 h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-[var(--borderColor-default)]" />
+            <div
+              key={i}
+              className="h-40 animate-pulse rounded-xl bg-[var(--borderColor-default)]"
+            />
           ))}
         </div>
       </div>
@@ -178,9 +184,13 @@ export default function ProjectsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="rounded-2xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-6 text-center max-w-md">
-          <h2 className="text-lg font-bold text-red-800 mb-1">Failed to load projects</h2>
+          <h2 className="text-lg font-bold text-red-800 mb-1">
+            Failed to load projects
+          </h2>
           <p className="text-sm text-red-600 mb-4">{error}</p>
-          <Button onClick={loadProjects} variant="secondary">Retry</Button>
+          <Button onClick={loadProjects} variant="secondary">
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -192,7 +202,9 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">Projects</h1>
+          <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">
+            Projects
+          </h1>
           <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
             Projects group your flags, environments, and segments together.
           </p>
@@ -209,9 +221,12 @@ export default function ProjectsPage() {
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)]">
             <BuildingIcon className="h-8 w-8 text-[var(--fgColor-accent)]" />
           </div>
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">No projects yet</h2>
+          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+            No projects yet
+          </h2>
           <p className="mt-1 max-w-sm text-sm text-[var(--fgColor-muted)]">
-            Create your first project to start managing feature flags, environments, and segments.
+            Create your first project to start managing feature flags,
+            environments, and segments.
           </p>
           <Button onClick={openCreate} variant="primary" className="mt-6">
             <PlusIcon className="h-4 w-4 mr-2" />
@@ -235,14 +250,20 @@ export default function ProjectsPage() {
                 {/* Actions */}
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={(e) => { e.stopPropagation(); openEdit(project); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(project);
+                    }}
                     className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-accent)]"
                     title="Edit project"
                   >
                     <PencilIcon className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); openDelete(project); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDelete(project);
+                    }}
                     className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-danger)]"
                     title="Delete project"
                   >
@@ -251,14 +272,22 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* Icon */}
-                <div className={cn(
-                  "mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-                  isActive ? "bg-[var(--bgColor-accent-muted)]" : "bg-[var(--bgColor-muted)] group-hover:bg-[var(--bgColor-accent-muted)]",
-                )}>
-                  <BuildingIcon className={cn(
-                    "h-5 w-5",
-                    isActive ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-muted)]",
-                  )} />
+                <div
+                  className={cn(
+                    "mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+                    isActive
+                      ? "bg-[var(--bgColor-accent-muted)]"
+                      : "bg-[var(--bgColor-muted)] group-hover:bg-[var(--bgColor-accent-muted)]",
+                  )}
+                >
+                  <BuildingIcon
+                    className={cn(
+                      "h-5 w-5",
+                      isActive
+                        ? "text-[var(--fgColor-accent)]"
+                        : "text-[var(--fgColor-muted)]",
+                    )}
+                  />
                 </div>
 
                 {/* Name */}
@@ -282,7 +311,10 @@ export default function ProjectsPage() {
                 <div className="mt-4 flex gap-2 border-t border-[var(--borderColor-muted)] pt-3">
                   <Link
                     href={`/environments`}
-                    onClick={(e) => { e.stopPropagation(); setCurrentProject(project.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentProject(project.id);
+                    }}
                     className="flex items-center gap-1 text-[10px] font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-accent)] transition-colors"
                   >
                     <GlobeIcon className="h-3 w-3" />
@@ -290,7 +322,10 @@ export default function ProjectsPage() {
                   </Link>
                   <Link
                     href={`/flags`}
-                    onClick={(e) => { e.stopPropagation(); setCurrentProject(project.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentProject(project.id);
+                    }}
                     className="flex items-center gap-1 text-[10px] font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-accent)] transition-colors"
                   >
                     <FlagIcon className="h-3 w-3" />
@@ -310,7 +345,9 @@ export default function ProjectsPage() {
             <BuildingIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
           </div>
           <DialogHeader className="text-center">
-            <DialogTitle>{editing ? "Edit project" : "Create project"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit project" : "Create project"}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-5">
             <div>
@@ -318,13 +355,18 @@ export default function ProjectsPage() {
               <Input
                 id="project-name"
                 value={name}
-                onChange={(e) => { setName(e.target.value); setFieldError(""); }}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setFieldError("");
+                }}
                 placeholder="My Awesome App"
                 className="mt-1.5"
                 autoFocus
               />
               {fieldError && (
-                <p className="mt-1.5 text-xs text-[var(--fgColor-danger)]">{fieldError}</p>
+                <p className="mt-1.5 text-xs text-[var(--fgColor-danger)]">
+                  {fieldError}
+                </p>
               )}
             </div>
             <div>
@@ -341,11 +383,29 @@ export default function ProjectsPage() {
               </p>
             </div>
             <DialogFooter className="!justify-between">
-              <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)} disabled={submitting}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setDialogOpen(false)}
+                disabled={submitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" disabled={submitting || !name.trim()}>
-                {submitting ? <><LoaderIcon className="mr-2 h-4 w-4 animate-spin" />Saving...</> : editing ? "Save changes" : "Create project"}
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={submitting || !name.trim()}
+              >
+                {submitting ? (
+                  <>
+                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : editing ? (
+                  "Save changes"
+                ) : (
+                  "Create project"
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -359,14 +419,34 @@ export default function ProjectsPage() {
             <DialogTitle className="text-red-600">Delete project</DialogTitle>
             <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
               Are you sure you want to delete{" "}
-              <span className="font-semibold text-[var(--fgColor-default)]">{deleting?.name}</span>?
-              This will permanently delete all flags, environments, and segments in this project.
+              <span className="font-semibold text-[var(--fgColor-default)]">
+                {deleting?.name}
+              </span>
+              ? This will permanently delete all flags, environments, and
+              segments in this project.
             </div>
           </DialogHeader>
           <DialogFooter className="!justify-between">
-            <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={submitting}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete} disabled={submitting}>
-              {submitting ? <><LoaderIcon className="mr-2 h-4 w-4 animate-spin" />Deleting...</> : "Delete project"}
+            <Button
+              variant="secondary"
+              onClick={() => setDeleteOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete project"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

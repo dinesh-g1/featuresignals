@@ -3,7 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  GitForkIcon, GitBranchIcon, GitPullRequestIcon, SettingsIcon, ExternalLinkIcon, TrashIcon, RefreshIcon
+  GitForkIcon,
+  GitBranchIcon,
+  GitPullRequestIcon,
+  SettingsIcon,
+  ExternalLinkIcon,
+  TrashIcon,
 } from "@/components/icons/nav-icons";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -85,7 +90,10 @@ export function GitProviderCard({
             {connected && name && (
               <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
                 Connected as "
-                <span className="font-medium text-[var(--fgColor-default)]">{name}</span>"
+                <span className="font-medium text-[var(--fgColor-default)]">
+                  {name}
+                </span>
+                "
                 {repoCount !== undefined && (
                   <span> — {repoCount} repos linked</span>
                 )}

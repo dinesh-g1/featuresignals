@@ -39,7 +39,6 @@ export const EventBus = {
   /** Subscribe once (auto-unsubscribes after first trigger). */
   once(name: EventName, callback: () => void): void {
     if (typeof window === "undefined") return;
-    const key = toKey(name);
     const cleanup = EventBus.subscribe(name, () => {
       callback();
       cleanup();

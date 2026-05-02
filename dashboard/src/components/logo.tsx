@@ -93,5 +93,9 @@ export function LogoIcon({
   size?: number;
   className?: string;
 }) {
-  return <CheckIcon size={size} />;
+  return (
+    <span className={className}>
+      <CheckIcon size={size} />
+    </span>
+  );
 }

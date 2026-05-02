@@ -12,7 +12,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   CheckIcon,
-  XIcon,
   MailIcon,
   AlertIcon,
   ArrowLeftIcon,
@@ -26,7 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
-  getPasswordStrength,
   isPasswordStrong,
   PasswordStrengthInline,
 } from "@/components/ui/password-strength";
@@ -475,9 +473,7 @@ function RegisterForm() {
     email: false,
   });
 
-  const [regions, setRegions] = useState<
-    Array<{ code: string; name: string; flag: string }>
-  >([
+  const regions = [
     {
       code: "in",
       name: "India",
@@ -493,7 +489,7 @@ function RegisterForm() {
       name: "Europe",
       flag: "\u{1F1EA}\u{1F1FA}",
     },
-  ]);
+  ];
   // Countdown timer for resend cooldown
   useEffect(() => {
     if (countdown <= 0) return;

@@ -1,13 +1,13 @@
-import { test as base } from '@playwright/test';
-import { AuthPage } from './pages/auth.page';
-import { DashboardPage } from './pages/dashboard.page';
-import { FlagsPage } from './pages/flags.page';
-import { SegmentsPage } from './pages/segments.page';
+import { test as base } from "@playwright/test";
+import { AuthPage } from "./pages/auth.page";
+import { DashboardPage } from "./pages/dashboard.page";
+import { FlagsPage } from "./pages/flags.page";
+import { SegmentsPage } from "./pages/segments.page";
 
 // Test user credentials for E2E tests
 const TEST_USER = {
-  email: 'test@example.com',
-  password: 'TestPassword123!',
+  email: "test@example.com",
+  password: "TestPassword123!",
 };
 
 type Fixtures = {
@@ -39,7 +39,7 @@ export const test = base.extend<Fixtures>({
     await use(new SegmentsPage(page));
   },
 
-  loginAsTestUser: async ({ authPage, page }, use) => {
+  loginAsTestUser: async ({ authPage, page: _page }, use) => {
     await use(async () => {
       await authPage.goto();
       await authPage.login(TEST_USER.email, TEST_USER.password);
@@ -49,10 +49,10 @@ export const test = base.extend<Fixtures>({
 
   mockFlagsApi: async ({ page }, use) => {
     await use(async (response: object, status = 200) => {
-      await page.route('**/api/flags**', async (route) => {
+      await page.route("**/api/flags**", async (route) => {
         await route.fulfill({
           status,
-          contentType: 'application/json',
+          contentType: "application/json",
           body: JSON.stringify(response),
         });
       });
@@ -61,10 +61,10 @@ export const test = base.extend<Fixtures>({
 
   mockSegmentsApi: async ({ page }, use) => {
     await use(async (response: object, status = 200) => {
-      await page.route('**/api/segments**', async (route) => {
+      await page.route("**/api/segments**", async (route) => {
         await route.fulfill({
           status,
-          contentType: 'application/json',
+          contentType: "application/json",
           body: JSON.stringify(response),
         });
       });
@@ -72,5 +72,5 @@ export const test = base.extend<Fixtures>({
   },
 });
 
-export { expect } from '@playwright/test';
+export { expect } from "@playwright/test";
 export { TEST_USER };

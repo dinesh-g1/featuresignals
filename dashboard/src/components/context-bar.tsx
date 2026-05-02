@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAppStore } from "@/stores/app-store";
 import { EventBus } from "@/lib/event-bus";
 import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
-import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import {
-  SearchIcon, ChevronDownIcon, PlusIcon, CheckIcon
+  SearchIcon,
+  ChevronDownIcon,
+  PlusIcon,
+  CheckIcon,
 } from "@/components/icons/nav-icons";
-import { useEffect, useRef } from "react";
 import type { Project, Environment } from "@/lib/types";
 
 // ─── Project Dropdown ───────────────────────────────────────────────
@@ -100,7 +101,9 @@ function ProjectDropdown() {
           className={cn(
             "h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
-            open ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-subtle)]",
+            open
+              ? "text-[var(--fgColor-accent)]"
+              : "text-[var(--fgColor-subtle)]",
           )}
         />
       </button>
@@ -290,7 +293,9 @@ function EnvironmentDropdown() {
           className={cn(
             "h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
-            open ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-subtle)]",
+            open
+              ? "text-[var(--fgColor-accent)]"
+              : "text-[var(--fgColor-subtle)]",
           )}
         />
       </button>

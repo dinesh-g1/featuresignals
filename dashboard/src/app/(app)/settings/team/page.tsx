@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,10 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  TrashIcon, ChevronDownIcon, UsersIcon, MailIcon
+  TrashIcon,
+  ChevronDownIcon,
+  UsersIcon,
+  MailIcon,
 } from "@/components/icons/nav-icons";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import type { OrgMember, EnvPermission, Environment } from "@/lib/types";
@@ -122,6 +125,7 @@ export default function TeamPage() {
 
   useEffect(() => {
     reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is intentionally not included to avoid re-render loops
   }, [token, projectId]);
 
   async function handleInvite(e: React.FormEvent) {
@@ -233,7 +237,9 @@ export default function TeamPage() {
       <UpgradeNudge context="seats" />
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">Team Members</h2>
+          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+            Team Members
+          </h2>
           <Button size="sm" onClick={() => setShowInvite(!showInvite)}>
             Invite Member
           </Button>

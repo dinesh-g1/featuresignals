@@ -13,9 +13,7 @@ import { toast } from "@/components/toast";
 import { PageHeader, Card, Button, Input, Label } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { InlineCreateForm } from "@/components/ui/inline-create-form";
-import {
-  UsersIcon, TrashIcon, ChevronDownIcon
-} from "@/components/icons/nav-icons";
+import { TrashIcon, ChevronDownIcon } from "@/components/icons/nav-icons";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { DOCS_LINKS } from "@/components/docs-link";
@@ -241,7 +239,7 @@ function SegmentsContent({
                     if (fieldErrors.key)
                       setFieldErrors({ ...fieldErrors, key: undefined });
                   }}
-                  onBlur={(e) => {
+                  onBlur={(_e) => {
                     if (!form.key && form.name) {
                       setForm({ ...form, key: suggestSlug(form.name) });
                     }
@@ -344,7 +342,9 @@ function SegmentsContent({
                   <div
                     className={cn(
                       "flex flex-col gap-2 px-4 py-3 transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4",
-                      isExpanded ? "bg-[var(--bgColor-accent-muted)]" : "hover:bg-[var(--bgColor-accent-muted)]",
+                      isExpanded
+                        ? "bg-[var(--bgColor-accent-muted)]"
+                        : "hover:bg-[var(--bgColor-accent-muted)]",
                     )}
                     onClick={() => setExpanded(isExpanded ? null : seg.key)}
                   >

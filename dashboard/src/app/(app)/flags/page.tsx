@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { EventBus } from "@/lib/event-bus";
@@ -17,29 +16,22 @@ import {
   StatusBadge,
   Label,
   Switch,
-  FormField,
   FlagsPageSkeleton,
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui";
-import { ErrorDisplay } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { Textarea, ErrorDisplay } from "@/components/ui";
 import {
   FlagIcon,
   SearchIcon,
   ChevronRightIcon,
   TrashIcon,
   LoaderIcon,
-  SlidersHorizontalIcon,
 } from "@/components/icons/nav-icons";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { FlagSlideOver } from "@/components/flag-slide-over";
 import { Blankslate } from "@/components/blankslate";
-import { UnderlineNav } from "@/components/underline-nav";
-import { FlagIcon as NavFlagIcon } from "@/components/icons/nav-icons";
-import { Breadcrumb } from "@/components/breadcrumb";
 import {
   useFlags,
   useEnvironments,
@@ -62,7 +54,6 @@ import {
 import type {
   FlagState,
   Flag as FlagType,
-  TargetingRule,
   Environment as EnvironmentType,
 } from "@/lib/types";
 
@@ -132,14 +123,15 @@ function FlagsInner() {
 
   const {
     data: flags,
-    loading: flagsLoading,
-    error: flagsError,
+    loading: _flagsLoading,
+    error: _flagsError,
     refetch: refetchFlags,
   } = useFlags(projectId);
-  const { data: envs } = useEnvironments(projectId);
+  const { data: _envs } = useEnvironments(projectId);
   const { data: batchStates } = useFlagStates(projectId, currentEnvId);
   const stateMap = useFlagStateMap(batchStates, flags);
 
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   // Debounced search
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -164,7 +156,7 @@ function FlagsInner() {
     default_value: "false",
   });
 
-  const suggestedKey = useMemo(() => {
+  const _suggestedKey = useMemo(() => {
     if (!newFlag.name) return "";
     return newFlag.name
       .toLowerCase()
@@ -410,6 +402,7 @@ function FlagsInner() {
     sortDir,
   ]);
 
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   const {
     state: prereqState,
     loading: prereqLoading,
@@ -530,7 +523,7 @@ function FlagsWithData({
   setSortBy,
   sortDir,
   setSortDir,
-  selectedFlagKey,
+  selectedFlagKey: _selectedFlagKey,
   setSelectedFlagKey,
 }: {
   search: string;
@@ -837,11 +830,11 @@ function FlagsWithData({
 // ---------------------------------------------------------------------------
 function FlagsContent({
   flags,
-  envs,
+  envs: _envs,
   stateMap,
   currentEnvName,
   suggestedKey,
-  search,
+  search: _search,
   searchInput,
   setSearchInput,
   typeFilter,
@@ -871,9 +864,9 @@ function FlagsContent({
   toggling,
   handleQuickToggle,
   handleDelete,
-  deleteFlag,
+  deleteFlag: _deleteFlag,
   filtered,
-  refetchFlags,
+  refetchFlags: _refetchFlags,
   onFlagClick,
 }: {
   flags: FlagType[] | undefined;
@@ -1200,7 +1193,7 @@ function FlagsContent({
         <div className="divide-y divide-stone-100">
           {filtered.length === 0 ? (
             <Blankslate
-              icon={NavFlagIcon}
+              icon={FlagIcon}
               title="You haven't created any flags yet"
               description="A feature flag lets you toggle features on/off for specific users, segments, or percentages of your audience."
               actionLabel="Create your first flag"
@@ -1248,7 +1241,7 @@ function FlagsContent({
                           <Switch
                             size="sm"
                             checked={st?.enabled ?? false}
-                            onCheckedChange={(checked) => {
+                            onCheckedChange={(_checked) => {
                               handleQuickToggle(flag.key);
                             }}
                             disabled={toggling === flag.key}
@@ -1316,14 +1309,15 @@ function FlagsContent({
   );
 }
 
-
 export default function FlagsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
+        </div>
+      }
+    >
       <FlagsInner />
     </Suspense>
   );

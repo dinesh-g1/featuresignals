@@ -34,7 +34,7 @@ export default function FlagHealthPage() {
       .catch(() => setLoading(false));
   }, [token, projectId]);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const EXPIRING_SOON_DAYS = 7;
 
   const staleDaysForCategory: Record<string, number> = {
@@ -52,7 +52,9 @@ export default function FlagHealthPage() {
       const threshold = staleDaysForCategory[f.category] ?? DEFAULT_STALE_DAYS;
       return age > threshold;
     });
-  }, [flags]);
+    // staleDaysForCategory and DEFAULT_STALE_DAYS are stable component-level constants
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flags, now]);
 
   const expiringSoon = useMemo(() => {
     return flags.filter((f) => {
@@ -61,14 +63,14 @@ export default function FlagHealthPage() {
       const daysLeft = (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
       return daysLeft > 0 && daysLeft <= EXPIRING_SOON_DAYS;
     });
-  }, [flags]);
+  }, [flags, now]);
 
   const expired = useMemo(() => {
     return flags.filter((f) => {
       if (!f.expires_at) return false;
       return new Date(f.expires_at) < now;
     });
-  }, [flags]);
+  }, [flags, now]);
 
   const noExpiration = useMemo(() => {
     return flags.filter((f) => !f.expires_at);

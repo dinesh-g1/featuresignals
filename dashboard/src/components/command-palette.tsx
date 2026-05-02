@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import type { Flag, Segment } from "@/lib/types";
 import { DOCS_LINKS } from "@/components/docs-link";
-import { SearchIcon, CommandIcon } from "@/components/icons/nav-icons";
+import { CommandIcon } from "@/components/icons/nav-icons";
 
 // Shared open state for external triggers
 let externalOpenSetter: ((open: boolean) => void) | null = null;

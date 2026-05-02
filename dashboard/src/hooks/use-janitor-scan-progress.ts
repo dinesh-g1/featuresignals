@@ -69,8 +69,7 @@ export function useJanitorScanProgress(scanId: string | null) {
       `${apiUrl}/v1/janitor/scans/${scanId}/events`,
     );
 
-    eventSource.addEventListener("scan.started", (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
+    eventSource.addEventListener("scan.started", (_e: MessageEvent) => {
       setState((prev) => ({
         ...prev,
         phase: "scanning_repos",
@@ -155,7 +154,7 @@ export function useJanitorScanProgress(scanId: string | null) {
       });
     });
 
-    eventSource.addEventListener("scan.complete", (e: MessageEvent) => {
+    eventSource.addEventListener("scan.complete", (_e: MessageEvent) => {
       setState((prev) => ({
         ...prev,
         phase: "complete",

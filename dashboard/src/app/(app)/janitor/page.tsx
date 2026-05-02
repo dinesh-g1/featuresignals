@@ -95,7 +95,7 @@ export default function JanitorPage() {
     } catch {
       setScanning(false);
     }
-  }, [currentProjectId, refreshFlags]);
+  }, [currentProjectId, token, refreshFlags]);
 
   const handleGeneratePR = useCallback(
     async (flagKey: string) => {

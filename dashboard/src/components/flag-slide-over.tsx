@@ -6,8 +6,6 @@ import {
   GripVerticalIcon,
   TrashIcon,
   PlusIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
   GitPullRequestIcon,
   ShieldIcon,
   ClockIcon,
@@ -23,7 +21,7 @@ import type { Flag, FlagState, TargetingRule } from "@/lib/types";
 interface FlagSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  flag? : Flag;
+  flag?: Flag;
   flagState?: FlagState;
   onToggle?: (enabled: boolean) => Promise<void>;
   onSaveRules?: (rules: TargetingRule[]) => Promise<void>;

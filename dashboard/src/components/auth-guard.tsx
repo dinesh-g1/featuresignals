@@ -9,7 +9,6 @@ const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const token = useAppStore((s) => s.token);
-  const refreshToken = useAppStore((s) => s.refreshToken);
   const expiresAt = useAppStore((s) => s.expiresAt);
   const setAuth = useAppStore((s) => s.setAuth);
   const logout = useAppStore((s) => s.logout);

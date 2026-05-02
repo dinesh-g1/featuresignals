@@ -6,7 +6,13 @@ import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import {
-  FolderOpenIcon, GlobeIcon, ChevronRightIcon, PlusIcon, Settings2Icon, ArrowUpDownIcon, CheckIcon
+  FolderOpenIcon,
+  GlobeIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  Settings2Icon,
+  ArrowUpDownIcon,
+  CheckIcon,
 } from "@/components/icons/nav-icons";
 import Link from "next/link";
 import type { Project, Environment } from "@/lib/types";
@@ -428,7 +434,7 @@ export function ContextHierarchy({
     } finally {
       setLoading(false);
     }
-  }, [token, currentProjectId, currentEnvId, setCurrentProject, setCurrentEnv]);
+  }, [token, currentProjectId, currentEnvId, setCurrentEnv]);
 
   useEffect(() => {
     loadData();

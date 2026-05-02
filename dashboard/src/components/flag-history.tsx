@@ -45,7 +45,7 @@ interface FlagHistoryProps {
   token: string | null;
   projectId: string | null;
   flagKey: string;
-  flagId: string;
+  flagId?: string;
   onRollback?: (version: number) => void;
 }
 
@@ -118,7 +118,7 @@ export function FlagHistory({
   token,
   projectId,
   flagKey,
-  flagId,
+  flagId: _flagId,
   onRollback,
 }: FlagHistoryProps) {
   const [versions, setVersions] = useState<FlagVersion[]>([]);

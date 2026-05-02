@@ -61,7 +61,6 @@ vi.mock("@/components/toast", () => ({
 }));
 
 vi.mock("@radix-ui/react-tabs", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const react = require("react");
   const { useState } = react;
   return {

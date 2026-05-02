@@ -21,7 +21,6 @@ import {
   TableCell,
 } from "@/components/ui";
 import {
-  ClipboardIcon,
   DownloadIcon,
   SearchIcon,
   ShieldIcon,

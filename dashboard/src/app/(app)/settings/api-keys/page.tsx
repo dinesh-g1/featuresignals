@@ -60,6 +60,7 @@ export default function APIKeysPage() {
 
   useEffect(() => {
     reloadKeys();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reloadKeys is intentionally not included to avoid re-render loops
   }, [token, selectedEnv]);
 
   async function handleCreate(e: React.FormEvent) {

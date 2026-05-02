@@ -1,7 +1,11 @@
 "use client";
 
 import {
-  ExternalLinkIcon, GitPullRequestIcon, BrainIcon, CheckCircleFillIcon, XCircleFillIcon
+  ExternalLinkIcon,
+  GitPullRequestIcon,
+  BrainIcon,
+  CheckCircleFillIcon,
+  XCircleFillIcon,
 } from "@/components/icons/nav-icons";
 import { Badge } from "@/components/ui/badge";
 
@@ -11,13 +15,20 @@ interface PRDetailViewProps {
   analysisConfidence?: number;
   llmProvider?: string;
   llmModel?: string;
-  flagKey?: string;
 }
 
-export function PRDetailView({ prUrl, prStatus, analysisConfidence, llmProvider, llmModel, flagKey }: PRDetailViewProps) {
+export function PRDetailView({
+  prUrl,
+  prStatus,
+  analysisConfidence,
+  llmProvider,
+  llmModel,
+}: PRDetailViewProps) {
   if (!prUrl && !prStatus) return null;
 
-  const confidencePercent = analysisConfidence ? Math.round(analysisConfidence * 100) : null;
+  const confidencePercent = analysisConfidence
+    ? Math.round(analysisConfidence * 100)
+    : null;
 
   return (
     <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 space-y-3">
@@ -31,7 +42,11 @@ export function PRDetailView({ prUrl, prStatus, analysisConfidence, llmProvider,
           <span className="text-xs text-[var(--fgColor-muted)]">Status:</span>
           <Badge
             variant={
-              prStatus === "merged" ? "success" : prStatus === "open" ? "primary" : "default"
+              prStatus === "merged"
+                ? "success"
+                : prStatus === "open"
+                  ? "primary"
+                  : "default"
             }
           >
             {prStatus === "merged" ? (
@@ -52,7 +67,12 @@ export function PRDetailView({ prUrl, prStatus, analysisConfidence, llmProvider,
           className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
         >
           <ExternalLinkIcon className="h-3 w-3" />
-          View on {prUrl.includes("github") ? "GitHub" : prUrl.includes("gitlab") ? "GitLab" : "Bitbucket"}
+          View on{" "}
+          {prUrl.includes("github")
+            ? "GitHub"
+            : prUrl.includes("gitlab")
+              ? "GitLab"
+              : "Bitbucket"}
         </a>
       )}
 
@@ -60,11 +80,21 @@ export function PRDetailView({ prUrl, prStatus, analysisConfidence, llmProvider,
         <div className="flex items-center gap-2 text-xs text-[var(--fgColor-muted)]">
           <BrainIcon className="h-3.5 w-3.5 text-purple-500" />
           <span>
-            Analyzed by: <span className="font-medium text-[var(--fgColor-default)]">{llmProvider}</span>
-            {llmModel && <span className="text-[var(--fgColor-subtle)]"> ({llmModel})</span>}
+            Analyzed by:{" "}
+            <span className="font-medium text-[var(--fgColor-default)]">
+              {llmProvider}
+            </span>
+            {llmModel && (
+              <span className="text-[var(--fgColor-subtle)]">
+                {" "}
+                ({llmModel})
+              </span>
+            )}
           </span>
           {confidencePercent !== null && (
-            <span className="ml-auto font-semibold text-[var(--fgColor-default)]">{confidencePercent}% confidence</span>
+            <span className="ml-auto font-semibold text-[var(--fgColor-default)]">
+              {confidencePercent}% confidence
+            </span>
           )}
         </div>
       )}

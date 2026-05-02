@@ -5,9 +5,7 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { toast } from "@/components/toast";
 import { PageHeader, Card, CardHeader, Button } from "@/components/ui";
-import {
-  BellIcon, MailIcon, LoaderIcon
-} from "@/components/icons/nav-icons";
+import { BellIcon, MailIcon, LoaderIcon } from "@/components/icons/nav-icons";
 
 const PREFS = [
   {
@@ -35,12 +33,10 @@ export default function NotificationsPage() {
   const [consent, setConsent] = useState(true);
   const [preference, setPreference] = useState("all");
   const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     api.getDismissedHints(token).catch(() => {});
-    setLoaded(true);
   }, [token]);
 
   const handleSave = async () => {
@@ -67,7 +63,9 @@ export default function NotificationsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <MailIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
-            <h2 className="font-semibold text-[var(--fgColor-default)]">Email Preferences</h2>
+            <h2 className="font-semibold text-[var(--fgColor-default)]">
+              Email Preferences
+            </h2>
           </div>
         </CardHeader>
         <div className="space-y-4 px-4 pb-6 sm:px-6">

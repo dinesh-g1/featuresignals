@@ -4,24 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
-import {
-  PageHeader,
-  Card,
-  CardHeader,
-  Button,
-  Badge,
-  EmptyState,
-} from "@/components/ui";
+import { PageHeader, Card, Button, Badge, EmptyState } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
-  ArrowLeftRightIcon, FolderOpenIcon, GlobeIcon
+  ArrowLeftRightIcon,
+  FolderOpenIcon,
 } from "@/components/icons/nav-icons";
-import type {
-  Environment,
-  EnvComparisonItem,
-  EnvComparisonResponse,
-} from "@/lib/types";
+import type { Environment, EnvComparisonResponse } from "@/lib/types";
 
 export default function EnvComparisonPage() {
   const token = useAppStore((s) => s.token);

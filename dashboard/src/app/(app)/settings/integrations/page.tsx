@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/stores/app-store";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +15,18 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/toast";
 import {
-  ArrowLeftRightIcon, CloudIcon, ServerIcon, CheckCircleFillIcon, LoaderIcon, ExternalLinkIcon, CopyIcon, ChevronRightIcon, AlertIcon, ShieldIcon, GitPullRequestIcon, CheckIcon, TerminalIcon, KeyIcon, GlobeIcon, ZapIcon
+  ArrowLeftRightIcon,
+  CloudIcon,
+  ServerIcon,
+  CheckCircleFillIcon,
+  ExternalLinkIcon,
+  CopyIcon,
+  ChevronRightIcon,
+  AlertIcon,
+  GitPullRequestIcon,
+  CheckIcon,
+  KeyIcon,
+  GlobeIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Copy Button ────────────────────────────────────────────────────
@@ -131,10 +141,7 @@ function LDImporterCard() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 shrink-0">
-            <ArrowLeftRightIcon
-              className="h-5 w-5 text-amber-600"
-             
-            />
+            <ArrowLeftRightIcon className="h-5 w-5 text-amber-600" />
           </div>
           <div>
             <CardTitle>LaunchDarkly Importer</CardTitle>
@@ -148,10 +155,7 @@ function LDImporterCard() {
       <CardContent className="space-y-4">
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-start gap-2.5">
-            <AlertIcon
-              className="h-4 w-4 text-amber-600 shrink-0 mt-0.5"
-             
-            />
+            <AlertIcon className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-semibold text-amber-800">
                 What gets imported
@@ -176,10 +180,7 @@ function LDImporterCard() {
               LaunchDarkly API Token
             </label>
             <div className="relative">
-              <KeyIcon
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fgColor-subtle)]"
-               
-              />
+              <KeyIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fgColor-subtle)]" />
               <Input
                 type="password"
                 placeholder="api-XXXXXXXXXXXXXXXXXXXXX"
@@ -198,10 +199,7 @@ function LDImporterCard() {
               LaunchDarkly Project Key
             </label>
             <div className="relative">
-              <GlobeIcon
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fgColor-subtle)]"
-               
-              />
+              <GlobeIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fgColor-subtle)]" />
               <Input
                 type="text"
                 placeholder="default"
@@ -211,8 +209,8 @@ function LDImporterCard() {
               />
             </div>
             <p className="text-xs text-[var(--fgColor-subtle)] mt-1">
-              Found in LaunchDarkly Project Settings under the &ldquo;KeyIcon&rdquo;ldquo;Key&ldquo;KeyIcon&rdquo;rdquo;
-              field.
+              Found in LaunchDarkly Project Settings under the
+              &ldquo;KeyIcon&rdquo;ldquo;Key&ldquo;KeyIcon&rdquo;rdquo; field.
             </p>
           </div>
         </div>
@@ -238,15 +236,9 @@ function LDImporterCard() {
           >
             <div className="flex items-start gap-2.5">
               {result.success ? (
-                <CheckCircleFillIcon
-                  className="h-4 w-4 shrink-0 mt-0.5 text-emerald-500"
-                 
-                />
+                <CheckCircleFillIcon className="h-4 w-4 shrink-0 mt-0.5 text-emerald-500" />
               ) : (
-                <AlertIcon
-                  className="h-4 w-4 shrink-0 mt-0.5 text-red-500"
-                 
-                />
+                <AlertIcon className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
               )}
               <p>{result.message}</p>
             </div>
@@ -260,7 +252,6 @@ function LDImporterCard() {
 // ─── Terraform Section ──────────────────────────────────────────────
 
 function TerraformCard() {
-  const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
 
   const terraformSnippet = `# provider.tf
@@ -428,19 +419,29 @@ docker run -d \\
         <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
           Edge Relay nodes cache feature flag rulesets in-memory and subscribe
           to real-time updates via Redis{" "}
-          <code className="text-[var(--fgColor-accent)] font-mono text-xs">LISTEN/NOTIFY</code>.
-          No database dependency on the evaluation hot path — every evaluation
+          <code className="text-[var(--fgColor-accent)] font-mono text-xs">
+            LISTEN/NOTIFY
+          </code>
+          . No database dependency on the evaluation hot path — every evaluation
           is served from RAM.
         </p>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-3 text-center">
-            <p className="text-lg font-bold text-[var(--fgColor-success)]">0 ms</p>
-            <p className="text-xs text-[var(--fgColor-muted)]">DB Hit Latency</p>
+            <p className="text-lg font-bold text-[var(--fgColor-success)]">
+              0 ms
+            </p>
+            <p className="text-xs text-[var(--fgColor-muted)]">
+              DB Hit Latency
+            </p>
           </div>
           <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-3 text-center">
-            <p className="text-lg font-bold text-[var(--fgColor-accent)]">Redis</p>
-            <p className="text-xs text-[var(--fgColor-muted)]">Stream Replication</p>
+            <p className="text-lg font-bold text-[var(--fgColor-accent)]">
+              Redis
+            </p>
+            <p className="text-xs text-[var(--fgColor-muted)]">
+              Stream Replication
+            </p>
           </div>
         </div>
 

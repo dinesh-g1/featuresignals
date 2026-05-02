@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import type { TargetingRule } from "@/lib/types";
 import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
 
@@ -40,7 +40,8 @@ const makeRule = (overrides = {}) => ({
 });
 
 describe("TargetingRulesEditor", () => {
-  let onSave: ReturnType<typeof vi.fn> & ((rules: TargetingRule[]) => Promise<void>);
+  let onSave: ReturnType<typeof vi.fn> &
+    ((rules: TargetingRule[]) => Promise<void>);
   const segments = [
     { key: "beta-segment", name: "Beta Testers" },
     { key: "vip-segment", name: "VIP UsersIcon" },
@@ -53,11 +54,18 @@ describe("TargetingRulesEditor", () => {
   it("renders empty state when no rules", () => {
     // Arrange & Act
     render(
-      <TargetingRulesEditor rules={[]} segments={segments} flagType="boolean" onSave={onSave} />,
+      <TargetingRulesEditor
+        rules={[]}
+        segments={segments}
+        flagType="boolean"
+        onSave={onSave}
+      />,
     );
 
     // Assert
-    expect(screen.getByText(/no targeting rules configured/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/no targeting rules configured/i),
+    ).toBeInTheDocument();
   });
 
   it("renders existing rules", () => {
@@ -66,7 +74,12 @@ describe("TargetingRulesEditor", () => {
 
     // Act
     render(
-      <TargetingRulesEditor rules={rules} segments={segments} flagType="boolean" onSave={onSave} />,
+      <TargetingRulesEditor
+        rules={rules}
+        segments={segments}
+        flagType="boolean"
+        onSave={onSave}
+      />,
     );
 
     // Assert
@@ -77,21 +90,33 @@ describe("TargetingRulesEditor", () => {
   it("'Add Rule' button adds a new rule", () => {
     // Arrange
     render(
-      <TargetingRulesEditor rules={[]} segments={segments} flagType="boolean" onSave={onSave} />,
+      <TargetingRulesEditor
+        rules={[]}
+        segments={segments}
+        flagType="boolean"
+        onSave={onSave}
+      />,
     );
 
     // Act
     fireEvent.click(screen.getByText("Add Rule"));
 
     // Assert
-    expect(screen.queryByText(/no targeting rules configured/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/no targeting rules configured/i),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Unnamed rule")).toBeInTheDocument();
   });
 
   it("save button appears when dirty", () => {
     // Arrange
     render(
-      <TargetingRulesEditor rules={[]} segments={segments} flagType="boolean" onSave={onSave} />,
+      <TargetingRulesEditor
+        rules={[]}
+        segments={segments}
+        flagType="boolean"
+        onSave={onSave}
+      />,
     );
     expect(screen.queryByText("Save Rules")).not.toBeInTheDocument();
 
@@ -105,7 +130,12 @@ describe("TargetingRulesEditor", () => {
   it("save calls onSave with rules array", async () => {
     // Arrange
     render(
-      <TargetingRulesEditor rules={[]} segments={segments} flagType="boolean" onSave={onSave} />,
+      <TargetingRulesEditor
+        rules={[]}
+        segments={segments}
+        flagType="boolean"
+        onSave={onSave}
+      />,
     );
     fireEvent.click(screen.getByText("Add Rule"));
 
@@ -127,7 +157,12 @@ describe("TargetingRulesEditor", () => {
 
     // Act
     render(
-      <TargetingRulesEditor rules={rules} segments={segments} flagType="boolean" onSave={onSave} />,
+      <TargetingRulesEditor
+        rules={rules}
+        segments={segments}
+        flagType="boolean"
+        onSave={onSave}
+      />,
     );
 
     // Expand the rule by clicking on it

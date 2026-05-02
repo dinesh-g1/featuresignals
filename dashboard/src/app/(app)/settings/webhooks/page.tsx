@@ -8,11 +8,20 @@ import { cn, timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  LinkIcon, TrashIcon, ChevronDownIcon, CheckIcon, XIcon, SendIcon, LoaderIcon, EyeIcon, EyeOffIcon, CopyIcon
+  LinkIcon,
+  TrashIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  XIcon,
+  SendIcon,
+  LoaderIcon,
+  EyeIcon,
+  EyeOffIcon,
+  CopyIcon,
 } from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { Webhook, WebhookDelivery } from "@/lib/types";
@@ -136,6 +145,7 @@ export default function WebhooksPage() {
 
   useEffect(() => {
     reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is intentionally not included to avoid re-render loops
   }, [token]);
 
   async function handleCreate(e: React.FormEvent) {
@@ -254,7 +264,8 @@ export default function WebhooksPage() {
   }
 
   function getStatusCodeBg(status: number) {
-    if (status >= 200 && status < 300) return "bg-[var(--bgColor-success-muted)] text-emerald-700";
+    if (status >= 200 && status < 300)
+      return "bg-[var(--bgColor-success-muted)] text-emerald-700";
     if (status >= 400 && status < 500) return "bg-amber-100 text-amber-700";
     if (status >= 500) return "bg-red-100 text-red-700";
     return "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]";
@@ -272,7 +283,9 @@ export default function WebhooksPage() {
     <div className="space-y-6">
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">Webhooks</h2>
+          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+            Webhooks
+          </h2>
           <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
             Add Webhook
           </Button>
