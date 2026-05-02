@@ -12,6 +12,8 @@ import (
 type FlagReader interface {
 	GetFlag(ctx context.Context, projectID, key string) (*Flag, error)
 	ListFlags(ctx context.Context, projectID string) ([]Flag, error)
+	ListFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]Flag, error)
+	ListFlagsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]Flag, error)
 	GetFlagState(ctx context.Context, flagID, envID string) (*FlagState, error)
 	ListFlagStatesByEnv(ctx context.Context, envID string) ([]FlagState, error)
 }
@@ -28,6 +30,8 @@ type FlagWriter interface {
 type SegmentStore interface {
 	CreateSegment(ctx context.Context, seg *Segment) error
 	ListSegments(ctx context.Context, projectID string) ([]Segment, error)
+	ListSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]Segment, error)
+	ListSegmentsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]Segment, error)
 	GetSegment(ctx context.Context, projectID, key string) (*Segment, error)
 	UpdateSegment(ctx context.Context, seg *Segment) error
 	DeleteSegment(ctx context.Context, id string) error
@@ -299,6 +303,40 @@ type StatusRecorder interface {
 	GetComponentHistory(ctx context.Context, days int) ([]DailyComponentStatus, error)
 }
 
+
+// SearchHit is a cross-resource search result used by SearchStore.
+type SearchHit struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	Category    string `json:"category"`
+	Href        string `json:"href"`
+}
+
+// LimitsReader returns plan limits and current resource usage.
+type LimitsReader interface {
+	GetLimitsConfig(ctx context.Context, plan string) (*LimitsConfigRow, error)
+	CountFlags(ctx context.Context, orgID string) (int, error)
+	CountSegments(ctx context.Context, orgID string) (int, error)
+	CountEnvironments(ctx context.Context, orgID string) (int, error)
+	CountMembers(ctx context.Context, orgID string) (int, error)
+	CountWebhooks(ctx context.Context, orgID string) (int, error)
+	CountAPIKeys(ctx context.Context, orgID string) (int, error)
+	CountProjects(ctx context.Context, orgID string) (int, error)
+}
+
+// PinnedItemsStore manages user-pinned resource bookmarks.
+type PinnedItemsStore interface {
+	ListPinnedItems(ctx context.Context, orgID, userID, projectID string) ([]PinnedItem, error)
+	CreatePinnedItem(ctx context.Context, orgID, userID, projectID, resourceType, resourceID string) (*PinnedItem, error)
+	DeletePinnedItem(ctx context.Context, orgID, userID, pinnedItemID string) error
+}
+
+// SearchStore provides cross-resource search.
+type SearchStore interface {
+	Search(ctx context.Context, orgID, projectID, query string) ([]SearchHit, error)
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -342,4 +380,7 @@ type Store interface {
 	IntegrationStore
 	OpsPortalStore
 	SessionStore
+	LimitsReader
+	PinnedItemsStore
+	SearchStore
 }

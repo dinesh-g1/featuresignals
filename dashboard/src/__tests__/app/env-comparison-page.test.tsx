@@ -53,7 +53,7 @@ vi.mock("@/components/ui/select", () => ({
 }));
 
 import { api } from "@/lib/api";
-import EnvComparisonPage from "@/app/(app)/env-comparison/page";
+import EnvComparisonPage from "@/app/(app)/projects/[projectId]/env-comparison/page";
 
 const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 

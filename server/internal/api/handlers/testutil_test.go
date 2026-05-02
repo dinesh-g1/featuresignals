@@ -433,6 +433,30 @@ func (m *mockStore) GetFlag(ctx context.Context, projectID, key string) (*domain
 	return f, nil
 }
 
+func (m *mockStore) GetLimitsConfig(_ context.Context, _ string) (*domain.LimitsConfigRow, error) {
+	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
+}
+func (m *mockStore) CountFlags(_ context.Context, _ string) (int, error)     { return 0, nil }
+func (m *mockStore) CountSegments(_ context.Context, _ string) (int, error)  { return 0, nil }
+func (m *mockStore) CountEnvironments(_ context.Context, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)   { return 0, nil }
+func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error)  { return 0, nil }
+func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)   { return 0, nil }
+func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)  { return 0, nil }
+
+func (m *mockStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+	return nil, nil
+}
+func (m *mockStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
+	return nil, nil
+}
+func (m *mockStore) DeletePinnedItem(context.Context, string, string, string) error {
+	return nil
+}
+func (m *mockStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
+	return nil, nil
+}
+
 func (m *mockStore) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -443,6 +467,14 @@ func (m *mockStore) ListFlags(ctx context.Context, projectID string) ([]domain.F
 		}
 	}
 	return result, nil
+}
+
+func (m *mockStore) ListFlagsWithFilter(_ context.Context, _, projectID, _ string) ([]domain.Flag, error) {
+	return m.ListFlags(context.Background(), projectID)
+}
+
+func (m *mockStore) ListFlagsSorted(_ context.Context, projectID, _, _ string) ([]domain.Flag, error) {
+	return m.ListFlags(context.Background(), projectID)
 }
 
 func (m *mockStore) UpdateFlag(ctx context.Context, f *domain.Flag) error {
@@ -524,6 +556,14 @@ func (m *mockStore) ListSegments(ctx context.Context, projectID string) ([]domai
 		}
 	}
 	return result, nil
+}
+
+func (m *mockStore) ListSegmentsWithFilter(_ context.Context, _, projectID, _ string) ([]domain.Segment, error) {
+	return m.ListSegments(context.Background(), projectID)
+}
+
+func (m *mockStore) ListSegmentsSorted(_ context.Context, projectID, _, _ string) ([]domain.Segment, error) {
+	return m.ListSegments(context.Background(), projectID)
 }
 
 func (m *mockStore) GetSegment(ctx context.Context, projectID, key string) (*domain.Segment, error) {

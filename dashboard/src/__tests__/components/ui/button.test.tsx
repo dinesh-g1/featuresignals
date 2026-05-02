@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 describe("Button", () => {
@@ -39,7 +40,7 @@ describe("Button", () => {
   it("renders as a different element when asChild is true", () => {
     render(
       <Button asChild>
-        <a href="/home">Home</a>
+        <Link href="/home">Home</Link>
       </Button>,
     );
 

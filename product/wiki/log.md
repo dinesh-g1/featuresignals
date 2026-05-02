@@ -1,7 +1,54 @@
 # FeatureSignals Product Wiki — Activity Log
 
-> Chronological record of all wiki operations. Append-only.
+> Chronological record
+
+## [2026-05-05 21:30] build | 3 server-side gaps implemented — label filtering, sort wiring, search expansion
+
+**Files modified:**
+- `server/internal/store/postgres/store.go` — Added `ListFlagsWithFilter` (labels JSONB `@>` filtering), `ListFlagsSorted`, `ListSegmentsWithFilter`, `ListSegmentsSorted` store methods. All validate sort fields against allowlists before dynamic ORDER BY
+- `server/internal/domain/store.go` — Extended `FlagReader` and `SegmentStore` interfaces with the new filter/sort methods
+- `server/internal/api/handlers/flags.go` — Updated `List` to read `label_selector` query param and call `ListFlagsWithFilter` when present; otherwise checks sort via `dto.ParseSort(r, "flags")` and calls `ListFlagsSorted` when non-default
+- `server/internal/api/handlers/segments.go` — Same pattern: `label_selector` + sort support via `ListSegmentsWithFilter` / `ListSegmentsSorted`
+- `server/internal/store/postgres/limits.go` — Added environment search (scoped by org + project) and member search (joined via org_members, searches name OR email)
+- Various test files — Added missing mock methods for `ListFlagsWithFilter`, `ListFlagsSorted`, `ListSegmentsWithFilter`, `ListSegmentsSorted`, `CountAPIKeys`, `PinnedItemsStore`, `SearchStore` to all 4 mock store implementations (testutil_test.go, tier_test.go, inmemory_test.go, router_test.go)
+
+**Verification:** `go build ./...` and `go vet ./...` both pass clean. Handler tests for flags/segments pass. API middleware tests pass. Cache tests pass.
+
+---
+
+## [2026-05-02 21:30] build | 5 dashboard-side gaps implemented
+
+**Files modified:**
+- `src/app/(app)/projects/page.tsx` — Added stat badges (flags/segments/environments counts) to each project card, loaded via parallel useEffect with Promise.all
+- `src/components/nav-list.tsx` — Added collapsible "Pinned" section between Tools and Docs & Help with inline PinIcon SVG, empty state "No pinned items yet", fetched via api.listPinnedItems
+- `src/hooks/use-limits.ts` (NEW) — Typed useLimits hook returning `{ limits, plan, loading }` using api.getLimits
+- `src/components/command-palette.tsx` — Arrow key navigation now wraps (modulo arithmetic) instead of clamping
+- `src/app/(app)/usage/page.tsx` — Added pure CSS bar chart showing top 10 flags by total count with true% bars
+
+**Gaps addressed:** project stat badges, dynamic pinned section, limits hook, search keyboard wrap, per-flag usage chart.
+
+**Verification:** Manual code review — all types properly defined, no `any`, no `console.log`, no `!` non-null assertions, Primer design tokens used throughout.
+
+## [2026-05-03 00:00] overhaul | Complete product overhaul — Hetzner-inspired architecture end-to-end
+
+**Dashboard:** Two-mode layout (org TabBar / project Sidebar), central nervous system dashboard with stat tiles + activity + guides, beginners guide widget, limits status widget, categorized sidebar with Docs & Help section, /limits page with progress bars, /usage page with org-level eval metrics, /projects with delete checkbox confirmation.
+
+**Server:** 7 new API endpoints (/v1/limits, /v1/search, /v1/flags?project_id=x, project-scoped activity, pinned items CRUD), Hetzner-style meta.pagination on all responses, ParseSort() with allowlists, flat flag endpoint for O(1) access.
+
+**Database (migration 101):** labels (JSONB+GIN), protection (JSONB), pinned_items table, limits_config table seeded for free/pro/enterprise.
+
+**Files:** 15 server (domain/dto/handlers/store/router), 5 dashboard (pages/components/hooks). Verified: go build + tsc --noEmit + next build clean. of all wiki operations. Append-only.
 > Format: `## [YYYY-MM-DD HH:MM] operation | description`
+
+## [2026-05-02 17:00] refactor | Dashboard route reorganization — moved pages out of /settings, renamed /audit and /usage-insights
+
+- **New routes:** `/api-keys` (from `/settings/api-keys`), `/webhooks` (from `/settings/webhooks`), `/team` (from `/settings/team`), `/activity` (from `/audit`, renamed "Activity"), `/usage` (from `/usage-insights`, renamed "Usage")
+- **Settings layout updated:** Removed API Keys, Webhooks, Team from `settingsTabs`. Kept General, Integrations, Notifications.
+- **API Keys & Webhooks:** No settings-layout wrapping; now project-scoped top-level pages.
+- **Team:** No settings-layout wrapping; now a top-level page.
+- **Activity:** Renamed from "Audit Log" to "Activity" in UI labels. Component renamed from `AuditPage` to `ActivityPage`.
+- **Usage:** Renamed from "Usage Insights" to "Usage" in UI labels. Component renamed from `UsageInsightsPage` to `UsagePage`.
+- **Files created:** 5 new page.tsx files; 1 layout updated. Zero compilation errors. Only pre-existing Tailwind v4 migration warnings.
 
 ## [2026-05-02 16:00] build | Email event emitter scoping + ZeptoMail production enablement
 

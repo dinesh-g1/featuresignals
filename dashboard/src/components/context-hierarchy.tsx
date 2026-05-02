@@ -155,7 +155,11 @@ function ProjectDropdown({
                 Create new project
               </button>
               <Link
-                href="/environments"
+                href={
+                  useAppStore.getState().currentProjectId
+                    ? `/projects/${useAppStore.getState().currentProjectId}/environments`
+                    : "/environments"
+                }
                 onClick={() => setOpen(false)}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
               >

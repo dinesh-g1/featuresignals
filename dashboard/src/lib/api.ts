@@ -848,6 +848,18 @@ export const api = {
     request<BillingInfo>("/v1/billing/subscription", { token }),
   getUsage: (token: string) =>
     request<UsageInfo>("/v1/billing/usage", { token }),
+  getLimits: (token: string) =>
+    request<{ plan: string; limits: Array<{ resource: string; used: number; max: number }> }>("/v1/limits", { token }),
+  search: (token: string, q: string, projectId?: string | null) =>
+    request<{ query: string; results: Record<string, Array<{ id: string; label: string; description: string; category: string; href: string }>>; total: number }>(
+      "/v1/search?q=" + encodeURIComponent(q) + (projectId ? "&project_id=" + encodeURIComponent(projectId) : ""), { token }
+    ),
+  listPinnedItems: (token: string, projectId: string) =>
+    request<{ items: Array<{ id: string; project_id: string; resource_type: string; resource_id: string; created_at: string }> }>("/v1/projects/" + projectId + "/pinned", { token }),
+  pinItem: (token: string, projectId: string, resourceType: string, resourceId: string) =>
+    request<{ id: string }>("/v1/pinned", { method: "POST", body: { project_id: projectId, resource_type: resourceType, resource_id: resourceId }, token }),
+  unpinItem: (token: string, pinnedId: string) =>
+    request<void>("/v1/pinned/" + pinnedId, { method: "DELETE", token }),
   cancelSubscription: (token: string, atPeriodEnd = true) =>
     request<{ status: string }>("/v1/billing/cancel", {
       method: "POST",

@@ -70,7 +70,7 @@ vi.mock("@/components/ui", () => ({
 }));
 
 import { queryCache } from "@/lib/query-cache";
-import DashboardPage from "@/app/(app)/dashboard/page";
+import DashboardPage from "@/app/(app)/projects/[projectId]/dashboard/page";
 
 describe("DashboardPage", () => {
   beforeEach(() => {

@@ -27,8 +27,8 @@ interface PaletteItem {
 
 const NAV_ITEMS: PaletteItem[] = [
   {
-    id: "nav-overview",
-    label: "Overview",
+    id: "nav-dashboard",
+    label: "Dashboard",
     category: "navigation",
     href: "/dashboard",
   },
@@ -38,6 +38,56 @@ const NAV_ITEMS: PaletteItem[] = [
     label: "Segments",
     category: "navigation",
     href: "/segments",
+  },
+  {
+    id: "nav-environments",
+    label: "Environment Config",
+    category: "navigation",
+    href: "/environments",
+  },
+  {
+    id: "nav-api-keys",
+    label: "API Keys",
+    category: "navigation",
+    href: "/api-keys",
+  },
+  {
+    id: "nav-webhooks",
+    label: "Webhooks",
+    category: "navigation",
+    href: "/webhooks",
+  },
+  {
+    id: "nav-approvals",
+    label: "Approvals",
+    category: "navigation",
+    href: "/approvals",
+  },
+  { id: "nav-usage", label: "Usage", category: "navigation", href: "/usage" },
+  {
+    id: "nav-activity",
+    label: "Activity",
+    category: "navigation",
+    href: "/activity",
+  },
+  { id: "nav-team", label: "Team", category: "navigation", href: "/team" },
+  {
+    id: "nav-billing",
+    label: "Billing",
+    category: "navigation",
+    href: "/settings/billing",
+  },
+  {
+    id: "nav-settings",
+    label: "Settings",
+    category: "navigation",
+    href: "/settings/general",
+  },
+  {
+    id: "nav-janitor",
+    label: "AI Janitor",
+    category: "navigation",
+    href: "/janitor",
   },
   {
     id: "nav-env-comparison",
@@ -53,9 +103,15 @@ const NAV_ITEMS: PaletteItem[] = [
   },
   {
     id: "nav-target-comparison",
-    label: "Target Comparison",
+    label: "Target Compare",
     category: "navigation",
     href: "/target-comparison",
+  },
+  {
+    id: "nav-analytics",
+    label: "Analytics",
+    category: "navigation",
+    href: "/analytics",
   },
   {
     id: "nav-metrics",
@@ -64,70 +120,10 @@ const NAV_ITEMS: PaletteItem[] = [
     href: "/metrics",
   },
   {
-    id: "nav-usage-insights",
-    label: "Usage Insights",
-    category: "navigation",
-    href: "/usage-insights",
-  },
-  {
     id: "nav-health",
-    label: "Flag Health",
+    label: "Health",
     category: "navigation",
     href: "/health",
-  },
-  {
-    id: "nav-audit",
-    label: "Audit Log",
-    category: "navigation",
-    href: "/audit",
-  },
-  {
-    id: "nav-approvals",
-    label: "Approvals",
-    category: "navigation",
-    href: "/approvals",
-  },
-  {
-    id: "nav-settings",
-    label: "Settings",
-    category: "navigation",
-    href: "/settings/general",
-  },
-  {
-    id: "nav-team",
-    label: "Team",
-    category: "navigation",
-    href: "/settings/team",
-  },
-  {
-    id: "nav-api-keys",
-    label: "API Keys",
-    category: "navigation",
-    href: "/settings/api-keys",
-  },
-  {
-    id: "nav-webhooks",
-    label: "Webhooks",
-    category: "navigation",
-    href: "/settings/webhooks",
-  },
-  {
-    id: "nav-billing",
-    label: "Billing",
-    category: "navigation",
-    href: "/settings/billing",
-  },
-  {
-    id: "nav-notifications",
-    label: "Notifications",
-    category: "navigation",
-    href: "/settings/notifications",
-  },
-  {
-    id: "nav-sso",
-    label: "SSO",
-    category: "navigation",
-    href: "/settings/sso",
   },
 ];
 
@@ -155,24 +151,24 @@ const CREATE_ITEMS: PaletteItem[] = [
   },
   {
     id: "create-api-key",
-    label: "Create API KeyIcon",
+    label: "Create API Key",
     description: "Generate a new API key",
     category: "create",
-    href: "/settings/api-keys",
+    href: "/api-keys",
   },
   {
     id: "create-webhook",
     label: "Create Webhook",
     description: "Set up a new webhook endpoint",
     category: "create",
-    href: "/settings/webhooks",
+    href: "/webhooks",
   },
   {
     id: "invite-member",
     label: "Invite Team Member",
     description: "Add someone to your team",
     category: "create",
-    href: "/settings/team",
+    href: "/team",
   },
 ];
 
@@ -356,7 +352,19 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loadItems = useCallback(async () => {
-    const results: PaletteItem[] = [...NAV_ITEMS];
+    const orgLevelHrefs = new Set([
+      "/usage",
+      "/activity",
+      "/settings/billing",
+      "/settings/general",
+    ]);
+    const results: PaletteItem[] = NAV_ITEMS.map((item) => {
+      if (orgLevelHrefs.has(item.href)) return item;
+      return {
+        ...item,
+        href: projectId ? `/projects/${projectId}${item.href}` : item.href,
+      };
+    });
     if (token && projectId) {
       try {
         const [flags, segments] = await Promise.all([
@@ -368,8 +376,8 @@ export function CommandPalette() {
             id: `flag-${f.key}`,
             label: f.key,
             description: f.name,
-            category: "flag",
-            href: `/flags/${f.key}`,
+            category: "flag" as const,
+            href: `/projects/${projectId}/flags/${f.key}`,
           });
         });
         (segments || []).forEach((s: Segment) => {
@@ -377,8 +385,8 @@ export function CommandPalette() {
             id: `seg-${s.key}`,
             label: s.key,
             description: s.name,
-            category: "segment",
-            href: `/segments`,
+            category: "segment" as const,
+            href: `/projects/${projectId}/segments`,
           });
         });
       } catch {
@@ -470,10 +478,12 @@ export function CommandPalette() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelected((prev) => Math.min(prev + 1, flatFiltered.length - 1));
+      setSelected((prev) => (prev + 1) % flatFiltered.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelected((prev) => Math.max(prev - 1, 0));
+      setSelected(
+        (prev) => (prev - 1 + flatFiltered.length) % flatFiltered.length,
+      );
     } else if (e.key === "Enter" && flatFiltered[selected]) {
       handleSelect(flatFiltered[selected]);
     } else if (e.key === "Escape") {

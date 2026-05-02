@@ -164,7 +164,7 @@ vi.mock("@/components/targeting-rules-editor", () => ({
 }));
 
 import { api } from "@/lib/api";
-import FlagDetailPage from "@/app/(app)/flags/[flagKey]/page";
+import FlagDetailPage from "@/app/(app)/projects/[projectId]/flags/[flagKey]/page";
 
 const mockFlag = {
   id: "f1",

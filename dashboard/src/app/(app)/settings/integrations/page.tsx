@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -502,13 +503,13 @@ function APIKeyHelper() {
             <CopyButton text="https://sdk.featuresignals.com" />
           </div>
         </div>
-        <a
-          href="/settings/api-keys"
+        <Link
+          href="/api-keys"
           className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors mt-1"
         >
           Manage API keys
           <ChevronRightIcon className="h-3.5 w-3.5" />
-        </a>
+        </Link>
       </CardContent>
     </Card>
   );

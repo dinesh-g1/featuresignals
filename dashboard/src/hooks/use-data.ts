@@ -255,15 +255,12 @@ export function useUpdateMemberRole() {
 
 export function useAudit(limit = 50, offset = 0, projectId?: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey(
-    "audit",
-    `${limit}`,
-    `${offset}`,
-    projectId ?? undefined,
-  );
+  // Use "org" sentinel for org-wide queries so cacheKey doesn't return null
+  const cacheId = projectId || "org";
+  const key = cacheKey("audit", `${limit}`, `${offset}`, cacheId);
   return useQuery<AuditEntry[]>(
     key,
-    () => api.listAudit(token!, limit, offset, projectId ?? undefined),
+    () => api.listAudit(token!, limit, offset, projectId || undefined),
     {
       enabled: !!token,
     },

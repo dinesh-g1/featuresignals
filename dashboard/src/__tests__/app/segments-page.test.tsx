@@ -49,7 +49,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 import { api } from "@/lib/api";
-import SegmentsPage from "@/app/(app)/segments/page";
+import SegmentsPage from "@/app/(app)/projects/[projectId]/segments/page";
 
 const mockSegments = [
   {

@@ -549,6 +549,67 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 	return flags, nil
 }
 
+// ListFlagsWithFilter returns flags filtered by project ID and optional label selector.
+// The label selector is a JSON object; flags whose labels column contains all specified
+// key:value pairs (via @> operator) are returned.
+func (s *Store) ListFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]domain.Flag, error) {
+	if labelSelector == "" {
+		return s.ListFlags(ctx, projectID)
+	}
+	// Validate labelSelector is valid JSON
+	var raw json.RawMessage
+	if err := json.Unmarshal([]byte(labelSelector), &raw); err != nil {
+		return nil, fmt.Errorf("list flags with filter: invalid label selector: %w", err)
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, labels, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+		 FROM flags WHERE org_id = $1 AND project_id = $2 AND labels @> $3::jsonb
+		 ORDER BY created_at`, orgID, projectID, labelSelector)
+	if err != nil {
+		return nil, fmt.Errorf("list flags with filter: %w", err)
+	}
+	defer rows.Close()
+	flags := []domain.Flag{}
+	for rows.Next() {
+		var f domain.Flag
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.OrgID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.Labels, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("list flags with filter scan: %w", err)
+		}
+		flags = append(flags, f)
+	}
+	return flags, rows.Err()
+}
+
+// ListFlagsSorted returns flags for a project, sorted by the given field and direction.
+// The sortField is validated against an allowlist to prevent SQL injection.
+func (s *Store) ListFlagsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]domain.Flag, error) {
+	allowed := map[string]bool{"key": true, "name": true, "created_at": true, "updated_at": true, "status": true}
+	if !allowed[sortField] {
+		sortField = "created_at"
+	}
+	dir := "DESC"
+	if sortDir == "ASC" || sortDir == "asc" {
+		dir = "ASC"
+	}
+	query := fmt.Sprintf(
+		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+		 FROM flags WHERE project_id = $1 ORDER BY %s %s`, sortField, dir)
+	rows, err := s.pool.Query(ctx, query, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("list flags sorted: %w", err)
+	}
+	defer rows.Close()
+	flags := []domain.Flag{}
+	for rows.Next() {
+		var f domain.Flag
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.OrgID, &f.Key, &f.Name, &f.Description, &f.FlagType, &f.Category, &f.Status, &f.DefaultValue, &f.Tags, &f.ExpiresAt, &f.Prerequisites, &f.MutualExclusionGroup, &f.CreatedAt, &f.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("list flags sorted scan: %w", err)
+		}
+		flags = append(flags, f)
+	}
+	return flags, rows.Err()
+}
+
 func (s *Store) UpdateFlag(ctx context.Context, f *domain.Flag) error {
 	if f.Prerequisites == nil {
 		f.Prerequisites = []string{}
@@ -795,6 +856,71 @@ func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Se
 		segments = append(segments, seg)
 	}
 	return segments, nil
+}
+
+// ListSegmentsWithFilter returns segments filtered by project ID and optional label selector.
+func (s *Store) ListSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]domain.Segment, error) {
+	if labelSelector == "" {
+		return s.ListSegments(ctx, projectID)
+	}
+	var raw json.RawMessage
+	if err := json.Unmarshal([]byte(labelSelector), &raw); err != nil {
+		return nil, fmt.Errorf("list segments with filter: invalid label selector: %w", err)
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, project_id, org_id, key, name, description, match_type, rules, labels, created_at, updated_at
+		 FROM segments WHERE org_id = $1 AND project_id = $2 AND labels @> $3::jsonb
+		 ORDER BY created_at`, orgID, projectID, labelSelector)
+	if err != nil {
+		return nil, fmt.Errorf("list segments with filter: %w", err)
+	}
+	defer rows.Close()
+	segments := []domain.Segment{}
+	for rows.Next() {
+		var seg domain.Segment
+		var rulesJSON []byte
+		if err := rows.Scan(&seg.ID, &seg.ProjectID, &seg.OrgID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.Labels, &seg.CreatedAt, &seg.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("list segments with filter scan: %w", err)
+		}
+		if err := json.Unmarshal(rulesJSON, &seg.Rules); err != nil {
+			return nil, fmt.Errorf("unmarshal rules: %w", err)
+		}
+		segments = append(segments, seg)
+	}
+	return segments, rows.Err()
+}
+
+// ListSegmentsSorted returns segments for a project, sorted by the given field and direction.
+func (s *Store) ListSegmentsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]domain.Segment, error) {
+	allowed := map[string]bool{"key": true, "name": true, "created_at": true, "updated_at": true}
+	if !allowed[sortField] {
+		sortField = "created_at"
+	}
+	dir := "DESC"
+	if sortDir == "ASC" || sortDir == "asc" {
+		dir = "ASC"
+	}
+	query := fmt.Sprintf(
+		`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
+		 FROM segments WHERE project_id = $1 ORDER BY %s %s`, sortField, dir)
+	rows, err := s.pool.Query(ctx, query, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("list segments sorted: %w", err)
+	}
+	defer rows.Close()
+	segments := []domain.Segment{}
+	for rows.Next() {
+		var seg domain.Segment
+		var rulesJSON []byte
+		if err := rows.Scan(&seg.ID, &seg.ProjectID, &seg.OrgID, &seg.Key, &seg.Name, &seg.Description, &seg.MatchType, &rulesJSON, &seg.CreatedAt, &seg.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("list segments sorted scan: %w", err)
+		}
+		if err := json.Unmarshal(rulesJSON, &seg.Rules); err != nil {
+			return nil, fmt.Errorf("unmarshal rules: %w", err)
+		}
+		segments = append(segments, seg)
+	}
+	return segments, rows.Err()
 }
 
 func (s *Store) GetSegment(ctx context.Context, projectID, key string) (*domain.Segment, error) {

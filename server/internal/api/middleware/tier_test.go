@@ -87,6 +87,12 @@ func (s *tierMockStore) GetFlag(context.Context, string, string) (*domain.Flag, 
 	return nil, fmt.Errorf("not found")
 }
 func (s *tierMockStore) ListFlags(context.Context, string) ([]domain.Flag, error) { return nil, nil }
+func (s *tierMockStore) ListFlagsWithFilter(context.Context, string, string, string) ([]domain.Flag, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListFlagsSorted(context.Context, string, string, string) ([]domain.Flag, error) {
+	return nil, nil
+}
 func (s *tierMockStore) UpdateFlag(context.Context, *domain.Flag) error           { return nil }
 func (s *tierMockStore) DeleteFlag(context.Context, string) error                 { return nil }
 func (s *tierMockStore) UpsertFlagState(context.Context, *domain.FlagState) error { return nil }
@@ -101,6 +107,12 @@ func (s *tierMockStore) ListPendingSchedules(context.Context, time.Time) ([]doma
 }
 func (s *tierMockStore) CreateSegment(context.Context, *domain.Segment) error { return nil }
 func (s *tierMockStore) ListSegments(context.Context, string) ([]domain.Segment, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListSegmentsWithFilter(context.Context, string, string, string) ([]domain.Segment, error) {
+	return nil, nil
+}
+func (s *tierMockStore) ListSegmentsSorted(context.Context, string, string, string) ([]domain.Segment, error) {
 	return nil, nil
 }
 func (s *tierMockStore) GetSegment(context.Context, string, string) (*domain.Segment, error) {
@@ -165,6 +177,28 @@ func (s *tierMockStore) ListAuditEntriesForExport(context.Context, string, strin
 	return nil, nil
 }
 func (s *tierMockStore) GetLastAuditHash(context.Context, string) (string, error) { return "", nil }
+func (s *tierMockStore) GetLimitsConfig(context.Context, string) (*domain.LimitsConfigRow, error) {
+	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
+}
+func (s *tierMockStore) CountFlags(context.Context, string) (int, error)       { return 0, nil }
+func (s *tierMockStore) CountSegments(context.Context, string) (int, error)    { return 0, nil }
+func (s *tierMockStore) CountEnvironments(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountMembers(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountWebhooks(context.Context, string) (int, error)    { return 0, nil }
+func (s *tierMockStore) CountAPIKeys(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountProjects(context.Context, string) (int, error)    { return 0, nil }
+func (s *tierMockStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+	return nil, nil
+}
+func (s *tierMockStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
+	return nil, nil
+}
+func (s *tierMockStore) DeletePinnedItem(context.Context, string, string, string) error {
+	return nil
+}
+func (s *tierMockStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
+	return nil, nil
+}
 func (s *tierMockStore) CountAuditEntries(context.Context, string) (int, error)   { return 0, nil }
 func (s *tierMockStore) CountApprovalRequests(context.Context, string, string) (int, error) {
 	return 0, nil

@@ -77,7 +77,7 @@ vi.mock("@/components/toast", () => ({
 
 import { api } from "@/lib/api";
 import { queryCache } from "@/lib/query-cache";
-import FlagsPage from "@/app/(app)/flags/page";
+import FlagsPage from "@/app/(app)/projects/[projectId]/flags/page";
 
 const mockFlags = [
   {

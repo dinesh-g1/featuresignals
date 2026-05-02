@@ -222,7 +222,7 @@ export default function FlagDetailPage() {
   async function handleDelete() {
     if (!token || !projectId) return;
     await api.deleteFlag(token, projectId, flagKey);
-    router.push("/flags");
+    router.push(`/projects/${projectId}/flags`);
   }
 
   async function handlePromote() {
@@ -328,7 +328,10 @@ export default function FlagDetailPage() {
             {fetchError ||
               `The flag "${flagKey}" does not exist or has been deleted.`}
           </p>
-          <Button variant="secondary" onClick={() => router.push("/flags")}>
+          <Button
+            variant="secondary"
+            onClick={() => router.push(`/projects/${projectId}/flags`)}
+          >
             Back to Flags
           </Button>
         </div>
@@ -367,7 +370,7 @@ export default function FlagDetailPage() {
             <Button
               size="icon-sm"
               variant="ghost"
-              onClick={() => router.push("/flags")}
+              onClick={() => router.push(`/projects/${projectId}/flags`)}
               className="text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] shrink-0"
             >
               <ArrowLeftIcon className="h-5 w-5" />

@@ -16,65 +16,98 @@ const ROUTE_BREADCRUMBS: Array<{
   pattern: RegExp;
   build: (pathname: string, matches: RegExpMatchArray) => BreadcrumbSegment[];
 }> = [
+  // Project-scoped pages
   {
-    pattern: /^\/dashboard$/,
-    build: () => [{ label: "Overview" }],
+    pattern: /^\/projects\/([^/]+)\/dashboard$/,
+    build: (_, _matches) => [{ label: "Dashboard" }],
   },
   {
-    pattern: /^\/flags$/,
-    build: () => [{ label: "Flags" }],
-  },
-  {
-    pattern: /^\/flags\/([^/]+)$/,
+    pattern: /^\/projects\/([^/]+)\/flags$/,
     build: (_, matches) => [
-      { label: "Flags", href: "/flags" },
-      { label: decodeURIComponent(matches[1]) },
+      { label: "Flags", href: `/projects/${matches[1]}/flags` },
     ],
   },
   {
-    pattern: /^\/segments$/,
+    pattern: /^\/projects\/([^/]+)\/flags\/([^/]+)$/,
+    build: (_, matches) => [
+      { label: "Flags", href: `/projects/${matches[1]}/flags` },
+      { label: decodeURIComponent(matches[2]) },
+    ],
+  },
+  {
+    pattern: /^\/projects\/([^/]+)\/segments$/,
     build: () => [{ label: "Segments" }],
   },
   {
-    pattern: /^\/environments$/,
-    build: () => [{ label: "Environments" }],
+    pattern: /^\/projects\/([^/]+)\/environments$/,
+    build: () => [{ label: "Environment Config" }],
   },
   {
-    pattern: /^\/usage-insights$/,
-    build: () => [{ label: "Usage Insights" }],
+    pattern: /^\/projects\/([^/]+)\/api-keys$/,
+    build: () => [{ label: "API Keys" }],
   },
   {
-    pattern: /^\/metrics$/,
+    pattern: /^\/projects\/([^/]+)\/team$/,
+    build: () => [{ label: "Team" }],
+  },
+  {
+    pattern: /^\/projects\/([^/]+)\/webhooks$/,
+    build: () => [{ label: "Webhooks" }],
+  },
+  {
+    pattern: /^\/projects\/([^/]+)\/janitor$/,
+    build: () => [{ label: "AI Janitor" }],
+  },
+  {
+    pattern: /^\/projects\/([^/]+)\/metrics$/,
     build: () => [{ label: "Eval Metrics" }],
   },
   {
-    pattern: /^\/health$/,
+    pattern: /^\/projects\/([^/]+)\/health$/,
     build: () => [{ label: "Flag Health" }],
   },
   {
-    pattern: /^\/env-comparison$/,
+    pattern: /^\/projects\/([^/]+)\/env-comparison$/,
     build: () => [{ label: "Env Comparison" }],
   },
   {
-    pattern: /^\/target-inspector$/,
+    pattern: /^\/projects\/([^/]+)\/target-inspector$/,
     build: () => [{ label: "Target Inspector" }],
   },
   {
-    pattern: /^\/target-comparison$/,
+    pattern: /^\/projects\/([^/]+)\/target-comparison$/,
     build: () => [{ label: "Target Compare" }],
   },
   {
-    pattern: /^\/approvals$/,
+    pattern: /^\/projects\/([^/]+)\/approvals$/,
     build: () => [{ label: "Approvals" }],
   },
   {
-    pattern: /^\/audit$/,
-    build: () => [{ label: "Audit Log" }],
+    pattern: /^\/projects\/([^/]+)\/analytics$/,
+    build: () => [{ label: "Analytics" }],
   },
   {
-    pattern: /^\/onboarding$/,
-    build: () => [{ label: "Onboarding" }],
+    pattern: /^\/projects\/([^/]+)\/activity$/,
+    build: () => [{ label: "Activity" }],
   },
+  {
+    pattern: /^\/projects\/([^/]+)\/audit$/,
+    build: () => [{ label: "Audit" }],
+  },
+  {
+    pattern: /^\/projects\/([^/]+)\/usage-insights$/,
+    build: () => [{ label: "Usage Insights" }],
+  },
+  // Org-level pages
+  {
+    pattern: /^\/projects$/,
+    build: () => [{ label: "Projects" }],
+  },
+  { pattern: /^\/usage$/, build: () => [{ label: "Usage" }] },
+  { pattern: /^\/activity$/, build: () => [{ label: "Activity" }] },
+  { pattern: /^\/limits$/, build: () => [{ label: "Limits" }] },
+  { pattern: /^\/support$/, build: () => [{ label: "Support" }] },
+  { pattern: /^\/onboarding$/, build: () => [{ label: "Onboarding" }] },
   // Settings pages
   {
     pattern: /^\/settings\/general$/,
@@ -83,29 +116,12 @@ const ROUTE_BREADCRUMBS: Array<{
       { label: "General" },
     ],
   },
+  { pattern: /^\/settings\/billing$/, build: () => [{ label: "Billing" }] },
   {
-    pattern: /^\/settings\/billing$/,
-    build: () => [{ label: "Billing" }],
-  },
-  {
-    pattern: /^\/settings\/api-keys$/,
+    pattern: /^\/settings\/integrations$/,
     build: () => [
       { label: "Settings", href: "/settings/general" },
-      { label: "API Keys" },
-    ],
-  },
-  {
-    pattern: /^\/settings\/team$/,
-    build: () => [
-      { label: "Settings", href: "/settings/general" },
-      { label: "Team" },
-    ],
-  },
-  {
-    pattern: /^\/settings\/webhooks$/,
-    build: () => [
-      { label: "Settings", href: "/settings/general" },
-      { label: "Webhooks" },
+      { label: "Integrations" },
     ],
   },
   {
@@ -115,23 +131,15 @@ const ROUTE_BREADCRUMBS: Array<{
       { label: "Notifications" },
     ],
   },
-  {
-    pattern: /^\/settings\/sso$/,
-    build: () => [{ label: "SSO" }],
-  },
+  { pattern: /^\/settings\/sso$/, build: () => [{ label: "SSO" }] },
   // Auth pages
-  {
-    pattern: /^\/login$/,
-    build: () => [{ label: "Sign In" }],
-  },
-  {
-    pattern: /^\/signup$/,
-    build: () => [{ label: "Sign Up" }],
-  },
+  { pattern: /^\/login$/, build: () => [{ label: "Sign In" }] },
+  { pattern: /^\/register$/, build: () => [{ label: "Sign Up" }] },
   {
     pattern: /^\/forgot-password$/,
     build: () => [{ label: "Reset Password" }],
   },
+  { pattern: /^\/reset-password$/, build: () => [{ label: "Reset Password" }] },
 ];
 
 function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {

@@ -17,9 +17,6 @@ interface SettingsTab {
 
 const settingsTabs: SettingsTab[] = [
   { href: "/settings/general", label: "General" },
-  { href: "/settings/api-keys", label: "API Keys" },
-  { href: "/settings/team", label: "Team" },
-  { href: "/settings/webhooks", label: "Webhooks", gatedFeature: "webhooks" },
   { href: "/settings/integrations", label: "Integrations" },
   { href: "/settings/notifications", label: "Notifications" },
 ];
@@ -75,9 +72,7 @@ export default function SettingsLayout({
                 )}
               >
                 {tab.label}
-                {locked && (
-                  <LockIcon className="h-3 w-3 text-amber-500" />
-                )}
+                {locked && <LockIcon className="h-3 w-3 text-amber-500" />}
               </Link>
             );
           })}

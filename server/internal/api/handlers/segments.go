@@ -108,11 +108,32 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
-	segments, err := h.store.ListSegments(r.Context(), projectID)
-	if err != nil {
-		logger.Error("failed to list segments", "error", err, "project_id", projectID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list segments")
-		return
+
+	var (
+		segments []domain.Segment
+		err      error
+	)
+	labelSelector := r.URL.Query().Get("label_selector")
+	if labelSelector != "" {
+		orgID := middleware.GetOrgID(r.Context())
+		segments, err = h.store.ListSegmentsWithFilter(r.Context(), orgID, projectID, labelSelector)
+		if err != nil {
+			logger.Error("failed to list segments with filter", "error", err, "project_id", projectID, "label_selector", labelSelector)
+			httputil.Error(w, http.StatusInternalServerError, "failed to list segments")
+			return
+		}
+	} else {
+		sortField, sortDir := dto.ParseSort(r, "segments")
+		if sortField != "created_at" || sortDir != "DESC" {
+			segments, err = h.store.ListSegmentsSorted(r.Context(), projectID, sortField, sortDir)
+		} else {
+			segments, err = h.store.ListSegments(r.Context(), projectID)
+		}
+		if err != nil {
+			logger.Error("failed to list segments", "error", err, "project_id", projectID)
+			httputil.Error(w, http.StatusInternalServerError, "failed to list segments")
+			return
+		}
 	}
 	if segments == nil {
 		segments = []domain.Segment{}

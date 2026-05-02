@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
 
   useEffect(() => {
     if (token) {
-      router.push("/dashboard");
+      router.push("/projects");
       return;
     }
     setLoadingAuth(false);

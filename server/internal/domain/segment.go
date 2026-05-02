@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Segment groups users by shared attributes (e.g. "Beta Users", "Enterprise Plan").
 // Segments are reusable across flags via TargetingRule.SegmentKeys.
@@ -13,6 +16,7 @@ type Segment struct {
 	Description string      `json:"description" db:"description"`
 	MatchType   MatchType   `json:"match_type" db:"match_type"`
 	Rules       []Condition `json:"rules" db:"rules"`
+	Labels      json.RawMessage `json:"labels" db:"labels"`
 	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at" db:"updated_at"`
 }

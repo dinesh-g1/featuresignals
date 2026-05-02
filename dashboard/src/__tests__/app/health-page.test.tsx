@@ -24,7 +24,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 import { api } from "@/lib/api";
-import FlagHealthPage from "@/app/(app)/health/page";
+import FlagHealthPage from "@/app/(app)/projects/[projectId]/health/page";
 
 const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 

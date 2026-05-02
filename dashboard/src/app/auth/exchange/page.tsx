@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
@@ -31,7 +32,7 @@ function ExchangeContent() {
           undefined,
           data.tokens.expires_at,
         );
-        router.replace("/dashboard");
+        router.replace("/projects");
       })
       .catch((err: unknown) => {
         setError(
@@ -51,7 +52,6 @@ function ExchangeContent() {
               className="h-6 w-6 text-red-600"
               fill="none"
               viewBox="0 0 24 24"
-             
               stroke="currentColor"
             >
               <path
@@ -66,18 +66,18 @@ function ExchangeContent() {
           </h2>
           <p className="mt-2 text-sm text-[var(--fgColor-muted)]">{error}</p>
           <div className="mt-6 flex flex-col gap-2">
-            <a
+            <Link
               href="/login"
               className="rounded-lg bg-[var(--bgColor-accent-emphasis)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--bgColor-accent-emphasis)]-dark"
             >
               Go to Login
-            </a>
-            <a
+            </Link>
+            <Link
               href="/register"
               className="rounded-lg border border-[var(--borderColor-emphasis)] px-4 py-2 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
             >
               Sign Up
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -88,7 +88,9 @@ function ExchangeContent() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)]">
       <div className="text-center">
         <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-[var(--fgColor-accent)]/10 border-t-accent" />
-        <p className="text-sm text-[var(--fgColor-muted)]">Setting up your account...</p>
+        <p className="text-sm text-[var(--fgColor-muted)]">
+          Setting up your account...
+        </p>
       </div>
     </div>
   );

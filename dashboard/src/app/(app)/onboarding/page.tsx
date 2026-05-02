@@ -4,7 +4,15 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  CheckIcon, SparklesIcon, CopyIcon, ClipboardIcon, KeyIcon, ArrowRightIcon, FolderOpenIcon, LayersIcon, FlagIcon
+  CheckIcon,
+  SparklesIcon,
+  CopyIcon,
+  ClipboardIcon,
+  KeyIcon,
+  ArrowRightIcon,
+  FolderOpenIcon,
+  LayersIcon,
+  FlagIcon,
 } from "@/components/icons/nav-icons";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
@@ -420,8 +428,10 @@ function OnboardingContent() {
     if (planIntent === "pro") {
       localStorage.removeItem("fs_plan_intent");
       router.push("/settings/billing");
+    } else if (projectId) {
+      router.push(`/projects/${projectId}/dashboard`);
     } else {
-      router.push("/dashboard");
+      router.push("/projects");
     }
   }
 
@@ -486,7 +496,11 @@ function OnboardingContent() {
                         : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
                   )}
                 >
-                  {done ? <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5" /> : idx + 1}
+                  {done ? (
+                    <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : (
+                    idx + 1
+                  )}
                 </button>
                 <span
                   className={cn(
@@ -566,7 +580,13 @@ function OnboardingContent() {
 
       <div className="flex items-center justify-center gap-6">
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => {
+            if (projectId) {
+              router.push(`/projects/${projectId}/dashboard`);
+            } else {
+              router.push("/projects");
+            }
+          }}
           className="text-sm font-medium text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-muted)]"
         >
           Skip onboarding
@@ -668,7 +688,9 @@ function StepProjectSetup({
                 <FolderOpenIcon
                   className={cn(
                     "h-5 w-5",
-                    selectedId === p.id ? "text-[var(--fgColor-accent)]" : "text-[var(--fgColor-subtle)]",
+                    selectedId === p.id
+                      ? "text-[var(--fgColor-accent)]"
+                      : "text-[var(--fgColor-subtle)]",
                   )}
                 />
                 <div>
@@ -682,7 +704,9 @@ function StepProjectSetup({
                   >
                     {p.name}
                   </p>
-                  <p className="text-xs text-[var(--fgColor-subtle)]">{p.slug}</p>
+                  <p className="text-xs text-[var(--fgColor-subtle)]">
+                    {p.slug}
+                  </p>
                 </div>
               </button>
             ))}
@@ -989,7 +1013,9 @@ function StepInstallSdk({
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bgColor-success-muted)]">
           <CheckIcon className="h-8 w-8 text-[var(--fgColor-success)]" />
         </div>
-        <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">SDK ready!</p>
+        <p className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">
+          SDK ready!
+        </p>
         <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
           You&apos;re all set to start using feature flags in your app.
         </p>
@@ -1001,7 +1027,9 @@ function StepInstallSdk({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-[var(--fgColor-default)]">Connect Your App</h2>
+      <h2 className="text-xl font-semibold text-[var(--fgColor-default)]">
+        Connect Your App
+      </h2>
       <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
         Install the SDK in your language and start evaluating flags.
       </p>
@@ -1103,6 +1131,7 @@ function StepInstallSdk({
 /* ── Step 5: Complete ───────────────────────────────────────────────── */
 
 function StepComplete({ onFinish }: { onFinish: () => void }) {
+  const projectId = useAppStore((s) => s.currentProjectId);
   return (
     <div className="text-center py-8">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-purple-100">
@@ -1119,10 +1148,16 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Button variant="secondary" asChild>
-          <Link href="/flags">View Flags</Link>
+          <Link href={projectId ? `/projects/${projectId}/flags` : "/flags"}>
+            View Flags
+          </Link>
         </Button>
         <Button variant="secondary" asChild>
-          <Link href="/segments">Segments</Link>
+          <Link
+            href={projectId ? `/projects/${projectId}/segments` : "/segments"}
+          >
+            Segments
+          </Link>
         </Button>
         <Button variant="secondary" asChild>
           <Link href="/settings/billing">Plans & Billing</Link>

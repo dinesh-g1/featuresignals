@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
+import { useAppStore } from "@/stores/app-store";
+import { api } from "@/lib/api";
+import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
 import { Logo } from "@/components/logo";
 import {
   FlagIcon,
@@ -13,20 +15,17 @@ import {
   EnvironmentIcon,
   ApiKeysIcon,
   WebhookIcon,
-  AuditLogIcon,
-  TeamIcon,
-  SettingsIcon,
   DashboardIcon,
   GraphIcon,
-  PulseIcon,
   HeartIcon,
   CheckListIcon,
   SearchIcon,
   SparklesIcon,
-  CreditCardIcon,
   ChevronDownIcon,
-  LogOutIcon,
-  ProjectIcon,
+  TeamIcon,
+  BookIcon,
+  ExternalLinkIcon,
+  UsersIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -39,78 +38,94 @@ interface NavItemDef {
 
 interface NavGroupDef {
   label: string;
-  storageKey: string;
   items: NavItemDef[];
 }
 
-// ─── Core nav — always visible, no collapsing ───────────────────────
+// ─── Sidebar groups — logically categorized ──────────────────────────
 
-const coreItems: NavItemDef[] = [
-  { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { href: "/projects", label: "Projects", icon: ProjectIcon },
-  { href: "/environments", label: "Environments", icon: EnvironmentIcon },
+// These paths are relative to /projects/[projectId] and will be prefixed at render time
+const featureManagement: NavItemDef[] = [
   { href: "/flags", label: "Flags", icon: FlagIcon },
   { href: "/segments", label: "Segments", icon: SegmentIcon },
+  { href: "/environments", label: "Env Config", icon: EnvironmentIcon },
 ];
 
-// ─── Collapsible groups — progressive disclosure ────────────────────
-
-const navGroups: NavGroupDef[] = [
-  {
-    label: "Insights",
-    storageKey: "fs:nav-insights",
-    items: [
-      { href: "/analytics", label: "Analytics", icon: GraphIcon },
-      { href: "/usage-insights", label: "Usage Insights", icon: PulseIcon },
-      { href: "/janitor", label: "AI Janitor", icon: SparklesIcon },
-      { href: "/metrics", label: "Metrics", icon: GraphIcon },
-      { href: "/health", label: "Health", icon: HeartIcon },
-    ],
-  },
-  {
-    label: "Tools",
-    storageKey: "fs:nav-tools",
-    items: [
-      { href: "/approvals", label: "Approvals", icon: CheckListIcon },
-      { href: "/env-comparison", label: "Env Comparison", icon: SearchIcon },
-      {
-        href: "/target-inspector",
-        label: "Target Inspector",
-        icon: SearchIcon,
-      },
-      { href: "/target-comparison", label: "Target Compare", icon: SearchIcon },
-    ],
-  },
-  {
-    label: "Integrations",
-    storageKey: "fs:nav-integrations",
-    items: [
-      { href: "/settings/api-keys", label: "API Keys", icon: ApiKeysIcon },
-      { href: "/settings/webhooks", label: "Webhooks", icon: WebhookIcon },
-    ],
-  },
-  {
-    label: "Governance",
-    storageKey: "fs:nav-governance",
-    items: [
-      { href: "/audit", label: "Audit Log", icon: AuditLogIcon },
-      { href: "/settings/team", label: "Team", icon: TeamIcon },
-    ],
-  },
+const integrations: NavItemDef[] = [
+  { href: "/api-keys", label: "API Keys", icon: ApiKeysIcon },
+  { href: "/webhooks", label: "Webhooks", icon: WebhookIcon },
 ];
 
-const bottomItems: NavItemDef[] = [
-  { href: "/settings/general", label: "Settings", icon: SettingsIcon },
-  { href: "/settings/billing", label: "Billing", icon: CreditCardIcon },
+const team: NavItemDef[] = [
+  { href: "/team", label: "Members", icon: TeamIcon },
 ];
+
+const governance: NavItemDef[] = [
+  { href: "/approvals", label: "Approvals", icon: CheckListIcon },
+];
+
+const tools: NavItemDef[] = [
+  { href: "/janitor", label: "AI Janitor", icon: SparklesIcon },
+  { href: "/env-comparison", label: "Env Comparison", icon: SearchIcon },
+  { href: "/target-inspector", label: "Target Inspector", icon: SearchIcon },
+  { href: "/target-comparison", label: "Target Compare", icon: SearchIcon },
+  { href: "/analytics", label: "Analytics", icon: GraphIcon },
+  { href: "/metrics", label: "Metrics", icon: GraphIcon },
+  { href: "/health", label: "Health", icon: HeartIcon },
+];
+
+const sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
+  {
+    label: "Feature Management",
+    items: featureManagement,
+    defaultExpanded: true,
+  },
+  { label: "Integrations", items: integrations, defaultExpanded: true },
+  { label: "Team", items: team, defaultExpanded: true },
+  { label: "Governance", items: governance, defaultExpanded: true },
+  { label: "Tools", items: tools, defaultExpanded: false },
+];
+
+// ─── Pin Icon (inline SVG — no Primer equivalent) ─────────────────────
+
+function PinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M11.83 1.04c.44-.22 1-.1 1.34.24l1.55 1.55c.34.34.46.9.24 1.34-.28.56-.82 1.05-1.56 1.68-.42.36-.92.79-1.3 1.26-.16.2-.29.39-.4.56l-2.26 3.68a.75.75 0 01-.94.33l-1.69-.63-3.77 3.65a.75.75 0 01-1.06-1.06l3.65-3.77-.63-1.69a.75.75 0 01.33-.94l3.68-2.26c.17-.11.36-.24.56-.4.47-.38.9-.88 1.26-1.3.63-.74 1.12-1.28 1.68-1.56zM8.4 5.38c.36-.48.78-.9 1.2-1.28l.01-.01c.42-.36.86-.66 1.25-.9l-1.02-1.02c-.24.39-.54.83-.9 1.25l-.01.01c-.38.42-.8.84-1.28 1.2L4.6 7.06l.63 1.69c.06.17.15.33.27.46l1.29-1.29a.75.75 0 111.06 1.06l-1.29 1.29c.13.12.29.21.46.27l1.69.63 2.59-4.22V5.38z" />
+    </svg>
+  );
+}
+
+interface PinnedItem {
+  id: string;
+  project_id: string;
+  resource_type: string;
+  resource_id: string;
+  created_at: string;
+}
 
 // ─── Nav Item ────────────────────────────────────────────────────────
 
-function NavItem({ item, active }: { item: NavItemDef; active: boolean }) {
+function NavItem({
+  item,
+  active,
+  projectId,
+}: {
+  item: NavItemDef;
+  active: boolean;
+  projectId: string;
+}) {
   const Icon = item.icon;
+  const href = `/projects/${projectId}${item.href}`;
   return (
     <Link
-      href={item.href}
+      href={href}
       className={cn(
         "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
         active
@@ -126,22 +141,32 @@ function NavItem({ item, active }: { item: NavItemDef; active: boolean }) {
 
 // ─── Collapsible Group ───────────────────────────────────────────────
 
-function NavGroup({ group }: { group: NavGroupDef }) {
+function NavGroup({
+  group,
+  projectId,
+}: {
+  group: NavGroupDef & { defaultExpanded?: boolean };
+  projectId: string;
+}) {
   const pathname = usePathname();
-  const [expanded, setExpanded] = useState(false);
+  const storageKey = `fs:nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
 
-  // Initialize from localStorage
-  useEffect(() => {
+  const [expanded, setExpanded] = useState(() => {
+    if (group.defaultExpanded) return true;
     try {
-      const stored = localStorage.getItem(group.storageKey);
-      if (stored !== null) setExpanded(stored === "true");
-    } catch {}
-  }, [group.storageKey]);
+      const stored = localStorage.getItem(storageKey);
+      return stored !== null ? stored === "true" : false;
+    } catch {
+      return group.defaultExpanded ?? false;
+    }
+  });
 
-  // Auto-expand if any child is active
   const anyActive = group.items.some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + "/"),
+    (item) =>
+      pathname === `/projects/${projectId}${item.href}` ||
+      pathname.startsWith(`/projects/${projectId}${item.href}/`),
   );
+
   useEffect(() => {
     if (anyActive) setExpanded(true);
   }, [anyActive]);
@@ -150,7 +175,7 @@ function NavGroup({ group }: { group: NavGroupDef }) {
     const next = !expanded;
     setExpanded(next);
     try {
-      localStorage.setItem(group.storageKey, String(next));
+      localStorage.setItem(storageKey, String(next));
     } catch {}
   };
 
@@ -175,8 +200,10 @@ function NavGroup({ group }: { group: NavGroupDef }) {
             <NavItem
               key={item.href}
               item={item}
+              projectId={projectId}
               active={
-                pathname === item.href || pathname.startsWith(item.href + "/")
+                pathname === `/projects/${projectId}${item.href}` ||
+                pathname.startsWith(`/projects/${projectId}${item.href}/`)
               }
             />
           ))}
@@ -186,129 +213,103 @@ function NavGroup({ group }: { group: NavGroupDef }) {
   );
 }
 
-// ─── Upgrade Callout ─────────────────────────────────────────────────
+// ─── Pinned Section ────────────────────────────────────────────────────
 
-function UpgradeCallout() {
-  const organization = useAppStore((s) => s.organization);
-  const plan = organization?.plan || "free";
-  if (plan === "pro" || plan === "enterprise") return null;
+function PinnedSection() {
+  const token = useAppStore((s) => s.token);
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const pathname = usePathname();
+  const [pinnedItems, setPinnedItems] = useState<PinnedItem[]>([]);
+  const [expanded, setExpanded] = useState(true);
 
-  return (
-    <Link
-      href="/settings/billing"
-      className="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-[var(--borderColor-attention-muted)] bg-gradient-to-br from-[var(--bgColor-attention-muted)] to-[var(--bgColor-default)] p-3 transition-all hover:shadow-md"
-    >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--bgColor-attention-muted)]">
-        <SparklesIcon className="h-4 w-4 text-[var(--fgColor-attention)]" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-semibold text-[var(--fgColor-attention)]">
-          Upgrade to Pro
-        </p>
-        <p className="text-[10px] text-[var(--fgColor-muted)]">
-          Unlimited flags, team & governance
-        </p>
-      </div>
-    </Link>
-  );
-}
+  useEffect(() => {
+    if (!token || !currentProjectId) return;
+    api
+      .listPinnedItems(token, currentProjectId)
+      .then((d) => setPinnedItems(d?.items ?? []))
+      .catch(() => {});
+  }, [token, currentProjectId]);
 
-// ─── Profile Section ─────────────────────────────────────────────────
+  if (!currentProjectId) return null;
 
-function ProfileSection() {
-  const user = useAppStore((s) => s.user);
-  const logout = useAppStore((s) => s.logout);
-
-  const initials = user?.name
-    ? user.name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "?";
+  const toggle = () => setExpanded((p) => !p);
 
   return (
-    <div className="border-t border-[var(--borderColor-muted)] px-3 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bgColor-accent-muted)] text-xs font-bold text-[var(--fgColor-accent)]">
-          {initials}
+    <div className="border-t border-[var(--borderColor-muted)]">
+      <button
+        onClick={toggle}
+        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-default)] transition-colors"
+      >
+        <ChevronDownIcon
+          size={12}
+          className={cn(
+            "shrink-0 transition-transform duration-200",
+            expanded && "rotate-180",
+          )}
+        />
+        Pinned
+      </button>
+      {expanded && (
+        <div className="px-3 pb-2 space-y-0.5">
+          {pinnedItems.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-[var(--fgColor-subtle)]">
+              No pinned items yet
+            </p>
+          ) : (
+            pinnedItems.map((item) => {
+              const label =
+                item.resource_type === "flag"
+                  ? item.resource_id
+                  : item.resource_type;
+              const href =
+                item.resource_type === "flag"
+                  ? `/projects/${currentProjectId}/flags/${item.resource_id}`
+                  : item.resource_type === "segment"
+                    ? `/projects/${currentProjectId}/segments`
+                    : `/projects/${currentProjectId}/environments`;
+              const active =
+                pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={item.id}
+                  href={href}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
+                    active
+                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border-l-[3px] border-l-[var(--fgColor-accent)] pl-[9px]"
+                      : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] border-l-[3px] border-l-transparent pl-[9px]",
+                  )}
+                >
+                  <PinIcon className="h-4 w-4 shrink-0" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })
+          )}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-[var(--fgColor-default)]">
-            {user?.name || "User"}
-          </p>
-          <p className="truncate text-xs text-[var(--fgColor-muted)]">
-            {user?.email || ""}
-          </p>
-        </div>
-        <button
-          onClick={logout}
-          className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-danger)] transition-colors"
-          aria-label="Sign out"
-        >
-          <LogOutIcon className="h-4 w-4" />
-        </button>
-      </div>
+      )}
     </div>
   );
 }
 
-// ─── Main NavList ────────────────────────────────────────────────────
-
-function NavListContent() {
-  const pathname = usePathname();
-
-  return (
-    <nav className="flex-1 overflow-y-auto py-4" aria-label="Main navigation">
-      {/* Core items — always visible */}
-      <div className="space-y-0.5 px-3">
-        {coreItems.map((item) => (
-          <NavItem
-            key={item.href}
-            item={item}
-            active={
-              pathname === item.href || pathname.startsWith(item.href + "/")
-            }
-          />
-        ))}
-      </div>
-
-      {/* Divider */}
-      <div className="my-3 border-t border-[var(--borderColor-muted)]" />
-
-      {/* Collapsible groups */}
-      <div className="space-y-1 px-3">
-        {navGroups.map((group) => (
-          <NavGroup key={group.label} group={group} />
-        ))}
-      </div>
-
-      {/* Bottom items */}
-      <div className="mt-3 border-t border-[var(--borderColor-muted)] pt-3 px-3 space-y-0.5">
-        {bottomItems.map((item) => (
-          <NavItem
-            key={item.href}
-            item={item}
-            active={
-              pathname === item.href || pathname.startsWith(item.href + "/")
-            }
-          />
-        ))}
-      </div>
-    </nav>
-  );
-}
-
-// ─── Exported NavList ───────────────────────────────────────────────
+// ─── NavList ─────────────────────────────────────────────────────────
 
 export function NavList() {
+  const pathname = usePathname();
   const isOpen = useSidebarStore((s) => s.isOpen);
   const close = useSidebarStore((s) => s.close);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
+  const currentProjectId = useAppStore((s) => s.currentProjectId) || "";
+
+  const dashHref = currentProjectId
+    ? `/projects/${currentProjectId}/dashboard`
+    : "/dashboard";
+  const dashActive = currentProjectId
+    ? pathname === dashHref || pathname.startsWith(dashHref + "/")
+    : false;
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/20 md:hidden"
@@ -316,7 +317,6 @@ export function NavList() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-[var(--bgColor-default)] border-r border-[var(--borderColor-default)]",
@@ -325,11 +325,16 @@ export function NavList() {
           "transition-transform duration-200",
         )}
       >
-        {/* Logo */}
-        <div className="flex h-14 items-center justify-between px-4 border-b border-[var(--borderColor-muted)]">
-          <Link href="/dashboard" onClick={close}>
-            <Logo size="sm" variant="minimal" />
-          </Link>
+        {/* Logo — entire header clickable to /projects */}
+        <Link
+          href="/projects"
+          onClick={() => {
+            close();
+            setCurrentProject("");
+          }}
+          className="flex h-14 items-center justify-between px-4 border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-muted)] transition-colors text-[var(--fgColor-default)]"
+        >
+          <Logo size="sm" variant="minimal" />
           <button
             onClick={close}
             className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] md:hidden"
@@ -339,16 +344,69 @@ export function NavList() {
               <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
             </svg>
           </button>
-        </div>
-
-        {/* Upgrade nudge */}
-        <UpgradeCallout />
+        </Link>
 
         {/* Navigation */}
-        <NavListContent />
+        <nav
+          className="flex-1 overflow-y-auto py-4"
+          aria-label="Project navigation"
+        >
+          {/* Dashboard — always first, stands alone */}
+          <div className="px-3 pb-1">
+            <NavItem
+              item={{
+                href: "/dashboard",
+                label: "Dashboard",
+                icon: DashboardIcon,
+              }}
+              projectId={currentProjectId}
+              active={dashActive}
+            />
+          </div>
 
-        {/* Profile */}
-        <ProfileSection />
+          <div className="my-3 mx-3 border-t border-[var(--borderColor-muted)]" />
+
+          {/* Grouped sections */}
+          <div className="space-y-1 px-3">
+            {sidebarGroups.map((group) => (
+              <NavGroup
+                key={group.label}
+                group={group}
+                projectId={currentProjectId}
+              />
+            ))}
+          </div>
+        </nav>
+
+        {/* Pinned section */}
+        <PinnedSection />
+
+        {/* Docs & Help */}
+        <div className="border-t border-[var(--borderColor-muted)] px-3 py-3 space-y-1">
+          <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
+            Docs & Help
+          </p>
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
+          >
+            <BookIcon className="h-4 w-4 shrink-0" />
+            Documentation
+            <ExternalLinkIcon className="h-3 w-3 shrink-0 opacity-50 ml-auto" />
+          </a>
+          <a
+            href={WEBSITE_URL + "/community"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
+          >
+            <UsersIcon className="h-4 w-4 shrink-0" />
+            Community
+            <ExternalLinkIcon className="h-3 w-3 shrink-0 opacity-50 ml-auto" />
+          </a>
+        </div>
       </aside>
     </>
   );

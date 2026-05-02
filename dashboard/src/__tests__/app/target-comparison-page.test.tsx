@@ -21,7 +21,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 import { api } from "@/lib/api";
-import TargetComparisonPage from "@/app/(app)/target-comparison/page";
+import TargetComparisonPage from "@/app/(app)/projects/[projectId]/target-comparison/page";
 
 const mockApi = api as unknown as Record<string, ReturnType<typeof vi.fn>>;
 

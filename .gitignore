@@ -83,6 +83,10 @@ product/wiki/internal/
 # Screenshots and browser test images — must never be committed
 *.png
 
+# Agentic prompt planning files
+PHASE1_PLAN.md
+FINAL_PROMPT.md
+
 # Local developer config (VPS host, etc.)
 .featuresignals/
 

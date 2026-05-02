@@ -100,7 +100,13 @@ func (noopStore) CreateFlag(context.Context, *domain.Flag) error { return errNoo
 func (noopStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, errNoop
 }
-func (noopStore) ListFlags(context.Context, string) ([]domain.Flag, error) { return nil, errNoop }
+func (noopStore) ListFlags(context.Context, string) ([]domain.Flag, error)           { return nil, errNoop }
+func (noopStore) ListFlagsWithFilter(context.Context, string, string, string) ([]domain.Flag, error) {
+	return nil, errNoop
+}
+func (noopStore) ListFlagsSorted(context.Context, string, string, string) ([]domain.Flag, error) {
+	return nil, errNoop
+}
 func (noopStore) UpdateFlag(context.Context, *domain.Flag) error           { return errNoop }
 func (noopStore) DeleteFlag(context.Context, string) error                 { return errNoop }
 
@@ -117,6 +123,12 @@ func (noopStore) ListPendingSchedules(context.Context, time.Time) ([]domain.Flag
 
 func (noopStore) CreateSegment(context.Context, *domain.Segment) error { return errNoop }
 func (noopStore) ListSegments(context.Context, string) ([]domain.Segment, error) {
+	return nil, errNoop
+}
+func (noopStore) ListSegmentsWithFilter(context.Context, string, string, string) ([]domain.Segment, error) {
+	return nil, errNoop
+}
+func (noopStore) ListSegmentsSorted(context.Context, string, string, string) ([]domain.Segment, error) {
 	return nil, errNoop
 }
 func (noopStore) GetSegment(context.Context, string, string) (*domain.Segment, error) {
@@ -183,6 +195,28 @@ func (noopStore) ListAuditEntriesForExport(context.Context, string, string, stri
 	return nil, errNoop
 }
 func (noopStore) GetLastAuditHash(context.Context, string) (string, error) { return "", errNoop }
+func (noopStore) GetLimitsConfig(context.Context, string) (*domain.LimitsConfigRow, error) {
+	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
+}
+func (noopStore) CountFlags(context.Context, string) (int, error)       { return 0, errNoop }
+func (noopStore) CountSegments(context.Context, string) (int, error)    { return 0, errNoop }
+func (noopStore) CountEnvironments(context.Context, string) (int, error) { return 0, errNoop }
+func (noopStore) CountMembers(context.Context, string) (int, error)     { return 0, errNoop }
+func (noopStore) CountWebhooks(context.Context, string) (int, error)    { return 0, errNoop }
+func (noopStore) CountAPIKeys(context.Context, string) (int, error)     { return 0, errNoop }
+func (noopStore) CountProjects(context.Context, string) (int, error)    { return 0, errNoop }
+func (noopStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+	return nil, errNoop
+}
+func (noopStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
+	return nil, errNoop
+}
+func (noopStore) DeletePinnedItem(context.Context, string, string, string) error {
+	return errNoop
+}
+func (noopStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
+	return nil, errNoop
+}
 func (noopStore) CountAuditEntries(context.Context, string) (int, error)   { return 0, errNoop }
 func (noopStore) CountApprovalRequests(context.Context, string, string) (int, error) {
 	return 0, errNoop

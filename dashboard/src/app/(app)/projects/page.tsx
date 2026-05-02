@@ -21,12 +21,9 @@ import {
   PencilIcon,
   TrashIcon,
   LoaderIcon,
-  GlobeIcon,
-  FlagIcon,
 } from "@/components/icons/nav-icons";
 import { toast } from "@/components/toast";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import type { Project } from "@/lib/types";
 
 export default function ProjectsPage() {
@@ -47,6 +44,7 @@ export default function ProjectsPage() {
   const [slug, setSlug] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
 
   const loadProjects = useCallback(async () => {
     if (!token) return;
@@ -94,6 +92,7 @@ export default function ProjectsPage() {
 
   function openDelete(project: Project) {
     setDeleting(project);
+    setDeleteConfirmed(false);
     setDeleteOpen(true);
   }
 
@@ -159,7 +158,7 @@ export default function ProjectsPage() {
 
   function handleSelectProject(project: Project) {
     setCurrentProject(project.id);
-    router.push("/flags");
+    router.push(`/projects/${project.id}/dashboard`);
   }
 
   // ── Loading ──
@@ -167,11 +166,11 @@ export default function ProjectsPage() {
     return (
       <div className="p-8">
         <div className="mb-8 h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-40 animate-pulse rounded-xl bg-[var(--borderColor-default)]"
+              className="h-[120px] animate-pulse rounded-xl bg-[var(--borderColor-default)]"
             />
           ))}
         </div>
@@ -200,19 +199,13 @@ export default function ProjectsPage() {
   return (
     <div className="p-6 sm:p-8 max-w-6xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">
-            Projects
-          </h1>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
-            Projects group your flags, environments, and segments together.
-          </p>
-        </div>
-        <Button onClick={openCreate} variant="primary">
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Project
-        </Button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">
+          Projects
+        </h1>
+        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          Projects group your flags, environments, and segments together.
+        </p>
       </div>
 
       {/* Empty state */}
@@ -234,20 +227,20 @@ export default function ProjectsPage() {
           </Button>
         </div>
       ) : (
-        /* Project cards */
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        /* Project cards grid */
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {projects.map((project) => {
             const isActive = project.id === projectId;
             return (
               <Card
                 key={project.id}
                 className={cn(
-                  "group relative p-5 transition-all duration-200 hover:shadow-md cursor-pointer",
+                  "group relative p-6 transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col items-center justify-center min-h-[120px]",
                   isActive && "ring-2 ring-[var(--fgColor-accent)]",
                 )}
                 onClick={() => handleSelectProject(project)}
               >
-                {/* Actions */}
+                {/* Edit/Delete buttons - visible on hover */}
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => {
@@ -274,7 +267,7 @@ export default function ProjectsPage() {
                 {/* Icon */}
                 <div
                   className={cn(
-                    "mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+                    "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
                     isActive
                       ? "bg-[var(--bgColor-accent-muted)]"
                       : "bg-[var(--bgColor-muted)] group-hover:bg-[var(--bgColor-accent-muted)]",
@@ -285,56 +278,27 @@ export default function ProjectsPage() {
                       "h-5 w-5",
                       isActive
                         ? "text-[var(--fgColor-accent)]"
-                        : "text-[var(--fgColor-muted)]",
+                        : "text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-accent)]",
                     )}
                   />
                 </div>
 
                 {/* Name */}
-                <h3 className="font-semibold text-[var(--fgColor-default)] truncate">
+                <h3 className="font-semibold text-[var(--fgColor-default)] text-center truncate max-w-full">
                   {project.name}
                 </h3>
-                {project.slug && (
-                  <p className="mt-0.5 text-xs font-mono text-[var(--fgColor-muted)]">
-                    {project.slug}
-                  </p>
-                )}
-
-                {/* Active badge */}
-                {isActive && (
-                  <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-[var(--bgColor-accent-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--fgColor-accent)]">
-                    Active
-                  </span>
-                )}
-
-                {/* Quick links */}
-                <div className="mt-4 flex gap-2 border-t border-[var(--borderColor-muted)] pt-3">
-                  <Link
-                    href={`/environments`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentProject(project.id);
-                    }}
-                    className="flex items-center gap-1 text-[10px] font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-accent)] transition-colors"
-                  >
-                    <GlobeIcon className="h-3 w-3" />
-                    Environments
-                  </Link>
-                  <Link
-                    href={`/flags`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentProject(project.id);
-                    }}
-                    className="flex items-center gap-1 text-[10px] font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-accent)] transition-colors"
-                  >
-                    <FlagIcon className="h-3 w-3" />
-                    Flags
-                  </Link>
-                </div>
               </Card>
             );
           })}
+
+          {/* Create Project card */}
+          <button
+            onClick={openCreate}
+            className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--borderColor-default)] flex flex-col items-center justify-center gap-2 text-[var(--fgColor-muted)] hover:border-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-all duration-200"
+          >
+            <PlusIcon className="h-8 w-8" />
+            <span className="text-sm font-medium">Create Project</span>
+          </button>
         </div>
       )}
 
@@ -426,6 +390,21 @@ export default function ProjectsPage() {
               segments in this project.
             </div>
           </DialogHeader>
+          {/* Confirmation checkbox */}
+          <label className="flex items-start gap-3 px-1 py-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={deleteConfirmed}
+              onChange={(e) => setDeleteConfirmed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[var(--borderColor-default)] text-[var(--fgColor-danger)] focus:ring-[var(--fgColor-danger)]"
+            />
+            <span className="text-sm text-[var(--fgColor-muted)]">
+              I understand that deleting this project will permanently remove
+              all flags, environments, segments, and associated data. This
+              action cannot be undone.
+            </span>
+          </label>
+
           <DialogFooter className="!justify-between">
             <Button
               variant="secondary"
@@ -437,7 +416,7 @@ export default function ProjectsPage() {
             <Button
               variant="danger"
               onClick={handleDelete}
-              disabled={submitting}
+              disabled={submitting || !deleteConfirmed}
             >
               {submitting ? (
                 <>

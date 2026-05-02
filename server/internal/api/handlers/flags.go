@@ -164,15 +164,50 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
-	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
-		return
-	}
 	projectID := chi.URLParam(r, "projectID")
 
-	flags, err := h.store.ListFlags(r.Context(), projectID)
-	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+	// Flat access: projectID from query param when not in URL path
+	if projectID == "" {
+		projectID = r.URL.Query().Get("project_id")
+	}
+
+	if projectID == "" {
+		httputil.Error(w, http.StatusBadRequest, "project_id is required")
 		return
+	}
+
+	// Verify ownership for nested route, skip for flat endpoint
+	if chi.URLParam(r, "projectID") != "" {
+		if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+			return
+		}
+	}
+
+	var (
+		flags []domain.Flag
+		err   error
+	)
+	labelSelector := r.URL.Query().Get("label_selector")
+	if labelSelector != "" {
+		orgID := middleware.GetOrgID(r.Context())
+		flags, err = h.store.ListFlagsWithFilter(r.Context(), orgID, projectID, labelSelector)
+		if err != nil {
+			h.l(r).Error("failed to list flags with filter", "error", err, "project_id", projectID, "label_selector", labelSelector)
+			httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+			return
+		}
+	} else {
+		sortField, sortDir := dto.ParseSort(r, "flags")
+		if sortField != "created_at" || sortDir != "DESC" {
+			flags, err = h.store.ListFlagsSorted(r.Context(), projectID, sortField, sortDir)
+		} else {
+			flags, err = h.store.ListFlags(r.Context(), projectID)
+		}
+		if err != nil {
+			h.l(r).Error("failed to list flags", "error", err, "project_id", projectID)
+			httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+			return
+		}
 	}
 	if flags == nil {
 		flags = []domain.Flag{}

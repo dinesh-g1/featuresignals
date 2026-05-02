@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
@@ -21,6 +23,9 @@ func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	p := dto.ParsePagination(r)
 	projectID := r.URL.Query().Get("project_id")
+	if projectID == "" {
+		projectID = chi.URLParam(r, "projectID")
+	}
 
 	var entries []domain.AuditEntry
 	var err error

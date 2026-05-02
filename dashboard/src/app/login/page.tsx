@@ -70,7 +70,7 @@ function LoginForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      router.push("/dashboard");
+      router.push("/projects");
       return;
     }
     setLoadingAuth(false);
@@ -127,7 +127,7 @@ function LoginForm() {
         if (!data.onboarding_completed) {
           router.push("/onboarding");
         } else {
-          router.push("/dashboard");
+          router.push("/projects");
         }
       } catch (err: unknown) {
         if (err instanceof APIError) {

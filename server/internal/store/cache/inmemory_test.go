@@ -88,6 +88,12 @@ func (m *mockStore) UpdateEnvironment(_ context.Context, _ *domain.Environment) 
 func (m *mockStore) CreateFlag(_ context.Context, _ *domain.Flag) error               { return nil }
 func (m *mockStore) GetFlag(_ context.Context, _, _ string) (*domain.Flag, error)     { return nil, nil }
 func (m *mockStore) ListFlags(_ context.Context, _ string) ([]domain.Flag, error)     { return nil, nil }
+func (m *mockStore) ListFlagsWithFilter(_ context.Context, _, _, _ string) ([]domain.Flag, error) {
+	return nil, nil
+}
+func (m *mockStore) ListFlagsSorted(_ context.Context, _, _, _ string) ([]domain.Flag, error) {
+	return nil, nil
+}
 func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error               { return nil }
 func (m *mockStore) DeleteFlag(_ context.Context, _ string) error                     { return nil }
 func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error     { return nil }
@@ -99,6 +105,12 @@ func (m *mockStore) ListFlagStatesByEnv(_ context.Context, _ string) ([]domain.F
 }
 func (m *mockStore) CreateSegment(_ context.Context, _ *domain.Segment) error { return nil }
 func (m *mockStore) ListSegments(_ context.Context, _ string) ([]domain.Segment, error) {
+	return nil, nil
+}
+func (m *mockStore) ListSegmentsWithFilter(_ context.Context, _, _, _ string) ([]domain.Segment, error) {
+	return nil, nil
+}
+func (m *mockStore) ListSegmentsSorted(_ context.Context, _, _, _ string) ([]domain.Segment, error) {
 	return nil, nil
 }
 func (m *mockStore) GetSegment(_ context.Context, _, _ string) (*domain.Segment, error) {
@@ -134,6 +146,28 @@ func (m *mockStore) ListAuditEntriesForExport(_ context.Context, _ string, _, _ 
 	return nil, nil
 }
 func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error) { return "", nil }
+func (m *mockStore) GetLimitsConfig(_ context.Context, _ string) (*domain.LimitsConfigRow, error) {
+	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
+}
+func (m *mockStore) CountFlags(_ context.Context, _ string) (int, error)       { return 0, nil }
+func (m *mockStore) CountSegments(_ context.Context, _ string) (int, error)    { return 0, nil }
+func (m *mockStore) CountEnvironments(_ context.Context, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)     { return 0, nil }
+func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error)    { return 0, nil }
+func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)     { return 0, nil }
+func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)    { return 0, nil }
+func (m *mockStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+	return nil, nil
+}
+func (m *mockStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
+	return nil, nil
+}
+func (m *mockStore) DeletePinnedItem(context.Context, string, string, string) error {
+	return nil
+}
+func (m *mockStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
+	return nil, nil
+}
 func (m *mockStore) CountAuditEntries(_ context.Context, _ string) (int, error)   { return 0, nil }
 func (m *mockStore) CountApprovalRequests(_ context.Context, _ string, _ string) (int, error) {
 	return 0, nil

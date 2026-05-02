@@ -8,7 +8,11 @@ import { useAppStore } from "@/stores/app-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  ArrowLeftIcon, LoaderIcon, CheckCircleFillIcon, EyeIcon, EyeOffIcon
+  ArrowLeftIcon,
+  LoaderIcon,
+  CheckCircleFillIcon,
+  EyeIcon,
+  EyeOffIcon,
 } from "@/components/icons/nav-icons";
 import { PasswordStrengthInline } from "@/components/ui/password-strength";
 
@@ -35,7 +39,7 @@ export default function ResetPasswordPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      router.push("/dashboard");
+      router.push("/projects");
       return;
     }
     setLoadingAuth(false);

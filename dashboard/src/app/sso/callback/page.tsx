@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { LoaderIcon } from "@/components/icons/nav-icons";
@@ -29,7 +30,7 @@ export default function SSOCallbackPage() {
 
     window.history.replaceState(null, "", window.location.pathname);
 
-    router.replace("/dashboard");
+    router.replace("/projects");
   }, [router, setAuth]);
 
   if (error) {
@@ -37,12 +38,12 @@ export default function SSOCallbackPage() {
       <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4">
         <div className="w-full max-w-md rounded-lg border border-red-200 bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-red-600">{error}</p>
-          <a
+          <Link
             href="/login"
             className="mt-4 inline-block text-sm font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
           >
             Back to login
-          </a>
+          </Link>
         </div>
       </div>
     );

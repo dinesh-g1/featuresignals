@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAppStore } from "@/stores/app-store";
 import { EventBus } from "@/lib/event-bus";
@@ -22,6 +22,7 @@ function ProjectDropdown() {
   const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -31,6 +32,12 @@ function ProjectDropdown() {
   const ref = useRef<HTMLDivElement>(null);
 
   const selected = projects.find((p) => p.id === currentProjectId);
+
+  function handleSelect(project: Project) {
+    setCurrentProject(project.id);
+    setOpen(false);
+    router.push(`/projects/${project.id}/dashboard`);
+  }
 
   // Fetch projects
   useEffect(() => {
@@ -80,6 +87,7 @@ function ProjectDropdown() {
       EventBus.dispatch(EVENTS.PROJECTS_CHANGED);
       setOpen(false);
       setName("");
+      router.push(`/projects/${project.id}/dashboard`);
     } finally {
       setCreating(false);
     }
@@ -137,10 +145,7 @@ function ProjectDropdown() {
               {filtered.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => {
-                    setCurrentProject(p.id);
-                    setOpen(false);
-                  }}
+                  onClick={() => handleSelect(p)}
                   className={cn(
                     "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                     p.id === currentProjectId
@@ -410,11 +415,10 @@ export function ContextBar() {
   const pathname = usePathname();
   const { organization } = useWorkspace();
 
-  // Hide project/env selectors on org-level pages
-  const isSettingsPage =
-    pathname?.startsWith("/settings") ||
-    pathname?.startsWith("/audit") ||
-    pathname?.startsWith("/approvals");
+  // Show project/env selectors only on project-scoped routes
+  const isProjectRoute = pathname
+    ? /^\/projects\/[^/]+\//.test(pathname)
+    : false;
 
   return (
     <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--borderColor-default)]/60 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
@@ -425,7 +429,7 @@ export function ContextBar() {
           {organization?.name || "Workspace"}
         </span>
 
-        {!isSettingsPage && (
+        {isProjectRoute && (
           <>
             <span className="text-stone-300 hidden sm:block">/</span>
 
@@ -439,11 +443,11 @@ export function ContextBar() {
           </>
         )}
 
-        {isSettingsPage && (
+        {!isProjectRoute && (
           <>
             <span className="text-stone-300">/</span>
             <span className="text-[var(--fgColor-muted)] font-medium text-sm capitalize">
-              {pathname?.split("/").pop()?.replace(/-/g, " ") || "Settings"}
+              {pathname?.split("/").pop()?.replace(/-/g, " ") || "Workspace"}
             </span>
           </>
         )}

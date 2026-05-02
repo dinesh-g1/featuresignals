@@ -63,6 +63,8 @@ type Flag struct {
 	Status       FlagStatus      `json:"status" db:"status"`
 	DefaultValue json.RawMessage `json:"default_value" db:"default_value"`
 	Tags          []string        `json:"tags" db:"tags"`
+	Labels        json.RawMessage `json:"labels" db:"labels"`
+	Protection    json.RawMessage `json:"protection" db:"protection"`
 	ExpiresAt     *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
 	Prerequisites        []string        `json:"prerequisites,omitempty" db:"prerequisites"`
 	MutualExclusionGroup string         `json:"mutual_exclusion_group,omitempty" db:"mutual_exclusion_group"`
