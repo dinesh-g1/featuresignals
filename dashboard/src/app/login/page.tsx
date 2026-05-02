@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, APIError } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -24,56 +23,6 @@ import {
 } from "@/components/icons/nav-icons";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-function LoginLeft() {
-  return (
-    <div className="flex flex-col justify-center h-full p-10 sm:p-14 lg:p-16 bg-[var(--bgColor-inset)]">
-      <div className="max-w-sm mx-auto text-center">
-        {/* Logo mark */}
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-emphasis)] shadow-lg shadow-accent/20">
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="white"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </div>
-
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3">
-          Welcome back
-        </h1>
-        <p className="text-base text-[var(--fgColor-muted)] leading-relaxed">
-          Sign in to your FeatureSignals dashboard to manage flags, review
-          experiments, and keep shipping.
-        </p>
-
-        {/* Subtle feature reminders */}
-        <div className="mt-10 space-y-3 text-left">
-          {[
-            { label: "Sub-millisecond flag evaluation", icon: "⚡" },
-            { label: "OpenFeature-native SDKs", icon: "🔓" },
-            { label: "Flat pricing. Unlimited seats.", icon: "💸" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center gap-3 text-sm text-[var(--fgColor-muted)]"
-            >
-              <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function LoginForm() {
   const router = useRouter();
@@ -312,14 +261,14 @@ function LoginForm() {
   }
 
   return (
-    <AuthLayout left={<LoginLeft />}>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Logo — mobile only (desktop has it in LoginLeft) */}
-        <div className="mb-8 text-center lg:hidden">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-emphasis)] shadow-lg shadow-accent/20">
+        {/* Welcome + Brand */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bgColor-accent-emphasis)] shadow-md shadow-accent/20">
             <svg
-              width="28"
-              height="28"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="white"
               xmlns="http://www.w3.org/2000/svg"
@@ -331,368 +280,348 @@ function LoginForm() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-default)]">
-            FeatureSignals
+          <h1 className="text-xl font-bold tracking-tight text-[var(--fgColor-default)]">
+            Welcome back
           </h1>
           <p className="mt-1.5 text-sm text-[var(--fgColor-muted)]">
-            {ssoMode
-              ? "Sign in with your identity provider"
-              : "Sign in to the enterprise control plane"}
+            Sign in to your account to continue.
           </p>
         </div>
 
-        {/* Desktop heading (no logo — that's in the left panel) */}
-        <div className="mb-6 hidden lg:block">
-          <h2 className="text-xl font-bold tracking-tight text-[var(--fgColor-default)]">
-            {ssoMode ? "Sign in with SSO" : "Sign in"}
-          </h2>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
-            {ssoMode
-              ? "Enter your organization slug to continue"
-              : "Access your feature flag dashboard"}
-          </p>
-        </div>
+        {/* Messages + Form */}
+        <div className="space-y-4">
+          {/* ===== SUCCESS MESSAGES ===== */}
+          {sessionExpired && (
+            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Your session has expired. Please sign in again.
+            </div>
+          )}
+          {emailVerified && (
+            <div className="mb-5 rounded-xl border border-[var(--borderColor-success-muted)] bg-emerald-50 px-4 py-3 text-sm text-[var(--fgColor-success)]">
+              Email verified successfully! You can now sign in.
+            </div>
+          )}
+          {ssoError && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-[var(--bgColor-danger-muted)] px-4 py-3 text-sm text-red-700">
+              {decodeURIComponent(ssoError)}
+            </div>
+          )}
 
-        {/* Main Card */}
-        <div className="rounded-2xl border border-[var(--borderColor-default)]/80 bg-white/90 shadow-xl shadow-stone-900/5 backdrop-blur-xl">
-          <div className="p-6 sm:p-8">
-            {/* ===== SUCCESS MESSAGES ===== */}
-            {sessionExpired && (
-              <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Your session has expired. Please sign in again.
-              </div>
-            )}
-            {emailVerified && (
-              <div className="mb-5 rounded-xl border border-[var(--borderColor-success-muted)] bg-emerald-50 px-4 py-3 text-sm text-[var(--fgColor-success)]">
-                Email verified successfully! You can now sign in.
-              </div>
-            )}
-            {ssoError && (
-              <div className="mb-5 rounded-xl border border-red-200 bg-[var(--bgColor-danger-muted)] px-4 py-3 text-sm text-red-700">
-                {decodeURIComponent(ssoError)}
-              </div>
-            )}
-
-            {/* ===== ERROR MESSAGES ===== */}
-            {error && (
-              <div
-                className={cn(
-                  "mb-5 rounded-xl border px-4 py-3 text-sm",
-                  errorType === "credentials" &&
-                    "border-amber-200 bg-amber-50 text-amber-800",
-                  errorType === "account_locked" &&
-                    "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
-                  errorType === "sso_enforced" &&
-                    "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]",
-                  !["credentials", "account_locked", "sso_enforced"].includes(
-                    errorType,
-                  ) &&
-                    "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+          {/* ===== ERROR MESSAGES ===== */}
+          {error && (
+            <div
+              className={cn(
+                "mb-5 rounded-xl border px-4 py-3 text-sm",
+                errorType === "credentials" &&
+                  "border-amber-200 bg-amber-50 text-amber-800",
+                errorType === "account_locked" &&
+                  "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+                errorType === "sso_enforced" &&
+                  "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]",
+                !["credentials", "account_locked", "sso_enforced"].includes(
+                  errorType,
+                ) &&
+                  "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+              )}
+            >
+              <div className="flex items-start gap-2.5">
+                {(errorType === "credentials" ||
+                  errorType === "account_locked") && (
+                  <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
                 )}
-              >
-                <div className="flex items-start gap-2.5">
-                  {(errorType === "credentials" ||
-                    errorType === "account_locked") && (
-                    <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="flex-1">
+                  <p>{error}</p>
+                  {isAccountLocked && retryAfter && (
+                    <p className="mt-1 text-xs font-medium">
+                      Try again at {retryAfter.toLocaleTimeString()}
+                    </p>
                   )}
-                  <div className="flex-1">
-                    <p>{error}</p>
-                    {isAccountLocked && retryAfter && (
-                      <p className="mt-1 text-xs font-medium">
-                        Try again at {retryAfter.toLocaleTimeString()}
-                      </p>
-                    )}
-                    {errorType === "sso_enforced" && (
-                      <button
-                        type="button"
-                        onClick={switchToSSO}
-                        className="mt-2 font-semibold text-[var(--fgColor-accent)] underline hover:text-[var(--fgColor-accent)]"
-                      >
-                        Sign in with SSO instead
-                      </button>
-                    )}
-                  </div>
+                  {errorType === "sso_enforced" && (
+                    <button
+                      type="button"
+                      onClick={switchToSSO}
+                      className="mt-2 font-semibold text-[var(--fgColor-accent)] underline hover:text-[var(--fgColor-accent)]"
+                    >
+                      Sign in with SSO instead
+                    </button>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* ===== RATE LIMIT WARNING ===== */}
-            {attemptsUsed > 0 && attemptsUsed < attemptsAllowed && (
-              <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <div className="flex items-center gap-2">
-                  <ClockIcon className="h-4 w-4 shrink-0" />
-                  <span>
-                    {Math.max(0, attemptsAllowed - attemptsUsed)} attempt
-                    {attemptsAllowed - attemptsUsed !== 1 ? "s" : ""} remaining.
-                    Account locks after {attemptsAllowed} failed attempts.
+          {/* ===== RATE LIMIT WARNING ===== */}
+          {attemptsUsed > 0 && attemptsUsed < attemptsAllowed && (
+            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div className="flex items-center gap-2">
+                <ClockIcon className="h-4 w-4 shrink-0" />
+                <span>
+                  {Math.max(0, attemptsAllowed - attemptsUsed)} attempt
+                  {attemptsAllowed - attemptsUsed !== 1 ? "s" : ""} remaining.
+                  Account locks after {attemptsAllowed} failed attempts.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SSO MODE ===== */}
+          {ssoMode ? (
+            <>
+              <form onSubmit={handleSSOLogin} noValidate className="space-y-5">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="orgSlug"
+                    className="text-sm font-semibold text-[var(--fgColor-default)]"
+                  >
+                    Organization Slug
+                  </label>
+                  <div className="relative">
+                    <BuildingIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+                    <Input
+                      id="orgSlug"
+                      type="text"
+                      placeholder="your-company"
+                      value={orgSlug}
+                      onChange={(e) => {
+                        setOrgSlug(e.target.value);
+                        if (ssoFieldError) setSsoFieldError("");
+                      }}
+                      className="pl-9"
+                      aria-invalid={!!ssoFieldError}
+                    />
+                  </div>
+                  {ssoFieldError && (
+                    <p className="text-xs text-red-500" role="alert">
+                      {ssoFieldError}
+                    </p>
+                  )}
+                  <p className="text-xs text-[var(--fgColor-subtle)]">
+                    Enter your organization&apos;s slug to discover your
+                    identity provider.
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={ssoLoading}
+                  fullWidth
+                  className="h-11"
+                >
+                  {ssoLoading ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Discovering...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldIcon className="h-4 w-4" />
+                      Continue with SSO
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <button
+                type="button"
+                onClick={switchToEmail}
+                className="mt-5 flex w-full items-center justify-center gap-1.5 text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
+              >
+                <ArrowLeftIcon className="h-3.5 w-3.5" />
+                Back to email login
+              </button>
+            </>
+          ) : (
+            <>
+              {/* ===== EMAIL FORM ===== */}
+              <form
+                onSubmit={handleEmailSubmit}
+                noValidate
+                className="space-y-5"
+              >
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-semibold text-[var(--fgColor-default)]"
+                  >
+                    Email
+                  </label>
+                  <div className="relative">
+                    <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (fieldErrors.email)
+                          setFieldErrors({
+                            ...fieldErrors,
+                            email: undefined,
+                          });
+                      }}
+                      className="pl-9"
+                      aria-invalid={!!fieldErrors.email}
+                    />
+                  </div>
+                  {fieldErrors.email && (
+                    <p className="text-xs text-red-500" role="alert">
+                      {fieldErrors.email}
+                    </p>
+                  )}
+                </div>
+
+                {/* Password */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="password"
+                      className="text-sm font-semibold text-[var(--fgColor-default)]"
+                    >
+                      Password
+                    </label>
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <LockIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (fieldErrors.password)
+                          setFieldErrors({
+                            ...fieldErrors,
+                            password: undefined,
+                          });
+                      }}
+                      className="pl-9 pr-10"
+                      aria-invalid={!!fieldErrors.password}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOffIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {fieldErrors.password && (
+                    <p className="text-xs text-red-500" role="alert">
+                      {fieldErrors.password}
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading || isAccountLocked}
+                  fullWidth
+                  className="h-11"
+                >
+                  {loading ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : isAccountLocked ? (
+                    "Account Locked"
+                  ) : (
+                    <>
+                      Sign in
+                      <ChevronRightIcon className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* ===== DIVIDER ===== */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[var(--borderColor-default)]" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-3 text-[var(--fgColor-subtle)]">
+                    or continue with
                   </span>
                 </div>
               </div>
-            )}
 
-            {/* ===== SSO MODE ===== */}
-            {ssoMode ? (
-              <>
-                <form
-                  onSubmit={handleSSOLogin}
-                  noValidate
-                  className="space-y-5"
+              {/* ===== SSO BUTTON ===== */}
+              <button
+                type="button"
+                onClick={switchToSSO}
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--borderColor-default)] bg-white py-3 text-sm font-semibold text-[var(--fgColor-default)] shadow-sm transition-all hover:bg-[var(--bgColor-default)] hover:border-[var(--borderColor-emphasis)] hover:shadow-md"
+              >
+                <ShieldIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />
+                Sign in with SSO
+              </button>
+
+              {/* ===== SIGN UP LINK ===== */}
+              <p className="mt-6 text-center text-sm text-[var(--fgColor-muted)]">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/register"
+                  className="font-semibold text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
                 >
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="orgSlug"
-                      className="text-sm font-semibold text-[var(--fgColor-default)]"
-                    >
-                      Organization Slug
-                    </label>
-                    <div className="relative">
-                      <BuildingIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
-                      <Input
-                        id="orgSlug"
-                        type="text"
-                        placeholder="your-company"
-                        value={orgSlug}
-                        onChange={(e) => {
-                          setOrgSlug(e.target.value);
-                          if (ssoFieldError) setSsoFieldError("");
-                        }}
-                        className="pl-9"
-                        aria-invalid={!!ssoFieldError}
-                      />
-                    </div>
-                    {ssoFieldError && (
-                      <p className="text-xs text-red-500" role="alert">
-                        {ssoFieldError}
-                      </p>
-                    )}
-                    <p className="text-xs text-[var(--fgColor-subtle)]">
-                      Enter your organization&apos;s slug to discover your
-                      identity provider.
-                    </p>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={ssoLoading}
-                    fullWidth
-                    className="h-11"
-                  >
-                    {ssoLoading ? (
-                      <>
-                        <svg
-                          className="h-4 w-4 animate-spin"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Discovering...
-                      </>
-                    ) : (
-                      <>
-                        <ShieldIcon className="h-4 w-4" />
-                        Continue with SSO
-                      </>
-                    )}
-                  </Button>
-                </form>
-
-                <button
-                  type="button"
-                  onClick={switchToEmail}
-                  className="mt-5 flex w-full items-center justify-center gap-1.5 text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
-                >
-                  <ArrowLeftIcon className="h-3.5 w-3.5" />
-                  Back to email login
-                </button>
-              </>
-            ) : (
-              <>
-                {/* ===== EMAIL FORM ===== */}
-                <form
-                  onSubmit={handleEmailSubmit}
-                  noValidate
-                  className="space-y-5"
-                >
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="email"
-                      className="text-sm font-semibold text-[var(--fgColor-default)]"
-                    >
-                      Email
-                    </label>
-                    <div className="relative">
-                      <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@company.com"
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          if (fieldErrors.email)
-                            setFieldErrors({
-                              ...fieldErrors,
-                              email: undefined,
-                            });
-                        }}
-                        className="pl-9"
-                        aria-invalid={!!fieldErrors.email}
-                      />
-                    </div>
-                    {fieldErrors.email && (
-                      <p className="text-xs text-red-500" role="alert">
-                        {fieldErrors.email}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Password */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label
-                        htmlFor="password"
-                        className="text-sm font-semibold text-[var(--fgColor-default)]"
-                      >
-                        Password
-                      </label>
-                      <Link
-                        href="/forgot-password"
-                        className="text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <LockIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          if (fieldErrors.password)
-                            setFieldErrors({
-                              ...fieldErrors,
-                              password: undefined,
-                            });
-                        }}
-                        className="pl-9 pr-10"
-                        aria-invalid={!!fieldErrors.password}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] transition-colors"
-                        tabIndex={-1}
-                      >
-                        {showPassword ? (
-                          <EyeOffIcon className="h-4 w-4" />
-                        ) : (
-                          <EyeIcon className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                    {fieldErrors.password && (
-                      <p className="text-xs text-red-500" role="alert">
-                        {fieldErrors.password}
-                      </p>
-                    )}
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={loading || isAccountLocked}
-                    fullWidth
-                    className="h-11"
-                  >
-                    {loading ? (
-                      <>
-                        <svg
-                          className="h-4 w-4 animate-spin"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Signing in...
-                      </>
-                    ) : isAccountLocked ? (
-                      "Account Locked"
-                    ) : (
-                      <>
-                        Sign in
-                        <ChevronRightIcon className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-
-                {/* ===== DIVIDER ===== */}
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[var(--borderColor-default)]" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-3 text-[var(--fgColor-subtle)]">
-                      or continue with
-                    </span>
-                  </div>
-                </div>
-
-                {/* ===== SSO BUTTON ===== */}
-                <button
-                  type="button"
-                  onClick={switchToSSO}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--borderColor-default)] bg-white py-3 text-sm font-semibold text-[var(--fgColor-default)] shadow-sm transition-all hover:bg-[var(--bgColor-default)] hover:border-[var(--borderColor-emphasis)] hover:shadow-md"
-                >
-                  <ShieldIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />
-                  Sign in with SSO
-                </button>
-
-                {/* ===== SIGN UP LINK ===== */}
-                <p className="mt-6 text-center text-sm text-[var(--fgColor-muted)]">
-                  Don&apos;t have an account?{" "}
-                  <Link
-                    href="/register"
-                    className="font-semibold text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
-                  >
-                    Sign up
-                  </Link>
-                </p>
-              </>
-            )}
-          </div>
+                  Sign up
+                </Link>
+              </p>
+            </>
+          )}
         </div>
 
         {/* ===== Trust Signals ===== */}
@@ -715,7 +644,7 @@ function LoginForm() {
           &copy; {new Date().getFullYear()} FeatureSignals. All rights reserved.
         </p>
       </div>
-    </AuthLayout>
+    </div>
   );
 }
 

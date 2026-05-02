@@ -333,65 +333,63 @@ const VALUE_PROPS = [
 
 function ValuePanel() {
   return (
-    <div className="flex flex-col justify-center h-full p-10 sm:p-14 lg:p-16 bg-[var(--bgColor-inset)]">
-      <div className="max-w-lg mx-auto">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)] mb-8">
-          <svg
-            className="h-3.5 w-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-          14-day Pro trial — all features
-        </div>
+    <div className="max-w-lg mx-auto">
+      {/* Badge */}
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)] mb-8">
+        <svg
+          className="h-3.5 w-3.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+        14-day Pro trial — all features
+      </div>
 
-        {/* Headline */}
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-4">
-          Feature flags that don&apos;t punish growth.
-        </h1>
-        <p className="text-base text-[var(--fgColor-muted)] mb-10 leading-relaxed">
-          Unlimited seats. Flat pricing. Sub-millisecond latency. Everything you
-          need to ship faster, at a fraction of the cost.
-        </p>
+      {/* Headline */}
+      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-4">
+        Feature flags that don&apos;t punish growth.
+      </h1>
+      <p className="text-base text-[var(--fgColor-muted)] mb-10 leading-relaxed">
+        Unlimited seats. Flat pricing. Sub-millisecond latency. Everything you
+        need to ship faster, at a fraction of the cost.
+      </p>
 
-        {/* Value props */}
-        <div className="space-y-5">
-          {VALUE_PROPS.map((prop) => (
-            <div key={prop.title} className="flex gap-3.5">
-              <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] flex items-center justify-center">
-                {prop.icon}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
-                  {prop.title}
-                </h3>
-                <p className="text-sm text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
-                  {prop.description}
-                </p>
-              </div>
+      {/* Value props */}
+      <div className="space-y-5">
+        {VALUE_PROPS.map((prop) => (
+          <div key={prop.title} className="flex gap-3.5">
+            <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] flex items-center justify-center">
+              {prop.icon}
             </div>
-          ))}
-        </div>
-
-        {/* Trust bar */}
-        <div className="mt-10 pt-7 border-t border-[var(--borderColor-muted)]">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {["Apache 2.0", "8 SDKs", "OpenFeature", "SOC 2"].map((item) => (
-              <span
-                key={item}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-muted)] text-[var(--fgColor-subtle)] border border-[var(--borderColor-default)]"
-              >
-                <CheckIcon className="h-3 w-3 text-[var(--fgColor-success)]" />
-                {item}
-              </span>
-            ))}
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+                {prop.title}
+              </h3>
+              <p className="text-sm text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
+                {prop.description}
+              </p>
+            </div>
           </div>
+        ))}
+      </div>
+
+      {/* Trust bar */}
+      <div className="mt-10 pt-7 border-t border-[var(--borderColor-muted)]">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {["Apache 2.0", "8 SDKs", "OpenFeature", "SOC 2"].map((item) => (
+            <span
+              key={item}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-muted)] text-[var(--fgColor-subtle)] border border-[var(--borderColor-default)]"
+            >
+              <CheckIcon className="h-3 w-3 text-[var(--fgColor-success)]" />
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     </div>

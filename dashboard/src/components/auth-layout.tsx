@@ -22,12 +22,14 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[var(--bgColor-default)]">
+    <div className="flex min-h-screen">
       {/* Left panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2">{left}</div>
+      <div className="hidden lg:flex lg:w-1/2 bg-[var(--bgColor-inset)] items-center justify-center">
+        {left}
+      </div>
 
       {/* Right panel */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center px-8 py-10 sm:px-12 lg:px-16 xl:px-20">
+      <div className="flex w-full lg:w-1/2 items-center justify-center bg-[var(--bgColor-muted)] px-8 py-10 sm:px-12 lg:px-16 xl:px-20">
         {children}
       </div>
     </div>
