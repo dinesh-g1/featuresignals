@@ -154,12 +154,7 @@
             "type": "string"
           },
           "status": {
-            "enum": [
-              "pending",
-              "approved",
-              "rejected",
-              "applied"
-            ],
+            "enum": ["pending", "approved", "rejected", "applied"],
             "type": "string"
           },
           "updated_at": {
@@ -196,9 +191,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "context"
-        ],
+        "required": ["context"],
         "type": "object"
       },
       "CancelRequest": {
@@ -256,10 +249,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "entity_a",
-          "entity_b"
-        ],
+        "required": ["entity_a", "entity_b"],
         "type": "object"
       },
       "CompleteSignupRequest": {
@@ -272,10 +262,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "otp"
-        ],
+        "required": ["email", "otp"],
         "type": "object"
       },
       "Condition": {
@@ -318,16 +305,11 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "server",
-              "client"
-            ],
+            "enum": ["server", "client"],
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "CreateApprovalRequest": {
@@ -343,11 +325,7 @@
           },
           "payload": {}
         },
-        "required": [
-          "flag_id",
-          "env_id",
-          "change_type"
-        ],
+        "required": ["flag_id", "env_id", "change_type"],
         "type": "object"
       },
       "CreateEnvironmentRequest": {
@@ -362,21 +340,14 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "CreateFlagRequest": {
         "properties": {
           "category": {
             "default": "release",
-            "enum": [
-              "release",
-              "experiment",
-              "ops",
-              "permission"
-            ],
+            "enum": ["release", "experiment", "ops", "permission"],
             "type": "string"
           },
           "default_value": {},
@@ -385,12 +356,7 @@
           },
           "flag_type": {
             "default": "boolean",
-            "enum": [
-              "boolean",
-              "string",
-              "number",
-              "json"
-            ],
+            "enum": ["boolean", "string", "number", "json"],
             "type": "string"
           },
           "key": {
@@ -411,12 +377,7 @@
           },
           "status": {
             "default": "active",
-            "enum": [
-              "active",
-              "rolled_out",
-              "deprecated",
-              "archived"
-            ],
+            "enum": ["active", "rolled_out", "deprecated", "archived"],
             "type": "string"
           },
           "tags": {
@@ -426,10 +387,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "key",
-          "name"
-        ],
+        "required": ["key", "name"],
         "type": "object"
       },
       "CreateProjectRequest": {
@@ -441,9 +399,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "CreateSegmentRequest": {
@@ -455,10 +411,7 @@
             "type": "string"
           },
           "match_type": {
-            "enum": [
-              "all",
-              "any"
-            ],
+            "enum": ["all", "any"],
             "type": "string"
           },
           "name": {
@@ -471,10 +424,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "key",
-          "name"
-        ],
+        "required": ["key", "name"],
         "type": "object"
       },
       "CreateWebhookRequest": {
@@ -496,10 +446,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "url"
-        ],
+        "required": ["name", "url"],
         "type": "object"
       },
       "DismissHintRequest": {
@@ -508,9 +455,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "hint_id"
-        ],
+        "required": ["hint_id"],
         "type": "object"
       },
       "EnvComparisonResponse": {
@@ -596,9 +541,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ],
+        "required": ["error"],
         "type": "object"
       },
       "EvalContext": {
@@ -612,9 +555,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "key"
-        ],
+        "required": ["key"],
         "type": "object"
       },
       "EvalResult": {
@@ -661,10 +602,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "flag_key",
-          "context"
-        ],
+        "required": ["flag_key", "context"],
         "type": "object"
       },
       "FeaturesResponse": {
@@ -705,12 +643,7 @@
       "FlagResponse": {
         "properties": {
           "category": {
-            "enum": [
-              "release",
-              "experiment",
-              "ops",
-              "permission"
-            ],
+            "enum": ["release", "experiment", "ops", "permission"],
             "type": "string"
           },
           "created_at": {
@@ -722,12 +655,7 @@
             "type": "string"
           },
           "flag_type": {
-            "enum": [
-              "boolean",
-              "string",
-              "number",
-              "json"
-            ],
+            "enum": ["boolean", "string", "number", "json"],
             "type": "string"
           },
           "id": {
@@ -750,12 +678,7 @@
             "type": "array"
           },
           "status": {
-            "enum": [
-              "active",
-              "rolled_out",
-              "deprecated",
-              "archived"
-            ],
+            "enum": ["active", "rolled_out", "deprecated", "archived"],
             "type": "string"
           },
           "tags": {
@@ -816,16 +739,11 @@
       "GatewayRequest": {
         "properties": {
           "gateway": {
-            "enum": [
-              "payu",
-              "stripe"
-            ],
+            "enum": ["payu", "stripe"],
             "type": "string"
           }
         },
-        "required": [
-          "gateway"
-        ],
+        "required": ["gateway"],
         "type": "object"
       },
       "GatewayResponse": {
@@ -881,11 +799,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "password",
-          "name"
-        ],
+        "required": ["email", "password", "name"],
         "type": "object"
       },
       "InspectEntityRequest": {
@@ -898,9 +812,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "key"
-        ],
+        "required": ["key"],
         "type": "object"
       },
       "InviteRequest": {
@@ -910,18 +822,11 @@
             "type": "string"
           },
           "role": {
-            "enum": [
-              "owner",
-              "admin",
-              "developer",
-              "viewer"
-            ],
+            "enum": ["owner", "admin", "developer", "viewer"],
             "type": "string"
           }
         },
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "type": "object"
       },
       "KillFlagRequest": {
@@ -931,9 +836,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "env_id"
-        ],
+        "required": ["env_id"],
         "type": "object"
       },
       "LoginRequest": {
@@ -950,10 +853,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "type": "object"
       },
       "LoginResponse": {
@@ -979,9 +879,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "password"
-        ],
+        "required": ["password"],
         "type": "object"
       },
       "MFAEnableResponse": {
@@ -1013,9 +911,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code"
-        ],
+        "required": ["code"],
         "type": "object"
       },
       "MemberResponse": {
@@ -1036,12 +932,7 @@
             "type": "string"
           },
           "role": {
-            "enum": [
-              "owner",
-              "admin",
-              "developer",
-              "viewer"
-            ],
+            "enum": ["owner", "admin", "developer", "viewer"],
             "type": "string"
           }
         },
@@ -1184,10 +1075,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "source_env_id",
-          "target_env_id"
-        ],
+        "required": ["source_env_id", "target_env_id"],
         "type": "object"
       },
       "RefreshRequest": {
@@ -1196,9 +1084,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "refresh_token"
-        ],
+        "required": ["refresh_token"],
         "type": "object"
       },
       "RefreshResponse": {
@@ -1231,27 +1117,20 @@
             "type": "string"
           }
         },
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "type": "object"
       },
       "ReviewRequest": {
         "properties": {
           "action": {
-            "enum": [
-              "approve",
-              "reject"
-            ],
+            "enum": ["approve", "reject"],
             "type": "string"
           },
           "note": {
             "type": "string"
           }
         },
-        "required": [
-          "action"
-        ],
+        "required": ["action"],
         "type": "object"
       },
       "RotateAPIKeyRequest": {
@@ -1362,11 +1241,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "contact_name",
-          "email",
-          "company"
-        ],
+        "required": ["contact_name", "email", "company"],
         "type": "object"
       },
       "SegmentResponse": {
@@ -1386,10 +1261,7 @@
             "type": "string"
           },
           "match_type": {
-            "enum": [
-              "all",
-              "any"
-            ],
+            "enum": ["all", "any"],
             "type": "string"
           },
           "name": {
@@ -1474,11 +1346,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "source_env_id",
-          "target_env_id",
-          "flag_keys"
-        ],
+        "required": ["source_env_id", "target_env_id", "flag_keys"],
         "type": "object"
       },
       "TargetingRule": {
@@ -1502,9 +1370,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "type": "object"
       },
       "TokenExchangeResponse": {
@@ -1608,18 +1474,11 @@
       "UpdateRoleRequest": {
         "properties": {
           "role": {
-            "enum": [
-              "owner",
-              "admin",
-              "developer",
-              "viewer"
-            ],
+            "enum": ["owner", "admin", "developer", "viewer"],
             "type": "string"
           }
         },
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "type": "object"
       },
       "UpdateSegmentRequest": {
@@ -1628,10 +1487,7 @@
             "type": "string"
           },
           "match_type": {
-            "enum": [
-              "all",
-              "any"
-            ],
+            "enum": ["all", "any"],
             "type": "string"
           },
           "name": {
@@ -1708,10 +1564,7 @@
             "type": "string"
           },
           "provider_type": {
-            "enum": [
-              "saml",
-              "oidc"
-            ],
+            "enum": ["saml", "oidc"],
             "type": "string"
           }
         },
@@ -1912,9 +1765,7 @@
         },
         "security": [],
         "summary": "API documentation index",
-        "tags": [
-          "Documentation"
-        ]
+        "tags": ["Documentation"]
       }
     },
     "/docs/openapi.json": {
@@ -1967,9 +1818,7 @@
         },
         "security": [],
         "summary": "OpenAPI specification",
-        "tags": [
-          "Documentation"
-        ]
+        "tags": ["Documentation"]
       }
     },
     "/health": {
@@ -2022,9 +1871,7 @@
         },
         "security": [],
         "summary": "Health check",
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/v1/analytics/overview": {
@@ -2081,9 +1928,7 @@
           }
         ],
         "summary": "Analytics overview",
-        "tags": [
-          "Analytics"
-        ]
+        "tags": ["Analytics"]
       }
     },
     "/v1/api-keys/{keyID}": {
@@ -2145,9 +1990,7 @@
           }
         ],
         "summary": "Revoke API key",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       }
     },
     "/v1/api-keys/{keyID}/rotate": {
@@ -2219,9 +2062,7 @@
           }
         ],
         "summary": "Rotate API key",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       }
     },
     "/v1/approvals": {
@@ -2285,9 +2126,7 @@
           }
         ],
         "summary": "List approvals",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       },
       "post": {
         "description": "Submits a new change request for review.",
@@ -2359,9 +2198,7 @@
           }
         ],
         "summary": "Create approval",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       }
     },
     "/v1/approvals/{approvalID}": {
@@ -2430,9 +2267,7 @@
           }
         ],
         "summary": "Get approval",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       }
     },
     "/v1/approvals/{approvalID}/review": {
@@ -2511,9 +2346,7 @@
           }
         ],
         "summary": "Review approval",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       }
     },
     "/v1/audit": {
@@ -2577,9 +2410,7 @@
           }
         ],
         "summary": "List audit log",
-        "tags": [
-          "Audit"
-        ]
+        "tags": ["Audit"]
       }
     },
     "/v1/audit/export": {
@@ -2636,9 +2467,7 @@
           }
         ],
         "summary": "Export audit log",
-        "tags": [
-          "Audit"
-        ]
+        "tags": ["Audit"]
       }
     },
     "/v1/auth/complete-signup": {
@@ -2708,9 +2537,7 @@
         },
         "security": [],
         "summary": "Complete signup",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/initiate-signup": {
@@ -2780,9 +2607,7 @@
         },
         "security": [],
         "summary": "Initiate signup",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/login": {
@@ -2852,9 +2677,7 @@
         },
         "security": [],
         "summary": "Log in",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/logout": {
@@ -2918,9 +2741,7 @@
           }
         ],
         "summary": "Log out",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/mfa/disable": {
@@ -2994,9 +2815,7 @@
           }
         ],
         "summary": "Disable MFA",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/mfa/enable": {
@@ -3060,9 +2879,7 @@
           }
         ],
         "summary": "Enable MFA",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/mfa/status": {
@@ -3126,9 +2943,7 @@
           }
         ],
         "summary": "Get MFA status",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/mfa/verify": {
@@ -3202,9 +3017,7 @@
           }
         ],
         "summary": "Verify MFA code",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/refresh": {
@@ -3274,9 +3087,7 @@
         },
         "security": [],
         "summary": "Refresh token",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/resend-signup-otp": {
@@ -3346,9 +3157,7 @@
         },
         "security": [],
         "summary": "Resend signup OTP",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/send-verification-email": {
@@ -3412,9 +3221,7 @@
           }
         ],
         "summary": "Send verification email",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/token-exchange": {
@@ -3484,9 +3291,7 @@
         },
         "security": [],
         "summary": "Exchange one-time token",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/verify-email": {
@@ -3539,9 +3344,7 @@
         },
         "security": [],
         "summary": "Verify email",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/billing/cancel": {
@@ -3615,9 +3418,7 @@
           }
         ],
         "summary": "Cancel subscription",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/checkout": {
@@ -3681,9 +3482,7 @@
           }
         ],
         "summary": "Create checkout session",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/gateway": {
@@ -3757,9 +3556,7 @@
           }
         ],
         "summary": "Update payment gateway",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/payu/callback": {
@@ -3812,9 +3609,7 @@
         },
         "security": [],
         "summary": "PayU callback",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/payu/failure": {
@@ -3867,9 +3662,7 @@
         },
         "security": [],
         "summary": "PayU failure",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/portal": {
@@ -3933,9 +3726,7 @@
           }
         ],
         "summary": "Get billing portal URL",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/stripe/webhook": {
@@ -3988,9 +3779,7 @@
         },
         "security": [],
         "summary": "Stripe webhook",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/subscription": {
@@ -4054,9 +3843,7 @@
           }
         ],
         "summary": "Get subscription",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/usage": {
@@ -4120,9 +3907,7 @@
           }
         ],
         "summary": "Get usage",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/capabilities": {
@@ -4175,9 +3960,7 @@
         },
         "security": [],
         "summary": "Get server capabilities",
-        "tags": [
-          "Pricing"
-        ]
+        "tags": ["Pricing"]
       }
     },
     "/v1/client/{envKey}/flags": {
@@ -4239,9 +4022,7 @@
           }
         ],
         "summary": "Get all flags for client",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/data/export": {
@@ -4298,9 +4079,7 @@
           }
         ],
         "summary": "Export organization data",
-        "tags": [
-          "Data Export"
-        ]
+        "tags": ["Data Export"]
       }
     },
     "/v1/environments/{envID}/api-keys": {
@@ -4369,9 +4148,7 @@
           }
         ],
         "summary": "List API keys",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       },
       "post": {
         "description": "Creates a new API key. The full key is returned only on creation.",
@@ -4441,9 +4218,7 @@
           }
         ],
         "summary": "Create API key",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       }
     },
     "/v1/evaluate": {
@@ -4517,9 +4292,7 @@
           }
         ],
         "summary": "Evaluate a single flag",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/evaluate/bulk": {
@@ -4586,9 +4359,7 @@
           }
         ],
         "summary": "Bulk evaluate",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/features": {
@@ -4652,9 +4423,7 @@
           }
         ],
         "summary": "List enabled features",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/feedback": {
@@ -4721,9 +4490,7 @@
           }
         ],
         "summary": "Submit feedback",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/ip-allowlist": {
@@ -4787,9 +4554,7 @@
           }
         ],
         "summary": "Get IP allowlist",
-        "tags": [
-          "IP Allowlist"
-        ]
+        "tags": ["IP Allowlist"]
       },
       "put": {
         "description": "Creates or updates the IP allowlist.",
@@ -4861,9 +4626,7 @@
           }
         ],
         "summary": "Update IP allowlist",
-        "tags": [
-          "IP Allowlist"
-        ]
+        "tags": ["IP Allowlist"]
       }
     },
     "/v1/members": {
@@ -4927,9 +4690,7 @@
           }
         ],
         "summary": "List members",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/members/invite": {
@@ -5003,9 +4764,7 @@
           }
         ],
         "summary": "Invite member",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/members/{memberID}": {
@@ -5067,9 +4826,7 @@
           }
         ],
         "summary": "Remove member",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       },
       "put": {
         "description": "Changes a team member's role.",
@@ -5139,9 +4896,7 @@
           }
         ],
         "summary": "Update member role",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/members/{memberID}/permissions": {
@@ -5203,9 +4958,7 @@
           }
         ],
         "summary": "Get member permissions",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       },
       "put": {
         "description": "Replaces per-environment permissions for a member.",
@@ -5275,9 +5028,7 @@
           }
         ],
         "summary": "Update member permissions",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/metrics/evaluations": {
@@ -5341,9 +5092,7 @@
           }
         ],
         "summary": "Get evaluation metrics",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/metrics/evaluations/reset": {
@@ -5407,9 +5156,7 @@
           }
         ],
         "summary": "Reset evaluation metrics",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/metrics/impressions": {
@@ -5466,9 +5213,7 @@
           }
         ],
         "summary": "Get impression metrics",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/metrics/impressions/flush": {
@@ -5525,9 +5270,7 @@
           }
         ],
         "summary": "Flush impressions",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/onboarding": {
@@ -5591,9 +5334,7 @@
           }
         ],
         "summary": "Get onboarding state",
-        "tags": [
-          "Onboarding"
-        ]
+        "tags": ["Onboarding"]
       },
       "patch": {
         "description": "Patches onboarding step completion flags.",
@@ -5665,9 +5406,7 @@
           }
         ],
         "summary": "Update onboarding state",
-        "tags": [
-          "Onboarding"
-        ]
+        "tags": ["Onboarding"]
       }
     },
     "/v1/pricing": {
@@ -5720,9 +5459,7 @@
         },
         "security": [],
         "summary": "Get pricing",
-        "tags": [
-          "Pricing"
-        ]
+        "tags": ["Pricing"]
       }
     },
     "/v1/projects": {
@@ -5786,9 +5523,7 @@
           }
         ],
         "summary": "List projects",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "post": {
         "description": "Creates a new project with default environments.",
@@ -5860,9 +5595,7 @@
           }
         ],
         "summary": "Create project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}": {
@@ -5924,9 +5657,7 @@
           }
         ],
         "summary": "Delete project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "get": {
         "description": "Returns a single project by ID.",
@@ -5993,9 +5724,7 @@
           }
         ],
         "summary": "Get project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "put": {
         "description": "Updates a project's name.",
@@ -6009,9 +5738,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -6082,9 +5809,7 @@
           }
         ],
         "summary": "Update project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}/environments": {
@@ -6153,9 +5878,7 @@
           }
         ],
         "summary": "List environments",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       },
       "post": {
         "description": "Creates a new environment in the specified project.",
@@ -6232,9 +5955,7 @@
           }
         ],
         "summary": "Create environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}": {
@@ -6299,9 +6020,7 @@
           }
         ],
         "summary": "Delete environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       },
       "put": {
         "description": "Updates an environment's name.",
@@ -6318,9 +6037,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -6391,9 +6108,7 @@
           }
         ],
         "summary": "Update environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/compare-entities": {
@@ -6468,9 +6183,7 @@
           }
         ],
         "summary": "Compare entities",
-        "tags": [
-          "Insights"
-        ]
+        "tags": ["Insights"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/flag-insights": {
@@ -6535,9 +6248,7 @@
           }
         ],
         "summary": "Flag insights",
-        "tags": [
-          "Insights"
-        ]
+        "tags": ["Insights"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/flag-states": {
@@ -6609,9 +6320,7 @@
           }
         ],
         "summary": "List flag states",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/inspect-entity": {
@@ -6686,9 +6395,7 @@
           }
         ],
         "summary": "Inspect entity",
-        "tags": [
-          "Insights"
-        ]
+        "tags": ["Insights"]
       }
     },
     "/v1/projects/{projectID}/flags": {
@@ -6757,9 +6464,7 @@
           }
         ],
         "summary": "List flags",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       },
       "post": {
         "description": "Creates a new feature flag in the project.",
@@ -6836,9 +6541,7 @@
           }
         ],
         "summary": "Create flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/compare-environments": {
@@ -6907,9 +6610,7 @@
           }
         ],
         "summary": "Compare environments",
-        "tags": [
-          "Flag Management"
-        ]
+        "tags": ["Flag Management"]
       }
     },
     "/v1/projects/{projectID}/flags/sync-environments": {
@@ -6981,9 +6682,7 @@
           }
         ],
         "summary": "Sync environments",
-        "tags": [
-          "Flag Management"
-        ]
+        "tags": ["Flag Management"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}": {
@@ -7048,9 +6747,7 @@
           }
         ],
         "summary": "Delete flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       },
       "get": {
         "description": "Returns a single feature flag by key.",
@@ -7120,9 +6817,7 @@
           }
         ],
         "summary": "Get flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       },
       "put": {
         "description": "Updates the flag definition (name, description, tags, category, status).",
@@ -7202,9 +6897,7 @@
           }
         ],
         "summary": "Update flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/history": {
@@ -7326,9 +7019,7 @@
           }
         ],
         "summary": "List flag history",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/history/{version}": {
@@ -7428,9 +7119,7 @@
           }
         ],
         "summary": "Get flag version",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/rollback": {
@@ -7456,9 +7145,7 @@
                     "type": "integer"
                   }
                 },
-                "required": [
-                  "version"
-                ],
+                "required": ["version"],
                 "type": "object"
               }
             }
@@ -7531,9 +7218,7 @@
           }
         ],
         "summary": "Rollback flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/agent/flag/{key}": {
@@ -7642,9 +7327,7 @@
           }
         ],
         "summary": "Get agent flag",
-        "tags": [
-          "Agent API"
-        ]
+        "tags": ["Agent API"]
       }
     },
     "/v1/agent/evaluate": {
@@ -7672,10 +7355,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "flag_key",
-                  "project_id"
-                ],
+                "required": ["flag_key", "project_id"],
                 "type": "object"
               }
             }
@@ -7732,9 +7412,7 @@
           }
         ],
         "summary": "Evaluate flag",
-        "tags": [
-          "Agent API"
-        ]
+        "tags": ["Agent API"]
       }
     },
     "/v1/agent/bulk-eval": {
@@ -7766,10 +7444,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "project_id",
-                  "flag_keys"
-                ],
+                "required": ["project_id", "flag_keys"],
                 "type": "object"
               }
             }
@@ -7834,9 +7509,7 @@
           }
         ],
         "summary": "Bulk evaluate flags",
-        "tags": [
-          "Agent API"
-        ]
+        "tags": ["Agent API"]
       }
     },
     "/v1/agent/create-flag": {
@@ -7870,11 +7543,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "key",
-                  "name",
-                  "project_id"
-                ],
+                "required": ["key", "name", "project_id"],
                 "type": "object"
               }
             }
@@ -7946,9 +7615,7 @@
           }
         ],
         "summary": "Create flag via agent",
-        "tags": [
-          "Agent API"
-        ]
+        "tags": ["Agent API"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/environments/{envID}": {
@@ -8023,9 +7690,7 @@
           }
         ],
         "summary": "Get flag state",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       },
       "put": {
         "description": "Updates the flag's enabled status, rules, rollout percentage, or schedule for a specific environment.",
@@ -8108,9 +7773,7 @@
           }
         ],
         "summary": "Update flag state",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/kill": {
@@ -8192,9 +7855,7 @@
           }
         ],
         "summary": "Kill switch",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/promote": {
@@ -8276,9 +7937,7 @@
           }
         ],
         "summary": "Promote flag",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/segments": {
@@ -8347,9 +8006,7 @@
           }
         ],
         "summary": "List segments",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       },
       "post": {
         "description": "Creates a new user segment with targeting rules.",
@@ -8426,9 +8083,7 @@
           }
         ],
         "summary": "Create segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       }
     },
     "/v1/projects/{projectID}/segments/{segmentKey}": {
@@ -8493,9 +8148,7 @@
           }
         ],
         "summary": "Delete segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       },
       "get": {
         "description": "Returns a single segment by key.",
@@ -8565,9 +8218,7 @@
           }
         ],
         "summary": "Get segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       },
       "put": {
         "description": "Updates a segment's name, description, match type, or rules.",
@@ -8647,9 +8298,7 @@
           }
         ],
         "summary": "Update segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       }
     },
     "/v1/regions": {
@@ -8702,9 +8351,7 @@
         },
         "security": [],
         "summary": "List data regions",
-        "tags": [
-          "Pricing"
-        ]
+        "tags": ["Pricing"]
       }
     },
     "/v1/roles": {
@@ -8761,9 +8408,7 @@
           }
         ],
         "summary": "List custom roles",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       },
       "post": {
         "description": "Creates a new custom role template.",
@@ -8818,9 +8463,7 @@
           }
         ],
         "summary": "Create custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       }
     },
     "/v1/roles/{roleID}": {
@@ -8882,9 +8525,7 @@
           }
         ],
         "summary": "Delete custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       },
       "get": {
         "description": "Returns a single custom role.",
@@ -8944,9 +8585,7 @@
           }
         ],
         "summary": "Get custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       },
       "put": {
         "description": "Updates a custom role template.",
@@ -9006,9 +8645,7 @@
           }
         ],
         "summary": "Update custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       }
     },
     "/v1/sales/inquiry": {
@@ -9071,9 +8708,7 @@
         },
         "security": [],
         "summary": "Submit sales inquiry",
-        "tags": [
-          "Sales"
-        ]
+        "tags": ["Sales"]
       }
     },
     "/v1/scim/Users": {
@@ -9130,9 +8765,7 @@
           }
         ],
         "summary": "List SCIM users",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       },
       "post": {
         "description": "Provisions a user via SCIM 2.0.",
@@ -9187,9 +8820,7 @@
           }
         ],
         "summary": "Create SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       }
     },
     "/v1/scim/Users/{userID}": {
@@ -9251,9 +8882,7 @@
           }
         ],
         "summary": "Delete SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       },
       "get": {
         "description": "Gets a single user via SCIM 2.0.",
@@ -9313,9 +8942,7 @@
           }
         ],
         "summary": "Get SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       },
       "put": {
         "description": "Updates a user via SCIM 2.0.",
@@ -9375,9 +9002,7 @@
           }
         ],
         "summary": "Update SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       }
     },
     "/v1/sso/config": {
@@ -9434,9 +9059,7 @@
           }
         ],
         "summary": "Delete SSO config",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       },
       "get": {
         "description": "Returns the SSO configuration. Secrets are masked.",
@@ -9498,9 +9121,7 @@
           }
         ],
         "summary": "Get SSO config",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       },
       "post": {
         "description": "Creates or updates the SSO configuration.",
@@ -9572,9 +9193,7 @@
           }
         ],
         "summary": "Create/update SSO config",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/config/test": {
@@ -9631,9 +9250,7 @@
           }
         ],
         "summary": "Test SSO connection",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/discovery/{orgSlug}": {
@@ -9691,9 +9308,7 @@
         },
         "security": [],
         "summary": "SSO discovery",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/oidc/authorize/{orgSlug}": {
@@ -9751,9 +9366,7 @@
         },
         "security": [],
         "summary": "Initiate OIDC login",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/oidc/callback/{orgSlug}": {
@@ -9811,9 +9424,7 @@
         },
         "security": [],
         "summary": "OIDC callback",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/saml/acs/{orgSlug}": {
@@ -9871,9 +9482,7 @@
         },
         "security": [],
         "summary": "SAML ACS",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/saml/login/{orgSlug}": {
@@ -9931,9 +9540,7 @@
         },
         "security": [],
         "summary": "Initiate SAML login",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/saml/metadata/{orgSlug}": {
@@ -9991,9 +9598,7 @@
         },
         "security": [],
         "summary": "SAML metadata",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/status": {
@@ -10046,9 +9651,7 @@
         },
         "security": [],
         "summary": "Get service status",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/status/global": {
@@ -10101,9 +9704,7 @@
         },
         "security": [],
         "summary": "Get global status",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/status/history": {
@@ -10156,9 +9757,7 @@
         },
         "security": [],
         "summary": "Get status history",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/status/sla": {
@@ -10211,9 +9810,7 @@
         },
         "security": [],
         "summary": "Get SLA info",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/stream/{envKey}": {
@@ -10275,9 +9872,7 @@
           }
         ],
         "summary": "SSE stream",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/track": {
@@ -10344,9 +9939,7 @@
           }
         ],
         "summary": "Track impression",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/users/me": {
@@ -10403,9 +9996,7 @@
           }
         ],
         "summary": "Delete account (GDPR)",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/users/me/data": {
@@ -10462,9 +10053,7 @@
           }
         ],
         "summary": "Export personal data (GDPR)",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/users/me/email-preferences": {
@@ -10521,9 +10110,7 @@
           }
         ],
         "summary": "Update email preferences",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/users/me/hints": {
@@ -10580,9 +10167,7 @@
           }
         ],
         "summary": "Get dismissed hints",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       },
       "post": {
         "description": "Marks a UI hint as dismissed.",
@@ -10654,9 +10239,7 @@
           }
         ],
         "summary": "Dismiss hint",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/webhooks": {
@@ -10720,9 +10303,7 @@
           }
         ],
         "summary": "List webhooks",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "post": {
         "description": "Creates a new webhook endpoint for flag change events.",
@@ -10794,9 +10375,7 @@
           }
         ],
         "summary": "Create webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/v1/webhooks/{webhookID}": {
@@ -10858,9 +10437,7 @@
           }
         ],
         "summary": "Delete webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "get": {
         "description": "Returns a single webhook by ID.",
@@ -10927,9 +10504,7 @@
           }
         ],
         "summary": "Get webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "put": {
         "description": "Updates a webhook's URL, events, secret, or enabled state.",
@@ -11006,9 +10581,7 @@
           }
         ],
         "summary": "Update webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/v1/webhooks/{webhookID}/deliveries": {
@@ -11077,17 +10650,13 @@
           }
         ],
         "summary": "List deliveries",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/v1/docs": {
       "get": {
         "description": "Serves a self-contained Swagger UI page for exploring the API interactively.",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "operationId": "getSwaggerUI",
         "responses": {
           "200": {
@@ -11102,9 +10671,7 @@
     "/v1/openapi.json": {
       "get": {
         "description": "Returns the OpenAPI specification as JSON.",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "operationId": "getOpenAPISpec",
         "responses": {
           "200": {
@@ -11120,9 +10687,7 @@
       "get": {
         "summary": "List integrations",
         "description": "Returns all integrations for the authenticated organization.",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11150,9 +10715,7 @@
       "post": {
         "summary": "Create integration",
         "description": "Creates a new third-party integration.",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11164,10 +10727,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "provider",
-                  "config"
-                ],
+                "required": ["provider", "config"],
                 "properties": {
                   "provider": {
                     "type": "string",
@@ -11213,9 +10773,7 @@
     "/v1/integrations/{integrationID}": {
       "get": {
         "summary": "Get integration",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11242,9 +10800,7 @@
       },
       "put": {
         "summary": "Update integration",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11281,9 +10837,7 @@
       },
       "delete": {
         "summary": "Delete integration",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11312,9 +10866,7 @@
     "/v1/integrations/{integrationID}/test": {
       "post": {
         "summary": "Test integration",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11340,9 +10892,7 @@
     "/v1/integrations/{integrationID}/deliveries": {
       "get": {
         "summary": "List integration deliveries",
-        "tags": [
-          "Integrations"
-        ],
+        "tags": ["Integrations"],
         "security": [
           {
             "BearerAuth": []
@@ -11376,19 +10926,14 @@
       "post": {
         "summary": "Ops portal login",
         "description": "Authenticate an ops portal user with email and password.",
-        "tags": [
-          "Ops Auth"
-        ],
+        "tags": ["Ops Auth"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "email",
-                  "password"
-                ],
+                "required": ["email", "password"],
                 "properties": {
                   "email": {
                     "type": "string"
@@ -11415,18 +10960,14 @@
       "post": {
         "summary": "Ops portal refresh token",
         "description": "Refresh an ops portal access token.",
-        "tags": [
-          "Ops Auth"
-        ],
+        "tags": ["Ops Auth"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "refresh_token"
-                ],
+                "required": ["refresh_token"],
                 "properties": {
                   "refresh_token": {
                     "type": "string"
@@ -11450,12 +10991,101 @@
       "post": {
         "summary": "Ops portal logout",
         "description": "Log out and invalidate the current session.",
-        "tags": [
-          "Ops Auth"
-        ],
+        "tags": ["Ops Auth"],
         "responses": {
           "204": {
             "description": "Logged out"
+          }
+        }
+      }
+    },
+    "/v1/limits": {
+      "get": {
+        "description": "Returns resource limits for the authenticated organization.",
+        "tags": ["Limits"],
+        "responses": {
+          "200": {
+            "description": "Limits retrieved"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/search": {
+      "get": {
+        "description": "Search across flags, segments, and environments within a project.",
+        "tags": ["Search"],
+        "parameters": [
+          { "$ref": "#/components/parameters/Query" },
+          { "$ref": "#/components/parameters/ProjectID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/pinned": {
+      "post": {
+        "description": "Pin a resource (flag, segment, environment) for quick access.",
+        "tags": ["Pinned"],
+        "responses": {
+          "201": {
+            "description": "Pinned item created"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/pinned/{pinnedID}": {
+      "delete": {
+        "description": "Unpin a previously pinned resource.",
+        "tags": ["Pinned"],
+        "parameters": [{ "$ref": "#/components/parameters/PinnedID" }],
+        "responses": {
+          "204": {
+            "description": "Pinned item removed"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/activity": {
+      "get": {
+        "description": "Returns project-scoped audit log entries.",
+        "tags": ["Activity"],
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": {
+            "description": "Activity entries"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectID}/pinned": {
+      "get": {
+        "description": "Returns pinned resources for a project.",
+        "tags": ["Pinned"],
+        "parameters": [{ "$ref": "#/components/parameters/ProjectID" }],
+        "responses": {
+          "200": {
+            "description": "Pinned items"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }

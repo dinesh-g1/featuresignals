@@ -756,7 +756,10 @@ var internalRoutes = map[string]bool{
 		"POST /v1/public/calculator":             true,
 		"POST /v1/public/migration/preview":      true,
 		"POST /v1/public/migration/save":         true,
-	}
+
+				// Internal-only flat flag listing — dashboard uses /v1/projects/{projectID}/flags
+				"GET /v1/flags": true,
+			}
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has
 // a corresponding entry in the OpenAPI spec, and vice versa. This prevents the
