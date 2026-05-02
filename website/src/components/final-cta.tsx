@@ -81,7 +81,7 @@ export function FinalCta() {
           transition={{ duration: 0.45, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
         >
           <a
-            href="https://app.featuresignals.com/signup"
+            href="https://app.featuresignals.com/register"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] active:bg-[#197935] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >

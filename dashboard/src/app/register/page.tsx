@@ -11,11 +11,16 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  CheckIcon, XIcon, MailIcon, AlertIcon, ArrowLeftIcon
+  CheckIcon,
+  XIcon,
+  MailIcon,
+  AlertIcon,
+  ArrowLeftIcon,
 } from "@/components/icons/nav-icons";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
+import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -239,7 +244,158 @@ function ResendCooldown({
           className={`h-full rounded-full bg-[var(--bgColor-accent-emphasis)] transition-all duration-1000 w-[${progress}%]`}
         />
       </div>
-      <p className="text-xs text-[var(--fgColor-subtle)]">Resend code in {countdown}s</p>
+      <p className="text-xs text-[var(--fgColor-subtle)]">
+        Resend code in {countdown}s
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Value Propositions — What FeatureSignals offers that competitors don't
+// ---------------------------------------------------------------------------
+
+const VALUE_PROPS = [
+  {
+    title: "Sub-millisecond evaluation",
+    description:
+      "Stateless, allocation-free engine. No database calls on the hot path. Your users never wait.",
+    icon: (
+      <svg
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
+    ),
+  },
+  {
+    title: "Unlimited seats. Flat pricing.",
+    description:
+      "₹999/month (~$12). No per-seat fees, no MAU charges, no surprise bills at scale.",
+    icon: (
+      <svg
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+      </svg>
+    ),
+  },
+  {
+    title: "OpenFeature-native. Zero lock-in.",
+    description:
+      "All 8 SDKs built on OpenFeature. Switch providers by changing one line of code.",
+    icon: (
+      <svg
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+  },
+  {
+    title: "Self-host in 3 minutes",
+    description:
+      "Single Go binary. Docker or bare metal. Apache 2.0. Your infrastructure, your data.",
+    icon: (
+      <svg
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+        <circle cx="6" cy="6" r="1" fill="currentColor" />
+        <circle cx="10" cy="6" r="1" fill="currentColor" />
+      </svg>
+    ),
+  },
+];
+
+function ValuePanel() {
+  return (
+    <div className="flex flex-col justify-center h-full p-10 sm:p-14 lg:p-16 bg-[var(--bgColor-inset)]">
+      <div className="max-w-lg mx-auto">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)] mb-8">
+          <svg
+            className="h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          14-day Pro trial — all features
+        </div>
+
+        {/* Headline */}
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-4">
+          Feature flags that don&apos;t punish growth.
+        </h1>
+        <p className="text-base text-[var(--fgColor-muted)] mb-10 leading-relaxed">
+          Unlimited seats. Flat pricing. Sub-millisecond latency. Everything you
+          need to ship faster, at a fraction of the cost.
+        </p>
+
+        {/* Value props */}
+        <div className="space-y-5">
+          {VALUE_PROPS.map((prop) => (
+            <div key={prop.title} className="flex gap-3.5">
+              <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] flex items-center justify-center">
+                {prop.icon}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+                  {prop.title}
+                </h3>
+                <p className="text-sm text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
+                  {prop.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Trust bar */}
+        <div className="mt-10 pt-7 border-t border-[var(--borderColor-muted)]">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {["Apache 2.0", "8 SDKs", "OpenFeature", "SOC 2"].map((item) => (
+              <span
+                key={item}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-muted)] text-[var(--fgColor-subtle)] border border-[var(--borderColor-default)]"
+              >
+                <CheckIcon className="h-3 w-3 text-[var(--fgColor-success)]" />
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -475,14 +631,25 @@ function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4 py-8">
-      <Card className="w-full max-w-2xl space-y-6 p-6 sm:p-8 shadow-sm">
-        <div className="text-center">
+    <AuthLayout left={<ValuePanel />}>
+      <Card className="w-full space-y-5 p-7 sm:p-9 shadow-sm">
+        {/* Mobile headline (hidden on desktop since ValuePanel shows it) */}
+        <div className="text-center lg:hidden">
           <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-accent)]">
             FeatureSignals
           </h1>
           <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
             {step === "form" ? "Create your account" : "Verify your email"}
+          </p>
+        </div>
+
+        {/* Desktop heading */}
+        <div className="hidden lg:block text-center">
+          <h2 className="text-xl font-bold tracking-tight text-[var(--fgColor-default)]">
+            {step === "form" ? "Create your account" : "Verify your email"}
+          </h2>
+          <p className="mt-1.5 text-sm text-[var(--fgColor-muted)]">
+            Start your 14-day Pro trial. No credit card required.
           </p>
         </div>
 
@@ -553,7 +720,6 @@ function RegisterForm() {
             <span>{error}</span>
           </div>
         )}
-
 
         {/* Step 1: Account details */}
         {step === "form" && (
@@ -786,7 +952,9 @@ function RegisterForm() {
               <p className="mt-4 text-sm text-[var(--fgColor-muted)]">
                 We sent a 6-digit verification code to
                 <br />
-                <span className="font-medium text-[var(--fgColor-default)]">{form.email}</span>
+                <span className="font-medium text-[var(--fgColor-default)]">
+                  {form.email}
+                </span>
               </p>
               {/* Wrong email? Go back — preserves form data */}
               <button
@@ -849,7 +1017,6 @@ function RegisterForm() {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-           
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -859,6 +1026,6 @@ function RegisterForm() {
           &middot; Open source
         </div>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

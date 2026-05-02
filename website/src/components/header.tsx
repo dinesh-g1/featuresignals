@@ -168,7 +168,7 @@ export function Header() {
               Sign In
             </a>
             <a
-              href="/signup"
+              href="https://app.featuresignals.com/register"
               className="text-sm font-semibold text-white px-5 py-2 rounded-md transition-all"
               style={{
                 backgroundColor: "#1f883d",
@@ -290,7 +290,7 @@ export function Header() {
                       Sign In
                     </a>
                     <a
-                      href="/signup"
+                      href="https://app.featuresignals.com/register"
                       className="block rounded-lg px-4 py-3 text-center text-sm font-medium text-white transition-all"
                       style={{
                         backgroundColor: "#1f883d",

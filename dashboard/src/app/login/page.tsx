@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, APIError } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,56 @@ import {
 } from "@/components/icons/nav-icons";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+function LoginLeft() {
+  return (
+    <div className="flex flex-col justify-center h-full p-10 sm:p-14 lg:p-16 bg-[var(--bgColor-inset)]">
+      <div className="max-w-sm mx-auto text-center">
+        {/* Logo mark */}
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-emphasis)] shadow-lg shadow-accent/20">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="white"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3">
+          Welcome back
+        </h1>
+        <p className="text-base text-[var(--fgColor-muted)] leading-relaxed">
+          Sign in to your FeatureSignals dashboard to manage flags, review
+          experiments, and keep shipping.
+        </p>
+
+        {/* Subtle feature reminders */}
+        <div className="mt-10 space-y-3 text-left">
+          {[
+            { label: "Sub-millisecond flag evaluation", icon: "⚡" },
+            { label: "OpenFeature-native SDKs", icon: "🔓" },
+            { label: "Flat pricing. Unlimited seats.", icon: "💸" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center gap-3 text-sm text-[var(--fgColor-muted)]"
+            >
+              <span className="text-base">{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -261,18 +312,10 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[var(--bgColor-default)] px-4 py-12">
-      {/* Background decorative elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/4 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[var(--bgColor-accent-emphasis)]/[0.04] blur-3xl" />
-        <div className="absolute -right-32 top-1/3 h-[400px] w-[400px] rounded-full bg-[var(--bgColor-accent-emphasis)]/[0.03] blur-3xl" />
-        <div className="absolute -left-32 bottom-1/4 h-[350px] w-[350px] rounded-full bg-[var(--bgColor-muted)]/30 blur-3xl" />
-      </div>
-
-      {/* Login Card */}
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="mb-8 text-center">
+    <AuthLayout left={<LoginLeft />}>
+      <div className="w-full max-w-md">
+        {/* Logo — mobile only (desktop has it in LoginLeft) */}
+        <div className="mb-8 text-center lg:hidden">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-emphasis)] shadow-lg shadow-accent/20">
             <svg
               width="28"
@@ -295,6 +338,18 @@ function LoginForm() {
             {ssoMode
               ? "Sign in with your identity provider"
               : "Sign in to the enterprise control plane"}
+          </p>
+        </div>
+
+        {/* Desktop heading (no logo — that's in the left panel) */}
+        <div className="mb-6 hidden lg:block">
+          <h2 className="text-xl font-bold tracking-tight text-[var(--fgColor-default)]">
+            {ssoMode ? "Sign in with SSO" : "Sign in"}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+            {ssoMode
+              ? "Enter your organization slug to continue"
+              : "Access your feature flag dashboard"}
           </p>
         </div>
 
@@ -660,7 +715,7 @@ function LoginForm() {
           &copy; {new Date().getFullYear()} FeatureSignals. All rights reserved.
         </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
 
