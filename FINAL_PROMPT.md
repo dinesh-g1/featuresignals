@@ -329,7 +329,7 @@ Every section proves a claim through interaction. No static card grids.
 │   ────────────────┴────────────────────                      │
 │                                                              │
 │   LaunchDarkly: $12,000/month                                │
-│   FeatureSignals: ₹999/month (~$12)                          │
+│   FeatureSignals: INR 1,999/month (~$29)                          │
 │   Annual savings: $143,988                                   │
 │                                                              │
 │   [See how we do it →]  [Self-host in 3 minutes]             │
@@ -355,7 +355,7 @@ Flagsmith: $45/month (Cloud Pro) + $20/seat
   → 50 engineers = $1,045/month
 Unleash: $80/month (Pro) + $15/seat
   → 50 engineers = $830/month
-FeatureSignals: ₹999/month (~$12) flat rate, unlimited seats, unlimited MAUs
+FeatureSignals: INR 1,999/month (~$29) flat rate, unlimited seats, unlimited MAUs
 ```
 
 **State management:**
@@ -461,7 +461,7 @@ function evaluateFlag(flag: FlagRule, context: Record<string, any>): {
 │  │ 47 flags          │ → │ ⚡ 3 sec │ → │ 47 flags          │  │
 │  │ 3 environments    │   │ per flag │   │ 3 environments    │  │
 │  │ 12 segments       │   │          │   │ 12 segments       │  │
-│  │ $12,000/month     │   │ $ fs     │   │ ₹999/month        │  │
+│  │ $12,000/month     │   │ $ fs     │   │ INR 1,999/month        │  │
 │  └──────────────────┘   └──────────┘   └──────────────────┘  │
 │                                                              │
 │  Annual savings: $143,988 (99.2% less)                      │
@@ -525,7 +525,7 @@ function evaluateFlag(flag: FlagRule, context: Record<string, any>): {
 │  ┌──────────┐  ┌──────────────┐  ┌──────────────────┐       │
 │  │Developer  │  │  Pro (Popular)│  │  Enterprise       │       │
 │  │──────────│  │──────────────│  │──────────────────│       │
-│  │ Free      │  │  ₹999/mo     │  │  Custom           │       │
+│  │ Free      │  │  INR 1,999/mo     │  │  Custom           │       │
 │  │           │  │              │  │                   │       │
 │  │ ✓ Unlim.  │  │ ✓ Everything │  │ ✓ Everything Pro  │       │
 │  │   MAUs    │  │   in Dev     │  │ ✓ Dedicated VPS   │       │
@@ -537,7 +537,7 @@ function evaluateFlag(flag: FlagRule, context: Record<string, any>): {
 │  │ [Start]   │  │ [Upgrade]    │  │ [Talk to Sales]   │       │
 │  └──────────┘  └──────────────┘  └──────────────────┘       │
 │                                                              │
-│  Your savings (50 engineers): ₹11,988/month → ₹999/month     │
+│  Your savings (50 engineers): ₹11,988/month → INR 1,999/month     │
 │  That's 91.7% less than LaunchDarkly.                        │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -1018,7 +1018,7 @@ HeroCalculator
 │   └── Options: LaunchDarkly, ConfigCat, Flagsmith, Unleash
 ├── SavingsDisplay
 │   ├── Competitor cost (animated)
-│   ├── FeatureSignals cost (₹999)
+│   ├── FeatureSignals cost (INR 1,999)
 │   ├── Annual savings (animated)
 │   └── Savings percentage
 └── CTAs
@@ -1293,5 +1293,5 @@ LaunchDarkly: $8.33/seat/month (billed as $12/connection)
 ConfigCat: Free tier (2,000 MAU), then $26/seat/month
 Flagsmith: Free tier (50K requests), Cloud Pro $45/month + $20/seat
 Unleash: Open source (self-host free), Pro $80/month + $15/seat
-FeatureSignals: Community (free, unlimited MAUs, 3 seats), Pro ₹999/month (~$12, unlimited everything)
+FeatureSignals: Community (free, unlimited MAUs, 3 seats), Pro INR 1,999/month (~$12, unlimited everything)
 ```

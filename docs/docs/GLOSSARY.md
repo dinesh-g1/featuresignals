@@ -71,4 +71,4 @@ This glossary defines the canonical terminology used across **all** FeatureSigna
 3. **Voice**: Technical, confident, direct. Never cute, corporate, or unnecessarily casual.
 4. **Numbers**: Use digits for all numbers in UI and data contexts. Use words for small numbers (one through nine) in prose.
 5. **Dates**: Always display in the user's locale format. Store and transmit as UTC ISO 8601.
-6. **Currencies**: Display with the appropriate symbol and format. INR: "₹999". USD: "$12".
+6. **Currencies**: Display with the appropriate symbol and format. INR: "INR 1,999". USD: "$12".

@@ -21,7 +21,7 @@
       "configcat": "$26/seat/month",
       "flagsmith": "$45/month (cloud Pro)",
       "unleash": "$80/month (Pro)",
-      "featuresignals_pro": "₹999/month (~$12, unlimited seats) — most competitive"
+      "featuresignals_pro": "INR 1,999/month (~$12, unlimited seats) — most competitive"
     },
     "exchange_rates_used": { "eur_to_inr": 92, "usd_to_inr": 84 }
   },
@@ -53,8 +53,8 @@
     "pro": {
       "name": "Pro",
       "tagline": "For growing engineering teams",
-      "price": 999,
-      "display_price": "₹999",
+      "price": 1999,
+      "display_price": "INR 1,999",
       "billing_period": "month",
       "limits": {
         "projects": -1,
@@ -174,7 +174,7 @@
           {
             "tier": "Scale",
             "use_case": "50+ users, multi-region, >1M evals/day",
-            "instances": "8 GB Droplet ($48) + Managed DB ($30) + Load Balancer ($12)",
+            "instances": "8 GB Droplet ($48) + Managed DB ($30) + Load Balancer ($29)",
             "monthly_cost": "$90+",
             "monthly_cost_inr": "~₹7,560+",
             "includes": "Multi-instance with managed DB, load balancer, relay proxies"

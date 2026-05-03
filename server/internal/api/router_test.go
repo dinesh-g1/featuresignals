@@ -929,3 +929,41 @@ func (noopStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.O
 }
 func (noopStore) DeleteOpsSession(context.Context, string, string) error { return nil }
 func (noopStore) DeleteAllOpsSessions(context.Context, string) error     { return nil }
+
+// CreditStore stubs — satisfy domain.Store interface in tests.
+var errCreditNotImpl = errors.New("credit store not implemented in tests")
+
+func (s noopStore) ListCostBearers(ctx context.Context) ([]domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) GetCostBearer(ctx context.Context, bearerID string) (*domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) ListCreditPacks(ctx context.Context, bearerID string) ([]domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) GetCreditPack(ctx context.Context, packID string) (*domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) GetCreditBalance(ctx context.Context, orgID, bearerID string) (*domain.CreditBalance, error) {
+	return &domain.CreditBalance{OrgID: orgID, BearerID: bearerID}, nil
+}
+func (s noopStore) ListCreditBalances(ctx context.Context, orgID string) ([]domain.CreditBalance, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) ConsumeCredits(ctx context.Context, orgID, bearerID string, credits int, operation string, metadata map[string]any, idempotencyKey string) (int, error) {
+	return 0, errCreditNotImpl
+}
+func (s noopStore) PurchaseCredits(ctx context.Context, orgID, packID string) (*domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) ListCreditPurchases(ctx context.Context, orgID string, limit, offset int) ([]domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) ListCreditConsumptions(ctx context.Context, orgID, bearerID string, limit, offset int) ([]domain.CreditConsumption, error) {
+	return nil, errCreditNotImpl
+}
+func (s noopStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
+	return errCreditNotImpl
+}
+

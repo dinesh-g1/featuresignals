@@ -119,7 +119,7 @@ func TestBillingHandler_CreateCheckout_PayUFormFields(t *testing.T) {
 				"key":      "merchant_key",
 				"txnid":    "FS_test_123",
 				"hash":     "abc123hash",
-				"amount":   "999.00",
+				"amount":   "1999.00",
 			},
 		},
 	}

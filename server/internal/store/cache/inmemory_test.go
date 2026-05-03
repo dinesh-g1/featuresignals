@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"errors"
 	"testing"
 	"time"
 
@@ -425,7 +426,8 @@ func TestLoadRuleset_CachesAndReturns(t *testing.T) {
 			{ID: "s1", FlagID: "f1", EnvID: "env-1", Enabled: true, Rules: []domain.TargetingRule{}, PercentageRollout: 10000},
 		},
 		segs: []domain.Segment{
-			{ID: "seg1", Key: "beta", Name: "Beta", MatchType: "all", Rules: []domain.Condition{}},
+			{ID: "seg1", Key: "beta", Name: "Beta", MatchType: "all", Rules: []domain.Condition{},
+			},
 		},
 	}
 	c := NewCache(store, testLogger(), nil)
@@ -478,8 +480,10 @@ func TestLoadRuleset_MapsStatesToFlagKeys(t *testing.T) {
 			{ID: "f2", Key: "bravo"},
 		},
 		states: []domain.FlagState{
-			{ID: "s2", FlagID: "f2", EnvID: "e1", Enabled: true, Rules: []domain.TargetingRule{}},
+			{ID: "s2", FlagID: "f2", EnvID: "e1", Enabled: true, Rules: []domain.TargetingRule{},
+			},
 		},
+		segs: []domain.Segment{},
 	}
 	c := NewCache(store, testLogger(), nil)
 
@@ -702,5 +706,39 @@ func (s *mockStore) GetSession(context.Context, string) (*domain.PublicSession, 
 func (s *mockStore) DeleteSession(context.Context, string) error          { return nil }
 func (s *mockStore) CleanExpiredSessions(context.Context) (int, error) { return 0, nil }
 
+// CreditStore stubs — satisfy domain.Store interface in tests.
+var errCreditNotImpl = errors.New("credit store not implemented in tests")
 
-
+func (s *mockStore) ListCostBearers(ctx context.Context) ([]domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GetCostBearer(ctx context.Context, bearerID string) (*domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListCreditPacks(ctx context.Context, bearerID string) ([]domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GetCreditPack(ctx context.Context, packID string) (*domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GetCreditBalance(ctx context.Context, orgID, bearerID string) (*domain.CreditBalance, error) {
+	return &domain.CreditBalance{OrgID: orgID, BearerID: bearerID}, nil
+}
+func (s *mockStore) ListCreditBalances(ctx context.Context, orgID string) ([]domain.CreditBalance, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ConsumeCredits(ctx context.Context, orgID, bearerID string, credits int, operation string, metadata map[string]any, idempotencyKey string) (int, error) {
+	return 0, errCreditNotImpl
+}
+func (s *mockStore) PurchaseCredits(ctx context.Context, orgID, packID string) (*domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListCreditPurchases(ctx context.Context, orgID string, limit, offset int) ([]domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListCreditConsumptions(ctx context.Context, orgID, bearerID string, limit, offset int) ([]domain.CreditConsumption, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
+	return errCreditNotImpl
+}

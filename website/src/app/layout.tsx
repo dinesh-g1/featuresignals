@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: "FeatureSignals | The LaunchDarkly Alternative — 99% Less Cost",
   },
   description:
-    "Stop overpaying for feature flags. FeatureSignals gives you unlimited flags, unlimited seats, sub-millisecond evaluation, and AI-powered stale flag cleanup — at a flat ₹999/month (~$12). Open-source. Self-host or cloud. The LaunchDarkly alternative that doesn't penalize growth.",
+    "Stop overpaying for feature flags. FeatureSignals gives you unlimited flags, unlimited seats, sub-millisecond evaluation, and AI-powered stale flag cleanup — at a flat INR 1,999/month (~$29). Open-source. Self-host or cloud. The LaunchDarkly alternative that doesn't penalize growth.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     type: "website",

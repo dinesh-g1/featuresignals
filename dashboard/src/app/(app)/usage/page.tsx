@@ -1,293 +1,259 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import {
-  Card,
-  CardContent,
-  SkeletonTable,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  Button,
-} from "@/components/ui";
-import { CreditCardIcon } from "@/components/icons/nav-icons";
-import { toast } from "@/components/toast";
+import { Card, CardContent } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { CreditPurchaseModal } from "@/components/credit-purchase-modal";
+import type {
+  UsageInfo,
+  CreditBearer,
+  CreditsResponse,
+  CreditPurchaseResponse,
+} from "@/lib/types";
 
-interface ProjectUsage {
-  id: string;
-  name: string;
-  flags: number;
-  segments: number;
-  environments: number;
+function formatPaise(paise: number): string {
+  return `INR ${(paise / 100).toLocaleString("en-IN")}`;
 }
 
 export default function UsagePage() {
   const token = useAppStore((s) => s.token);
-  const router = useRouter();
-  const [projectUsage, setProjectUsage] = useState<ProjectUsage[]>([]);
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [credits, setCredits] = useState<CreditsResponse | null>(null);
+  const [metrics, setMetrics] = useState<{ total_evaluations: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [usage, setUsage] = useState<{
-    seats_used: number;
-    seats_limit: number;
-    projects_used: number;
-    projects_limit: number;
-    environments_used: number;
-    environments_limit: number;
-    plan: string;
-  } | null>(null);
-  const [metrics, setMetrics] = useState<{ total_evaluations: number } | null>(
-    null,
-  );
-  const [generatingPreview, setGeneratingPreview] = useState(false);
+  const [purchaseBearer, setPurchaseBearer] = useState<CreditBearer | null>(null);
 
-  // Fetch org usage stats
-  useEffect(() => {
-    if (!token) return;
-    api
-      .getUsage(token)
-      .then(setUsage)
-      .catch(() => {});
-    api
-      .getEvalMetrics(token)
-      .then(setMetrics)
-      .catch(() => {});
+  const refreshCredits = useCallback(() => {
+    if (token) {
+      api.getCredits(token).then(setCredits).catch(() => {});
+    }
   }, [token]);
 
-  // Fetch per-project resource counts
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    api
-      .listProjects(token)
-      .then(async (projects) => {
-        const rows: ProjectUsage[] = await Promise.all(
-          projects.map(async (p) => {
-            try {
-              const [flags, segments, environments] = await Promise.all([
-                api.listFlags(token, p.id),
-                api.listSegments(token, p.id),
-                api.listEnvironments(token, p.id),
-              ]);
-              return {
-                id: p.id,
-                name: p.name,
-                flags: flags?.length ?? 0,
-                segments: segments?.length ?? 0,
-                environments: environments?.length ?? 0,
-              };
-            } catch {
-              return {
-                id: p.id,
-                name: p.name,
-                flags: 0,
-                segments: 0,
-                environments: 0,
-              };
-            }
-          }),
-        );
-        setProjectUsage(rows);
+    Promise.all([
+      api.getUsage(token).catch(() => null),
+      api.getCredits(token).catch(() => null),
+      api.getEvalMetrics(token).catch(() => null),
+    ])
+      .then(([u, c, m]) => {
+        setUsage(u as UsageInfo | null);
+        setCredits(c as CreditsResponse | null);
+        setMetrics(m as { total_evaluations: number } | null);
       })
-      .catch(() => {})
       .finally(() => setLoading(false));
   }, [token]);
 
+  function handlePurchased(_response: CreditPurchaseResponse) {
+    refreshCredits();
+  }
+
   const now = new Date();
-  const monthYear = now.toLocaleString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthYear = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+  const plan = usage?.plan ?? "free";
+  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
 
-  const totals = projectUsage.reduce(
-    (acc, p) => ({
-      flags: acc.flags + p.flags,
-      segments: acc.segments + p.segments,
-      environments: acc.environments + p.environments,
-    }),
-    { flags: 0, segments: 0, environments: 0 },
-  );
-  const totalResources = totals.flags + totals.segments + totals.environments;
-
-  function handleGeneratePreview() {
-    setGeneratingPreview(true);
-    setTimeout(() => {
-      toast("Usage reports coming soon", "info");
-      setGeneratingPreview(false);
-    }, 600);
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-xl bg-[var(--borderColor-default)]" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
         <div>
-          <h1 className="text-xl font-bold text-[var(--fgColor-default)]">
-            Usage
-          </h1>
+          <h1 className="text-xl font-bold text-[var(--fgColor-default)]">Usage</h1>
           <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
-            Current usage: {monthYear}
+            {monthYear} · {planLabel} Plan
+            {plan === "pro" && usage?.platform_fee_monthly
+              ? ` · ${formatPaise(usage.platform_fee_monthly)}/month`
+              : ""}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleGeneratePreview}
-          disabled={generatingPreview}
-        >
-          {generatingPreview ? "Generating..." : "Generate Preview"}
-        </Button>
-      </div>
 
-      {/* Summary cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-[var(--fgColor-muted)]">
-              Total Evaluations
-            </p>
-            <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
-              {metrics?.total_evaluations?.toLocaleString() ?? "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-[var(--fgColor-muted)]">Seats Used</p>
-            <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
-              {usage
-                ? usage.seats_used +
-                  "/" +
-                  (usage.seats_limit === -1 ? "∞" : String(usage.seats_limit))
-                : "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-[var(--fgColor-muted)]">Projects</p>
-            <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
-              {usage
-                ? usage.projects_used +
-                  "/" +
-                  (usage.projects_limit === -1
-                    ? "∞"
-                    : String(usage.projects_limit))
-                : "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-[var(--fgColor-muted)]">Environments</p>
-            <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
-              {usage
-                ? usage.environments_used +
-                  "/" +
-                  (usage.environments_limit === -1
-                    ? "∞"
-                    : String(usage.environments_limit))
-                : "—"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Billing Documents card */}
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
-                Billing Documents
-              </h3>
-              <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
-                You can view your invoices in your user account.
-              </p>
-            </div>
-            <button
-              onClick={() => router.push("/settings/billing")}
-              className="flex items-center gap-1 text-sm font-medium text-[var(--fgColor-accent)] hover:underline shrink-0"
-            >
-              <CreditCardIcon className="h-4 w-4" />
-              Invoice Overview →
-            </button>
+        {/* Section 1: Resource Usage */}
+        <section>
+          <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+            Resources
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-[var(--fgColor-muted)]">Seats</p>
+                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                  {usage ? `${usage.seats_used}/${usage.seats_limit === -1 ? "∞" : usage.seats_limit}` : "—"}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-[var(--fgColor-muted)]">Projects</p>
+                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                  {usage ? `${usage.projects_used}/${usage.projects_limit === -1 ? "∞" : usage.projects_limit}` : "—"}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-[var(--fgColor-muted)]">Environments</p>
+                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                  {usage ? `${usage.environments_used}/${usage.environments_limit === -1 ? "∞" : usage.environments_limit}` : "—"}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-[var(--fgColor-muted)]">Total Evaluations</p>
+                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                  {metrics?.total_evaluations?.toLocaleString() ?? "—"}
+                </p>
+                <p className="text-xs text-[var(--fgColor-muted)] mt-1">
+                  Included in plan · no extra charge
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Per-project usage table */}
-      {loading ? (
-        <SkeletonTable rows={4} cols={4} />
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead className="text-right">Flags</TableHead>
-                <TableHead className="text-right">Segments</TableHead>
-                <TableHead className="text-right">Envs</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projectUsage.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="text-center text-sm text-[var(--fgColor-muted)] py-8"
-                  >
-                    No projects yet. Create a project to see usage data.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <>
-                  {projectUsage.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium text-[var(--fgColor-default)]">
-                        {p.name}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-[var(--fgColor-muted)]">
-                        {p.flags}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-[var(--fgColor-muted)]">
-                        {p.segments}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-[var(--fgColor-muted)]">
-                        {p.environments}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="border-t-2 border-[var(--borderColor-emphasis)]">
-                    <TableCell className="font-semibold text-[var(--fgColor-default)]">
-                      Subtotal
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums font-semibold text-[var(--fgColor-default)]">
-                      {totals.flags}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums font-semibold text-[var(--fgColor-default)]">
-                      {totals.segments}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums font-semibold text-[var(--fgColor-default)]">
-                      {totals.environments}
-                    </TableCell>
-                  </TableRow>
-                </>
-              )}
-            </TableBody>
-          </Table>
-          {projectUsage.length > 0 && (
-            <div className="px-4 py-3 border-t border-[var(--borderColor-default)] text-sm text-[var(--fgColor-muted)]">
-              Total Resources: {totalResources}
+        {/* Section 2: Cost-Bearing Feature Credits */}
+        {credits?.bearers?.length ? (
+          <section>
+            <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+              AI Janitor Credits
+            </h2>
+            <div className="space-y-3">
+              {credits.bearers.map((bearer) => (
+                <CreditCard
+                  key={bearer.id}
+                  bearer={bearer}
+                  onPurchase={() => setPurchaseBearer(bearer)}
+                />
+              ))}
             </div>
-          )}
-        </Card>
+          </section>
+        ) : null}
+      </div>
+
+      {/* Purchase Modal */}
+      {purchaseBearer && (
+        <CreditPurchaseModal
+          open={true}
+          onClose={() => setPurchaseBearer(null)}
+          bearerId={purchaseBearer.id}
+          bearerName={purchaseBearer.display_name}
+          currentBalance={purchaseBearer.balance}
+          includedPerMonth={purchaseBearer.included_per_month}
+          packs={purchaseBearer.available_packs}
+          onPurchased={handlePurchased}
+        />
       )}
-    </div>
+    </>
+  );
+}
+
+/** Single credit bearer card with balance, progress, and purchase button. */
+function CreditCard({
+  bearer,
+  onPurchase,
+}: {
+  bearer: CreditBearer;
+  onPurchase: () => void;
+}) {
+  const pct =
+    bearer.included_per_month > 0
+      ? Math.min(
+          Math.round(
+            ((bearer.included_per_month -
+              Math.max(
+                0,
+                bearer.included_per_month -
+                  (bearer.balance > bearer.included_per_month
+                    ? bearer.included_per_month
+                    : bearer.balance),
+              )) /
+              bearer.included_per_month) *
+              100,
+          ),
+          100,
+        )
+      : 0;
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-[var(--fgColor-default)]">
+                {bearer.display_name}
+              </h3>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium">
+                {bearer.unit_name}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--fgColor-muted)] mt-1">
+              {bearer.description}
+            </p>
+            <div className="mt-3 flex items-center gap-4">
+              <div>
+                <p className="text-xs text-[var(--fgColor-muted)]">Balance</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                  {bearer.balance.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--fgColor-muted)]">Included/mo</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                  {bearer.included_per_month.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--fgColor-muted)]">Lifetime</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                  {bearer.lifetime_used.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            {bearer.included_per_month > 0 && (
+              <div className="mt-3 w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[var(--fgColor-accent)] transition-all duration-500"
+                  style={{ width: `${pct}%` }}
+                  aria-label={`${pct}% of monthly credits used`}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <Button size="sm" variant="secondary" onClick={onPurchase}>
+            Purchase Credits
+          </Button>
+          {bearer.balance === 0 && (
+            <span className="text-xs text-amber-600 font-medium">
+              Out of credits
+            </span>
+          )}
+          {bearer.balance > 0 && bearer.balance < 50 && (
+            <span className="text-xs text-amber-600 font-medium">
+              Running low ({bearer.balance} remaining)
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

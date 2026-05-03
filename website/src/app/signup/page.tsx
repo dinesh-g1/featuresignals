@@ -86,8 +86,8 @@ function SignupLeft() {
             {meta.name}
           </span>{" "}
           charges {teamSize} engineers. FeatureSignals Pro is a flat{" "}
-          <strong className="text-[var(--fgColor-default)]">₹999/month</strong>{" "}
-          (~$12). Unlimited seats. Unlimited flags. No per-MAU fees. No
+          <strong className="text-[var(--fgColor-default)]">INR 1,999/month</strong>{" "}
+          (~$29). Unlimited seats. Unlimited flags. No per-MAU fees. No
           surprises.
         </p>
 
@@ -225,14 +225,14 @@ function SignupRight() {
         <p className="mt-6 text-xs text-[var(--fgColor-subtle)] text-center">
           By signing up, you agree to our{" "}
           <a
-            href="https://featuresignals.com/terms"
+            href="/terms-and-conditions"
             className="text-[var(--fgColor-accent)] hover:underline"
           >
             Terms
           </a>{" "}
           and{" "}
           <a
-            href="https://featuresignals.com/privacy"
+            href="/privacy-policy"
             className="text-[var(--fgColor-accent)] hover:underline"
           >
             Privacy Policy

@@ -101,7 +101,7 @@ func TestSMTPMailer_AllTemplatesRender(t *testing.T) {
 		"Role":           "developer",
 		"AcceptURL":      "https://app.featuresignals.com/accept",
 		"PlanName":       "Pro",
-		"Amount":         "₹999",
+		"Amount":         "INR 1,999",
 		"NextRenewal":    "2026-05-07",
 		"PaymentMethod":  "Visa ending in 4242",
 		"BillingURL":     "https://app.featuresignals.com/settings/billing",

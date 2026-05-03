@@ -28,8 +28,8 @@
     "pro": {
       "name": "Pro",
       "tagline": "For growing engineering teams",
-      "price": 999,
-      "display_price": "₹999",
+      "price": 1999,
+      "display_price": "INR 1,999",
       "billing_period": "month",
       "limits": {
         "projects": -1,

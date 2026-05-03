@@ -25,7 +25,7 @@ func TestProvider_CreateCheckoutSession(t *testing.T) {
 		UserEmail:  "user@example.com",
 		UserName:   "Test User",
 		Plan:       "pro",
-		Amount:     "999.00",
+		Amount:     "1999.00",
 		SuccessURL: "https://app.example.com/v1/billing/payu/callback",
 		CancelURL:  "https://app.example.com/v1/billing/payu/failure",
 		Metadata: map[string]string{
@@ -62,8 +62,8 @@ func TestProvider_CreateCheckoutSession(t *testing.T) {
 
 func TestProvider_Hash_Deterministic(t *testing.T) {
 	p := NewProvider("testkey", "testsalt", "test")
-	h1 := p.hash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
-	h2 := p.hash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
+	h1 := p.hash("TXN001", "1999.00", "Pro Plan", "John", "john@test.com")
+	h2 := p.hash("TXN001", "1999.00", "Pro Plan", "John", "john@test.com")
 	if h1 != h2 {
 		t.Error("hash should be deterministic")
 	}
@@ -74,8 +74,8 @@ func TestProvider_Hash_Deterministic(t *testing.T) {
 
 func TestProvider_Hash_DifferentInputs(t *testing.T) {
 	p := NewProvider("testkey", "testsalt", "test")
-	h1 := p.hash("TXN001", "999.00", "Pro Plan", "John", "john@test.com")
-	h2 := p.hash("TXN002", "999.00", "Pro Plan", "John", "john@test.com")
+	h1 := p.hash("TXN001", "1999.00", "Pro Plan", "John", "john@test.com")
+	h2 := p.hash("TXN002", "1999.00", "Pro Plan", "John", "john@test.com")
 	if h1 == h2 {
 		t.Error("different txnid should produce different hash")
 	}
@@ -85,7 +85,7 @@ func TestProvider_Hash_FormatConsistency(t *testing.T) {
 	p := NewProvider("merchant", "salt", "test")
 
 	txnid := "FS_test1234_1700000000"
-	amount := "999.00"
+	amount := "1999.00"
 	productinfo := "FeatureSignals Pro Plan"
 	firstname := "Test"
 	email := "test@example.com"
@@ -105,12 +105,12 @@ func TestProvider_HandleCallbackParams_Success(t *testing.T) {
 	p := NewProvider("testkey", "testsalt", "test")
 
 	reverseStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
-		p.salt, "success", "john@test.com", "John", "Pro Plan", "999.00", "TXN001", p.merchantKey)
+		p.salt, "success", "john@test.com", "John", "Pro Plan", "1999.00", "TXN001", p.merchantKey)
 	reverseHash := sha512.Sum512([]byte(reverseStr))
 
 	params := map[string]string{
 		"txnid":       "TXN001",
-		"amount":      "999.00",
+		"amount":      "1999.00",
 		"productinfo": "Pro Plan",
 		"firstname":   "John",
 		"email":       "john@test.com",
@@ -138,12 +138,12 @@ func TestProvider_HandleCallbackParams_Failure(t *testing.T) {
 	p := NewProvider("testkey", "testsalt", "test")
 
 	reverseStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
-		p.salt, "failure", "john@test.com", "John", "Pro Plan", "999.00", "TXN001", p.merchantKey)
+		p.salt, "failure", "john@test.com", "John", "Pro Plan", "1999.00", "TXN001", p.merchantKey)
 	reverseHash := sha512.Sum512([]byte(reverseStr))
 
 	params := map[string]string{
 		"txnid":       "TXN001",
-		"amount":      "999.00",
+		"amount":      "1999.00",
 		"productinfo": "Pro Plan",
 		"firstname":   "John",
 		"email":       "john@test.com",
@@ -169,7 +169,7 @@ func TestProvider_HandleCallbackParams_InvalidHash(t *testing.T) {
 
 	params := map[string]string{
 		"txnid":       "TXN001",
-		"amount":      "999.00",
+		"amount":      "1999.00",
 		"productinfo": "Pro Plan",
 		"firstname":   "John",
 		"email":       "john@test.com",
@@ -188,7 +188,7 @@ func TestProvider_HandleCallbackParams_TamperedAmount(t *testing.T) {
 	p := NewProvider("testkey", "testsalt", "test")
 
 	reverseStr := fmt.Sprintf("%s|%s|||||||||||%s|%s|%s|%s|%s|%s",
-		p.salt, "success", "john@test.com", "John", "Pro Plan", "999.00", "TXN001", p.merchantKey)
+		p.salt, "success", "john@test.com", "John", "Pro Plan", "1999.00", "TXN001", p.merchantKey)
 	reverseHash := sha512.Sum512([]byte(reverseStr))
 
 	params := map[string]string{

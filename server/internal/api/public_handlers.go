@@ -278,7 +278,7 @@ func (h *PublicHandler) MigrationPreview(w http.ResponseWriter, r *http.Request)
 	// Pricing comparison
 	teamSize := 50 // reasonable default for preview
 	competitorMonthly := getCompetitorPrice(provider, teamSize)
-	fsMonthly := 12.0 // Pro plan ~$12 USD equivalent
+	fsMonthly := 29.0 // Pro plan ~$29 USD
 
 	resp := MigrationPreviewResponse{
 		Flags:                 flagInfos,
@@ -338,8 +338,8 @@ func (h *PublicHandler) Calculator(w http.ResponseWriter, r *http.Request) {
 
 	competitorMonthly := getCompetitorPrice(strings.ToLower(req.Provider), req.TeamSize)
 
-	// FS pricing: Pro plan ~$12 USD/month for unlimited team
-	fsMonthly := 12.0
+	// FS pricing: Pro plan ~$29 USD/month for unlimited team
+	fsMonthly := 29.0 // Pro plan ~$29 USD
 
 	savingsAnnual := (competitorMonthly - fsMonthly) * 12
 	savingsPercent := 0.0

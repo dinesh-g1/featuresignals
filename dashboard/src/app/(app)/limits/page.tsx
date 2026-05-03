@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { CreditsResponse, CreditBearer } from "@/lib/types";
 
 interface ResourceLimit {
   resource: string;
@@ -29,14 +31,19 @@ const LABELS: Record<string, string> = {
 export default function LimitsPage() {
   const token = useAppStore((s) => s.token);
   const [data, setData] = useState<LimitsResponse | null>(null);
+  const [credits, setCredits] = useState<CreditsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!token) return;
-    api
-      .getLimits(token)
-      .then(setData)
-      .catch(() => {})
+    Promise.all([
+      api.getLimits(token).catch(() => null),
+      api.getCredits(token).catch(() => null),
+    ])
+      .then(([l, c]) => {
+        setData(l as LimitsResponse | null);
+        setCredits(c as CreditsResponse | null);
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -58,76 +65,171 @@ export default function LimitsPage() {
 
   const limits = data?.limits ?? [];
   const plan = data?.plan ?? "free";
+  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Header with plan info */}
       <div>
         <h1 className="text-xl font-bold text-[var(--fgColor-default)]">
-          Resource Limits
+          Limits
         </h1>
         <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
-          Current usage vs plan limits for the{" "}
-          {plan.charAt(0).toUpperCase() + plan.slice(1)} plan.
+          {planLabel} Plan
+          {plan === "pro" && (
+            <span> · INR 1,999/month</span>
+          )}
+          {plan === "free" && (
+            <span> · <Link href="/settings/billing" className="text-[var(--fgColor-accent)] underline">Upgrade to Pro</Link> for unlimited</span>
+          )}
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {limits.map((l) => {
-          const pct = l.max > 0 ? Math.min((l.used / l.max) * 100, 100) : 0;
-          const isNearLimit = l.max > 0 && l.used / l.max >= 0.8;
-          const isUnlimited = l.max === -1;
+      {/* Section 1: Resource Limits */}
+      <section>
+        <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+          Resources
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {limits.map((l) => {
+            const pct = l.max > 0 ? Math.min((l.used / l.max) * 100, 100) : 0;
+            const isNearLimit = l.max > 0 && l.used / l.max >= 0.8;
+            const isUnlimited = l.max === -1;
 
-          return (
-            <Card
-              key={l.resource}
-              className={cn(isNearLimit && "border-amber-200")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-[var(--fgColor-default)]">
-                    {LABELS[l.resource] ?? l.resource}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm font-bold tabular-nums",
-                      isNearLimit
-                        ? "text-amber-600"
-                        : "text-[var(--fgColor-default)]",
-                    )}
-                  >
-                    {isUnlimited ? "∞" : `${l.used}/${l.max}`}
-                  </span>
-                </div>
-                {!isUnlimited && (
-                  <div className="w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
-                    <div
+            return (
+              <Card
+                key={l.resource}
+                className={cn(isNearLimit && "border-amber-200")}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-[var(--fgColor-default)]">
+                      {LABELS[l.resource] ?? l.resource}
+                    </span>
+                    <span
                       className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        pct >= 90
-                          ? "bg-red-500"
-                          : pct >= 80
-                            ? "bg-amber-500"
-                            : "bg-[var(--fgColor-accent)]",
+                        "text-sm font-bold tabular-nums",
+                        isNearLimit
+                          ? "text-amber-600"
+                          : "text-[var(--fgColor-default)]",
                       )}
-                      style={{ width: `${pct}%` }}
-                    />
+                    >
+                      {isUnlimited ? "∞" : `${l.used}/${l.max}`}
+                    </span>
                   </div>
-                )}
-                {isUnlimited && (
-                  <p className="text-xs text-[var(--fgColor-muted)] italic">
-                    Unlimited on this plan
-                  </p>
-                )}
-                {isNearLimit && (
-                  <p className="mt-1.5 text-xs text-amber-600 font-medium">
-                    Approaching limit — consider upgrading
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  {!isUnlimited && (
+                    <div className="w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          pct >= 90
+                            ? "bg-red-500"
+                            : pct >= 80
+                              ? "bg-amber-500"
+                              : "bg-[var(--fgColor-accent)]",
+                        )}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
+                  {isUnlimited && (
+                    <p className="text-xs text-[var(--fgColor-muted)] italic">
+                      Unlimited on this plan
+                    </p>
+                  )}
+                  {isNearLimit && (
+                    <p className="mt-1.5 text-xs text-amber-600 font-medium">
+                      Approaching limit — consider upgrading
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Section 2: Credit Limits */}
+      {credits?.bearers?.length ? (
+        <section>
+          <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+            AI Janitor Credits
+          </h2>
+          <div className="space-y-3">
+            {credits.bearers.map((bearer) => (
+              <CreditLimitCard key={bearer.id} bearer={bearer} plan={plan} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+function CreditLimitCard({ bearer, plan }: { bearer: CreditBearer; plan: string }) {
+  const included = bearer.included_per_month;
+  const pct = included > 0
+    ? Math.min(Math.round((bearer.lifetime_used % Math.max(included, 1)) / included * 100), 100)
+    : 0;
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-[var(--fgColor-default)]">
+                {bearer.display_name}
+              </h3>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium">
+                {bearer.unit_name}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--fgColor-muted)] mt-1">{bearer.description}</p>
+
+            <div className="mt-3 grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-[var(--fgColor-muted)]">Included/month</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                  {included.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--fgColor-muted)]">Balance</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                  {bearer.balance.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--fgColor-muted)]">Lifetime used</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                  {bearer.lifetime_used.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {included > 0 && (
+              <div className="mt-3 w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-[var(--fgColor-accent)]",
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            )}
+
+            <p className="mt-2 text-xs text-[var(--fgColor-muted)]">
+              {plan === "free"
+                ? `Free plan: ${included} credits/month. Upgrade to Pro for 200/month.`
+                : plan === "pro"
+                  ? `Pro plan: ${included} credits/month included. Need more? Purchase additional credit packs.`
+                  : `Enterprise: ${included >= 10000 ? "Effectively unlimited" : included.toLocaleString() + " credits/month"}.`}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

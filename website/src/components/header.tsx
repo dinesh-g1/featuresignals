@@ -7,305 +7,252 @@ import {
   LinkExternalIcon,
   ThreeBarsIcon,
   XIcon,
-  CheckCircleFillIcon,
-  ArrowRightIcon,
+  RocketIcon,
+  BeakerIcon,
+  LightBulbIcon,
+  ShieldCheckIcon,
+  GitBranchIcon,
+  PackageIcon,
+  CloudIcon,
 } from "@primer/octicons-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 /**
- * Minimal header — just what a visitor needs.
+ * Enterprise Platform Header
  *
- *   FeatureSignals logo    [Try Demo ▾]  [Pricing]  [Docs →]    [Sign In]  [Start Free]
+ *   [Logo]  [Platform ▾]  [Pricing]  [Docs ↗]     [Sign In]  [Start Free]
  *
- * "Try Demo" dropdown links to homepage sections.
- * "Pricing" scrolls to #pricing on the homepage.
- * "Docs" links out to docs.featuresignals.com.
- * No mega-menus, no complexity.
+ * Platform dropdown is grouped into capability areas with generous spacing.
+ * Each item leads with the outcome, not the feature name.
  */
 
-const productLinks = [
+const platformGroups = [
   {
-    label: "Feature Flag Lifecycle",
-    href: "/create",
-    description: "Create, target, rollout, and clean up feature flags",
+    label: "Ship",
+    items: [
+      {
+        label: "Release Management",
+        desc: "Sub-millisecond feature flags with percentage rollouts and kill switches",
+        href: "/create",
+        icon: RocketIcon,
+      },
+      {
+        label: "A/B Experiments",
+        desc: "Weighted variants with impression tracking. Built in, not an add-on.",
+        href: "/create",
+        icon: BeakerIcon,
+      },
+    ],
   },
   {
-    label: "AI Janitor",
-    href: "/cleanup",
-    description: "Automated stale flag detection and cleanup",
+    label: "Automate",
+    items: [
+      {
+        label: "AI Janitor",
+        desc: "Find and remove stale flags across your codebase — automatically",
+        href: "/cleanup",
+        icon: LightBulbIcon,
+      },
+      {
+        label: "Migration Engine",
+        desc: "Import from LaunchDarkly, ConfigCat, Flagsmith, or Unleash in minutes",
+        href: "/migrate",
+        icon: GitBranchIcon,
+      },
+    ],
   },
   {
-    label: "Migrate from other platforms",
-    href: "/migrate",
-    description: "Import your flags from LaunchDarkly, ConfigCat, and more",
+    label: "Trust",
+    items: [
+      {
+        label: "Governance",
+        desc: "RBAC, audit logs, approvals, SSO. Enterprise security, built in.",
+        href: "/create",
+        icon: ShieldCheckIcon,
+      },
+      {
+        label: "Integrations",
+        desc: "8 SDKs, Terraform, OpenFeature, webhooks. Works with your stack.",
+        href: "/create",
+        icon: PackageIcon,
+      },
+    ],
   },
 ];
 
 export function Header() {
-  const [productOpen, setProductOpen] = useState(false);
+  const [platformOpen, setPlatformOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   return (
-    <>
-      <header
-        className="fixed top-0 inset-x-0 z-50 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/90 backdrop-blur-md"
-        style={{
-          boxShadow: "0 1px 1px 0 #1f23280a, 0 1px 2px 0 #1f232808",
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-16">
+    <header className="sticky top-0 z-40 border-b border-[var(--borderColor-default)] bg-white/95 backdrop-blur-md">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="flex h-14 items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-2 group shrink-0"
+            className="flex items-center gap-2.5 font-bold text-lg text-[var(--fgColor-default)] shrink-0"
             aria-label="FeatureSignals Home"
           >
-            <CheckCircleFillIcon
-              size={24}
-              fill="#0969da"
-              className="transition-transform group-hover:scale-110"
-            />
-            <span className="font-bold tracking-tight text-[var(--fgColor-default)] text-lg">
-              FeatureSignals
-            </span>
+            <svg
+              width="28" height="28" viewBox="0 0 28 28" fill="none"
+              className="shrink-0" aria-hidden="true"
+            >
+              <rect width="28" height="28" rx="6" fill="var(--fgColor-accent)" />
+              <text x="14" y="19" textAnchor="middle" fill="white"
+                fontSize="14" fontWeight="bold" fontFamily="system-ui">FS</text>
+            </svg>
+            <span className="hidden sm:inline">FeatureSignals</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
-            {/* Product dropdown */}
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-1" aria-label="Main">
+            {/* Platform Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setProductOpen(!productOpen)}
-                onBlur={(e) => {
-                  // Delay to allow click on dropdown items
-                  setTimeout(() => setProductOpen(false), 150);
-                }}
-                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors duration-150 hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-default)]"
-                aria-expanded={productOpen}
+                onClick={() => setPlatformOpen(!platformOpen)}
+                onBlur={() => setTimeout(() => setPlatformOpen(false), 200)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  platformOpen
+                    ? "text-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)]"
+                    : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+                )}
+                aria-expanded={platformOpen}
               >
-                Product
-                <ChevronDownIcon
-                  size={14}
-                  className={cn(
-                    "text-[var(--fgColor-subtle)] transition-transform duration-200",
-                    productOpen && "rotate-180",
-                  )}
-                  aria-hidden
-                />
+                Platform
+                <ChevronDownIcon size={12} className={cn("transition-transform", platformOpen && "rotate-180")} />
               </button>
 
               <AnimatePresence>
-                {productOpen && (
+                {platformOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute left-0 top-full mt-1.5 w-72 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] py-1.5"
-                    style={{
-                      boxShadow: "var(--shadow-floating-medium)",
-                    }}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-full mt-1.5 w-[520px] rounded-xl border border-[var(--borderColor-default)] bg-white shadow-xl py-4 z-50"
                   >
-                    {productLinks.map((link) => (
-                      <a
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setProductOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-[var(--bgColor-inset)]"
-                      >
-                        <div>
-                          <div className="font-medium text-[var(--fgColor-default)]">
-                            {link.label}
-                          </div>
-                          <div className="text-xs text-[var(--fgColor-muted)] mt-0.5">
-                            {link.description}
-                          </div>
+                    <div className="px-5 pb-3 mb-1 border-b border-[var(--borderColor-default)]">
+                      <p className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide">
+                        Release Infrastructure Platform
+                      </p>
+                      <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                        Everything you need to ship faster, with confidence.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 px-2">
+                      {platformGroups.map((group) => (
+                        <div key={group.label} className="px-2 py-1 flex flex-col">
+                          <p className="text-[10px] font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider px-2 mb-1.5">
+                            {group.label}
+                          </p>
+                          {group.items.map((item) => (
+                            <Link
+                              key={item.label}
+                              href={item.href}
+                              className="flex items-start gap-2.5 px-2 py-2.5 rounded-lg hover:bg-[var(--bgColor-muted)] transition-colors group"
+                            >
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--bgColor-accent-muted)] mt-0.5">
+                                <item.icon size={14} className="text-[var(--fgColor-accent)]" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-[var(--fgColor-default)] group-hover:text-[var(--fgColor-accent)] transition-colors">
+                                  {item.label}
+                                </p>
+                                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5 leading-snug">
+                                  {item.desc}
+                                </p>
+                              </div>
+                            </Link>
+                          ))}
                         </div>
-                        <ArrowRightIcon
-                          size={14}
-                          className="text-[var(--fgColor-subtle)]"
-                        />
-                      </a>
-                    ))}
+                      ))}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Pricing */}
-            <a
-              href="/#pricing"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors duration-150 hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-default)]"
-            >
+            <Link href="/#pricing" className="px-3.5 py-2.5 rounded-lg text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors">
               Pricing
-            </a>
-
-            {/* Docs */}
-            <a
-              href="https://docs.featuresignals.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] transition-colors duration-150 hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-default)]"
-            >
-              Docs
-              <LinkExternalIcon
-                size={12}
-                className="text-[var(--fgColor-subtle)]"
-              />
+            </Link>
+            <a href="https://docs.featuresignals.com" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-3.5 py-2.5 rounded-lg text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors">
+              Docs <LinkExternalIcon size={12} />
             </a>
           </nav>
 
-          {/* CTA buttons */}
-          <div className="hidden lg:flex items-center gap-3">
-            <a
-              href="https://app.featuresignals.com/login"
-              className="text-sm font-semibold text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
-            >
+          {/* Right */}
+          <div className="flex items-center gap-2">
+            <a href="https://app.featuresignals.com/login"
+              className="hidden sm:inline-flex px-3.5 py-2.5 rounded-lg text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors">
               Sign In
             </a>
-            <a
-              href="https://app.featuresignals.com/register"
-              className="text-sm font-semibold text-white px-5 py-2 rounded-md transition-all"
-              style={{
-                backgroundColor: "#1f883d",
-                boxShadow: "0 1px 0 0 #1f232826",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#1c8139")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#1f883d")
-              }
-            >
-              Start Free
+            <a href="https://app.featuresignals.com/register"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] transition-colors shadow-sm">
+              <CloudIcon size={14} /> <span className="hidden sm:inline">Start Free</span>
             </a>
+            <button onClick={() => setMobileOpen(true)}
+              className="md:hidden p-2 -mr-2 rounded-lg text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
+              aria-label="Open menu">
+              <ThreeBarsIcon size={20} />
+            </button>
           </div>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="flex items-center justify-center rounded-lg p-2 text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-default)] lg:hidden"
-            aria-label="Open menu"
-          >
-            <ThreeBarsIcon size={24} />
-          </button>
         </div>
-      </header>
+      </div>
 
-      {/* Mobile Navigation Dialog */}
+      {/* Mobile */}
       <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
-        <AnimatePresence>
-          {mobileOpen && (
-            <Dialog.Portal forceMount>
-              <Dialog.Overlay asChild>
-                <motion.div
-                  className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                />
-              </Dialog.Overlay>
-              <Dialog.Content asChild>
-                <motion.div
-                  className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-[var(--bgColor-default)]/95 backdrop-blur-lg shadow-2xl"
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div className="flex items-center justify-between border-b border-[var(--borderColor-default)] px-4 py-3">
-                    <Link
-                      href="/"
-                      onClick={closeMobile}
-                      className="flex items-center gap-2 text-lg font-bold tracking-tight text-[var(--fgColor-accent)]"
-                    >
-                      <CheckCircleFillIcon size={20} fill="#0969da" />
-                      FeatureSignals
-                    </Link>
-                    <Dialog.Close asChild>
-                      <button
-                        className="rounded-lg p-2 text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-default)]"
-                        aria-label="Close menu"
-                      >
-                        <XIcon size={20} />
-                      </button>
-                    </Dialog.Close>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <Dialog.Content className="fixed right-0 top-0 z-50 h-full w-80 bg-white shadow-2xl p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <Dialog.Title className="text-lg font-bold text-[var(--fgColor-default)]">Menu</Dialog.Title>
+              <button onClick={closeMobile} className="p-2 rounded-lg hover:bg-[var(--bgColor-muted)]" aria-label="Close">
+                <XIcon size={20} />
+              </button>
+            </div>
+            <nav className="space-y-4">
+              {platformGroups.map((group) => (
+                <div key={group.label}>
+                  <p className="text-[10px] font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider px-2 mb-2">
+                    {group.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => (
+                      <Link key={item.label} href={item.href} onClick={closeMobile}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bgColor-muted)] transition-colors">
+                        <item.icon size={16} className="text-[var(--fgColor-accent)]" />
+                        <div>
+                          <p className="text-sm font-medium text-[var(--fgColor-default)]">{item.label}</p>
+                          <p className="text-xs text-[var(--fgColor-muted)]">{item.desc}</p>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-
-                  <div className="flex-1 overflow-y-auto px-4 py-6">
-                    <div className="space-y-1">
-                      <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
-                        Product
-                      </p>
-                      {productLinks.map((link) => (
-                        <a
-                          key={link.label}
-                          href={link.href}
-                          onClick={closeMobile}
-                          className="block rounded-lg px-3 py-3 text-base font-medium text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-inset)]"
-                        >
-                          {link.label}
-                          <span className="block text-sm text-[var(--fgColor-muted)] mt-0.5">
-                            {link.description}
-                          </span>
-                        </a>
-                      ))}
-
-                      <hr className="my-4 border-[var(--borderColor-muted)]" />
-
-                      <a
-                        href="/#pricing"
-                        onClick={closeMobile}
-                        className="block rounded-lg px-3 py-3 text-base font-medium text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-inset)]"
-                      >
-                        Pricing
-                      </a>
-
-                      <a
-                        href="https://docs.featuresignals.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={closeMobile}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-3 text-base font-medium text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-inset)]"
-                      >
-                        Docs
-                        <LinkExternalIcon
-                          size={14}
-                          className="text-[var(--fgColor-subtle)]"
-                        />
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-[var(--borderColor-default)] px-4 py-4 space-y-3">
-                    <a
-                      href="https://app.featuresignals.com/login"
-                      className="block rounded-lg border border-[var(--borderColor-default)] px-4 py-3 text-center text-sm font-medium text-[var(--fgColor-default)] transition-all hover:bg-[var(--bgColor-inset)]"
-                    >
-                      Sign In
-                    </a>
-                    <a
-                      href="https://app.featuresignals.com/register"
-                      className="block rounded-lg px-4 py-3 text-center text-sm font-medium text-white transition-all"
-                      style={{
-                        backgroundColor: "#1f883d",
-                        boxShadow: "0 1px 0 0 #1f232826",
-                      }}
-                    >
-                      Start Free
-                    </a>
-                  </div>
-                </motion.div>
-              </Dialog.Content>
-            </Dialog.Portal>
-          )}
-        </AnimatePresence>
+                </div>
+              ))}
+              <hr className="border-[var(--borderColor-default)]" />
+              <Link href="/#pricing" onClick={closeMobile}
+                className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]">Pricing</Link>
+              <a href="https://docs.featuresignals.com" target="_blank" rel="noopener noreferrer" onClick={closeMobile}
+                className="flex items-center gap-1 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]">
+                Docs <LinkExternalIcon size={12} />
+              </a>
+              <hr className="border-[var(--borderColor-default)]" />
+              <a href="https://app.featuresignals.com/login"
+                className="block w-full px-3 py-2.5 rounded-lg text-sm font-medium text-center text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]">Sign In</a>
+              <a href="https://app.featuresignals.com/register"
+                className="block w-full mt-2 px-4 py-3 rounded-lg text-sm font-semibold text-center text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139]">Start Free</a>
+            </nav>
+          </Dialog.Content>
+        </Dialog.Portal>
       </Dialog.Root>
-    </>
+    </header>
   );
 }

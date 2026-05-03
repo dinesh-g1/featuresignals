@@ -82,12 +82,12 @@ func Pricing() (PricingConfig, error) {
 func ProPlanAmount() string {
 	cfg, err := Pricing()
 	if err != nil {
-		return "999.00"
+		return "1999.00"
 	}
 	if p, ok := cfg.Plans[PlanPro]; ok && p.Price != nil {
 		return fmt.Sprintf("%.2f", *p.Price)
 	}
-	return "999.00"
+	return "1999.00"
 }
 
 func ProPlanProductInfo() string {

@@ -171,8 +171,8 @@ func TestPublicHandler_Calculator_Success(t *testing.T) {
 			if resp.CompetitorMonthly < tc.expectCompetitorGT {
 				t.Errorf("expected competitor monthly >= %.0f, got %.0f", tc.expectCompetitorGT, resp.CompetitorMonthly)
 			}
-			if resp.FSMonthly != 12.0 {
-				t.Errorf("expected fs_monthly=12, got %.0f", resp.FSMonthly)
+			if resp.FSMonthly != 29.0 {
+				t.Errorf("expected fs_monthly=29, got %.0f", resp.FSMonthly)
 			}
 			if resp.SavingsPercent < 0 {
 				t.Errorf("savings_percent should be >= 0, got %.1f", resp.SavingsPercent)

@@ -24,6 +24,7 @@ type billingHandlerStore interface {
 	domain.EnvironmentReader
 	domain.OrgMemberStore
 	domain.BillingStore
+	domain.CreditStore
 	domain.OnboardingStore
 }
 
@@ -721,6 +722,35 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 		Gateway:           org.PaymentGateway,
 	}
 
+	// Add platform fee info based on plan.
+	if org.Plan == domain.PlanPro {
+		resp.PlatformFeeMonthly = domain.ProPlanMonthlyPaise
+		resp.PlatformFeeCurrency = "INR"
+	}
+
+	// Add credit balances.
+	creditBals, _ := h.store.ListCreditBalances(r.Context(), orgID)
+	if len(creditBals) > 0 {
+		resp.CreditBalances = make([]dto.CreditBalanceInfo, 0, len(creditBals))
+		for _, bal := range creditBals {
+			bearer, _ := h.store.GetCostBearer(r.Context(), bal.BearerID)
+			info := dto.CreditBalanceInfo{
+				BearerID:   bal.BearerID,
+				Balance:    bal.Balance,
+				LifetimeUsed: bal.LifetimeUsed,
+			}
+			if bearer != nil {
+				info.BearerName = bearer.DisplayName
+				if org.Plan == domain.PlanFree {
+					info.IncludedPerMonth = bearer.FreeUnits
+				} else {
+					info.IncludedPerMonth = bearer.ProUnits
+				}
+			}
+			resp.CreditBalances = append(resp.CreditBalances, info)
+		}
+	}
+
 	if sub != nil {
 		resp.Status = sub.Status
 		resp.CurrentPeriodStart = &sub.CurrentPeriodStart
@@ -760,14 +790,44 @@ func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 		totalEnvs += len(envs)
 	}
 
+	// Gather credit usage info.
+	var creditUsage []dto.CreditUsageInfo
+	bearers, _ := h.store.ListCostBearers(r.Context())
+	for _, b := range bearers {
+		bal, _ := h.store.GetCreditBalance(r.Context(), orgID, b.ID)
+		included := b.FreeUnits
+		if org.Plan == domain.PlanPro {
+			included = b.ProUnits
+		} else if org.Plan == domain.PlanEnterprise {
+			included = 10000
+		}
+		cu := dto.CreditUsageInfo{
+			BearerID:        b.ID,
+			BearerName:      b.DisplayName,
+			IncludedPerMonth: included,
+		}
+		if bal != nil {
+			cu.PurchasedBalance = bal.Balance
+			// Estimate used this month from lifetime_used (approximate — accurate tracking needs usage_summary)
+			cu.UsedThisMonth = 0
+		}
+		creditUsage = append(creditUsage, cu)
+	}
+
+	var platformFee int64
+	if org.Plan == domain.PlanPro {
+		platformFee = domain.ProPlanMonthlyPaise
+	}
 	httputil.JSON(w, http.StatusOK, dto.UsageResponse{
-		SeatsUsed:         len(members),
-		SeatsLimit:        org.PlanSeatsLimit,
-		ProjectsUsed:      len(projects),
-		ProjectsLimit:     org.PlanProjectsLimit,
-		EnvironmentsUsed:  totalEnvs,
-		EnvironmentsLimit: org.PlanEnvironmentsLimit,
-		Plan:              org.Plan,
+		SeatsUsed:          len(members),
+		SeatsLimit:         org.PlanSeatsLimit,
+		ProjectsUsed:       len(projects),
+		ProjectsLimit:      org.PlanProjectsLimit,
+		EnvironmentsUsed:   totalEnvs,
+		EnvironmentsLimit:  org.PlanEnvironmentsLimit,
+		Plan:               org.Plan,
+		PlatformFeeMonthly: platformFee,
+		CreditUsage:        creditUsage,
 	})
 }
 

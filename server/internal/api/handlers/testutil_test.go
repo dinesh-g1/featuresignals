@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -1603,4 +1604,41 @@ func (s *mockStore) GetSession(_ context.Context, _ string) (*domain.PublicSessi
 }
 func (s *mockStore) DeleteSession(_ context.Context, _ string) error          { return nil }
 func (s *mockStore) CleanExpiredSessions(_ context.Context) (int, error) { return 0, nil }
+
+// CreditStore stubs — satisfy domain.Store interface in tests.
+var errCreditNotImpl = errors.New("credit store not implemented in tests")
+
+func (s *mockStore) ListCostBearers(ctx context.Context) ([]domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GetCostBearer(ctx context.Context, bearerID string) (*domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListCreditPacks(ctx context.Context, bearerID string) ([]domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GetCreditPack(ctx context.Context, packID string) (*domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GetCreditBalance(ctx context.Context, orgID, bearerID string) (*domain.CreditBalance, error) {
+	return &domain.CreditBalance{OrgID: orgID, BearerID: bearerID}, nil
+}
+func (s *mockStore) ListCreditBalances(ctx context.Context, orgID string) ([]domain.CreditBalance, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ConsumeCredits(ctx context.Context, orgID, bearerID string, credits int, operation string, metadata map[string]any, idempotencyKey string) (int, error) {
+	return 0, errCreditNotImpl
+}
+func (s *mockStore) PurchaseCredits(ctx context.Context, orgID, packID string) (*domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListCreditPurchases(ctx context.Context, orgID string, limit, offset int) ([]domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListCreditConsumptions(ctx context.Context, orgID, bearerID string, limit, offset int) ([]domain.CreditConsumption, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
+	return errCreditNotImpl
+}
 

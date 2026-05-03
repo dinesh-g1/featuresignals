@@ -358,6 +358,7 @@ type Store interface {
 	WebhookStore
 	ApprovalStore
 	BillingStore
+	CreditStore
 	OnboardingStore
 	SalesStore
 	PendingRegistrationStore

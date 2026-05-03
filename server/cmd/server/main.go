@@ -447,6 +447,7 @@ func main() {
 		janitorH = handlers.NewJanitorHandler(
 			store,              // domain.Store (implements FlagReader + others)
 			janitorStore,       // store.JanitorStore
+			store,              // domain.Store (implements CreditStore)
 			analysisRegistry,   // Code analysis provider registry
 			complianceStore,    // Compliance store for provider selection
 			eventBus,           // SSE event bus for scan progress

@@ -125,6 +125,7 @@ type PRResponse struct {
 type JanitorHandler struct {
 	store            domain.FlagReader
 	janitorStore     store.JanitorStore
+	creditStore      domain.CreditStore
 	analysisRegistry *codeanalysis.ProviderRegistry
 	complianceStore  store.ComplianceStore
 	eventBus         *sse.ScanEventBus
@@ -137,6 +138,7 @@ type JanitorHandler struct {
 func NewJanitorHandler(
 	store domain.FlagReader,
 	janitorStore store.JanitorStore,
+	creditStore domain.CreditStore,
 	analysisRegistry *codeanalysis.ProviderRegistry,
 	complianceStore store.ComplianceStore,
 	eventBus *sse.ScanEventBus,
@@ -147,6 +149,7 @@ func NewJanitorHandler(
 	return &JanitorHandler{
 		store:            store,
 		janitorStore:     janitorStore,
+		creditStore:      creditStore,
 		analysisRegistry: analysisRegistry,
 		complianceStore:  complianceStore,
 		eventBus:         eventBus,
@@ -211,6 +214,28 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(repos) == 0 {
 		httputil.Error(w, http.StatusBadRequest, "no repositories connected. Connect a repository first.")
+		return
+	}
+
+	// Credit check: estimate credits needed for this scan.
+	estimatedCredits := (len(req.FlagKeys) / 5) + (len(repos) * 2)
+	if estimatedCredits < 1 {
+		estimatedCredits = 1
+	}
+	if estimatedCredits > 100 {
+		estimatedCredits = 100
+	}
+	bal, balErr := h.creditStore.GetCreditBalance(r.Context(), orgID, "ai_janitor")
+	if balErr != nil {
+		logger.Error("failed to check credit balance", "error", balErr)
+		httputil.Error(w, http.StatusInternalServerError, "failed to verify credits")
+		return
+	}
+	if bal.Balance < estimatedCredits {
+		httputil.Error(w, http.StatusPaymentRequired, fmt.Sprintf(
+			"Insufficient AI Janitor credits. Need %d, have %d. Purchase more at /settings/billing.",
+			estimatedCredits, bal.Balance,
+		))
 		return
 	}
 
@@ -855,6 +880,23 @@ This PR was generated automatically. Please review carefully before merging:
 	}
 
 	logger.Info("PR created successfully", "pr_url", pr.URL, "pr_number", pr.Number)
+
+	// Deduct credits for PR generation (5 credits).
+	// Use the stale flag ID as idempotency key to prevent double-charge on retry.
+	idempotencyKey := fmt.Sprintf("pr_%s_%s", orgID, staleFlag.ID)
+	newBalance, deductErr := h.creditStore.ConsumeCredits(
+		r.Context(), orgID, "ai_janitor", 5,
+		"generate_pr",
+		map[string]any{"flag_key": flagKey, "repo": repo.FullName, "pr_url": pr.URL},
+		idempotencyKey,
+	)
+	if deductErr != nil && !errors.Is(deductErr, domain.ErrInsufficientCredits) {
+		// Log but don't fail — PR was already created successfully.
+		// The credit deduction can be retried or reconciled.
+		logger.Warn("failed to deduct credits after PR creation", "error", deductErr)
+	} else if deductErr == nil {
+		logger.Info("credits deducted for PR generation", "new_balance", newBalance)
+	}
 
 	httputil.JSON(w, http.StatusOK, PRResponse{
 		Status:      "created",

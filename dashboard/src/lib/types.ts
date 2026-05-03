@@ -183,6 +183,9 @@ export interface BillingInfo {
   cancel_at_period_end?: boolean;
   card_last4?: string;
   card_exp_date?: string;
+  platform_fee_monthly?: number;
+  platform_fee_currency?: string;
+  credit_balances?: CreditBalance[];
 }
 
 export interface UsageMetric {
@@ -203,6 +206,8 @@ export interface UsageInfo {
   environments_used: number;
   environments_limit: number;
   plan: string;
+  platform_fee_monthly?: number;
+  credit_usage?: CreditUsage[];
 }
 
 export interface OnboardingState {
@@ -216,6 +221,82 @@ export interface OnboardingState {
   completed_at?: string;
   updated_at: string;
 }
+
+export interface CreditBalance {
+  bearer_id: string;
+  bearer_name?: string;
+  balance: number;
+  included_per_month: number;
+  lifetime_used: number;
+}
+
+export interface CreditPack {
+  id: string;
+  name: string;
+  credits: number;
+  price_paise: number;
+  price_display: string;
+}
+
+export interface CreditBearer {
+  id: string;
+  display_name: string;
+  description: string;
+  unit_name: string;
+  balance: number;
+  included_per_month: number;
+  lifetime_used: number;
+  available_packs: CreditPack[];
+}
+
+export interface CreditPurchase {
+  id: string;
+  pack_id: string;
+  bearer_id: string;
+  credits: number;
+  price_paise: number;
+  price_display: string;
+  purchased_at: string;
+}
+
+export interface CreditConsumption {
+  id: string;
+  bearer_id: string;
+  operation: string;
+  credits: number;
+  idempotency_key?: string;
+  consumed_at: string;
+}
+
+export interface CreditUsage {
+  bearer_id: string;
+  bearer_name: string;
+  included_per_month: number;
+  used_this_month: number;
+  purchased_balance: number;
+}
+
+export interface CreditsResponse {
+  bearers: CreditBearer[];
+}
+
+export interface CreditHistoryResponse {
+  purchases: CreditPurchase[];
+  consumptions: CreditConsumption[];
+}
+
+export interface CreditPurchaseResponse {
+  purchase: {
+    id: string;
+    pack_id: string;
+    bearer_id: string;
+    credits: number;
+    price_paise: number;
+    price_display: string;
+  };
+  new_balance: number;
+}
+
 
 export interface OrgMember {
   id: string;
@@ -359,6 +440,8 @@ export interface FeatureItem {
   feature: string;
   enabled: boolean;
   min_plan: string;
+  platform_fee_monthly?: number;
+  credit_usage?: CreditUsage[];
 }
 
 export interface FeaturesResponse {

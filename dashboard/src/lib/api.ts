@@ -1,5 +1,8 @@
 import { useAppStore } from "@/stores/app-store";
 import type {
+  CreditsResponse,
+  CreditHistoryResponse,
+  CreditPurchaseResponse,
   AnalyticsOverview,
   APIKey,
   APIKeyCreateResponse,
@@ -848,6 +851,27 @@ export const api = {
     request<BillingInfo>("/v1/billing/subscription", { token }),
   getUsage: (token: string) =>
     request<UsageInfo>("/v1/billing/usage", { token }),
+
+  // ── Credit System ───────────────────────────────────────────────
+
+  getCredits: (token: string) =>
+    request<CreditsResponse>('/v1/billing/credits', { token }),
+
+  getCreditHistory: (token: string, bearerId?: string, limit = 50, offset = 0) => {
+    const params = new URLSearchParams();
+    if (bearerId) params.set('bearer_id', bearerId);
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    return request<CreditHistoryResponse>('/v1/billing/credits/history?' + params, { token });
+  },
+
+  purchaseCredits: (token: string, packId: string) =>
+    request<CreditPurchaseResponse>('/v1/billing/credits/purchase', {
+      token,
+      method: 'POST',
+      body: { pack_id: packId },
+    }),
+
   getLimits: (token: string) =>
     request<{ plan: string; limits: Array<{ resource: string; used: number; max: number }> }>("/v1/limits", { token }),
   search: (token: string, q: string, projectId?: string | null) =>

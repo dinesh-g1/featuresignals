@@ -54,9 +54,9 @@ const COMPETITOR_RATES: Record<
   },
 };
 
-/** FeatureSignals Pro: flat ₹999/month (~$12 USD) */
-const FS_MONTHLY_USD = 12; // ₹999 ≈ $12
-const FS_MONTHLY_INR = 999;
+/** FeatureSignals Pro: flat INR 1,999/month (~$29 USD) */
+const FS_MONTHLY_USD = 29; // INR 1,999 ≈ $29
+const FS_MONTHLY_INR = 1999;
 
 export function calculateSavings(state: CalculatorState): SavingsResult {
   const { teamSize, provider } = state;

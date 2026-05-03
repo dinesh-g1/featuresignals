@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-04-29
-> **Total pages:** 18 (7 public, 7 private, 4 internal, 0 archive)
+> **Updated:** 2026-05-06
+> **Total pages:** 19 (7 public, 8 private, 4 internal, 0 archive)
 
 ---
 
@@ -50,12 +50,13 @@
 
 | Page | Status | Summary | Confidence |
 |------|--------|---------|------------|
-| [[BUSINESS.md]] | `current` | Business model, pricing strategy (Free/Pro/Enterprise), cost analysis (Hetzner infra at ₹5,242/mo), margin analysis (63% at 100 customers, 80% at 500), competitor pricing benchmarks (LaunchDarkly $8.33/seat vs FeatureSignals ₹999/mo unlimited), self-hosting cost comparisons across 4 providers (Hetzner/DigitalOcean/AWS/GCP), Open Core feature boundaries | high |
+| [[BUSINESS.md]] | `current` | Business model, pricing strategy (Free/Pro/Enterprise), cost analysis (Hetzner infra at ₹5,242/mo), margin analysis (63% at 100 customers, 80% at 500), competitor pricing benchmarks (LaunchDarkly $8.33/seat vs FeatureSignals INR 1,999/mo unlimited), self-hosting cost comparisons across 4 providers (Hetzner/DigitalOcean/AWS/GCP), Open Core feature boundaries | high |
 | [[COMPETITIVE.md]] | `current` | Competitive intelligence — 4 competitors (LaunchDarkly, ConfigCat, Flagsmith, Unleash), feature comparison, pricing comparison, key differentiators (sub-ms eval, OpenFeature, single Go binary, transparent pricing), known competitor weaknesses, migration patterns from each competitor | high |
 | [[ROADMAP.md]] | `current` | Product roadmap — what's built (flag lifecycle, toggle categories, agent/API, AI janitor, environment comparison, target inspector), what's in progress (IAM implementation), what's planned (compliance certifications, additional SDKs, SSO, Ops Portal, horizontal scaling), CI/CD pipeline verified working (ci.yml, cd.yml, cd-content.yml), multi-region DNS-based routing in long-term vision | medium |
 | [[SALES.md]] | `current` | Sales playbook — target customer profiles (startups, growing teams, enterprises), common objections with responses (placeholder - needs filling from real calls), sales process overview, links to competitive intelligence and pricing data | low |
 | [[CUSTOMERS.md]] | `current` | Customer insights — profiles, feedback, use cases, pain points (placeholder shell - to be filled from real customer interactions) | low |
 | [[FINANCIALS.md]] | `current` | Financial data — infrastructure costs (€47.47/mo for Hetzner Scale tier), margin analysis, pricing tiers revenue structure, self-hosting cost comparisons across 4 cloud providers | medium |
+| [[BILLING_STRATEGY.md]] | `current` | Complete billing strategy — market analysis, resource model (platform fee + evaluation metering), invoice structure, payment infrastructure (Razorpay/Stripe/Paddle), spend management, missing features for V1 leadership, 3-phase implementation plan, revenue projections, risk analysis | high |
 | [[PEOPLE.md]] | `current` | Team & hiring — structure, hiring plans, skill gaps (placeholder shell) | low |
 
 ---
@@ -91,12 +92,12 @@
 | `infrastructure` | DEPLOYMENT.md, INFRASTRUCTURE.md |
 | `operations` | INFRASTRUCTURE.md, RUNBOOKS.md, INCIDENTS.md, COMPLIANCE_GAPS.md |
 | `incident` | RUNBOOKS.md, INCIDENTS.md |
-| `business` | BUSINESS.md, COMPETITIVE.md, ROADMAP.md, SALES.md, CUSTOMERS.md, FINANCIALS.md |
-| `financial` | BUSINESS.md, FINANCIALS.md |
+| `business` | BUSINESS.md, COMPETITIVE.md, ROADMAP.md, SALES.md, CUSTOMERS.md, FINANCIALS.md, BILLING_STRATEGY.md |
+| `financial` | BUSINESS.md, FINANCIALS.md, BILLING_STRATEGY.md |
 | `competitive` | COMPETITIVE.md |
 | `customer` | CUSTOMERS.md |
 | `sales` | SALES.md |
-| `roadmap` | ROADMAP.md |
+| `roadmap` | ROADMAP.md, BILLING_STRATEGY.md |
 | `people` | PEOPLE.md |
 | `core` | ARCHITECTURE.md, DEPLOYMENT.md, DEVELOPMENT.md, SDK.md, TESTING.md, PERFORMANCE.md |
 

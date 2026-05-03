@@ -34,7 +34,7 @@ GET /v1/pricing
     "pro": {
       "name": "Pro",
       "price": 999,
-      "display_price": "₹999",
+      "display_price": "INR 1,999",
       "billing_period": "month",
       "limits": { "projects": -1, "environments": -1, "seats": -1 },
       "features": ["Unlimited projects", "Unlimited environments", "..."]
@@ -89,7 +89,7 @@ The response includes a `gateway` field indicating which payment provider is bei
   "key": "merchant_key",
   "txnid": "FS_abc12345_1711929600000",
   "hash": "sha512_hash_string",
-  "amount": "999.00",
+  "amount": "1999.00",
   "productinfo": "FeatureSignals Pro Plan",
   "firstname": "Jane",
   "email": "jane@company.com",

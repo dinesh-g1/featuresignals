@@ -2,6 +2,29 @@
 
 > Chronological record
 
+## [2026-05-06 10:00] strategy | Comprehensive billing strategy & implementation plan
+
+**New wiki page:** `product/wiki/private/BILLING_STRATEGY.md` — 751 lines, 9 parts:
+- Part 1: Market analysis (LaunchDarkly per-connection+MAU pivot, ConfigCat per-download, Unleash $75/seat pivot, dev tools trends, 4 customer segments)
+- Part 2: Billing resource strategy — two-axis model (platform fee + evaluation metering), 4 tiers (Free/Pro/Scale/Enterprise), spend management
+- Part 3: Invoice & usage transparency — invoice structure with line-item breakdown, invoice lifecycle, usage dashboard v2 spec
+- Part 4: Payment infrastructure — gateway strategy (Razorpay India, Stripe Global, Paddle MoR), payment methods by priority, build-vs-buy decisions, dunning management, multi-currency
+- Part 5: Missing features for V1 leadership — 12 billing gaps (B1–B12), 10 platform gaps (P1–P10), competitive differentiation analysis
+- Part 6: 3-phase implementation plan (Weeks 1–4 Foundation, 5–8 Enterprise, 9–16 Global), technical architecture diagram, 12 new API endpoints, database migrations
+- Part 7: Revenue projections (₹15–45 lakhs/mo at 620 paid customers), breakeven at 6 customers, key metrics to track
+- Part 8: Risk analysis (9 risks with mitigations)
+- Part 9: Updated competitive pricing positioning (4–125x cheaper at scale)
+
+**Key strategic decisions:**
+- Charge for evaluations (value metric), not seats (anti-pattern)
+- Platform fee + included usage credit (Vercel/Supabase pattern)
+- Spend caps ON by default — bill shock prevention
+- Evaluation hot path never gated by billing — flag serving is infrastructure
+- Razorpay for India (UPI), Stripe for global, Paddle MoR optional
+- New "Scale" tier (₹4,999/mo) between Pro and Enterprise for SSO + SLA
+
+**Wiki updates:** index.md (total pages 18→19, added billing tag), log.md (this entry)
+
 ## [2026-05-05 21:30] build | 3 server-side gaps implemented — label filtering, sort wiring, search expansion
 
 **Files modified:**

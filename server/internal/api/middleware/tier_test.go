@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"errors"
 	"testing"
 	"time"
 
@@ -469,7 +470,7 @@ func TestTierEnforce_EnvironmentCreate_AtLimit(t *testing.T) {
 	store := &tierMockStore{
 		org: &domain.Organization{ID: "org-1", PlanEnvironmentsLimit: 2},
 		envs: map[string][]domain.Environment{
-			"proj-1": {{ID: "e1"}, {ID: "e2"}},
+			"proj-1": {{ID: "e1"}, {ID: "e2"}}	,
 		},
 	}
 	logger := slog.Default()
@@ -652,3 +653,39 @@ func (s *tierMockStore) GetSession(context.Context, string) (*domain.PublicSessi
 func (s *tierMockStore) DeleteSession(context.Context, string) error          { return nil }
 func (s *tierMockStore) CleanExpiredSessions(context.Context) (int, error) { return 0, nil }
 
+// CreditStore stubs — satisfy domain.Store interface in tests.
+var errCreditNotImpl = errors.New("credit store not implemented in tests")
+
+func (s *tierMockStore) ListCostBearers(ctx context.Context) ([]domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) GetCostBearer(ctx context.Context, bearerID string) (*domain.CostBearer, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) ListCreditPacks(ctx context.Context, bearerID string) ([]domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) GetCreditPack(ctx context.Context, packID string) (*domain.CreditPack, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) GetCreditBalance(ctx context.Context, orgID, bearerID string) (*domain.CreditBalance, error) {
+	return &domain.CreditBalance{OrgID: orgID, BearerID: bearerID}, nil
+}
+func (s *tierMockStore) ListCreditBalances(ctx context.Context, orgID string) ([]domain.CreditBalance, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) ConsumeCredits(ctx context.Context, orgID, bearerID string, credits int, operation string, metadata map[string]any, idempotencyKey string) (int, error) {
+	return 0, errCreditNotImpl
+}
+func (s *tierMockStore) PurchaseCredits(ctx context.Context, orgID, packID string) (*domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) ListCreditPurchases(ctx context.Context, orgID string, limit, offset int) ([]domain.CreditPurchase, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) ListCreditConsumptions(ctx context.Context, orgID, bearerID string, limit, offset int) ([]domain.CreditConsumption, error) {
+	return nil, errCreditNotImpl
+}
+func (s *tierMockStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
+	return errCreditNotImpl
+}

@@ -275,7 +275,7 @@ const VALUE_PROPS = [
   {
     title: "Unlimited seats. Flat pricing.",
     description:
-      "₹999/month (~$12). No per-seat fees, no MAU charges, no surprise bills at scale.",
+      "INR 1,999/month (~$29). No per-seat fees. No usage meters. No surprise bills..",
     icon: (
       <svg
         className="h-5 w-5"
