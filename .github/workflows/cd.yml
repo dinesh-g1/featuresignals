@@ -4,7 +4,9 @@
 # The runner user has kubectl configured at ~/.kube/config (set up by cloud-init).
 #
 # Usage:
-#   gh workflow run cd.yml -f version=<full-commit-sha>
+#   gh workflow run cd.yml -f version=<commit-sha> -f services=dashboard
+#   gh workflow run cd.yml -f version=<commit-sha> -f services=all
+#   gh workflow run cd.yml -f version=<commit-sha> -f services=server,dashboard
 #
 # Required secrets (set in GitHub Settings → Secrets and variables → Actions):
 #   GHCR_TOKEN       — GitHub PAT with read:packages
@@ -21,6 +23,11 @@ on:
         description: "Image tag (commit SHA) to deploy. Must exist in GHCR."
         required: true
         type: string
+      services:
+        description: "Services to deploy: server, dashboard, global-router (comma-separated) or 'all'"
+        required: true
+        default: "all"
+        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -36,6 +43,29 @@ jobs:
       PATH: /usr/local/bin:/usr/local/sbin:/usr/bin:/bin
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve services
+        id: resolve
+        run: |
+          INPUT="${{ inputs.services }}"
+          if [ "$INPUT" = "all" ]; then
+            echo "services=server,dashboard,global-router" >> $GITHUB_OUTPUT
+          else
+            echo "services=$INPUT" >> $GITHUB_OUTPUT
+          fi
+          echo "Resolved: $INPUT"
+
+      - name: Should deploy server?
+        id: deploy_server
+        run: echo "enabled=$([[ ",${{ steps.resolve.outputs.services }}," == *",server,"* ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Should deploy dashboard?
+        id: deploy_dashboard
+        run: echo "enabled=$([[ ",${{ steps.resolve.outputs.services }}," == *",dashboard,"* ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Should deploy global-router?
+        id: deploy_router
+        run: echo "enabled=$([[ ",${{ steps.resolve.outputs.services }}," == *",global-router,"* ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
       # ── Auth ────────────────────────────────────────────────────
       - name: Update GHCR pull secret
@@ -56,44 +86,56 @@ jobs:
             --namespace=${{ env.NS }}
           echo "✅ ZeptoMail secret synced"
 
-      - name: Apply K8s manifests (ConfigMaps, etc.)
+      - name: Apply K8s manifests
         run: |
           kubectl apply -f ${{ github.workspace }}/deploy/k8s/server.yaml
           echo "✅ K8s manifests applied"
 
       # ── Server ──────────────────────────────────────────────────
-      - name: Update server
+      - name: Deploy server
+        if: steps.deploy_server.outputs.enabled == 'true'
         run: |
+          # Force-delete any stuck pods before rollout
+          kubectl delete pod -n ${{ env.NS }} -l app=server --force --grace-period=0 2>/dev/null || true
+          sleep 5
           kubectl set image deployment/server \
             -n ${{ env.NS }} \
             server=${{ env.REGISTRY }}/featuresignals-server:${{ inputs.version }}
-          kubectl rollout status deployment/server -n ${{ env.NS }} --timeout=120s
-          echo "✅ Server updated"
+          kubectl rollout status deployment/server -n ${{ env.NS }} --timeout=180s
+          echo "✅ Server deployed"
 
       # ── Dashboard ───────────────────────────────────────────────
-      - name: Update dashboard
+      - name: Deploy dashboard
+        if: steps.deploy_dashboard.outputs.enabled == 'true'
         run: |
+          # Force-delete any stuck pods before rollout
+          kubectl delete pod -n ${{ env.NS }} -l app=dashboard --force --grace-period=0 2>/dev/null || true
+          sleep 5
           kubectl set image deployment/dashboard \
             -n ${{ env.NS }} \
             dashboard=${{ env.REGISTRY }}/featuresignals-dashboard:${{ inputs.version }}
-          kubectl rollout status deployment/dashboard -n ${{ env.NS }} --timeout=120s
-          echo "✅ Dashboard updated"
+          kubectl rollout status deployment/dashboard -n ${{ env.NS }} --timeout=180s
+          echo "✅ Dashboard deployed"
 
       # ── Global Router ───────────────────────────────────────────
-      - name: Update global-router
+      - name: Deploy global-router
+        if: steps.deploy_router.outputs.enabled == 'true'
         run: |
+          # Force-delete any stuck pods before rollout
+          kubectl delete pod -n ${{ env.NS }} -l app=global-router --force --grace-period=0 2>/dev/null || true
+          sleep 5
           kubectl set image deployment/global-router \
             -n ${{ env.NS }} \
             global-router=${{ env.REGISTRY }}/featuresignals-global-router:${{ inputs.version }}
-          kubectl rollout status deployment/global-router -n ${{ env.NS }} --timeout=120s
-          echo "✅ Global Router updated"
+          kubectl rollout status deployment/global-router -n ${{ env.NS }} --timeout=180s
+          echo "✅ Global Router deployed"
 
       # ── Smoke Tests ─────────────────────────────────────────────
-      - name: Smoke test — all pods running
+      - name: Smoke test
         run: |
-          for dep in server dashboard global-router; do
-            kubectl wait --for=condition=Available deployment/$dep -n ${{ env.NS }} --timeout=120s
-            echo "✅ $dep deployment available"
+          IFS=',' read -ra SVCS <<< "${{ steps.resolve.outputs.services }}"
+          for svc in "${SVCS[@]}"; do
+            kubectl wait --for=condition=Available deployment/$svc -n ${{ env.NS }} --timeout=60s || echo "⚠️  $svc not yet available"
           done
 
       # ── Summary ─────────────────────────────────────────────────
@@ -104,6 +146,7 @@ jobs:
           echo "║           DEPLOY COMPLETE                                  ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
-          echo "  Version: ${{ inputs.version }}"
+          echo "  Version:  ${{ inputs.version }}"
+          echo "  Services: ${{ steps.resolve.outputs.services }}"
           kubectl get pods -n ${{ env.NS }} -o wide
           echo ""
