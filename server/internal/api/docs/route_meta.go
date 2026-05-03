@@ -71,16 +71,26 @@ var AllRouteMeta = []RouteMeta{
 	{Method: "GET", Path: "/v1/stream/{envKey}", Tag: "Evaluation", Summary: "SSE stream", Description: "Opens a Server-Sent Events stream for real-time flag updates.", Security: []string{"apikey"}, Status: 200},
 	{Method: "POST", Path: "/v1/track", Tag: "Metrics", Summary: "Track impression", Description: "Records a flag impression for A/B testing analytics.", Security: []string{"apikey"}, ReqType: "TrackImpressionRequest", Status: 204},
 
+	// ── Agent API (SDK polling) ─────────────────────────────────────────
+	{Method: "GET", Path: "/v1/agent/flag/{key}", Tag: "Evaluation", Summary: "Agent flag lookup", Description: "Polls for the current state of a single flag. Used by SDKs in polling mode.", Security: []string{"apikey"}, Status: 200},
+	{Method: "POST", Path: "/v1/agent/bulk-eval", Tag: "Evaluation", Summary: "Agent bulk evaluate", Description: "Evaluates multiple flags in a single request. Used by SDKs.", Security: []string{"apikey"}, ReqType: "BulkEvaluateRequest", Status: 200},
+	{Method: "POST", Path: "/v1/agent/evaluate", Tag: "Evaluation", Summary: "Agent evaluate", Description: "Evaluates a single flag for an SDK agent.", Security: []string{"apikey"}, ReqType: "EvaluateRequest", Status: 200},
+	{Method: "POST", Path: "/v1/agent/create-flag", Tag: "Evaluation", Summary: "Agent create flag", Description: "Proxies flag creation for SDKs.", Security: []string{"apikey"}, Status: 201},
+
 	// ── Projects ────────────────────────────────────────────────────────
 	{Method: "GET", Path: "/v1/projects", Tag: "Projects", Summary: "List projects", Description: "Returns all projects the authenticated user has access to.", Security: []string{"bearer"}, RespType: "PaginatedResponse", Status: 200},
 	{Method: "GET", Path: "/v1/projects/{projectID}", Tag: "Projects", Summary: "Get project", Description: "Returns a single project by ID.", Security: []string{"bearer"}, RespType: "ProjectResponse", Status: 200},
 	{Method: "POST", Path: "/v1/projects", Tag: "Projects", Summary: "Create project", Description: "Creates a new project.", Security: []string{"bearer"}, ReqType: "CreateProjectRequest", RespType: "ProjectResponse", Status: 201},
 	{Method: "DELETE", Path: "/v1/projects/{projectID}", Tag: "Projects", Summary: "Delete project", Description: "Permanently deletes a project and all associated resources.", Security: []string{"bearer"}, Status: 204},
+	{Method: "PUT", Path: "/v1/projects/{projectID}", Tag: "Projects", Summary: "Update project", Description: "Updates a project's name, description, or settings.", Security: []string{"bearer"}, Status: 200},
+	{Method: "GET", Path: "/v1/projects/{projectID}/activity", Tag: "Projects", Summary: "Project activity", Description: "Returns recent activity for a specific project.", Security: []string{"bearer"}, Status: 200},
+	{Method: "GET", Path: "/v1/projects/{projectID}/pinned", Tag: "Projects", Summary: "List pinned items", Description: "Returns pinned items for a project.", Security: []string{"bearer"}, Status: 200},
 
 	// ── Environments ────────────────────────────────────────────────────
 	{Method: "GET", Path: "/v1/projects/{projectID}/environments", Tag: "Environments", Summary: "List environments", Description: "Returns all environments in a project.", Security: []string{"bearer"}, RespType: "PaginatedResponse", Status: 200},
 	{Method: "POST", Path: "/v1/projects/{projectID}/environments", Tag: "Environments", Summary: "Create environment", Description: "Creates a new environment in the specified project.", Security: []string{"bearer"}, ReqType: "CreateEnvironmentRequest", RespType: "EnvironmentResponse", Status: 201},
 	{Method: "DELETE", Path: "/v1/projects/{projectID}/environments/{envID}", Tag: "Environments", Summary: "Delete environment", Description: "Permanently deletes an environment and its flag states.", Security: []string{"bearer"}, Status: 204},
+	{Method: "PUT", Path: "/v1/projects/{projectID}/environments/{envID}", Tag: "Environments", Summary: "Update environment", Description: "Updates an environment's name, key, or description.", Security: []string{"bearer"}, Status: 200},
 
 	// ── Flags ───────────────────────────────────────────────────────────
 	{Method: "GET", Path: "/v1/projects/{projectID}/flags", Tag: "Flags", Summary: "List flags", Description: "Returns all feature flags in a project.", Security: []string{"bearer"}, RespType: "PaginatedResponse", Status: 200},
@@ -88,6 +98,9 @@ var AllRouteMeta = []RouteMeta{
 	{Method: "POST", Path: "/v1/projects/{projectID}/flags", Tag: "Flags", Summary: "Create flag", Description: "Creates a new feature flag in the project.", Security: []string{"bearer"}, ReqType: "CreateFlagRequest", RespType: "FlagResponse", Status: 201},
 	{Method: "PUT", Path: "/v1/projects/{projectID}/flags/{flagKey}", Tag: "Flags", Summary: "Update flag", Description: "Updates the flag definition (name, description, tags, category, status).", Security: []string{"bearer"}, ReqType: "CreateFlagRequest", RespType: "FlagResponse", Status: 200},
 	{Method: "DELETE", Path: "/v1/projects/{projectID}/flags/{flagKey}", Tag: "Flags", Summary: "Delete flag", Description: "Permanently deletes a feature flag and all associated state.", Security: []string{"bearer"}, Status: 204},
+	{Method: "GET", Path: "/v1/projects/{projectID}/flags/{flagKey}/history", Tag: "Flags", Summary: "Get flag history", Description: "Returns version history for a flag.", Security: []string{"bearer"}, Status: 200},
+	{Method: "GET", Path: "/v1/projects/{projectID}/flags/{flagKey}/history/{version}", Tag: "Flags", Summary: "Get flag version", Description: "Returns a specific historical version of a flag.", Security: []string{"bearer"}, Status: 200},
+	{Method: "POST", Path: "/v1/projects/{projectID}/flags/{flagKey}/rollback", Tag: "Flags", Summary: "Rollback flag", Description: "Rolls back a flag to a previous version.", Security: []string{"bearer"}, Status: 200},
 
 	// ── Flag State ──────────────────────────────────────────────────────
 	{Method: "GET", Path: "/v1/projects/{projectID}/flags/{flagKey}/environments/{envID}", Tag: "Flag State", Summary: "Get flag state", Description: "Returns the flag's state for a specific environment.", Security: []string{"bearer"}, RespType: "FlagStateResponse", Status: 200},
@@ -166,6 +179,34 @@ var AllRouteMeta = []RouteMeta{
 
 	// ── Sales ───────────────────────────────────────────────────────────
 	{Method: "POST", Path: "/v1/sales/inquiry", Tag: "Sales", Summary: "Submit sales inquiry", Description: "Submits an Enterprise plan inquiry.", Security: []string{}, ReqType: "SalesInquiryRequest", Status: 201},
+
+	// ── Pinned Items ─────────────────────────────────────────────────────
+	{Method: "POST", Path: "/v1/pinned", Tag: "Projects", Summary: "Pin item", Description: "Pins a resource (flag, segment, environment) for quick access.", Security: []string{"bearer"}, Status: 201},
+	{Method: "DELETE", Path: "/v1/pinned/{pinnedID}", Tag: "Projects", Summary: "Unpin item", Description: "Removes a pinned item.", Security: []string{"bearer"}, Status: 204},
+
+	// ── Search ───────────────────────────────────────────────────────────
+	{Method: "GET", Path: "/v1/search", Tag: "Search", Summary: "Search", Description: "Searches across flags, segments, projects, and members.", Security: []string{"bearer"}, Status: 200},
+
+	// ── Limits ───────────────────────────────────────────────────────────
+	{Method: "GET", Path: "/v1/limits", Tag: "Billing", Summary: "Get plan limits", Description: "Returns current plan resource limits and usage.", Security: []string{"bearer"}, Status: 200},
+
+	// ── Integrations ────────────────────────────────────────────────────
+	{Method: "GET", Path: "/v1/integrations", Tag: "Integrations", Summary: "List integrations", Description: "Returns all configured integrations.", Security: []string{"bearer"}, Status: 200},
+	{Method: "GET", Path: "/v1/integrations/{integrationID}", Tag: "Integrations", Summary: "Get integration", Description: "Returns a single integration by ID.", Security: []string{"bearer"}, Status: 200},
+	{Method: "POST", Path: "/v1/integrations", Tag: "Integrations", Summary: "Create integration", Description: "Creates a new integration (Slack, webhook, etc.).", Security: []string{"bearer"}, Status: 201},
+	{Method: "PUT", Path: "/v1/integrations/{integrationID}", Tag: "Integrations", Summary: "Update integration", Description: "Updates an integration configuration.", Security: []string{"bearer"}, Status: 200},
+	{Method: "DELETE", Path: "/v1/integrations/{integrationID}", Tag: "Integrations", Summary: "Delete integration", Description: "Removes an integration.", Security: []string{"bearer"}, Status: 204},
+	{Method: "GET", Path: "/v1/integrations/{integrationID}/deliveries", Tag: "Integrations", Summary: "List integration deliveries", Description: "Returns delivery history for an integration.", Security: []string{"bearer"}, Status: 200},
+	{Method: "POST", Path: "/v1/integrations/{integrationID}/test", Tag: "Integrations", Summary: "Test integration", Description: "Sends a test event to verify the integration works.", Security: []string{"bearer"}, Status: 200},
+
+	// ── Docs ─────────────────────────────────────────────────────────────
+	{Method: "GET", Path: "/v1/openapi.json", Tag: "Docs", Summary: "OpenAPI spec", Description: "Returns the OpenAPI 3.0 specification for the API. Public endpoint.", Security: []string{}, Status: 200},
+	{Method: "GET", Path: "/v1/docs", Tag: "Docs", Summary: "API docs", Description: "Serves the API documentation page.", Security: []string{}, Status: 200},
+
+	// ── Ops Portal Auth (internal) ──────────────────────────────────────
+	{Method: "POST", Path: "/api/v1/ops/auth/login", Tag: "Ops", Summary: "Ops login", Description: "Authenticates an ops portal user.", Security: []string{}, Status: 200},
+	{Method: "POST", Path: "/api/v1/ops/auth/logout", Tag: "Ops", Summary: "Ops logout", Description: "Terminates an ops portal session.", Security: []string{"bearer"}, Status: 200},
+	{Method: "POST", Path: "/api/v1/ops/auth/refresh", Tag: "Ops", Summary: "Ops refresh token", Description: "Refreshes an ops portal access token.", Security: []string{}, Status: 200},
 
 	// ── Billing callbacks (public) ──────────────────────────────────────
 	{Method: "POST", Path: "/v1/billing/payu/callback", Tag: "Billing", Summary: "PayU callback", Description: "Handles PayU payment callback. Redirects to dashboard.", Security: []string{}, Status: 303},
