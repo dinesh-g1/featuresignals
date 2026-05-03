@@ -44,6 +44,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve version (short SHA → full SHA)
+        id: version
+        run: |
+          FULL=$(git rev-parse ${{ inputs.version }})
+          echo "full=$FULL" >> $GITHUB_OUTPUT
+          echo "Resolved: ${{ inputs.version }} → $FULL"
+
+
       - name: Resolve services
         id: resolve
         run: |
@@ -137,7 +145,7 @@ jobs:
           echo "=== Setting image ==="
           kubectl set image deployment/$APP \
             -n ${{ env.NS }} \
-            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ inputs.version }}
+            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ steps.version.outputs.full }}
 
           sleep 10
 
@@ -176,7 +184,7 @@ jobs:
           echo "=== Setting image ==="
           kubectl set image deployment/$APP \
             -n ${{ env.NS }} \
-            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ inputs.version }}
+            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ steps.version.outputs.full }}
 
           sleep 10
 
@@ -215,7 +223,7 @@ jobs:
           echo "=== Setting image ==="
           kubectl set image deployment/$APP \
             -n ${{ env.NS }} \
-            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ inputs.version }}
+            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ steps.version.outputs.full }}
 
           sleep 10
 
@@ -243,7 +251,7 @@ jobs:
           echo "║           DEPLOY COMPLETE                                  ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
-          echo "  Version:  ${{ inputs.version }}"
+          echo "  Version:  ${{ steps.version.outputs.full }}"
           echo "  Services: ${{ steps.resolve.outputs.services }}"
           echo ""
           kubectl get pods -n ${{ env.NS }} -o wide
