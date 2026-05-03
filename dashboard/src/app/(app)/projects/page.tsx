@@ -198,108 +198,114 @@ export default function ProjectsPage() {
   // ── Render ──
   return (
     <div className="p-6 sm:p-8 max-w-6xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">
-          Projects
-        </h1>
-        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
-          Projects group your flags, environments, and segments together.
-        </p>
-      </div>
-
-      {/* Empty state */}
+      {/* Empty state — centered in viewport */}
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)]">
-            <BuildingIcon className="h-8 w-8 text-[var(--fgColor-accent)]" />
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)] text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--bgColor-accent-muted)] to-[var(--bgColor-accent-muted)]/50 ring-1 ring-[var(--borderColor-accent-muted)]/50 shadow-sm">
+            <BuildingIcon className="h-10 w-10 text-[var(--fgColor-accent)]" />
           </div>
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+          <h2 className="text-xl font-bold text-[var(--fgColor-default)]">
             No projects yet
           </h2>
-          <p className="mt-1 max-w-sm text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--fgColor-muted)]">
             Create your first project to start managing feature flags,
-            environments, and segments.
+            environments, and segments — all in one place.
           </p>
-          <Button onClick={openCreate} variant="primary" className="mt-6">
-            <PlusIcon className="h-4 w-4 mr-2" />
+          <Button
+            onClick={openCreate}
+            variant="primary"
+            size="lg"
+            className="mt-8"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
             Create your first project
           </Button>
         </div>
       ) : (
-        /* Project cards grid */
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {projects.map((project) => {
-            const isActive = project.id === projectId;
-            return (
-              <Card
-                key={project.id}
-                className={cn(
-                  "group relative p-6 transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col items-center justify-center min-h-[120px]",
-                  isActive && "ring-2 ring-[var(--fgColor-accent)]",
-                )}
-                onClick={() => handleSelectProject(project)}
-              >
-                {/* Edit/Delete buttons - visible on hover */}
-                <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEdit(project);
-                    }}
-                    className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-accent)]"
-                    title="Edit project"
-                  >
-                    <PencilIcon className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDelete(project);
-                    }}
-                    className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-danger)]"
-                    title="Delete project"
-                  >
-                    <TrashIcon className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-
-                {/* Icon */}
-                <div
+        <>
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">
+              Projects
+            </h1>
+            <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+              Projects group your flags, environments, and segments together.
+            </p>
+          </div>
+          {/* Project cards grid */}
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+            {projects.map((project) => {
+              const isActive = project.id === projectId;
+              return (
+                <Card
+                  key={project.id}
                   className={cn(
-                    "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-                    isActive
-                      ? "bg-[var(--bgColor-accent-muted)]"
-                      : "bg-[var(--bgColor-muted)] group-hover:bg-[var(--bgColor-accent-muted)]",
+                    "group relative p-6 transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col items-center justify-center min-h-[120px]",
+                    isActive && "ring-2 ring-[var(--fgColor-accent)]",
                   )}
+                  onClick={() => handleSelectProject(project)}
                 >
-                  <BuildingIcon
+                  {/* Edit/Delete buttons - visible on hover */}
+                  <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(project);
+                      }}
+                      className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-accent)]"
+                      title="Edit project"
+                    >
+                      <PencilIcon className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDelete(project);
+                      }}
+                      className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-danger)]"
+                      title="Delete project"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Icon */}
+                  <div
                     className={cn(
-                      "h-5 w-5",
+                      "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
                       isActive
-                        ? "text-[var(--fgColor-accent)]"
-                        : "text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-accent)]",
+                        ? "bg-[var(--bgColor-accent-muted)]"
+                        : "bg-[var(--bgColor-muted)] group-hover:bg-[var(--bgColor-accent-muted)]",
                     )}
-                  />
-                </div>
+                  >
+                    <BuildingIcon
+                      className={cn(
+                        "h-5 w-5",
+                        isActive
+                          ? "text-[var(--fgColor-accent)]"
+                          : "text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-accent)]",
+                      )}
+                    />
+                  </div>
 
-                {/* Name */}
-                <h3 className="font-semibold text-[var(--fgColor-default)] text-center truncate max-w-full">
-                  {project.name}
-                </h3>
-              </Card>
-            );
-          })}
+                  {/* Name */}
+                  <h3 className="font-semibold text-[var(--fgColor-default)] text-center truncate max-w-full">
+                    {project.name}
+                  </h3>
+                </Card>
+              );
+            })}
 
-          {/* Create Project card */}
-          <button
-            onClick={openCreate}
-            className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--borderColor-default)] flex flex-col items-center justify-center gap-2 text-[var(--fgColor-muted)] hover:border-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-all duration-200"
-          >
-            <PlusIcon className="h-8 w-8" />
-            <span className="text-sm font-medium">Create Project</span>
-          </button>
-        </div>
+            {/* Create Project card */}
+            <button
+              onClick={openCreate}
+              className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--borderColor-default)] flex flex-col items-center justify-center gap-2 text-[var(--fgColor-muted)] hover:border-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-all duration-200"
+            >
+              <PlusIcon className="h-8 w-8" />
+              <span className="text-sm font-medium">Create Project</span>
+            </button>
+          </div>
+        </>
       )}
 
       {/* Create / Edit Dialog */}

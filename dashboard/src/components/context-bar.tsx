@@ -2,21 +2,23 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useWorkspace } from "@/hooks/use-workspace";
 import { useAppStore } from "@/stores/app-store";
 import { EventBus } from "@/lib/event-bus";
 import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
+import { UserMenu } from "@/components/user-menu";
 import {
   SearchIcon,
   ChevronDownIcon,
-  PlusIcon,
   CheckIcon,
+  BellIcon,
+  AuditLogIcon,
 } from "@/components/icons/nav-icons";
-import type { Project, Environment } from "@/lib/types";
+import type { Project, Environment, AuditEntry } from "@/lib/types";
 
-// ─── Project Dropdown ───────────────────────────────────────────────
+// ─── Project Dropdown (no inline create) ───────────────────────────
 
 function ProjectDropdown() {
   const token = useAppStore((s) => s.token);
@@ -27,8 +29,6 @@ function ProjectDropdown() {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [search, setSearch] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   const selected = projects.find((p) => p.id === currentProjectId);
@@ -36,6 +36,7 @@ function ProjectDropdown() {
   function handleSelect(project: Project) {
     setCurrentProject(project.id);
     setOpen(false);
+    setSearch("");
     router.push(`/projects/${project.id}/dashboard`);
   }
 
@@ -71,28 +72,6 @@ function ProjectDropdown() {
       p.slug.toLowerCase().includes(search.toLowerCase()),
   );
 
-  async function handleCreate() {
-    if (!token || !name.trim()) return;
-    setCreating(true);
-    try {
-      const project = await api.createProject(token, {
-        name: name.trim(),
-        slug: name
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, ""),
-      });
-      setCurrentProject(project.id);
-      EventBus.dispatch(EVENTS.PROJECTS_CHANGED);
-      setOpen(false);
-      setName("");
-      router.push(`/projects/${project.id}/dashboard`);
-    } finally {
-      setCreating(false);
-    }
-  }
-
   return (
     <div className="relative" ref={ref}>
       <button
@@ -104,10 +83,12 @@ function ProjectDropdown() {
             : "bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] hover:border-[var(--borderColor-emphasis)]",
         )}
       >
-        <span>{selected?.name || "Select Project"}</span>
+        <span className="truncate max-w-[140px]">
+          {selected?.name || "Select Project"}
+        </span>
         <ChevronDownIcon
           className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200",
+            "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
             open && "rotate-180",
             open
               ? "text-[var(--fgColor-accent)]"
@@ -132,14 +113,9 @@ function ProjectDropdown() {
             </div>
 
             <div className="max-h-48 overflow-y-auto space-y-0.5">
-              {filtered.length === 0 && !search && (
+              {filtered.length === 0 && (
                 <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
-                  No projects yet. Create one below.
-                </p>
-              )}
-              {filtered.length === 0 && search && (
-                <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
-                  No projects match "{search}"
+                  {search ? `No projects match "${search}"` : "No projects yet"}
                 </p>
               )}
               {filtered.map((p) => (
@@ -160,28 +136,6 @@ function ProjectDropdown() {
                 </button>
               ))}
             </div>
-
-            <div className="mt-1.5 pt-1.5 border-t border-[var(--borderColor-muted)]">
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  placeholder="New project name..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreate();
-                  }}
-                  className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-2 py-1.5 text-xs text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
-                />
-                <button
-                  onClick={handleCreate}
-                  disabled={creating || !name.trim()}
-                  className="shrink-0 rounded-lg bg-[var(--bgColor-accent-emphasis)] px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--bgColor-accent-emphasis)]-dark transition-colors disabled:opacity-50"
-                >
-                  <PlusIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -189,7 +143,7 @@ function ProjectDropdown() {
   );
 }
 
-// ─── Environment Dropdown ───────────────────────────────────────────
+// ─── Environment Dropdown (no colored dots) ────────────────────────
 
 function EnvironmentDropdown() {
   const token = useAppStore((s) => s.token);
@@ -199,8 +153,6 @@ function EnvironmentDropdown() {
 
   const [open, setOpen] = useState(false);
   const [envs, setEnvs] = useState<Environment[]>([]);
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   const selected = envs.find((e) => e.id === currentEnvId);
@@ -241,37 +193,6 @@ function EnvironmentDropdown() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const envColors: Record<string, string> = {
-    production: "bg-emerald-500",
-    staging: "bg-amber-500",
-    development: "bg-blue-500",
-    test: "bg-purple-500",
-    qa: "bg-teal-500",
-    default: "bg-stone-400",
-  };
-
-  async function handleCreate() {
-    if (!token || !currentProjectId || !name.trim()) return;
-    setCreating(true);
-    try {
-      const env = await api.createEnvironment(token, currentProjectId, {
-        name: name.trim(),
-        slug: name
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, ""),
-        color: "#14b8a6",
-      });
-      setCurrentEnv(env.id);
-      EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
-      setOpen(false);
-      setName("");
-    } finally {
-      setCreating(false);
-    }
-  }
-
   if (!currentProjectId) return null;
 
   return (
@@ -285,18 +206,12 @@ function EnvironmentDropdown() {
             : "bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] hover:border-[var(--borderColor-emphasis)]",
         )}
       >
-        {selected && (
-          <span
-            className={cn(
-              "h-2 w-2 rounded-full",
-              envColors[selected.slug] || envColors.default,
-            )}
-          />
-        )}
-        <span>{selected?.name || "Select Environment"}</span>
+        <span className="truncate max-w-[120px]">
+          {selected?.name || "Select Environment"}
+        </span>
         <ChevronDownIcon
           className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200",
+            "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
             open && "rotate-180",
             open
               ? "text-[var(--fgColor-accent)]"
@@ -306,7 +221,7 @@ function EnvironmentDropdown() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 w-56 z-50 animate-slide-up">
+        <div className="absolute left-0 top-full mt-1.5 w-48 z-50 animate-slide-up">
           <div className="rounded-xl border border-[var(--borderColor-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
             <div className="max-h-48 overflow-y-auto space-y-0.5">
               {envs.length === 0 && (
@@ -328,42 +243,12 @@ function EnvironmentDropdown() {
                       : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]",
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "h-2 w-2 rounded-full shrink-0",
-                        envColors[e.slug] || envColors.default,
-                      )}
-                    />
-                    <span className="truncate">{e.name}</span>
-                  </div>
+                  <span className="truncate">{e.name}</span>
                   {e.id === currentEnvId && (
                     <CheckIcon className="h-3.5 w-3.5 text-[var(--fgColor-accent)] shrink-0" />
                   )}
                 </button>
               ))}
-            </div>
-
-            <div className="mt-1.5 pt-1.5 border-t border-[var(--borderColor-muted)]">
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  placeholder="New env name..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreate();
-                  }}
-                  className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-2 py-1.5 text-xs text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
-                />
-                <button
-                  onClick={handleCreate}
-                  disabled={creating || !name.trim()}
-                  className="shrink-0 rounded-lg bg-[var(--bgColor-accent-emphasis)] px-2 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--bgColor-accent-emphasis)]-dark transition-colors disabled:opacity-50"
-                >
-                  <PlusIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -372,91 +257,196 @@ function EnvironmentDropdown() {
   );
 }
 
-// ─── Omni-Search Button ─────────────────────────────────────────────
+// ─── Omni-Search Button (centered, clickable → CommandPalette) ──────
 
 function OmniSearchButton() {
   return (
-    <button className="flex items-center gap-2 bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] hover:border-[var(--borderColor-emphasis)] hover:bg-[var(--bgColor-muted)] px-3 py-1.5 rounded-lg text-sm transition-all w-56">
-      <SearchIcon className="h-3.5 w-3.5 shrink-0" />
-      <span className="flex-1 text-left text-xs">
-        Search flags, segments...
+    <button
+      onClick={() => {
+        import("@/components/command-palette").then((mod) =>
+          mod.openCommandPalette(),
+        );
+      }}
+      className="flex items-center gap-2.5 bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] hover:border-[var(--borderColor-emphasis)] hover:bg-[var(--bgColor-muted)] hover:shadow-sm px-4 py-2 rounded-lg text-sm transition-all w-full max-w-lg cursor-text"
+    >
+      <SearchIcon className="h-4 w-4 shrink-0" />
+      <span className="flex-1 text-left text-sm">
+        Search flags, segments, environments...
       </span>
-      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-white border border-[var(--borderColor-default)] px-1.5 py-0.5 rounded text-[var(--fgColor-subtle)]">
+      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-[var(--bgColor-muted)] border border-[var(--borderColor-default)] px-1.5 py-0.5 rounded text-[var(--fgColor-subtle)]">
         <span className="text-[9px]">⌘</span>K
       </kbd>
     </button>
   );
 }
 
-// ─── Profile Avatar ─────────────────────────────────────────────────
+// ─── Activity Bell with recent audit dropdown ───────────────────────
 
-function ProfileAvatar() {
-  const user = useAppStore((s) => s.user);
-  const initials = (user?.name || "U")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+function ActivityBell() {
+  const token = useAppStore((s) => s.token);
+  const router = useRouter();
+  const pathname = usePathname();
+  const isActive =
+    pathname === "/activity" || pathname.startsWith("/activity/");
+
+  const [open, setOpen] = useState(false);
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Fetch recent audit entries
+  useEffect(() => {
+    if (!token) return;
+    api
+      .listAudit(token, 5, 0)
+      .then(setEntries)
+      .catch(() => {});
+  }, [token]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open]);
 
   return (
-    <div
-      className="h-8 w-8 rounded-full bg-[var(--bgColor-accent-emphasis)] text-white flex items-center justify-center text-xs font-bold shadow-sm shrink-0"
-      title={user?.name || "User"}
-    >
-      {initials}
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className={cn(
+          "relative rounded-lg p-2 transition-all",
+          open || isActive
+            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+            : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]",
+        )}
+        aria-label="Activity"
+        title="Activity"
+      >
+        <BellIcon className="h-5 w-5" />
+      </button>
+
+      {open && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+
+          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-xl border border-[var(--borderColor-default)] bg-white shadow-[var(--shadow-floating-medium)] animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--borderColor-muted)]">
+              <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+                Recent Activity
+              </h3>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/activity");
+                }}
+                className="text-xs font-medium text-[var(--fgColor-accent)] hover:underline"
+              >
+                View all
+              </button>
+            </div>
+
+            {/* Entries */}
+            <div className="max-h-64 overflow-y-auto py-1">
+              {entries.length === 0 ? (
+                <p className="px-4 py-6 text-xs text-[var(--fgColor-muted)] text-center">
+                  No recent activity.
+                </p>
+              ) : (
+                entries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => {
+                      setOpen(false);
+                      router.push("/activity");
+                    }}
+                    className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-[var(--bgColor-muted)] transition-colors"
+                  >
+                    <span className="mt-0.5 shrink-0">
+                      <AuditLogIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[var(--fgColor-default)] truncate">
+                        <span className="font-medium">{entry.action}</span>
+                        <span className="text-[var(--fgColor-muted)]">
+                          {" "}
+                          on{" "}
+                        </span>
+                        <span className="font-mono text-xs">
+                          {entry.resource_type}
+                        </span>
+                      </p>
+                      <p className="text-xs text-[var(--fgColor-subtle)] mt-0.5">
+                        {timeAgo(entry.created_at)}
+                      </p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Footer link */}
+            <div className="border-t border-[var(--borderColor-muted)] px-4 py-2.5">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/activity");
+                }}
+                className="w-full text-center text-xs font-medium text-[var(--fgColor-accent)] hover:underline py-1"
+              >
+                View all activity →
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-// ─── ContextBar (Main Export) ───────────────────────────────────────
+// ─── ContextBar (Main Export) ──────────────────────────────────────
 
 export function ContextBar() {
-  const pathname = usePathname();
-  const { organization } = useWorkspace();
-
-  // Show project/env selectors only on project-scoped routes
-  const isProjectRoute = pathname
-    ? /^\/projects\/[^/]+\//.test(pathname)
-    : false;
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
 
   return (
-    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--borderColor-default)]/60 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
-      {/* Left: Breadcrumb-style hierarchy */}
+    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--borderColor-default)]/60 flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-40 shrink-0">
+      {/* Left: Project + Environment breadcrumb */}
       <div className="flex items-center gap-2 text-sm min-w-0">
-        {/* Org name */}
-        <span className="text-[var(--fgColor-subtle)] font-medium hidden sm:block truncate max-w-[120px]">
-          {organization?.name || "Workspace"}
-        </span>
+        <ProjectDropdown />
 
-        {isProjectRoute && (
+        {currentProjectId && (
           <>
-            <span className="text-stone-300 hidden sm:block">/</span>
-
-            {/* Project selector */}
-            <ProjectDropdown />
-
-            <span className="text-stone-300">/</span>
-
-            {/* Environment selector */}
+            <span className="text-stone-300 select-none">/</span>
             <EnvironmentDropdown />
-          </>
-        )}
-
-        {!isProjectRoute && (
-          <>
-            <span className="text-stone-300">/</span>
-            <span className="text-[var(--fgColor-muted)] font-medium text-sm capitalize">
-              {pathname?.split("/").pop()?.replace(/-/g, " ") || "Workspace"}
-            </span>
           </>
         )}
       </div>
 
-      {/* Right: Omni-Search & Profile */}
-      <div className="flex items-center gap-3">
+      {/* Center: Omni-Search (flex-1 to push to center) */}
+      <div className="flex-1 flex justify-center px-2">
         <OmniSearchButton />
-        <ProfileAvatar />
+      </div>
+
+      {/* Right: Activity Bell + User Menu */}
+      <div className="flex items-center gap-3 shrink-0">
+        <ActivityBell />
+        <UserMenu />
       </div>
     </header>
   );

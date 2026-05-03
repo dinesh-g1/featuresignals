@@ -8,7 +8,6 @@ import { useSidebarStore } from "@/stores/sidebar-store";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
-import { Logo } from "@/components/logo";
 import {
   FlagIcon,
   SegmentIcon,
@@ -26,6 +25,10 @@ import {
   BookIcon,
   ExternalLinkIcon,
   UsersIcon,
+  ProjectIcon,
+  ActivityIcon,
+  BarChartIcon,
+  HelpCircleIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -41,9 +44,18 @@ interface NavGroupDef {
   items: NavItemDef[];
 }
 
-// ─── Sidebar groups — logically categorized ──────────────────────────
+// ─── Org-level nav items (when no project selected) ───────────────────
 
-// These paths are relative to /projects/[projectId] and will be prefixed at render time
+const orgNavItems: NavItemDef[] = [
+  { href: "/projects", label: "Projects", icon: ProjectIcon },
+  { href: "/usage", label: "Usage", icon: BarChartIcon },
+  { href: "/activity", label: "Activity", icon: ActivityIcon },
+  { href: "/limits", label: "Limits", icon: CheckListIcon },
+  { href: "/support", label: "Support", icon: HelpCircleIcon },
+];
+
+// ─── Project-level nav groups (when project selected) ─────────────────
+
 const featureManagement: NavItemDef[] = [
   { href: "/flags", label: "Flags", icon: FlagIcon },
   { href: "/segments", label: "Segments", icon: SegmentIcon },
@@ -85,7 +97,7 @@ const sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
   { label: "Tools", items: tools, defaultExpanded: false },
 ];
 
-// ─── Pin Icon (inline SVG — no Primer equivalent) ─────────────────────
+// ─── Pin Icon ─────────────────────────────────────────────────────────
 
 function PinIcon({ className }: { className?: string }) {
   return (
@@ -110,9 +122,29 @@ interface PinnedItem {
   created_at: string;
 }
 
-// ─── Nav Item ────────────────────────────────────────────────────────
+// ─── Simple Nav Item (no project prefix) ─────────────────────────────
 
-function NavItem({
+function SimpleNavItem({ item, active }: { item: NavItemDef; active: boolean }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
+        active
+          ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border-l-[3px] border-l-[var(--fgColor-accent)] pl-[9px]"
+          : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] border-l-[3px] border-l-transparent pl-[9px]",
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span>{item.label}</span>
+    </Link>
+  );
+}
+
+// ─── Project-scoped Nav Item ─────────────────────────────────────────
+
+function ProjectNavItem({
   item,
   active,
   projectId,
@@ -197,7 +229,7 @@ function NavGroup({
       {expanded && (
         <div className="mt-0.5 space-y-0.5">
           {group.items.map((item) => (
-            <NavItem
+            <ProjectNavItem
               key={item.href}
               item={item}
               projectId={projectId}
@@ -213,7 +245,7 @@ function NavGroup({
   );
 }
 
-// ─── Pinned Section ────────────────────────────────────────────────────
+// ─── Pinned Section ──────────────────────────────────────────────────
 
 function PinnedSection() {
   const token = useAppStore((s) => s.token);
@@ -292,19 +324,55 @@ function PinnedSection() {
   );
 }
 
-// ─── NavList ─────────────────────────────────────────────────────────
+// ─── Docs & Help Footer ──────────────────────────────────────────────
+
+function DocsFooter() {
+  return (
+    <div className="border-t border-[var(--borderColor-muted)] px-3 py-3 space-y-1">
+      <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
+        Docs & Help
+      </p>
+      <a
+        href={DOCS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
+      >
+        <BookIcon className="h-4 w-4 shrink-0" />
+        Documentation
+        <ExternalLinkIcon className="h-3 w-3 shrink-0 opacity-50 ml-auto" />
+      </a>
+      <a
+        href={WEBSITE_URL + "/community"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
+      >
+        <UsersIcon className="h-4 w-4 shrink-0" />
+        Community
+        <ExternalLinkIcon className="h-3 w-3 shrink-0 opacity-50 ml-auto" />
+      </a>
+    </div>
+  );
+}
+
+// ─── NavList — Main Export ───────────────────────────────────────────
 
 export function NavList() {
   const pathname = usePathname();
   const isOpen = useSidebarStore((s) => s.isOpen);
   const close = useSidebarStore((s) => s.close);
-  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const currentProjectId = useAppStore((s) => s.currentProjectId) || "";
 
-  const dashHref = currentProjectId
+  // Sidebar mode: project-nav only when URL is inside a project AND project is selected
+  const isProjectRoute =
+    pathname && /^\/projects\/[^/]+/.test(pathname);
+  const isInProject = isProjectRoute && !!currentProjectId;
+
+  const dashHref = isInProject
     ? `/projects/${currentProjectId}/dashboard`
     : "/dashboard";
-  const dashActive = currentProjectId
+  const dashActive = isInProject
     ? pathname === dashHref || pathname.startsWith(dashHref + "/")
     : false;
 
@@ -325,18 +393,38 @@ export function NavList() {
           "transition-transform duration-200",
         )}
       >
-        {/* Logo — entire header clickable to /projects */}
+        {/* Header — FeatureSignals brand, clickable → /projects */}
         <Link
           href="/projects"
-          onClick={() => {
-            close();
-            setCurrentProject("");
-          }}
-          className="flex h-14 items-center justify-between px-4 border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-muted)] transition-colors text-[var(--fgColor-default)]"
+          className="flex h-14 items-center gap-2.5 px-4 border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-muted)] transition-colors"
         >
-          <Logo size="sm" variant="minimal" />
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="var(--fgColor-accent)"
+            className="shrink-0"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
+            />
+          </svg>
+          <div className="flex flex-col leading-none min-w-0 flex-1">
+            <span className="text-sm font-bold tracking-tight text-[var(--fgColor-default)]">
+              Feature
+              <span className="bg-gradient-to-r from-[#0969da] to-[#54aeff] bg-clip-text text-transparent">
+                Signals
+              </span>
+            </span>
+          </div>
           <button
-            onClick={close}
+            onClick={(e) => {
+              e.preventDefault();
+              close();
+            }}
             className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] md:hidden"
             aria-label="Close sidebar"
           >
@@ -347,66 +435,56 @@ export function NavList() {
         </Link>
 
         {/* Navigation */}
-        <nav
-          className="flex-1 overflow-y-auto py-4"
-          aria-label="Project navigation"
-        >
-          {/* Dashboard — always first, stands alone */}
-          <div className="px-3 pb-1">
-            <NavItem
-              item={{
-                href: "/dashboard",
-                label: "Dashboard",
-                icon: DashboardIcon,
-              }}
-              projectId={currentProjectId}
-              active={dashActive}
-            />
-          </div>
+        <nav className="flex-1 overflow-y-auto py-4" aria-label="Main navigation">
+          {isInProject ? (
+            <>
+              {/* Project mode: Dashboard + grouped sections */}
+              <div className="px-3 pb-1">
+                <ProjectNavItem
+                  item={{
+                    href: "/dashboard",
+                    label: "Dashboard",
+                    icon: DashboardIcon,
+                  }}
+                  projectId={currentProjectId}
+                  active={dashActive}
+                />
+              </div>
 
-          <div className="my-3 mx-3 border-t border-[var(--borderColor-muted)]" />
+              <div className="my-3 mx-3 border-t border-[var(--borderColor-muted)]" />
 
-          {/* Grouped sections */}
-          <div className="space-y-1 px-3">
-            {sidebarGroups.map((group) => (
-              <NavGroup
-                key={group.label}
-                group={group}
-                projectId={currentProjectId}
-              />
-            ))}
-          </div>
+              <div className="space-y-1 px-3">
+                {sidebarGroups.map((group) => (
+                  <NavGroup
+                    key={group.label}
+                    group={group}
+                    projectId={currentProjectId}
+                  />
+                ))}
+              </div>
+
+              <PinnedSection />
+            </>
+          ) : (
+            <>
+              {/* Organization mode: simple flat nav */}
+              <div className="space-y-0.5 px-3">
+                {orgNavItems.map((item) => (
+                  <SimpleNavItem
+                    key={item.href}
+                    item={item}
+                    active={
+                      pathname === item.href ||
+                      pathname.startsWith(item.href + "/")
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </nav>
 
-        {/* Pinned section */}
-        <PinnedSection />
-
-        {/* Docs & Help */}
-        <div className="border-t border-[var(--borderColor-muted)] px-3 py-3 space-y-1">
-          <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
-            Docs & Help
-          </p>
-          <a
-            href={DOCS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
-          >
-            <BookIcon className="h-4 w-4 shrink-0" />
-            Documentation
-            <ExternalLinkIcon className="h-3 w-3 shrink-0 opacity-50 ml-auto" />
-          </a>
-          <a
-            href={WEBSITE_URL + "/community"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
-          >
-            <UsersIcon className="h-4 w-4 shrink-0" />
-            Community
-            <ExternalLinkIcon className="h-3 w-3 shrink-0 opacity-50 ml-auto" />
-          </a>
-        </div>
+        <DocsFooter />
       </aside>
     </>
   );

@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BuildingIcon, LoaderIcon } from "@/components/icons/nav-icons";
+import { BuildingIcon } from "@/components/icons/nav-icons";
 import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
@@ -73,19 +73,26 @@ export function CreateProjectDialog({
         if (!creating) onOpenChange(v);
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        {/* Icon header */}
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-          <BuildingIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
+      <DialogContent className="sm:max-w-md !p-0 overflow-hidden">
+        {/* Gradient icon header */}
+        <div className="relative px-6 pt-8 pb-6 bg-gradient-to-b from-[var(--bgColor-accent-muted)]/40 to-transparent">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[var(--borderColor-default)]">
+            <BuildingIcon className="h-7 w-7 text-[var(--fgColor-accent)]" />
+          </div>
         </div>
 
-        <DialogHeader className="text-center">
-          <DialogTitle>Create project</DialogTitle>
+        <DialogHeader className="text-center !border-b-0 px-6 !pt-0 !pb-2">
+          <DialogTitle className="text-lg">Create project</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <Label htmlFor="create-project-name">Project name</Label>
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5">
+          <div className="max-w-sm mx-auto w-full">
+            <Label
+              htmlFor="create-project-name"
+              className="text-sm font-semibold"
+            >
+              Project name
+            </Label>
             <Input
               id="create-project-name"
               value={name}
@@ -93,26 +100,28 @@ export function CreateProjectDialog({
                 setName(e.target.value);
                 setFieldError("");
               }}
-              placeholder="My Awesome App"
-              className="mt-1.5"
+              placeholder="e.g. My Awesome App"
+              className="mt-2 h-11 text-[15px]"
               autoFocus
             />
             {fieldError && (
-              <p className="mt-1.5 text-xs text-[var(--fgColor-danger)]">
+              <p className="mt-2 text-xs font-medium text-[var(--fgColor-danger)]">
                 {fieldError}
               </p>
             )}
-            <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--fgColor-muted)]">
               Projects group your flags, environments, and segments together.
+              Choose a name that reflects your application or team.
             </p>
           </div>
 
-          <DialogFooter className="!justify-between">
+          <DialogFooter className="!justify-between !border-t-0 !px-0 !pt-0 max-w-sm mx-auto w-full">
             <Button
               type="button"
               variant="secondary"
               onClick={handleClose}
               disabled={creating}
+              size="lg"
             >
               Cancel
             </Button>
@@ -120,15 +129,10 @@ export function CreateProjectDialog({
               type="submit"
               disabled={creating || !name.trim()}
               variant="primary"
+              size="lg"
+              loading={creating}
             >
-              {creating ? (
-                <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create project"
-              )}
+              Create project
             </Button>
           </DialogFooter>
         </form>

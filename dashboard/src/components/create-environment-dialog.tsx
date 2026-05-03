@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GlobeIcon, LoaderIcon } from "@/components/icons/nav-icons";
+import { GlobeIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
 import { EVENTS, ENVIRONMENT_COLORS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
@@ -25,16 +25,38 @@ interface CreateEnvironmentDialogProps {
   onCreated: (env: Environment) => void;
 }
 
-const COLOR_MAP: Record<string, { bg: string; ring: string }> = {
-  "#64748b": { bg: "bg-slate-500", ring: "ring-slate-500" },
-  "#ef4444": { bg: "bg-red-500", ring: "ring-red-500" },
-  "#f97316": { bg: "bg-orange-500", ring: "ring-orange-500" },
-  "#eab308": { bg: "bg-yellow-500", ring: "ring-yellow-500" },
-  "#22c55e": { bg: "bg-green-500", ring: "ring-green-500" },
-  "#06b6d4": { bg: "bg-cyan-500", ring: "ring-cyan-500" },
-  "#3b82f6": { bg: "bg-blue-500", ring: "ring-blue-500" },
-  "#8b5cf6": { bg: "bg-violet-500", ring: "ring-violet-500" },
-  "#ec4899": { bg: "bg-pink-500", ring: "ring-pink-500" },
+const COLOR_MAP: Record<string, { bg: string; ring: string; label: string }> = {
+  "#22c55e": {
+    bg: "bg-emerald-500",
+    ring: "ring-emerald-500",
+    label: "Emerald",
+  },
+  "#f59e0b": {
+    bg: "bg-amber-500",
+    ring: "ring-amber-500",
+    label: "Amber",
+  },
+  "#ef4444": { bg: "bg-red-500", ring: "ring-red-500", label: "Red" },
+  "#3b82f6": {
+    bg: "bg-blue-500",
+    ring: "ring-blue-500",
+    label: "Blue",
+  },
+  "#8b5cf6": {
+    bg: "bg-violet-500",
+    ring: "ring-violet-500",
+    label: "Violet",
+  },
+  "#14b8a6": {
+    bg: "bg-teal-500",
+    ring: "ring-teal-500",
+    label: "Teal",
+  },
+  "#64748b": {
+    bg: "bg-slate-500",
+    ring: "ring-slate-500",
+    label: "Slate",
+  },
 };
 
 export function CreateEnvironmentDialog({
@@ -92,20 +114,24 @@ export function CreateEnvironmentDialog({
         if (!creating) onOpenChange(v);
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        {/* Icon header */}
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-          <GlobeIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
+      <DialogContent className="sm:max-w-md !p-0 overflow-hidden">
+        {/* Gradient icon header */}
+        <div className="relative px-6 pt-8 pb-6 bg-gradient-to-b from-[var(--bgColor-accent-muted)]/40 to-transparent">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[var(--borderColor-default)]">
+            <GlobeIcon className="h-7 w-7 text-[var(--fgColor-accent)]" />
+          </div>
         </div>
 
-        <DialogHeader className="text-center">
-          <DialogTitle>Create environment</DialogTitle>
+        <DialogHeader className="text-center !border-b-0 px-6 !pt-0 !pb-2">
+          <DialogTitle className="text-lg">Create environment</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5">
           {/* Name */}
-          <div>
-            <Label htmlFor="create-env-name">Environment name</Label>
+          <div className="max-w-sm mx-auto w-full">
+            <Label htmlFor="create-env-name" className="text-sm font-semibold">
+              Environment name
+            </Label>
             <Input
               id="create-env-name"
               value={name}
@@ -114,28 +140,29 @@ export function CreateEnvironmentDialog({
                 setFieldError("");
               }}
               placeholder="e.g. Staging, QA, Canary"
-              className="mt-1.5"
+              className="mt-2 h-11 text-[15px]"
               autoFocus
             />
             {fieldError && (
-              <p className="mt-1.5 text-xs text-[var(--fgColor-danger)]">
+              <p className="mt-2 text-xs font-medium text-[var(--fgColor-danger)]">
                 {fieldError}
               </p>
             )}
-            <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--fgColor-muted)]">
               Manage separate flag configurations for dev, staging, and
-              production.
+              production environments.
             </p>
           </div>
 
           {/* Color picker */}
-          <div>
-            <Label>Color label</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
+          <div className="max-w-sm mx-auto w-full">
+            <Label className="text-sm font-semibold">Color label</Label>
+            <div className="mt-3 flex flex-wrap gap-2.5">
               {ENVIRONMENT_COLORS.map((c) => {
                 const styles = COLOR_MAP[c.value] || {
                   bg: "bg-slate-500",
                   ring: "ring-slate-500",
+                  label: "Slate",
                 };
                 const isSelected = colorVal === c.value;
                 return (
@@ -143,29 +170,47 @@ export function CreateEnvironmentDialog({
                     key={c.value}
                     type="button"
                     onClick={() => setColorVal(c.value)}
-                    title={c.label}
+                    title={styles.label}
                     className={cn(
-                      "h-7 w-7 rounded-full transition-all duration-150",
+                      "h-9 w-9 rounded-xl transition-all duration-200 relative",
                       styles.bg,
                       isSelected
-                        ? `ring-2 ring-offset-2 ${styles.ring} scale-110`
-                        : "opacity-60 hover:opacity-100 hover:scale-105",
+                        ? `ring-[3px] ring-offset-2 ${styles.ring} scale-110 shadow-md`
+                        : "opacity-50 hover:opacity-80 hover:scale-105",
                     )}
-                  />
+                  >
+                    {isSelected && (
+                      <svg
+                        className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow-sm"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
-              Choose a color to visually identify this environment.
+            <p className="mt-2 text-xs leading-relaxed text-[var(--fgColor-muted)]">
+              Choose a color to visually identify this environment across the
+              dashboard.
             </p>
           </div>
 
-          <DialogFooter className="!justify-between">
+          <DialogFooter className="!justify-between !border-t-0 !px-0 !pt-0 max-w-sm mx-auto w-full">
             <Button
               type="button"
               variant="secondary"
               onClick={handleClose}
               disabled={creating}
+              size="lg"
             >
               Cancel
             </Button>
@@ -173,15 +218,10 @@ export function CreateEnvironmentDialog({
               type="submit"
               disabled={creating || !name.trim()}
               variant="primary"
+              size="lg"
+              loading={creating}
             >
-              {creating ? (
-                <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create environment"
-              )}
+              Create environment
             </Button>
           </DialogFooter>
         </form>

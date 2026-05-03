@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   async redirects() {
     return [
       // Old settings sub-routes → new top-level routes
