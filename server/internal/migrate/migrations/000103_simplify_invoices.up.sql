@@ -31,4 +31,4 @@ WHERE platform_fee_paise = 0
   AND total > 0;
 
 -- Add index for efficient invoice listing per org.
-CREATE INDEX IF NOT EXISTS idx_invoices_org_period ON invoices(org_id, period_start DESC);
+CREATE INDEX IF NOT EXISTS idx_invoices_org_period ON invoices(tenant_id, period_start DESC);
