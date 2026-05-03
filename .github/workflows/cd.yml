@@ -67,6 +67,24 @@ jobs:
         id: deploy_router
         run: echo "enabled=$([[ ",${{ steps.resolve.outputs.services }}," == *",global-router,"* ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
+      # ── Preflight ───────────────────────────────────────────────
+      - name: Preflight — cluster health
+        run: |
+          echo "=== Node status ==="
+          kubectl get nodes -o wide
+          echo ""
+          echo "=== Node resource usage ==="
+          kubectl top nodes 2>/dev/null || echo "(metrics-server may not be running)"
+          echo ""
+          echo "=== Node capacity & allocatable ==="
+          kubectl describe node 2>/dev/null | grep -A8 "Capacity:" | head -20
+          echo ""
+          echo "=== Current pods ==="
+          kubectl get pods -n ${{ env.NS }} -o wide
+          echo ""
+          echo "=== Current deployments ==="
+          kubectl get deployments -n ${{ env.NS }}
+
       # ── Auth ────────────────────────────────────────────────────
       - name: Update GHCR pull secret
         run: |
@@ -91,52 +109,131 @@ jobs:
           kubectl apply -f ${{ github.workspace }}/deploy/k8s/server.yaml
           echo "✅ K8s manifests applied"
 
+      # ── Helper: deploy a service with debug ─────────────────────
+      # Each deployment step now follows this pattern:
+      #   1. Show current state
+      #   2. Force-delete stuck pods
+      #   3. Update image
+      #   4. Wait a few seconds for new pod to be created
+      #   5. Show debug: pod status, describe, logs, events
+      #   6. Wait for rollout
+
       # ── Server ──────────────────────────────────────────────────
       - name: Deploy server
         if: steps.deploy_server.outputs.enabled == 'true'
         run: |
-          # Force-delete any stuck pods before rollout
-          kubectl delete pod -n ${{ env.NS }} -l app=server --force --grace-period=0 2>/dev/null || true
+          APP=server
+          echo "╔══════════════════════════════════════════════════════╗"
+          echo "║  Deploying: $APP"
+          echo "╚══════════════════════════════════════════════════════╝"
+
+          echo "=== Pre-deploy pod status ==="
+          kubectl get pods -n ${{ env.NS }} -l app=$APP -o wide 2>/dev/null || echo "No existing pods"
+
+          echo "=== Force-deleting stuck pods ==="
+          kubectl delete pod -n ${{ env.NS }} -l app=$APP --force --grace-period=0 2>/dev/null || true
           sleep 5
-          kubectl set image deployment/server \
+
+          echo "=== Setting image ==="
+          kubectl set image deployment/$APP \
             -n ${{ env.NS }} \
-            server=${{ env.REGISTRY }}/featuresignals-server:${{ inputs.version }}
-          kubectl rollout status deployment/server -n ${{ env.NS }} --timeout=180s
+            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ inputs.version }}
+
+          sleep 10
+
+          echo "=== Post-deploy pod status ==="
+          kubectl get pods -n ${{ env.NS }} -l app=$APP -o wide
+
+          echo "=== Pod describe (last 40 lines) ==="
+          kubectl describe pod -n ${{ env.NS }} -l app=$APP 2>&1 | tail -40
+
+          echo "=== Pod logs (last 30 lines, all containers) ==="
+          kubectl logs -n ${{ env.NS }} -l app=$APP --all-containers=true --tail=30 2>/dev/null || echo "(no logs yet)"
+
+          echo "=== Recent events ==="
+          kubectl get events -n ${{ env.NS }} --sort-by='.lastTimestamp' 2>/dev/null | tail -15
+
+          echo "=== Waiting for rollout ==="
+          kubectl rollout status deployment/$APP -n ${{ env.NS }} --timeout=240s
           echo "✅ Server deployed"
 
       # ── Dashboard ───────────────────────────────────────────────
       - name: Deploy dashboard
         if: steps.deploy_dashboard.outputs.enabled == 'true'
         run: |
-          # Force-delete any stuck pods before rollout
-          kubectl delete pod -n ${{ env.NS }} -l app=dashboard --force --grace-period=0 2>/dev/null || true
+          APP=dashboard
+          echo "╔══════════════════════════════════════════════════════╗"
+          echo "║  Deploying: $APP"
+          echo "╚══════════════════════════════════════════════════════╝"
+
+          echo "=== Pre-deploy pod status ==="
+          kubectl get pods -n ${{ env.NS }} -l app=$APP -o wide 2>/dev/null || echo "No existing pods"
+
+          echo "=== Force-deleting stuck pods ==="
+          kubectl delete pod -n ${{ env.NS }} -l app=$APP --force --grace-period=0 2>/dev/null || true
           sleep 5
-          kubectl set image deployment/dashboard \
+
+          echo "=== Setting image ==="
+          kubectl set image deployment/$APP \
             -n ${{ env.NS }} \
-            dashboard=${{ env.REGISTRY }}/featuresignals-dashboard:${{ inputs.version }}
-          kubectl rollout status deployment/dashboard -n ${{ env.NS }} --timeout=180s
+            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ inputs.version }}
+
+          sleep 10
+
+          echo "=== Post-deploy pod status ==="
+          kubectl get pods -n ${{ env.NS }} -l app=$APP -o wide
+
+          echo "=== Pod describe (last 40 lines) ==="
+          kubectl describe pod -n ${{ env.NS }} -l app=$APP 2>&1 | tail -40
+
+          echo "=== Pod logs (last 30 lines, all containers) ==="
+          kubectl logs -n ${{ env.NS }} -l app=$APP --all-containers=true --tail=30 2>/dev/null || echo "(no logs yet)"
+
+          echo "=== Recent events ==="
+          kubectl get events -n ${{ env.NS }} --sort-by='.lastTimestamp' 2>/dev/null | tail -15
+
+          echo "=== Waiting for rollout ==="
+          kubectl rollout status deployment/$APP -n ${{ env.NS }} --timeout=240s
           echo "✅ Dashboard deployed"
 
       # ── Global Router ───────────────────────────────────────────
       - name: Deploy global-router
         if: steps.deploy_router.outputs.enabled == 'true'
         run: |
-          # Force-delete any stuck pods before rollout
-          kubectl delete pod -n ${{ env.NS }} -l app=global-router --force --grace-period=0 2>/dev/null || true
-          sleep 5
-          kubectl set image deployment/global-router \
-            -n ${{ env.NS }} \
-            global-router=${{ env.REGISTRY }}/featuresignals-global-router:${{ inputs.version }}
-          kubectl rollout status deployment/global-router -n ${{ env.NS }} --timeout=180s
-          echo "✅ Global Router deployed"
+          APP=global-router
+          echo "╔══════════════════════════════════════════════════════╗"
+          echo "║  Deploying: $APP"
+          echo "╚══════════════════════════════════════════════════════╝"
 
-      # ── Smoke Tests ─────────────────────────────────────────────
-      - name: Smoke test
-        run: |
-          IFS=',' read -ra SVCS <<< "${{ steps.resolve.outputs.services }}"
-          for svc in "${SVCS[@]}"; do
-            kubectl wait --for=condition=Available deployment/$svc -n ${{ env.NS }} --timeout=60s || echo "⚠️  $svc not yet available"
-          done
+          echo "=== Pre-deploy pod status ==="
+          kubectl get pods -n ${{ env.NS }} -l app=$APP -o wide 2>/dev/null || echo "No existing pods"
+
+          echo "=== Force-deleting stuck pods ==="
+          kubectl delete pod -n ${{ env.NS }} -l app=$APP --force --grace-period=0 2>/dev/null || true
+          sleep 5
+
+          echo "=== Setting image ==="
+          kubectl set image deployment/$APP \
+            -n ${{ env.NS }} \
+            $APP=${{ env.REGISTRY }}/featuresignals-$APP:${{ inputs.version }}
+
+          sleep 10
+
+          echo "=== Post-deploy pod status ==="
+          kubectl get pods -n ${{ env.NS }} -l app=$APP -o wide
+
+          echo "=== Pod describe (last 40 lines) ==="
+          kubectl describe pod -n ${{ env.NS }} -l app=$APP 2>&1 | tail -40
+
+          echo "=== Pod logs (last 30 lines, all containers) ==="
+          kubectl logs -n ${{ env.NS }} -l app=$APP --all-containers=true --tail=30 2>/dev/null || echo "(no logs yet)"
+
+          echo "=== Recent events ==="
+          kubectl get events -n ${{ env.NS }} --sort-by='.lastTimestamp' 2>/dev/null | tail -15
+
+          echo "=== Waiting for rollout ==="
+          kubectl rollout status deployment/$APP -n ${{ env.NS }} --timeout=240s
+          echo "✅ Global Router deployed"
 
       # ── Summary ─────────────────────────────────────────────────
       - name: Summary
@@ -148,5 +245,7 @@ jobs:
           echo ""
           echo "  Version:  ${{ inputs.version }}"
           echo "  Services: ${{ steps.resolve.outputs.services }}"
+          echo ""
           kubectl get pods -n ${{ env.NS }} -o wide
           echo ""
+          kubectl get deployments -n ${{ env.NS }}
