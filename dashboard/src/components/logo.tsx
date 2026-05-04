@@ -1,37 +1,40 @@
 import { cn } from "@/lib/utils";
+import {
+  PrismLotus,
+  PrismLotusIcon,
+  type PrismLotusProps,
+} from "@/components/prism-lotus";
+
+/* ------------------------------------------------------------------ */
+/*  Logo — backward-compatible wrapper around PrismLotus.             */
+/*                                                                     */
+/*  Existing callers use:                                              */
+/*    <Logo size="md" variant="default" showWordmark />                */
+/*    <LogoIcon size={24} />                                           */
+/*                                                                     */
+/*  Both work identically; the visual mark is now the Prism Lotus.    */
+/* ------------------------------------------------------------------ */
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
+  /** default = purple on light bg, light = white on dark bg, minimal = monochrome */
   variant?: "default" | "light" | "minimal";
   showWordmark?: boolean;
   className?: string;
 }
 
-const sizeMap = {
-  sm: { icon: 20, text: "text-sm", gap: 2 },
-  md: { icon: 24, text: "text-base", gap: 2.5 },
-  lg: { icon: 28, text: "text-lg", gap: 3 },
-  xl: { icon: 32, text: "text-xl", gap: 3 },
-};
-
-function CheckIcon({ size = 24 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="var(--fgColor-accent)"
-      xmlns="http://www.w3.org/2000/svg"
-      className="shrink-0"
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
-      />
-    </svg>
-  );
+/** Maps legacy Logo variant to PrismLotus colorScheme. */
+function variantToScheme(
+  variant: LogoProps["variant"],
+): PrismLotusProps["colorScheme"] {
+  switch (variant) {
+    case "light":
+      return "white";
+    case "minimal":
+      return "monochrome";
+    default:
+      return "default";
+  }
 }
 
 export function Logo({
@@ -40,51 +43,20 @@ export function Logo({
   showWordmark = true,
   className,
 }: LogoProps) {
-  const s = sizeMap[size];
-
-  const textColor =
-    variant === "light"
-      ? "text-white"
-      : variant === "minimal"
-        ? "text-[var(--fgColor-default)]"
-        : "text-[var(--fgColor-default)]";
-
-  const accentGradient =
-    variant === "light"
-      ? "from-[#54aeff] to-[#80ccff]"
-      : "from-[#0969da] to-[#54aeff]";
-
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <CheckIcon size={s.icon} />
-
-      {/* Wordmark */}
-      {showWordmark && (
-        <div className="flex flex-col leading-none">
-          <span className={cn("font-bold tracking-tight", s.text, textColor)}>
-            Feature
-            <span
-              className={cn(
-                "bg-gradient-to-r bg-clip-text text-transparent",
-                accentGradient,
-              )}
-            >
-              Signals
-            </span>
-          </span>
-          {size === "xl" && (
-            <span className="text-[10px] font-medium tracking-[0.2em] text-[var(--fgColor-subtle)] uppercase">
-              Enterprise Control Plane
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+    <PrismLotus
+      size={size}
+      variant="full"
+      showWordmark={showWordmark}
+      colorScheme={variantToScheme(variant)}
+      className={className}
+    />
   );
 }
 
 /**
  * Minimal icon-only version — useful for favicon-sized spaces, mobile headers, etc.
+ * Preserved for backward compatibility.
  */
 export function LogoIcon({
   size = 24,
@@ -94,8 +66,6 @@ export function LogoIcon({
   className?: string;
 }) {
   return (
-    <span className={className}>
-      <CheckIcon size={size} />
-    </span>
+    <PrismLotusIcon size={size} className={className} colorScheme="default" />
   );
 }

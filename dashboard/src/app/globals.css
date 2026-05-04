@@ -131,6 +131,7 @@
     --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     --animate-scale-in: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     --animate-shimmer: shimmer 2s linear infinite;
+    --animate-ring-pulse: ring-pulse 2s ease-in-out infinite;
 }
 
 /* ================================================================
@@ -229,6 +230,22 @@
     100% {
         opacity: 1;
         transform: scale(1) translateY(0);
+    }
+}
+
+/* ================================================================
+   Signal Ring Keyframe — Heartbeat pulse
+   ================================================================ */
+
+@keyframes ring-pulse {
+    0%,
+    100% {
+        transform: scale(0.94);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.04);
+        opacity: 1;
     }
 }
 

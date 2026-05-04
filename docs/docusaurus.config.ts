@@ -10,7 +10,7 @@ const config: Config = {
   title: "FeatureSignals",
   tagline:
     "The control plane for software delivery. Sub-millisecond latency. AI-driven cleanup.",
-  favicon: "img/logo.svg",
+  favicon: "img/favicon.svg",
 
   future: {
     v4: true,

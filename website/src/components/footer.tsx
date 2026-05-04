@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircleFillIcon } from "@primer/octicons-react";
+import { PrismLotus } from "@/components/prism-lotus";
 
 const footerSections = [
   {
@@ -122,11 +122,7 @@ export function Footer() {
           {/* Brand */}
           <div className="max-w-xs">
             <div className="flex items-center space-x-2 mb-4">
-              <CheckCircleFillIcon
-                size={24}
-                fill="#0969da"
-                aria-hidden="true"
-              />
+              <PrismLotus size="sm" variant="icon" colorScheme="white" />
               <span className="font-bold tracking-tight text-white text-lg">
                 FeatureSignals
               </span>

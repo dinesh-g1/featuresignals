@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useAppStore } from "@/stores/app-store";
+import { PrismLotusIcon } from "@/components/prism-lotus";
 import { api } from "@/lib/api";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
 import {
@@ -124,7 +125,13 @@ interface PinnedItem {
 
 // ─── Simple Nav Item (no project prefix) ─────────────────────────────
 
-function SimpleNavItem({ item, active }: { item: NavItemDef; active: boolean }) {
+function SimpleNavItem({
+  item,
+  active,
+}: {
+  item: NavItemDef;
+  active: boolean;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -365,8 +372,7 @@ export function NavList() {
   const currentProjectId = useAppStore((s) => s.currentProjectId) || "";
 
   // Sidebar mode: project-nav only when URL is inside a project AND project is selected
-  const isProjectRoute =
-    pathname && /^\/projects\/[^/]+/.test(pathname);
+  const isProjectRoute = pathname && /^\/projects\/[^/]+/.test(pathname);
   const isInProject = isProjectRoute && !!currentProjectId;
 
   const dashHref = isInProject
@@ -396,28 +402,15 @@ export function NavList() {
         {/* Header — FeatureSignals brand, clickable → /projects */}
         <Link
           href="/projects"
-          className="flex h-14 items-center gap-2.5 px-4 border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-muted)] transition-colors"
+          className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-muted)] transition-colors"
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="var(--fgColor-accent)"
-            className="shrink-0"
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
-            />
-          </svg>
+          <PrismLotusIcon size={32} className="shrink-0" />
           <div className="flex flex-col leading-none min-w-0 flex-1">
-            <span className="text-sm font-bold tracking-tight text-[var(--fgColor-default)]">
-              Feature
-              <span className="bg-gradient-to-r from-[#0969da] to-[#54aeff] bg-clip-text text-transparent">
-                Signals
-              </span>
+            <span className="text-base font-bold tracking-tight whitespace-nowrap text-[var(--fgColor-default)]">
+              Feature<span className="text-[#0969da]">Signals</span>
+            </span>
+            <span className="text-[10px] font-medium tracking-wide text-[var(--fgColor-subtle)] uppercase mt-0.5 whitespace-nowrap truncate">
+              Enterprise Control Plane
             </span>
           </div>
           <button
@@ -435,7 +428,10 @@ export function NavList() {
         </Link>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4" aria-label="Main navigation">
+        <nav
+          className="flex-1 overflow-y-auto py-4"
+          aria-label="Main navigation"
+        >
           {isInProject ? (
             <>
               {/* Project mode: Dashboard + grouped sections */}
