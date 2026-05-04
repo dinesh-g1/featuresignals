@@ -1,39 +1,34 @@
 import Link from "next/link";
 import { PrismLotus } from "@/components/prism-lotus";
 
+/**
+ * Footer — Enterprise-grade, Tailscale/Sanity inspired
+ *
+ * Dark themed footer with organized columns, social links,
+ * system status indicator, and legal information.
+ */
+
 const footerSections = [
   {
     title: "Product",
     links: [
-      { label: "Cost Calculator", href: "/#hero" },
-      { label: "Live Demo", href: "/#live-demo" },
-      { label: "Migration Preview", href: "/#migration" },
-      { label: "AI Janitor", href: "/#ai-janitor" },
-      { label: "Pricing", href: "/#pricing" },
+      { label: "Features", href: "/features" },
+      { label: "Use Cases", href: "/use-cases" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Integrations", href: "/integrations" },
+      { label: "Customer Stories", href: "/customers" },
+      { label: "Blog", href: "/blog" },
     ],
   },
   {
-    title: "Get Started",
+    title: "Platform",
     links: [
-      {
-        label: "Deploy in 3 Minutes",
-        href: "https://docs.featuresignals.com/getting-started/quickstart",
-        external: true,
-      },
-      {
-        label: "Sign Up Free",
-        href: "/signup",
-      },
-      {
-        label: "Log in",
-        href: "https://app.featuresignals.com/login",
-        external: true,
-      },
-      {
-        label: "Contact",
-        href: "mailto:sales@featuresignals.com",
-        external: true,
-      },
+      { label: "Feature Flags", href: "/features#feature-flags" },
+      { label: "A/B Experiments", href: "/features#experiments" },
+      { label: "AI Janitor", href: "/features#ai-janitor" },
+      { label: "Migration Engine", href: "/features#migration" },
+      { label: "Governance & RBAC", href: "/features#governance" },
+      { label: "OpenFeature SDKs", href: "/integrations#sdks" },
     ],
   },
   {
@@ -41,27 +36,45 @@ const footerSections = [
     links: [
       {
         label: "Documentation",
-        href: "https://docs.featuresignals.com",
-        external: true,
+        href: "/docs",
       },
       {
         label: "API Reference",
-        href: "https://docs.featuresignals.com/api-playground",
-        external: true,
+        href: "/docs/api-reference/overview",
       },
       {
         label: "SDKs (8 Languages)",
-        href: "https://docs.featuresignals.com/sdks/overview",
-        external: true,
+        href: "/integrations#sdks",
       },
       {
         label: "Terraform Provider",
-        href: "https://registry.terraform.io/providers/featuresignals",
-        external: true,
+        href: "/integrations#iac",
+      },
+      {
+        label: "OpenFeature",
+        href: "/integrations#openfeature",
       },
       {
         label: "GitHub",
         href: "https://github.com/dinesh-g1/featuresignals",
+        external: true,
+      },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Partners", href: "/partners" },
+      { label: "Contact Sales", href: "/contact" },
+      {
+        label: "System Status",
+        href: "https://status.featuresignals.com",
+        external: true,
+      },
+      {
+        label: "Changelog",
+        href: "https://github.com/dinesh-g1/featuresignals/releases",
         external: true,
       },
     ],
@@ -77,6 +90,31 @@ const footerSections = [
     ],
   },
 ];
+
+const socialLinks = [
+  {
+    label: "GitHub",
+    href: "https://github.com/dinesh-g1/featuresignals",
+    icon: GitHubIcon,
+  },
+  {
+    label: "Discord",
+    href: "https://discord.gg/featuresignals",
+    icon: DiscordIcon,
+  },
+  {
+    label: "LinkedIn",
+    href: "https://linkedin.com/company/featuresignals",
+    icon: LinkedInIcon,
+  },
+  {
+    label: "X (Twitter)",
+    href: "https://x.com/featuresignals",
+    icon: XIcon,
+  },
+];
+
+/* ---- Social Icon Components ---- */
 
 function GitHubIcon() {
   return (
@@ -111,15 +149,17 @@ function DiscordIcon() {
 }
 
 export function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer
       className="border-t border-[var(--borderColor-default)]"
       style={{ backgroundColor: "#25292e" }}
     >
       <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
-        {/* Top section */}
+        {/* Top section: Brand + Links Grid */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-10 mb-12">
-          {/* Brand */}
+          {/* Brand column */}
           <div className="max-w-xs">
             <div className="flex items-center space-x-2 mb-4">
               <PrismLotus size="sm" variant="icon" colorScheme="white" />
@@ -131,55 +171,30 @@ export function Footer() {
               className="text-sm leading-relaxed mb-6"
               style={{ color: "#8b949e" }}
             >
-              The control plane for software delivery. Sub-millisecond latency.
-              Automated tech-debt cleanup. OpenFeature native.
+              The control plane for software delivery. Sub-millisecond feature
+              flags, AI-powered stale flag detection, and OpenFeature-native
+              SDKs — open source, self-hosted or cloud.
             </p>
-            <div className="flex items-center gap-4">
-              <a
-                href="https://github.com/dinesh-g1/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                style={{ color: "#8b949e" }}
-                aria-label="GitHub"
-              >
-                <GitHubIcon />
-              </a>
-              <a
-                href="https://linkedin.com/company/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                style={{ color: "#8b949e" }}
-                aria-label="LinkedIn"
-              >
-                <LinkedInIcon />
-              </a>
-              <a
-                href="https://x.com/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                style={{ color: "#8b949e" }}
-                aria-label="X (Twitter)"
-              >
-                <XIcon />
-              </a>
-              <a
-                href="https://discord.gg/featuresignals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-                style={{ color: "#8b949e" }}
-                aria-label="Discord"
-              >
-                <DiscordIcon />
-              </a>
+            {/* Social links */}
+            <div className="flex items-center gap-3">
+              {socialLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                  style={{ color: "#8b949e" }}
+                  aria-label={link.label}
+                >
+                  <link.icon />
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Links grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 lg:gap-12 flex-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10 flex-1">
             {footerSections.map((section) => (
               <div key={section.title}>
                 <h3
@@ -218,21 +233,21 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Operational status bar */}
+        {/* Status bar */}
         <div
           className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
           style={{ borderColor: "#373e47", borderTopWidth: "1px" }}
         >
           <div className="flex items-center space-x-3">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
             </span>
             <span
               className="font-mono text-sm font-medium"
               style={{ color: "#8b949e" }}
             >
-              All Edge Nodes Operational
+              All Systems Operational
             </span>
           </div>
 
@@ -265,8 +280,8 @@ export function Footer() {
           }}
         >
           <p>
-            &copy; {new Date().getFullYear()} Vivekananda Technology Labs,
-            trading as FeatureSignals. Apache-2.0 License.
+            &copy; {currentYear} Vivekananda Technology Labs, trading as
+            FeatureSignals. Apache-2.0 License.
           </p>
           <p>
             Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,

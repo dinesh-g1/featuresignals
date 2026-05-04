@@ -20,6 +20,7 @@
     "@radix-ui/react-dialog": "^1",
     "@radix-ui/react-navigation-menu": "^1",
     "@radix-ui/react-tabs": "^1",
+    "@scalar/api-reference": "^1.55.1",
     "@tailwindcss/postcss": "^4",
     "class-variance-authority": "^0.7",
     "clsx": "^2",

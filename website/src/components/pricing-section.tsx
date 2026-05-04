@@ -58,7 +58,8 @@ export function PricingSection() {
             Transparent pricing. No surprises. No lock-in.
           </h2>
           <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
-            Two ways to run FeatureSignals. Same platform. Same features. Pick what works.
+            Two ways to run FeatureSignals. Same platform. Same features. Pick
+            what works.
           </p>
         </motion.div>
 
@@ -80,7 +81,10 @@ export function PricingSection() {
               "Community support",
               "All 8 SDKs + OpenFeature",
             ]}
-            cta={{ label: "Sign Up Free", href: "https://app.featuresignals.com/register" }}
+            cta={{
+              label: "Sign Up Free",
+              href: "https://app.featuresignals.com/register",
+            }}
             variant="outline"
             delay={0}
           />
@@ -103,7 +107,10 @@ export function PricingSection() {
               "Relay proxy (1 included)",
               "Priority email support",
             ]}
-            cta={{ label: "Start Pro Trial", href: "https://app.featuresignals.com/register?plan=pro" }}
+            cta={{
+              label: "Start Pro Trial",
+              href: "https://app.featuresignals.com/register?plan=pro",
+            }}
             variant="featured"
             delay={0.1}
             annualLabel={pricing.proAnnual + "/year (save 17%)"}
@@ -125,7 +132,7 @@ export function PricingSection() {
               "On-prem deployment support",
               "Custom AI Janitor pools",
             ]}
-            cta={{ label: "Contact Sales", href: "mailto:sales@featuresignals.com" }}
+            cta={{ label: "Contact Sales", href: "/contact?reason=sales" }}
             variant="outline"
             delay={0.2}
           />
@@ -145,7 +152,10 @@ export function PricingSection() {
               "Single Go binary",
               "Deploy in 3 minutes",
             ]}
-            cta={{ label: "Deploy Now", href: "https://docs.featuresignals.com/getting-started/quickstart" }}
+            cta={{
+              label: "Deploy Now",
+              href: "https://docs.featuresignals.com/getting-started/quickstart",
+            }}
             variant="outline"
             delay={0.3}
             badge="100% Open Source"
@@ -163,29 +173,38 @@ export function PricingSection() {
           <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--bgColor-success-muted)] border border-[var(--borderColor-success-muted)]">
             <HeartIcon size={16} className="text-emerald-500" />
             <p className="text-sm text-[var(--fgColor-default)]">
-              <span className="font-semibold text-emerald-600">No lock-in. Ever.</span>{" "}
-              Switch between Self-Hosted and Cloud anytime. All SDKs support OpenFeature — swap
-              providers without changing code.
+              <span className="font-semibold text-emerald-600">
+                No lock-in. Ever.
+              </span>{" "}
+              Switch between Self-Hosted and Cloud anytime. All SDKs support
+              OpenFeature — swap providers without changing code.
             </p>
           </div>
           <p className="text-sm text-[var(--fgColor-muted)] mt-4">
             Compare: {savingsResult.competitor.name} at{" "}
-            <span className="font-semibold">{formatUSD(savingsResult.competitor.monthly)}/month</span>{" "}
+            <span className="font-semibold">
+              {formatUSD(savingsResult.competitor.monthly)}/month
+            </span>{" "}
             for {teamSize} engineers. FeatureSignals Pro:{" "}
             <span className="font-bold text-emerald-600">
               {formatUSD(29)}/month
             </span>
             . That&apos;s{" "}
             <span className="font-bold text-emerald-600">
-              {Math.round((1 - pricing.proMonthlyValue / savingsResult.competitor.monthly) * 100)}% less
+              {Math.round(
+                (1 -
+                  pricing.proMonthlyValue / savingsResult.competitor.monthly) *
+                  100,
+              )}
+              % less
             </span>
             .
           </p>
 
           {/* AI Janitor credit packs info */}
           <p className="text-xs text-[var(--fgColor-muted)] mt-4">
-            💡 AI Janitor credit packs available on all plans:{" "}
-            Starter (50 credits) INR 249 · Team (250) INR 899 · Scale (1,500) INR 3,999
+            💡 AI Janitor credit packs available on all plans: Starter (50
+            credits) INR 249 · Team (250) INR 899 · Scale (1,500) INR 3,999
           </p>
         </motion.div>
       </div>
@@ -229,7 +248,11 @@ function PricingCard({
           ? "border-2 border-[var(--borderColor-accent-emphasis)] bg-white md:-mt-3 md:mb-3"
           : "border border-[var(--borderColor-default)] bg-white"
       }`}
-      style={{ boxShadow: isFeatured ? "var(--shadow-floating-medium)" : "var(--shadow-resting-small)" }}
+      style={{
+        boxShadow: isFeatured
+          ? "var(--shadow-floating-medium)"
+          : "var(--shadow-resting-small)",
+      }}
     >
       {isFeatured && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -248,19 +271,29 @@ function PricingCard({
       )}
 
       <div className={`mt-1 mb-4 ${isFeatured ? "text-center" : ""}`}>
-        <h3 className="text-lg font-bold text-[var(--fgColor-default)]">{title}</h3>
-        <p className="text-sm text-[var(--fgColor-muted)] mt-1">{description}</p>
+        <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+          {title}
+        </h3>
+        <p className="text-sm text-[var(--fgColor-muted)] mt-1">
+          {description}
+        </p>
       </div>
 
       <div className="mb-4">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-[var(--fgColor-default)]">{price}</span>
+          <span className="text-3xl font-bold text-[var(--fgColor-default)]">
+            {price}
+          </span>
           {period && (
-            <span className="text-sm text-[var(--fgColor-muted)]">/{period}</span>
+            <span className="text-sm text-[var(--fgColor-muted)]">
+              /{period}
+            </span>
           )}
         </div>
         {annualLabel && (
-          <p className="text-xs text-emerald-600 font-medium mt-1">{annualLabel}</p>
+          <p className="text-xs text-emerald-600 font-medium mt-1">
+            {annualLabel}
+          </p>
         )}
       </div>
 

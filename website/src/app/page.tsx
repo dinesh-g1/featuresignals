@@ -1,241 +1,1323 @@
-import { CalculatorProvider } from "@/lib/calculator-context";
-import { HeroCalculator } from "@/components/hero-calculator";
-import { PricingSection } from "@/components/pricing-section";
-import { FinalCta } from "@/components/final-cta";
-import { CheckCircleFillIcon } from "@primer/octicons-react";
+"use client";
+
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import {
+  RocketIcon,
+  LightBulbIcon,
+  SyncIcon,
+  ShieldLockIcon,
+  GraphIcon,
+  ContainerIcon,
+  CodeIcon,
+  GearIcon,
+  ShieldCheckIcon,
+  CheckIcon,
+  CheckCircleIcon,
+  StarFillIcon,
+  HeartFillIcon,
+  CommentDiscussionIcon,
+  XIcon,
+  ArrowRightIcon,
+  ZapIcon,
+  LinkExternalIcon,
+  PeopleIcon,
+} from "@primer/octicons-react";
+import { cn } from "@/lib/utils";
 
-/**
- * FeatureSignals Homepage — Release Infrastructure Platform
- *
- * Narrative-driven. Each section answers "what does this do for my team?"
- * Not "here are features we have."
- */
+/* ==========================================================================
+   Animation helpers
+   ========================================================================== */
 
-export default function HomePage() {
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-64px" },
+  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
+};
+
+const fadeUpDelayed = (delay: number) => ({
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-64px" },
+  transition: { duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] as const },
+});
+
+/* ==========================================================================
+   Shared constants
+   ========================================================================== */
+
+const REGISTER_URL = "https://app.featuresignals.com/register";
+const SALES_EMAIL = "/contact?reason=sales";
+const DOCS_URL = "/docs";
+
+/* ==========================================================================
+   Shared CTA components
+   ========================================================================== */
+
+function CtaPrimary({
+  href = REGISTER_URL,
+  children = "Start Free",
+  className,
+}: {
+  href?: string;
+  children?: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <CalculatorProvider>
-      {/* 1. Hero */}
-      <HeroCalculator />
-
-      {/* 2. The Platform — story-driven sections, alternating layout */}
-      <ShipFaster />
-      <StopFlagRot />
-      <MigrateWithoutFear />
-      <TrustSection />
-      <PricingSection />
-      <FinalCta />
-    </CalculatorProvider>
+    <a
+      href={href}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md px-6 h-10 text-sm font-semibold",
+        "text-white",
+        "bg-[var(--bgColor-success-emphasis)]",
+        "hover:opacity-90 transition-opacity",
+        className,
+      )}
+    >
+      {children}
+    </a>
   );
 }
 
-/** Section: Ship faster with confidence */
-function ShipFaster() {
+function CtaSecondary({
+  href = DOCS_URL,
+  children = "Read Docs",
+  className,
+}: {
+  href?: string;
+  children?: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="py-20 sm:py-28 bg-white">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider">
-              Release Management + Experiments
-            </span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight leading-tight">
-              Ship faster. Roll back instantly. Know what works.
-            </h2>
-            <p className="mt-4 text-base text-[var(--fgColor-muted)] leading-relaxed max-w-lg">
-              Deploy code to production behind feature flags. Roll out gradually to 1%, 10%, 100%.
-              If something breaks, kill the flag in one click — no redeploy, no downtime.
-              Run A/B experiments with weighted variants and impression tracking to measure
-              what actually moves your metrics. Built into every plan, not a paid add-on.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/create"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-accent-emphasis)] hover:opacity-90 transition-opacity shadow-sm"
-              >
-                Try the demo →
-              </Link>
-              <a
-                href="https://docs.featuresignals.com"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
-              >
-                Read the docs
-              </a>
-            </div>
+    <a
+      href={href}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md border px-6 h-10 text-sm font-semibold",
+        "text-[var(--fgColor-default)] border-[var(--borderColor-default)]",
+        "bg-[var(--bgColor-default)]",
+        "hover:bg-[var(--bgColor-inset)] transition-colors",
+        className,
+      )}
+    >
+      {children}
+    </a>
+  );
+}
+
+/* ==========================================================================
+   Section Label (reusable)
+   ========================================================================== */
+
+function SectionLabel({
+  icon: Icon,
+  text,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  text: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-3">
+      <Icon size={14} />
+      {text}
+    </span>
+  );
+}
+
+/* ==========================================================================
+   1. Hero Section
+   ========================================================================== */
+
+function HeroSection() {
+  return (
+    <section
+      id="hero"
+      className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-32"
+    >
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left: Text content */}
+          <div className="flex flex-col items-start text-left">
+            <motion.h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight"
+              {...fadeUp}
+            >
+              <span className="text-[var(--fgColor-accent)]">
+                The control plane
+              </span>
+              <br />
+              <span className="text-[var(--fgColor-done)]">
+                for software delivery
+              </span>
+            </motion.h1>
+
+            <motion.p
+              className="text-lg font-normal max-w-[600px] text-[var(--fgColor-muted)] mt-6 leading-relaxed break-words"
+              {...fadeUpDelayed(0.1)}
+            >
+              Deploy features with confidence. Roll back instantly. Automate
+              stale flag cleanup with AI. All with sub-millisecond evaluation
+              performance, open-source transparency, and zero vendor lock-in.
+            </motion.p>
+
+            <motion.div
+              className="flex items-center gap-3 mt-8"
+              {...fadeUpDelayed(0.15)}
+            >
+              <CtaPrimary>Start Free</CtaPrimary>
+              <CtaSecondary>Read Docs</CtaSecondary>
+            </motion.div>
+
+            <motion.p
+              className="text-sm text-[var(--fgColor-muted)] mt-4"
+              {...fadeUpDelayed(0.2)}
+            >
+              Free forever. No credit card required.
+            </motion.p>
           </div>
-          <div className="relative">
-            <div className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] p-8 shadow-sm">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-sm font-medium text-[var(--fgColor-default)]">Production deploy v2.4.1</p>
+
+          {/* Right: Dashboard preview card */}
+          <motion.div
+            className="flex justify-center lg:justify-end"
+            {...fadeUpDelayed(0.15)}
+          >
+            <div className="w-full max-w-[480px] rounded-xl border border-[var(--borderColor-default)] border-l-[3px] border-l-[var(--borderColor-accent-emphasis)] bg-linear-to-b from-[var(--bgColor-default)] to-[var(--bgColor-inset)] shadow-[var(--shadow-resting-medium)] overflow-hidden">
+              {/* Card header */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)]">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--bgColor-success-emphasis)] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--bgColor-success-emphasis)]" />
+                    </span>
+                    <span className="text-sm font-semibold text-[var(--fgColor-default)]">
+                      Production deploy v2.4.1
+                    </span>
+                  </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-[var(--borderColor-default)] overflow-hidden">
-                  <div className="h-full w-[15%] rounded-full bg-[var(--fgColor-accent)]" />
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]">
+                  ● Live
+                </span>
+              </div>
+
+              {/* Card body */}
+              <div className="p-5 space-y-5">
+                {/* Progress bar */}
+                <div>
+                  <div className="flex justify-between text-xs text-[var(--fgColor-muted)] mb-1.5">
+                    <span>Rollout progress</span>
+                    <span className="font-medium text-[var(--fgColor-default)]">
+                      15%
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-[var(--bgColor-inset)] rounded-full overflow-hidden shadow-inner">
+                    <motion.div
+                      className="h-full rounded-full bg-[var(--bgColor-success-emphasis)]"
+                      style={{}}
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "15%" }}
+                      viewport={{ once: true }}
+                      transition={{
+                        duration: 1,
+                        delay: 0.5,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Rolling out to 15% of users · 0 errors</p>
-                <div className="h-px bg-[var(--borderColor-default)]" />
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div><p className="text-[var(--fgColor-muted)]">Flags active</p><p className="font-bold tabular-nums text-[var(--fgColor-default)]">47</p></div>
-                  <div><p className="text-[var(--fgColor-muted)]">Eval latency</p><p className="font-bold tabular-nums text-[var(--fgColor-default)]">0.4ms</p></div>
-                  <div><p className="text-[var(--fgColor-muted)]">Experiments</p><p className="font-bold tabular-nums text-[var(--fgColor-default)]">3 running</p></div>
-                  <div><p className="text-[var(--fgColor-muted)]">Last 24h evals</p><p className="font-bold tabular-nums text-[var(--fgColor-default)]">12.4M</p></div>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
+                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                      47
+                    </p>
+                    <p className="text-sm text-[var(--fgColor-muted)]">
+                      flags active
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
+                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                      0.4ms
+                    </p>
+                    <p className="text-sm text-[var(--fgColor-muted)]">
+                      eval latency
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
+                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                      3
+                    </p>
+                    <p className="text-sm text-[var(--fgColor-muted)]">
+                      experiments
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
+                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                      12.4M
+                    </p>
+                    <p className="text-sm text-[var(--fgColor-muted)]">evals</p>
+                  </div>
+                </div>
+
+                {/* Quickstart command bar */}
+                <div className="flex items-center gap-2 rounded-md bg-[var(--bgColor-emphasis)] px-4 py-3 font-mono text-sm text-white">
+                  <span className="text-[var(--fgColor-muted)] select-none">
+                    $
+                  </span>
+                  <span className="truncate">
+                    docker run -p 8080:8080 featuresignals/app
+                  </span>
+                  <button
+                    className="ml-auto text-white/60 hover:text-white transition-colors"
+                    aria-label="Copy command"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        "docker run -p 8080:8080 featuresignals/app",
+                      );
+                    }}
+                  >
+                    <CheckIcon size={14} />
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
   );
 }
 
-/** Section: Stop flag rot */
-function StopFlagRot() {
+/* ==========================================================================
+   2. Social Proof Section
+   ========================================================================== */
+
+const socialMetrics = [
+  { value: "<1ms", label: "p99 evaluation latency" },
+  { value: "10M+", label: "evaluations per day" },
+  { value: "8", label: "SDK languages" },
+  { value: "Apache 2.0", label: "open source license" },
+];
+
+function SocialProofSection() {
   return (
-    <section className="py-20 sm:py-28 bg-[var(--bgColor-inset)]">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="order-2 md:order-1 relative">
-            <div className="rounded-2xl border border-[var(--borderColor-default)] bg-white p-8 shadow-sm">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-[var(--fgColor-default)]">AI Janitor · Last scan</p>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">2h ago</span>
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="p-3 rounded-lg bg-[var(--bgColor-inset)]">
-                    <p className="text-2xl font-bold tabular-nums text-[var(--fgColor-default)]">12</p>
-                    <p className="text-xs text-[var(--fgColor-muted)]">Stale flags found</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[var(--bgColor-inset)]">
-                    <p className="text-2xl font-bold tabular-nums text-[var(--fgColor-default)]">3</p>
-                    <p className="text-xs text-[var(--fgColor-muted)]">PRs created</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[var(--bgColor-inset)]">
-                    <p className="text-2xl font-bold tabular-nums text-[var(--fgColor-default)]">1,240</p>
-                    <p className="text-xs text-[var(--fgColor-muted)]">Dead LOC removed</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="order-1 md:order-2">
-            <span className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider">
-              AI Janitor
-            </span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight leading-tight">
-              Your codebase has dead flags. The AI Janitor finds them.
-            </h2>
-            <p className="mt-4 text-base text-[var(--fgColor-muted)] leading-relaxed max-w-lg">
-              Engineering teams forget to remove flags after launches. Over time, they accumulate —
-              cluttering code, confusing new developers, and hiding real bugs. The AI Janitor scans
-              your repositories, identifies flags that haven&apos;t been toggled in months, analyzes
-              whether they&apos;re safe to remove, and opens pull requests with the fixes automatically.
-            </p>
-            <div className="mt-6">
-              <Link
-                href="/cleanup"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-accent-emphasis)] hover:opacity-90 transition-opacity shadow-sm"
+    <section id="social-proof" className="py-16 bg-[var(--bgColor-inset)]">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
+        <motion.div className="mb-8" {...fadeUp}>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {socialMetrics.map((metric, i) => (
+              <div
+                key={metric.label}
+                className="inline-flex flex-col items-center rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-6 py-4 min-w-[140px]"
               >
-                See it in action →
-              </Link>
-            </div>
+                <span
+                  className={cn(
+                    "text-2xl font-bold",
+                    [
+                      "text-[var(--fgColor-accent)]",
+                      "text-[var(--fgColor-done)]",
+                      "text-[var(--fgColor-success)]",
+                      "text-[var(--fgColor-attention)]",
+                    ][i % 4],
+                  )}
+                >
+                  {metric.value}
+                </span>
+                <span className="text-sm text-[var(--fgColor-muted)]">
+                  {metric.label}
+                </span>
+              </div>
+            ))}
           </div>
+        </motion.div>
+
+        <motion.p
+          className="text-base text-[var(--fgColor-muted)] font-normal"
+          {...fadeUpDelayed(0.1)}
+        >
+          Trusted by engineering teams from startups to enterprises
+        </motion.p>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   3. Capability Cards Section (3x2 grid)
+   ========================================================================== */
+
+interface CapabilityCard {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  description: string;
+}
+
+const capabilities: CapabilityCard[] = [
+  {
+    icon: RocketIcon,
+    title: "Release with Confidence",
+    description:
+      "Deploy behind feature flags. Roll out gradually to 1%, 10%, 100%. Kill any feature instantly — no redeploy, no downtime.",
+  },
+  {
+    icon: LightBulbIcon,
+    title: "Automate Cleanup",
+    description:
+      "The AI Janitor scans your codebase, finds stale flags, and opens PRs to remove them automatically.",
+  },
+  {
+    icon: SyncIcon,
+    title: "Migrate Without Risk",
+    description:
+      "Import flags, environments, and targeting rules from LaunchDarkly, ConfigCat, or Flagsmith in minutes.",
+  },
+  {
+    icon: ShieldLockIcon,
+    title: "Govern Every Change",
+    description:
+      "RBAC with per-environment permissions. Tamper-evident audit logs. Change approval workflows. SSO.",
+  },
+  {
+    icon: GraphIcon,
+    title: "Experiment at Scale",
+    description:
+      "Weighted variants with impression tracking. A/B test anything — built into every plan.",
+  },
+  {
+    icon: ContainerIcon,
+    title: "Deploy Anywhere",
+    description:
+      "Single Go binary. Docker or bare metal. Cloud or self-hosted. Apache 2.0.",
+  },
+];
+
+function CapabilityCardsSection() {
+  return (
+    <section id="capabilities" className="py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <motion.div className="text-center mb-14" {...fadeUp}>
+          <SectionLabel icon={RocketIcon} text="Platform Capabilities" />
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+            Everything you need to ship
+          </h2>
+          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+            No per-seat pricing. No surprises. Just powerful feature management.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {capabilities.map((cap, i) => {
+            const accents = [
+              {
+                bg: "bg-[var(--bgColor-accent-muted)]",
+                fg: "text-[var(--fgColor-accent)]",
+                border: "border-l-[var(--borderColor-accent-emphasis)]",
+              },
+              {
+                bg: "bg-[var(--bgColor-done-muted)]",
+                fg: "text-[var(--fgColor-done)]",
+                border: "border-l-[var(--borderColor-done-emphasis)]",
+              },
+              {
+                bg: "bg-[var(--bgColor-attention-muted)]",
+                fg: "text-[var(--fgColor-attention)]",
+                border: "border-l-[var(--borderColor-attention-emphasis)]",
+              },
+              {
+                bg: "bg-[var(--bgColor-danger-muted)]",
+                fg: "text-[var(--fgColor-danger)]",
+                border: "border-l-[var(--borderColor-danger-emphasis)]",
+              },
+              {
+                bg: "bg-[var(--bgColor-success-muted)]",
+                fg: "text-[var(--fgColor-success)]",
+                border: "border-l-[var(--borderColor-success-emphasis)]",
+              },
+              {
+                bg: "bg-[var(--bgColor-accent-muted)]",
+                fg: "text-[var(--fgColor-accent)]",
+                border: "border-l-[var(--borderColor-accent-emphasis)]",
+              },
+            ];
+            const a = accents[i % accents.length];
+            return (
+              <motion.div
+                key={cap.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-48px" }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.05 * i,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                whileHover={{ scale: 1.02 }}
+                className={cn(
+                  "group flex flex-col gap-4 rounded-xl border border-[var(--borderColor-default)] border-l-[3px] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow",
+                  a.border,
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-11 h-11 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform",
+                    a.bg,
+                  )}
+                >
+                  <cap.icon size={22} className={a.fg} />
+                </div>
+                <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+                  {cap.title}
+                </h3>
+                <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+                  {cap.description}
+                </p>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-/** Section: Migrate without fear */
-function MigrateWithoutFear() {
-  return (
-    <section className="py-20 sm:py-28 bg-white">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider">
-              Migration + OpenFeature
-            </span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight leading-tight">
-              Already on LaunchDarkly? Switch in minutes, not months.
-            </h2>
-            <p className="mt-4 text-base text-[var(--fgColor-muted)] leading-relaxed max-w-lg">
-              Import your flags, environments, segments, and targeting rules from LaunchDarkly,
-              ConfigCat, Flagsmith, or Unleash with our built-in migration engine. Dry-run first
-              to see exactly what will be migrated. And because every SDK implements OpenFeature
-              natively, switching providers is a one-line code change — zero vendor lock-in.
-            </p>
-            <div className="mt-6">
-              <Link
-                href="/migrate"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-accent-emphasis)] hover:opacity-90 transition-opacity shadow-sm"
-              >
-                Preview your migration →
-              </Link>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] p-8 shadow-sm">
-              <p className="text-sm font-semibold text-[var(--fgColor-default)] mb-4">Migration preview</p>
-              <div className="space-y-3">
-                {[
-                  { name: "LaunchDarkly", flags: 142, envs: 3, savings: "98%" },
-                  { name: "ConfigCat", flags: 89, envs: 2, savings: "74%" },
-                  { name: "Flagsmith", flags: 56, envs: 2, savings: "93%" },
-                ].map((p) => (
-                  <div key={p.name} className="flex items-center justify-between py-2 border-b border-[var(--borderColor-default)] last:border-0">
-                    <div>
-                      <p className="text-sm font-medium text-[var(--fgColor-default)]">{p.name}</p>
-                      <p className="text-xs text-[var(--fgColor-muted)]">{p.flags} flags · {p.envs} environments</p>
-                    </div>
-                    <span className="text-sm font-bold text-emerald-600 tabular-nums">Save {p.savings}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+/* ==========================================================================
+   4. How It Works Section (3 numbered steps)
+   ========================================================================== */
+
+interface HowItWorksStep {
+  number: string;
+  title: string;
+  description: string;
 }
 
-/** Section: Trust indicators */
-function TrustSection() {
-  const items = [
-    { label: "Apache 2.0", desc: "Open source. Self-host or cloud. No vendor lock-in." },
-    { label: "SOC 2 Type II", desc: "Audit in progress. Controls mapped and documented." },
-    { label: "OpenFeature Native", desc: "All 8 SDKs. Switch providers without code changes." },
-    { label: "Sub-millisecond", desc: "Stateless eval engine. No DB calls on hot path." },
-    { label: "8 SDK Languages", desc: "Go, Node, Python, Java, .NET, Ruby, React, Vue." },
-    { label: "Single Binary", desc: "One Go binary. Docker or bare metal. No JVM, no bloat." },
+const howItWorksSteps: HowItWorksStep[] = [
+  {
+    number: "01",
+    title: "Create a flag",
+    description:
+      "Define your feature flag with targeting rules, percentage rollouts, or A/B variants.",
+  },
+  {
+    number: "02",
+    title: "Target users",
+    description:
+      "Use 13 targeting operators, custom attributes, and reusable segments to control who sees what.",
+  },
+  {
+    number: "03",
+    title: "Ship with confidence",
+    description:
+      "Monitor evaluations in real-time. Kill switches. Gradual rollouts. Zero stress.",
+  },
+];
+
+function HowItWorksSection() {
+  const stepColors = [
+    {
+      bg: "bg-[var(--bgColor-accent-muted)]",
+      fg: "text-[var(--fgColor-accent)]",
+      border: "border-[var(--borderColor-accent-muted)]",
+    },
+    {
+      bg: "bg-[var(--bgColor-done-muted)]",
+      fg: "text-[var(--fgColor-done)]",
+      border: "border-[var(--borderColor-accent-muted)]",
+    },
+    {
+      bg: "bg-[var(--bgColor-success-muted)]",
+      fg: "text-[var(--fgColor-success)]",
+      border: "border-[var(--borderColor-success-muted)]",
+    },
   ];
 
   return (
-    <section className="py-16 sm:py-20 bg-[var(--bgColor-inset)]">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight">
-            Built for teams that can&apos;t afford downtime
+    <section
+      id="how-it-works"
+      className="py-20 md:py-28 bg-[var(--bgColor-inset)]"
+    >
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <motion.div className="text-center mb-14" {...fadeUp}>
+          <SectionLabel icon={SyncIcon} text="How It Works" />
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+            How it works
           </h2>
-          <p className="text-base text-[var(--fgColor-muted)] mt-2 max-w-xl mx-auto">
-            Open source. SOC 2. Sub-millisecond. No vendor lock-in.
+          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+            Three steps from idea to production. No YAML required.
           </p>
+        </motion.div>
+
+        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
+          {howItWorksSteps.map((step, i) => {
+            const c = stepColors[i];
+            return (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-48px" }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.08 * i,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="relative flex flex-col items-center text-center gap-4"
+              >
+                <span
+                  className={cn(
+                    "relative z-10 flex items-center justify-center w-16 h-16 rounded-full border text-2xl font-extrabold select-none shadow-[var(--shadow-resting-small)]",
+                    c.bg,
+                    c.fg,
+                    c.border,
+                  )}
+                >
+                  {i + 1}
+                </span>
+                <h3 className="text-xl font-semibold text-[var(--fgColor-default)]">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-[var(--fgColor-muted)] max-w-[280px] leading-relaxed">
+                  {step.description}
+                </p>
+              </motion.div>
+            );
+          })}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.label} className="flex items-start gap-3 p-4 rounded-xl bg-white border border-[var(--borderColor-default)]">
-              <CheckCircleFillIcon size={16} className="mt-0.5 shrink-0 text-emerald-500" />
+
+        {/* Code snippet visual */}
+        <motion.div className="mt-14 max-w-xl mx-auto" {...fadeUpDelayed(0.3)}>
+          <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden shadow-[var(--shadow-resting-medium)]">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
+              <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+              <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+              <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+              <span className="ml-2 text-xs text-[var(--fgColor-muted)] font-mono">
+                create-flag.ts
+              </span>
+            </div>
+            <div className="p-4 font-mono text-xs leading-relaxed text-[var(--fgColor-default)]">
               <div>
-                <p className="text-sm font-semibold text-[var(--fgColor-default)]">{item.label}</p>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">{item.desc}</p>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;1
+                </span>
+                <span className="text-[var(--fgColor-accent)]">import</span>{" "}
+                <span className="text-[var(--fgColor-success)]">
+                  FeatureSignals
+                </span>{" "}
+                <span className="text-[var(--fgColor-accent)]">from</span>{" "}
+                <span className="text-[var(--fgColor-done)]">
+                  &apos;@featuresignals/sdk&apos;
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;2
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;3
+                </span>
+                <span className="text-[var(--fgColor-accent)]">const</span>{" "}
+                <span>fs</span> ={" "}
+                <span className="text-[var(--fgColor-accent)]">new</span>{" "}
+                <span className="text-[var(--fgColor-success)]">
+                  FeatureSignals
+                </span>
+                (&#123;
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;4
+                </span>
+                &nbsp;&nbsp;apiKey:{" "}
+                <span className="text-[var(--fgColor-done)]">
+                  &apos;fs_sk_...&apos;
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;5
+                </span>
+                &#125;)
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;6
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;7
+                </span>
+                <span className="text-[var(--fgColor-accent)]">const</span>{" "}
+                <span>enabled</span> ={" "}
+                <span className="text-[var(--fgColor-accent)]">await</span> fs.
+                <span className="text-[var(--fgColor-done)]">isEnabled</span>(
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;8
+                </span>
+                &nbsp;&nbsp;
+                <span className="text-[var(--fgColor-done)]">
+                  &apos;dark-mode-v2&apos;
+                </span>
+              </div>
+              <div>
+                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                  &nbsp;9
+                </span>
+                )
               </div>
             </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   5. Persona Tabs Section
+   ========================================================================== */
+
+interface PersonaTab {
+  id: string;
+  label: string;
+}
+
+const personaTabs: PersonaTab[] = [
+  { id: "developers", label: "For Developers" },
+  { id: "platform", label: "For Platform Teams" },
+  { id: "security", label: "For Security & Compliance" },
+];
+
+interface PersonaFeature {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  description: string;
+}
+
+const personaFeatures: Record<string, PersonaFeature[]> = {
+  developers: [
+    {
+      icon: ZapIcon,
+      title: "Sub-millisecond evaluation in 8 languages",
+      description:
+        "Go, Node.js, Python, Java, .NET, Ruby, React, Vue — all with native SDKs optimized for minimal overhead.",
+    },
+    {
+      icon: CodeIcon,
+      title: "One-line SDK integration",
+      description:
+        "Import, initialize, evaluate. The simplest integration of any feature flag platform.",
+    },
+    {
+      icon: LinkExternalIcon,
+      title: "OpenFeature native — zero vendor lock-in",
+      description:
+        "All SDKs implement the OpenFeature standard. Swap providers with a single line of config.",
+    },
+    {
+      icon: ContainerIcon,
+      title: "Local evaluation from in-memory cache",
+      description:
+        "Flags evaluate locally in under 1ms. No network round-trips on the hot path.",
+    },
+  ],
+  platform: [
+    {
+      icon: GearIcon,
+      title: "Terraform, Pulumi, Ansible providers for GitOps",
+      description:
+        "Manage flags as code in your existing infrastructure pipelines. Full GitOps support.",
+    },
+    {
+      icon: ContainerIcon,
+      title: "Relay proxy for edge caching and high availability",
+      description:
+        "Deploy relay proxies at the edge for sub-millisecond evaluation across all regions.",
+    },
+    {
+      icon: SyncIcon,
+      title: "Webhooks, scheduling, CI/CD integration",
+      description:
+        "Trigger deployments, notifications, and automated workflows on flag changes.",
+    },
+    {
+      icon: RocketIcon,
+      title: "Multi-environment management with flag promotion",
+      description:
+        "Promote flags from dev → staging → production with confidence. Environment-specific targeting.",
+    },
+  ],
+  security: [
+    {
+      icon: ShieldCheckIcon,
+      title: "RBAC with 4 built-in roles and per-environment permissions",
+      description:
+        "Admin, Editor, Viewer, and custom roles with granular environment-level access control.",
+    },
+    {
+      icon: ShieldLockIcon,
+      title: "Tamper-evident audit logging with before/after diffs",
+      description:
+        "Every change is recorded with actor identity, timestamp, and full before/after state diff.",
+    },
+    {
+      icon: CheckIcon,
+      title: "SSO (SAML/OIDC), SCIM, MFA enforcement",
+      description:
+        "Enterprise authentication with Okta, Azure AD, Google Workspace, and any SAML/OIDC provider.",
+    },
+    {
+      icon: CheckCircleIcon,
+      title: "SOC 2 Type II, GDPR, HIPAA compliance ready",
+      description:
+        "Auditor-ready compliance posture with data residency controls and DPA support.",
+    },
+  ],
+};
+
+function PersonaFeaturesSection() {
+  const [activeTab, setActiveTab] = useState(personaTabs[0].id);
+  const features = personaFeatures[activeTab] ?? personaFeatures.developers;
+
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const currentIdx = personaTabs.findIndex((t) => t.id === activeTab);
+      let nextIdx = currentIdx;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nextIdx = (currentIdx + 1) % personaTabs.length;
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        nextIdx = (currentIdx - 1 + personaTabs.length) % personaTabs.length;
+      }
+      const next = personaTabs[nextIdx];
+      if (next) setActiveTab(next.id);
+    },
+    [activeTab],
+  );
+
+  const tabAccents: Record<
+    string,
+    { active: string; muted: string; fg: string }
+  > = {
+    developers: {
+      active:
+        "bg-[var(--bgColor-accent-emphasis)] border-[var(--bgColor-accent-emphasis)]",
+      muted: "bg-[var(--bgColor-accent-muted)]",
+      fg: "text-[var(--fgColor-accent)]",
+    },
+    platform: {
+      active:
+        "bg-[var(--bgColor-done-emphasis)] border-[var(--bgColor-done-emphasis)]",
+      muted: "bg-[var(--bgColor-done-muted)]",
+      fg: "text-[var(--fgColor-done)]",
+    },
+    security: {
+      active:
+        "bg-[var(--bgColor-success-emphasis)] border-[var(--bgColor-success-emphasis)]",
+      muted: "bg-[var(--bgColor-success-muted)]",
+      fg: "text-[var(--fgColor-success)]",
+    },
+  };
+  const currentAccent = tabAccents[activeTab] ?? tabAccents.developers;
+
+  return (
+    <section id="personas" className="py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <motion.div className="text-center mb-12" {...fadeUp}>
+          <SectionLabel icon={PeopleIcon} text="Built For Your Team" />
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+            Built for every team
+          </h2>
+          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+            Feature management that scales from indie devs to the Fortune 500.
+          </p>
+        </motion.div>
+
+        {/* Pill tab buttons */}
+        <motion.div
+          className="flex flex-wrap justify-center gap-2 mb-10"
+          role="tablist"
+          aria-label="Persona tabs"
+          onKeyDown={handleTabKeyDown}
+          {...fadeUpDelayed(0.1)}
+        >
+          {personaTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const accent = tabAccents[tab.id] ?? tabAccents.developers;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`persona-panel-${tab.id}`}
+                id={`persona-tab-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "px-5 h-10 rounded-full text-sm font-semibold transition-all duration-200",
+                  isActive
+                    ? cn("text-white border", accent.active)
+                    : "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)] border border-transparent hover:bg-[var(--bgColor-inset)]",
+                )}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </motion.div>
+
+        {/* Tab content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            id={`persona-panel-${activeTab}`}
+            role="tabpanel"
+            aria-labelledby={`persona-tab-${activeTab}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+          >
+            {features.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.05 * i,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow"
+              >
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                    currentAccent.muted,
+                  )}
+                >
+                  <feature.icon size={20} className={currentAccent.fg} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-[var(--fgColor-muted)] mt-1 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   6. Testimonials Section (3x2 grid, 6 cards)
+   ========================================================================== */
+
+interface TweetCard {
+  handle: string;
+  name: string;
+  initials: string;
+  quote: string;
+  likes: number;
+  reposts: number;
+}
+
+const tweetCards: TweetCard[] = [
+  {
+    handle: "@sarah_engineer",
+    name: "Sarah Chen",
+    initials: "SC",
+    quote:
+      "Switched from LaunchDarkly in a week. Sub-ms eval is real. Our p99 dropped 40ms.",
+    likes: 128,
+    reposts: 24,
+  },
+  {
+    handle: "@marcus_architect",
+    name: "Marcus Johansson",
+    initials: "MJ",
+    quote:
+      "Finally, a feature flag platform that treats ops as first-class. Terraform provider is excellent.",
+    likes: 215,
+    reposts: 47,
+  },
+  {
+    handle: "@priya_infra",
+    name: "Priya Patel",
+    initials: "PP",
+    quote:
+      "Self-hosted in our VPC in 15 minutes. Single Go binary. No JVM. No bloat.",
+    likes: 189,
+    reposts: 36,
+  },
+  {
+    handle: "@alex_cto",
+    name: "Alex Rodriguez",
+    initials: "AR",
+    quote:
+      "The AI Janitor found 200+ stale flags we forgot about. Cleaned them up in a weekend.",
+    likes: 342,
+    reposts: 89,
+  },
+  {
+    handle: "@jordan_devops",
+    name: "Jordan Kim",
+    initials: "JK",
+    quote:
+      "OpenFeature support means we're not locked in. That matters for our compliance.",
+    likes: 156,
+    reposts: 31,
+  },
+  {
+    handle: "@taylor_sec",
+    name: "Taylor Wallace",
+    initials: "TW",
+    quote:
+      "SOC 2 auditor was impressed by the audit trail. Every change tracked with before/after.",
+    likes: 134,
+    reposts: 29,
+  },
+];
+
+function TestimonialsSection() {
+  return (
+    <section
+      id="testimonials"
+      className="py-20 md:py-28 bg-[var(--bgColor-inset)]"
+    >
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <motion.div className="text-center mb-14" {...fadeUp}>
+          <SectionLabel icon={HeartFillIcon} text="What Teams Say" />
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+            Developer approved
+          </h2>
+          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+            But don&apos;t just take our word for it.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tweetCards.map((card, i) => (
+            <motion.div
+              key={card.handle}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-48px" }}
+              transition={{
+                duration: 0.4,
+                delay: 0.05 * i,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              whileHover={{ scale: 1.02 }}
+              className={cn(
+                "flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow",
+                [
+                  "border-l-[3px] border-l-[var(--borderColor-accent-emphasis)]",
+                  "border-l-[3px] border-l-[var(--borderColor-done-emphasis)]",
+                  "border-l-[3px] border-l-[var(--borderColor-success-emphasis)]",
+                  "border-l-[3px] border-l-[var(--borderColor-attention-emphasis)]",
+                  "border-l-[3px] border-l-[var(--borderColor-danger-emphasis)]",
+                  "border-l-[3px] border-l-[var(--borderColor-accent-emphasis)]",
+                ][i % 6],
+              )}
+            >
+              {/* Header: avatar + handle */}
+              <div className="flex justify-between items-start">
+                <div className="flex gap-2.5">
+                  <div className="h-11 w-11 rounded-full border-[1.5px] border-[var(--borderColor-default)] flex items-center justify-center bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-semibold text-sm shrink-0">
+                    {card.initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+                      {card.name}
+                    </p>
+                    <p className="text-xs text-[var(--fgColor-muted)]">
+                      {card.handle}
+                    </p>
+                  </div>
+                </div>
+                <XIcon
+                  size={16}
+                  className="text-[var(--fgColor-muted)] shrink-0"
+                />
+              </div>
+
+              {/* Quote */}
+              <p className="text-sm text-[var(--fgColor-default)] leading-relaxed">
+                &ldquo;{card.quote}&rdquo;
+              </p>
+
+              {/* Like / Repost footer */}
+              <div className="flex items-center gap-4 text-xs text-[var(--fgColor-muted)] pt-3 border-t border-[var(--borderColor-default)] mt-auto">
+                <span className="inline-flex items-center gap-1.5">
+                  <HeartFillIcon size={12} className="text-red-400" />
+                  {card.likes}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <SyncIcon size={12} />
+                  {card.reposts}
+                </span>
+                <span className="inline-flex items-center gap-1.5 ml-auto">
+                  <CommentDiscussionIcon size={12} />
+                </span>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+/* ==========================================================================
+   7. Pricing Overview Section (3 cards)
+   ========================================================================== */
+
+interface PricingPlan {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
+  ctaHref: string;
+  badge?: string;
+  highlighted?: boolean;
+}
+
+const pricingPlans: PricingPlan[] = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description:
+      "1 project, 2 environments, 3 team members. All SDKs + OpenFeature.",
+    features: [
+      "Unlimited feature flags",
+      "All 8 SDKs + OpenFeature",
+      "Community support",
+      "Apache 2.0 license",
+    ],
+    cta: "Start Free",
+    ctaHref: REGISTER_URL,
+  },
+  {
+    name: "Pro",
+    price: "$29",
+    period: "/month flat",
+    description:
+      "Unlimited everything. AI Janitor, RBAC, audit logs, webhooks.",
+    features: [
+      "Unlimited projects & environments",
+      "AI Janitor stale flag removal",
+      "RBAC & audit logs",
+      "Webhooks & integrations",
+      "Email support",
+    ],
+    cta: "Start Free",
+    ctaHref: REGISTER_URL,
+    badge: "Most Popular",
+    highlighted: true,
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    description: "SSO, SCIM, 99.9% SLA, dedicated support, on-prem deployment.",
+    features: [
+      "Everything in Pro",
+      "SSO (SAML/OIDC) & SCIM",
+      "99.9% uptime SLA",
+      "Dedicated support engineer",
+      "On-prem / air-gapped deployment",
+    ],
+    cta: "Contact Sales",
+    ctaHref: SALES_EMAIL,
+  },
+];
+
+function PricingOverviewSection() {
+  return (
+    <section id="pricing" className="py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <motion.div className="text-center mb-14" {...fadeUp}>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+            Simple, transparent pricing
+          </h2>
+          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+            No per-seat fees. No surprise MAU billing. Just fair, flat pricing.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {pricingPlans.map((plan, i) => (
+            <motion.div
+              key={plan.name}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-48px" }}
+              transition={{
+                duration: 0.4,
+                delay: 0.08 * i,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              whileHover={{ scale: 1.02 }}
+              className={cn(
+                "relative flex flex-col rounded-xl border p-6 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow",
+                plan.highlighted
+                  ? "border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-default)]"
+                  : "border-[var(--borderColor-default)] bg-[var(--bgColor-default)]",
+              )}
+            >
+              {plan.badge && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bgColor-accent-emphasis)] text-white px-3 py-1 text-xs font-semibold">
+                    <StarFillIcon size={12} />
+                    {plan.badge}
+                  </span>
+                </div>
+              )}
+
+              <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">
+                {plan.name}
+              </h3>
+
+              <div className="mt-3 mb-1">
+                <span className="text-3xl font-bold text-[var(--fgColor-default)]">
+                  {plan.price}
+                </span>
+                {plan.period && (
+                  <span className="text-sm text-[var(--fgColor-muted)] ml-1">
+                    {plan.period}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-sm text-[var(--fgColor-muted)] mb-5 leading-relaxed">
+                {plan.description}
+              </p>
+
+              <ul className="space-y-2.5 mb-6 flex-1">
+                {plan.features.map((feature) => (
+                  <li
+                    key={feature}
+                    className="flex items-start gap-2 text-sm text-[var(--fgColor-default)]"
+                  >
+                    <CheckIcon
+                      size={14}
+                      className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href={plan.ctaHref}
+                className={cn(
+                  "inline-flex items-center justify-center rounded-md px-6 h-10 text-sm font-semibold w-full transition-opacity",
+                  plan.highlighted
+                    ? "text-white bg-[var(--bgColor-success-emphasis)] hover:opacity-90"
+                    : "text-[var(--fgColor-default)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-inset)]",
+                )}
+              >
+                {plan.cta}
+              </a>
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.div className="text-center mt-8" {...fadeUpDelayed(0.2)}>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-accent)] hover:underline underline-offset-4"
+          >
+            View full pricing
+            <ArrowRightIcon size={14} />
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   8. Final CTA Section
+   ========================================================================== */
+
+function FinalCtaSection() {
+  return (
+    <section
+      id="final-cta"
+      className="py-20 md:py-28 bg-[var(--bgColor-emphasis)]"
+    >
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
+        <motion.h2
+          className="text-3xl md:text-4xl font-bold text-white max-w-[700px] mx-auto"
+          {...fadeUp}
+        >
+          Ready to take control of your release infrastructure?
+        </motion.h2>
+
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-3 mt-8"
+          {...fadeUpDelayed(0.1)}
+        >
+          <a
+            href={REGISTER_URL}
+            className="inline-flex items-center justify-center rounded-md px-6 h-11 text-sm font-semibold text-[var(--fgColor-default)] bg-white hover:opacity-90 transition-opacity"
+          >
+            Start Free
+          </a>
+          <a
+            href={SALES_EMAIL}
+            className="inline-flex items-center justify-center rounded-md border border-white/30 px-6 h-11 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+          >
+            Contact Sales
+          </a>
+        </motion.div>
+
+        <motion.p
+          className="text-sm text-[var(--fgColor-muted)] mt-6 font-normal max-w-[500px] mx-auto"
+          {...fadeUpDelayed(0.2)}
+        >
+          Open source. Apache 2.0. Self-host or cloud. No vendor lock-in.
+        </motion.p>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   Homepage — default export
+   ========================================================================== */
+
+export default function HomePage() {
+  return (
+    <>
+      <HeroSection />
+      <SocialProofSection />
+      <CapabilityCardsSection />
+      <HowItWorksSection />
+      <PersonaFeaturesSection />
+      <TestimonialsSection />
+      <PricingOverviewSection />
+      <FinalCtaSection />
+    </>
   );
 }

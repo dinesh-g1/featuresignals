@@ -193,7 +193,7 @@ export default function TermsPage() {
         <p>
           For questions about these terms, contact us at{" "}
           <a
-            href="mailto:legal@featuresignals.com"
+            href="/contact?reason=support"
             className="text-accent hover:underline"
           >
             legal@featuresignals.com

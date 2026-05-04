@@ -2,15 +2,20 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import {
+  AnnouncementBanner,
+  DEFAULT_ANNOUNCEMENT,
+} from "@/components/announcement-banner";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://featuresignals.com"),
   title: {
     template: "%s | FeatureSignals",
-    default: "FeatureSignals | The LaunchDarkly Alternative — 99% Less Cost",
+    default:
+      "FeatureSignals | Release Infrastructure Platform — Sub-Millisecond Feature Flags",
   },
   description:
-    "Stop overpaying for feature flags. FeatureSignals gives you unlimited flags, unlimited seats, sub-millisecond evaluation, and AI-powered stale flag cleanup — at a flat INR 1,999/month (~$29). Open-source. Self-host or cloud. The LaunchDarkly alternative that doesn't penalize growth.",
+    "The control plane for software delivery. FeatureSignals provides sub-millisecond feature flags, AI-powered stale flag detection, A/B experimentation, and OpenFeature-native SDKs — open source, self-hosted or cloud. Enterprise-grade release infrastructure for teams that ship.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     type: "website",
@@ -60,6 +65,16 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <head />
       <body className="min-h-screen flex flex-col bg-[var(--bgColor-default)] text-[var(--fgColor-default)] font-sans antialiased">
+        {/* Announcement Banner */}
+        {DEFAULT_ANNOUNCEMENT.DISPLAY && (
+          <AnnouncementBanner
+            text={DEFAULT_ANNOUNCEMENT.TEXT}
+            ctaLabel={DEFAULT_ANNOUNCEMENT.CTA_LABEL}
+            ctaHref={DEFAULT_ANNOUNCEMENT.CTA_HREF}
+            links={DEFAULT_ANNOUNCEMENT.LINKS}
+          />
+        )}
+
         {/* JSON-LD Structured Data for Google Rich Results */}
         <script
           type="application/ld+json"

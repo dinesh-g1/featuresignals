@@ -29,9 +29,9 @@ function resolveSize(size: PrismLotusProps["size"]): number {
 
 const TEXT_SIZE_MAP: Record<string, string> = {
   sm: "text-sm",
-  md: "text-base",
-  lg: "text-lg",
-  xl: "text-xl",
+  md: "text-lg",
+  lg: "text-xl",
+  xl: "text-2xl",
 };
 
 /* ================================================================== */
@@ -112,9 +112,11 @@ function Wordmark({
 
   return (
     <div className="flex flex-col leading-none">
-      <span className={cn("font-bold tracking-tight", textSize, mainColor)}>
+      <span
+        className={cn("font-extrabold tracking-tight", textSize, mainColor)}
+      >
         Feature
-        <span className={accentColor}>Signals</span>
+        <span className={cn(accentColor, "font-extrabold")}>Signals</span>
       </span>
       {sizeKey === "xl" && (
         <span className="text-[10px] font-medium tracking-[0.2em] text-[var(--fgColor-subtle)] uppercase mt-0.5">

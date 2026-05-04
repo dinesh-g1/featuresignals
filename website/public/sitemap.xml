@@ -1,13 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Homepage -->
+
+  <!-- ============================================================
+       Homepage — Priority 1.0
+       ============================================================ -->
   <url>
     <loc>https://featuresignals.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Platform Pages -->
+  <!-- ============================================================
+       Marketing Pages — Priority 0.9
+       ============================================================ -->
+  <url>
+    <loc>https://featuresignals.com/features</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/pricing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/use-cases</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/integrations</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/customers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/partners</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/signup</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Platform Demo Pages -->
   <url>
     <loc>https://featuresignals.com/create</loc>
     <changefreq>monthly</changefreq>
@@ -34,14 +86,400 @@
     <priority>0.9</priority>
   </url>
 
-  <!-- Pricing & Signup -->
+  <!-- ============================================================
+       Blog — Priority 0.8
+       ============================================================ -->
   <url>
-    <loc>https://featuresignals.com/signup</loc>
+    <loc>https://featuresignals.com/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/how-we-built-sub-millisecond-eval-engine-go</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/introducing-ai-janitor-autonomous-stale-flag-cleanup</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/why-openfeature-matters-breaking-free-vendor-lock-in</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/migrating-from-launchdarkly-technical-guide-zero-downtime</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/feature-flag-governance-soc2-compliance</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/progressive-delivery-patterns-every-team-should-know</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/self-hosting-feature-flags-complete-infrastructure-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/blog/hidden-cost-of-stale-feature-flags</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Legal -->
+  <!-- ============================================================
+       Docs — Priority 0.7
+       ============================================================ -->
+  <url>
+    <loc>https://featuresignals.com/docs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Getting Started -->
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/quickstart</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/installation</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/create-your-first-flag</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Core Concepts -->
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/feature-flags</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/flag-lifecycle</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/toggle-categories</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/targeting-and-segments</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/percentage-rollouts</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/ab-experimentation</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/projects-and-environments</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: SDKs -->
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/go</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/nodejs</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/python</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/java</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/dotnet</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/ruby</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/react</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/vue</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/sdks/openfeature</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Tutorials -->
+  <url>
+    <loc>https://featuresignals.com/docs/tutorials</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/tutorials/ab-testing-react</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/tutorials/feature-flag-checkout</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Advanced -->
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/approval-workflows</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/audit-logging</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/migration</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/rbac</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/relay-proxy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/scheduling</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/webhooks</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Architecture -->
+  <url>
+    <loc>https://featuresignals.com/docs/architecture</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/architecture/evaluation-engine</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Deployment -->
+  <url>
+    <loc>https://featuresignals.com/docs/deployment/docker-compose</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/deployment/self-hosting</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/deployment/configuration</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Compliance -->
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/security-overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/soc2</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/gdpr</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/hipaa</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: API Reference -->
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/playground</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/authentication</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/flags</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/evaluation</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/projects</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/environments</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/segments</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/approvals</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/audit-log</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/webhooks</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/team-management</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/api-keys</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/billing</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/sso</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/scim</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/custom-roles</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/metrics</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/integrations</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/ip-allowlist</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/insights</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/platform</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/api-reference/user</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ============================================================
+       Legal — Priority 0.3
+       ============================================================ -->
   <url>
     <loc>https://featuresignals.com/privacy-policy</loc>
     <changefreq>yearly</changefreq>
@@ -67,4 +505,5 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+
 </urlset>

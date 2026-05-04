@@ -182,6 +182,38 @@
     }
 }
 
+/* Accordion open/close animations */
+@keyframes accordion-down {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+    to {
+        height: var(--radix-accordion-content-height);
+        opacity: 1;
+    }
+}
+
+@keyframes accordion-up {
+    from {
+        height: var(--radix-accordion-content-height);
+        opacity: 1;
+    }
+    to {
+        height: 0;
+        opacity: 0;
+    }
+}
+
+/* Accordion animation utilities (Radix) */
+.animate-accordion-down {
+    animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+    animation: accordion-up 0.2s ease-out;
+}
+
 /* ================================================================
    Dark Mode — Primer Token Overrides
    ================================================================ */
@@ -225,6 +257,59 @@ body {
 .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+/* ================================================================
+   Announcement Banner Keyframes
+   ================================================================ */
+
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* ================================================================
+   Focus Ring — Primer-style accessible focus indicator
+   ================================================================ */
+
+*:focus-visible {
+    outline: 2px solid #0969da;
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+/* ================================================================
+   Nav dropdown animation utilities
+   ================================================================ */
+
+@keyframes dropdown-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-dropdown-enter {
+    animation: dropdown-enter 0.15s ease-out;
 }
 
 /* Custom range slider for Flag Rot Calculator (Primer-styled) */

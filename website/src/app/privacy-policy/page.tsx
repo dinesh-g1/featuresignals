@@ -205,7 +205,7 @@ export default function PrivacyPolicyPage() {
         <p>
           To exercise any of these rights, contact us at{" "}
           <a
-            href="mailto:privacy@featuresignals.com"
+            href="/contact?reason=support"
             className="text-accent hover:underline"
           >
             privacy@featuresignals.com
@@ -264,7 +264,7 @@ export default function PrivacyPolicyPage() {
         <p>
           <strong>Email:</strong>{" "}
           <a
-            href="mailto:privacy@featuresignals.com"
+            href="/contact?reason=support"
             className="text-accent hover:underline"
           >
             privacy@featuresignals.com

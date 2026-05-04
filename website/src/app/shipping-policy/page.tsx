@@ -147,7 +147,7 @@ export default function ShippingPolicyPage() {
           If you experience issues downloading your software or encounter a
           corrupted download, contact us at{" "}
           <a
-            href="mailto:support@featuresignals.com"
+            href="/contact?reason=support"
             className="text-accent hover:underline"
           >
             support@featuresignals.com
@@ -174,7 +174,7 @@ export default function ShippingPolicyPage() {
         <p>
           For questions about this shipping policy, contact us at{" "}
           <a
-            href="mailto:support@featuresignals.com"
+            href="/contact?reason=support"
             className="text-accent hover:underline"
           >
             support@featuresignals.com
