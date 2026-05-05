@@ -152,11 +152,12 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer
-      className="border-t border-[var(--borderColor-default)]"
-      style={{ backgroundColor: "#25292e" }}
-    >
-      <div className="mx-auto max-w-7xl px-6 py-12 sm:py-16">
+    <footer className="relative bg-gradient-mesh-dark border-t border-[var(--borderColor-default)]">
+      <div
+        className="absolute inset-0 bg-dots-dark pointer-events-none"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto max-w-7xl px-6 py-16 sm:py-24">
         {/* Top section: Brand + Links Grid */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-10 mb-12">
           {/* Brand column */}
@@ -169,7 +170,7 @@ export function Footer() {
             </div>
             <p
               className="text-sm leading-relaxed mb-6"
-              style={{ color: "#8b949e" }}
+              style={{ color: "rgba(255,255,255,0.45)" }}
             >
               The control plane for software delivery. Sub-millisecond feature
               flags, AI-powered stale flag detection, and OpenFeature-native
@@ -183,8 +184,8 @@ export function Footer() {
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                  style={{ color: "#8b949e" }}
+                  className="hover:text-white hover:scale-110 transition-all duration-200"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
                   aria-label={link.label}
                 >
                   <link.icon />
@@ -198,8 +199,8 @@ export function Footer() {
             {footerSections.map((section) => (
               <div key={section.title}>
                 <h3
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
-                  style={{ color: "#8b949e" }}
+                  className="text-[11px] font-semibold uppercase tracking-[0.08em] mb-4"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
                 >
                   {section.title}
                 </h3>
@@ -211,16 +212,16 @@ export function Footer() {
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm hover:text-white transition-colors"
-                          style={{ color: "#8b949e" }}
+                          className="text-sm hover:text-white/90 transition-colors"
+                          style={{ color: "rgba(255,255,255,0.55)" }}
                         >
                           {link.label}
                         </a>
                       ) : (
                         <Link
                           href={link.href}
-                          className="text-sm hover:text-white transition-colors"
-                          style={{ color: "#8b949e" }}
+                          className="text-sm hover:text-white/90 transition-colors"
+                          style={{ color: "rgba(255,255,255,0.55)" }}
                         >
                           {link.label}
                         </Link>
@@ -236,7 +237,10 @@ export function Footer() {
         {/* Status bar */}
         <div
           className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
-          style={{ borderColor: "#373e47", borderTopWidth: "1px" }}
+          style={{
+            borderColor: "var(--fs-bg-inverse-border)",
+            borderTopWidth: "1px",
+          }}
         >
           <div className="flex items-center space-x-3">
             <span className="relative flex h-2.5 w-2.5">
@@ -245,25 +249,31 @@ export function Footer() {
             </span>
             <span
               className="font-mono text-sm font-medium"
-              style={{ color: "#8b949e" }}
+              style={{ color: "rgba(255,255,255,0.55)" }}
             >
               All Systems Operational
             </span>
           </div>
 
           <div className="flex gap-6 text-sm">
-            <span className="font-mono text-xs" style={{ color: "#8b949e" }}>
+            <span
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-[var(--fs-bg-inverse-border)]"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
               SOC 2 Type II
             </span>
-            <span className="font-mono text-xs" style={{ color: "#8b949e" }}>
+            <span
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-[var(--fs-bg-inverse-border)]"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
               OpenFeature Native
             </span>
             <a
               href="https://status.featuresignals.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-white transition-colors font-mono text-xs"
-              style={{ color: "#8b949e" }}
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border border-[var(--fs-bg-inverse-border)] hover:text-white/90 transition-colors"
+              style={{ color: "rgba(255,255,255,0.4)" }}
             >
               Uptime 99.95%
             </a>
@@ -274,9 +284,9 @@ export function Footer() {
         <div
           className="mt-6 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs"
           style={{
-            borderColor: "#373e47",
+            borderColor: "var(--fs-bg-inverse-border)",
             borderTopWidth: "1px",
-            color: "#59636e",
+            color: "rgba(255,255,255,0.25)",
           }}
         >
           <p>

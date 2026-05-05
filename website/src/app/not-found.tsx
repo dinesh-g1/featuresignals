@@ -10,7 +10,7 @@ import { SearchIcon, HomeIcon } from "@primer/octicons-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen pt-16 flex items-center justify-center bg-[var(--bgColor-default)]">
+    <div className="min-h-screen pt-16 flex items-center justify-center bg-[var(--bgColor-default)] bg-glow-orbs">
       <div className="max-w-lg mx-auto px-6 py-20 text-center">
         {/* Large 404 */}
         <p className="text-[120px] sm:text-[160px] font-bold leading-none tracking-tighter text-[var(--fgColor-default)] opacity-10 select-none">

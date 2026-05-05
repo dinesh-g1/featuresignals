@@ -70,10 +70,7 @@ function CtaPrimary({
     <a
       href={href}
       className={cn(
-        "inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold",
-        "text-white bg-[var(--bgColor-success-emphasis)]",
-        "hover:opacity-90 transition-opacity",
-        "shadow-[0_1px_0_0_#1f232826]",
+        "btn-primary-success",
         className,
       )}
     >
@@ -93,11 +90,7 @@ function CtaSecondary({
   className?: string;
 }) {
   const cls = cn(
-    "inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold",
-    "text-[var(--fgColor-default)] bg-[var(--bgColor-muted)]",
-    "border border-[var(--borderColor-default)]",
-    "hover:bg-[#eff2f5] transition-colors",
-    "shadow-[0_1px_0_0_#1f23280a]",
+    "btn-secondary",
     className,
   );
 
@@ -192,7 +185,7 @@ function OperatorPill({ op }: { op: string }) {
 /** Code block visual */
 function CodeBlock({ lines }: { lines: string[] }) {
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] overflow-hidden">
+    <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
         <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
         <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
@@ -244,7 +237,7 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden bg-[var(--bgColor-default)]"
+      className="relative overflow-hidden bg-[var(--bgColor-default)] bg-glow-orbs"
       aria-labelledby="features-hero-heading"
     >
       {/* Subtle grid background */}
@@ -283,7 +276,7 @@ function HeroSection() {
           <div>
             <motion.h1
               id="features-hero-heading"
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--fgColor-default)] leading-[1.08]"
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.02em] text-[var(--fgColor-default)] leading-[1.08]"
               {...fadeUp}
             >
               Release infrastructure for{" "}
@@ -318,7 +311,7 @@ function HeroSection() {
               <p className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-2">
                 Quickstart
               </p>
-              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[var(--bgColor-inset)] border border-[var(--borderColor-default)] font-mono text-sm text-[var(--fgColor-default)]">
+              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[var(--fs-bg-surface-inset)] border border-[var(--borderColor-default)] font-mono text-sm text-[var(--fgColor-default)]">
                 <TerminalIcon
                   size={14}
                   className="text-[var(--fgColor-muted)] shrink-0"
@@ -338,8 +331,7 @@ function HeroSection() {
             transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           >
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden"
-              style={{ boxShadow: "var(--shadow-floating-medium)" }}
+              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
             >
               {/* Card header */}
               <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
@@ -382,7 +374,7 @@ function FeatureFlagsSection() {
   return (
     <section
       id="feature-flags"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--fs-bg-surface-inset)]"
       aria-labelledby="feature-flags-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -513,7 +505,7 @@ function TargetingSection() {
           {/* Left: Visual */}
           <motion.div {...fadeUp} className="order-last lg:order-first">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] overflow-hidden"
+              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
               style={{ boxShadow: "var(--shadow-resting-medium)" }}
             >
               <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
@@ -631,7 +623,7 @@ function ExperimentsSection() {
   return (
     <section
       id="experiments"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--fs-bg-surface-inset)]"
       aria-labelledby="experiments-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -685,8 +677,7 @@ function ExperimentsSection() {
           {/* Right: Variant distribution visual */}
           <motion.div
             {...fadeUpDelayed(0.1)}
-            className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden"
-            style={{ boxShadow: "var(--shadow-resting-medium)" }}
+            className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
           >
             <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
               <p className="text-sm font-semibold text-[var(--fgColor-default)]">
@@ -726,7 +717,7 @@ function ExperimentsSection() {
                       {v.pct}% &middot; {v.users} users
                     </span>
                   </div>
-                  <div className="w-full h-2.5 rounded-full bg-[var(--bgColor-inset)] overflow-hidden">
+                  <div className="w-full h-2.5 rounded-full bg-[var(--fs-bg-surface-inset)] overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all",
@@ -739,7 +730,7 @@ function ExperimentsSection() {
               ))}
               {/* Impressions counter */}
               <div className="pt-4 border-t border-[var(--borderColor-default)] grid grid-cols-2 gap-3">
-                <div className="text-center p-3 rounded-lg bg-[var(--bgColor-inset)]">
+                <div className="text-center p-3 rounded-lg bg-[var(--fs-bg-surface-inset)]">
                   <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
                     24.9K
                   </p>
@@ -747,7 +738,7 @@ function ExperimentsSection() {
                     Impressions
                   </p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-[var(--bgColor-inset)]">
+                <div className="text-center p-3 rounded-lg bg-[var(--fs-bg-surface-inset)]">
                   <p className="text-2xl font-bold text-[var(--fgColor-success)] tabular-nums">
                     +3.2%
                   </p>
@@ -783,7 +774,7 @@ function AiJanitorSection() {
             className="order-last lg:order-first flex flex-col gap-5"
           >
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] overflow-hidden"
+              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
               style={{ boxShadow: "var(--shadow-resting-medium)" }}
             >
               <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
@@ -930,7 +921,7 @@ function MigrationSection() {
   return (
     <section
       id="migration"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--fs-bg-surface-inset)]"
       aria-labelledby="migration-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -988,8 +979,7 @@ function MigrationSection() {
           {/* Right: Provider migration visual */}
           <motion.div {...fadeUpDelayed(0.1)} className="flex flex-col gap-5">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden"
-              style={{ boxShadow: "var(--shadow-resting-medium)" }}
+              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
             >
               <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
                 <p className="text-sm font-semibold text-[var(--fgColor-default)]">
@@ -1022,7 +1012,7 @@ function MigrationSection() {
                 ].map((row) => (
                   <div
                     key={row.from}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)]"
+                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)]"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-[var(--fgColor-default)]">
@@ -1089,7 +1079,7 @@ function GovernanceSection() {
           {/* Left: Visual */}
           <motion.div {...fadeUp} className="order-last lg:order-first">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] overflow-hidden"
+              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
               style={{ boxShadow: "var(--shadow-resting-medium)" }}
             >
               <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
@@ -1216,7 +1206,7 @@ function AutomationSection() {
   return (
     <section
       id="automation"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--fs-bg-surface-inset)]"
       aria-labelledby="automation-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -1273,8 +1263,7 @@ function AutomationSection() {
           {/* Right: Webhook event visual */}
           <motion.div
             {...fadeUpDelayed(0.1)}
-            className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden"
-            style={{ boxShadow: "var(--shadow-resting-medium)" }}
+            className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
           >
             <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
               <p className="text-sm font-semibold text-[var(--fgColor-default)]">
@@ -1307,7 +1296,7 @@ function AutomationSection() {
               ].map((evt, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] p-4"
+                  className="rounded-lg border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-[var(--fgColor-accent)] font-mono">
@@ -1417,7 +1406,7 @@ function IntegrationsSection() {
           {/* Right: Technology grid */}
           <motion.div {...fadeUpDelayed(0.1)} className="flex flex-col gap-5">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] p-6"
+              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] p-6"
               style={{ boxShadow: "var(--shadow-resting-medium)" }}
             >
               {/* SDKs */}
@@ -1505,20 +1494,11 @@ function FinalCtaSection() {
   return (
     <section
       id="cta"
-      className="relative overflow-hidden py-20 sm:py-28"
-      style={{ backgroundColor: "#25292e" }}
+      className="relative overflow-hidden py-20 sm:py-28 bg-gradient-mesh-dark"
       aria-labelledby="features-cta-heading"
     >
       {/* Decorative background */}
-      <div className="absolute inset-0 bg-dotted-dark" aria-hidden="true" />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 0%, rgba(9,105,218,0.12) 0%, transparent 60%)",
-        }}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-dots-dark" aria-hidden="true" />
 
       <div className="relative mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
@@ -1545,14 +1525,14 @@ function FinalCtaSection() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
             <a
               href={REGISTER_URL}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:opacity-90 transition-opacity shadow-[0_1px_0_0_#1f232826]"
+              className="btn-primary-success"
             >
               Start Free — No Credit Card
               <ArrowRightIcon size={16} />
             </a>
             <a
               href={SALES_EMAIL}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors"
+              className="btn-secondary !text-white !bg-white/10 !border-white/15 hover:!bg-white/15"
             >
               Contact Sales
             </a>

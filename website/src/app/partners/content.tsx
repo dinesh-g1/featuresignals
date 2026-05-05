@@ -256,8 +256,7 @@ function PartnerTypeCard({
   const Icon = partnerType.icon;
   return (
     <motion.div
-      className="flex flex-col rounded-xl border border-[var(--borderColor-default)] bg-white p-6"
-      style={{ boxShadow: "var(--shadow-resting-small)" }}
+      className="flex flex-col rounded-xl border border-[var(--borderColor-default)] bg-white p-6 premium-card"
       {...fadeUpDelayed(index * 0.12)}
     >
       <div className="flex items-center gap-3 mb-4">

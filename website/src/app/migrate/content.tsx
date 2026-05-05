@@ -31,7 +31,7 @@ const migrationFacts = [
 export function MigratePageContent() {
   return (
     <>
-      <section className="py-16 sm:py-20">
+      <section className="relative py-16 sm:py-20 bg-glow-orbs">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Demo */}
@@ -47,7 +47,11 @@ export function MigratePageContent() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: 0.5,
+                delay: 0.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)] mb-6">
                 <SyncIcon size={12} />

@@ -12,20 +12,12 @@ export function FinalCta() {
   return (
     <section
       id="final-cta"
-      className="relative py-24 sm:py-32 overflow-hidden"
-      style={{ backgroundColor: "#25292e" }}
+      className="relative py-24 sm:py-32 overflow-hidden bg-gradient-mesh-dark"
       aria-labelledby="final-cta-heading"
     >
-      {/* Dotted overlay */}
-      <div className="absolute inset-0 bg-dotted-dark" aria-hidden="true" />
-
-      {/* Subtle gradient overlay */}
+      {/* Premium dot overlay */}
       <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 0%, rgba(9,105,218,0.12) 0%, transparent 60%)",
-        }}
+        className="absolute inset-0 bg-dots-dark pointer-events-none"
         aria-hidden="true"
       />
 
@@ -82,8 +74,7 @@ export function FinalCta() {
         >
           <a
             href="https://app.featuresignals.com/register"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] active:bg-[#197935] transition-colors duration-150"
-            style={{ boxShadow: "0 1px 0 0 #1f232826" }}
+            className="btn-primary-success"
           >
             Start Free — No Credit Card
             <ArrowRightIcon size={16} />
@@ -92,11 +83,7 @@ export function FinalCta() {
             href="https://docs.featuresignals.com/getting-started/quickstart"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white border transition-colors duration-150"
-            style={{
-              borderColor: "#373e47",
-              boxShadow: "0 1px 0 0 #ffffff14",
-            }}
+            className="btn-secondary text-white border-white/20 hover:border-white/40 hover:bg-white/10"
           >
             <DownloadIcon size={16} />
             Self-Host in 3 Minutes

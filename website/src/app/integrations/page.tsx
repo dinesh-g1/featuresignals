@@ -522,7 +522,7 @@ function IntegrationsContent({
               {category.items.map((item, itemIndex) => (
                 <motion.div
                   key={item.name}
-                  className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 hover:border-[var(--borderColor-accent-muted)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200"
+                  className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 premium-card"
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-20px" }}
@@ -639,10 +639,7 @@ function OpenFeatureHighlight() {
               }}
             >
               <div className="w-10 h-10 rounded-lg bg-[var(--bgColor-done-muted)] flex items-center justify-center mx-auto mb-3">
-                <item.icon
-                  size={20}
-                  className="text-[var(--fgColor-done)]"
-                />
+                <item.icon size={20} className="text-[var(--fgColor-done)]" />
               </div>
               <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-1.5">
                 {item.title}

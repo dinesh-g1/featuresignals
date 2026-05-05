@@ -144,11 +144,11 @@ function HeroSection() {
               {...fadeUp}
             >
               <span className="text-[var(--fgColor-accent)]">
-                The control plane
+                Feature flags
               </span>
               <br />
               <span className="text-[var(--fgColor-done)]">
-                for software delivery
+                that don&apos;t slow you down
               </span>
             </motion.h1>
 
@@ -156,9 +156,9 @@ function HeroSection() {
               className="text-lg font-normal max-w-[600px] text-[var(--fgColor-muted)] mt-6 leading-relaxed break-words"
               {...fadeUpDelayed(0.1)}
             >
-              Deploy features with confidence. Roll back instantly. Automate
-              stale flag cleanup with AI. All with sub-millisecond evaluation
-              performance, open-source transparency, and zero vendor lock-in.
+              Sub-millisecond evaluation. Flat-rate pricing &mdash; $29/mo for
+              unlimited seats. Open-source Apache 2.0. Deploy anywhere in 3
+              minutes.
             </motion.p>
 
             <motion.div
@@ -166,15 +166,36 @@ function HeroSection() {
               {...fadeUpDelayed(0.15)}
             >
               <CtaPrimary>Start Free</CtaPrimary>
-              <CtaSecondary>Read Docs</CtaSecondary>
+              <CtaSecondary href="#how-it-works">See How It Works</CtaSecondary>
             </motion.div>
 
-            <motion.p
-              className="text-sm text-[var(--fgColor-muted)] mt-4"
+            <motion.div
+              className="flex flex-wrap items-center gap-2 mt-4"
               {...fadeUpDelayed(0.2)}
             >
-              Free forever. No credit card required.
-            </motion.p>
+              <a
+                href="https://github.com/dinesh-g1/featuresignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] transition-colors"
+              >
+                500+ GitHub Stars
+              </a>
+              <a
+                href="https://openfeature.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] transition-colors"
+              >
+                OpenFeature Certified
+              </a>
+              <span className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)]">
+                Apache 2.0
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)]">
+                Deploy in 3 min
+              </span>
+            </motion.div>
           </div>
 
           {/* Right: Dashboard preview card */}
@@ -291,54 +312,30 @@ function HeroSection() {
 }
 
 /* ==========================================================================
-   2. Social Proof Section
+   2. Trust Bar Section
    ========================================================================== */
 
-const socialMetrics = [
-  { value: "<1ms", label: "p99 evaluation latency" },
-  { value: "10M+", label: "evaluations per day" },
-  { value: "8", label: "SDK languages" },
-  { value: "Apache 2.0", label: "open source license" },
-];
-
-function SocialProofSection() {
+function TrustBarSection() {
   return (
-    <section id="social-proof" className="py-16 bg-[var(--bgColor-inset)]">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
-        <motion.div className="mb-8" {...fadeUp}>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            {socialMetrics.map((metric, i) => (
-              <div
-                key={metric.label}
-                className="inline-flex flex-col items-center rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-6 py-4 min-w-[140px]"
-              >
-                <span
-                  className={cn(
-                    "text-2xl font-bold",
-                    [
-                      "text-[var(--fgColor-accent)]",
-                      "text-[var(--fgColor-done)]",
-                      "text-[var(--fgColor-success)]",
-                      "text-[var(--fgColor-attention)]",
-                    ][i % 4],
-                  )}
-                >
-                  {metric.value}
-                </span>
-                <span className="text-sm text-[var(--fgColor-muted)]">
-                  {metric.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.p
-          className="text-base text-[var(--fgColor-muted)] font-normal"
-          {...fadeUpDelayed(0.1)}
-        >
-          Trusted by engineering teams from startups to enterprises
-        </motion.p>
+    <section className="py-10 border-b border-[var(--borderColor-default)]">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <p className="text-center text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-6">
+          Trusted by engineering teams at
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
+          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+            Series A Startups
+          </span>
+          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+            Open Source Projects
+          </span>
+          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+            Platform Teams
+          </span>
+          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+            SaaS Companies
+          </span>
+        </div>
       </div>
     </section>
   );
@@ -925,160 +922,60 @@ function PersonaFeaturesSection() {
 }
 
 /* ==========================================================================
-   6. Testimonials Section (3x2 grid, 6 cards)
+   6. Open Source Proof Section
    ========================================================================== */
 
-interface TweetCard {
-  handle: string;
-  name: string;
-  initials: string;
-  quote: string;
-  likes: number;
-  reposts: number;
-}
-
-const tweetCards: TweetCard[] = [
-  {
-    handle: "@sarah_engineer",
-    name: "Sarah Chen",
-    initials: "SC",
-    quote:
-      "Switched from LaunchDarkly in a week. Sub-ms eval is real. Our p99 dropped 40ms.",
-    likes: 128,
-    reposts: 24,
-  },
-  {
-    handle: "@marcus_architect",
-    name: "Marcus Johansson",
-    initials: "MJ",
-    quote:
-      "Finally, a feature flag platform that treats ops as first-class. Terraform provider is excellent.",
-    likes: 215,
-    reposts: 47,
-  },
-  {
-    handle: "@priya_infra",
-    name: "Priya Patel",
-    initials: "PP",
-    quote:
-      "Self-hosted in our VPC in 15 minutes. Single Go binary. No JVM. No bloat.",
-    likes: 189,
-    reposts: 36,
-  },
-  {
-    handle: "@alex_cto",
-    name: "Alex Rodriguez",
-    initials: "AR",
-    quote:
-      "The AI Janitor found 200+ stale flags we forgot about. Cleaned them up in a weekend.",
-    likes: 342,
-    reposts: 89,
-  },
-  {
-    handle: "@jordan_devops",
-    name: "Jordan Kim",
-    initials: "JK",
-    quote:
-      "OpenFeature support means we're not locked in. That matters for our compliance.",
-    likes: 156,
-    reposts: 31,
-  },
-  {
-    handle: "@taylor_sec",
-    name: "Taylor Wallace",
-    initials: "TW",
-    quote:
-      "SOC 2 auditor was impressed by the audit trail. Every change tracked with before/after.",
-    likes: 134,
-    reposts: 29,
-  },
+const ossMetrics = [
+  { value: "500+", label: "GitHub Stars", href: "https://github.com/dinesh-g1/featuresignals" },
+  { value: "8", label: "SDK Languages", href: "/integrations#sdks" },
+  { value: "Apache 2.0", label: "Open Source License", href: "https://github.com/dinesh-g1/featuresignals/blob/main/LICENSE" },
+  { value: "OpenFeature", label: "Certified Provider", href: "https://openfeature.dev/ecosystem" },
 ];
 
-function TestimonialsSection() {
+function OpenSourceProofSection() {
   return (
-    <section
-      id="testimonials"
-      className="py-20 md:py-28 bg-[var(--bgColor-inset)]"
-    >
+    <section id="open-source" className="py-20 md:py-28 bg-[var(--bgColor-inset)]">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
-          <SectionLabel icon={HeartFillIcon} text="What Teams Say" />
+          <SectionLabel icon={StarFillIcon} text="Open Source First" />
           <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
-            Developer approved
+            Built in the open. Trusted by the community.
           </h2>
           <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
-            But don&apos;t just take our word for it.
+            Apache 2.0 licensed. OpenFeature certified. No vendor lock-in. Ever.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tweetCards.map((card, i) => (
-            <motion.div
-              key={card.handle}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+          {ossMetrics.map((metric, i) => (
+            <motion.a
+              key={metric.label}
+              href={metric.href}
+              target={metric.href.startsWith("http") ? "_blank" : undefined}
+              rel={metric.href.startsWith("http") ? "noopener noreferrer" : undefined}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-48px" }}
-              transition={{
-                duration: 0.4,
-                delay: 0.05 * i,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              whileHover={{ scale: 1.02 }}
-              className={cn(
-                "flex flex-col gap-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow",
-                [
-                  "border-l-[3px] border-l-[var(--borderColor-accent-emphasis)]",
-                  "border-l-[3px] border-l-[var(--borderColor-done-emphasis)]",
-                  "border-l-[3px] border-l-[var(--borderColor-success-emphasis)]",
-                  "border-l-[3px] border-l-[var(--borderColor-attention-emphasis)]",
-                  "border-l-[3px] border-l-[var(--borderColor-danger-emphasis)]",
-                  "border-l-[3px] border-l-[var(--borderColor-accent-emphasis)]",
-                ][i % 6],
-              )}
+              transition={{ duration: 0.4, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ scale: 1.05 }}
+              className="flex flex-col items-center gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow text-center group"
             >
-              {/* Header: avatar + handle */}
-              <div className="flex justify-between items-start">
-                <div className="flex gap-2.5">
-                  <div className="h-11 w-11 rounded-full border-[1.5px] border-[var(--borderColor-default)] flex items-center justify-center bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-semibold text-sm shrink-0">
-                    {card.initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--fgColor-default)]">
-                      {card.name}
-                    </p>
-                    <p className="text-xs text-[var(--fgColor-muted)]">
-                      {card.handle}
-                    </p>
-                  </div>
-                </div>
-                <XIcon
-                  size={16}
-                  className="text-[var(--fgColor-muted)] shrink-0"
-                />
-              </div>
-
-              {/* Quote */}
-              <p className="text-sm text-[var(--fgColor-default)] leading-relaxed">
-                &ldquo;{card.quote}&rdquo;
-              </p>
-
-              {/* Like / Repost footer */}
-              <div className="flex items-center gap-4 text-xs text-[var(--fgColor-muted)] pt-3 border-t border-[var(--borderColor-default)] mt-auto">
-                <span className="inline-flex items-center gap-1.5">
-                  <HeartFillIcon size={12} className="text-red-400" />
-                  {card.likes}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <SyncIcon size={12} />
-                  {card.reposts}
-                </span>
-                <span className="inline-flex items-center gap-1.5 ml-auto">
-                  <CommentDiscussionIcon size={12} />
-                </span>
-              </div>
-            </motion.div>
+              <span className={cn(
+                "text-3xl font-bold",
+                ["text-[var(--fgColor-accent)]", "text-[var(--fgColor-done)]", "text-[var(--fgColor-success)]", "text-[var(--fgColor-attention)]"][i % 4],
+              )}>
+                {metric.value}
+              </span>
+              <span className="text-sm text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-default)] transition-colors">
+                {metric.label}
+              </span>
+            </motion.a>
           ))}
         </div>
+
+        <motion.blockquote className="mt-12 max-w-2xl mx-auto text-center" {...fadeUpDelayed(0.3)}>
+          {/* Real user quote will go here when available */}
+        </motion.blockquote>
       </div>
     </section>
   );
@@ -1311,11 +1208,11 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <SocialProofSection />
+      <TrustBarSection />
       <CapabilityCardsSection />
       <HowItWorksSection />
       <PersonaFeaturesSection />
-      <TestimonialsSection />
+      <OpenSourceProofSection />
       <PricingOverviewSection />
       <FinalCtaSection />
     </>

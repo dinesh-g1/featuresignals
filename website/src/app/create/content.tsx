@@ -20,7 +20,7 @@ const lifecycleSteps = [
 export function CreatePageContent() {
   return (
     <>
-      <section className="py-16 sm:py-20">
+      <section className="relative py-16 sm:py-20 bg-glow-orbs">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Text */}
@@ -40,7 +40,8 @@ export function CreatePageContent() {
                 Feature flags begin as a single configuration. A name, a type, a
                 default value. That&apos;s it. What makes them powerful is
                 everything that comes after — targeting, rollouts, monitoring,
-                and automated cleanup. But it all starts with a clean definition.
+                and automated cleanup. But it all starts with a clean
+                definition.
               </p>
 
               <div className="mt-6 space-y-3">
@@ -80,7 +81,11 @@ export function CreatePageContent() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: 0.5,
+                delay: 0.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               <FlagCreator />
             </motion.div>

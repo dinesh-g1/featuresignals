@@ -415,11 +415,11 @@ export function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--bgColor-default)] transition-colors duration-300 border-b border-[var(--borderColor-default)]">
+    <header className="sticky top-0 z-40 glass-card !rounded-none !border-0 !border-b !border-[var(--fs-border-default)] !shadow-sm">
       {/* Announcement Banner slot — rendered by parent layout */}
       <div id="announcement-banner-slot" />
 
-      <div className="mx-auto w-full max-w-[1360px] px-6 md:max-w-[1440px] md:px-16 h-14 flex items-center justify-between gap-4">
+      <div className="mx-auto w-full max-w-[1360px] px-6 md:max-w-[1440px] md:px-16 h-[56px] flex items-center justify-between gap-4">
         {/* Logo */}
         <Link
           href="/"
@@ -462,13 +462,13 @@ export function Header() {
         <nav className="flex items-center gap-1 font-medium">
           <Link
             href="https://app.featuresignals.com/login"
-            className="hidden sm:inline-flex rounded-md px-3 py-2.5 text-sm text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+            className="btn-ghost !h-9 !text-sm hidden sm:inline-flex"
           >
             Sign In
           </Link>
           <Link
             href="https://app.featuresignals.com/register"
-            className="inline-flex border items-center justify-center rounded-md px-3 h-9 text-sm font-medium bg-[var(--bgColor-emphasis)] border-transparent text-[var(--fgColor-onEmphasis)] shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow whitespace-nowrap"
+            className="btn-primary-success whitespace-nowrap !h-9 !px-4 !text-sm"
           >
             Start Free
           </Link>
@@ -556,7 +556,7 @@ export function Header() {
               <Link
                 href="https://app.featuresignals.com/register"
                 onClick={closeMobile}
-                className="block w-full mt-2 px-3 py-2.5 rounded-md text-sm font-semibold text-center text-[var(--fgColor-onEmphasis)] bg-[var(--bgColor-emphasis)] hover:opacity-90 transition-opacity"
+                className="btn-primary-success w-full mt-2"
               >
                 Start Free
               </Link>

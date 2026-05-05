@@ -142,8 +142,7 @@ const stories: Story[] = [
 function StoryCard({ story, index }: { story: Story; index: number }) {
   return (
     <motion.div
-      className="relative rounded-xl border border-[var(--borderColor-default)] bg-white p-6 flex flex-col"
-      style={{ boxShadow: "var(--shadow-resting-small)" }}
+      className="relative rounded-xl border border-[var(--borderColor-default)] bg-white p-6 flex flex-col premium-card"
       {...fadeUpDelayed(index * 0.08)}
     >
       {/* Accent left border */}

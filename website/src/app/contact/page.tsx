@@ -220,7 +220,7 @@ function ContactFormSection() {
                 return (
                   <motion.div
                     key={item.title}
-                    className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 hover:border-[var(--borderColor-accent-muted)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200"
+                    className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 premium-card"
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: "-40px" }}

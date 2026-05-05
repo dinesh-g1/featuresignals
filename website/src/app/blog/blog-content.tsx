@@ -134,7 +134,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
 
   return (
     <motion.article
-      className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 hover:border-[var(--borderColor-accent-muted)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200 flex flex-col"
+      className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 premium-card glass-card-hover flex flex-col"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}

@@ -19,19 +19,21 @@ const debtStats = [
   {
     icon: <GitBranchIcon size={16} fill="var(--fgColor-done)" />,
     stat: "1 in 4",
-    label: "Feature flags in production are dead — fully rolled out or abandoned, adding zero value",
+    label:
+      "Feature flags in production are dead — fully rolled out or abandoned, adding zero value",
   },
   {
     icon: <TrashIcon size={16} fill="var(--fgColor-danger)" />,
     stat: "3 PRs",
-    label: "Average tech debt cleanup per stale flag: the flag check, the branch logic, and the tests",
+    label:
+      "Average tech debt cleanup per stale flag: the flag check, the branch logic, and the tests",
   },
 ];
 
 export function CleanupPageContent() {
   return (
     <>
-      <section className="py-16 sm:py-20">
+      <section className="relative py-16 sm:py-20 bg-glow-orbs">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Text */}
@@ -90,7 +92,11 @@ export function CleanupPageContent() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: 0.5,
+                delay: 0.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               <AiJanitorSimulator />
             </motion.div>

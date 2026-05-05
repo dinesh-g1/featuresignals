@@ -107,7 +107,7 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="relative py-20 sm:py-28 bg-[var(--bgColor-default)] bg-glow-orbs"
       aria-labelledby="about-hero-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">

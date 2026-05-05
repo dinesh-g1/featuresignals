@@ -222,7 +222,7 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden bg-[var(--bgColor-default)]"
+      className="relative overflow-hidden bg-[var(--bgColor-default)] bg-glow-orbs"
       aria-labelledby="use-cases-hero-heading"
     >
       <div

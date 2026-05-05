@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { MobileCtaBar } from "@/components/mobile-cta-bar";
 import {
   AnnouncementBanner,
   DEFAULT_ANNOUNCEMENT,
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: {
     template: "%s | FeatureSignals",
     default:
-      "FeatureSignals | Release Infrastructure Platform — Sub-Millisecond Feature Flags",
+      "FeatureSignals — Open-Source Feature Flags | Sub-Millisecond Eval",
   },
   description:
     "The control plane for software delivery. FeatureSignals provides sub-millisecond feature flags, AI-powered stale flag detection, A/B experimentation, and OpenFeature-native SDKs — open source, self-hosted or cloud. Enterprise-grade release infrastructure for teams that ship.",
@@ -161,6 +162,7 @@ export default function RootLayout({
         />
         <Header />
         <main className="flex-1">{children}</main>
+        <MobileCtaBar />
         <Footer />
       </body>
     </html>

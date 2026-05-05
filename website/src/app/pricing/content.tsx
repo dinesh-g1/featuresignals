@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 const REGISTER_URL = "https://app.featuresignals.com/register";
 const DOCS_QUICKSTART = "/docs/getting-started/quickstart";
 const SALES_EMAIL = "/contact?reason=sales";
+const ANNUAL_DISCOUNT_PCT = 17;
 
 /* ==========================================================================
    Animation Presets
@@ -594,16 +595,11 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
     <motion.div
       {...fadeUpDelayed(index * 0.1)}
       className={cn(
-        "relative flex flex-col rounded-xl p-6",
+        "relative flex flex-col p-6",
         isFeatured
-          ? "border-2 border-[var(--borderColor-accent-emphasis)] bg-white md:-mt-3 md:mb-3"
-          : "border border-[var(--borderColor-default)] bg-white",
+          ? "premium-card-featured !shadow-accent border-2 border-[var(--fs-border-accent-strong)] md:-mt-3 md:mb-3"
+          : "premium-card",
       )}
-      style={{
-        boxShadow: isFeatured
-          ? "var(--shadow-floating-medium)"
-          : "var(--shadow-resting-small)",
-      }}
     >
       {/* Badge */}
       {tier.badge && (
@@ -663,10 +659,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
         <a
           href={tier.cta.href}
           className={cn(
-            "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-colors w-full text-center",
-            isFeatured
-              ? "text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139]"
-              : "text-[var(--fgColor-default)] bg-[var(--bgColor-muted)] hover:bg-[#eff2f5] border border-[var(--borderColor-default)]",
+            isFeatured ? "btn-primary-success w-full" : "btn-secondary w-full",
           )}
         >
           {tier.cta.label}
@@ -676,10 +669,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
         <Link
           href={tier.cta.href}
           className={cn(
-            "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-colors w-full text-center",
-            isFeatured
-              ? "text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139]"
-              : "text-[var(--fgColor-default)] bg-[var(--bgColor-muted)] hover:bg-[#eff2f5] border border-[var(--borderColor-default)]",
+            isFeatured ? "btn-primary-success w-full" : "btn-secondary w-full",
           )}
         >
           {tier.cta.label}
@@ -761,7 +751,12 @@ function FeatureComparisonTable() {
               <Fragment key={category.name}>
                 {/* Category header row */}
                 <tr
-                  className="border-b border-[var(--borderColor-default)] cursor-pointer hover:bg-[var(--bgColor-muted)] transition-colors"
+                  className={cn(
+                    "border-b border-[var(--borderColor-default)] cursor-pointer transition-colors",
+                    isExpanded
+                      ? "bg-[var(--fs-bg-accent-subtle)] hover:bg-[var(--fs-bg-surface-hover)]"
+                      : "hover:bg-[var(--fs-bg-surface-hover)]",
+                  )}
                   onClick={() => toggleCategory(category.name)}
                 >
                   <td colSpan={5} className="py-3 pr-4">
@@ -784,10 +779,13 @@ function FeatureComparisonTable() {
                 </tr>
                 {/* Feature rows */}
                 {isExpanded &&
-                  category.rows.map((row) => (
+                  category.rows.map((row, idx) => (
                     <tr
                       key={row.feature}
-                      className="border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-inset)] transition-colors"
+                      className={cn(
+                        "border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-inset)] transition-colors",
+                        idx % 2 === 0 && "bg-[var(--fs-bg-surface)]",
+                      )}
                     >
                       <td className="py-2.5 pr-4 text-sm text-[var(--fgColor-default)] sticky left-0 bg-white">
                         {row.feature}
@@ -826,7 +824,7 @@ function FaqAccordion() {
         <Accordion.Item
           key={i}
           value={`faq-${i}`}
-          className="border-b border-[var(--borderColor-muted)] last:border-b-0"
+          className="premium-card mb-3 last:mb-0 border-[var(--fs-border-subtle)]"
         >
           <Accordion.Header asChild>
             <Accordion.Trigger className="flex items-center justify-between w-full py-5 text-left text-base font-semibold text-[var(--fgColor-default)] hover:text-[var(--fgColor-accent)] transition-colors group cursor-pointer">
@@ -856,7 +854,7 @@ function HeroSection() {
   return (
     <section
       id="pricing-hero"
-      className="py-16 sm:py-24 bg-[var(--bgColor-default)]"
+      className="relative py-16 sm:py-24 bg-[var(--bgColor-default)] bg-glow-orbs"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.h1
@@ -1017,22 +1015,12 @@ function OpenSourcePromiseSection() {
   return (
     <section
       id="open-source-promise"
-      className="relative py-20 sm:py-28 overflow-hidden"
-      style={{ backgroundColor: "#25292e" }}
+      className="relative py-20 sm:py-28 overflow-hidden bg-gradient-mesh-dark"
       aria-labelledby="oss-heading"
     >
       {/* Dotted overlay */}
-      <div className="absolute inset-0 bg-dotted-dark" aria-hidden="true" />
+      <div className="absolute inset-0 bg-dots-dark" aria-hidden="true" />
 
-      {/* Accent glow */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 50%, rgba(130,80,223,0.1) 0%, transparent 60%)",
-        }}
-        aria-hidden="true"
-      />
 
       <div className="relative mx-auto max-w-4xl px-6 text-center">
         <motion.div {...fadeUp}>
@@ -1079,11 +1067,7 @@ function OpenSourcePromiseSection() {
           ].map((item, i) => (
             <motion.div
               key={item.title}
-              className="text-left p-5 rounded-xl"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.04)",
-                border: "1px solid #373e47",
-              }}
+              className="text-left p-5 rounded-xl glass-card-dark"
               {...fadeUpDelayed(0.1 + i * 0.1)}
             >
               <div className="mb-3">{item.icon}</div>
