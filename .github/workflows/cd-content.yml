@@ -55,6 +55,7 @@ jobs:
           cd website
           npm ci
           npm run build
+          bash scripts/fix-double-dots.sh out
           ls -la out/ 2>/dev/null || { echo "❌ website/out/ not found — build failed"; exit 1; }
           echo "✅ Website built ($(ls out/ | wc -l) top-level items)"
 
