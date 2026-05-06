@@ -2,6 +2,25 @@
 
 > Chronological record
 
+## [2026-05-10 13:00] docs | Cloudflare cleanup — removed all non-DNS Cloudflare references from documentation
+
+**Context:** Cloudflare is now used for DNS only (no WAF, no CDN, no Pages, no edge proxying). All edge security is handled by the global router (Go binary, hostNetwork, autocert). This session removed outdated Cloudflare-as-service references and updated all documentation to reflect the current architecture.
+
+**Files updated:**
+- `ARCHITECTURE_IMPLEMENTATION.md` — Architecture diagram, DNS table, Website & Docs section, Security Layer 1 (Cloudflare → Global Router), CI/CD pipeline, Steps 5a/9/10, Security checklist, Security Quick-Reference Card, Success criteria, Files to create
+- `product/wiki/public/COMPLIANCE.md` — Security Architecture: 5-layer → 4-layer defense, removed Cloudflare Layer 1, replaced with Global Router layer, updated rate limiting description, updated cross-references
+- `product/wiki/public/DEPLOYMENT.md` — Overview, DNS records (all DNS-only), replaced Load Balancer + Caddy sections with Global Router + Static Content, updated CI/CD workflow, removed Cloudflare-specific secrets, updated cell architecture diagram
+- `deploy/lb/setup.md` — Complete rewrite from Load Balancer + Cloudflare Pages to Global Router + DNS-only
+- `product/wiki/log.md` — This entry
+
+**Key changes:**
+- All DNS records are now DNS-only (grey cloud) pointing to K3s node IP
+- Website/docs deploy to K3s persistent volume via Dagger, served by global router (not Cloudflare Pages)
+- Security model: 4-layer defense (Global Router → API Server → Cluster Internal → CI/CD)
+- TLS: autocert in Go global router (no cert-manager, no Caddy)
+- WAF/Rate limiting: built into global router (no Cloudflare WAF/DDoS)
+- Ops-portal Cloudflare DNS management client is preserved — it manages DNS records only, not edge services
+
 ## [2026-05-10 12:00] build | Blog infrastructure, individual post pages, graphics integration
 
 **Blog infrastructure completed:**

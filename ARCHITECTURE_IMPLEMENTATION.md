@@ -19,19 +19,19 @@
   │  featuresign │   │  api.features │   │  app.featuresign │
   │  als.com      │   │  ignals.com   │   │  als.com          │
   │               │   │               │   │                   │
-  │  Static/CDN   │   │  ┌─────────┐  │   │  ┌───────────┐   │
-  │  + WAF        │   │  │ Central  │  │   │  │ Dashboard  │   │
-  │  (Cloudflare) │   │  │ API      │  │   │  │ (Next.js   │   │
-  │               │   │  │ Server   │  │   │  │  SSR)      │   │
-  │  Build:       │   │  │          │  │   │  │           │   │
-  │  Next.js SSG  │   │  │ • Auth   │  │   │  │ • Tenant  │   │
-  │  → static     │   │  │ • API    │  │   │  │   Mgmt   │   │
-  │  files        │   │  │   Keys   │  │   │  │ • Flags  │   │
-  │               │   │  │ • Cell   │  │   │  │ • Metrics│   │
-  │  Deploy:      │   │  │   Router │  │   │  └───────────┘   │
-  │  CI push CDN  │   │  │ • Docs   │  │   └──────────────────┘
-  └──────────────┘   │  │   API    │  │
-                     │  └────┬─────┘  │
+  │  Static files │   │  ┌─────────┐  │   │  ┌───────────┐   │
+  │  served by    │   │  │ Central  │  │   │  │ Dashboard  │   │
+  │  Global       │   │  │ API      │  │   │  │ (Next.js   │   │
+  │  Router       │   │  │ Server   │  │   │  │  SSR)      │   │
+  │               │   │  │          │  │   │  │           │   │
+  │  Build:       │   │  │ • Auth   │  │   │  │ • Tenant  │   │
+  │  Next.js SSG  │   │  │ • API    │  │   │  │   Mgmt   │   │
+  │  → static     │   │  │   Keys   │  │   │  │ • Flags  │   │
+  │  files        │   │  │ • Cell   │  │   │  │ • Metrics│   │
+  │               │   │  │   Router │  │   │  └───────────┘   │
+  │  Deploy:      │   │  │ • Docs   │  │   └──────────────────┘
+  │  CI → k3s PV  │   │  │   API    │  │
+  └──────────────┘   │  └────┬─────┘  │
                      └───────┼─────────┘
                              │
                     ┌────────▼────────┐
@@ -61,24 +61,28 @@
 
 ### DNS (set once, manually)
 
+All DNS records are DNS-only at Cloudflare (no edge proxying). The global router on the K3s node handles all TLS termination, WAF, rate limiting, and security headers.
+
 | Record | Target | Purpose |
 |---|---|---|
-| `featuresignals.com` | CDN (Cloudflare) | Marketing website — proxied through Cloudflare WAF |
-| `docs.featuresignals.com` | CDN (Cloudflare) | Documentation site — API playground calls api.featuresignals.com, so CORS includes this origin |
-| `api.featuresignals.com` | Hetzner LB static IP | Evaluation + management API |
-| `app.featuresignals.com` | Hetzner LB static IP | Dashboard (Next.js SSR) |
+| `featuresignals.com` | K3s node IP | Marketing website — static files served by global router |
+| `docs.featuresignals.com` | K3s node IP | Documentation site — static files served by global router |
+| `api.featuresignals.com` | K3s node IP | Evaluation + management API |
+| `app.featuresignals.com` | K3s node IP | Dashboard (Next.js SSR) |
 
 SDKs default to `https://api.featuresignals.com`. No extra DNS record.
 
 ### Website & Docs — Separate Deployment Pipeline
 
-The website and docs are **completely separate** from cell deployments:
+The website and docs are **completely separate** from cell deployments. They are static sites served by the global router from a persistent volume on the K3s node.
 
 ```
 ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
 │  Push to main │────>│  CI validates  │────>│  Deploy to    │
-│  (website/)   │     │  (build, lint) │     │  CDN/Cloudflare│
-│  or (docs/)   │     │               │     │  Pages        │
+│  (website/)   │     │  (build, lint) │     │  K3s PV       │
+│  or (docs/)   │     │               │     │  (global       │
+│               │     │               │     │   router       │
+│               │     │               │     │   serves)      │
 └───────────────┘     └───────────────┘     └───────────────┘
 ```
 
@@ -88,17 +92,17 @@ The website and docs are **completely separate** from cell deployments:
 | **Framework** | Next.js SSG (static export) | Next.js SSG or Markdown (Docusaurus/Mintlify) |
 | **CI trigger** | Push to `main` touching `website/` | Push to `main` touching `docs/` |
 | **CI job** | `dagger call deploy-website` | `dagger call deploy-docs` |
-| **Target** | Cloudflare Pages or Netlify | Cloudflare Pages or Netlify |
-| **Rollback** | One-click in Cloudflare dashboard | One-click in Cloudflare dashboard |
-| **Preview URLs** | Cloudflare Pages PR previews | Cloudflare Pages PR previews |
-| **Cells needed?** | No — static files, no k8s | No — static files, no k8s |
+| **Target** | K3s persistent volume (`/mnt/data/www/`) | K3s persistent volume (`/mnt/data/www/`) |
+| **Served by** | Global router (hostNetwork) | Global router (hostNetwork) |
+| **Rollback** | Re-deploy previous version via CI | Re-deploy previous version via CI |
+| **Preview URLs** | Not yet implemented | Not yet implemented |
+| **Cells needed?** | No — static files, no k8s beyond PV | No — static files, no k8s beyond PV |
 
-**Key principle:** Website and docs are static sites. They never touch k8s, cells, or the Central API. Deploying them is as simple as uploading a folder to a CDN. This means:
+**Key principle:** Website and docs are static sites. They never touch the application database or API. Deploying them is as simple as copying built files to a persistent volume. This means:
 
 - No downtime during website/docs deployments
 - No dependency on cell health or infrastructure
 - Can be deployed independently at any frequency
-- PR previews come free with Cloudflare Pages
 
 **Future CI commands:**
 
@@ -108,9 +112,6 @@ dagger call deploy-website --source=. --env=production
 
 # Deploy docs to production
 dagger call deploy-docs --source=. --env=production
-
-# Preview PR changes (auto-generated by Cloudflare Pages)
-# → https://pr-42.website.featuresignals.pages.dev
 ```
 
 **Note:** The dashboard (`app.featuresignals.com`) is NOT part of this. The dashboard is a Next.js SSR app deployed to the Central API's k3s cluster alongside the Go server. It needs database access, auth, and real-time data — it can't be static. Only the **marketing website** and **docs** are static.
@@ -130,51 +131,21 @@ PR previews are lightweight k3s namespaces on the dev cell — not full VPSs.
 
 Every layer is designed with the principle: **deny by default, allow by exception.**
 
-### Layer 1: CDN / Edge (Cloudflare)
+### Layer 1: Global Router (hostNetwork on K3s node)
+
+The global router runs with `hostNetwork: true`, binding directly to ports 80 and 443 on the K3s node. It handles all edge security — TLS termination, WAF, rate limiting, and security headers — before proxying to upstream services. Cloudflare is used for DNS only (no edge proxying).
 
 | Control | Implementation |
 |---|---|
-| **WAF** | Cloudflare WAF blocks SQLi, XSS, path traversal, bot attacks before they reach origin |
-| **DDoS protection** | Cloudflare absorbs L3/L4/L7 attacks at the edge |
-| **Rate limiting** | 100 req/min per IP on API routes, 1000 req/min on evaluation routes |
-| **TLS** | Cloudflare manages certs, enforces TLS 1.3, redirects HTTP → HTTPS |
-| **CORS** | Origin validation at Cloudflare level — only known domains allowed |
-| **Bot management** | Cloudflare bot score check on login/signup endpoints |
-| **Geo-blocking** | (Optional) Block traffic from non-service regions |
+| **TLS termination** | Let's Encrypt via autocert (built into the Go global router). HTTP-01 challenge on port 80. TLS 1.2+ with modern cipher suites. No cert-manager, no Caddy, no external ACME client. |
+| **WAF** | Built-in regex patterns for SQLi, XSS, path traversal, directory traversal. Blocks matching requests before they reach upstream services. |
+| **Rate limiting** | Per-IP sliding window rate limiter. Path-aware: static assets (`.css`, `.js`, `.svg`, `.png`, `.ico`, `.woff2`) bypass rate limits entirely. API routes get strict limits (20/min auth, 100/min mutations, 1000/min eval). |
+| **Connection limiting** | Max 100 concurrent connections per IP. Prevents connection exhaustion attacks. |
+| **Security headers** | `Strict-Transport-Security` (max-age=31536000, includeSubDomains), `Content-Security-Policy` (restrictive per-service), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`. All set by the global router before proxying. |
+| **Host-based routing** | Routes requests to correct upstream service by domain: `api.featuresignals.com` → Go server (8080), `app.featuresignals.com` → Next.js SSR (3000), `signoz.featuresignals.com` → SigNoz UI (3301), `featuresignals.com` and `docs.featuresignals.com` → static file serving (website/docs). |
+| **Health monitoring** | `/ops/health` endpoint returns JSON with upstream service health checks. |
 
-**Implementation:**
-```caddyfile
-# At the Hetzner LB / Caddy level:
-api.featuresignals.com {
-    # CORS headers — strict allowlist
-    @cors {
-        header Origin https://app.featuresignals.com
-        header Origin https://featuresignals.com
-        header Origin https://docs.featuresignals.com
-    }
-    header Access-Control-Allow-Origin "*" {
-        @cors
-    }
-    header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    header Access-Control-Allow-Headers "Authorization, Content-Type, X-API-Key, Idempotency-Key"
-    header Access-Control-Max-Age "86400"
-
-    # Security headers
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
-    }
-
-    # Rate limiting
-    rate_limit 100 rpm per_ip
-
-    reverse_proxy <central-node-ip>:8080
-    tls admin@featuresignals.com
-}
-```
+> **Migration note (April 2026):** Cloudflare edge services (WAF, DDoS protection, bot management, CDN) have been removed. Cloudflare is DNS-only. The global router handles all edge security. This simplifies the architecture and eliminates Cloudflare as a dependency for production traffic.
 
 ### Layer 2: Central API Server
 
@@ -359,8 +330,8 @@ Detect changed paths:
   ├── server/       → build + push ghcr.io/featuresignals/server:main-<sha>
   ├── dashboard/    → build + push ghcr.io/featuresignals/dashboard:main-<sha>
   ├── ops-portal/   → build + push ghcr.io/featuresignals/ops-portal:main-<sha>
-  ├── website/      → deploy to Cloudflare Pages
-  ├── docs/         → deploy to Cloudflare Pages
+  ├── website/      → deploy static files to K3s persistent volume
+  ├── docs/         → deploy static files to K3s persistent volume
   ├── ci/           → no image build, just validate CI code
   ├── deploy/       → no image build, validate manifests
   └── root files    → build ALL images (go.mod, package.json changes affect everything)
@@ -498,22 +469,20 @@ jobs:
       - uses: dagger/dagger-action@v1
         with:
           args: call build-images --source=. --version=main-${{ github.sha }}
-      # Website/docs deploy separately
+      # Website/docs deploy to K3s persistent volume (via Dagger)
       - if: contains(needs.validate.outputs.changed, 'website')
-        uses: cloudflare/pages-action@v1
-        with:
-          directory: ./website/out
+        run: echo "Deploy website to K3s PV — dagger call deploy-website"
       - if: contains(needs.validate.outputs.changed, 'docs')
-        uses: cloudflare/pages-action@v1
+        run: echo "Deploy docs to K3s PV — dagger call deploy-docs"
 ```
 
 | Control | Implementation |
 |---|---|
 | **Selective builds** | Only build containers whose source files changed |
 | **Root-level changes** | `go.mod`, `package.json`, `.github/` changes trigger full build |
-| **Website/docs** | Deployed to CDN, never built as containers |
+| **Website/docs** | Deployed to K3s persistent volume, served by global router — never built as containers |
 | **CI-only changes** | `ci/` and `deploy/` changes validate syntax but skip image builds |
-| **PR previews** | Cloudflare Pages auto-generates for website/docs PRs |
+| **PR previews** | Not yet implemented (future: per-PR namespaces on K3s) |
 | **Vulnerability scanning** | `trivy` scan on changed containers only — fail on critical/high CVEs |
 | **Secret scanning** | `git secrets` / `trufflehog` scan in CI — fail if secrets detected |
 | **Dependency scanning** | `govulncheck` for Go, `npm audit` for JS — fail on critical vulns |
@@ -566,19 +535,17 @@ func scrubBody(body []byte) []byte {
 
 Already done in the split. Confirm the bootstrap.sh ONLY installs:
 - k3s (single-node)
-- PostgreSQL (Bitnami Helm)
-- cert-manager + Let's Encrypt issuers
-- Traefik (for internal ingress, no public cert resolver)
-- node-exporter DaemonSet
-- Hetzner firewall rules (from the `apply_firewall` function above)
+- CloudNative PG operator (via Helm) for PostgreSQL management
+- Global router (via deploy-app.sh, not bootstrap — bootstrap only provisions infra)
+- Hetzner Cloud Firewall rules (configured via Hetzner Cloud Console or API, not iptables)
 
-Verify that `configure_traefik()` does NOT create an IngressRoute — cells have no public DNS. Remove the `CELL_SUBDOMAIN` env var from k3s manifests since it's not relevant for internal cells.
+Verify that the bootstrap does NOT install cert-manager, Traefik, or any ingress controller — the global router handles TLS termination and routing via hostNetwork.
 
 **Verify:**
-- [ ] No Traefik IngressRoute in bootstrap.sh
+- [ ] No cert-manager or Traefik in bootstrap.sh
 - [ ] No `CELL_SUBDOMAIN` references in bootstrap.sh
 - [ ] No `FEATURESIGNALS_VERSION` env var check in bootstrap.sh (it's in deploy-app.sh)
-- [ ] Firewall rules applied after k3s install
+- [ ] CloudNative PG operator installed
 - [ ] Bootstrap log shows `Bootstrap complete` without errors
 
 ### Step 2: Deploy-app — application stack with version tag
@@ -874,9 +841,9 @@ For now, the website and docs directories may not exist yet. The architecture de
 
 | Project | Target | Method |
 |---|---|---|
-| Website | Cloudflare Pages / Netlify | `dagger call deploy-website --env=production` |
-| Docs | Cloudflare Pages / Netlify | `dagger call deploy-docs --env=production` |
-| PR previews | Auto-generated by Cloudflare Pages | Automatic on PR |
+| Website | K3s persistent volume | `dagger call deploy-website --env=production` |
+| Docs | K3s persistent volume | `dagger call deploy-docs --env=production` |
+| PR previews | Not yet implemented | Future: per-PR namespace on K3s |
 
 ### Step 5b: Central API deployment
 
@@ -1083,25 +1050,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: |
-          cd website && npm ci && npm run build && npm run export
-      - uses: cloudflare/pages-action@v1
+      - uses: dagger/dagger-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: featuresignals-website
-          directory: ./website/out
+          args: call deploy-website --source=. --env=production
 
   deploy-docs:
     needs: detect-changes
     if: ${{ fromJSON(needs.detect-changes.outputs.docs) && github.ref == 'refs/heads/main' }}
-    # Same pattern as deploy-website but with docs/ directory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dagger/dagger-action@v1
+        with:
+          args: call deploy-docs --source=. --env=production
 ```
 
 Key behaviors:
 - **PR opened changing `server/` only** → validates server, skips everything else. ~2min CI.
-- **Push to main changing `website/` only** → deploys website to Cloudflare Pages. ~1min.
+- **Push to main changing `website/` only** → deploys website to K3s PV via Dagger. ~1min.
 - **Push changing `server/` + `dashboard/`** → validates + builds both. ~5min.
 - **Push changing `.github/workflows/`** → no builds, just workflow syntax validation. ~30s.
 - **Root change like `go.mod`** → builds everything. ~8min (rare).
@@ -1113,84 +1079,46 @@ Key behaviors:
 Create a README that documents the one-time manual LB setup:
 
 ```markdown
-# Load Balancer Setup
+# Global Router & DNS Setup
 
 ## Prerequisites
 - Hetzner Cloud account with API token
 - Domain DNS access (featuresignals.com)
-- Cloudflare account (for WAF/DDoS protection)
+- Cloudflare account (for DNS hosting only — no edge proxying)
 
-## Hetzner Load Balancer
+## Global Router
 
-1. Create in Hetzner Cloud Console:
-   - Type: Network LB
-   - Location: fsn1 (closest to central API)
-   - Static IP: Assign now (note the IP)
+The global router runs as a Kubernetes Deployment with `hostNetwork: true` on the K3s node. It binds directly to ports 80 and 443 and handles:
+- TLS termination (Let's Encrypt autocert)
+- WAF (SQLi, XSS, path traversal)
+- Rate limiting (per-IP, path-aware)
+- Security headers (HSTS, CSP, X-Frame-Options)
+- Host-based routing to upstream services
 
-2. Configure targets:
-   - Target: Central API k3s node (port 8080 for API, port 3000 for dashboard)
-
-3. Configure services:
-   - Port 443 → 8080 (for api.featuresignals.com)
-   - Port 443 → 3000 (for app.featuresignals.com)
-
-## Caddy on the LB (TLS termination + CORS + rate limiting)
-
-```caddyfile
-api.featuresignals.com {
-    # Security headers
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
-    }
-
-    # Rate limiting
-    rate_limit 100 rpm per_ip
-
-    reverse_proxy <central-node-ip>:8080
-    tls admin@featuresignals.com
-}
-
-app.featuresignals.com {
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-    }
-
-    reverse_proxy <central-node-ip>:3000
-    tls admin@featuresignals.com
-}
-```
+See `deploy/k3s/global-router.yaml` for the Deployment manifest and `deploy/k3s/deploy-app.sh` for the deployment script.
 
 ## Cloudflare DNS
 
-Create these records at Cloudflare (orange cloud = proxied through WAF):
+Create these records at Cloudflare. All records are DNS-only (grey cloud — no edge proxying):
 
 | Record | Type | Proxy | Value |
 |---|---|---|---|
-| featuresignals.com | A | Proxied (orange) | Cloudflare CDN IP |
-| api.featuresignals.com | A | DNS only (grey) | <Hetzner LB IP> |
-| app.featuresignals.com | A | DNS only (grey) | <Hetzner LB IP> |
+| featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
+| api.featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
+| app.featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
+| docs.featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
 
-**Why grey cloud for API/Dashboard?** Cloudflare can terminate TLS and proxy to the LB,
-but evaluation requests come from SDKs (not browsers), so WAF isn't needed for the API path.
-If you want WAF protection on API endpoints, enable orange cloud and configure Cloudflare's
-API Shield or WAF custom rules.
+**Why DNS-only?** Cloudflare is used exclusively for DNS hosting. All edge security (TLS, WAF, rate limiting) is handled by the global router on the K3s node. This simplifies the architecture by eliminating Cloudflare as a traffic dependency. The global router's built-in protections replace the edge-level services previously provided by Cloudflare.
 
 ## Security checklist
 
-- [ ] TLS 1.3 enforced at LB level
+- [ ] TLS 1.2+ enforced by global router (autocert)
 - [ ] HTTP → HTTPS redirect
 - [ ] HSTS header set (1 year)
 - [ ] CORS headers match the allowlist in the Go middleware
-- [ ] Rate limiting configured at LB level (backup to app-level)
-- [ ] Cloudflare WAF rules enabled for login/signup endpoints
-- [ ] Bot fight mode enabled at Cloudflare
-- [ ] API endpoints behind Cloudflare API Shield (future)
+- [ ] Rate limiting configured at global router level (backup to app-level)
+- [ ] WAF patterns enabled for SQLi, XSS, path traversal
+- [ ] Connection limiting enabled (max 100 per IP)
 ```
 
 ### Step 10: Validation
@@ -1282,14 +1210,14 @@ dagger call validate --source=. --filter=server
 | File | Purpose |
 |---|---|
 | `server/internal/api/middleware/cors.go` | CORS middleware with strict origin allowlist |
-| `deploy/lb/setup.md` | One-time LB + DNS + Cloudflare setup docs |
-| `ci/website.go` | (Future) Deploy website + docs to CDN |
+| `deploy/lb/setup.md` | One-time global router + DNS setup docs |
+| `ci/website.go` | (Future) Deploy website + docs to K3s persistent volume |
 
 ## Files to modify
 
 | File | Changes |
 |---|---|
-| `deploy/k3s/bootstrap.sh` | Remove Traefik IngressRoute, CELL_SUBDOMAIN, FEATURESIGNALS_VERSION; add firewall rules |
+| `deploy/k3s/bootstrap.sh` | Remove any cert-manager/Traefik references; add CloudNative PG operator install; add firewall rules |
 | `deploy/k3s/deploy-app.sh` | Create/verify exists with proper image refs and non-root user |
 | `server/internal/queue/queue.go` | Add `Version` to `ProvisionCellPayload` |
 | `server/internal/queue/handler.go` | After bootstrap → call deploy-app.sh; add version to bootstrap |
@@ -1317,7 +1245,7 @@ dagger call validate --source=. --filter=server
 11. CI builds only what changed — website-only push doesn't build containers
 12. Root-level changes (go.mod) trigger full build
 13. LB setup documented in `deploy/lb/setup.md` (one-time manual step)
-14. Cloudflare WAF + rate limiting configured at edge
+14. Global router WAF + rate limiting configured at edge
 15. Audit logging for all cell lifecycle events
 
 ---
@@ -1326,22 +1254,21 @@ dagger call validate --source=. --filter=server
 
 ```
 INTERNET
-  └─ Cloudflare WAF (DDoS, bot, SQLi, XSS protection)
-      └─ Hetzner LB (TLS 1.3, HSTS, rate limiting, CORS)
-          └─ Central API
-              ├─ CORS middleware (strict origin allowlist)
-              ├─ Auth middleware (JWT for dashboard, API keys for SDK)
-              ├─ RBAC middleware (owner/admin/developer/viewer)
-              ├─ Input validation (DisallowUnknownFields, size limit)
-              ├─ Rate limiting (20/auth, 1000/eval, 100/mutation per min)
-              └─ Cell Router (API key validation BEFORE proxying)
-                  └─ Hetzner Private Network (encrypted, internal)
-                      └─ Cell
-                          ├─ Hetzner Firewall (SSH only from ops IPs)
-                          ├─ iptables (DROP default, allow internal only)
-                          ├─ PostgreSQL (ClusterIP only, strong auth)
-                          ├─ k3s Secrets (no env var secrets)
-                          └─ Node exporter (metrics port locked to central API)
+  └─ Global Router (hostNetwork, TLS 1.2+, WAF, DDoS, rate limiting)
+      └─ Central API (on K3s node)
+          ├─ CORS middleware (strict origin allowlist)
+          ├─ Auth middleware (JWT for dashboard, API keys for SDK)
+          ├─ RBAC middleware (owner/admin/developer/viewer)
+          ├─ Input validation (DisallowUnknownFields, size limit)
+          ├─ Rate limiting (20/auth, 1000/eval, 100/mutation per min)
+          └─ Cell Router (API key validation BEFORE proxying)
+              └─ Hetzner Private Network (encrypted, internal)
+                  └─ Cell
+                      ├─ Hetzner Firewall (SSH only from ops IPs)
+                      ├─ iptables (DROP default, allow internal only)
+                      ├─ PostgreSQL (ClusterIP only, strong auth)
+                      ├─ k3s Secrets (no env var secrets)
+                      └─ Node exporter (metrics port locked to central API)
 ```
 
 ---

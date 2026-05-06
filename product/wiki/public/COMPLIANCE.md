@@ -161,7 +161,7 @@ No wildcard origins in production. Source: `ARCHITECTURE_IMPLEMENTATION.md` — 
 | Management API (mutations) | 100 requests / minute | `middleware.RateLimit` |
 | Evaluation API | 1,000 requests / minute | `middleware.RateLimit` |
 
-Rate limits are applied at both Cloudflare (edge) and the Central API Server (application). Cloudflare limits act as a first-pass filter; application-level limits provide finer-grained per-route control.
+Rate limits are applied at two layers: the global router (edge-level, per-IP sliding window with path awareness — static assets bypass limits) and the API server (application-level, per-route control). The global router handles first-pass filtering; application-level limits provide finer-grained enforcement.
 
 ### Input Validation
 
@@ -512,30 +512,34 @@ See [Sub-processors](#sub-processors) in Data Protection section above. Full lis
 
 ---
 
-## Security Architecture — Five-Layer Defense
+## Security Architecture — Four-Layer Defense
 
-FeatureSignals implements a **five-layer defense-in-depth** model. Each layer validates independently — no trust is placed between layers.
+FeatureSignals implements a **four-layer defense-in-depth** model. Each layer validates independently — no trust is placed between layers. Cloudflare is used for DNS only (no edge proxying, no WAF, no CDN). All edge security is handled by the global router on the K3s node.
 
 ```
- Layer 1:  Cloudflare (CDN / Edge WAF)
- Layer 2:  Central API Server (auth, validation, rate limiting)
- Layer 3:  Cell Router (API key validation, tenant routing)
- Layer 4:  Cell Internal (k3s cluster isolation)
- Layer 5:  CI/CD Pipeline (build → scan → deploy)
+ Layer 1:  Global Router (TLS, WAF, rate limiting, security headers — hostNetwork on K3s node)
+ Layer 2:  API Server (auth, validation, rate limiting, RBAC)
+ Layer 3:  Cell/Cluster Internal (k3s cluster isolation, firewall, secrets)
+ Layer 4:  CI/CD Pipeline (build → scan → deploy)
 ```
 
-### Layer 1: CDN / Edge (Cloudflare)
+### Layer 1: Global Router (hostNetwork)
+
+The global router runs with `hostNetwork: true` on the K3s node, binding directly to ports 80 and 443. It handles all edge security:
 
 | Control | Detail |
 |---|---|
-| WAF | Blocks SQLi, XSS, path traversal, bot attacks at the edge |
-| DDoS | Cloudflare absorbs L3/L4/L7 attacks |
-| Rate limiting | 100 req/min per IP (API), 1000 req/min (evaluation) |
-| TLS | Cloudflare-managed certs; enforces TLS 1.3; HTTP → HTTPS redirect |
-| Bot management | Bot score check on login/signup |
-| Geo-blocking | Optional — block traffic from non-service regions |
+| TLS termination | Let's Encrypt via autocert (built into Go global router). TLS 1.2+ with modern cipher suites. |
+| WAF | Built-in regex patterns for SQLi, XSS, path traversal, directory traversal. Blocks matching requests before they reach upstream services. |
+| Rate limiting | Per-IP sliding window. Static assets bypass rate limits. API routes: 20/min auth, 100/min mutations, 1000/min eval. |
+| Security headers | HSTS (max-age=31536000, includeSubDomains), CSP, X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy. |
+| Connection limiting | Max 100 concurrent connections per IP. |
+| Host-based routing | Routes by domain: api.* → Go server (8080), app.* → Next.js (3000), signoz.* → SigNoz UI (3301), * → static files. |
+| Health monitoring | `/ops/health` endpoint with upstream service health checks. |
 
-### Layer 2: Central API Server
+> **Migration note (April 2026):** Cloudflare edge services (WAF, DDoS, bot management, CDN) have been removed. Cloudflare is DNS-only. The global router handles all edge security. This simplifies the architecture and eliminates Cloudflare as a dependency for production traffic.
+
+### Layer 2: API Server
 
 | Control | Detail |
 |---|---|
@@ -550,13 +554,7 @@ FeatureSignals implements a **five-layer defense-in-depth** model. Each layer va
 | Audit logging | All mutating operations logged with user, action, target, IP |
 | Log scrubbing | Middleware redacts `password`, `token`, `secret`, `key` from logs |
 
-### Layer 3: Cell Router
-
-- API keys are signed HMAC-SHA256 tokens containing tenant and cell routing info
-- Validation: prefix check → signature verification → expiry check → tenant extraction
-- **Never forward unauthenticated requests** to cells
-
-### Layer 4: Cell Internal (k3s)
+### Layer 3: Cluster Internal (k3s)
 
 | Control | Detail |
 |---|---|
@@ -569,7 +567,7 @@ FeatureSignals implements a **five-layer defense-in-depth** model. Each layer va
 | Secrets | k3s Secrets mounted as files (not env vars) |
 | Rate-limited SSH | iptables: 4 new SSH connections per 60 seconds per IP |
 
-### Layer 5: CI/CD Pipeline
+### Layer 4: CI/CD Pipeline
 
 | Control | Detail |
 |---|---|
@@ -586,7 +584,7 @@ Source: `ARCHITECTURE_IMPLEMENTATION.md` — Security Architecture section; `pro
 
 ## Cross-References
 
-- [[Architecture]] — 5-layer defense with full implementation detail in the Security Architecture section; cell trust model; CORS middleware configuration
+- [[Architecture]] — 4-layer defense with full implementation detail in the Security Architecture section; global router edge security; CORS middleware configuration
 - [[Deployment]] — network isolation, Hetzner firewall rules, k3s hardening flags, CI/CD pipeline security controls (Trivy, secret scanning, SBOM)
 - [[Development]] — coding standards for error handling (sentinel errors), store patterns (parameterized queries), handler guidelines (input validation, body limits)
 
@@ -620,4 +618,4 @@ Source: `ARCHITECTURE_IMPLEMENTATION.md` — Security Architecture section; `pro
 - `server/internal/domain/compliance.go` — domain types: `LLMComplianceMode`, `ApprovedLLMProvider`, `RedactionRule`, `LLMInteractionRecord`, `LLMCompliancePolicy`
 - `server/internal/domain/compliance_errors.go` — sentinel errors for LLM compliance enforcement
 - `CLAUDE.md` — security standards (Sections 7.1–7.3): authentication, authorization, data protection, operational security
-- `ARCHITECTURE_IMPLEMENTATION.md` — 5-layer defense-in-depth security architecture with implementation details for each layer
+- `ARCHITECTURE_IMPLEMENTATION.md` — 4-layer defense-in-depth security architecture with implementation details for each layer
