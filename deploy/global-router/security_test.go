@@ -1007,3 +1007,281 @@ func TestConcurrentRateLimiter(t *testing.T) {
 		t.Error("rate limiter should not affect other IPs after concurrent load")
 	}
 }
+
+// ── Circuit Breaker Tests ───────────────────────────────────────────
+
+func TestCircuitBreakerClosedAllowsRequests(t *testing.T) {
+	t.Parallel()
+
+	cb := newCircuitBreaker("test-upstream", defaultCircuitConfig())
+
+	for i := 0; i < 100; i++ {
+		if !cb.Allow() {
+			t.Errorf("request %d should be allowed in closed state", i)
+			return
+		}
+		cb.RecordSuccess()
+	}
+
+	if cb.State() != circuitClosed {
+		t.Errorf("circuit should still be closed after successes, got %s", cb.State())
+	}
+}
+
+func TestCircuitBreakerOpensAfterFailures(t *testing.T) {
+	t.Parallel()
+
+	cfg := defaultCircuitConfig()
+	cfg.FailureThreshold = 3
+	cb := newCircuitBreaker("test-upstream", cfg)
+
+	// Record 3 failures — should open the circuit
+	for i := 0; i < 3; i++ {
+		cb.Allow()
+		cb.RecordFailure()
+	}
+
+	if cb.State() != circuitOpen {
+		t.Errorf("circuit should be open after %d failures, got %s", cfg.FailureThreshold, cb.State())
+	}
+
+	// Subsequent requests should be denied
+	if cb.Allow() {
+		t.Error("requests should be denied in open state")
+	}
+}
+
+func TestCircuitBreakerHalfOpenProbe(t *testing.T) {
+	cfg := defaultCircuitConfig()
+	cfg.FailureThreshold = 2
+	cfg.Cooldown = 10 * time.Millisecond
+	cfg.HalfOpenMaxRequests = 1
+	cb := newCircuitBreaker("test-upstream", cfg)
+
+	// Trip the circuit
+	for i := 0; i < 2; i++ {
+		cb.Allow()
+		cb.RecordFailure()
+	}
+	if cb.State() != circuitOpen {
+		t.Fatalf("expected open, got %s", cb.State())
+	}
+
+	// Wait for cooldown
+	time.Sleep(15 * time.Millisecond)
+
+	// First request after cooldown should be allowed (half-open probe)
+	if !cb.Allow() {
+		t.Error("probe request should be allowed after cooldown")
+	}
+
+	// Record success — should close the circuit
+	cb.RecordSuccess()
+	if cb.State() != circuitClosed {
+		t.Errorf("circuit should close after successful probe, got %s", cb.State())
+	}
+}
+
+func TestCircuitBreakerHalfOpenFailureReopens(t *testing.T) {
+	cfg := defaultCircuitConfig()
+	cfg.FailureThreshold = 2
+	cfg.Cooldown = 10 * time.Millisecond
+	cb := newCircuitBreaker("test-upstream", cfg)
+
+	// Trip the circuit
+	for i := 0; i < 2; i++ {
+		cb.Allow()
+		cb.RecordFailure()
+	}
+
+	// Wait for cooldown
+	time.Sleep(15 * time.Millisecond)
+
+	// Probe
+	cb.Allow()
+	cb.RecordFailure() // probe fails → re-open
+
+	if cb.State() != circuitOpen {
+		t.Errorf("circuit should re-open after failed probe, got %s", cb.State())
+	}
+}
+
+func TestCircuitBreakerRecoversAfterSuccesses(t *testing.T) {
+	t.Parallel()
+
+	cfg := defaultCircuitConfig()
+	cfg.FailureThreshold = 3
+	cfg.Cooldown = 10 * time.Millisecond
+	cb := newCircuitBreaker("test-upstream", cfg)
+
+	// Mixed: some successes, some failures
+	for i := 0; i < 2; i++ {
+		cb.Allow()
+		cb.RecordSuccess()
+	}
+	cb.Allow()
+	cb.RecordFailure()
+
+	// Not enough consecutive failures yet
+	if cb.State() != circuitClosed {
+		t.Errorf("circuit should still be closed, got %s", cb.State())
+	}
+
+	// Reset with a success
+	cb.Allow()
+	cb.RecordSuccess()
+
+	// Now start fresh failure streak
+	for i := 0; i < 3; i++ {
+		cb.Allow()
+		cb.RecordFailure()
+	}
+
+	if cb.State() != circuitOpen {
+		t.Errorf("circuit should open after %d consecutive failures, got %s", 3, cb.State())
+	}
+}
+
+func TestCircuitBreakerHandlerIntegration(t *testing.T) {
+	t.Parallel()
+
+	cfg := defaultCircuitConfig()
+	cfg.FailureThreshold = 1
+	cb := newCircuitBreaker("test-upstream", cfg)
+
+	// Create a handler that always returns 500
+	failingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+
+	wrapped := circuitBreakerHandler(cb, failingHandler)
+
+	// First request: allowed, triggers circuit open via 500 response
+	req := httptest.NewRequest("GET", "/test", nil)
+	rec := httptest.NewRecorder()
+	wrapped.ServeHTTP(rec, req)
+
+	// Second request: should be denied by open circuit
+	rec2 := httptest.NewRecorder()
+	wrapped.ServeHTTP(rec2, req)
+
+	if rec2.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected 503 when circuit open, got %d", rec2.Code)
+	}
+}
+
+// ── Leaky Bucket Tests ──────────────────────────────────────────────
+
+func TestLeakyBucketAllowsUnderCapacity(t *testing.T) {
+	t.Parallel()
+
+	lb := NewLeakyBucketLimiter(10, 50, 1000) // 10 req/sec, burst 50
+	ip := "10.0.0.1"
+
+	// First request should always be allowed
+	allowed, remaining, _, _ := lb.Allow(ip)
+	if !allowed {
+		t.Fatal("first request should be allowed")
+	}
+	if remaining < 49 {
+		t.Errorf("expected remaining >= 49, got %d", remaining)
+	}
+}
+
+func TestLeakyBucketRejectsWhenFull(t *testing.T) {
+	// Use a very slow rate so that between rapid-fire calls, essentially
+	// zero water leaks. This ensures the bucket fills deterministically.
+	lb := NewLeakyBucketLimiter(0.000001, 3, 1000) // essentially zero leak, burst 3
+	ip := "10.0.0.1"
+
+	// Fill the bucket past capacity
+	// With zero leak rate, each call adds 1. After 4 calls water = 4 > capacity 3.
+	for i := 0; i < 4; i++ {
+		lb.Allow(ip)
+	}
+
+	// 5th request should be rejected (bucket over capacity)
+	allowed, remaining, _, retryAfter := lb.Allow(ip)
+	if allowed {
+		t.Error("request should be rejected when bucket is full")
+	}
+	if remaining != 0 {
+		t.Errorf("remaining should be 0 when rejected, got %d", remaining)
+	}
+	if retryAfter <= 0 {
+		t.Errorf("retryAfter should be positive, got %v", retryAfter)
+	}
+}
+
+func TestLeakyBucketLeaksOverTime(t *testing.T) {
+	// Use a moderate rate so the leak is fast enough to observe in a test
+	lb := NewLeakyBucketLimiter(100, 5, 1000) // 100 req/sec, burst 5
+	ip := "10.0.0.1"
+
+	// Fill the bucket
+	for i := 0; i < 5; i++ {
+		lb.Allow(ip)
+	}
+
+	// Wait long enough for at least one unit to leak (1/100 sec = 10ms)
+	// Use 20ms to be safe
+	time.Sleep(20 * time.Millisecond)
+
+	// Now one more should be allowed since at least 1 unit leaked
+	allowed, remaining, _, _ := lb.Allow(ip)
+	if !allowed {
+		t.Error("request should be allowed after leak")
+	}
+	if remaining < 0 {
+		t.Errorf("expected remaining >= 0, got %d", remaining)
+	}
+}
+
+func TestLeakyBucketDifferentIPs(t *testing.T) {
+	t.Parallel()
+
+	lb := NewLeakyBucketLimiter(100, 2, 1000)
+
+	// Fill bucket for IP 1
+	lb.Allow("10.0.0.1")
+	lb.Allow("10.0.0.1")
+
+	// IP 2 should have its own bucket
+	allowed, remaining, _, _ := lb.Allow("10.0.0.2")
+	if !allowed {
+		t.Error("different IP should have independent bucket")
+	}
+	if remaining < 1 {
+		t.Errorf("remaining for new IP should be >= 1, got %d", remaining)
+	}
+}
+
+func TestParseLeakyRate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		input           string
+		wantRatePerSec  float64
+		wantMinCapacity int
+	}{
+		{"per minute", "100/min", 100.0 / 60.0, 50},
+		{"per second", "2/sec", 2.0, 2},
+		{"per second alt", "5/s", 5.0, 5},
+		{"empty defaults", "", 1.67, 50},
+		{"invalid format", "abc", 1.67, 50},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rate, capacity := parseLeakyRate(tc.input)
+			// Allow small floating point differences
+			if rate < tc.wantRatePerSec-0.01 || rate > tc.wantRatePerSec+0.01 {
+				t.Errorf("rate = %v, want ~%v", rate, tc.wantRatePerSec)
+			}
+			if capacity < tc.wantMinCapacity {
+				t.Errorf("capacity = %d, want >= %d", capacity, tc.wantMinCapacity)
+			}
+		})
+	}
+}

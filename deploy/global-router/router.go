@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httputil"
@@ -10,19 +12,24 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Router struct {
-	config             *Config
-	metrics            *Metrics
-	rateLimiters       map[string]*RateLimiter
-	defaultRateLimiter *RateLimiter
-	connLimiter        *connLimiter
-	startTime          time.Time
-	allowedDomains     map[string]bool
-	proxies            map[string]*httputil.ReverseProxy
-	opsTokenHash       string // SHA256 hash of OPS_AUTH_TOKEN env var
+	config                *Config
+	metrics               *Metrics
+	rateLimiters          map[string]*RateLimiter
+	leakyBucketLimiters   map[string]*LeakyBucketLimiter // per domain, nil for sliding window
+	defaultRateLimiter    *RateLimiter
+	defaultLeakyLimiter   *LeakyBucketLimiter
+	connLimiter           *connLimiter
+	startTime             time.Time
+	allowedDomains        map[string]bool
+	proxies               map[string]*httputil.ReverseProxy
+	circuitBreakers       map[string]*circuitBreaker // per proxy domain, nil for static
+	opsTokenHash          string                    // SHA256 hash of OPS_AUTH_TOKEN env var
+	mu                    sync.RWMutex              // protects config reloads
 }
 
 func NewRouter(cfg *Config, m *Metrics) *Router {
@@ -44,27 +51,40 @@ func NewRouter(cfg *Config, m *Metrics) *Router {
 	}
 
 	r := &Router{
-		config:         cfg,
-		metrics:        m,
-		rateLimiters:   make(map[string]*RateLimiter),
-		connLimiter:    newConnLimiter(connLimit),
-		startTime:      time.Now(),
-		allowedDomains: make(map[string]bool),
-		proxies:        make(map[string]*httputil.ReverseProxy),
-		opsTokenHash:   opsTokenHash,
+		config:              cfg,
+		metrics:             m,
+		rateLimiters:        make(map[string]*RateLimiter),
+		leakyBucketLimiters: make(map[string]*LeakyBucketLimiter),
+		connLimiter:         newConnLimiter(connLimit),
+		startTime:           time.Now(),
+		allowedDomains:      make(map[string]bool),
+		proxies:             make(map[string]*httputil.ReverseProxy),
+		circuitBreakers:     make(map[string]*circuitBreaker),
+		opsTokenHash:        opsTokenHash,
 	}
 
-	// Parse default rate limit
-	limit, window := parseRateLimit(cfg.Router.RateLimit.Default)
-	r.defaultRateLimiter = NewRateLimiter(limit, window, maxIPs)
+	// Parse default rate limit — check if leaky bucket is configured globally
+	if cfg.Router.RateLimit.Algo == "leaky" {
+		rate, capacity := parseLeakyRate(cfg.Router.RateLimit.Default)
+		r.defaultLeakyLimiter = NewLeakyBucketLimiter(rate, capacity, maxIPs)
+	} else {
+		limit, window := parseRateLimit(cfg.Router.RateLimit.Default)
+		r.defaultRateLimiter = NewRateLimiter(limit, window, maxIPs)
+	}
 
 	// Parse per-domain rate limits and populate allowedDomains + proxies
 	for _, d := range cfg.Router.Domains {
 		r.allowedDomains[d.Name] = true
 
 		if d.RateLimit != "" {
-			l, w := parseRateLimit(d.RateLimit)
-			r.rateLimiters[d.Name] = NewRateLimiter(l, w, maxIPs)
+			// Check if this domain wants leaky bucket
+			if d.RateLimitAlgo == "leaky" {
+				rate, capacity := parseLeakyRate(d.RateLimit)
+				r.leakyBucketLimiters[d.Name] = NewLeakyBucketLimiter(rate, capacity, maxIPs)
+			} else {
+				l, w := parseRateLimit(d.RateLimit)
+				r.rateLimiters[d.Name] = NewRateLimiter(l, w, maxIPs)
+			}
 		}
 
 		if d.Type == "proxy" {
@@ -83,6 +103,27 @@ func NewRouter(cfg *Config, m *Metrics) *Router {
 				http.Error(w, "502 Bad Gateway", http.StatusBadGateway)
 			}
 			r.proxies[d.Name] = proxy
+
+			// Create circuit breaker for this upstream
+			cbCfg := defaultCircuitConfig()
+			if d.CircuitBreaker != nil {
+				if d.CircuitBreaker.FailureThreshold > 0 {
+					cbCfg.FailureThreshold = d.CircuitBreaker.FailureThreshold
+				}
+				if d.CircuitBreaker.Cooldown != "" {
+					if cd, err := time.ParseDuration(d.CircuitBreaker.Cooldown); err == nil {
+						cbCfg.Cooldown = cd
+					}
+				}
+				if d.CircuitBreaker.HalfOpenMaxRequests > 0 {
+					cbCfg.HalfOpenMaxRequests = d.CircuitBreaker.HalfOpenMaxRequests
+				}
+			}
+			r.circuitBreakers[d.Name] = newCircuitBreaker(d.Target, cbCfg)
+			r.circuitBreakers[d.Name].onTransition = func(target string, from, to circuitState) {
+				m.IncCircuitTransition(target, to.String())
+				m.SetCircuitOpen(target, to == circuitOpen)
+			}
 		}
 	}
 
@@ -146,9 +187,13 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					r.serveStatic(w, req, d)
 				})
 			case "proxy":
-				handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-					r.serveProxy(w, req, d)
-				})
+					handler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+						r.serveProxy(w, req, d)
+					})
+					// Wrap with circuit breaker if configured for this domain
+					if cb, ok := r.circuitBreakers[host]; ok && cb != nil {
+						handler = circuitBreakerHandler(cb, handler)
+					}
 			default:
 				http.Error(w, "502 Bad Gateway", http.StatusBadGateway)
 				return
@@ -258,4 +303,125 @@ type loggingResponseWriter struct {
 func (lrw *loggingResponseWriter) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
+}
+
+// Reload atomically replaces the router's configuration without restarting.
+// Safe to call while serving requests — the old config remains active until
+// the swap is complete. New leaky bucket limiters get cleanup goroutines.
+func (r *Router) Reload(newCfg *Config) error {
+	maxIPs := newCfg.Router.MaxIPs
+	if maxIPs <= 0 {
+		maxIPs = 100000
+	}
+
+	newAllowedDomains := make(map[string]bool)
+	newProxies := make(map[string]*httputil.ReverseProxy)
+	newRateLimiters := make(map[string]*RateLimiter)
+	newLeakyLimiters := make(map[string]*LeakyBucketLimiter)
+	newCircuitBreakers := make(map[string]*circuitBreaker)
+
+	var newDefaultRateLimiter *RateLimiter
+	var newDefaultLeakyLimiter *LeakyBucketLimiter
+
+	if newCfg.Router.RateLimit.Algo == "leaky" {
+		rate, capacity := parseLeakyRate(newCfg.Router.RateLimit.Default)
+		newDefaultLeakyLimiter = NewLeakyBucketLimiter(rate, capacity, maxIPs)
+	} else {
+		limit, window := parseRateLimit(newCfg.Router.RateLimit.Default)
+		newDefaultRateLimiter = NewRateLimiter(limit, window, maxIPs)
+	}
+
+	for _, d := range newCfg.Router.Domains {
+		newAllowedDomains[d.Name] = true
+
+		if d.RateLimit != "" {
+			if d.RateLimitAlgo == "leaky" {
+				rate, capacity := parseLeakyRate(d.RateLimit)
+				newLeakyLimiters[d.Name] = NewLeakyBucketLimiter(rate, capacity, maxIPs)
+			} else {
+				l, w := parseRateLimit(d.RateLimit)
+				newRateLimiters[d.Name] = NewRateLimiter(l, w, maxIPs)
+			}
+		}
+
+		if d.Type == "proxy" {
+			targetURL, err := url.Parse(d.Target)
+			if err != nil {
+				return fmt.Errorf("invalid proxy target for %s: %w", d.Name, err)
+			}
+			proxy := httputil.NewSingleHostReverseProxy(targetURL)
+			proxy.ErrorHandler = func(w http.ResponseWriter, req *http.Request, err error) {
+				slog.Error("proxy error", "host", req.Host, "target", d.Target, "error", err)
+				http.Error(w, "502 Bad Gateway", http.StatusBadGateway)
+			}
+			newProxies[d.Name] = proxy
+
+			// Reuse existing circuit breaker if present, otherwise create new
+			r.mu.RLock()
+			existingCB, exists := r.circuitBreakers[d.Name]
+			r.mu.RUnlock()
+			if exists && existingCB != nil {
+				newCircuitBreakers[d.Name] = existingCB
+			} else {
+				cbCfg := defaultCircuitConfig()
+				if d.CircuitBreaker != nil {
+					if d.CircuitBreaker.FailureThreshold > 0 {
+						cbCfg.FailureThreshold = d.CircuitBreaker.FailureThreshold
+					}
+					if d.CircuitBreaker.Cooldown != "" {
+						if cd, err := time.ParseDuration(d.CircuitBreaker.Cooldown); err == nil {
+							cbCfg.Cooldown = cd
+						}
+					}
+					if d.CircuitBreaker.HalfOpenMaxRequests > 0 {
+						cbCfg.HalfOpenMaxRequests = d.CircuitBreaker.HalfOpenMaxRequests
+					}
+				}
+				cb := newCircuitBreaker(d.Target, cbCfg)
+				cb.onTransition = func(target string, from, to circuitState) {
+					r.metrics.IncCircuitTransition(target, to.String())
+					r.metrics.SetCircuitOpen(target, to == circuitOpen)
+				}
+				newCircuitBreakers[d.Name] = cb
+			}
+		}
+	}
+
+	newOpsTokenHash := ""
+	if token := os.Getenv("OPS_AUTH_TOKEN"); token != "" {
+		h := sha256.Sum256([]byte(token))
+		newOpsTokenHash = hex.EncodeToString(h[:])
+	}
+
+	// Atomically swap all state under write lock
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.config = newCfg
+	r.allowedDomains = newAllowedDomains
+	r.proxies = newProxies
+	r.rateLimiters = newRateLimiters
+	r.leakyBucketLimiters = newLeakyLimiters
+	r.circuitBreakers = newCircuitBreakers
+	r.defaultRateLimiter = newDefaultRateLimiter
+	r.defaultLeakyLimiter = newDefaultLeakyLimiter
+	r.opsTokenHash = newOpsTokenHash
+
+	// Start cleanup loops for new leaky bucket limiters
+	ctx := context.Background()
+	if newDefaultLeakyLimiter != nil {
+		go newDefaultLeakyLimiter.CleanupLoop(ctx)
+	}
+	for _, lb := range newLeakyLimiters {
+		if lb != nil {
+			go lb.CleanupLoop(ctx)
+		}
+	}
+
+	slog.Info("router config reloaded",
+		"domain_count", len(newAllowedDomains),
+		"proxy_count", len(newProxies),
+		"circuit_breaker_count", len(newCircuitBreakers),
+	)
+	return nil
 }

@@ -140,6 +140,7 @@ func (r *Router) wafMiddleware(next http.Handler) http.Handler {
 }
 
 // rateLimitMiddleware applies per-IP rate limiting, skipping static assets.
+// Uses leaky bucket if configured for the domain, otherwise sliding window.
 func (r *Router) rateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// Skip rate limiting for static assets
@@ -151,6 +152,38 @@ func (r *Router) rateLimitMiddleware(next http.Handler) http.Handler {
 		ip := extractIP(req)
 		host := stripPort(req.Host)
 
+		// Check for leaky bucket limiter (per-domain or default)
+		if lb, ok := r.leakyBucketLimiters[host]; ok && lb != nil {
+			allowed, remaining, reset, retryAfter := lb.Allow(ip)
+			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%.0f", lb.capacity))
+			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", reset.Unix()))
+			if !allowed {
+				r.metrics.IncRateLimited(host)
+				w.Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter.Seconds()))
+				http.Error(w, "429 Too Many Requests", http.StatusTooManyRequests)
+				return
+			}
+			next.ServeHTTP(w, req)
+			return
+		}
+
+		if r.defaultLeakyLimiter != nil {
+			allowed, remaining, reset, retryAfter := r.defaultLeakyLimiter.Allow(ip)
+			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%.0f", r.defaultLeakyLimiter.capacity))
+			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+			w.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", reset.Unix()))
+			if !allowed {
+				r.metrics.IncRateLimited(host)
+				w.Header().Set("Retry-After", fmt.Sprintf("%.0f", retryAfter.Seconds()))
+				http.Error(w, "429 Too Many Requests", http.StatusTooManyRequests)
+				return
+			}
+			next.ServeHTTP(w, req)
+			return
+		}
+
+		// Fall through to sliding window rate limiter
 		rl, ok := r.rateLimiters[host]
 		if !ok {
 			rl = r.defaultRateLimiter
@@ -187,9 +220,9 @@ func (r *Router) connLimitMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// ── RateLimiter ─────────────────────────────────────────────────────
+// ── RateLimiter (Sliding Window) ────────────────────────────────────
 
-// RateLimiter implements a per-IP sliding window rate limiter
+// RateLimiter implements a per-IP sliding window rate limiter.
 type RateLimiter struct {
 	mu       sync.Mutex
 	requests map[string]*list.List // IP -> list of request timestamps
@@ -296,6 +329,157 @@ func (rl *RateLimiter) CleanupLoop(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// ── LeakyBucketLimiter ──────────────────────────────────────────────
+
+// LeakyBucketLimiter implements a leaky bucket rate limiting algorithm.
+// Unlike the sliding window, the leaky bucket smooths bursts by leaking
+// requests at a constant rate. Each request adds one unit to the bucket;
+// if the bucket overflows (exceeds capacity), the request is rejected.
+// The bucket leaks at a constant rate (requests per second).
+//
+// This is useful for upstream services that can handle steady traffic
+// but degrade under bursty patterns — the leaky bucket shapes traffic
+// into a smooth flow rather than passing bursts through.
+type LeakyBucketLimiter struct {
+	mu       sync.Mutex
+	buckets  map[string]*leakyBucket // IP -> bucket state
+	rate     float64                 // requests per second (leak rate)
+	capacity float64                 // max burst size
+	maxIPs   int
+}
+
+type leakyBucket struct {
+	water    float64   // current water level
+	lastLeak time.Time // last time water was leaked
+}
+
+// NewLeakyBucketLimiter creates a new leaky bucket rate limiter.
+// rate is requests per second. capacity is the max burst.
+func NewLeakyBucketLimiter(ratePerSec float64, capacity int, maxIPs int) *LeakyBucketLimiter {
+	if ratePerSec <= 0 {
+		ratePerSec = 1.67 // default: 100/min
+	}
+	if capacity <= 0 {
+		capacity = 50
+	}
+	if maxIPs <= 0 {
+		maxIPs = 100000
+	}
+	return &LeakyBucketLimiter{
+		buckets:  make(map[string]*leakyBucket),
+		rate:     ratePerSec,
+		capacity: float64(capacity),
+		maxIPs:   maxIPs,
+	}
+}
+
+// Allow checks whether a request from ip is allowed under the leaky bucket.
+// Returns: allowed, remaining capacity, reset time (when bucket empties), retry-after.
+func (lb *LeakyBucketLimiter) Allow(ip string) (allowed bool, remaining int, reset time.Time, retryAfter time.Duration) {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
+
+	now := time.Now()
+
+	b, ok := lb.buckets[ip]
+	if !ok {
+		b = &leakyBucket{water: 0, lastLeak: now}
+		lb.buckets[ip] = b
+	}
+
+	// Leak water based on elapsed time
+	elapsed := now.Sub(b.lastLeak).Seconds()
+	leaked := elapsed * lb.rate
+	b.water = max(0, b.water-leaked)
+	b.lastLeak = now
+
+	// If bucket is full, reject
+	if b.water >= lb.capacity {
+		// Estimate when the bucket will have room for 1 more request
+		timeToLeakOne := (b.water - lb.capacity + 1) / lb.rate
+		retryAfter = time.Duration(timeToLeakOne * float64(time.Second))
+		remaining = 0
+		reset = now.Add(time.Duration((b.water / lb.rate) * float64(time.Second)))
+		return
+	}
+
+	// Add water for this request
+	b.water += 1.0
+	allowed = true
+	remaining = int(lb.capacity - b.water)
+	reset = now.Add(time.Duration((b.water / lb.rate) * float64(time.Second)))
+
+	// Evict oldest buckets when map exceeds maxIPs
+	if lb.maxIPs > 0 && len(lb.buckets) > lb.maxIPs {
+		var oldestIP string
+		var oldestTime time.Time
+		first := true
+		for ipKey, bucket := range lb.buckets {
+			if first || bucket.lastLeak.Before(oldestTime) {
+				oldestTime = bucket.lastLeak
+				oldestIP = ipKey
+				first = false
+			}
+		}
+		if oldestIP != "" {
+			delete(lb.buckets, oldestIP)
+		}
+	}
+
+	return
+}
+
+// CleanupLoop periodically removes stale buckets to bound memory.
+func (lb *LeakyBucketLimiter) CleanupLoop(ctx context.Context) {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			lb.mu.Lock()
+			now := time.Now()
+			// Remove buckets that have been empty and idle for >10 minutes
+			for ip, b := range lb.buckets {
+				if b.water <= 0 && now.Sub(b.lastLeak) > 10*time.Minute {
+					delete(lb.buckets, ip)
+				}
+			}
+			lb.mu.Unlock()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// parseLeakyRate converts a rate string like "100/min" or "2/sec" to
+// requests-per-second and burst capacity. The burst defaults to the rate
+// value (1 second worth of requests).
+func parseLeakyRate(s string) (ratePerSec float64, capacity int) {
+	parts := strings.SplitN(s, "/", 2)
+	if len(parts) != 2 {
+		return 1.67, 50 // default: 100/min, burst 50
+	}
+	n := atoi(parts[0])
+	if n == 0 {
+		n = 100
+	}
+	switch parts[1] {
+	case "min":
+		ratePerSec = float64(n) / 60.0
+		capacity = n / 2 // burst = half the per-minute rate
+	case "sec", "s":
+		ratePerSec = float64(n)
+		capacity = n
+	default:
+		ratePerSec = float64(n) / 60.0
+		capacity = n / 2
+	}
+	if capacity < 1 {
+		capacity = 1
+	}
+	return
 }
 
 // ── Ops Auth Middleware ────────────────────────────────────────────

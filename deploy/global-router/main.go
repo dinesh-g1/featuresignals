@@ -60,7 +60,17 @@ func main() {
 	// ── Start rate limiter cleanup goroutine ─────────────────────────
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go router.defaultRateLimiter.CleanupLoop(ctx)
+	if router.defaultRateLimiter != nil {
+		go router.defaultRateLimiter.CleanupLoop(ctx)
+	}
+	if router.defaultLeakyLimiter != nil {
+		go router.defaultLeakyLimiter.CleanupLoop(ctx)
+	}
+	for _, lb := range router.leakyBucketLimiters {
+		if lb != nil {
+			go lb.CleanupLoop(ctx)
+		}
+	}
 
 	// ── Start DNS server (if enabled) ────────────────────────────────
 	dnsServer := NewDNSServer(cfg)
@@ -119,6 +129,33 @@ func main() {
 		logger.Error("failed to configure TLS", "error", err)
 		os.Exit(1)
 	}
+
+	// ── SIGHUP handler: dynamic config reload ────────────────────────
+	reloadCh := make(chan os.Signal, 1)
+	signal.Notify(reloadCh, syscall.SIGHUP)
+	go func() {
+		for range reloadCh {
+			logger.Info("received SIGHUP, reloading configuration")
+			newCfg, err := LoadConfig(configPath)
+			if err != nil {
+				logger.Error("config reload failed: cannot load config", "error", err, "path", configPath)
+				continue
+			}
+			if err := newCfg.Validate(); err != nil {
+				logger.Error("config reload failed: invalid config", "error", err)
+				continue
+			}
+			if err := router.Reload(newCfg); err != nil {
+				logger.Error("config reload failed", "error", err)
+				continue
+			}
+			// Update autocert host whitelist for any new domains
+			tlsSetup.updateDomains(newCfg)
+			logger.Info("configuration reloaded successfully",
+				"domain_count", len(newCfg.Router.Domains),
+			)
+		}
+	}()
 
 	// HTTP-01 challenge + redirect server on :80
 	go func() {

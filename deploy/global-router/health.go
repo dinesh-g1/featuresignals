@@ -9,11 +9,12 @@ import (
 )
 
 type HealthResponse struct {
-	Status   string            `json:"status"`
-	Cluster  string            `json:"cluster"`
-	Version  string            `json:"version"`
-	Uptime   int64             `json:"uptime"`
-	Services map[string]string `json:"services"`
+	Status       string                         `json:"status"`
+	Cluster      string                         `json:"cluster"`
+	Version      string                         `json:"version"`
+	Uptime       int64                          `json:"uptime"`
+	Services     map[string]string              `json:"services"`
+	Circuits     map[string]string              `json:"circuits,omitempty"`
 }
 
 var version = "v1.5.0"
@@ -36,12 +37,24 @@ func (r *Router) HealthHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	// Collect circuit breaker states
+	circuits := make(map[string]string)
+	for target, cb := range r.circuitBreakers {
+		if cb != nil {
+			circuits[target] = cb.State().String()
+			if cb.State() == circuitOpen {
+				overall = "degraded"
+			}
+		}
+	}
+
 	resp := HealthResponse{
 		Status:   overall,
 		Cluster:  r.config.Router.Cluster.Name,
 		Version:  version,
 		Uptime:   int64(time.Since(r.startTime).Seconds()),
 		Services: services,
+		Circuits: circuits,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

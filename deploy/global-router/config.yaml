@@ -27,6 +27,11 @@ router:
       type: proxy
       target: http://featuresignals-server:8080
       rate_limit: 1000/min
+      # rate_limit_algo: leaky  # uncomment for leaky bucket instead of sliding window
+      # circuit_breaker:
+      #   failure_threshold: 5
+      #   cooldown: 30s
+      #   half_open_max_requests: 1
 
     - name: app.featuresignals.com
       type: proxy
@@ -38,12 +43,16 @@ router:
       target: http://signoz-frontend:3301
       rate_limit: 20/min
       auth: ops
+      circuit_breaker:
+        failure_threshold: 3
+        cooldown: 60s
 
   # Rate limiting
   rate_limit:
     default: 100/min
     burst: 50
     window: 60s
+    # algo: leaky  # "sliding" (default) or "leaky" for smoother burst handling
 
   # Connection limiting & IP tracking bounds
   conn_limit: 100

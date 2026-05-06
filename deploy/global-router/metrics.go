@@ -31,6 +31,12 @@ type Metrics struct {
 	// router_waf_blocked_total{rule}
 	wafBlockedTotal map[string]int64
 
+	// router_circuit_open{target} — 1 if circuit is open, 0 if closed/half-open
+	circuitOpenState map[string]int64
+
+	// router_circuit_transitions_total{target,to_state}
+	circuitTransitions map[string]int64
+
 	// router_active_connections (gauge)
 	activeConnections int64
 }
@@ -55,6 +61,8 @@ func NewMetrics() *Metrics {
 		requestDurationSum: make(map[string]float64),
 		rateLimitedTotal:   make(map[string]int64),
 		wafBlockedTotal:    make(map[string]int64),
+		circuitOpenState:   make(map[string]int64),
+		circuitTransitions: make(map[string]int64),
 	}
 }
 
@@ -107,6 +115,25 @@ func (m *Metrics) IncRateLimited(host string) {
 func (m *Metrics) IncWAFBlocked(rule string) {
 	m.mu.Lock()
 	m.wafBlockedTotal[rule]++
+	m.mu.Unlock()
+}
+
+// SetCircuitOpen sets the circuit state gauge for a target (1=open, 0=closed/half-open).
+func (m *Metrics) SetCircuitOpen(target string, open bool) {
+	m.mu.Lock()
+	if open {
+		m.circuitOpenState[target] = 1
+	} else {
+		m.circuitOpenState[target] = 0
+	}
+	m.mu.Unlock()
+}
+
+// IncCircuitTransition increments the circuit state transition counter.
+func (m *Metrics) IncCircuitTransition(target, toState string) {
+	m.mu.Lock()
+	key := target + "|" + toState
+	m.circuitTransitions[key]++
 	m.mu.Unlock()
 }
 
@@ -224,6 +251,23 @@ func (m *Metrics) writePrometheusText(w http.ResponseWriter) {
 	fmt.Fprintln(w, "# HELP router_active_connections Current number of active connections.")
 	fmt.Fprintln(w, "# TYPE router_active_connections gauge")
 	fmt.Fprintf(w, "router_active_connections %d\n", atomic.LoadInt64(&m.activeConnections))
+
+	// router_circuit_open (gauge)
+	fmt.Fprintln(w, "# HELP router_circuit_open Whether the circuit breaker is open (1) or not (0) for each upstream target.")
+	fmt.Fprintln(w, "# TYPE router_circuit_open gauge")
+	for target, val := range m.circuitOpenState {
+		fmt.Fprintf(w, "router_circuit_open{target=\"%s\"} %d\n", target, val)
+	}
+
+	// router_circuit_transitions_total (counter)
+	fmt.Fprintln(w, "# HELP router_circuit_transitions_total Total number of circuit breaker state transitions.")
+	fmt.Fprintln(w, "# TYPE router_circuit_transitions_total counter")
+	for key, val := range m.circuitTransitions {
+		parts := splitMetricsKey(key, 2)
+		if len(parts) == 2 {
+			fmt.Fprintf(w, "router_circuit_transitions_total{target=\"%s\",to_state=\"%s\"} %d\n", parts[0], parts[1], val)
+		}
+	}
 }
 
 // splitMetricsKey splits a pipe-delimited key into n parts.

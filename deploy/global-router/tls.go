@@ -19,6 +19,7 @@ type tlsSetup struct {
 	tlsServer       *http.Server
 	challengeServer *http.Server
 	tlsListener     net.Listener
+	certManager     *autocert.Manager
 }
 
 // setupTLS configures TLS with Let's Encrypt autocert and returns the
@@ -91,6 +92,7 @@ func (r *Router) setupTLS(handler http.Handler) (*tlsSetup, error) {
 		tlsServer:       tlsSrv,
 		challengeServer: challengeSrv,
 		tlsListener:     tlsListener,
+		certManager:     certManager,
 	}, nil
 }
 
@@ -101,4 +103,15 @@ func (r *Router) redirectHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	target := "https://" + req.Host + req.URL.RequestURI()
 	http.Redirect(w, req, target, http.StatusMovedPermanently)
+}
+
+// updateDomains refreshes the autocert HostWhitelist with domains from a new config.
+// Called on SIGHUP to support adding domains without restarting.
+func (ts *tlsSetup) updateDomains(newCfg *Config) {
+	var domains []string
+	for _, d := range newCfg.Router.Domains {
+		domains = append(domains, d.Name)
+	}
+	ts.certManager.HostPolicy = autocert.HostWhitelist(domains...)
+	slog.Info("autocert host whitelist updated", "domains", domains)
 }

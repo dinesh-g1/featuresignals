@@ -36,18 +36,28 @@ type DNSConfig struct {
 }
 
 type Domain struct {
-	Name      string `yaml:"name"`
-	Type      string `yaml:"type"` // "static" or "proxy"
-	Root      string `yaml:"root,omitempty"`
-	Target    string `yaml:"target,omitempty"`
-	RateLimit string `yaml:"rate_limit,omitempty"`
-	Auth      string `yaml:"auth,omitempty"`
+	Name           string                `yaml:"name"`
+	Type           string                `yaml:"type"` // "static" or "proxy"
+	Root           string                `yaml:"root,omitempty"`
+	Target         string                `yaml:"target,omitempty"`
+	RateLimit      string                `yaml:"rate_limit,omitempty"`
+	RateLimitAlgo  string                `yaml:"rate_limit_algo,omitempty"` // "sliding" (default) or "leaky"
+	Auth           string                `yaml:"auth,omitempty"`
+	CircuitBreaker *CircuitBreakerConfig `yaml:"circuit_breaker,omitempty"`
+}
+
+// CircuitBreakerConfig holds per-domain circuit breaker tunables.
+type CircuitBreakerConfig struct {
+	FailureThreshold    int    `yaml:"failure_threshold"`
+	Cooldown            string `yaml:"cooldown"`              // e.g. "30s", "1m"
+	HalfOpenMaxRequests int    `yaml:"half_open_max_requests"`
 }
 
 type RateLimitCfg struct {
 	Default string `yaml:"default"`
 	Burst   int    `yaml:"burst"`
 	Window  string `yaml:"window"`
+	Algo    string `yaml:"algo"` // "sliding" (default) or "leaky"
 }
 
 type ClusterInfo struct {
