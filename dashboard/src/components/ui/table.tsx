@@ -21,7 +21,12 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("[&_tr]:border-b [&_tr]:border-[var(--signal-border-subtle)]", className)}
+    className={cn(
+      "sticky top-0 z-10 bg-white [&_tr]:border-b [&_tr]:border-[var(--signal-border-subtle)]",
+      // Subtle shadow below sticky header to suggest it floats above scrollable data
+      "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-[var(--signal-border-default)]/40",
+      className,
+    )}
     {...props}
   />
 ));
@@ -33,7 +38,12 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn(
+      // Zebra striping: alternating row backgrounds for easy scanning
+      "[&_tr:nth-child(even)]:bg-[var(--signal-bg-secondary)]/60",
+      "[&_tr:last-child]:border-0",
+      className,
+    )}
     {...props}
   />
 ));
@@ -46,7 +56,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]/50 font-medium [&>tr]:last:border-b-0",
+      "sticky bottom-0 z-10 border-t border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]/95 backdrop-blur-sm font-medium [&>tr]:last:border-b-0",
       className,
     )}
     {...props}
@@ -61,7 +71,10 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-[var(--signal-border-subtle)]/70 transition-colors hover:bg-[var(--signal-bg-primary)]/60 data-[state=selected]:bg-[var(--signal-bg-accent-muted)]",
+      "border-b border-[var(--signal-border-subtle)]/50 transition-colors",
+      // Hover-triggered row highlighting for visual place during scanning
+      "hover:bg-[var(--signal-bg-accent-muted)]/60",
+      "data-[state=selected]:bg-[var(--signal-bg-accent-muted)]",
       className,
     )}
     {...props}
