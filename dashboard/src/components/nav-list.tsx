@@ -107,7 +107,7 @@ const managementGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
 ];
 
 /** All groups in flat order (kept for backward compatibility if needed) */
-const sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
+const _sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
   ...developmentGroups,
   ...managementGroups,
 ];

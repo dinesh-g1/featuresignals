@@ -20,7 +20,6 @@ export default function GlobalError({
   useEffect(() => {
     // Log the error for debugging — user never sees this
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.error("[GlobalError]", {
         message: error.message,
         digest: error.digest,

@@ -16,8 +16,6 @@ import { test, expect, type Page } from "@playwright/test";
 import {
   makeTestUser,
   type TestUser,
-  login,
-  fullSignup,
   expectLoggedIn,
   injectToken,
 } from "../fixtures/auth.fixture";
@@ -25,13 +23,8 @@ import {
   navigateTo,
   waitForPageLoad,
   waitForSuccessToast,
-  waitForErrorToast,
-  createTestFlag,
   expectDialogOpen,
-  closeDialog,
   expectFieldError,
-  expectSubmitDisabled,
-  waitForTableRows,
 } from "../utils/test-helpers";
 
 // ── Test Configuration ───────────────────────────────────────────────────

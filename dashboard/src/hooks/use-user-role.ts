@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
-import type { OrgMember } from "@/lib/types";
 
 export type UserRole = "owner" | "admin" | "developer" | "viewer";
 

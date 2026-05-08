@@ -8,12 +8,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   SparklesIcon,
-  ArrowRightIcon,
   FolderOpenIcon,
-  GlobeIcon,
   FlagIcon,
   KeyIcon,
   CheckIcon,
@@ -72,7 +69,7 @@ interface StepWelcomeProps {
 
 export function StepWelcome({
   onContinue,
-  onSkip,
+  onSkip: _onSkip,
   userName,
 }: StepWelcomeProps) {
   const router = useRouter();
@@ -176,7 +173,7 @@ function PreviewCard({ orgName, projectName, envName }: PreviewCard) {
 
 export function StepNameProject({
   onComplete,
-  userName,
+  userName: _userName,
   orgName,
 }: StepNameProjectProps) {
   const token = useAppStore((s) => s.token);

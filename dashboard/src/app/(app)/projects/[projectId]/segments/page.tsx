@@ -12,14 +12,7 @@ import { SegmentRulesEditor } from "@/components/segment-rules-editor";
 import { toast } from "@/components/toast";
 import { showFeedback } from "@/components/action-feedback";
 import { PageHeader } from "@/components/page-header";
-import {
-  Card,
-  Button,
-  Input,
-  Label,
-  FormField,
-  FormLayout,
-} from "@/components/ui";
+import { Card, Button, Input, FormField, FormLayout } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { InlineCreateForm } from "@/components/ui/inline-create-form";
 import { TrashIcon, ChevronDownIcon } from "@/components/icons/nav-icons";

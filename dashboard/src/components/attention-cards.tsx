@@ -96,7 +96,7 @@ const variantStyles: Record<
  */
 export function AttentionCards({
   items,
-  projectId,
+  projectId: _projectId,
   className,
 }: AttentionCardsProps) {
   // Filter out items with count = 0 (nothing actionable)
@@ -118,9 +118,7 @@ export function AttentionCards({
           All systems operational
         </span>
         <span className="text-emerald-500/50">—</span>
-        <span className="text-emerald-600/70">
-          No action needed right now
-        </span>
+        <span className="text-emerald-600/70">No action needed right now</span>
       </div>
     );
   }
@@ -178,16 +176,8 @@ export function AttentionCards({
             </div>
 
             {/* Action button */}
-            <Link
-              href={item.href}
-              className="shrink-0 ml-4"
-              tabIndex={-1}
-            >
-              <Button
-                variant={styles.buttonVariant}
-                size="sm"
-                asChild={false}
-              >
+            <Link href={item.href} className="shrink-0 ml-4" tabIndex={-1}>
+              <Button variant={styles.buttonVariant} size="sm" asChild={false}>
                 {item.actionLabel}
                 <ChevronRightIcon className="h-3.5 w-3.5" />
               </Button>

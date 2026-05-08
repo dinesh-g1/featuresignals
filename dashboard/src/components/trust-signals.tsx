@@ -3,7 +3,6 @@
 import React, { useId } from "react";
 import {
   Shield,
-  Lock,
   Code,
   Database,
   Globe,
@@ -77,7 +76,7 @@ const SIGNALS: TrustSignal[] = [
 // ── Individual Signal Card ──────────────────────────────────────────────────
 
 function TrustCard({ signal }: { signal: TrustSignal }) {
-  const id = useId();
+  const _id = useId();
 
   return (
     <div className="group relative rounded-[var(--radius-medium)] border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-4 transition-all duration-200 hover:border-[var(--signal-border-accent-muted)] hover:shadow-[var(--signal-shadow-sm)]">

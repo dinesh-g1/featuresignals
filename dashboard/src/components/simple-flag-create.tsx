@@ -93,7 +93,7 @@ export function SimpleFlagCreate({
   projectId,
   onCreated,
   onCancel,
-  advancedAfterFlags = DEFAULT_ADVANCED_AFTER,
+  advancedAfterFlags: _advancedAfterFlags = DEFAULT_ADVANCED_AFTER,
   startAdvanced = false,
   className,
 }: SimpleFlagCreateProps) {
@@ -225,7 +225,6 @@ export function SimpleFlagCreate({
           <Input
             id={nameId}
             type="text"
-            
             value={name}
             onChange={handleNameChange}
             disabled={submitting}
@@ -247,7 +246,6 @@ export function SimpleFlagCreate({
           <Input
             id={keyId}
             type="text"
-            
             value={key}
             onChange={handleKeyChange}
             disabled={submitting}
@@ -282,7 +280,6 @@ export function SimpleFlagCreate({
           <Input
             id={descId}
             type="text"
-            
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={submitting}
@@ -328,7 +325,6 @@ export function SimpleFlagCreate({
           >
             <Input
               type="text"
-              
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               disabled={submitting}

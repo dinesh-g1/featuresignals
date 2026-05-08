@@ -230,7 +230,7 @@ function MobilePlanCard({
   isCurrentPlan: boolean;
 }) {
   const plan = PLANS[planKey];
-  const planFeatures = FEATURES.filter((f) => {
+  const planFeatures = FEATURES.filter((_f) => {
     // Show all features for this plan
     return true;
   });

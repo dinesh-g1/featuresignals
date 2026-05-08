@@ -16,13 +16,7 @@ import {
   navigateTo,
   waitForPageLoad,
   waitForSuccessToast,
-  waitForErrorToast,
   expectDialogOpen,
-  closeDialog,
-  waitForTableRows,
-  createSegment,
-  createEnvironment,
-  createAPIKey,
 } from "../utils/test-helpers";
 
 // ── Segment Management ───────────────────────────────────────────────────
@@ -43,25 +37,22 @@ test.describe("Segment Management", () => {
 
     // Fill segment form
     await page.getByTestId("segment-name-input").fill("Premium Users");
-    await page.getByTestId("segment-description-input").fill(
-      "Users on the premium plan with active subscription",
-    );
+    await page
+      .getByTestId("segment-description-input")
+      .fill("Users on the premium plan with active subscription");
     await page.getByTestId("create-segment-submit").click();
 
     // Verify segment appears
-    await expect(
-      page.getByTestId("segment-row-premium-users"),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("segment-row-premium-users")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Verify success toast
     await waitForSuccessToast(page, "Segment created");
   });
 
   test("User can add targeting rules to a segment", async ({ page }) => {
-    await navigateTo(
-      page,
-      "/projects/proj_test/segments/premium-users",
-    );
+    await navigateTo(page, "/projects/proj_test/segments/premium-users");
     await waitForPageLoad(page);
 
     // Click "Add Rule" button
@@ -83,10 +74,7 @@ test.describe("Segment Management", () => {
   });
 
   test("User can add multiple rules with AND/OR logic", async ({ page }) => {
-    await navigateTo(
-      page,
-      "/projects/proj_test/segments/premium-users",
-    );
+    await navigateTo(page, "/projects/proj_test/segments/premium-users");
     await waitForPageLoad(page);
 
     // Add first rule
@@ -156,9 +144,7 @@ test.describe("Segment Management", () => {
 
     // Select the segment
     const segmentSelect = page.getByTestId("rule-segment-select");
-    if (
-      await segmentSelect.isVisible({ timeout: 500 }).catch(() => false)
-    ) {
+    if (await segmentSelect.isVisible({ timeout: 500 }).catch(() => false)) {
       await segmentSelect.selectOption("premium-users");
     }
 
@@ -186,9 +172,9 @@ test.describe("Segment Management", () => {
     await page.getByTestId("confirm-delete-button").click();
 
     // Verify segment removed
-    await expect(
-      page.getByTestId("segment-row-premium-users"),
-    ).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("segment-row-premium-users")).not.toBeVisible(
+      { timeout: 10_000 },
+    );
 
     await waitForSuccessToast(page, "Segment deleted");
   });
@@ -216,9 +202,9 @@ test.describe("Environment Management", () => {
     await page.getByTestId("create-environment-submit").click();
 
     // Verify environment appears
-    await expect(
-      page.getByTestId("environment-row-staging"),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("environment-row-staging")).toBeVisible({
+      timeout: 10_000,
+    });
 
     await waitForSuccessToast(page, "Environment created");
   });
@@ -239,9 +225,9 @@ test.describe("Environment Management", () => {
     await page.getByTestId("create-api-key-submit").click();
 
     // Key reveal dialog should appear with the one-time key
-    await expect(
-      page.getByTestId("api-key-reveal-value"),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("api-key-reveal-value")).toBeVisible({
+      timeout: 10_000,
+    });
 
     const keyValue = await page
       .getByTestId("api-key-reveal-value")
@@ -253,9 +239,9 @@ test.describe("Environment Management", () => {
     await page.getByTestId("api-key-reveal-done").click();
 
     // Verify key appears in the list
-    await expect(
-      page.getByTestId("api-key-row-my-sdk-key"),
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("api-key-row-my-sdk-key")).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
   test("User can revoke an API key", async ({ page }) => {
@@ -311,14 +297,14 @@ test.describe("Flag Lifecycle", () => {
     await expectDialogOpen(page, "create-flag-dialog");
 
     await page.getByTestId("flag-name-input").fill("New Checkout Flow");
-    await page.getByTestId("flag-description-input").fill(
-      "Gradual rollout of redesigned checkout experience",
-    );
+    await page
+      .getByTestId("flag-description-input")
+      .fill("Gradual rollout of redesigned checkout experience");
     await page.getByTestId("create-flag-submit").click();
 
-    await expect(
-      page.getByTestId("flag-row-new-checkout-flow"),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("flag-row-new-checkout-flow")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // ── Step 2: Add percentage rollout ──
     // Navigate to the flag detail page
@@ -335,9 +321,7 @@ test.describe("Flag Lifecycle", () => {
     const rolloutSlider = page.getByTestId("percentage-rollout-slider");
     const rolloutInput = page.getByTestId("percentage-rollout-input");
 
-    if (
-      await rolloutInput.isVisible({ timeout: 1_000 }).catch(() => false)
-    ) {
+    if (await rolloutInput.isVisible({ timeout: 1_000 }).catch(() => false)) {
       await rolloutInput.fill("25");
     } else if (
       await rolloutSlider.isVisible({ timeout: 1_000 }).catch(() => false)
@@ -360,9 +344,7 @@ test.describe("Flag Lifecycle", () => {
 
     // Confirm archive
     const confirmDialog = page.getByTestId("confirm-archive-dialog");
-    if (
-      await confirmDialog.isVisible({ timeout: 2_000 }).catch(() => false)
-    ) {
+    if (await confirmDialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await page.getByTestId("confirm-archive-button").click();
     }
 
@@ -385,10 +367,10 @@ test.describe("Flag Lifecycle", () => {
     await expect(versions.first()).toBeVisible({ timeout: 5_000 });
 
     // Click rollback on an older version
-    const rollbackButton = versions.nth(1).getByTestId("rollback-version-button");
-    if (
-      await rollbackButton.isVisible({ timeout: 1_000 }).catch(() => false)
-    ) {
+    const rollbackButton = versions
+      .nth(1)
+      .getByTestId("rollback-version-button");
+    if (await rollbackButton.isVisible({ timeout: 1_000 }).catch(() => false)) {
       await rollbackButton.click();
       await expectDialogOpen(page, "confirm-rollback-dialog");
       await page.getByTestId("confirm-rollback-button").click();
@@ -407,9 +389,7 @@ test.describe("Flag Lifecycle", () => {
 
     // Find a flag that differs between environments
     const promoteButton = page.getByTestId("promote-flag-button");
-    if (
-      await promoteButton.isVisible({ timeout: 2_000 }).catch(() => false)
-    ) {
+    if (await promoteButton.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await promoteButton.click();
       await expectDialogOpen(page, "promote-flag-dialog");
       await page.getByTestId("promote-confirm-button").click();
@@ -428,9 +408,9 @@ test.describe("Flag Lifecycle", () => {
       await killSwitch.click();
 
       // Production safety gate should appear
-      await expect(
-        page.getByTestId("production-safety-gate"),
-      ).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("production-safety-gate")).toBeVisible({
+        timeout: 5_000,
+      });
 
       // Confirm kill switch
       await page.getByTestId("kill-switch-confirm-button").click();
@@ -495,9 +475,7 @@ test.describe("Project Settings", () => {
     await page.getByTestId("invite-member-button").click();
     await expectDialogOpen(page, "invite-member-dialog");
 
-    await page.getByTestId("invite-email-input").fill(
-      "developer@example.com",
-    );
+    await page.getByTestId("invite-email-input").fill("developer@example.com");
     await page.getByTestId("invite-role-select").selectOption("editor");
     await page.getByTestId("invite-submit-button").click();
 
@@ -579,7 +557,10 @@ async function setupMockSegments(page: any) {
 
   // Mock segment update (rules save)
   await page.route("**/api/segments/*", async (route: any) => {
-    if (route.request().method() === "PUT" || route.request().method() === "PATCH") {
+    if (
+      route.request().method() === "PUT" ||
+      route.request().method() === "PATCH"
+    ) {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -623,30 +604,33 @@ async function setupMockSegments(page: any) {
 
 async function setupMockEnvironments(page: any) {
   // Mock environments list
-  await page.route("**/api/projects/proj_test/environments", async (route: any) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        environments: [
-          {
-            id: "env_dev",
-            name: "Development",
-            slug: "development",
-            color: "blue",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "env_prod",
-            name: "Production",
-            slug: "production",
-            color: "red",
-            created_at: new Date().toISOString(),
-          },
-        ],
-      }),
-    });
-  });
+  await page.route(
+    "**/api/projects/proj_test/environments",
+    async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          environments: [
+            {
+              id: "env_dev",
+              name: "Development",
+              slug: "development",
+              color: "blue",
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: "env_prod",
+              name: "Production",
+              slug: "production",
+              color: "red",
+              created_at: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
+    },
+  );
 
   // Mock environment creation
   await page.route("**/api/environments", async (route: any) => {
@@ -667,24 +651,27 @@ async function setupMockEnvironments(page: any) {
   });
 
   // Mock API keys list
-  await page.route("**/api/projects/proj_test/api-keys**", async (route: any) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        api_keys: [
-          {
-            id: "key_1",
-            key_prefix: "fs_sdk_abc123",
-            name: "My SDK Key",
-            type: "sdk",
-            created_at: new Date().toISOString(),
-            last_used_at: new Date().toISOString(),
-          },
-        ],
-      }),
-    });
-  });
+  await page.route(
+    "**/api/projects/proj_test/api-keys**",
+    async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          api_keys: [
+            {
+              id: "key_1",
+              key_prefix: "fs_sdk_abc123",
+              name: "My SDK Key",
+              type: "sdk",
+              created_at: new Date().toISOString(),
+              last_used_at: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
+    },
+  );
 
   // Mock API key creation
   await page.route("**/api/api-keys", async (route: any) => {
@@ -738,18 +725,33 @@ async function setupMockFlagLifecycle(page: any) {
   });
 
   // Mock environments
-  await page.route("**/api/projects/proj_test/environments", async (route: any) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        environments: [
-          { id: "env_dev", name: "Development", slug: "development", color: "blue", created_at: new Date().toISOString() },
-          { id: "env_prod", name: "Production", slug: "production", color: "red", created_at: new Date().toISOString() },
-        ],
-      }),
-    });
-  });
+  await page.route(
+    "**/api/projects/proj_test/environments",
+    async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          environments: [
+            {
+              id: "env_dev",
+              name: "Development",
+              slug: "development",
+              color: "blue",
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: "env_prod",
+              name: "Production",
+              slug: "production",
+              color: "red",
+              created_at: new Date().toISOString(),
+            },
+          ],
+        }),
+      });
+    },
+  );
 
   // Mock flags list
   await page.route("**/api/flags?**", async (route: any) => {
@@ -873,26 +875,29 @@ async function setupMockFlagLifecycle(page: any) {
   });
 
   // Mock environment comparison
-  await page.route("**/api/projects/proj_test/compare-environments**", async (route: any) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        total: 3,
-        diff_count: 1,
-        diffs: [
-          {
-            flag_key: "dark-mode",
-            source_enabled: true,
-            target_enabled: false,
-            source_rollout: 100,
-            target_rollout: 0,
-            differences: ["enabled", "rollout"],
-          },
-        ],
-      }),
-    });
-  });
+  await page.route(
+    "**/api/projects/proj_test/compare-environments**",
+    async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          total: 3,
+          diff_count: 1,
+          diffs: [
+            {
+              flag_key: "dark-mode",
+              source_enabled: true,
+              target_enabled: false,
+              source_rollout: 100,
+              target_rollout: 0,
+              differences: ["enabled", "rollout"],
+            },
+          ],
+        }),
+      });
+    },
+  );
 
   // Mock flag archive
   await page.route("**/api/flags/dark-mode/archive", async (route: any) => {
@@ -937,23 +942,26 @@ async function setupMockProjectSettings(page: any) {
   });
 
   // Mock members list
-  await page.route("**/api/projects/proj_test/members**", async (route: any) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        members: [
-          {
-            id: "mem_1",
-            org_id: "org_test",
-            role: "admin",
-            email: "admin@example.com",
-            name: "Admin User",
-          },
-        ],
-      }),
-    });
-  });
+  await page.route(
+    "**/api/projects/proj_test/members**",
+    async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          members: [
+            {
+              id: "mem_1",
+              org_id: "org_test",
+              role: "admin",
+              email: "admin@example.com",
+              name: "Admin User",
+            },
+          ],
+        }),
+      });
+    },
+  );
 
   // Mock member invitation
   await page.route("**/api/members", async (route: any) => {

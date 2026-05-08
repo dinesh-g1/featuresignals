@@ -53,7 +53,7 @@ export function RoleBasedView({
   className,
   children,
 }: RoleBasedViewProps) {
-  const { hasRole, loading, role } = useUserRole();
+  const { hasRole, loading, role: _role } = useUserRole();
 
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
   const isAllowed = hasRole(allowedRoles);
@@ -79,10 +79,7 @@ export function RoleBasedView({
   return (
     <div className={cn("relative", className)}>
       {/* Disabled overlay: subtle gray tint + badge */}
-      <div
-        className="pointer-events-none opacity-50"
-        aria-hidden="true"
-      >
+      <div className="pointer-events-none opacity-50" aria-hidden="true">
         {children}
       </div>
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { InlineError } from "@/components/ui/inline-error";
 
 // Mock the toast system
@@ -27,9 +27,7 @@ describe("InlineError", () => {
 
     it("shows retry button when retryAction is provided", () => {
       const onRetry = vi.fn();
-      render(
-        <InlineError message="Failed to save" retryAction={onRetry} />,
-      );
+      render(<InlineError message="Failed to save" retryAction={onRetry} />);
 
       const retryButton = screen.getByText("Retry");
       expect(retryButton).toBeInTheDocument();
@@ -60,11 +58,7 @@ describe("InlineError", () => {
     it("shows retry button when retryAction is provided", () => {
       const onRetry = vi.fn();
       render(
-        <InlineError
-          message="Error"
-          variant="banner"
-          retryAction={onRetry}
-        />,
+        <InlineError message="Error" variant="banner" retryAction={onRetry} />,
       );
 
       const retryButton = screen.getByText("Retry");
@@ -75,11 +69,7 @@ describe("InlineError", () => {
     it("shows dismiss button when onDismiss is provided", () => {
       const onDismiss = vi.fn();
       render(
-        <InlineError
-          message="Error"
-          variant="banner"
-          onDismiss={onDismiss}
-        />,
+        <InlineError message="Error" variant="banner" onDismiss={onDismiss} />,
       );
 
       const dismissButton = screen.getByLabelText("Dismiss error");

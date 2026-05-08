@@ -14,10 +14,6 @@ import {
 } from "@/components/eval-decision-tree";
 import { EvalReasonBadge } from "@/components/eval-reason-badge";
 import { EvalTraceViewer } from "@/components/eval-trace-viewer";
-import type {
-  EvalStep,
-  EvalFinalResult,
-} from "@/components/eval-decision-tree";
 import type { EvalTraceStep } from "@/components/eval-trace-viewer";
 import {
   Card,
@@ -43,7 +39,7 @@ import { showFeedback } from "@/components/action-feedback";
 import { PageHeader } from "@/components/page-header";
 import { useFlagToggle } from "@/hooks/use-flag-toggle";
 import { ProductionSafetyGate } from "@/components/production-safety-gate";
-import { ArrowLeftIcon, AlertIcon, XIcon } from "@/components/icons/nav-icons";
+import { AlertIcon, XIcon } from "@/components/icons/nav-icons";
 import type {
   Flag,
   FlagState,
@@ -1219,7 +1215,7 @@ function FlagEvaluationView({
   setTestTargetKey: (v: string) => void;
   setTestResult: (v: boolean | null) => void;
 }) {
-  const rules = state?.rules || [];
+  const rules = useMemo(() => state?.rules || [], [state?.rules]);
   const isEnabled = state?.enabled ?? false;
 
   // Build decision tree steps from flag state

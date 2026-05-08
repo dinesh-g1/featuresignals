@@ -30,7 +30,6 @@ import {
   ChevronRightIcon,
   SparklesIcon,
   TeamIcon,
-  ActivityIcon,
   TrendingUpIcon,
 } from "@/components/icons/nav-icons";
 import type {
@@ -324,7 +323,7 @@ function LimitsStatus({
 
 // ─── Attention data hook ────────────────────────────────────────────
 
-interface AttentionData {
+interface _AttentionData {
   approvalCount: number;
   webhookFailCount: number;
   staleFlagCount: number;

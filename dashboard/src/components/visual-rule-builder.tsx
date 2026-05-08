@@ -21,7 +21,6 @@ import {
   getConflictsForRule,
   type Conflict,
   type SampleUser,
-  evaluateRule,
 } from "./rule-conflict-detector";
 import { RuleLivePreview, SAMPLE_USERS } from "./rule-live-preview";
 
@@ -113,7 +112,11 @@ function getSuggestedOperators(
   }
 
   // Boolean attributes
-  if (attr.includes("beta") || attr.includes("flag") || attr.includes("enabled")) {
+  if (
+    attr.includes("beta") ||
+    attr.includes("flag") ||
+    attr.includes("enabled")
+  ) {
     return ALL_OPERATORS.filter((op) =>
       ["eq", "neq", "exists"].includes(op.value),
     );
@@ -324,10 +327,15 @@ export function VisualRuleBuilder({
 
   // ── Rule CRUD ─────────────────────────────────────────────────────────────
 
-  const updateRule = useCallback((id: string, patch: Partial<TargetingRule>) => {
-    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    setDirty(true);
-  }, []);
+  const updateRule = useCallback(
+    (id: string, patch: Partial<TargetingRule>) => {
+      setRules((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+      );
+      setDirty(true);
+    },
+    [],
+  );
 
   const addRule = useCallback(() => {
     const maxPriority = rules.reduce((m, r) => Math.max(m, r.priority), 0);
@@ -342,29 +350,26 @@ export function VisualRuleBuilder({
     setDirty(true);
   }, []);
 
-  const moveRule = useCallback(
-    (id: string, direction: "up" | "down") => {
-      setRules((prev) => {
-        const sorted = [...prev].sort((a, b) => a.priority - b.priority);
-        const idx = sorted.findIndex((r) => r.id === id);
-        if (idx === -1) return prev;
+  const moveRule = useCallback((id: string, direction: "up" | "down") => {
+    setRules((prev) => {
+      const sorted = [...prev].sort((a, b) => a.priority - b.priority);
+      const idx = sorted.findIndex((r) => r.id === id);
+      if (idx === -1) return prev;
 
-        const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-        if (swapIdx < 0 || swapIdx >= sorted.length) return prev;
+      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sorted.length) return prev;
 
-        // Swap priorities
-        const temp = sorted[idx].priority;
-        sorted[idx] = { ...sorted[idx], priority: sorted[swapIdx].priority };
-        sorted[swapIdx] = { ...sorted[swapIdx], priority: temp };
+      // Swap priorities
+      const temp = sorted[idx].priority;
+      sorted[idx] = { ...sorted[idx], priority: sorted[swapIdx].priority };
+      sorted[swapIdx] = { ...sorted[swapIdx], priority: temp };
 
-        // Re-sort
-        sorted.sort((a, b) => a.priority - b.priority);
-        return sorted;
-      });
-      setDirty(true);
-    },
-    [],
-  );
+      // Re-sort
+      sorted.sort((a, b) => a.priority - b.priority);
+      return sorted;
+    });
+    setDirty(true);
+  }, []);
 
   // ── Condition CRUD ────────────────────────────────────────────────────────
 
@@ -751,9 +756,7 @@ export function VisualRuleBuilder({
                                 {/* Remove condition */}
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    removeCondition(rule.id, ci)
-                                  }
+                                  onClick={() => removeCondition(rule.id, ci)}
                                   className="rounded-lg p-1 text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-500 focus:opacity-100"
                                   aria-label={`Remove condition ${ci + 1}`}
                                 >
@@ -774,16 +777,14 @@ export function VisualRuleBuilder({
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {segments.map((seg) => {
-                            const active = (
-                              rule.segment_keys ?? []
-                            ).includes(seg.key);
+                            const active = (rule.segment_keys ?? []).includes(
+                              seg.key,
+                            );
                             return (
                               <button
                                 key={seg.key}
                                 type="button"
-                                onClick={() =>
-                                  toggleSegment(rule.id, seg.key)
-                                }
+                                onClick={() => toggleSegment(rule.id, seg.key)}
                                 className={cn(
                                   "rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150",
                                   active
@@ -835,9 +836,7 @@ export function VisualRuleBuilder({
                         <ServeValueInput
                           flagType={flagType}
                           value={rule.value}
-                          onChange={(v) =>
-                            updateRule(rule.id, { value: v })
-                          }
+                          onChange={(v) => updateRule(rule.id, { value: v })}
                         />
                       </div>
                     </div>

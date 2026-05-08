@@ -2,24 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { timeAgo } from "@/lib/utils";
-import { Card, Badge, Switch, Button } from "@/components/ui";
+import { Card, Badge, Switch } from "@/components/ui";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { CopyButton } from "@/components/ui/copy-button";
 import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state";
-import {
-  Rocket,
-  BeakerIcon,
-  Settings,
-  Key,
-  Clock,
-  Activity,
-  Archive,
-  AlertTriangle,
-  GripVertical,
-} from "lucide-react";
+import { Rocket, BeakerIcon, Settings, Key, Clock } from "lucide-react";
 import type { Flag, FlagState } from "@/lib/types";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

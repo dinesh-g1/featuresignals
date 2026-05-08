@@ -1,7 +1,6 @@
 /** Signal UI Icons — powered by lucide-react, zero Primer dependency */
 import {
   Activity,
-  AlertCircle,
   AlertTriangle,
   ArrowLeft,
   ArrowLeftRight,

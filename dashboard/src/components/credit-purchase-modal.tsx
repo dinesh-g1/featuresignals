@@ -22,7 +22,7 @@ interface CreditPurchaseModalProps {
 export function CreditPurchaseModal({
   open,
   onClose,
-  bearerId,
+  bearerId: _bearerId,
   bearerName,
   currentBalance,
   includedPerMonth,
@@ -40,7 +40,10 @@ export function CreditPurchaseModal({
     try {
       const result = await api.purchaseCredits(token, packId);
       onPurchased(result);
-      toast(`Purchased ${result.purchase.credits} credits successfully!`, "success");
+      toast(
+        `Purchased ${result.purchase.credits} credits successfully!`,
+        "success",
+      );
       onClose();
     } catch {
       toast("Failed to purchase credits. Please try again.", "error");

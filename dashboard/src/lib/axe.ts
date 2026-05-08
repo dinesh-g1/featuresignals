@@ -31,7 +31,7 @@ export async function initAxe(): Promise<void> {
     axeReact.default(React, ReactDOM, AXE_DELAY_MS, axeConfig);
 
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
+       
       console.log(
         "[a11y] axe-core initialized. Accessibility violations will be logged to the console.",
         "\n  Tip: Add ?axe=off to the URL to disable checks temporarily.",
@@ -40,7 +40,7 @@ export async function initAxe(): Promise<void> {
   } catch {
     // axe-core is a devDependency — fail silently if not installed
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         "[a11y] @axe-core/react not found. Run `npm install --save-dev @axe-core/react` to enable accessibility checks.",
       );

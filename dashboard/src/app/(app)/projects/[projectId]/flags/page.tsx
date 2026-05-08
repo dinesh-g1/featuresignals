@@ -9,13 +9,8 @@ import { toast } from "@/components/toast";
 import { showFeedback } from "@/components/action-feedback";
 import { PageHeader } from "@/components/page-header";
 import {
-  Card,
   Button,
   Input,
-  Badge,
-  CategoryBadge,
-  StatusBadge,
-  Label,
   Switch,
   FlagsPageSkeleton,
   FormField,
@@ -23,20 +18,13 @@ import {
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Textarea, ErrorDisplay } from "@/components/ui";
-import {
-  FlagIcon,
-  SearchIcon,
-  ChevronRightIcon,
-  TrashIcon,
-  LoaderIcon,
-} from "@/components/icons/nav-icons";
+import { FlagIcon, SearchIcon } from "@/components/icons/nav-icons";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { UpgradeNudge } from "@/components/upgrade-nudge";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { FlagSlideOver } from "@/components/flag-slide-over";
 import { FlagCardGrid } from "@/components/flag-card-grid";
 import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state";
-import { Blankslate } from "@/components/blankslate";
 import {
   useFlags,
   useEnvironments,
@@ -684,21 +672,24 @@ function FlagsWithData({
     }
   }
 
-  async function handleQuickToggle(flagKey: string) {
-    if (!currentEnvId) {
-      toast("Select an environment first", "error");
-      return;
-    }
-    const flag = (flags ?? []).find((f) => f.key === flagKey);
-    if (!flag) return;
-    const isProduction = currentEnvName?.toLowerCase() === "production";
-    await listToggle({
-      flagKey: flag.key,
-      flagName: flag.name ?? flag.key,
-      envName: currentEnvName ?? "Production",
-      isProduction,
-    });
-  }
+  const handleQuickToggle = useCallback(
+    async (flagKey: string) => {
+      if (!currentEnvId) {
+        toast("Select an environment first", "error");
+        return;
+      }
+      const flag = (flags ?? []).find((f) => f.key === flagKey);
+      if (!flag) return;
+      const isProduction = currentEnvName?.toLowerCase() === "production";
+      await listToggle({
+        flagKey: flag.key,
+        flagName: flag.name ?? flag.key,
+        envName: currentEnvName ?? "Production",
+        isProduction,
+      });
+    },
+    [currentEnvId, currentEnvName, flags, listToggle],
+  );
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -845,7 +836,7 @@ function FlagsContent({
   flags,
   envs: _envs,
   stateMap,
-  currentEnvName,
+  currentEnvName: _currentEnvName,
   suggestedKey,
   search: _search,
   searchInput,
@@ -872,10 +863,10 @@ function FlagsContent({
   createFlag,
   fieldErrors,
   setFieldErrors,
-  deleting,
-  setDeleting,
-  handleQuickToggle,
-  handleDelete,
+  deleting: _deleting,
+  setDeleting: _setDeleting,
+  handleQuickToggle: _handleQuickToggle,
+  handleDelete: _handleDelete,
   deleteFlag: _deleteFlag,
   filtered,
   refetchFlags: _refetchFlags,
@@ -883,11 +874,11 @@ function FlagsContent({
   onToggle,
   projectId,
   togglingSet,
-  listGateOpen,
-  closeListGate,
-  listGateContext,
-  listGateAction,
-  handleListGateConfirm,
+  listGateOpen: _listGateOpen,
+  closeListGate: _closeListGate,
+  listGateContext: _listGateContext,
+  listGateAction: _listGateAction,
+  handleListGateConfirm: _handleListGateConfirm,
 }: {
   flags: FlagType[] | undefined;
   envs: EnvironmentType[] | undefined;
@@ -941,7 +932,7 @@ function FlagsContent({
   listGateAction: "enable" | "disable";
   handleListGateConfirm: () => Promise<void>;
 }) {
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const _currentEnvId = useAppStore((s) => s.currentEnvId);
 
   return (
     <div className="space-y-4 sm:space-y-6">

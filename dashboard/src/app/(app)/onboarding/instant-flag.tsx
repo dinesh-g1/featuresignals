@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFlagToggle } from "@/hooks/use-flag-toggle";
 import { ProductionSafetyGate } from "@/components/production-safety-gate";
@@ -195,7 +194,9 @@ export function InstantFlagToggle({
             <span
               className={cn(
                 "text-lg font-bold transition-colors duration-300",
-                enabled ? "text-[#1f883d]" : "text-[var(--signal-fg-secondary)]",
+                enabled
+                  ? "text-[#1f883d]"
+                  : "text-[var(--signal-fg-secondary)]",
               )}
             >
               {enabled ? "ON" : "OFF"}
@@ -252,7 +253,9 @@ export function InstantFlagToggle({
               </code>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--signal-fg-secondary)]">Value</span>
+              <span className="text-sm text-[var(--signal-fg-secondary)]">
+                Value
+              </span>
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",

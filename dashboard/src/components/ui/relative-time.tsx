@@ -28,14 +28,16 @@ export function RelativeTime({
   date,
   neverLabel = "Never",
   className,
-  justNowThreshold = 60,
+  justNowThreshold: _justNowThreshold = 60,
 }: RelativeTimeProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Handle invalid or missing dates
   if (!date) {
     return (
-      <span className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}>
+      <span
+        className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}
+      >
         {neverLabel}
       </span>
     );
@@ -46,7 +48,9 @@ export function RelativeTime({
   // Check for invalid date
   if (isNaN(dateObj.getTime())) {
     return (
-      <span className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}>
+      <span
+        className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}
+      >
         {neverLabel}
       </span>
     );
@@ -59,7 +63,9 @@ export function RelativeTime({
   // If date is in the future, show full date
   if (diffSec < 0) {
     return (
-      <span className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}>
+      <span
+        className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}
+      >
         {formatDateTime(dateObj)}
       </span>
     );
@@ -68,7 +74,9 @@ export function RelativeTime({
   // If more than 100 years, show "Never"
   if (diffSec > 100 * 365 * 86400) {
     return (
-      <span className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}>
+      <span
+        className={cn("text-xs text-[var(--signal-fg-tertiary)]", className)}
+      >
         {neverLabel}
       </span>
     );

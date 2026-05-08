@@ -15,7 +15,6 @@ import {
   Trash2,
   Users,
   Settings,
-  Flag,
   GitBranch,
   Activity,
   ArrowRight,
@@ -32,21 +31,57 @@ const ACTION_CONFIG: Record<
     label: string;
   }
 > = {
-  "flag.created": { icon: PlusCircle, color: "text-emerald-500", label: "created" },
+  "flag.created": {
+    icon: PlusCircle,
+    color: "text-emerald-500",
+    label: "created",
+  },
   "flag.updated": { icon: Edit, color: "text-blue-500", label: "updated" },
   "flag.deleted": { icon: Trash2, color: "text-red-500", label: "deleted" },
-  "flag.enabled": { icon: ToggleRight, color: "text-emerald-500", label: "enabled" },
-  "flag.disabled": { icon: ToggleLeft, color: "text-slate-500", label: "disabled" },
-  "state.updated": { icon: Edit, color: "text-blue-500", label: "updated targeting for" },
-  "rule.created": { icon: GitBranch, color: "text-purple-500", label: "added rule to" },
-  "rule.updated": { icon: GitBranch, color: "text-purple-500", label: "updated rule on" },
-  "rule.deleted": { icon: Trash2, color: "text-red-500", label: "removed rule from" },
+  "flag.enabled": {
+    icon: ToggleRight,
+    color: "text-emerald-500",
+    label: "enabled",
+  },
+  "flag.disabled": {
+    icon: ToggleLeft,
+    color: "text-slate-500",
+    label: "disabled",
+  },
+  "state.updated": {
+    icon: Edit,
+    color: "text-blue-500",
+    label: "updated targeting for",
+  },
+  "rule.created": {
+    icon: GitBranch,
+    color: "text-purple-500",
+    label: "added rule to",
+  },
+  "rule.updated": {
+    icon: GitBranch,
+    color: "text-purple-500",
+    label: "updated rule on",
+  },
+  "rule.deleted": {
+    icon: Trash2,
+    color: "text-red-500",
+    label: "removed rule from",
+  },
   "member.invited": { icon: Users, color: "text-blue-500", label: "invited" },
   "member.removed": { icon: Users, color: "text-red-500", label: "removed" },
-  "settings.updated": { icon: Settings, color: "text-slate-500", label: "updated settings for" },
+  "settings.updated": {
+    icon: Settings,
+    color: "text-slate-500",
+    label: "updated settings for",
+  },
 };
 
-const DEFAULT_ACTION = { icon: Activity, color: "text-slate-500", label: "modified" };
+const DEFAULT_ACTION = {
+  icon: Activity,
+  color: "text-slate-500",
+  label: "modified",
+};
 
 // ─── Description Builder ─────────────────────────────────────────────────────
 

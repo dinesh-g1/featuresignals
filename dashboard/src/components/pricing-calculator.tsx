@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useId } from "react";
+import { useState, useEffect, useMemo, useId } from "react";
 import {
   Calculator,
   Users,
@@ -10,7 +10,6 @@ import {
   ArrowRight,
   ChevronDown,
   Info,
-  BarChart3,
   Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,7 +40,7 @@ const FEATURESIGNALS_PRICING = {
   },
 } as const;
 
-const ANNUAL_DISCOUNT = 0.2; // 20% off annual
+const _ANNUAL_DISCOUNT = 0.2; // 20% off annual
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -60,7 +59,9 @@ function competitorCost(
 }
 
 function fsCost(annual: boolean): { inr: number; usd: number } {
-  const inr = annual ? FEATURESIGNALS_PRICING.pro.annual : FEATURESIGNALS_PRICING.pro.monthly;
+  const inr = annual
+    ? FEATURESIGNALS_PRICING.pro.annual
+    : FEATURESIGNALS_PRICING.pro.monthly;
   return { inr, usd: Math.round(inr / INR_TO_USD) };
 }
 
@@ -69,7 +70,8 @@ function savings(
   fsCostUsd: number,
 ): { usd: number; pct: number } {
   const saved = competitorCostUsd - fsCostUsd;
-  const pct = competitorCostUsd > 0 ? Math.round((saved / competitorCostUsd) * 100) : 0;
+  const pct =
+    competitorCostUsd > 0 ? Math.round((saved / competitorCostUsd) * 100) : 0;
   return { usd: saved, pct };
 }
 
@@ -138,9 +140,7 @@ function ComparisonBars({
   const fsPct = Math.max((fsCost / max) * 100, 8);
 
   const fmt = (v: number) =>
-    currency === "USD"
-      ? `$${v.toLocaleString()}`
-      : `₹${v.toLocaleString()}`;
+    currency === "USD" ? `$${v.toLocaleString()}` : `₹${v.toLocaleString()}`;
 
   return (
     <div className="mt-6 space-y-4" aria-label="Cost comparison bar chart">
@@ -192,20 +192,28 @@ interface PricingCalculatorProps {
 export function PricingCalculator({ className }: PricingCalculatorProps) {
   const id = useId();
   const [teamSize, setTeamSize] = useState(50);
-  const [competitorKey, setCompetitorKey] = useState<CompetitorKey>("launchdarkly");
+  const [competitorKey, setCompetitorKey] =
+    useState<CompetitorKey>("launchdarkly");
   const [annual, setAnnual] = useState(false);
   const [showMath, setShowMath] = useState(false);
   const [currency, setCurrency] = useState<"USD" | "INR">("USD");
 
   const competitor = COMPETITOR_PRICING[competitorKey];
-  const compCost = useMemo(() => competitorCost(competitorKey, teamSize), [competitorKey, teamSize]);
+  const compCost = useMemo(
+    () => competitorCost(competitorKey, teamSize),
+    [competitorKey, teamSize],
+  );
   const fs = useMemo(() => fsCost(annual), [annual]);
-  const save = useMemo(() => savings(compCost.usd, fs.usd), [compCost.usd, fs.usd]);
+  const save = useMemo(
+    () => savings(compCost.usd, fs.usd),
+    [compCost.usd, fs.usd],
+  );
 
   // Display costs in selected currency
   const displayCompCost = currency === "INR" ? compCost.inr : compCost.usd;
   const displayFsCost = currency === "INR" ? fs.inr : fs.usd;
-  const displaySavings = currency === "INR" ? Math.round(save.usd * INR_TO_USD) : save.usd;
+  const displaySavings =
+    currency === "INR" ? Math.round(save.usd * INR_TO_USD) : save.usd;
   const currencySymbol = currency === "USD" ? "$" : "₹";
 
   const fsLabel = annual
@@ -331,7 +339,9 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
 
       {/* Currency toggle */}
       <div className="mt-4 flex items-center gap-2">
-        <span className="text-xs text-[var(--signal-fg-tertiary)]">Show in:</span>
+        <span className="text-xs text-[var(--signal-fg-tertiary)]">
+          Show in:
+        </span>
         <button
           onClick={() => setCurrency("USD")}
           className={cn(
@@ -370,7 +380,9 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
           per month vs {competitor.name}
         </p>
         <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
-          {annual ? "Annual billing saves an extra 20%." : "Switch to annual billing and save an additional 20%."}{" "}
+          {annual
+            ? "Annual billing saves an extra 20%."
+            : "Switch to annual billing and save an additional 20%."}{" "}
           That&apos;s{" "}
           <span className="font-semibold text-[var(--signal-fg-success)]">
             {save.pct}%
@@ -420,8 +432,7 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
                 <strong>FeatureSignals:</strong>{" "}
                 {annual
                   ? `₹19,190/yr (annual) ≈ ₹${Math.round(FEATURESIGNALS_PRICING.pro.annual / 12).toLocaleString()}/mo ≈ $${fs.usd.toLocaleString()} USD/mo`
-                  : `₹1,999/mo flat ≈ $${fs.usd.toLocaleString()} USD/mo`}
-                {" "}
+                  : `₹1,999/mo flat ≈ $${fs.usd.toLocaleString()} USD/mo`}{" "}
                 — unlimited seats, unlimited projects.
               </li>
               <li>
