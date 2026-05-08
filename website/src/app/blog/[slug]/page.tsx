@@ -46,12 +46,12 @@ export async function generateMetadata({
    ========================================================================== */
 
 const categoryColors: Record<string, string> = {
-  Engineering: "var(--fgColor-accent)",
-  Product: "var(--fgColor-success)",
-  Guides: "var(--fgColor-done)",
-  Security: "var(--fgColor-attention)",
-  DevOps: "var(--fgColor-muted)",
-  "Open Source": "var(--fgColor-done)",
+  Engineering: "var(--signal-fg-accent)",
+  Product: "var(--signal-fg-success)",
+  Guides: "var(--signal-fg-info)",
+  Security: "var(--signal-fg-warning)",
+  DevOps: "var(--signal-fg-secondary)",
+  "Open Source": "var(--signal-fg-info)",
 };
 
 /* ==========================================================================
@@ -71,12 +71,12 @@ export default async function BlogPostPage({
   }
 
   return (
-    <article className="min-h-screen bg-[var(--bgColor-default)]">
+    <article className="min-h-screen bg-[var(--signal-bg-primary)]">
       {/* Back link */}
       <div className="mx-auto max-w-3xl px-6 pt-8 pb-4">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1.5 text-sm text-[var(--fgColor-muted)] hover:text-[var(--fgColor-accent)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors"
         >
           <ArrowLeftIcon size={14} />
           Back to blog
@@ -84,48 +84,48 @@ export default async function BlogPostPage({
       </div>
 
       {/* Header */}
-      <header className="mx-auto max-w-3xl px-6 pb-8 border-b border-[var(--borderColor-default)]">
+      <header className="mx-auto max-w-3xl px-6 pb-8 border-b border-[var(--signal-border-default)]">
         <div className="mb-4">
           <span
             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
             style={{
-              color: categoryColors[post.category] ?? "var(--fgColor-muted)",
-              backgroundColor: "var(--bgColor-accent-muted)",
-              border: "1px solid var(--borderColor-accent-muted)",
+              color: categoryColors[post.category] ?? "var(--signal-fg-secondary)",
+              backgroundColor: "var(--signal-bg-accent-muted)",
+              border: "1px solid var(--signal-border-accent-muted)",
             }}
           >
             {post.category}
           </span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight mb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4">
           {post.title}
         </h1>
-        <p className="text-lg text-[var(--fgColor-muted)] mb-6 leading-relaxed">
+        <p className="text-lg text-[var(--signal-fg-secondary)] mb-6 leading-relaxed">
           {post.description}
         </p>
-        <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--fgColor-muted)]">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--signal-fg-secondary)]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[var(--bgColor-accent-muted)] flex items-center justify-center text-xs font-bold text-[var(--fgColor-accent)]">
+            <div className="w-8 h-8 rounded-full bg-[var(--signal-bg-accent-muted)] flex items-center justify-center text-xs font-bold text-[var(--signal-fg-accent)]">
               {post.author.name
                 .split(" ")
                 .map((n) => n[0])
                 .join("")
                 .slice(0, 2)}
             </div>
-            <span className="font-medium text-[var(--fgColor-default)]">
+            <span className="font-medium text-[var(--signal-fg-primary)]">
               {post.author.name}
             </span>
           </div>
-          <span className="text-[var(--borderColor-emphasis)] hidden sm:inline">
+          <span className="text-[var(--signal-border-emphasis)] hidden sm:inline">
             ·
           </span>
           <span className="hidden sm:inline">{post.author.role}</span>
-          <span className="text-[var(--borderColor-emphasis)]">·</span>
+          <span className="text-[var(--signal-border-emphasis)]">·</span>
           <span className="flex items-center gap-1">
             <CalendarIcon size={12} />
             {post.date}
           </span>
-          <span className="text-[var(--borderColor-emphasis)]">·</span>
+          <span className="text-[var(--signal-border-emphasis)]">·</span>
           <span className="flex items-center gap-1">
             <ClockIcon size={12} />
             {post.readTime}
@@ -147,10 +147,10 @@ export default async function BlogPostPage({
       </div>
 
       {/* Footer */}
-      <footer className="mx-auto max-w-3xl px-6 pb-16 pt-8 border-t border-[var(--borderColor-default)]">
+      <footer className="mx-auto max-w-3xl px-6 pb-16 pt-8 border-t border-[var(--signal-border-default)]">
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
         >
           <ArrowLeftIcon size={14} />
           Read more articles
@@ -167,13 +167,13 @@ export default async function BlogPostPage({
 function ComingSoon() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-[var(--bgColor-accent-muted)] flex items-center justify-center mb-5">
+      <div className="w-16 h-16 rounded-2xl bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mb-5">
         <svg
           width="28"
           height="28"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="var(--fgColor-accent)"
+          stroke="var(--signal-fg-accent)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -182,15 +182,15 @@ function ComingSoon() {
           <polyline points="12 6 12 12 16 14" />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mb-2">
+      <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mb-2">
         Full article coming soon
       </h2>
-      <p className="text-sm text-[var(--fgColor-muted)] max-w-md">
+      <p className="text-sm text-[var(--signal-fg-secondary)] max-w-md">
         This article is currently in the works. Check back soon for the complete
         technical deep-dive, or{" "}
         <Link
           href="/blog"
-          className="text-[var(--fgColor-accent)] hover:underline"
+          className="text-[var(--signal-fg-accent)] hover:underline"
         >
           browse other published articles
         </Link>
@@ -211,10 +211,10 @@ function BlogSectionRenderer({ section }: { section: BlogSection }) {
       return (
         <Tag
           className={cn(
-            "font-semibold text-[var(--fgColor-default)]",
+            "font-semibold text-[var(--signal-fg-primary)]",
             section.headingLevel === 3
               ? "text-lg mt-8 mb-3"
-              : "text-2xl mt-12 mb-4 pb-2 border-b border-[var(--borderColor-default)]",
+              : "text-2xl mt-12 mb-4 pb-2 border-b border-[var(--signal-border-default)]",
           )}
         >
           {section.content}
@@ -224,7 +224,7 @@ function BlogSectionRenderer({ section }: { section: BlogSection }) {
 
     case "paragraph":
       return (
-        <p className="text-[var(--fgColor-default)] leading-relaxed mb-5 text-[0.95rem]">
+        <p className="text-[var(--signal-fg-primary)] leading-relaxed mb-5 text-[0.95rem]">
           {section.content}
         </p>
       );
@@ -277,7 +277,7 @@ function ListBlock({
       {items.map((item, i) => (
         <li
           key={i}
-          className="text-[var(--fgColor-default)] leading-relaxed text-[0.95rem] pl-1"
+          className="text-[var(--signal-fg-primary)] leading-relaxed text-[0.95rem] pl-1"
         >
           {item}
         </li>
@@ -311,23 +311,23 @@ function CalloutBlock({
   > = {
     info: {
       icon: "\u2139\uFE0F",
-      bg: "var(--bgColor-accent-muted)",
-      border: "var(--borderColor-accent-muted)",
-      fg: "var(--fgColor-accent)",
+      bg: "var(--signal-bg-accent-muted)",
+      border: "var(--signal-border-accent-muted)",
+      fg: "var(--signal-fg-accent)",
       label: "Info",
     },
     warning: {
       icon: "\u26A0\uFE0F",
-      bg: "var(--bgColor-attention-muted)",
-      border: "var(--borderColor-attention-muted)",
-      fg: "var(--fgColor-attention)",
+      bg: "var(--signal-bg-warning-muted)",
+      border: "var(--signal-border-warning-muted)",
+      fg: "var(--signal-fg-warning)",
       label: "Warning",
     },
     tip: {
       icon: "\uD83D\uDCA1",
-      bg: "var(--bgColor-done-muted)",
-      border: "var(--borderColor-accent-muted)",
-      fg: "var(--fgColor-done)",
+      bg: "var(--signal-bg-info-muted)",
+      border: "var(--signal-border-accent-muted)",
+      fg: "var(--signal-fg-info)",
       label: "Tip",
     },
   };
@@ -349,7 +349,7 @@ function CalloutBlock({
         <p className="text-sm font-semibold mb-1" style={{ color: c.fg }}>
           {c.label}
         </p>
-        <p className="text-sm text-[var(--fgColor-default)] leading-relaxed">
+        <p className="text-sm text-[var(--signal-fg-primary)] leading-relaxed">
           {text}
         </p>
       </div>

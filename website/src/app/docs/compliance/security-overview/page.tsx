@@ -13,28 +13,28 @@ export default function SecurityOverviewPage() {
     <div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         Security Overview
       </h1>
-      <p className="text-sm text-[var(--fgColor-muted)] mb-6">
+      <p className="text-sm text-[var(--signal-fg-secondary)] mb-6">
         <em>Last updated: April 2026</em>
       </p>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         FeatureSignals is designed as critical infrastructure for your
         applications. This document provides a comprehensive overview of the
         security controls built into the product.
       </p>
 
       {/* Info callout */}
-      <div className="p-4 mb-8 rounded-lg border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]">
+      <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
           <ShieldCheckIcon
             size={18}
-            className="text-[var(--fgColor-accent)] mt-0.5 shrink-0"
+            className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0"
           />
           <div>
-            <p className="text-sm text-[var(--fgColor-muted)]">
+            <p className="text-sm text-[var(--signal-fg-secondary)]">
               This document describes technical security controls that are
               implemented in FeatureSignals. Where we reference compliance
               frameworks (SOC 2, GDPR, HIPAA, ISO 27001), we describe how our
@@ -48,14 +48,14 @@ export default function SecurityOverviewPage() {
       {/* Architecture Security */}
       <SectionHeading>Architecture Security</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Hexagonal Architecture
       </h3>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         FeatureSignals uses a hexagonal (ports &amp; adapters) architecture that
         enforces strict separation of concerns:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-4">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-4">
         <li>
           <strong>Domain layer</strong>: Pure business logic with zero
           infrastructure dependencies
@@ -72,10 +72,10 @@ export default function SecurityOverviewPage() {
           <strong>Evaluator</strong>: Stateless flag evaluation engine
         </li>
       </ul>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         This architecture prevents common vulnerability classes:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-muted)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-secondary)] mb-6">
         <li>
           SQL injection is impossible in domain/handler code (no SQL there)
         </li>
@@ -83,7 +83,7 @@ export default function SecurityOverviewPage() {
         <li>Each layer can be independently tested and audited</li>
       </ul>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Multi-Tenancy Isolation
       </h3>
       <SimpleTable>
@@ -121,7 +121,7 @@ export default function SecurityOverviewPage() {
       {/* Authentication & Authorization */}
       <SectionHeading>Authentication &amp; Authorization</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Authentication Methods
       </h3>
       <SimpleTable>
@@ -161,10 +161,10 @@ export default function SecurityOverviewPage() {
         </tbody>
       </SimpleTable>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-8 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-8 mb-3">
         Authorization Model
       </h3>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         Four built-in roles with escalating privileges:
       </p>
       <SimpleTable>
@@ -257,7 +257,7 @@ export default function SecurityOverviewPage() {
       {/* Data Protection */}
       <SectionHeading>Data Protection</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Encryption
       </h3>
       <SimpleTable>
@@ -291,10 +291,10 @@ export default function SecurityOverviewPage() {
         </tbody>
       </SimpleTable>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-8 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-8 mb-3">
         Input Validation
       </h3>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           All JSON decoders use <InlineCode>DisallowUnknownFields()</InlineCode>{" "}
           to prevent mass-assignment
@@ -304,13 +304,13 @@ export default function SecurityOverviewPage() {
         <li>User input never interpolated into queries</li>
       </ul>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-8 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-8 mb-3">
         Security Headers
       </h3>
-      <p className="text-[var(--fgColor-default)] mb-3">
+      <p className="text-[var(--signal-fg-primary)] mb-3">
         All responses include:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           <InlineCode>Content-Security-Policy</InlineCode>
         </li>
@@ -347,7 +347,7 @@ export default function SecurityOverviewPage() {
       {/* Network Security */}
       <SectionHeading>Network Security</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Rate Limiting
       </h3>
       <SimpleTable>
@@ -373,10 +373,10 @@ export default function SecurityOverviewPage() {
         </tbody>
       </SimpleTable>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-8 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-8 mb-3">
         IP Allowlisting (Enterprise)
       </h3>
-      <p className="text-[var(--fgColor-default)] mb-6">
+      <p className="text-[var(--signal-fg-primary)] mb-6">
         Restrict management API access to specific IP ranges (CIDR notation).
         The evaluation API is not restricted to ensure SDK connectivity.
       </p>
@@ -384,13 +384,13 @@ export default function SecurityOverviewPage() {
       {/* Audit & Monitoring */}
       <SectionHeading>Audit &amp; Monitoring</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Audit Trail
       </h3>
-      <p className="text-[var(--fgColor-default)] mb-3">
+      <p className="text-[var(--signal-fg-primary)] mb-3">
         Every mutating operation is recorded with:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Timestamp (UTC, RFC 3339)</li>
         <li>Actor identity (user ID, email)</li>
         <li>Action name and resource type/ID</li>
@@ -399,10 +399,10 @@ export default function SecurityOverviewPage() {
         <li>SHA-256 integrity hash (chain-linked to previous entry)</li>
       </ul>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-8 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-8 mb-3">
         Structured Logging
       </h3>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>JSON-formatted logs to stdout (12-factor compliant)</li>
         <li>Request ID correlation across all log entries</li>
         <li>Organization/tenant scoping on all log entries</li>
@@ -411,11 +411,11 @@ export default function SecurityOverviewPage() {
 
       {/* Responsible Disclosure */}
       <SectionHeading>Responsible Disclosure</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-6">
+      <p className="text-[var(--signal-fg-primary)] mb-6">
         Report vulnerabilities to{" "}
         <a
           href="/contact?reason=security"
-          className="text-[var(--fgColor-accent)] hover:underline font-medium"
+          className="text-[var(--signal-fg-accent)] hover:underline font-medium"
         >
           security@featuresignals.com
         </a>
@@ -438,7 +438,7 @@ export default function SecurityOverviewPage() {
           <Link
             key={step.href}
             href={step.href}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)] transition-colors font-medium"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
             <ArrowRightIcon size={14} />
             <span>{step.label}</span>
@@ -455,7 +455,7 @@ export default function SecurityOverviewPage() {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
@@ -463,7 +463,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -471,7 +471,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 
 function SimpleTable({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
@@ -479,7 +479,7 @@ function SimpleTable({ children }: { children: React.ReactNode }) {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
@@ -487,7 +487,7 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function Tr({ children }: { children: React.ReactNode }) {
   return (
-    <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">
+    <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">
       {children}
     </tr>
   );
@@ -495,13 +495,13 @@ function Tr({ children }: { children: React.ReactNode }) {
 
 function Td({ children }: { children: React.ReactNode }) {
   return (
-    <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>
+    <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>
   );
 }
 
 function Check() {
   return (
-    <span className="text-[var(--fgColor-success)] font-bold" aria-label="Yes">
+    <span className="text-[var(--signal-fg-success)] font-bold" aria-label="Yes">
       ✓
     </span>
   );
@@ -509,7 +509,7 @@ function Check() {
 
 function Cross() {
   return (
-    <span className="text-[var(--fgColor-muted)]" aria-label="No">
+    <span className="text-[var(--signal-fg-secondary)]" aria-label="No">
       —
     </span>
   );

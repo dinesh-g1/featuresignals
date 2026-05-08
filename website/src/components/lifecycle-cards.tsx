@@ -19,9 +19,9 @@ const lifecycleSteps = [
       "Define flag keys, types, and default values. Start the lifecycle.",
     href: "/create",
     icon: <RocketIcon size={20} fill="#ffffff" />,
-    bgColor: "var(--bgColor-accent-emphasis)",
-    mutedBg: "var(--bgColor-accent-muted)",
-    fgColor: "var(--fgColor-accent)",
+    bgColor: "var(--signal-bg-accent-emphasis)",
+    mutedBg: "var(--signal-bg-accent-muted)",
+    fgColor: "var(--signal-fg-accent)",
     emoji: "🚩",
   },
   {
@@ -31,9 +31,9 @@ const lifecycleSteps = [
       "Route features to the right users with attribute-based rules.",
     href: "/target",
     icon: <GoalIcon size={20} fill="#ffffff" />,
-    bgColor: "var(--bgColor-done-emphasis)",
-    mutedBg: "var(--bgColor-done-muted)",
-    fgColor: "var(--fgColor-done)",
+    bgColor: "var(--signal-bg-info-emphasis)",
+    mutedBg: "var(--signal-bg-info-muted)",
+    fgColor: "var(--signal-fg-info)",
     emoji: "🎯",
   },
   {
@@ -43,9 +43,9 @@ const lifecycleSteps = [
       "Ship with confidence using gradual percentage rollouts and canary releases.",
     href: "/rollout",
     icon: <GraphIcon size={20} fill="#ffffff" />,
-    bgColor: "var(--bgColor-attention-emphasis)",
-    mutedBg: "var(--bgColor-attention-muted)",
-    fgColor: "var(--fgColor-attention)",
+    bgColor: "var(--signal-bg-warning-emphasis)",
+    mutedBg: "var(--signal-bg-warning-muted)",
+    fgColor: "var(--signal-fg-warning)",
     emoji: "📈",
   },
   {
@@ -55,9 +55,9 @@ const lifecycleSteps = [
       "AI Janitor detects stale flags and generates PRs to remove them.",
     href: "/cleanup",
     icon: <LightBulbIcon size={20} fill="#ffffff" />,
-    bgColor: "var(--bgColor-danger-emphasis)",
-    mutedBg: "var(--bgColor-danger-muted)",
-    fgColor: "var(--fgColor-danger)",
+    bgColor: "var(--signal-bg-danger-emphasis)",
+    mutedBg: "var(--signal-bg-danger-muted)",
+    fgColor: "var(--signal-fg-danger)",
     emoji: "🧹",
   },
   {
@@ -67,9 +67,9 @@ const lifecycleSteps = [
       "Import flags from LaunchDarkly, ConfigCat, Flagsmith, or Unleash.",
     href: "/migrate",
     icon: <SyncIcon size={20} fill="#ffffff" />,
-    bgColor: "var(--bgColor-success-emphasis)",
-    mutedBg: "var(--bgColor-success-muted)",
-    fgColor: "var(--fgColor-success)",
+    bgColor: "var(--signal-bg-success-emphasis)",
+    mutedBg: "var(--signal-bg-success-muted)",
+    fgColor: "var(--signal-fg-success)",
     emoji: "📦",
   },
 ];
@@ -78,7 +78,7 @@ export function LifecycleCards() {
   return (
     <section
       id="lifecycle"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)] border-y border-[var(--borderColor-muted)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)] border-y border-[var(--signal-border-subtle)]"
       aria-labelledby="lifecycle-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -92,11 +92,11 @@ export function LifecycleCards() {
         >
           <h2
             id="lifecycle-heading"
-            className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             The complete feature flag lifecycle.
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 max-w-2xl mx-auto">
             Every flag moves through five stages. FeatureSignals handles each
             one — from creation to automated cleanup.
           </p>
@@ -118,11 +118,11 @@ export function LifecycleCards() {
             >
               <Link
                 href={step.href}
-                className="group block rounded-xl border border-[var(--borderColor-default)] bg-white p-5 transition-all duration-200 hover:shadow-[var(--shadow-floating-small)] hover:border-[var(--borderColor-emphasis)] h-full"
+                className="group block rounded-xl border border-[var(--signal-border-default)] bg-white p-5 transition-all duration-200 hover:shadow-[var(--signal-shadow-md)] hover:border-[var(--signal-border-emphasis)] h-full"
               >
                 {/* Step number + icon */}
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-bold text-[var(--fgColor-subtle)] uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-[var(--signal-fg-tertiary)] uppercase tracking-wider">
                     Step {step.step}
                   </span>
                   <span className="text-lg" aria-hidden="true">
@@ -139,12 +139,12 @@ export function LifecycleCards() {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-base font-bold text-[var(--fgColor-default)] mb-1.5">
+                <h3 className="text-base font-bold text-[var(--signal-fg-primary)] mb-1.5">
                   {step.title}
                 </h3>
 
                 {/* Description */}
-                <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed mb-4">
+                <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed mb-4">
                   {step.description}
                 </p>
 
@@ -170,7 +170,7 @@ export function LifecycleCards() {
         >
           <Link
             href="/create"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] transition-colors duration-150"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
             Start the lifecycle

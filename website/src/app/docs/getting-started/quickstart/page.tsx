@@ -14,27 +14,27 @@ export default function QuickstartPage() {
     <div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         Quickstart
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         Get FeatureSignals running locally in under 5 minutes using Docker Compose.
       </p>
 
       {/* Callout */}
-      <div className="p-4 mb-8 rounded-lg border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]">
+      <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--fgColor-accent)] mt-0.5 shrink-0" />
+          <LightBulbIcon size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-[var(--fgColor-default)] mb-1">
+            <p className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1">
               Try without installing
             </p>
-            <p className="text-sm text-[var(--fgColor-muted)]">
+            <p className="text-sm text-[var(--signal-fg-secondary)]">
               Want to explore FeatureSignals without any setup?{" "}
               <a
                 href="https://app.featuresignals.com/register"
-                className="text-[var(--fgColor-accent)] hover:underline font-medium"
+                className="text-[var(--signal-fg-accent)] hover:underline font-medium"
               >
                 Start a free trial
               </a>{" "}
@@ -46,13 +46,13 @@ export default function QuickstartPage() {
 
       {/* Section 1: Prerequisites */}
       <SectionHeading>Prerequisites</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           <a
             href="https://docs.docker.com/get-docker/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--fgColor-accent)] hover:underline"
+            className="text-[var(--signal-fg-accent)] hover:underline"
           >
             Docker
           </a>{" "}
@@ -63,7 +63,7 @@ export default function QuickstartPage() {
             href="https://nodejs.org/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--fgColor-accent)] hover:underline"
+            className="text-[var(--signal-fg-accent)] hover:underline"
           >
             Node.js 18+
           </a>{" "}
@@ -79,31 +79,31 @@ export default function QuickstartPage() {
 cd featuresignals
 docker compose up -d`}
       />
-      <p className="text-sm text-[var(--fgColor-muted)] mb-6">
+      <p className="text-sm text-[var(--signal-fg-secondary)] mb-6">
         This starts{" "}
-        <strong className="text-[var(--fgColor-default)]">PostgreSQL</strong> on port{" "}
+        <strong className="text-[var(--signal-fg-primary)]">PostgreSQL</strong> on port{" "}
         <InlineCode>5432</InlineCode>, the{" "}
-        <strong className="text-[var(--fgColor-default)]">API Server</strong> on port{" "}
+        <strong className="text-[var(--signal-fg-primary)]">API Server</strong> on port{" "}
         <InlineCode>8080</InlineCode>, and the{" "}
-        <strong className="text-[var(--fgColor-default)]">Flag Engine</strong> on port{" "}
+        <strong className="text-[var(--signal-fg-primary)]">Flag Engine</strong> on port{" "}
         <InlineCode>3000</InlineCode>. Database migrations run automatically on startup.
       </p>
 
       {/* Section 3: Create Your Account */}
       <SectionHeading>2. Create Your Account</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         Open{" "}
         <a
           href="https://app.featuresignals.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[var(--fgColor-accent)] hover:underline"
+          className="text-[var(--signal-fg-accent)] hover:underline"
         >
           https://app.featuresignals.com
         </a>{" "}
         and register a new account. This creates:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Your user account</li>
         <li>A default organization</li>
         <li>
@@ -115,7 +115,7 @@ docker compose up -d`}
 
       {/* Section 4: Create a Feature Flag */}
       <SectionHeading>3. Create a Feature Flag</SectionHeading>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-4">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-4">
         <li>
           Navigate to <strong>Flags</strong> in the sidebar
         </li>
@@ -143,7 +143,7 @@ docker compose up -d`}
 
       {/* Section 5: Enable the Flag */}
       <SectionHeading>4. Enable the Flag</SectionHeading>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Open the flag detail page</li>
         <li>
           Switch to the <strong>dev</strong> environment tab
@@ -156,10 +156,10 @@ docker compose up -d`}
       {/* Section 6: Evaluate in Your App */}
       <SectionHeading>5. Evaluate in Your App</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-3">
         Create an API Key
       </h3>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           Go to <strong>Settings</strong> → <strong>API Keys</strong>
         </li>
@@ -169,7 +169,7 @@ docker compose up -d`}
         <li>Copy the key (shown only once)</li>
       </ol>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-3">
         Install an SDK
       </h3>
 
@@ -319,7 +319,7 @@ const enabled = useFlag("new-checkout", false);
 
       {/* Section 7: Toggle and Observe */}
       <SectionHeading>6. Toggle and Observe</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-6">
+      <p className="text-[var(--signal-fg-primary)] mb-6">
         Go back to the Flag Engine, toggle the flag OFF, and re-run your app. The value changes
         instantly (or within the polling interval).
       </p>
@@ -330,36 +330,36 @@ const enabled = useFlag("new-checkout", false);
         <li>
           <Link
             href="/docs/getting-started/create-your-first-flag"
-            className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"
+            className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
           >
             <ArrowRightIcon size={14} />
             <span>Create Your First Flag</span>
           </Link>
-          <span className="text-xs text-[var(--fgColor-muted)] ml-6">
+          <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">
             — deeper walkthrough
           </span>
         </li>
         <li>
           <Link
             href="/docs/core-concepts/feature-flags"
-            className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"
+            className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
           >
             <ArrowRightIcon size={14} />
             <span>Core Concepts</span>
           </Link>
-          <span className="text-xs text-[var(--fgColor-muted)] ml-6">
+          <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">
             — understand flag types, targeting, and rollouts
           </span>
         </li>
         <li>
           <Link
             href="/docs/sdks/overview"
-            className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"
+            className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
           >
             <ArrowRightIcon size={14} />
             <span>SDK Documentation</span>
           </Link>
-          <span className="text-xs text-[var(--fgColor-muted)] ml-6">
+          <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">
             — full SDK reference for all languages
           </span>
         </li>
@@ -374,7 +374,7 @@ const enabled = useFlag("new-checkout", false);
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
@@ -382,7 +382,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -402,19 +402,19 @@ function SdkExample({
   extraCode?: string;
 }) {
   return (
-    <div className="border border-[var(--borderColor-default)] rounded-lg overflow-hidden">
-      <div className="px-4 py-2.5 bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)]">
-        <span className="text-sm font-semibold text-[var(--fgColor-default)]">{label}</span>
+    <div className="border border-[var(--signal-border-default)] rounded-lg overflow-hidden">
+      <div className="px-4 py-2.5 bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)]">
+        <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">{label}</span>
       </div>
       <div className="p-4 space-y-3">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
             Install
           </span>
           <CodeBlock language="bash" code={packageCmd} className="mt-1" />
         </div>
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
             Usage
           </span>
           <CodeBlock language={language} code={code} className="mt-1" />

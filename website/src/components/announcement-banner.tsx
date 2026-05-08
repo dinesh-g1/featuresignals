@@ -68,8 +68,8 @@ export function AnnouncementBanner({
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
           className={cn(
-            "relative overflow-hidden border-b border-[var(--borderColor-accent-muted)]",
-            "bg-[var(--bgColor-accent-muted)]",
+            "relative overflow-hidden border-b border-[var(--signal-border-accent-muted)]",
+            "bg-[var(--signal-bg-accent-muted)]",
             className,
           )}
         >
@@ -77,13 +77,13 @@ export function AnnouncementBanner({
             <div className="flex items-center justify-between gap-4 min-h-[44px] py-2">
               {/* Message + CTA */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <p className="text-sm text-[var(--fgColor-default)] font-medium truncate">
+                <p className="text-sm text-[var(--signal-fg-primary)] font-medium truncate">
                   {text}
                 </p>
                 {ctaLabel && ctaHref && (
                   <Link
                     href={ctaHref}
-                    className="inline-flex items-center gap-1 shrink-0 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--bgColor-accent-emphasis)] text-white hover:bg-[#0757ba] transition-colors"
+                    className="inline-flex items-center gap-1 shrink-0 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-accent-emphasis)] text-white hover:bg-[#0757ba] transition-colors"
                   >
                     {ctaLabel}
                     {ctaHref.startsWith("http") && (
@@ -101,7 +101,7 @@ export function AnnouncementBanner({
                     href={link.href}
                     target={link.external ? "_blank" : undefined}
                     rel={link.external ? "noopener noreferrer" : undefined}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-accent)] hover:text-[#0757ba] transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:text-[#0757ba] transition-colors"
                   >
                     {link.label}
                     {link.external && <LinkExternalIcon size={10} />}
@@ -112,7 +112,7 @@ export function AnnouncementBanner({
               {/* Dismiss */}
               <button
                 onClick={dismiss}
-                className="shrink-0 p-1.5 -mr-1.5 rounded-md text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+                className="shrink-0 p-1.5 -mr-1.5 rounded-md text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
                 aria-label="Dismiss banner"
               >
                 <XIcon size={14} />

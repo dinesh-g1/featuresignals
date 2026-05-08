@@ -263,7 +263,7 @@ export function DocsSidebar() {
     <>
       {/* Mobile toggle button */}
       <button
-        className="lg:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-[var(--bgColor-accent-emphasis)] text-white shadow-[var(--shadow-floating-medium)] hover:bg-[var(--color-accent-dark)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="lg:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white shadow-[var(--signal-shadow-lg)] hover:bg-[var(--color-accent-dark)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         onClick={() => setMobileOpen(!mobileOpen)}
         aria-label={
           mobileOpen ? "Close documentation menu" : "Open documentation menu"
@@ -295,11 +295,11 @@ export function DocsSidebar() {
           // Desktop: sticky sidebar within grid, scrolls with page
           "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto",
           "lg:flex lg:flex-col lg:z-20",
-          "lg:border-r lg:border-[var(--borderColor-default)]",
-          "lg:bg-[var(--bgColor-default)]",
+          "lg:border-r lg:border-[var(--signal-border-default)]",
+          "lg:bg-[var(--signal-bg-primary)]",
           // Mobile: slide-over
           "fixed inset-y-0 left-0 z-50 w-[300px] max-w-[85vw]",
-          "bg-[var(--bgColor-default)] border-r border-[var(--borderColor-default)]",
+          "bg-[var(--signal-bg-primary)] border-r border-[var(--signal-border-default)]",
           "shadow-[var(--shadow-floating-large)]",
           "flex flex-col",
           "transition-transform duration-300 ease-in-out",
@@ -309,10 +309,10 @@ export function DocsSidebar() {
         )}
       >
         {/* Sidebar header (mobile close) */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[var(--borderColor-default)]">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[var(--signal-border-default)]">
           <Link
             href="/docs"
-            className="flex items-center gap-2 font-semibold text-[var(--fgColor-default)]"
+            className="flex items-center gap-2 font-semibold text-[var(--signal-fg-primary)]"
             onClick={() => setMobileOpen(false)}
           >
             <BookIcon size={18} />
@@ -320,7 +320,7 @@ export function DocsSidebar() {
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-2 rounded-md hover:bg-[var(--bgColor-inset)] transition-colors"
+            className="p-2 rounded-md hover:bg-[var(--signal-bg-secondary)] transition-colors"
             aria-label="Close sidebar"
           >
             <XIcon size={18} />
@@ -335,8 +335,8 @@ export function DocsSidebar() {
             className={cn(
               "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium mb-4 transition-colors",
               isActive("/docs")
-                ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
-                : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-inset)]",
+                ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+                : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
             )}
           >
             <BookIcon size={16} />
@@ -356,12 +356,12 @@ export function DocsSidebar() {
         </nav>
 
         {/* Bottom help */}
-        <div className="border-t border-[var(--borderColor-default)] p-4">
+        <div className="border-t border-[var(--signal-border-default)] p-4">
           <a
             href="https://github.com/dinesh-g1/featuresignals/discussions"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-[var(--fgColor-muted)] hover:text-[var(--fgColor-accent)] transition-colors"
+            className="flex items-center gap-2 text-xs text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors"
           >
             <PackageIcon size={14} />
             <span>Ask the community on GitHub Discussions</span>
@@ -400,8 +400,8 @@ function SidebarSection({
           "flex items-center justify-between w-full px-3 py-2 text-left rounded-md transition-colors",
           "text-xs font-semibold uppercase tracking-widest",
           sectionActive
-            ? "text-[var(--fgColor-accent)]"
-            : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)]",
+            ? "text-[var(--signal-fg-accent)]"
+            : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
         )}
         aria-expanded={expanded}
       >
@@ -438,13 +438,13 @@ function SidebarSection({
                     className={cn(
                       "flex items-center gap-2 pl-10 pr-3 py-1.5 text-sm rounded-md transition-colors",
                       active
-                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium"
-                        : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:bg-[var(--bgColor-inset)]",
+                        ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium"
+                        : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
                     )}
                   >
                     <span className="truncate">{link.label}</span>
                     {link.badge && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] leading-none">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] leading-none">
                         {link.badge}
                       </span>
                     )}

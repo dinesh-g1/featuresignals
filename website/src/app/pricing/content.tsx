@@ -559,7 +559,7 @@ const faqItems: FaqItem[] = [
 
 function CheckListItem({ text }: { text: string }) {
   return (
-    <li className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]">
+    <li className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]">
       <CheckIcon size={16} className="mt-0.5 shrink-0 text-emerald-500" />
       <span>{text}</span>
     </li>
@@ -571,17 +571,17 @@ function FeatureValue({ value }: { value: string | boolean }) {
     return value ? (
       <CheckIcon size={16} className="text-emerald-500" />
     ) : (
-      <XIcon size={16} className="text-[var(--fgColor-subtle)]" />
+      <XIcon size={16} className="text-[var(--signal-fg-tertiary)]" />
     );
   }
   if (value === "BYO") {
     return (
-      <span className="text-xs font-medium text-[var(--fgColor-muted)] italic">
+      <span className="text-xs font-medium text-[var(--signal-fg-secondary)] italic">
         BYO
       </span>
     );
   }
-  return <span className="text-sm text-[var(--fgColor-default)]">{value}</span>;
+  return <span className="text-sm text-[var(--signal-fg-primary)]">{value}</span>;
 }
 
 /* ==========================================================================
@@ -608,8 +608,8 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
             className={cn(
               "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold shadow-sm",
               isFeatured
-                ? "bg-[var(--bgColor-accent-emphasis)] text-white"
-                : "bg-[var(--bgColor-done-muted)] text-[var(--fgColor-done)]",
+                ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+                : "bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)]",
             )}
           >
             {isFeatured && <CloudIcon size={12} />}
@@ -620,10 +620,10 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
 
       {/* Header */}
       <div className={cn("mb-4", isFeatured && "text-center")}>
-        <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+        <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
           {tier.name}
         </h3>
-        <p className="text-sm text-[var(--fgColor-muted)] mt-1">
+        <p className="text-sm text-[var(--signal-fg-secondary)] mt-1">
           {tier.description}
         </p>
       </div>
@@ -631,11 +631,11 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
       {/* Price */}
       <div className="mb-4">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-[var(--fgColor-default)]">
+          <span className="text-3xl font-bold text-[var(--signal-fg-primary)]">
             {tier.price}
           </span>
           {tier.period && (
-            <span className="text-sm text-[var(--fgColor-muted)]">
+            <span className="text-sm text-[var(--signal-fg-secondary)]">
               {tier.period}
             </span>
           )}
@@ -717,7 +717,7 @@ function FeatureComparisonTable() {
       <div className="flex justify-end mb-4">
         <button
           onClick={allExpanded ? collapseAll : expandAll}
-          className="text-xs font-medium text-[var(--fgColor-accent)] hover:underline"
+          className="text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
         >
           {allExpanded ? "Collapse All" : "Expand All"}
         </button>
@@ -726,20 +726,20 @@ function FeatureComparisonTable() {
       {/* Table */}
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="border-b border-[var(--borderColor-default)]">
-            <th className="py-3 pr-4 text-sm font-semibold text-[var(--fgColor-default)] sticky left-0 bg-white z-10">
+          <tr className="border-b border-[var(--signal-border-default)]">
+            <th className="py-3 pr-4 text-sm font-semibold text-[var(--signal-fg-primary)] sticky left-0 bg-white z-10">
               Feature
             </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--fgColor-default)] text-center">
+            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-primary)] text-center">
               Free
             </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--fgColor-accent)] text-center bg-[var(--bgColor-accent-muted)]/30">
+            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-accent)] text-center bg-[var(--signal-bg-accent-muted)]/30">
               Pro
             </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--fgColor-default)] text-center">
+            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-primary)] text-center">
               Enterprise
             </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--fgColor-done)] text-center">
+            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-info)] text-center">
               Self-Hosted
             </th>
           </tr>
@@ -752,7 +752,7 @@ function FeatureComparisonTable() {
                 {/* Category header row */}
                 <tr
                   className={cn(
-                    "border-b border-[var(--borderColor-default)] cursor-pointer transition-colors",
+                    "border-b border-[var(--signal-border-default)] cursor-pointer transition-colors",
                     isExpanded
                       ? "bg-[var(--fs-bg-accent-subtle)] hover:bg-[var(--fs-bg-surface-hover)]"
                       : "hover:bg-[var(--fs-bg-surface-hover)]",
@@ -764,14 +764,14 @@ function FeatureComparisonTable() {
                       <ChevronDownIcon
                         size={14}
                         className={cn(
-                          "text-[var(--fgColor-muted)] transition-transform duration-200",
+                          "text-[var(--signal-fg-secondary)] transition-transform duration-200",
                           isExpanded && "rotate-180",
                         )}
                       />
-                      <span className="text-sm font-semibold text-[var(--fgColor-default)]">
+                      <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                         {category.name}
                       </span>
-                      <span className="text-xs text-[var(--fgColor-muted)]">
+                      <span className="text-xs text-[var(--signal-fg-secondary)]">
                         ({category.rows.length} features)
                       </span>
                     </div>
@@ -783,17 +783,17 @@ function FeatureComparisonTable() {
                     <tr
                       key={row.feature}
                       className={cn(
-                        "border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-inset)] transition-colors",
+                        "border-b border-[var(--signal-border-subtle)] hover:bg-[var(--signal-bg-secondary)] transition-colors",
                         idx % 2 === 0 && "bg-[var(--fs-bg-surface)]",
                       )}
                     >
-                      <td className="py-2.5 pr-4 text-sm text-[var(--fgColor-default)] sticky left-0 bg-white">
+                      <td className="py-2.5 pr-4 text-sm text-[var(--signal-fg-primary)] sticky left-0 bg-white">
                         {row.feature}
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <FeatureValue value={row.free} />
                       </td>
-                      <td className="py-2.5 px-3 text-center bg-[var(--bgColor-accent-muted)]/15">
+                      <td className="py-2.5 px-3 text-center bg-[var(--signal-bg-accent-muted)]/15">
                         <FeatureValue value={row.pro} />
                       </td>
                       <td className="py-2.5 px-3 text-center">
@@ -827,16 +827,16 @@ function FaqAccordion() {
           className="premium-card mb-3 last:mb-0 border-[var(--fs-border-subtle)]"
         >
           <Accordion.Header asChild>
-            <Accordion.Trigger className="flex items-center justify-between w-full py-5 text-left text-base font-semibold text-[var(--fgColor-default)] hover:text-[var(--fgColor-accent)] transition-colors group cursor-pointer">
+            <Accordion.Trigger className="flex items-center justify-between w-full py-5 text-left text-base font-semibold text-[var(--signal-fg-primary)] hover:text-[var(--signal-fg-accent)] transition-colors group cursor-pointer">
               <span className="pr-4">{item.question}</span>
               <ChevronDownIcon
                 size={16}
-                className="shrink-0 text-[var(--fgColor-muted)] transition-transform duration-200 group-data-[state=open]:rotate-180"
+                className="shrink-0 text-[var(--signal-fg-secondary)] transition-transform duration-200 group-data-[state=open]:rotate-180"
               />
             </Accordion.Trigger>
           </Accordion.Header>
           <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <p className="pb-5 text-[var(--fgColor-muted)] leading-relaxed text-sm">
+            <p className="pb-5 text-[var(--signal-fg-secondary)] leading-relaxed text-sm">
               {item.answer}
             </p>
           </Accordion.Content>
@@ -854,17 +854,17 @@ function HeroSection() {
   return (
     <section
       id="pricing-hero"
-      className="relative py-16 sm:py-24 bg-[var(--bgColor-default)] bg-glow-orbs"
+      className="relative py-16 sm:py-24 bg-[var(--signal-bg-primary)] bg-glow-orbs"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.h1
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--fgColor-default)]"
+          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--signal-fg-primary)]"
           {...fadeUp}
         >
           Plans that scale with your team
         </motion.h1>
         <motion.p
-          className="text-lg sm:text-xl text-[var(--fgColor-muted)] mt-4 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl text-[var(--signal-fg-secondary)] mt-4 max-w-2xl mx-auto"
           {...fadeUpDelayed(0.1)}
         >
           From startups to enterprises. Free to start. No per-seat penalties.
@@ -882,18 +882,18 @@ function PricingTiersSection() {
   return (
     <section
       id="pricing-tiers"
-      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="tiers-heading"
     >
       <div className="mx-auto max-w-6xl px-6">
         <motion.div className="text-center mb-12" {...fadeUp}>
           <h2
             id="tiers-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Choose your plan
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             Transparent pricing. No hidden fees. No lock-in.
           </p>
         </motion.div>
@@ -909,9 +909,9 @@ function PricingTiersSection() {
           className="mt-12 text-center max-w-xl mx-auto"
           {...fadeUpDelayed(0.4)}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--bgColor-success-muted)] border border-[var(--borderColor-success-muted)]">
+          <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
             <HeartIcon size={16} className="text-emerald-500" />
-            <p className="text-sm text-[var(--fgColor-default)]">
+            <p className="text-sm text-[var(--signal-fg-primary)]">
               <span className="font-semibold text-emerald-600">
                 No lock-in. Ever.
               </span>{" "}
@@ -933,18 +933,18 @@ function FeatureComparisonSection() {
   return (
     <section
       id="feature-comparison"
-      className="py-16 sm:py-20 bg-[var(--bgColor-default)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-primary)]"
       aria-labelledby="comparison-heading"
     >
       <div className="mx-auto max-w-5xl px-6">
         <motion.div className="text-center mb-10" {...fadeUp}>
           <h2
             id="comparison-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Feature comparison
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             Everything you need to evaluate, ship, and clean up — across every
             plan.
           </p>
@@ -966,21 +966,21 @@ function FaqSection() {
   return (
     <section
       id="faq"
-      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="faq-heading"
     >
       <div className="mx-auto max-w-3xl px-6">
         <motion.div className="text-center mb-10" {...fadeUp}>
           <div className="inline-flex items-center gap-2 mb-4">
-            <QuestionIcon size={24} className="text-[var(--fgColor-accent)]" />
+            <QuestionIcon size={24} className="text-[var(--signal-fg-accent)]" />
           </div>
           <h2
             id="faq-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Frequently asked questions
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             Everything you need to know about FeatureSignals pricing.
           </p>
         </motion.div>
@@ -991,12 +991,12 @@ function FaqSection() {
 
         {/* Still have questions? */}
         <motion.div className="mt-10 text-center" {...fadeUpDelayed(0.3)}>
-          <p className="text-sm text-[var(--fgColor-muted)] mb-3">
+          <p className="text-sm text-[var(--signal-fg-secondary)] mb-3">
             Still have questions?
           </p>
           <Link
             href="/contact?reason=sales"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] hover:bg-[#ccebff] transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#ccebff] transition-colors"
           >
             <ChevronRightIcon size={14} />
             Contact Sales

@@ -11,17 +11,17 @@ import { TargetingBuilder } from "@/components/targeting-builder";
 
 const targetingBenefits = [
   {
-    icon: <GoalIcon size={16} fill="var(--fgColor-done)" />,
+    icon: <GoalIcon size={16} fill="var(--signal-fg-info)" />,
     title: "Attribute-based rules",
     desc: "Target by any user property — plan, country, email domain, beta status, or custom attributes.",
   },
   {
-    icon: <ChecklistIcon size={16} fill="var(--fgColor-success)" />,
+    icon: <ChecklistIcon size={16} fill="var(--signal-fg-success)" />,
     title: "First-match wins",
     desc: "Rules are evaluated in order. The first matching rule determines the result. Predictable and debuggable.",
   },
   {
-    icon: <ShieldCheckIcon size={16} fill="var(--fgColor-accent)" />,
+    icon: <ShieldCheckIcon size={16} fill="var(--signal-fg-accent)" />,
     title: "Default safety net",
     desc: "Every flag has a default value. If no rules match, the default is served. No surprises in production.",
   },
@@ -52,14 +52,14 @@ export function TargetPageContent() {
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-done-muted)] text-[var(--fgColor-done)] border border-[var(--borderColor-done-emphasis)] border-opacity-20 mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)] border border-[var(--borderColor-done-emphasis)] border-opacity-20 mb-6">
                 <GoalIcon size={12} />
                 Step 2 of 6
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--fgColor-default)] leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
                 Precision targeting. The right features, to the right users.
               </h1>
-              <p className="text-lg text-[var(--fgColor-muted)] mt-4 leading-relaxed">
+              <p className="text-lg text-[var(--signal-fg-secondary)] mt-4 leading-relaxed">
                 A feature flag without targeting is just a kill switch. Add
                 rules to route features to specific user segments — enterprise
                 customers, users in a particular country, beta testers, or any
@@ -71,14 +71,14 @@ export function TargetPageContent() {
               <div className="mt-6 space-y-4">
                 {targetingBenefits.map((benefit, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--bgColor-inset)] border border-[var(--borderColor-default)]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)]">
                       {benefit.icon}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-[var(--fgColor-default)]">
+                      <div className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                         {benefit.title}
                       </div>
-                      <div className="text-sm text-[var(--fgColor-muted)]">
+                      <div className="text-sm text-[var(--signal-fg-secondary)]">
                         {benefit.desc}
                       </div>
                     </div>
@@ -91,7 +91,7 @@ export function TargetPageContent() {
                   href="https://docs.featuresignals.com/concepts/targeting"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about targeting rules
                   <ArrowRightIcon size={14} />
@@ -103,9 +103,9 @@ export function TargetPageContent() {
       </section>
 
       {/* Bottom nav */}
-      <section className="py-10 border-t border-[var(--borderColor-muted)] bg-[var(--bgColor-inset)]">
+      <section className="py-10 border-t border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-4 text-center">
+          <div className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider mb-4 text-center">
             The Feature Flag Lifecycle
           </div>
           <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
@@ -131,8 +131,8 @@ export function TargetPageContent() {
                   href={step.href}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
                     step.active
-                      ? "bg-[var(--bgColor-done-emphasis)] text-white"
-                      : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:bg-white border border-[var(--borderColor-default)]"
+                      ? "bg-[var(--signal-bg-info-emphasis)] text-white"
+                      : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-white border border-[var(--signal-border-default)]"
                   }`}
                 >
                   <span aria-hidden="true">{step.icon}</span>
@@ -141,7 +141,7 @@ export function TargetPageContent() {
                 {i < 4 && (
                   <ArrowRightIcon
                     size={12}
-                    className="text-[var(--fgColor-subtle)] hidden sm:block"
+                    className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />
                 )}
               </div>

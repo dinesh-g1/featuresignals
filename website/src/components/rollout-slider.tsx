@@ -75,19 +75,19 @@ export function RolloutSlider() {
 
   return (
     <div
-      className="rounded-2xl border border-[var(--borderColor-default)] bg-white p-6 sm:p-8"
-      style={{ boxShadow: "var(--shadow-floating-medium)" }}
+      className="rounded-2xl border border-[var(--signal-border-default)] bg-white p-6 sm:p-8"
+      style={{ boxShadow: "var(--signal-shadow-lg)" }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bgColor-accent-muted)]">
-          <RocketIcon size={16} fill="var(--fgColor-accent)" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--signal-bg-accent-muted)]">
+          <RocketIcon size={16} fill="var(--signal-fg-accent)" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+          <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
             Gradual Rollout
           </h3>
-          <p className="text-xs text-[var(--fgColor-muted)]">
+          <p className="text-xs text-[var(--signal-fg-secondary)]">
             Flag: new-checkout-flow
           </p>
         </div>
@@ -99,11 +99,11 @@ export function RolloutSlider() {
           key={percentage}
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
-          className="text-5xl font-bold text-[var(--fgColor-default)] tabular-nums tracking-tight"
+          className="text-5xl font-bold text-[var(--signal-fg-primary)] tabular-nums tracking-tight"
         >
           {percentage}%
         </motion.div>
-        <div className="text-sm text-[var(--fgColor-muted)] mt-1">
+        <div className="text-sm text-[var(--signal-fg-secondary)] mt-1">
           of users receiving this flag
         </div>
       </div>
@@ -123,24 +123,24 @@ export function RolloutSlider() {
               setIsRollingOut(true);
             }}
             style={{
-              background: `linear-gradient(to right, var(--fgColor-accent) 0%, var(--fgColor-accent) ${percentage}%, var(--borderColor-default) ${percentage}%, var(--borderColor-default) 100%)`,
+              background: `linear-gradient(to right, var(--signal-fg-accent) 0%, var(--signal-fg-accent) ${percentage}%, var(--signal-border-default) ${percentage}%, var(--signal-border-default) 100%)`,
             }}
             className="w-full h-2 rounded-full appearance-none cursor-pointer bg-transparent
               [&::-webkit-slider-thumb]:appearance-none
               [&::-webkit-slider-thumb]:h-5
               [&::-webkit-slider-thumb]:w-5
               [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-[var(--fgColor-accent)]
+              [&::-webkit-slider-thumb]:bg-[var(--signal-fg-accent)]
               [&::-webkit-slider-thumb]:border-2
               [&::-webkit-slider-thumb]:border-white
-              [&::-webkit-slider-thumb]:shadow-[var(--shadow-resting-small)]
+              [&::-webkit-slider-thumb]:shadow-[var(--signal-shadow-sm)]
               [&::-webkit-slider-thumb]:cursor-pointer
               [&::-webkit-slider-thumb]:mt-[-6px]
               focus:outline-none
               [&::-moz-range-thumb]:h-5
               [&::-moz-range-thumb]:w-5
               [&::-moz-range-thumb]:rounded-full
-              [&::-moz-range-thumb]:bg-[var(--fgColor-accent)]
+              [&::-moz-range-thumb]:bg-[var(--signal-fg-accent)]
               [&::-moz-range-thumb]:border-2
               [&::-moz-range-thumb]:border-white
               [&::-moz-range-thumb]:cursor-pointer
@@ -163,8 +163,8 @@ export function RolloutSlider() {
               }}
               className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors duration-150 ${
                 percentage === pct
-                  ? "bg-[var(--fgColor-accent)] text-white"
-                  : "text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-default)] hover:bg-[var(--bgColor-inset)]"
+                  ? "bg-[var(--signal-fg-accent)] text-white"
+                  : "text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
               }`}
             >
               {pct}%
@@ -175,7 +175,7 @@ export function RolloutSlider() {
 
       {/* Ring stages visualization */}
       <div className="mb-5">
-        <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-3">
+        <div className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider mb-3">
           Deployment Rings
         </div>
         <div className="space-y-1.5">
@@ -190,34 +190,34 @@ export function RolloutSlider() {
                 key={stage.label}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-colors duration-150 ${
                   isCurrent
-                    ? "bg-[var(--bgColor-accent-muted)] border border-[var(--borderColor-accent-muted)]"
+                    ? "bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)]"
                     : isActive
-                      ? "text-[var(--fgColor-muted)]"
-                      : "text-[var(--fgColor-subtle)] opacity-60"
+                      ? "text-[var(--signal-fg-secondary)]"
+                      : "text-[var(--signal-fg-tertiary)] opacity-60"
                 }`}
               >
                 <div
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
                     isActive
-                      ? "bg-[var(--fgColor-accent)] text-white"
-                      : "border border-[var(--borderColor-default)] text-[var(--fgColor-subtle)]"
+                      ? "bg-[var(--signal-fg-accent)] text-white"
+                      : "border border-[var(--signal-border-default)] text-[var(--signal-fg-tertiary)]"
                   }`}
                 >
                   {isActive ? "✓" : i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-[var(--fgColor-default)]">
+                  <div className="font-semibold text-[var(--signal-fg-primary)]">
                     {stage.label}
                   </div>
-                  <div className="text-[10px] text-[var(--fgColor-muted)]">
+                  <div className="text-[10px] text-[var(--signal-fg-secondary)]">
                     {stage.description}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="font-mono font-bold text-[var(--fgColor-default)] tabular-nums">
+                  <div className="font-mono font-bold text-[var(--signal-fg-primary)] tabular-nums">
                     {stage.percentage}%
                   </div>
-                  <div className="text-[10px] text-[var(--fgColor-subtle)]">
+                  <div className="text-[10px] text-[var(--signal-fg-tertiary)]">
                     {stage.users.toLocaleString()} users
                   </div>
                 </div>
@@ -230,20 +230,20 @@ export function RolloutSlider() {
       {/* User distribution bar */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider">
             User Distribution
           </span>
-          <span className="text-[10px] text-[var(--fgColor-subtle)]">
+          <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
             {TOTAL_USERS.toLocaleString()} total users
           </span>
         </div>
-        <div className="h-8 rounded-lg overflow-hidden flex bg-[var(--borderColor-muted)]">
+        <div className="h-8 rounded-lg overflow-hidden flex bg-[var(--signal-border-subtle)]">
           {percentage > 0 && (
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${percentage}%` }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full flex items-center justify-center bg-[var(--bgColor-success-emphasis)] text-white text-[10px] font-bold overflow-hidden"
+              className="h-full flex items-center justify-center bg-[var(--signal-bg-success-emphasis)] text-white text-[10px] font-bold overflow-hidden"
             >
               {percentage >= 8 && (
                 <span>
@@ -252,7 +252,7 @@ export function RolloutSlider() {
               )}
             </motion.div>
           )}
-          <div className="h-full flex items-center justify-center text-[10px] text-[var(--fgColor-subtle)] flex-1">
+          <div className="h-full flex items-center justify-center text-[10px] text-[var(--signal-fg-tertiary)] flex-1">
             {percentage < 92 && (
               <span>{usersNotReceiving.toLocaleString()} excluded</span>
             )}
@@ -267,28 +267,28 @@ export function RolloutSlider() {
           animate={{ opacity: 1, y: 0 }}
           className={`rounded-lg p-3 mb-4 flex items-start gap-2 ${
             percentage === 100
-              ? "bg-[var(--bgColor-success-muted)] border border-[var(--borderColor-success-muted)]"
+              ? "bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]"
               : percentage === 0
-                ? "bg-[var(--bgColor-muted)] border border-[var(--borderColor-default)]"
-                : "bg-[var(--bgColor-attention-muted)] border border-[var(--borderColor-attention-muted)]"
+                ? "bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)]"
+                : "bg-[var(--signal-bg-warning-muted)] border border-[var(--signal-border-warning-muted)]"
           }`}
         >
           {percentage === 100 ? (
-            <ShieldCheckIcon size={16} fill="var(--fgColor-success)" />
+            <ShieldCheckIcon size={16} fill="var(--signal-fg-success)" />
           ) : percentage === 0 ? (
-            <ZapIcon size={16} fill="var(--fgColor-subtle)" />
+            <ZapIcon size={16} fill="var(--signal-fg-tertiary)" />
           ) : (
-            <RocketIcon size={16} fill="var(--fgColor-attention)" />
+            <RocketIcon size={16} fill="var(--signal-fg-warning)" />
           )}
           <div>
-            <div className="text-xs font-semibold text-[var(--fgColor-default)]">
+            <div className="text-xs font-semibold text-[var(--signal-fg-primary)]">
               {percentage === 100
                 ? "Fully rolled out — 100% of users"
                 : percentage === 0
                   ? "Flag created but not yet rolled out"
                   : `Rolling out to ${currentStage.label} — ${percentage}% of users`}
             </div>
-            <div className="text-[10px] text-[var(--fgColor-muted)] mt-0.5">
+            <div className="text-[10px] text-[var(--signal-fg-secondary)] mt-0.5">
               {percentage === 100
                 ? "All users are receiving this flag. Safe to remove targeting."
                 : percentage === 0
@@ -304,7 +304,7 @@ export function RolloutSlider() {
         {percentage === 0 && !isRollingOut && (
           <button
             onClick={handleStartRollout}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] transition-colors duration-150"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
             <RocketIcon size={16} />
@@ -313,7 +313,7 @@ export function RolloutSlider() {
         )}
         <a
           href="/cleanup"
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--fgColor-accent)] hover:bg-[#0757ba] transition-colors duration-150"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150"
         >
           Clean up when done
           <ChevronRightIcon size={16} />

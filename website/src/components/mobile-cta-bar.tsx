@@ -36,18 +36,18 @@ export function MobileCtaBar() {
           className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
-          <div className="mx-3 mb-3 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-floating-large)] p-3 flex items-center justify-between gap-3">
+          <div className="mx-3 mb-3 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-[var(--shadow-floating-large)] p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--fgColor-default)] truncate">
+              <p className="text-sm font-semibold text-[var(--signal-fg-primary)] truncate">
                 Start building for free
               </p>
-              <p className="text-xs text-[var(--fgColor-muted)] truncate">
+              <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
                 No credit card &middot; 14-day Pro trial
               </p>
             </div>
             <a
               href={REGISTER_URL}
-              className="inline-flex items-center gap-1.5 shrink-0 rounded-md px-4 h-9 text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:opacity-90 active:opacity-80 transition-opacity"
+              className="inline-flex items-center gap-1.5 shrink-0 rounded-md px-4 h-9 text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:opacity-90 active:opacity-80 transition-opacity"
             >
               Start Free
               <ArrowRightIcon size={14} />

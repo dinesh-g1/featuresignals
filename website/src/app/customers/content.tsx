@@ -142,7 +142,7 @@ const stories: Story[] = [
 function StoryCard({ story, index }: { story: Story; index: number }) {
   return (
     <motion.div
-      className="relative rounded-xl border border-[var(--borderColor-default)] bg-white p-6 flex flex-col premium-card"
+      className="relative rounded-xl border border-[var(--signal-border-default)] bg-white p-6 flex flex-col premium-card"
       {...fadeUpDelayed(index * 0.08)}
     >
       {/* Accent left border */}
@@ -153,29 +153,29 @@ function StoryCard({ story, index }: { story: Story; index: number }) {
 
       <div className="pl-3 flex flex-col h-full">
         {/* Industry tag */}
-        <span className="text-xs font-medium text-[var(--fgColor-muted)] mb-2">
+        <span className="text-xs font-medium text-[var(--signal-fg-secondary)] mb-2">
           {story.industry}
         </span>
 
         {/* Company name */}
-        <h3 className="text-lg font-bold text-[var(--fgColor-default)] mb-3">
+        <h3 className="text-lg font-bold text-[var(--signal-fg-primary)] mb-3">
           {story.company}
         </h3>
 
         {/* Headline */}
-        <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed mb-4 flex-1">
+        <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed mb-4 flex-1">
           {story.headline}
         </p>
 
         {/* Quote excerpt */}
-        <blockquote className="text-sm text-[var(--fgColor-muted)] italic border-l-2 border-[var(--borderColor-muted)] pl-3 mb-4 line-clamp-3">
+        <blockquote className="text-sm text-[var(--signal-fg-secondary)] italic border-l-2 border-[var(--signal-border-subtle)] pl-3 mb-4 line-clamp-3">
           &ldquo;{story.quote}&rdquo;
         </blockquote>
 
         {/* Read story link */}
         <a
           href={story.href}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-accent)] hover:underline mt-auto"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline mt-auto"
         >
           Read story
           <ArrowRightIcon size={14} />
@@ -193,17 +193,17 @@ function HeroSection() {
   return (
     <section
       id="customers-hero"
-      className="py-16 sm:py-24 bg-[var(--bgColor-default)]"
+      className="py-16 sm:py-24 bg-[var(--signal-bg-primary)]"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.h1
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--fgColor-default)]"
+          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--signal-fg-primary)]"
           {...fadeUp}
         >
           Trusted by engineering teams worldwide
         </motion.h1>
         <motion.p
-          className="text-lg sm:text-xl text-[var(--fgColor-muted)] mt-4 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl text-[var(--signal-fg-secondary)] mt-4 max-w-2xl mx-auto"
           {...fadeUpDelayed(0.1)}
         >
           See how teams use FeatureSignals to ship faster, reduce technical
@@ -219,12 +219,12 @@ function HeroSection() {
             <div key={metric.label} className="text-center">
               <metric.icon
                 size={20}
-                className="mx-auto mb-2 text-[var(--fgColor-muted)]"
+                className="mx-auto mb-2 text-[var(--signal-fg-secondary)]"
               />
-              <div className="text-2xl font-bold text-[var(--fgColor-default)]">
+              <div className="text-2xl font-bold text-[var(--signal-fg-primary)]">
                 {metric.value}
               </div>
-              <div className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+              <div className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                 {metric.label}
               </div>
             </div>
@@ -243,25 +243,25 @@ function FeaturedStorySection() {
   return (
     <section
       id="featured-story"
-      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="featured-heading"
     >
       <div className="mx-auto max-w-4xl px-6">
         <motion.div className="text-center mb-10" {...fadeUp}>
-          <p className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-2">
             Featured Story
           </p>
           <h2
             id="featured-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             {featuredStory.headline}
           </h2>
         </motion.div>
 
         <motion.div
-          className="bg-white rounded-2xl border border-[var(--borderColor-default)] p-6 sm:p-10"
-          style={{ boxShadow: "var(--shadow-floating-medium)" }}
+          className="bg-white rounded-2xl border border-[var(--signal-border-default)] p-6 sm:p-10"
+          style={{ boxShadow: "var(--signal-shadow-lg)" }}
           {...fadeUpDelayed(0.15)}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -269,47 +269,47 @@ function FeaturedStorySection() {
             <div className="space-y-6">
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]">
                     <ClockIcon size={12} />
                     Challenge
                   </span>
                 </div>
-                <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+                <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                   {featuredStory.challenge}
                 </p>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)]">
                     <RocketIcon size={12} />
                     Solution
                   </span>
                 </div>
-                <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+                <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                   {featuredStory.solution}
                 </p>
               </div>
 
               <div>
-                <span className="text-xs font-medium text-[var(--fgColor-muted)]">
+                <span className="text-xs font-medium text-[var(--signal-fg-secondary)]">
                   {featuredStory.industry}
                 </span>
               </div>
             </div>
 
             {/* Results */}
-            <div className="bg-[var(--bgColor-inset)] rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-4">
+            <div className="bg-[var(--signal-bg-secondary)] rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-4">
                 Results
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {featuredStory.results.map((r) => (
                   <div key={r.label}>
-                    <div className="text-2xl font-bold text-[var(--fgColor-accent)]">
+                    <div className="text-2xl font-bold text-[var(--signal-fg-accent)]">
                       {r.value}
                     </div>
-                    <div className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                    <div className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                       {r.label}
                     </div>
                   </div>
@@ -317,7 +317,7 @@ function FeaturedStorySection() {
               </div>
 
               {/* Company badge */}
-              <div className="mt-6 pt-6 border-t border-[var(--borderColor-default)]">
+              <div className="mt-6 pt-6 border-t border-[var(--signal-border-default)]">
                 <div className="flex items-center gap-2">
                   <div
                     className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
@@ -326,10 +326,10 @@ function FeaturedStorySection() {
                     N
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+                    <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                       {featuredStory.company}
                     </p>
-                    <p className="text-xs text-[var(--fgColor-muted)]">
+                    <p className="text-xs text-[var(--signal-fg-secondary)]">
                       {featuredStory.industry}
                     </p>
                   </div>
@@ -351,18 +351,18 @@ function StoryGridSection() {
   return (
     <section
       id="customer-stories"
-      className="py-16 sm:py-20 bg-[var(--bgColor-default)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-primary)]"
       aria-labelledby="stories-heading"
     >
       <div className="mx-auto max-w-6xl px-6">
         <motion.div className="text-center mb-12" {...fadeUp}>
           <h2
             id="stories-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             More customer stories
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             From startups to enterprises — teams shipping with FeatureSignals.
           </p>
         </motion.div>
@@ -375,22 +375,22 @@ function StoryGridSection() {
 
         {/* CTA */}
         <motion.div className="mt-16 text-center" {...fadeUpDelayed(0.5)}>
-          <div className="inline-flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--bgColor-inset)] border border-[var(--borderColor-default)]">
-            <HeartIcon size={24} className="text-[var(--fgColor-accent)]" />
-            <p className="text-[var(--fgColor-default)] font-semibold">
+          <div className="inline-flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)]">
+            <HeartIcon size={24} className="text-[var(--signal-fg-accent)]" />
+            <p className="text-[var(--signal-fg-primary)] font-semibold">
               Ready to become our next customer story?
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <a
                 href="https://app.featuresignals.com/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors"
               >
                 Start Free Trial
                 <ArrowRightIcon size={14} />
               </a>
               <a
                 href="/contact?reason=sales"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--fgColor-default)] bg-[var(--bgColor-muted)] hover:bg-[#eff2f5] border border-[var(--borderColor-default)] transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)] transition-colors"
               >
                 Talk to Sales
               </a>
@@ -450,7 +450,7 @@ function FinalCtaSection() {
         >
           <a
             href="https://app.featuresignals.com/register"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors"
           >
             Start Free
             <ArrowRightIcon size={16} />

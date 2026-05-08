@@ -12,17 +12,17 @@ export default function AiJanitorPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]">
           New
         </span>
       </div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         AI Janitor
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         The AI Janitor is FeatureSignals&apos; intelligent stale flag detection and cleanup engine.
         It automatically identifies feature flags that are no longer needed, scans your source code
         for references, and generates pull requests to remove them — keeping your codebase clean and
@@ -60,14 +60,14 @@ export default function AiJanitorPage() {
         ].map((item) => (
           <div
             key={item.step}
-            className="flex gap-3 p-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+            className="flex gap-3 p-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]"
           >
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] text-sm font-bold shrink-0">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] text-sm font-bold shrink-0">
               {item.step}
             </span>
             <div>
-              <h3 className="font-semibold text-[var(--fgColor-default)] mb-1">{item.title}</h3>
-              <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+              <h3 className="font-semibold text-[var(--signal-fg-primary)] mb-1">{item.title}</h3>
+              <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                 {item.description}
               </p>
             </div>
@@ -77,7 +77,7 @@ export default function AiJanitorPage() {
 
       {/* Supported Git Providers */}
       <SectionHeading>Supported Git Providers</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>GitHub (cloud and GitHub Enterprise Server)</li>
         <li>GitLab (cloud and self-hosted)</li>
         <li>Bitbucket (cloud and Bitbucket Data Center)</li>
@@ -86,8 +86,8 @@ export default function AiJanitorPage() {
 
       {/* Getting Started */}
       <SectionHeading>Getting Started</SectionHeading>
-      <div className="p-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] mb-6">
-        <ol className="list-decimal pl-5 space-y-2 text-[var(--fgColor-default)]">
+      <div className="p-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] mb-6">
+        <ol className="list-decimal pl-5 space-y-2 text-[var(--signal-fg-primary)]">
           <li>
             Navigate to <strong>AI Janitor</strong> in the sidebar
           </li>
@@ -103,14 +103,14 @@ export default function AiJanitorPage() {
       </div>
 
       {/* Human-in-the-loop */}
-      <div className="p-4 mb-8 rounded-lg border border-[var(--borderColor-attention-muted)] bg-[var(--bgColor-attention-muted)]">
+      <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-warning-muted)] bg-[var(--signal-bg-warning-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--fgColor-attention)] mt-0.5 shrink-0" />
+          <LightBulbIcon size={18} className="text-[var(--signal-fg-warning)] mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-[var(--fgColor-default)] mb-1">
+            <p className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1">
               Human-in-the-loop design
             </p>
-            <p className="text-sm text-[var(--fgColor-muted)]">
+            <p className="text-sm text-[var(--signal-fg-secondary)]">
               AI suggests, human approves. The AI Janitor never makes autonomous production changes.
               Every PR requires your team&apos;s review and approval before merging.
             </p>
@@ -130,7 +130,7 @@ export default function AiJanitorPage() {
           <Link
             key={step.href}
             href={step.href}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)] transition-colors font-medium"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
             <ArrowRightIcon size={14} />
             <span>{step.label}</span>
@@ -147,7 +147,7 @@ export default function AiJanitorPage() {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );

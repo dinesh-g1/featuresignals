@@ -12,15 +12,15 @@ export const metadata: Metadata = {
 export default function FeatureFlagCheckoutPage() {
   return (
     <div>
-      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3">
+      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3">
         Feature Flag a Checkout Flow
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         Learn how to wrap a new checkout experience behind a feature flag and roll it out safely.
       </p>
 
       <SectionHeading>Prerequisites</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>FeatureSignals server running (locally or hosted)</li>
         <li>An API key for your environment</li>
         <li>Node.js SDK installed (<InlineCode>npm install @featuresignals/node</InlineCode>)</li>
@@ -65,15 +65,15 @@ await client.initialize();`}
       />
 
       <SectionHeading>Step 4: Enable in Staging First</SectionHeading>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Go to the <strong>Environments</strong> tab for the <InlineCode>new-checkout</InlineCode> flag</li>
         <li>Select your <strong>Staging</strong> environment, toggle <strong>Enabled</strong> to <InlineCode>true</InlineCode></li>
         <li>Run your test suite against staging to verify</li>
       </ol>
 
       <SectionHeading>Step 5: Roll Out to Production</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">Start with a canary release:</p>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">Start with a canary release:</p>
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-4">
         <li>Select <strong>Production</strong> environment</li>
         <li>Set percentage to <strong>10%</strong> for a canary release</li>
         <li>Monitor error rates and conversion metrics</li>
@@ -96,7 +96,7 @@ app.post('/checkout', async (req, res) => {
           { label: "Approval Workflows", href: "/docs/advanced/approval-workflows" },
         ].map((step) => (
           <li key={step.href}>
-            <Link href={step.href} className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium">
+            <Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium">
               <ArrowRightIcon size={14} />
               <span>{step.label}</span>
             </Link>
@@ -109,37 +109,37 @@ app.post('/checkout', async (req, res) => {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
 }
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
 }
 function SimpleTable({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
 }
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
 }
 function Tr({ children }: { children: React.ReactNode }) {
   return (
-    <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">{children}</tr>
+    <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">{children}</tr>
   );
 }
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>;
+  return <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>;
 }

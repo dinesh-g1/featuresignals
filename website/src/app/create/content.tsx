@@ -29,14 +29,14 @@ export function CreatePageContent() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)] mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)] mb-6">
                 <RocketIcon size={12} />
                 Step 1 of 6
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--fgColor-default)] leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
                 Every flag has a lifecycle. Start here.
               </h1>
-              <p className="text-lg text-[var(--fgColor-muted)] mt-4 leading-relaxed">
+              <p className="text-lg text-[var(--signal-fg-secondary)] mt-4 leading-relaxed">
                 Feature flags begin as a single configuration. A name, a type, a
                 default value. That&apos;s it. What makes them powerful is
                 everything that comes after — targeting, rollouts, monitoring,
@@ -45,17 +45,17 @@ export function CreatePageContent() {
               </p>
 
               <div className="mt-6 space-y-3">
-                <div className="text-sm font-semibold text-[var(--fgColor-default)] flex items-center gap-2">
-                  <WorkflowIcon size={14} fill="var(--fgColor-accent)" />
+                <div className="text-sm font-semibold text-[var(--signal-fg-primary)] flex items-center gap-2">
+                  <WorkflowIcon size={14} fill="var(--signal-fg-accent)" />
                   The full lifecycle:
                 </div>
                 <ol className="space-y-2">
                   {lifecycleSteps.map((step, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-3 text-sm text-[var(--fgColor-muted)]"
+                      className="flex items-start gap-3 text-sm text-[var(--signal-fg-secondary)]"
                     >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--bgColor-inset)] border border-[var(--borderColor-default)] text-[10px] font-bold text-[var(--fgColor-subtle)] mt-0.5">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)] text-[10px] font-bold text-[var(--signal-fg-tertiary)] mt-0.5">
                         {i + 1}
                       </span>
                       {step}
@@ -69,7 +69,7 @@ export function CreatePageContent() {
                   href="https://docs.featuresignals.com/concepts/flags"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about flag configuration
                   <ArrowRightIcon size={14} />
@@ -94,9 +94,9 @@ export function CreatePageContent() {
       </section>
 
       {/* Bottom nav — lifecycle progress */}
-      <section className="py-10 border-t border-[var(--borderColor-muted)] bg-[var(--bgColor-inset)]">
+      <section className="py-10 border-t border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-4 text-center">
+          <div className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider mb-4 text-center">
             The Feature Flag Lifecycle
           </div>
           <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
@@ -122,8 +122,8 @@ export function CreatePageContent() {
                   href={step.href}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
                     step.active
-                      ? "bg-[var(--bgColor-accent-emphasis)] text-white"
-                      : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:bg-white border border-[var(--borderColor-default)]"
+                      ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+                      : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-white border border-[var(--signal-border-default)]"
                   }`}
                 >
                   <span aria-hidden="true">{step.icon}</span>
@@ -132,7 +132,7 @@ export function CreatePageContent() {
                 {i < 4 && (
                   <ArrowRightIcon
                     size={12}
-                    className="text-[var(--fgColor-subtle)] hidden sm:block"
+                    className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />
                 )}
               </div>

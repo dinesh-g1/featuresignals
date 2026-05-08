@@ -152,7 +152,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-gradient-mesh-dark border-t border-[var(--borderColor-default)]">
+    <footer className="relative bg-gradient-mesh-dark border-t border-[var(--signal-border-default)]">
       <div
         className="absolute inset-0 bg-dots-dark pointer-events-none"
         aria-hidden="true"

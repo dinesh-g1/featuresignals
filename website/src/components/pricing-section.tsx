@@ -19,7 +19,7 @@ import { useRegionalPricing } from "@/lib/use-regional-pricing";
 
 function CheckListItem({ text }: { text: string }) {
   return (
-    <li className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]">
+    <li className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]">
       <CheckIcon size={16} className="mt-0.5 shrink-0 text-emerald-500" />
       <span>{text}</span>
     </li>
@@ -39,7 +39,7 @@ export function PricingSection() {
   return (
     <section
       id="pricing"
-      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="pricing-heading"
     >
       <div className="mx-auto max-w-6xl px-6">
@@ -53,11 +53,11 @@ export function PricingSection() {
         >
           <h2
             id="pricing-heading"
-            className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Transparent pricing. No surprises. No lock-in.
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 max-w-2xl mx-auto">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 max-w-2xl mx-auto">
             Two ways to run FeatureSignals. Same platform. Same features. Pick
             what works.
           </p>
@@ -170,9 +170,9 @@ export function PricingSection() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.45, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--bgColor-success-muted)] border border-[var(--borderColor-success-muted)]">
+          <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
             <HeartIcon size={16} className="text-emerald-500" />
-            <p className="text-sm text-[var(--fgColor-default)]">
+            <p className="text-sm text-[var(--signal-fg-primary)]">
               <span className="font-semibold text-emerald-600">
                 No lock-in. Ever.
               </span>{" "}
@@ -180,7 +180,7 @@ export function PricingSection() {
               OpenFeature — swap providers without changing code.
             </p>
           </div>
-          <p className="text-sm text-[var(--fgColor-muted)] mt-4">
+          <p className="text-sm text-[var(--signal-fg-secondary)] mt-4">
             Compare: {savingsResult.competitor.name} at{" "}
             <span className="font-semibold">
               {formatUSD(savingsResult.competitor.monthly)}/month
@@ -202,7 +202,7 @@ export function PricingSection() {
           </p>
 
           {/* AI Janitor credit packs info */}
-          <p className="text-xs text-[var(--fgColor-muted)] mt-4">
+          <p className="text-xs text-[var(--signal-fg-secondary)] mt-4">
             💡 AI Janitor credit packs available on all plans: Starter (50
             credits) INR 249 · Team (250) INR 899 · Scale (1,500) INR 3,999
           </p>
@@ -245,18 +245,18 @@ function PricingCard({
       transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
       className={`relative flex flex-col rounded-xl p-6 ${
         isFeatured
-          ? "border-2 border-[var(--borderColor-accent-emphasis)] bg-white md:-mt-3 md:mb-3"
-          : "border border-[var(--borderColor-default)] bg-white"
+          ? "border-2 border-[var(--signal-border-accent-emphasis)] bg-white md:-mt-3 md:mb-3"
+          : "border border-[var(--signal-border-default)] bg-white"
       }`}
       style={{
         boxShadow: isFeatured
-          ? "var(--shadow-floating-medium)"
-          : "var(--shadow-resting-small)",
+          ? "var(--signal-shadow-lg)"
+          : "var(--signal-shadow-sm)",
       }}
     >
       {isFeatured && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--bgColor-accent-emphasis)] text-white shadow-sm">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-accent-emphasis)] text-white shadow-sm">
             <CloudIcon size={12} />
             Most Popular
           </span>
@@ -264,28 +264,28 @@ function PricingCard({
       )}
       {badge && !isFeatured && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--bgColor-done-muted)] text-[var(--fgColor-done)] shadow-sm">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)] shadow-sm">
             {badge}
           </span>
         </div>
       )}
 
       <div className={`mt-1 mb-4 ${isFeatured ? "text-center" : ""}`}>
-        <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+        <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
           {title}
         </h3>
-        <p className="text-sm text-[var(--fgColor-muted)] mt-1">
+        <p className="text-sm text-[var(--signal-fg-secondary)] mt-1">
           {description}
         </p>
       </div>
 
       <div className="mb-4">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-[var(--fgColor-default)]">
+          <span className="text-3xl font-bold text-[var(--signal-fg-primary)]">
             {price}
           </span>
           {period && (
-            <span className="text-sm text-[var(--fgColor-muted)]">
+            <span className="text-sm text-[var(--signal-fg-secondary)]">
               /{period}
             </span>
           )}
@@ -308,8 +308,8 @@ function PricingCard({
           href={cta.href}
           className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-colors w-full text-center ${
             isFeatured
-              ? "text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139]"
-              : "text-[var(--fgColor-default)] bg-[var(--bgColor-muted)] hover:bg-[#eff2f5] border border-[var(--borderColor-default)]"
+              ? "text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139]"
+              : "text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)]"
           }`}
         >
           {cta.label}
@@ -320,8 +320,8 @@ function PricingCard({
           href={cta.href}
           className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-colors w-full text-center ${
             isFeatured
-              ? "text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139]"
-              : "text-[var(--fgColor-default)] bg-[var(--bgColor-muted)] hover:bg-[#eff2f5] border border-[var(--borderColor-default)]"
+              ? "text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139]"
+              : "text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)]"
           }`}
         >
           {cta.label}

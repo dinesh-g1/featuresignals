@@ -14,17 +14,17 @@ export default function ABTestingReactPage() {
     <div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         A/B Testing with the React SDK
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         Learn how to set up an A/B test using FeatureSignals and the React SDK
         to measure which variant performs better.
       </p>
 
       <SectionHeading>Prerequisites</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>FeatureSignals server running</li>
         <li>A React application (Create React App, Next.js, Vite, etc.)</li>
         <li>
@@ -107,7 +107,7 @@ function PricingCard({ plan }: { plan: Plan }) {
       />
 
       <SectionHeading>Tips for Reliable A/B Tests</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           <strong>Sample size:</strong> Run tests long enough to reach
           statistical significance (1,000+ conversions per variant)
@@ -142,7 +142,7 @@ function PricingCard({ plan }: { plan: Plan }) {
           <li key={step.href}>
             <Link
               href={step.href}
-              className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"
+              className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
             >
               <ArrowRightIcon size={14} />
               <span>{step.label}</span>
@@ -156,41 +156,41 @@ function PricingCard({ plan }: { plan: Plan }) {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
 }
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
 }
 function SimpleTable({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
 }
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
 }
 function Tr({ children }: { children: React.ReactNode }) {
   return (
-    <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">
+    <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">
       {children}
     </tr>
   );
 }
 function Td({ children }: { children: React.ReactNode }) {
   return (
-    <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>
+    <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>
   );
 }

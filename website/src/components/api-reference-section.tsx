@@ -73,19 +73,19 @@ function formatJson(raw: string): string {
 function statusColorClass(status: number): { bg: string; fg: string } {
   if (status >= 200 && status < 300) {
     return {
-      bg: "var(--bgColor-success-muted)",
-      fg: "var(--fgColor-success)",
+      bg: "var(--signal-bg-success-muted)",
+      fg: "var(--signal-fg-success)",
     };
   }
   if (status >= 400) {
     return {
-      bg: "var(--bgColor-danger-muted)",
-      fg: "var(--fgColor-danger)",
+      bg: "var(--signal-bg-danger-muted)",
+      fg: "var(--signal-fg-danger)",
     };
   }
   return {
-    bg: "var(--bgColor-attention-muted)",
-    fg: "var(--fgColor-attention)",
+    bg: "var(--signal-bg-warning-muted)",
+    fg: "var(--signal-fg-warning)",
   };
 }
 
@@ -95,32 +95,32 @@ function statusColorClass(status: number): { bg: string; fg: string } {
 
 const METHOD_STYLES: Record<string, { bg: string; fg: string }> = {
   GET: {
-    bg: "var(--bgColor-success-muted)",
-    fg: "var(--fgColor-success)",
+    bg: "var(--signal-bg-success-muted)",
+    fg: "var(--signal-fg-success)",
   },
   POST: {
-    bg: "var(--bgColor-accent-muted)",
-    fg: "var(--fgColor-accent)",
+    bg: "var(--signal-bg-accent-muted)",
+    fg: "var(--signal-fg-accent)",
   },
   PUT: {
-    bg: "var(--bgColor-attention-muted)",
-    fg: "var(--fgColor-attention)",
+    bg: "var(--signal-bg-warning-muted)",
+    fg: "var(--signal-fg-warning)",
   },
   DELETE: {
-    bg: "var(--bgColor-danger-muted)",
-    fg: "var(--fgColor-danger)",
+    bg: "var(--signal-bg-danger-muted)",
+    fg: "var(--signal-fg-danger)",
   },
   PATCH: {
-    bg: "var(--bgColor-done-muted)",
-    fg: "var(--fgColor-done)",
+    bg: "var(--signal-bg-info-muted)",
+    fg: "var(--signal-fg-info)",
   },
 };
 
 function getMethodStyle(method: string): { bg: string; fg: string } {
   return (
     METHOD_STYLES[method] ?? {
-      bg: "var(--bgColor-inset)",
-      fg: "var(--fgColor-default)",
+      bg: "var(--signal-bg-secondary)",
+      fg: "var(--signal-fg-primary)",
     }
   );
 }
@@ -151,9 +151,9 @@ function AuthBadge({ auth }: { auth: string }) {
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
       style={{
-        backgroundColor: "var(--bgColor-inset)",
-        color: "var(--fgColor-muted)",
-        border: "1px solid var(--borderColor-default)",
+        backgroundColor: "var(--signal-bg-secondary)",
+        color: "var(--signal-fg-secondary)",
+        border: "1px solid var(--signal-border-default)",
       }}
     >
       <Icon size={12} />
@@ -167,9 +167,9 @@ function HasBodyIndicator() {
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
       style={{
-        backgroundColor: "var(--bgColor-attention-muted)",
-        color: "var(--fgColor-attention)",
-        border: "1px solid var(--borderColor-attention-muted)",
+        backgroundColor: "var(--signal-bg-warning-muted)",
+        color: "var(--signal-fg-warning)",
+        border: "1px solid var(--signal-border-warning-muted)",
       }}
     >
       Request Body
@@ -179,7 +179,7 @@ function HasBodyIndicator() {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -196,20 +196,20 @@ function ParamTable({
 
   return (
     <div className="mt-3">
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--fgColor-muted)] mb-2">
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--signal-fg-secondary)] mb-2">
         {label}
       </h4>
-      <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-md">
+      <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-md">
         <table className="w-full text-xs text-left">
           <thead>
-            <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-inset)]">
-              <th className="px-3 py-2 font-semibold text-[var(--fgColor-default)]">
+            <tr className="border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+              <th className="px-3 py-2 font-semibold text-[var(--signal-fg-primary)]">
                 Name
               </th>
-              <th className="px-3 py-2 font-semibold text-[var(--fgColor-default)]">
+              <th className="px-3 py-2 font-semibold text-[var(--signal-fg-primary)]">
                 Required
               </th>
-              <th className="px-3 py-2 font-semibold text-[var(--fgColor-default)]">
+              <th className="px-3 py-2 font-semibold text-[var(--signal-fg-primary)]">
                 Description
               </th>
             </tr>
@@ -218,7 +218,7 @@ function ParamTable({
             {params.map((p) => (
               <tr
                 key={p.name}
-                className="border-b border-[var(--borderColor-default)] last:border-b-0"
+                className="border-b border-[var(--signal-border-default)] last:border-b-0"
               >
                 <td className="px-3 py-2">
                   <InlineCode>{p.name}</InlineCode>
@@ -228,19 +228,19 @@ function ParamTable({
                     <span
                       className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold"
                       style={{
-                        backgroundColor: "var(--bgColor-danger-muted)",
-                        color: "var(--fgColor-danger)",
+                        backgroundColor: "var(--signal-bg-danger-muted)",
+                        color: "var(--signal-fg-danger)",
                       }}
                     >
                       Required
                     </span>
                   ) : (
-                    <span className="text-[var(--fgColor-muted)]">
+                    <span className="text-[var(--signal-fg-secondary)]">
                       Optional
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-[var(--fgColor-muted)]">
+                <td className="px-3 py-2 text-[var(--signal-fg-secondary)]">
                   {p.description}
                 </td>
               </tr>
@@ -257,14 +257,14 @@ function EndpointPath({ path }: { path: string }) {
   const segments = path.split(/(\{[^}]+\})/g);
 
   return (
-    <code className="text-sm font-mono text-[var(--fgColor-default)] break-all">
+    <code className="text-sm font-mono text-[var(--signal-fg-primary)] break-all">
       {segments.map((seg, i) => {
         if (seg.startsWith("{") && seg.endsWith("}")) {
           return (
             <span
               key={i}
-              className="px-0.5 rounded text-[var(--fgColor-accent)]"
-              style={{ backgroundColor: "var(--bgColor-accent-muted)" }}
+              className="px-0.5 rounded text-[var(--signal-fg-accent)]"
+              style={{ backgroundColor: "var(--signal-bg-accent-muted)" }}
             >
               {seg}
             </span>
@@ -317,18 +317,18 @@ function InlineTryIt({
     <div
       className="mt-4 rounded-md overflow-hidden"
       style={{
-        border: "1px solid var(--borderColor-default)",
+        border: "1px solid var(--signal-border-default)",
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between px-3 py-2"
         style={{
-          backgroundColor: "var(--bgColor-inset)",
-          borderBottom: "1px solid var(--borderColor-default)",
+          backgroundColor: "var(--signal-bg-secondary)",
+          borderBottom: "1px solid var(--signal-border-default)",
         }}
       >
-        <span className="text-xs font-semibold text-[var(--fgColor-default)] flex items-center gap-1.5">
+        <span className="text-xs font-semibold text-[var(--signal-fg-primary)] flex items-center gap-1.5">
           <PlayIcon size={12} />
           Try it
         </span>
@@ -337,9 +337,9 @@ function InlineTryIt({
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors hover:bg-[var(--bgColor-default)]"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors hover:bg-[var(--signal-bg-primary)]"
             style={{
-              color: "var(--fgColor-muted)",
+              color: "var(--signal-fg-secondary)",
             }}
             title="Copy curl command"
           >
@@ -358,8 +358,8 @@ function InlineTryIt({
             disabled={state.loading}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              backgroundColor: "var(--bgColor-accent-emphasis)",
-              color: "var(--fgColor-onEmphasis)",
+              backgroundColor: "var(--signal-bg-accent-emphasis)",
+              color: "var(--signal-fg-on-emphasis)",
             }}
           >
             {state.loading ? (
@@ -383,10 +383,10 @@ function InlineTryIt({
       {/* Curl command block */}
       <div className="relative">
         <pre
-          className="px-4 py-3 text-xs font-mono text-[var(--fgColor-default)] overflow-x-auto m-0 whitespace-pre-wrap break-all"
+          className="px-4 py-3 text-xs font-mono text-[var(--signal-fg-primary)] overflow-x-auto m-0 whitespace-pre-wrap break-all"
           style={{
             backgroundColor:
-              "var(--bgColor-canvas-inset, var(--bgColor-inset))",
+              "var(--bgColor-canvas-inset, var(--signal-bg-secondary))",
           }}
         >
           <code>{curlCommand}</code>
@@ -397,14 +397,14 @@ function InlineTryIt({
       {(state.loading || state.response || state.error) && (
         <div
           style={{
-            borderTop: "1px solid var(--borderColor-default)",
+            borderTop: "1px solid var(--signal-border-default)",
           }}
         >
           {/* Loading state */}
           {state.loading && (
             <div
               className="px-4 py-6 flex items-center justify-center gap-2"
-              style={{ color: "var(--fgColor-muted)" }}
+              style={{ color: "var(--signal-fg-secondary)" }}
             >
               <span
                 className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
@@ -419,20 +419,20 @@ function InlineTryIt({
             <div
               className="px-4 py-4"
               style={{
-                backgroundColor: "var(--bgColor-danger-muted)",
+                backgroundColor: "var(--signal-bg-danger-muted)",
                 borderBottom: "1px solid var(--borderColor-danger-muted)",
               }}
             >
               <div className="flex items-start gap-2">
                 <span
                   className="text-xs font-mono font-semibold shrink-0 mt-0.5"
-                  style={{ color: "var(--fgColor-danger)" }}
+                  style={{ color: "var(--signal-fg-danger)" }}
                 >
                   Error
                 </span>
                 <p
                   className="text-xs m-0 leading-relaxed"
-                  style={{ color: "var(--fgColor-danger)" }}
+                  style={{ color: "var(--signal-fg-danger)" }}
                 >
                   {state.error}
                 </p>
@@ -447,8 +447,8 @@ function InlineTryIt({
               <div
                 className="flex items-center gap-2 px-4 py-2"
                 style={{
-                  backgroundColor: "var(--bgColor-inset)",
-                  borderBottom: "1px solid var(--borderColor-default)",
+                  backgroundColor: "var(--signal-bg-secondary)",
+                  borderBottom: "1px solid var(--signal-border-default)",
                 }}
               >
                 <span
@@ -462,7 +462,7 @@ function InlineTryIt({
                 </span>
                 {/* Show content-type header if present */}
                 {state.response.headers["content-type"] && (
-                  <span className="text-[11px] text-[var(--fgColor-muted)] font-mono truncate">
+                  <span className="text-[11px] text-[var(--signal-fg-secondary)] font-mono truncate">
                     {state.response.headers["content-type"]}
                   </span>
                 )}
@@ -473,9 +473,9 @@ function InlineTryIt({
                 <pre
                   className="px-4 py-3 text-xs font-mono m-0 overflow-x-auto max-h-64"
                   style={{
-                    color: "var(--fgColor-default)",
+                    color: "var(--signal-fg-primary)",
                     backgroundColor:
-                      "var(--bgColor-canvas-inset, var(--bgColor-inset))",
+                      "var(--bgColor-canvas-inset, var(--signal-bg-secondary))",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
                   }}
@@ -487,8 +487,8 @@ function InlineTryIt({
                 <button
                   type="button"
                   onClick={onReset}
-                  className="absolute top-1 right-2 px-1.5 py-0.5 rounded text-[10px] transition-colors hover:bg-[var(--bgColor-default)]"
-                  style={{ color: "var(--fgColor-muted)" }}
+                  className="absolute top-1 right-2 px-1.5 py-0.5 rounded text-[10px] transition-colors hover:bg-[var(--signal-bg-primary)]"
+                  style={{ color: "var(--signal-fg-secondary)" }}
                   title="Clear response"
                 >
                   Clear
@@ -638,11 +638,11 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
       {/* Category header */}
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-2"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-2"
       >
         {category.name} API
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-5 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-5 leading-relaxed">
         {category.description}
       </p>
 
@@ -650,19 +650,19 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
       <div
         className="inline-flex items-center gap-3 px-4 py-2 rounded-lg text-sm mb-8 flex-wrap"
         style={{
-          backgroundColor: "var(--bgColor-inset)",
-          border: "1px solid var(--borderColor-default)",
+          backgroundColor: "var(--signal-bg-secondary)",
+          border: "1px solid var(--signal-border-default)",
         }}
       >
-        <span className="font-semibold text-[var(--fgColor-default)]">
+        <span className="font-semibold text-[var(--signal-fg-primary)]">
           {endpointCount} {endpointCount === 1 ? "endpoint" : "endpoints"}
         </span>
         <span
           className="inline-block w-px h-4 shrink-0"
-          style={{ backgroundColor: "var(--borderColor-default)" }}
+          style={{ backgroundColor: "var(--signal-border-default)" }}
           aria-hidden="true"
         />
-        <span className="text-[var(--fgColor-muted)] flex items-center gap-1.5">
+        <span className="text-[var(--signal-fg-secondary)] flex items-center gap-1.5">
           <LockIcon size={14} />
           {authTypes}
         </span>
@@ -673,11 +673,11 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
         <div
           className="rounded-lg p-8 text-center"
           style={{
-            backgroundColor: "var(--bgColor-inset)",
-            border: "1px solid var(--borderColor-default)",
+            backgroundColor: "var(--signal-bg-secondary)",
+            border: "1px solid var(--signal-border-default)",
           }}
         >
-          <p className="text-[var(--fgColor-muted)]">
+          <p className="text-[var(--signal-fg-secondary)]">
             No endpoints have been documented for this category yet.
           </p>
         </div>
@@ -701,8 +701,8 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                 key={`${primaryMethod}-${ep.path}`}
                 className="rounded-lg overflow-hidden"
                 style={{
-                  border: `1px solid ${isExpanded ? "var(--borderColor-emphasis)" : "var(--borderColor-default)"}`,
-                  backgroundColor: "var(--bgColor-default)",
+                  border: `1px solid ${isExpanded ? "var(--signal-border-emphasis)" : "var(--signal-border-default)"}`,
+                  backgroundColor: "var(--signal-bg-primary)",
                   transition: "border-color 0.15s ease",
                 }}
               >
@@ -710,10 +710,10 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                 <button
                   type="button"
                   onClick={() => toggle(idx)}
-                  className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[var(--bgColor-inset)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--borderColor-accent-emphasis)] focus-visible:outline-offset-[-2px] cursor-pointer"
+                  className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[var(--signal-bg-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--signal-border-accent-emphasis)] focus-visible:outline-offset-[-2px] cursor-pointer"
                 >
                   {/* Expand chevron */}
-                  <span className="shrink-0 text-[var(--fgColor-muted)]">
+                  <span className="shrink-0 text-[var(--signal-fg-secondary)]">
                     {isExpanded ? (
                       <ChevronDownIcon size={14} />
                     ) : (
@@ -729,7 +729,7 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
 
                   {/* Alternate methods (e.g. HEAD/OPTIONS) */}
                   {altMethods.length > 0 && (
-                    <span className="text-xs text-[var(--fgColor-muted)] shrink-0">
+                    <span className="text-xs text-[var(--signal-fg-secondary)] shrink-0">
                       +{altMethods.join(", ")}
                     </span>
                   )}
@@ -738,7 +738,7 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                   <span className="flex-1" aria-hidden="true" />
 
                   {/* Summary on the right (hidden on narrow screens) */}
-                  <span className="hidden md:inline-block text-xs text-[var(--fgColor-muted)] truncate max-w-[200px]">
+                  <span className="hidden md:inline-block text-xs text-[var(--signal-fg-secondary)] truncate max-w-[200px]">
                     {ep.summary}
                   </span>
 
@@ -751,12 +751,12 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                   <div
                     className="px-4 pb-4 pt-1 space-y-3"
                     style={{
-                      borderTop: "1px solid var(--borderColor-default)",
+                      borderTop: "1px solid var(--signal-border-default)",
                     }}
                   >
                     {/* Description */}
                     <div>
-                      <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+                      <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                         {ep.description || ep.summary}
                       </p>
                     </div>
@@ -764,7 +764,7 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                     {/* Full method list if multiple */}
                     {ep.methods.length > 1 && (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-[var(--fgColor-muted)] shrink-0">
+                        <span className="text-xs text-[var(--signal-fg-secondary)] shrink-0">
                           Allowed methods:
                         </span>
                         {ep.methods.map((m) => (
@@ -775,13 +775,13 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
 
                     {/* Auth */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-[var(--fgColor-muted)] shrink-0">
+                      <span className="text-xs text-[var(--signal-fg-secondary)] shrink-0">
                         Auth:
                       </span>
                       {ep.auth && ep.auth !== "None" ? (
                         <AuthBadge auth={ep.auth} />
                       ) : (
-                        <span className="text-xs text-[var(--fgColor-muted)]">
+                        <span className="text-xs text-[var(--signal-fg-secondary)]">
                           None
                         </span>
                       )}
@@ -808,9 +808,9 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
                         style={{
-                          backgroundColor: "var(--bgColor-success-muted)",
-                          color: "var(--fgColor-success)",
-                          border: "1px solid var(--borderColor-success-muted)",
+                          backgroundColor: "var(--signal-bg-success-muted)",
+                          color: "var(--signal-fg-success)",
+                          border: "1px solid var(--signal-border-success-muted)",
                         }}
                       >
                         {ep.successStatus}
@@ -822,9 +822,9 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                           key={tag}
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
                           style={{
-                            backgroundColor: "var(--bgColor-inset)",
-                            color: "var(--fgColor-muted)",
-                            border: "1px solid var(--borderColor-default)",
+                            backgroundColor: "var(--signal-bg-secondary)",
+                            color: "var(--signal-fg-secondary)",
+                            border: "1px solid var(--signal-border-default)",
                           }}
                         >
                           {tag}

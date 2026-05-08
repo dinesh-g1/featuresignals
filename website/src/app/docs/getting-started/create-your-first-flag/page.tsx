@@ -12,27 +12,27 @@ export const metadata: Metadata = {
 export default function CreateFirstFlagPage() {
   return (
     <div>
-      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3">
+      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3">
         Create Your First Flag
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         This guide walks through creating a feature flag, enabling it per environment, adding targeting rules, and evaluating it from your application.
       </p>
 
       <SectionHeading>Step 1: Register and Set Up</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         After installing FeatureSignals, register at{" "}
-        <a href="https://app.featuresignals.com" className="text-[var(--fgColor-accent)] hover:underline">https://app.featuresignals.com</a>.
+        <a href="https://app.featuresignals.com" className="text-[var(--signal-fg-accent)] hover:underline">https://app.featuresignals.com</a>.
         Registration automatically creates:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Your user with <strong>owner</strong> role</li>
         <li>A default organization</li>
         <li>A <strong>Default Project</strong> with environments: <InlineCode>dev</InlineCode>, <InlineCode>staging</InlineCode>, <InlineCode>production</InlineCode></li>
       </ul>
 
       <SectionHeading>Step 2: Create a Flag</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">Navigate to <strong>Flags</strong> and click <strong>Create Flag</strong>.</p>
+      <p className="text-[var(--signal-fg-primary)] mb-4">Navigate to <strong>Flags</strong> and click <strong>Create Flag</strong>.</p>
       <SimpleTable>
         <thead>
           <tr>
@@ -48,13 +48,13 @@ export default function CreateFirstFlagPage() {
           <Tr><Td><InlineCode>default_value</InlineCode></Td><Td><InlineCode>false</InlineCode></Td><Td>Returned when the flag is disabled</Td></Tr>
         </tbody>
       </SimpleTable>
-      <p className="text-[var(--fgColor-muted)] text-sm mb-6">
+      <p className="text-[var(--signal-fg-secondary)] text-sm mb-6">
         The flag key is immutable after creation and is what your SDKs reference.
       </p>
 
       <SectionHeading>Step 3: Enable Per Environment</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">Flags are <strong>disabled by default</strong> in all environments. To enable:</p>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <p className="text-[var(--signal-fg-primary)] mb-4">Flags are <strong>disabled by default</strong> in all environments. To enable:</p>
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Open the flag detail page</li>
         <li>Select the <strong>dev</strong> environment tab</li>
         <li>Toggle <strong>Enabled</strong> to ON</li>
@@ -62,13 +62,13 @@ export default function CreateFirstFlagPage() {
       </ol>
 
       <SectionHeading>Step 4: Add Targeting Rules</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">Targeting rules let you return specific values based on user attributes:</p>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">Targeting rules let you return specific values based on user attributes:</p>
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-4">
         <li>In the flag&apos;s <strong>dev</strong> environment, click <strong>Add Rule</strong></li>
         <li>Configure: <strong>Condition</strong>: <InlineCode>country</InlineCode> <InlineCode>equals</InlineCode> <InlineCode>US</InlineCode>, <strong>Value</strong>: <InlineCode>true</InlineCode></li>
         <li>Save</li>
       </ol>
-      <p className="text-[var(--fgColor-default)] mb-6">Now only users with <InlineCode>country: &quot;US&quot;</InlineCode> in their evaluation context get <InlineCode>true</InlineCode>.</p>
+      <p className="text-[var(--signal-fg-primary)] mb-6">Now only users with <InlineCode>country: &quot;US&quot;</InlineCode> in their evaluation context get <InlineCode>true</InlineCode>.</p>
 
       <SectionHeading>Step 5: Evaluate from Code</SectionHeading>
       <CodeBlock
@@ -97,22 +97,22 @@ const ukUser = client.boolVariation('dark-mode', {
 // → false`}
       />
 
-      <div className="p-4 mb-8 rounded-lg border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]">
+      <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--fgColor-accent)] mt-0.5 shrink-0" />
-          <p className="text-sm text-[var(--fgColor-muted)]">
+          <LightBulbIcon size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
+          <p className="text-sm text-[var(--signal-fg-secondary)]">
             The <InlineCode>key</InlineCode> field is required and uniquely identifies the user. It&apos;s used for percentage rollouts and A/B variant assignment via consistent hashing.
           </p>
         </div>
       </div>
 
       <SectionHeading>Step 6: Gradual Rollout</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">Instead of enabling for all users, do a percentage rollout:</p>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <p className="text-[var(--signal-fg-primary)] mb-4">Instead of enabling for all users, do a percentage rollout:</p>
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>Set <strong>Percentage Rollout</strong> to <InlineCode>2500</InlineCode> (25%)</li>
         <li>Save</li>
       </ol>
-      <p className="text-[var(--fgColor-default)] mb-6">Now 25% of users (deterministically based on their key) see <InlineCode>true</InlineCode>.</p>
+      <p className="text-[var(--signal-fg-primary)] mb-6">Now 25% of users (deterministically based on their key) see <InlineCode>true</InlineCode>.</p>
 
       <SectionHeading>Understanding Evaluation Reasons</SectionHeading>
       <SimpleTable>
@@ -139,7 +139,7 @@ const ukUser = client.boolVariation('dark-mode', {
           { label: "Flag Lifecycle", href: "/docs/core-concepts/flag-lifecycle" },
         ].map((step) => (
           <li key={step.href}>
-            <Link href={step.href} className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium">
+            <Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium">
               <ArrowRightIcon size={14} />
               <span>{step.label}</span>
             </Link>
@@ -156,7 +156,7 @@ const ukUser = client.boolVariation('dark-mode', {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
@@ -164,7 +164,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -172,7 +172,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 
 function SimpleTable({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
@@ -180,16 +180,16 @@ function SimpleTable({ children }: { children: React.ReactNode }) {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
 }
 
 function Tr({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">{children}</tr>;
+  return <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">{children}</tr>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>;
+  return <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>;
 }

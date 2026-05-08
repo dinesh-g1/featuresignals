@@ -86,11 +86,11 @@ export default function DocsPage() {
       <div className="mb-12">
         <h1
           id="docs-main-heading"
-          className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-4"
+          className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-4"
         >
           Documentation
         </h1>
-        <p className="text-lg text-[var(--fgColor-muted)] max-w-2xl leading-relaxed">
+        <p className="text-lg text-[var(--signal-fg-secondary)] max-w-2xl leading-relaxed">
           FeatureSignals is an <strong>open-source, AI-powered feature flag management platform</strong>{" "}
           built for modern engineering teams. Ship features safely with targeted rollouts, run
           data-driven A/B experiments, clean stale flags automatically with AI, and recover from
@@ -102,7 +102,7 @@ export default function DocsPage() {
       <section className="mb-14" aria-labelledby="quick-links-heading">
         <h2
           id="quick-links-heading"
-          className="text-xl font-semibold text-[var(--fgColor-default)] mb-6"
+          className="text-xl font-semibold text-[var(--signal-fg-primary)] mb-6"
         >
           Quick Links
         </h2>
@@ -111,17 +111,17 @@ export default function DocsPage() {
             <Link
               key={link.href}
               href={link.href}
-              className="group flex flex-col p-5 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200"
+              className="group flex flex-col p-5 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-accent-emphasis)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
             >
               <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]">
+                <span className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]">
                   <link.icon size={18} />
                 </span>
-                <h3 className="font-semibold text-[var(--fgColor-default)] group-hover:text-[var(--fgColor-accent)] transition-colors">
+                <h3 className="font-semibold text-[var(--signal-fg-primary)] group-hover:text-[var(--signal-fg-accent)] transition-colors">
                   {link.title}
                 </h3>
               </div>
-              <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+              <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                 {link.description}
               </p>
             </Link>
@@ -133,7 +133,7 @@ export default function DocsPage() {
       <section aria-labelledby="popular-topics-heading">
         <h2
           id="popular-topics-heading"
-          className="text-xl font-semibold text-[var(--fgColor-default)] mb-6"
+          className="text-xl font-semibold text-[var(--signal-fg-primary)] mb-6"
         >
           Popular Topics
         </h2>
@@ -142,11 +142,11 @@ export default function DocsPage() {
             <Link
               key={topic.href}
               href={topic.href}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-[var(--fgColor-default)] hover:bg-[var(--bgColor-inset)] hover:text-[var(--fgColor-accent)] transition-colors group"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors group"
             >
               <ArrowRightIcon
                 size={14}
-                className="text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-accent)] transition-colors shrink-0"
+                className="text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-accent)] transition-colors shrink-0"
               />
               <span>{topic.label}</span>
             </Link>
@@ -155,20 +155,20 @@ export default function DocsPage() {
       </section>
 
       {/* Help footer */}
-      <div className="mt-16 p-6 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)]">
+      <div className="mt-16 p-6 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
         <div className="flex items-start gap-3">
-          <BookIcon size={20} className="text-[var(--fgColor-accent)] mt-0.5 shrink-0" />
+          <BookIcon size={20} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <div>
-            <h3 className="font-semibold text-[var(--fgColor-default)] mb-1">
+            <h3 className="font-semibold text-[var(--signal-fg-primary)] mb-1">
               Can&apos;t find what you&apos;re looking for?
             </h3>
-            <p className="text-sm text-[var(--fgColor-muted)] mb-3">
+            <p className="text-sm text-[var(--signal-fg-secondary)] mb-3">
               Ask the community on GitHub Discussions, or{" "}
               <a
                 href="https://github.com/dinesh-g1/featuresignals/issues/new"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[var(--fgColor-accent)] hover:underline"
+                className="text-[var(--signal-fg-accent)] hover:underline"
               >
                 open an issue
               </a>{" "}
@@ -178,7 +178,7 @@ export default function DocsPage() {
               href="https://github.com/dinesh-g1/featuresignals/discussions"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               <span>Browse Discussions</span>
               <ArrowRightIcon size={14} />

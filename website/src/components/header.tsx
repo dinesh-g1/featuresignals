@@ -148,8 +148,8 @@ function SimpleDropdown({
         className={cn(
           "flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
           open
-            ? "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]"
-            : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+            ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+            : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
         )}
         aria-expanded={open}
         aria-haspopup="true"
@@ -165,7 +165,7 @@ function SimpleDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-1 w-56 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-floating-large)] py-2 z-50"
+            className="absolute left-0 top-full mt-1 w-56 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-[var(--shadow-floating-large)] py-2 z-50"
           >
             <ul className="flex flex-col">
               {items.map((item) => (
@@ -173,7 +173,7 @@ function SimpleDropdown({
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+                    className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -227,8 +227,8 @@ function PlatformDropdown({
         className={cn(
           "flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
           open
-            ? "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]"
-            : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+            ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+            : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
         )}
         aria-expanded={open}
         aria-haspopup="true"
@@ -246,17 +246,17 @@ function PlatformDropdown({
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="absolute left-1/2 top-full mt-2 -translate-x-1/2 z-50"
           >
-            <div className="w-[560px] shadow-[var(--shadow-floating-large)] overflow-hidden rounded-2xl border border-[var(--borderColor-default)]">
+            <div className="w-[560px] shadow-[var(--shadow-floating-large)] overflow-hidden rounded-2xl border border-[var(--signal-border-default)]">
               {/* Main grid — 2 columns */}
-              <div className="shadow-[var(--shadow-resting-small)] grid grid-cols-2 gap-6 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-8">
+              <div className="shadow-[var(--signal-shadow-sm)] grid grid-cols-2 gap-6 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-8">
                 {platformColumns.map((col) => (
                   <div key={col.title} className="flex flex-col gap-4">
                     {/* Column header: text + horizontal line */}
                     <div className="flex items-center gap-2.5 px-3">
-                      <p className="font-medium whitespace-nowrap text-[14px] uppercase tracking-[0.6px] text-[var(--fgColor-muted)]">
+                      <p className="font-medium whitespace-nowrap text-[14px] uppercase tracking-[0.6px] text-[var(--signal-fg-secondary)]">
                         {col.title}
                       </p>
-                      <div className="h-px w-full bg-[var(--borderColor-default)]" />
+                      <div className="h-px w-full bg-[var(--signal-border-default)]" />
                     </div>
                     <ul className="flex flex-col gap-1">
                       {col.items.map((item) => (
@@ -264,7 +264,7 @@ function PlatformDropdown({
                           <Link
                             href={item.href}
                             onClick={() => setOpen(false)}
-                            className="block rounded-md px-3 py-2.5 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+                            className="block rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
                           >
                             {item.label}
                           </Link>
@@ -276,20 +276,20 @@ function PlatformDropdown({
               </div>
 
               {/* Bottom promo bar */}
-              <div className="bg-[var(--bgColor-muted)] p-8">
+              <div className="bg-[var(--signal-bg-secondary)] p-8">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-[14px] uppercase tracking-[0.6px] text-[var(--fgColor-muted)]">
+                    <p className="font-medium text-[14px] uppercase tracking-[0.6px] text-[var(--signal-fg-secondary)]">
                       New: AI Janitor v2
                     </p>
-                    <p className="text-sm text-[var(--fgColor-muted)] leading-snug mt-0.5">
+                    <p className="text-sm text-[var(--signal-fg-secondary)] leading-snug mt-0.5">
                       Smarter detection, automated PRs, cross-repo cleanup.
                     </p>
                   </div>
                   <Link
                     href="/features#ai-janitor"
                     onClick={() => setOpen(false)}
-                    className="inline-flex shrink-0 items-center justify-center rounded-md px-3 h-9 text-sm font-medium bg-[var(--bgColor-emphasis)] text-[var(--fgColor-onEmphasis)] border border-transparent shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow"
+                    className="inline-flex shrink-0 items-center justify-center rounded-md px-3 h-9 text-sm font-medium bg-[var(--signal-bg-inverse)] text-[var(--signal-fg-on-emphasis)] border border-transparent shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow"
                   >
                     Learn more
                   </Link>
@@ -323,7 +323,7 @@ function MobileNavLink({
       href={href}
       onClick={onClick}
       className={cn(
-        "block w-full rounded-md px-3 py-2.5 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors",
+        "block w-full rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors",
         className,
       )}
     >
@@ -351,7 +351,7 @@ function MobileAccordion({
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full rounded-md px-3 py-2.5 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+        className="flex items-center justify-between w-full rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
       >
         {title}
         <PlusMinusIcon open={open} />
@@ -365,7 +365,7 @@ function MobileAccordion({
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="ml-4 mt-1 mb-2 flex flex-col gap-0.5 border-l border-[var(--borderColor-default)] pl-3">
+            <div className="ml-4 mt-1 mb-2 flex flex-col gap-0.5 border-l border-[var(--signal-border-default)] pl-3">
               {items.map((item) => (
                 <MobileNavLink
                   key={item.label}
@@ -452,7 +452,7 @@ export function Header() {
 
           <Link
             href="/pricing"
-            className="flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+            className="flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
           >
             Pricing
           </Link>
@@ -476,7 +476,7 @@ export function Header() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 -mr-2 rounded-md text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)] transition-colors"
+            className="lg:hidden p-2 -mr-2 rounded-md text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
             aria-label="Open menu"
           >
             <ThreeBarsIcon size={20} />
@@ -490,7 +490,7 @@ export function Header() {
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
           <Dialog.Content
             aria-describedby="mobile-menu-description"
-            className="fixed right-0 top-0 z-50 h-full w-80 max-w-[calc(100vw-2rem)] bg-[var(--bgColor-default)] shadow-[var(--shadow-floating-xlarge)] p-6 overflow-y-auto"
+            className="fixed right-0 top-0 z-50 h-full w-80 max-w-[calc(100vw-2rem)] bg-[var(--signal-bg-primary)] shadow-[var(--shadow-floating-xlarge)] p-6 overflow-y-auto"
           >
             <Dialog.Title className="sr-only">Navigation Menu</Dialog.Title>
             <Dialog.Description
@@ -511,7 +511,7 @@ export function Header() {
               </Link>
               <Dialog.Close asChild>
                 <button
-                  className="p-2 rounded-md hover:bg-[var(--bgColor-muted)] transition-colors"
+                  className="p-2 rounded-md hover:bg-[var(--signal-bg-secondary)] transition-colors"
                   aria-label="Close menu"
                 >
                   <XIcon size={20} />
@@ -545,7 +545,7 @@ export function Header() {
                 onClick={closeMobile}
               />
 
-              <hr className="my-3 border-[var(--borderColor-default)]" />
+              <hr className="my-3 border-[var(--signal-border-default)]" />
 
               <MobileNavLink
                 href="https://app.featuresignals.com/login"

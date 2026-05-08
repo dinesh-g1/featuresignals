@@ -25,17 +25,17 @@ export default function ApiOverviewPage() {
     <div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         API Reference
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         The FeatureSignals REST API provides programmatic access to all platform
         features. <strong>{totalEndpoints} endpoints</strong> across{" "}
         <strong>{apiCategories.length} categories</strong> — with an{" "}
         <Link
           href="/docs/api-reference/playground"
-          className="text-[var(--fgColor-accent)] hover:underline font-medium"
+          className="text-[var(--signal-fg-accent)] hover:underline font-medium"
         >
           interactive playground
         </Link>{" "}
@@ -47,9 +47,9 @@ export default function ApiOverviewPage() {
         href="/docs/api-reference/playground"
         className="inline-flex items-center gap-2 px-4 py-3 mb-8 rounded-lg font-medium text-sm transition-colors"
         style={{
-          backgroundColor: "var(--bgColor-accent-muted)",
-          color: "var(--fgColor-accent)",
-          border: "1px solid var(--borderColor-accent-emphasis)",
+          backgroundColor: "var(--signal-bg-accent-muted)",
+          color: "var(--signal-fg-accent)",
+          border: "1px solid var(--signal-border-accent-emphasis)",
         }}
       >
         <PlayIcon size={16} />
@@ -60,13 +60,13 @@ export default function ApiOverviewPage() {
       {/* Base URL */}
       <SectionHeading>Base URL</SectionHeading>
       <CodeBlock language="text" code="https://api.featuresignals.com/v1" />
-      <p className="text-sm text-[var(--fgColor-muted)] mt-2 mb-6">
+      <p className="text-sm text-[var(--signal-fg-secondary)] mt-2 mb-6">
         For self-hosted installations, replace with your own API server URL.
       </p>
 
       {/* Authentication */}
       <SectionHeading>Authentication</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         The API uses two authentication methods:
       </p>
       <SimpleTable>
@@ -98,11 +98,11 @@ export default function ApiOverviewPage() {
           </Tr>
         </tbody>
       </SimpleTable>
-      <p className="text-sm text-[var(--fgColor-muted)] mt-2 mb-6">
+      <p className="text-sm text-[var(--signal-fg-secondary)] mt-2 mb-6">
         See{" "}
         <Link
           href="/docs/api-reference/authentication"
-          className="text-[var(--fgColor-accent)] hover:underline"
+          className="text-[var(--signal-fg-accent)] hover:underline"
         >
           Authentication
         </Link>{" "}
@@ -111,12 +111,12 @@ export default function ApiOverviewPage() {
 
       {/* All API Categories */}
       <SectionHeading>API Categories</SectionHeading>
-      <p className="text-[var(--fgColor-muted)] mb-6">
+      <p className="text-[var(--signal-fg-secondary)] mb-6">
         Every endpoint in the FeatureSignals API, organized by category. Click
         any category to see detailed endpoint specifications, or use the{" "}
         <Link
           href="/docs/api-reference/playground"
-          className="text-[var(--fgColor-accent)] hover:underline"
+          className="text-[var(--signal-fg-accent)] hover:underline"
         >
           playground
         </Link>{" "}
@@ -134,24 +134,24 @@ export default function ApiOverviewPage() {
             <Link
               key={cat.slug}
               href={`/docs/api-reference/${cat.slug}`}
-              className="group flex flex-col p-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200"
+              className="group flex flex-col p-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-accent-emphasis)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-[var(--fgColor-default)] group-hover:text-[var(--fgColor-accent)] transition-colors">
+                <h3 className="font-semibold text-[var(--signal-fg-primary)] group-hover:text-[var(--signal-fg-accent)] transition-colors">
                   {cat.name}
                 </h3>
                 <span
                   className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                   style={{
-                    backgroundColor: "var(--bgColor-inset)",
-                    color: "var(--fgColor-muted)",
+                    backgroundColor: "var(--signal-bg-secondary)",
+                    color: "var(--signal-fg-secondary)",
                   }}
                 >
                   {cat.endpoints.length} endpoint
                   {cat.endpoints.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              <p className="text-xs text-[var(--fgColor-muted)] leading-relaxed mb-2">
+              <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed mb-2">
                 {cat.description}
               </p>
               {authTypes.length > 0 && (
@@ -160,7 +160,7 @@ export default function ApiOverviewPage() {
                     <span
                       key={a}
                       className="inline-flex items-center gap-1 text-[10px]"
-                      style={{ color: "var(--fgColor-muted)" }}
+                      style={{ color: "var(--signal-fg-secondary)" }}
                     >
                       {a === "Bearer JWT" ? (
                         <LockIcon size={10} />
@@ -207,7 +207,7 @@ export default function ApiOverviewPage() {
           </Tr>
         </tbody>
       </SimpleTable>
-      <p className="text-sm text-[var(--fgColor-muted)] mt-3 mb-2">
+      <p className="text-sm text-[var(--signal-fg-secondary)] mt-3 mb-2">
         Paginated responses use a consistent envelope:
       </p>
       <CodeBlock
@@ -223,7 +223,7 @@ export default function ApiOverviewPage() {
 
       {/* Error Responses */}
       <SectionHeading>Error Responses</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         All errors follow a consistent format:
       </p>
       <CodeBlock
@@ -332,7 +332,7 @@ export default function ApiOverviewPage() {
           <Link
             key={step.href}
             href={step.href}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)] transition-colors font-medium"
+            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
             <ArrowRightIcon size={14} />
             <span>{step.label}</span>
@@ -349,7 +349,7 @@ export default function ApiOverviewPage() {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
@@ -357,7 +357,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -370,14 +370,14 @@ function Badge({
   children: React.ReactNode;
   className?: string;
 }) {
-  let bg = "var(--bgColor-success-muted)";
-  let fg = "var(--fgColor-success)";
+  let bg = "var(--signal-bg-success-muted)";
+  let fg = "var(--signal-fg-success)";
   if (className === "put") {
-    bg = "var(--bgColor-attention-muted)";
-    fg = "var(--fgColor-attention)";
+    bg = "var(--signal-bg-warning-muted)";
+    fg = "var(--signal-fg-warning)";
   } else if (className === "delete") {
-    bg = "var(--bgColor-danger-muted)";
-    fg = "var(--fgColor-danger)";
+    bg = "var(--signal-bg-danger-muted)";
+    fg = "var(--signal-fg-danger)";
   }
 
   return (
@@ -392,7 +392,7 @@ function Badge({
 
 function SimpleTable({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
@@ -400,7 +400,7 @@ function SimpleTable({ children }: { children: React.ReactNode }) {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
@@ -408,7 +408,7 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function Tr({ children }: { children: React.ReactNode }) {
   return (
-    <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">
+    <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">
       {children}
     </tr>
   );
@@ -416,6 +416,6 @@ function Tr({ children }: { children: React.ReactNode }) {
 
 function Td({ children }: { children: React.ReactNode }) {
   return (
-    <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>
+    <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>
   );
 }

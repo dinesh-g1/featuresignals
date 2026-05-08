@@ -71,7 +71,7 @@ function CtaPrimary({
       className={cn(
         "inline-flex items-center justify-center rounded-md px-6 h-10 text-sm font-semibold",
         "text-white",
-        "bg-[var(--bgColor-success-emphasis)]",
+        "bg-[var(--signal-bg-success-emphasis)]",
         "hover:opacity-90 transition-opacity",
         className,
       )}
@@ -95,9 +95,9 @@ function CtaSecondary({
       href={href}
       className={cn(
         "inline-flex items-center justify-center rounded-md border px-6 h-10 text-sm font-semibold",
-        "text-[var(--fgColor-default)] border-[var(--borderColor-default)]",
-        "bg-[var(--bgColor-default)]",
-        "hover:bg-[var(--bgColor-inset)] transition-colors",
+        "text-[var(--signal-fg-primary)] border-[var(--signal-border-default)]",
+        "bg-[var(--signal-bg-primary)]",
+        "hover:bg-[var(--signal-bg-secondary)] transition-colors",
         className,
       )}
     >
@@ -118,7 +118,7 @@ function SectionLabel({
   text: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-3">
+    <span className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
       <Icon size={14} />
       {text}
     </span>
@@ -143,17 +143,17 @@ function HeroSection() {
               className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight"
               {...fadeUp}
             >
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 Feature flags
               </span>
               <br />
-              <span className="text-[var(--fgColor-done)]">
+              <span className="text-[var(--signal-fg-info)]">
                 that don&apos;t slow you down
               </span>
             </motion.h1>
 
             <motion.p
-              className="text-lg font-normal max-w-[600px] text-[var(--fgColor-muted)] mt-6 leading-relaxed break-words"
+              className="text-lg font-normal max-w-[600px] text-[var(--signal-fg-secondary)] mt-6 leading-relaxed break-words"
               {...fadeUpDelayed(0.1)}
             >
               Sub-millisecond evaluation. Flat-rate pricing &mdash; $29/mo for
@@ -177,7 +177,7 @@ function HeroSection() {
                 href="https://github.com/dinesh-g1/featuresignals"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] transition-colors"
+                className="inline-flex items-center rounded-full border border-[var(--signal-border-default)] px-3 py-1 text-xs font-medium text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:border-[var(--signal-border-accent-emphasis)] transition-colors"
               >
                 500+ GitHub Stars
               </a>
@@ -185,14 +185,14 @@ function HeroSection() {
                 href="https://openfeature.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] transition-colors"
+                className="inline-flex items-center rounded-full border border-[var(--signal-border-default)] px-3 py-1 text-xs font-medium text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:border-[var(--signal-border-accent-emphasis)] transition-colors"
               >
                 OpenFeature Certified
               </a>
-              <span className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)]">
+              <span className="inline-flex items-center rounded-full border border-[var(--signal-border-default)] px-3 py-1 text-xs font-medium text-[var(--signal-fg-secondary)]">
                 Apache 2.0
               </span>
-              <span className="inline-flex items-center rounded-full border border-[var(--borderColor-default)] px-3 py-1 text-xs font-medium text-[var(--fgColor-muted)]">
+              <span className="inline-flex items-center rounded-full border border-[var(--signal-border-default)] px-3 py-1 text-xs font-medium text-[var(--signal-fg-secondary)]">
                 Deploy in 3 min
               </span>
             </motion.div>
@@ -203,21 +203,21 @@ function HeroSection() {
             className="flex justify-center lg:justify-end"
             {...fadeUpDelayed(0.15)}
           >
-            <div className="w-full max-w-[480px] rounded-xl border border-[var(--borderColor-default)] border-l-[3px] border-l-[var(--borderColor-accent-emphasis)] bg-linear-to-b from-[var(--bgColor-default)] to-[var(--bgColor-inset)] shadow-[var(--shadow-resting-medium)] overflow-hidden">
+            <div className="w-full max-w-[480px] rounded-xl border border-[var(--signal-border-default)] border-l-[3px] border-l-[var(--signal-border-accent-emphasis)] bg-linear-to-b from-[var(--signal-bg-primary)] to-[var(--signal-bg-secondary)] shadow-[var(--signal-shadow-md)] overflow-hidden">
               {/* Card header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)]">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5">
                     <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--bgColor-success-emphasis)] opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--bgColor-success-emphasis)]" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--signal-bg-success-emphasis)] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--signal-bg-success-emphasis)]" />
                     </span>
-                    <span className="text-sm font-semibold text-[var(--fgColor-default)]">
+                    <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                       Production deploy v2.4.1
                     </span>
                   </div>
                 </div>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)]">
                   ● Live
                 </span>
               </div>
@@ -226,15 +226,15 @@ function HeroSection() {
               <div className="p-5 space-y-5">
                 {/* Progress bar */}
                 <div>
-                  <div className="flex justify-between text-xs text-[var(--fgColor-muted)] mb-1.5">
+                  <div className="flex justify-between text-xs text-[var(--signal-fg-secondary)] mb-1.5">
                     <span>Rollout progress</span>
-                    <span className="font-medium text-[var(--fgColor-default)]">
+                    <span className="font-medium text-[var(--signal-fg-primary)]">
                       15%
                     </span>
                   </div>
-                  <div className="w-full h-3 bg-[var(--bgColor-inset)] rounded-full overflow-hidden shadow-inner">
+                  <div className="w-full h-3 bg-[var(--signal-bg-secondary)] rounded-full overflow-hidden shadow-inner">
                     <motion.div
-                      className="h-full rounded-full bg-[var(--bgColor-success-emphasis)]"
+                      className="h-full rounded-full bg-[var(--signal-bg-success-emphasis)]"
                       style={{}}
                       initial={{ width: 0 }}
                       whileInView={{ width: "15%" }}
@@ -250,41 +250,41 @@ function HeroSection() {
 
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
-                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                  <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-3 shadow-[var(--signal-shadow-sm)]">
+                    <p className="text-2xl font-bold text-[var(--signal-fg-primary)]">
                       47
                     </p>
-                    <p className="text-sm text-[var(--fgColor-muted)]">
+                    <p className="text-sm text-[var(--signal-fg-secondary)]">
                       flags active
                     </p>
                   </div>
-                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
-                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                  <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-3 shadow-[var(--signal-shadow-sm)]">
+                    <p className="text-2xl font-bold text-[var(--signal-fg-primary)]">
                       0.4ms
                     </p>
-                    <p className="text-sm text-[var(--fgColor-muted)]">
+                    <p className="text-sm text-[var(--signal-fg-secondary)]">
                       eval latency
                     </p>
                   </div>
-                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
-                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                  <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-3 shadow-[var(--signal-shadow-sm)]">
+                    <p className="text-2xl font-bold text-[var(--signal-fg-primary)]">
                       3
                     </p>
-                    <p className="text-sm text-[var(--fgColor-muted)]">
+                    <p className="text-sm text-[var(--signal-fg-secondary)]">
                       experiments
                     </p>
                   </div>
-                  <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-3 shadow-[var(--shadow-resting-small)]">
-                    <p className="text-2xl font-bold text-[var(--fgColor-default)]">
+                  <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-3 shadow-[var(--signal-shadow-sm)]">
+                    <p className="text-2xl font-bold text-[var(--signal-fg-primary)]">
                       12.4M
                     </p>
-                    <p className="text-sm text-[var(--fgColor-muted)]">evals</p>
+                    <p className="text-sm text-[var(--signal-fg-secondary)]">evals</p>
                   </div>
                 </div>
 
                 {/* Quickstart command bar */}
-                <div className="flex items-center gap-2 rounded-md bg-[var(--bgColor-emphasis)] px-4 py-3 font-mono text-sm text-white">
-                  <span className="text-[var(--fgColor-muted)] select-none">
+                <div className="flex items-center gap-2 rounded-md bg-[var(--signal-bg-inverse)] px-4 py-3 font-mono text-sm text-white">
+                  <span className="text-[var(--signal-fg-secondary)] select-none">
                     $
                   </span>
                   <span className="truncate">
@@ -317,22 +317,22 @@ function HeroSection() {
 
 function TrustBarSection() {
   return (
-    <section className="py-10 border-b border-[var(--borderColor-default)]">
+    <section className="py-10 border-b border-[var(--signal-border-default)]">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <p className="text-center text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-6">
+        <p className="text-center text-xs font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wider mb-6">
           Trusted by engineering teams at
         </p>
         <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
-          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+          <span className="text-sm font-semibold text-[var(--signal-fg-secondary)]">
             Series A Startups
           </span>
-          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+          <span className="text-sm font-semibold text-[var(--signal-fg-secondary)]">
             Open Source Projects
           </span>
-          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+          <span className="text-sm font-semibold text-[var(--signal-fg-secondary)]">
             Platform Teams
           </span>
-          <span className="text-sm font-semibold text-[var(--fgColor-muted)]">
+          <span className="text-sm font-semibold text-[var(--signal-fg-secondary)]">
             SaaS Companies
           </span>
         </div>
@@ -396,10 +396,10 @@ function CapabilityCardsSection() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
           <SectionLabel icon={RocketIcon} text="Platform Capabilities" />
-          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Everything you need to ship
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 font-normal">
             No per-seat pricing. No surprises. Just powerful feature management.
           </p>
         </motion.div>
@@ -408,34 +408,34 @@ function CapabilityCardsSection() {
           {capabilities.map((cap, i) => {
             const accents = [
               {
-                bg: "bg-[var(--bgColor-accent-muted)]",
-                fg: "text-[var(--fgColor-accent)]",
-                border: "border-l-[var(--borderColor-accent-emphasis)]",
+                bg: "bg-[var(--signal-bg-accent-muted)]",
+                fg: "text-[var(--signal-fg-accent)]",
+                border: "border-l-[var(--signal-border-accent-emphasis)]",
               },
               {
-                bg: "bg-[var(--bgColor-done-muted)]",
-                fg: "text-[var(--fgColor-done)]",
+                bg: "bg-[var(--signal-bg-info-muted)]",
+                fg: "text-[var(--signal-fg-info)]",
                 border: "border-l-[var(--borderColor-done-emphasis)]",
               },
               {
-                bg: "bg-[var(--bgColor-attention-muted)]",
-                fg: "text-[var(--fgColor-attention)]",
-                border: "border-l-[var(--borderColor-attention-emphasis)]",
+                bg: "bg-[var(--signal-bg-warning-muted)]",
+                fg: "text-[var(--signal-fg-warning)]",
+                border: "border-l-[var(--signal-border-warning-emphasis)]",
               },
               {
-                bg: "bg-[var(--bgColor-danger-muted)]",
-                fg: "text-[var(--fgColor-danger)]",
-                border: "border-l-[var(--borderColor-danger-emphasis)]",
+                bg: "bg-[var(--signal-bg-danger-muted)]",
+                fg: "text-[var(--signal-fg-danger)]",
+                border: "border-l-[var(--signal-border-danger-emphasis)]",
               },
               {
-                bg: "bg-[var(--bgColor-success-muted)]",
-                fg: "text-[var(--fgColor-success)]",
-                border: "border-l-[var(--borderColor-success-emphasis)]",
+                bg: "bg-[var(--signal-bg-success-muted)]",
+                fg: "text-[var(--signal-fg-success)]",
+                border: "border-l-[var(--signal-border-success-emphasis)]",
               },
               {
-                bg: "bg-[var(--bgColor-accent-muted)]",
-                fg: "text-[var(--fgColor-accent)]",
-                border: "border-l-[var(--borderColor-accent-emphasis)]",
+                bg: "bg-[var(--signal-bg-accent-muted)]",
+                fg: "text-[var(--signal-fg-accent)]",
+                border: "border-l-[var(--signal-border-accent-emphasis)]",
               },
             ];
             const a = accents[i % accents.length];
@@ -452,7 +452,7 @@ function CapabilityCardsSection() {
                 }}
                 whileHover={{ scale: 1.02 }}
                 className={cn(
-                  "group flex flex-col gap-4 rounded-xl border border-[var(--borderColor-default)] border-l-[3px] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow",
+                  "group flex flex-col gap-4 rounded-xl border border-[var(--signal-border-default)] border-l-[3px] bg-[var(--signal-bg-primary)] p-6 shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow",
                   a.border,
                 )}
               >
@@ -464,10 +464,10 @@ function CapabilityCardsSection() {
                 >
                   <cap.icon size={22} className={a.fg} />
                 </div>
-                <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+                <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
                   {cap.title}
                 </h3>
-                <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+                <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                   {cap.description}
                 </p>
               </motion.div>
@@ -513,34 +513,34 @@ const howItWorksSteps: HowItWorksStep[] = [
 function HowItWorksSection() {
   const stepColors = [
     {
-      bg: "bg-[var(--bgColor-accent-muted)]",
-      fg: "text-[var(--fgColor-accent)]",
-      border: "border-[var(--borderColor-accent-muted)]",
+      bg: "bg-[var(--signal-bg-accent-muted)]",
+      fg: "text-[var(--signal-fg-accent)]",
+      border: "border-[var(--signal-border-accent-muted)]",
     },
     {
-      bg: "bg-[var(--bgColor-done-muted)]",
-      fg: "text-[var(--fgColor-done)]",
-      border: "border-[var(--borderColor-accent-muted)]",
+      bg: "bg-[var(--signal-bg-info-muted)]",
+      fg: "text-[var(--signal-fg-info)]",
+      border: "border-[var(--signal-border-accent-muted)]",
     },
     {
-      bg: "bg-[var(--bgColor-success-muted)]",
-      fg: "text-[var(--fgColor-success)]",
-      border: "border-[var(--borderColor-success-muted)]",
+      bg: "bg-[var(--signal-bg-success-muted)]",
+      fg: "text-[var(--signal-fg-success)]",
+      border: "border-[var(--signal-border-success-muted)]",
     },
   ];
 
   return (
     <section
       id="how-it-works"
-      className="py-20 md:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 md:py-28 bg-[var(--signal-bg-secondary)]"
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
           <SectionLabel icon={SyncIcon} text="How It Works" />
-          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             How it works
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 font-normal">
             Three steps from idea to production. No YAML required.
           </p>
         </motion.div>
@@ -563,7 +563,7 @@ function HowItWorksSection() {
               >
                 <span
                   className={cn(
-                    "relative z-10 flex items-center justify-center w-16 h-16 rounded-full border text-2xl font-extrabold select-none shadow-[var(--shadow-resting-small)]",
+                    "relative z-10 flex items-center justify-center w-16 h-16 rounded-full border text-2xl font-extrabold select-none shadow-[var(--signal-shadow-sm)]",
                     c.bg,
                     c.fg,
                     c.border,
@@ -571,10 +571,10 @@ function HowItWorksSection() {
                 >
                   {i + 1}
                 </span>
-                <h3 className="text-xl font-semibold text-[var(--fgColor-default)]">
+                <h3 className="text-xl font-semibold text-[var(--signal-fg-primary)]">
                   {step.title}
                 </h3>
-                <p className="text-sm text-[var(--fgColor-muted)] max-w-[280px] leading-relaxed">
+                <p className="text-sm text-[var(--signal-fg-secondary)] max-w-[280px] leading-relaxed">
                   {step.description}
                 </p>
               </motion.div>
@@ -584,86 +584,86 @@ function HowItWorksSection() {
 
         {/* Code snippet visual */}
         <motion.div className="mt-14 max-w-xl mx-auto" {...fadeUpDelayed(0.3)}>
-          <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden shadow-[var(--shadow-resting-medium)]">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
+          <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden shadow-[var(--signal-shadow-md)]">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
               <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
               <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
               <span className="w-3 h-3 rounded-full bg-[#28c840]" />
-              <span className="ml-2 text-xs text-[var(--fgColor-muted)] font-mono">
+              <span className="ml-2 text-xs text-[var(--signal-fg-secondary)] font-mono">
                 create-flag.ts
               </span>
             </div>
-            <div className="p-4 font-mono text-xs leading-relaxed text-[var(--fgColor-default)]">
+            <div className="p-4 font-mono text-xs leading-relaxed text-[var(--signal-fg-primary)]">
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;1
                 </span>
-                <span className="text-[var(--fgColor-accent)]">import</span>{" "}
-                <span className="text-[var(--fgColor-success)]">
+                <span className="text-[var(--signal-fg-accent)]">import</span>{" "}
+                <span className="text-[var(--signal-fg-success)]">
                   FeatureSignals
                 </span>{" "}
-                <span className="text-[var(--fgColor-accent)]">from</span>{" "}
-                <span className="text-[var(--fgColor-done)]">
+                <span className="text-[var(--signal-fg-accent)]">from</span>{" "}
+                <span className="text-[var(--signal-fg-info)]">
                   &apos;@featuresignals/sdk&apos;
                 </span>
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;2
                 </span>
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;3
                 </span>
-                <span className="text-[var(--fgColor-accent)]">const</span>{" "}
+                <span className="text-[var(--signal-fg-accent)]">const</span>{" "}
                 <span>fs</span> ={" "}
-                <span className="text-[var(--fgColor-accent)]">new</span>{" "}
-                <span className="text-[var(--fgColor-success)]">
+                <span className="text-[var(--signal-fg-accent)]">new</span>{" "}
+                <span className="text-[var(--signal-fg-success)]">
                   FeatureSignals
                 </span>
                 (&#123;
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;4
                 </span>
                 &nbsp;&nbsp;apiKey:{" "}
-                <span className="text-[var(--fgColor-done)]">
+                <span className="text-[var(--signal-fg-info)]">
                   &apos;fs_sk_...&apos;
                 </span>
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;5
                 </span>
                 &#125;)
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;6
                 </span>
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;7
                 </span>
-                <span className="text-[var(--fgColor-accent)]">const</span>{" "}
+                <span className="text-[var(--signal-fg-accent)]">const</span>{" "}
                 <span>enabled</span> ={" "}
-                <span className="text-[var(--fgColor-accent)]">await</span> fs.
-                <span className="text-[var(--fgColor-done)]">isEnabled</span>(
+                <span className="text-[var(--signal-fg-accent)]">await</span> fs.
+                <span className="text-[var(--signal-fg-info)]">isEnabled</span>(
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;8
                 </span>
                 &nbsp;&nbsp;
-                <span className="text-[var(--fgColor-done)]">
+                <span className="text-[var(--signal-fg-info)]">
                   &apos;dark-mode-v2&apos;
                 </span>
               </div>
               <div>
-                <span className="text-[var(--fgColor-muted)] select-none mr-3">
+                <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
                   &nbsp;9
                 </span>
                 )
@@ -805,21 +805,21 @@ function PersonaFeaturesSection() {
   > = {
     developers: {
       active:
-        "bg-[var(--bgColor-accent-emphasis)] border-[var(--bgColor-accent-emphasis)]",
-      muted: "bg-[var(--bgColor-accent-muted)]",
-      fg: "text-[var(--fgColor-accent)]",
+        "bg-[var(--signal-bg-accent-emphasis)] border-[var(--signal-bg-accent-emphasis)]",
+      muted: "bg-[var(--signal-bg-accent-muted)]",
+      fg: "text-[var(--signal-fg-accent)]",
     },
     platform: {
       active:
-        "bg-[var(--bgColor-done-emphasis)] border-[var(--bgColor-done-emphasis)]",
-      muted: "bg-[var(--bgColor-done-muted)]",
-      fg: "text-[var(--fgColor-done)]",
+        "bg-[var(--signal-bg-info-emphasis)] border-[var(--signal-bg-info-emphasis)]",
+      muted: "bg-[var(--signal-bg-info-muted)]",
+      fg: "text-[var(--signal-fg-info)]",
     },
     security: {
       active:
-        "bg-[var(--bgColor-success-emphasis)] border-[var(--bgColor-success-emphasis)]",
-      muted: "bg-[var(--bgColor-success-muted)]",
-      fg: "text-[var(--fgColor-success)]",
+        "bg-[var(--signal-bg-success-emphasis)] border-[var(--signal-bg-success-emphasis)]",
+      muted: "bg-[var(--signal-bg-success-muted)]",
+      fg: "text-[var(--signal-fg-success)]",
     },
   };
   const currentAccent = tabAccents[activeTab] ?? tabAccents.developers;
@@ -829,10 +829,10 @@ function PersonaFeaturesSection() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-12" {...fadeUp}>
           <SectionLabel icon={PeopleIcon} text="Built For Your Team" />
-          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Built for every team
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 font-normal">
             Feature management that scales from indie devs to the Fortune 500.
           </p>
         </motion.div>
@@ -861,7 +861,7 @@ function PersonaFeaturesSection() {
                   "px-5 h-10 rounded-full text-sm font-semibold transition-all duration-200",
                   isActive
                     ? cn("text-white border", accent.active)
-                    : "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)] border border-transparent hover:bg-[var(--bgColor-inset)]",
+                    : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-transparent hover:bg-[var(--signal-bg-secondary)]",
                 )}
               >
                 {tab.label}
@@ -894,7 +894,7 @@ function PersonaFeaturesSection() {
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 whileHover={{ scale: 1.02 }}
-                className="flex items-start gap-4 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow"
+                className="flex items-start gap-4 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-5 shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow"
               >
                 <div
                   className={cn(
@@ -905,10 +905,10 @@ function PersonaFeaturesSection() {
                   <feature.icon size={20} className={currentAccent.fg} />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
+                  <h3 className="text-base font-semibold text-[var(--signal-fg-primary)]">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-[var(--fgColor-muted)] mt-1 leading-relaxed">
+                  <p className="text-sm text-[var(--signal-fg-secondary)] mt-1 leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
@@ -934,14 +934,14 @@ const ossMetrics = [
 
 function OpenSourceProofSection() {
   return (
-    <section id="open-source" className="py-20 md:py-28 bg-[var(--bgColor-inset)]">
+    <section id="open-source" className="py-20 md:py-28 bg-[var(--signal-bg-secondary)]">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
           <SectionLabel icon={StarFillIcon} text="Open Source First" />
-          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Built in the open. Trusted by the community.
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 font-normal">
             Apache 2.0 licensed. OpenFeature certified. No vendor lock-in. Ever.
           </p>
         </motion.div>
@@ -958,15 +958,15 @@ function OpenSourceProofSection() {
               viewport={{ once: true, margin: "-48px" }}
               transition={{ duration: 0.4, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: 1.05 }}
-              className="flex flex-col items-center gap-2 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow text-center group"
+              className="flex flex-col items-center gap-2 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow text-center group"
             >
               <span className={cn(
                 "text-3xl font-bold",
-                ["text-[var(--fgColor-accent)]", "text-[var(--fgColor-done)]", "text-[var(--fgColor-success)]", "text-[var(--fgColor-attention)]"][i % 4],
+                ["text-[var(--signal-fg-accent)]", "text-[var(--signal-fg-info)]", "text-[var(--signal-fg-success)]", "text-[var(--signal-fg-warning)]"][i % 4],
               )}>
                 {metric.value}
               </span>
-              <span className="text-sm text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-default)] transition-colors">
+              <span className="text-sm text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-primary)] transition-colors">
                 {metric.label}
               </span>
             </motion.a>
@@ -1053,10 +1053,10 @@ function PricingOverviewSection() {
     <section id="pricing" className="py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
-          <h2 className="text-3xl md:text-4xl font-bold text-[var(--fgColor-default)]">
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Simple, transparent pricing
           </h2>
-          <p className="text-lg text-[var(--fgColor-muted)] mt-3 font-normal">
+          <p className="text-lg text-[var(--signal-fg-secondary)] mt-3 font-normal">
             No per-seat fees. No surprise MAU billing. Just fair, flat pricing.
           </p>
         </motion.div>
@@ -1075,37 +1075,37 @@ function PricingOverviewSection() {
               }}
               whileHover={{ scale: 1.02 }}
               className={cn(
-                "relative flex flex-col rounded-xl border p-6 shadow-[var(--shadow-resting-small)] hover:shadow-[var(--shadow-resting-medium)] transition-shadow",
+                "relative flex flex-col rounded-xl border p-6 shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow",
                 plan.highlighted
-                  ? "border-[var(--borderColor-accent-emphasis)] bg-[var(--bgColor-default)]"
-                  : "border-[var(--borderColor-default)] bg-[var(--bgColor-default)]",
+                  ? "border-[var(--signal-border-accent-emphasis)] bg-[var(--signal-bg-primary)]"
+                  : "border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]",
               )}
             >
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bgColor-accent-emphasis)] text-white px-3 py-1 text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white px-3 py-1 text-xs font-semibold">
                     <StarFillIcon size={12} />
                     {plan.badge}
                   </span>
                 </div>
               )}
 
-              <h3 className="text-lg font-semibold text-[var(--fgColor-default)]">
+              <h3 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
                 {plan.name}
               </h3>
 
               <div className="mt-3 mb-1">
-                <span className="text-3xl font-bold text-[var(--fgColor-default)]">
+                <span className="text-3xl font-bold text-[var(--signal-fg-primary)]">
                   {plan.price}
                 </span>
                 {plan.period && (
-                  <span className="text-sm text-[var(--fgColor-muted)] ml-1">
+                  <span className="text-sm text-[var(--signal-fg-secondary)] ml-1">
                     {plan.period}
                   </span>
                 )}
               </div>
 
-              <p className="text-sm text-[var(--fgColor-muted)] mb-5 leading-relaxed">
+              <p className="text-sm text-[var(--signal-fg-secondary)] mb-5 leading-relaxed">
                 {plan.description}
               </p>
 
@@ -1113,11 +1113,11 @@ function PricingOverviewSection() {
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 text-sm text-[var(--fgColor-default)]"
+                    className="flex items-start gap-2 text-sm text-[var(--signal-fg-primary)]"
                   >
                     <CheckIcon
                       size={14}
-                      className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                      className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                     />
                     {feature}
                   </li>
@@ -1129,8 +1129,8 @@ function PricingOverviewSection() {
                 className={cn(
                   "inline-flex items-center justify-center rounded-md px-6 h-10 text-sm font-semibold w-full transition-opacity",
                   plan.highlighted
-                    ? "text-white bg-[var(--bgColor-success-emphasis)] hover:opacity-90"
-                    : "text-[var(--fgColor-default)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:bg-[var(--bgColor-inset)]",
+                    ? "text-white bg-[var(--signal-bg-success-emphasis)] hover:opacity-90"
+                    : "text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] hover:bg-[var(--signal-bg-secondary)]",
                 )}
               >
                 {plan.cta}
@@ -1142,7 +1142,7 @@ function PricingOverviewSection() {
         <motion.div className="text-center mt-8" {...fadeUpDelayed(0.2)}>
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fgColor-accent)] hover:underline underline-offset-4"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline underline-offset-4"
           >
             View full pricing
             <ArrowRightIcon size={14} />
@@ -1161,7 +1161,7 @@ function FinalCtaSection() {
   return (
     <section
       id="final-cta"
-      className="py-20 md:py-28 bg-[var(--bgColor-emphasis)]"
+      className="py-20 md:py-28 bg-[var(--signal-bg-inverse)]"
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
         <motion.h2
@@ -1177,7 +1177,7 @@ function FinalCtaSection() {
         >
           <a
             href={REGISTER_URL}
-            className="inline-flex items-center justify-center rounded-md px-6 h-11 text-sm font-semibold text-[var(--fgColor-default)] bg-white hover:opacity-90 transition-opacity"
+            className="inline-flex items-center justify-center rounded-md px-6 h-11 text-sm font-semibold text-[var(--signal-fg-primary)] bg-white hover:opacity-90 transition-opacity"
           >
             Start Free
           </a>
@@ -1190,7 +1190,7 @@ function FinalCtaSection() {
         </motion.div>
 
         <motion.p
-          className="text-sm text-[var(--fgColor-muted)] mt-6 font-normal max-w-[500px] mx-auto"
+          className="text-sm text-[var(--signal-fg-secondary)] mt-6 font-normal max-w-[500px] mx-auto"
           {...fadeUpDelayed(0.2)}
         >
           Open source. Apache 2.0. Self-host or cloud. No vendor lock-in.

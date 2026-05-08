@@ -17,34 +17,34 @@ const categoryConfig: Record<
   { fg: string; bg: string; border: string }
 > = {
   Engineering: {
-    fg: "var(--fgColor-accent)",
-    bg: "var(--bgColor-accent-muted)",
-    border: "var(--borderColor-accent-muted)",
+    fg: "var(--signal-fg-accent)",
+    bg: "var(--signal-bg-accent-muted)",
+    border: "var(--signal-border-accent-muted)",
   },
   Product: {
-    fg: "var(--fgColor-success)",
-    bg: "var(--bgColor-success-muted)",
-    border: "var(--borderColor-success-muted)",
+    fg: "var(--signal-fg-success)",
+    bg: "var(--signal-bg-success-muted)",
+    border: "var(--signal-border-success-muted)",
   },
   Guides: {
-    fg: "var(--fgColor-done)",
-    bg: "var(--bgColor-done-muted)",
-    border: "var(--borderColor-accent-muted)",
+    fg: "var(--signal-fg-info)",
+    bg: "var(--signal-bg-info-muted)",
+    border: "var(--signal-border-accent-muted)",
   },
   Security: {
-    fg: "var(--fgColor-attention)",
-    bg: "var(--bgColor-attention-muted)",
-    border: "var(--borderColor-attention-muted)",
+    fg: "var(--signal-fg-warning)",
+    bg: "var(--signal-bg-warning-muted)",
+    border: "var(--signal-border-warning-muted)",
   },
   DevOps: {
-    fg: "var(--fgColor-muted)",
-    bg: "var(--bgColor-muted)",
-    border: "var(--borderColor-default)",
+    fg: "var(--signal-fg-secondary)",
+    bg: "var(--signal-bg-secondary)",
+    border: "var(--signal-border-default)",
   },
   "Open Source": {
-    fg: "var(--fgColor-done)",
-    bg: "var(--bgColor-done-muted)",
-    border: "var(--borderColor-accent-muted)",
+    fg: "var(--signal-fg-info)",
+    bg: "var(--signal-bg-info-muted)",
+    border: "var(--signal-border-accent-muted)",
   },
 };
 
@@ -81,7 +81,7 @@ export function BlogContent({ posts }: { posts: BlogPost[] }) {
   return (
     <>
       {/* Category Filter */}
-      <div className="bg-[var(--bgColor-default)] border-b border-[var(--borderColor-default)]">
+      <div className="bg-[var(--signal-bg-primary)] border-b border-[var(--signal-border-default)]">
         <div className="mx-auto max-w-7xl px-6">
           <div
             className="flex items-center gap-1.5 py-4 overflow-x-auto scrollbar-hide"
@@ -97,8 +97,8 @@ export function BlogContent({ posts }: { posts: BlogPost[] }) {
                 className={cn(
                   "shrink-0 px-3.5 py-2 rounded-full text-xs font-medium transition-colors duration-150",
                   activeCategory === cat
-                    ? "bg-[var(--bgColor-accent-emphasis)] text-[var(--fgColor-onEmphasis)]"
-                    : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] bg-[var(--bgColor-muted)] hover:bg-[#eff2f5]",
+                    ? "bg-[var(--signal-bg-accent-emphasis)] text-[var(--signal-fg-on-emphasis)]"
+                    : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5]",
                 )}
               >
                 {cat}
@@ -109,7 +109,7 @@ export function BlogContent({ posts }: { posts: BlogPost[] }) {
       </div>
 
       {/* Blog Posts Grid */}
-      <div className="py-16 sm:py-20 bg-[var(--bgColor-inset)]">
+      <div className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredPosts.map((post, i) => (
@@ -134,7 +134,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
 
   return (
     <motion.article
-      className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 premium-card glass-card-hover flex flex-col"
+      className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 premium-card glass-card-hover flex flex-col"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
@@ -159,20 +159,20 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
       </div>
 
       {/* Title */}
-      <h2 className="text-base font-semibold text-[var(--fgColor-default)] mb-2 leading-snug group-hover:text-[var(--fgColor-accent)] transition-colors">
+      <h2 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-2 leading-snug group-hover:text-[var(--signal-fg-accent)] transition-colors">
         <Link href={`/blog/${post.slug}`} className="hover:underline">
           {post.title}
         </Link>
       </h2>
 
       {/* Description */}
-      <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed mb-4 flex-1">
+      <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed mb-4 flex-1">
         {post.description}
       </p>
 
       {/* Meta row */}
-      <div className="flex items-center justify-between pt-3 border-t border-[var(--borderColor-default)]">
-        <div className="flex items-center gap-3 text-xs text-[var(--fgColor-muted)]">
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--signal-border-default)]">
+        <div className="flex items-center gap-3 text-xs text-[var(--signal-fg-secondary)]">
           <span>{post.date}</span>
           <span className="flex items-center gap-1">
             <ClockIcon size={12} />
@@ -181,7 +181,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
         </div>
         <Link
           href={`/blog/${post.slug}`}
-          className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-accent)] hover:underline shrink-0"
+          className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline shrink-0"
         >
           Read more
           <ArrowRightIcon size={12} />
@@ -199,27 +199,27 @@ function SubscribeSection() {
   return (
     <section
       id="subscribe"
-      className="py-16 sm:py-20 bg-[var(--bgColor-default)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-primary)]"
       aria-labelledby="subscribe-heading"
     >
       <div className="mx-auto max-w-xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <div className="w-12 h-12 rounded-xl bg-[var(--bgColor-accent-muted)] flex items-center justify-center mx-auto mb-5">
-            <RssIcon size={22} className="text-[var(--fgColor-accent)]" />
+          <div className="w-12 h-12 rounded-xl bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mx-auto mb-5">
+            <RssIcon size={22} className="text-[var(--signal-fg-accent)]" />
           </div>
           <h2
             id="subscribe-heading"
-            className="text-xl sm:text-2xl font-bold text-[var(--fgColor-default)] tracking-tight mb-3"
+            className="text-xl sm:text-2xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-3"
           >
             Subscribe to our blog
           </h2>
-          <p className="text-sm text-[var(--fgColor-muted)] mb-6">
+          <p className="text-sm text-[var(--signal-fg-secondary)] mb-6">
             Get the latest posts delivered to your inbox. No spam. Unsubscribe
             anytime.
           </p>
           <a
             href="/blog/rss.xml"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] hover:bg-[#cae8ff] transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#cae8ff] transition-colors"
           >
             <RssIcon size={16} />
             RSS Feed

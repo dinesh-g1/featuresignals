@@ -107,25 +107,25 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative py-20 sm:py-28 bg-[var(--bgColor-default)] bg-glow-orbs"
+      className="relative py-20 sm:py-28 bg-[var(--signal-bg-primary)] bg-glow-orbs"
       aria-labelledby="about-hero-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.p
-          className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-4"
+          className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-4"
           {...fadeUp}
         >
           About
         </motion.p>
         <motion.h1
           id="about-hero-heading"
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--fgColor-default)] tracking-tight mb-4"
+          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           {...fadeUp}
         >
           We&apos;re building the control plane for software delivery
         </motion.h1>
         <motion.p
-          className="text-lg text-[var(--fgColor-muted)] max-w-xl mx-auto"
+          className="text-lg text-[var(--signal-fg-secondary)] max-w-xl mx-auto"
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-64px" }}
@@ -147,29 +147,29 @@ function MissionSection() {
   return (
     <section
       id="mission"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="mission-heading"
     >
       <div className="mx-auto max-w-3xl px-6">
         <motion.div {...fadeUp}>
-          <p className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-4 text-center">
+          <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-4 text-center">
             Our Mission
           </p>
           <h2
             id="mission-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight mb-8 text-center"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-8 text-center"
           >
             Real tools for real engineering teams
           </h2>
         </motion.div>
 
         <motion.div
-          className="space-y-6 text-base text-[var(--fgColor-muted)] leading-relaxed"
+          className="space-y-6 text-base text-[var(--signal-fg-secondary)] leading-relaxed"
           {...fadeUpDelayed(0.1)}
         >
           <p>
             We believe feature flags should be{" "}
-            <strong className="text-[var(--fgColor-default)]">
+            <strong className="text-[var(--signal-fg-primary)]">
               fast, open, and affordable
             </strong>{" "}
             — infrastructure, not a profit center. The platforms that came
@@ -184,7 +184,7 @@ function MissionSection() {
             infrastructure: predictable, transparent, and fair.
           </p>
           <p>
-            <strong className="text-[var(--fgColor-default)]">
+            <strong className="text-[var(--signal-fg-primary)]">
               Open source is not a marketing tactic. It&apos;s how we build
               trust.
             </strong>{" "}
@@ -208,21 +208,21 @@ function PrinciplesSection() {
   return (
     <section
       id="principles"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="principles-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
         <motion.div className="text-center max-w-2xl mx-auto mb-14" {...fadeUp}>
-          <p className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-3">
+          <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
             Guiding Principles
           </p>
           <h2
             id="principles-heading"
-            className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             What we stand for
           </h2>
-          <p className="text-base text-[var(--fgColor-muted)] mt-3">
+          <p className="text-base text-[var(--signal-fg-secondary)] mt-3">
             The principles that guide every decision we make — from architecture
             to pricing.
           </p>
@@ -232,7 +232,7 @@ function PrinciplesSection() {
           {principles.map((principle, i) => (
             <motion.div
               key={principle.title}
-              className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-6 hover:border-[var(--borderColor-accent-muted)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200"
+              className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 hover:border-[var(--signal-border-accent-muted)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
@@ -242,16 +242,16 @@ function PrinciplesSection() {
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
-              <div className="w-10 h-10 rounded-lg bg-[var(--bgColor-accent-muted)] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200">
+              <div className="w-10 h-10 rounded-lg bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200">
                 <principle.icon
                   size={20}
-                  className="text-[var(--fgColor-accent)]"
+                  className="text-[var(--signal-fg-accent)]"
                 />
               </div>
-              <h3 className="text-base font-semibold text-[var(--fgColor-default)] mb-2">
+              <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-2">
                 {principle.title}
               </h3>
-              <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+              <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
                 {principle.description}
               </p>
             </motion.div>
@@ -270,23 +270,23 @@ function OriginSection() {
   return (
     <section
       id="origin"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="origin-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Text */}
           <motion.div {...fadeUp}>
-            <p className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-3">
+            <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
               Our Story
             </p>
             <h2
               id="origin-heading"
-              className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight mb-6"
+              className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-6"
             >
               Built by engineers, for engineers
             </h2>
-            <div className="space-y-4 text-base text-[var(--fgColor-muted)] leading-relaxed">
+            <div className="space-y-4 text-base text-[var(--signal-fg-secondary)] leading-relaxed">
               <p>
                 FeatureSignals started with a real problem: an engineering team
                 needed feature flags, and the market options were either
@@ -316,20 +316,20 @@ function OriginSection() {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-8">
-              <h3 className="text-lg font-semibold text-[var(--fgColor-default)] mb-6">
+            <div className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-8">
+              <h3 className="text-lg font-semibold text-[var(--signal-fg-primary)] mb-6">
                 Company
               </h3>
               <dl className="space-y-4">
                 {companyFacts.map((fact) => (
                   <div
                     key={fact.label}
-                    className="flex items-center justify-between py-2 border-b border-[var(--borderColor-default)] last:border-b-0"
+                    className="flex items-center justify-between py-2 border-b border-[var(--signal-border-default)] last:border-b-0"
                   >
-                    <dt className="text-sm text-[var(--fgColor-muted)]">
+                    <dt className="text-sm text-[var(--signal-fg-secondary)]">
                       {fact.label}
                     </dt>
-                    <dd className="text-sm font-medium text-[var(--fgColor-default)] text-right">
+                    <dd className="text-sm font-medium text-[var(--signal-fg-primary)] text-right">
                       {fact.value}
                     </dd>
                   </div>
@@ -351,21 +351,21 @@ function TeamSection() {
   return (
     <section
       id="team"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="team-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <div className="w-14 h-14 rounded-2xl bg-[var(--bgColor-accent-muted)] flex items-center justify-center mx-auto mb-6">
-            <PeopleIcon size={28} className="text-[var(--fgColor-accent)]" />
+          <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mx-auto mb-6">
+            <PeopleIcon size={28} className="text-[var(--signal-fg-accent)]" />
           </div>
           <h2
             id="team-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight mb-4"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           >
             Built by a small, focused team
           </h2>
-          <p className="text-base text-[var(--fgColor-muted)] max-w-lg mx-auto leading-relaxed">
+          <p className="text-base text-[var(--signal-fg-secondary)] max-w-lg mx-auto leading-relaxed">
             We&apos;re a small, focused team of engineers passionate about
             developer tools. We believe great infrastructure software comes from
             teams that understand the problem deeply — not from the largest
@@ -385,21 +385,21 @@ function BackersSection() {
   return (
     <section
       id="backers"
-      className="py-20 sm:py-28 bg-[var(--bgColor-inset)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="backers-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <div className="w-14 h-14 rounded-2xl bg-[var(--bgColor-done-muted)] flex items-center justify-center mx-auto mb-6">
-            <RocketIcon size={28} className="text-[var(--fgColor-done)]" />
+          <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-6">
+            <RocketIcon size={28} className="text-[var(--signal-fg-info)]" />
           </div>
           <h2
             id="backers-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight mb-4"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           >
             Bootstrapped and independent
           </h2>
-          <p className="text-base text-[var(--fgColor-muted)] max-w-lg mx-auto leading-relaxed">
+          <p className="text-base text-[var(--signal-fg-secondary)] max-w-lg mx-auto leading-relaxed">
             We answer to our users, not VCs. FeatureSignals is self-funded and
             profitable. Our incentives are aligned with yours — build a product
             so good that you choose to pay for it. No growth-at-all-costs

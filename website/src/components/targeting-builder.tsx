@@ -130,32 +130,32 @@ export function TargetingBuilder() {
 
   return (
     <div
-      className="rounded-2xl border border-[var(--borderColor-default)] bg-white p-6 sm:p-8"
-      style={{ boxShadow: "var(--shadow-floating-medium)" }}
+      className="rounded-2xl border border-[var(--signal-border-default)] bg-white p-6 sm:p-8"
+      style={{ boxShadow: "var(--signal-shadow-lg)" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bgColor-done-muted)]">
-            <ZapIcon size={16} fill="var(--fgColor-done)" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--signal-bg-info-muted)]">
+            <ZapIcon size={16} fill="var(--signal-fg-info)" />
           </div>
-          <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+          <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
             Targeting Rules
           </h3>
         </div>
         {/* Enable/disable toggle */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--fgColor-subtle)]">
+          <span className="text-xs text-[var(--signal-fg-tertiary)]">
             Flag is
           </span>
           <button
             onClick={() => setFlagEnabled((p) => !p)}
             role="switch"
             aria-checked={flagEnabled}
-            className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:ring-offset-2 ${
+            className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:ring-offset-2 ${
               flagEnabled
-                ? "bg-[var(--bgColor-success-emphasis)]"
-                : "bg-[var(--borderColor-default)]"
+                ? "bg-[var(--signal-bg-success-emphasis)]"
+                : "bg-[var(--signal-border-default)]"
             }`}
           >
             <span
@@ -168,8 +168,8 @@ export function TargetingBuilder() {
       </div>
 
       {/* Rule builder form */}
-      <div className="rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-inset)] p-4 mb-4">
-        <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-3">
+      <div className="rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 mb-4">
+        <div className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider mb-3">
           Add Rule
         </div>
 
@@ -178,7 +178,7 @@ export function TargetingBuilder() {
           <select
             value={draft.attribute}
             onChange={(e) => setDraft((d) => ({ ...d, attribute: e.target.value }))}
-            className="rounded-lg border border-[var(--borderColor-default)] bg-white px-2.5 py-2 text-xs font-medium text-[var(--fgColor-default)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:border-[var(--fgColor-accent)]"
+            className="rounded-lg border border-[var(--signal-border-default)] bg-white px-2.5 py-2 text-xs font-medium text-[var(--signal-fg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:border-[var(--signal-fg-accent)]"
           >
             {ATTRIBUTES.map((a) => (
               <option key={a.value} value={a.value}>
@@ -191,7 +191,7 @@ export function TargetingBuilder() {
           <select
             value={draft.operator}
             onChange={(e) => setDraft((d) => ({ ...d, operator: e.target.value as DraftRule["operator"] }))}
-            className="rounded-lg border border-[var(--borderColor-default)] bg-white px-2.5 py-2 text-xs font-medium text-[var(--fgColor-default)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:border-[var(--fgColor-accent)]"
+            className="rounded-lg border border-[var(--signal-border-default)] bg-white px-2.5 py-2 text-xs font-medium text-[var(--signal-fg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:border-[var(--signal-fg-accent)]"
           >
             {OPERATORS.map((op) => (
               <option key={op.value} value={op.value}>
@@ -218,14 +218,14 @@ export function TargetingBuilder() {
                   ? "enterprise"
                   : "value"
             }
-            className="rounded-lg border border-[var(--borderColor-default)] bg-white px-2.5 py-2 text-xs font-mono text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:border-[var(--fgColor-accent)]"
+            className="rounded-lg border border-[var(--signal-border-default)] bg-white px-2.5 py-2 text-xs font-mono text-[var(--signal-fg-primary)] placeholder:text-[var(--signal-fg-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:border-[var(--signal-fg-accent)]"
           />
 
           {/* Serve value */}
           <select
             value={draft.serveValue}
             onChange={(e) => setDraft((d) => ({ ...d, serveValue: e.target.value }))}
-            className="rounded-lg border border-[var(--borderColor-default)] bg-white px-2.5 py-2 text-xs font-medium text-[var(--fgColor-default)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:border-[var(--fgColor-accent)]"
+            className="rounded-lg border border-[var(--signal-border-default)] bg-white px-2.5 py-2 text-xs font-medium text-[var(--signal-fg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:border-[var(--signal-fg-accent)]"
           >
             <option value="true">Serve ON</option>
             <option value="false">Serve OFF</option>
@@ -233,7 +233,7 @@ export function TargetingBuilder() {
         </div>
 
         {addError && (
-          <p className="text-xs text-[var(--fgColor-danger)] mb-2 flex items-center gap-1">
+          <p className="text-xs text-[var(--signal-fg-danger)] mb-2 flex items-center gap-1">
             <AlertIcon size={12} />
             {addError}
           </p>
@@ -241,7 +241,7 @@ export function TargetingBuilder() {
 
         <button
           onClick={addRule}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[var(--fgColor-accent)] hover:bg-[#0757ba] transition-colors duration-150"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150"
         >
           <PlusIcon size={14} />
           Add Rule
@@ -255,7 +255,7 @@ export function TargetingBuilder() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-4 text-xs text-[var(--fgColor-subtle)]"
+              className="text-center py-4 text-xs text-[var(--signal-fg-tertiary)]"
             >
               No targeting rules yet. Add a rule above to see it take effect.
             </motion.div>
@@ -269,32 +269,32 @@ export function TargetingBuilder() {
                 transition={{ duration: 0.2 }}
                 className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm ${
                   i === matchedRuleIndex
-                    ? "border-[var(--borderColor-success-emphasis)] bg-[var(--bgColor-success-muted)]"
-                    : "border-[var(--borderColor-default)] bg-white"
+                    ? "border-[var(--signal-border-success-emphasis)] bg-[var(--signal-bg-success-muted)]"
+                    : "border-[var(--signal-border-default)] bg-white"
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {i === matchedRuleIndex && (
-                    <CheckIcon size={14} fill="var(--fgColor-success)" />
+                    <CheckIcon size={14} fill="var(--signal-fg-success)" />
                   )}
-                  <span className="font-medium text-[var(--fgColor-default)] shrink-0">
+                  <span className="font-medium text-[var(--signal-fg-primary)] shrink-0">
                     IF
                   </span>
-                  <span className="font-mono text-[var(--fgColor-accent)] truncate">
+                  <span className="font-mono text-[var(--signal-fg-accent)] truncate">
                     {rule.attribute}
                   </span>
-                  <span className="text-[var(--fgColor-subtle)] shrink-0">
+                  <span className="text-[var(--signal-fg-tertiary)] shrink-0">
                     {rule.operator}
                   </span>
-                  <span className="font-mono text-[var(--fgColor-done)] truncate">
+                  <span className="font-mono text-[var(--signal-fg-info)] truncate">
                     {JSON.stringify(rule.value)}
                   </span>
-                  <span className="text-[var(--fgColor-muted)] shrink-0">→</span>
+                  <span className="text-[var(--signal-fg-secondary)] shrink-0">→</span>
                   <span
                     className={`font-semibold shrink-0 ${
                       rule.serveValue
-                        ? "text-[var(--fgColor-success)]"
-                        : "text-[var(--fgColor-danger)]"
+                        ? "text-[var(--signal-fg-success)]"
+                        : "text-[var(--signal-fg-danger)]"
                     }`}
                   >
                     {rule.serveValue ? "ON" : "OFF"}
@@ -302,7 +302,7 @@ export function TargetingBuilder() {
                 </div>
                 <button
                   onClick={() => removeRule(i)}
-                  className="ml-2 p-1 rounded text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-danger)] hover:bg-[var(--bgColor-danger-muted)] transition-colors shrink-0"
+                  className="ml-2 p-1 rounded text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-danger)] hover:bg-[var(--signal-bg-danger-muted)] transition-colors shrink-0"
                   aria-label="Remove rule"
                 >
                   <TrashIcon size={14} />
@@ -317,19 +317,19 @@ export function TargetingBuilder() {
       <div
         className={`rounded-xl p-4 mb-5 ${
           isEnabled
-            ? "bg-[var(--bgColor-success-muted)] border border-[var(--borderColor-success-muted)]"
-            : "bg-[var(--bgColor-danger-muted)] border border-[var(--borderColor-danger-muted)]"
+            ? "bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]"
+            : "bg-[var(--signal-bg-danger-muted)] border border-[var(--borderColor-danger-muted)]"
         }`}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
             Live Evaluation
           </span>
           <motion.span
             key={evalResult.latencyMs}
             initial={{ scale: 1.2, opacity: 0.5 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)]"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]"
           >
             <ZapIcon size={10} />
             {evalResult.latencyMs.toFixed(2)}ms
@@ -339,17 +339,17 @@ export function TargetingBuilder() {
         <div
           className={`text-xl font-bold mb-1 ${
             isEnabled
-              ? "text-[var(--fgColor-success)]"
-              : "text-[var(--fgColor-danger)]"
+              ? "text-[var(--signal-fg-success)]"
+              : "text-[var(--signal-fg-danger)]"
           }`}
         >
           {isEnabled ? "✅ ENABLED" : "❌ DISABLED"}
         </div>
-        <div className="text-xs text-[var(--fgColor-muted)]">
+        <div className="text-xs text-[var(--signal-fg-secondary)]">
           Context: plan=<span className="font-mono font-semibold">{DEMO_CONTEXT.plan}</span>,
           country=<span className="font-mono font-semibold">{DEMO_CONTEXT.country}</span>
         </div>
-        <div className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+        <div className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
           {evalResult.reason}
         </div>
       </div>
@@ -357,7 +357,7 @@ export function TargetingBuilder() {
       {/* CTA */}
       <a
         href="/rollout"
-        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--fgColor-accent)] hover:bg-[#0757ba] transition-colors duration-150"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150"
       >
         Roll it out gradually
         <ChevronRightIcon size={16} />

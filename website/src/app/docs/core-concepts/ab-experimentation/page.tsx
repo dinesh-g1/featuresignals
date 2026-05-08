@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default function ABExperimentationPage() {
   return (
     <div>
-      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3">A/B Experimentation</h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">FeatureSignals has built-in A/B experimentation support. Create flags with the <InlineCode>ab</InlineCode> type to assign users to weighted variants using consistent hashing.</p>
+      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3">A/B Experimentation</h1>
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">FeatureSignals has built-in A/B experimentation support. Create flags with the <InlineCode>ab</InlineCode> type to assign users to weighted variants using consistent hashing.</p>
 
       <SectionHeading>Concepts</SectionHeading>
       <SimpleTable>
@@ -38,7 +38,7 @@ export default function ABExperimentationPage() {
   }'`} />
 
       <SectionHeading>How Assignment Works</SectionHeading>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>A hash bucket is computed from <InlineCode>flagKey + &quot;.&quot; + userKey</InlineCode> (0–9999)</li>
         <li>Variants are walked in order, accumulating weights</li>
         <li>The first variant where <InlineCode>bucket &lt; cumulative_weight</InlineCode> is assigned</li>
@@ -65,7 +65,7 @@ export default function ABExperimentationPage() {
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
         {[{ label: "Percentage Rollouts", href: "/docs/core-concepts/percentage-rollouts" }, { label: "Tutorial: A/B Testing in React", href: "/docs/tutorials/ab-testing-react" }].map((step) => (
-          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
+          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
         ))}
       </ul>
     </div>
@@ -73,20 +73,20 @@ export default function ABExperimentationPage() {
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">{children}</h2>;
+  return <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">{children}</h2>;
 }
 function InlineCode({ children }: { children: React.ReactNode }) {
-  return <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">{children}</code>;
+  return <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">{children}</code>;
 }
 function SimpleTable({ children }: { children: React.ReactNode }) {
-  return <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6"><table className="w-full text-sm text-left">{children}</table></div>;
+  return <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6"><table className="w-full text-sm text-left">{children}</table></div>;
 }
 function Th({ children }: { children: React.ReactNode }) {
-  return <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">{children}</th>;
+  return <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">{children}</th>;
 }
 function Tr({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">{children}</tr>;
+  return <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">{children}</tr>;
 }
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>;
+  return <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>;
 }

@@ -14,29 +14,29 @@ export default function FeatureFlagsPage() {
     <div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         Feature Flags
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         A feature flag (also called a feature toggle) is a mechanism that lets you enable or disable
         functionality in your application without deploying new code. FeatureSignals supports
         multiple flag types for different use cases.
       </p>
 
       {/* Callout */}
-      <div className="p-4 mb-8 rounded-lg border border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]">
+      <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--fgColor-accent)] mt-0.5 shrink-0" />
+          <LightBulbIcon size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-[var(--fgColor-default)] mb-1">
+            <p className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1">
               Open in Flag Engine
             </p>
-            <p className="text-sm text-[var(--fgColor-muted)]">
+            <p className="text-sm text-[var(--signal-fg-secondary)]">
               Manage your feature flags directly in the{" "}
               <a
                 href="https://app.featuresignals.com/flags"
-                className="text-[var(--fgColor-accent)] hover:underline font-medium"
+                className="text-[var(--signal-fg-accent)] hover:underline font-medium"
               >
                 Flag Engine →
               </a>
@@ -66,7 +66,7 @@ export default function FeatureFlagsPage() {
 
       {/* Flag Structure */}
       <SectionHeading>Flag Structure</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">Every flag has these properties:</p>
+      <p className="text-[var(--signal-fg-primary)] mb-4">Every flag has these properties:</p>
       <SimpleTable>
         <thead>
           <tr>
@@ -91,12 +91,12 @@ export default function FeatureFlagsPage() {
 
       {/* Flag States */}
       <SectionHeading>Flag States</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         A flag&apos;s configuration is <strong>per-environment</strong>. The same flag can be ON in{" "}
         <InlineCode>dev</InlineCode> and OFF in <InlineCode>production</InlineCode>. Each environment
         state controls:
       </p>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           <strong>Enabled/Disabled</strong> — master toggle
         </li>
@@ -116,7 +116,7 @@ export default function FeatureFlagsPage() {
 
       {/* Evaluation Flow */}
       <SectionHeading>Evaluation Flow</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         When an SDK evaluates a flag, the engine follows this order:
       </p>
       <CodeBlock
@@ -134,10 +134,10 @@ export default function FeatureFlagsPage() {
 
       {/* Default Values */}
       <SectionHeading>Default Values</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         Default values work at two levels:
       </p>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>
           <strong>Flag-level default</strong> — Defined when creating the flag. Returned when the
           flag is disabled.
@@ -155,7 +155,7 @@ export default function FeatureFlagsPage() {
 
       {/* Best Practices */}
       <SectionHeading>Best Practices</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1.5 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1.5 text-[var(--signal-fg-primary)] mb-6">
         <li>
           <strong>Use descriptive keys</strong> — <InlineCode>enable-dark-mode</InlineCode> is better
           than <InlineCode>flag-1</InlineCode>
@@ -165,7 +165,7 @@ export default function FeatureFlagsPage() {
           permission to set lifecycle expectations (see{" "}
           <Link
             href="/docs/core-concepts/toggle-categories"
-            className="text-[var(--fgColor-accent)] hover:underline"
+            className="text-[var(--signal-fg-accent)] hover:underline"
           >
             Toggle Categories
           </Link>
@@ -201,7 +201,7 @@ export default function FeatureFlagsPage() {
           <li key={step.href}>
             <Link
               href={step.href}
-              className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"
+              className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
             >
               <ArrowRightIcon size={14} />
               <span>{step.label}</span>
@@ -219,7 +219,7 @@ export default function FeatureFlagsPage() {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
@@ -227,7 +227,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -235,7 +235,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 
 function SimpleTable({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
@@ -243,16 +243,16 @@ function SimpleTable({ children }: { children: React.ReactNode }) {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
 }
 
 function Tr({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">{children}</tr>;
+  return <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">{children}</tr>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>;
+  return <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>;
 }

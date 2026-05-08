@@ -68,25 +68,25 @@ function SignupLeft() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)] mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)] mb-6">
           <ZapIcon size={12} />
           Live savings estimate
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-4">
           You&apos;re about to save{" "}
-          <span className="text-[var(--fgColor-success)] tabular-nums">
+          <span className="text-[var(--signal-fg-success)] tabular-nums">
             {formatUSD(counted)}/year
           </span>
         </h1>
 
-        <p className="text-lg text-[var(--fgColor-muted)] mb-8">
+        <p className="text-lg text-[var(--signal-fg-secondary)] mb-8">
           Compared to what{" "}
           <span style={{ color: meta.logoColor }} className="font-semibold">
             {meta.name}
           </span>{" "}
           charges {teamSize} engineers. FeatureSignals Pro is a flat{" "}
-          <strong className="text-[var(--fgColor-default)]">INR 1,999/month</strong>{" "}
+          <strong className="text-[var(--signal-fg-primary)]">INR 1,999/month</strong>{" "}
           (~$29). Unlimited seats. Unlimited flags. No per-MAU fees. No
           surprises.
         </p>
@@ -100,11 +100,11 @@ function SignupLeft() {
           ].map((item) => (
             <li
               key={item}
-              className="flex items-start gap-2.5 text-sm text-[var(--fgColor-muted)]"
+              className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-secondary)]"
             >
               <CheckIcon
                 size={16}
-                fill="var(--fgColor-success)"
+                fill="var(--signal-fg-success)"
                 className="mt-0.5 shrink-0"
               />
               <span>{item}</span>
@@ -113,8 +113,8 @@ function SignupLeft() {
         </ul>
 
         {/* Formula detail */}
-        <div className="rounded-lg border border-[var(--borderColor-muted)] bg-[var(--bgColor-inset)] p-4">
-          <p className="text-xs text-[var(--fgColor-subtle)] font-mono">
+        <div className="rounded-lg border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)] p-4">
+          <p className="text-xs text-[var(--signal-fg-tertiary)] font-mono">
             {result.formula}
           </p>
         </div>
@@ -136,7 +136,7 @@ function SignupRight() {
   };
 
   return (
-    <div className="flex flex-col justify-center h-full p-8 sm:p-12 lg:p-16 bg-[var(--bgColor-default)]">
+    <div className="flex flex-col justify-center h-full p-8 sm:p-12 lg:p-16 bg-[var(--signal-bg-primary)]">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -144,10 +144,10 @@ function SignupRight() {
         className="max-w-sm mx-auto w-full"
       >
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-[var(--fgColor-default)] mb-2">
+          <h2 className="text-2xl font-bold text-[var(--signal-fg-primary)] mb-2">
             Start your free trial
           </h2>
-          <p className="text-sm text-[var(--fgColor-muted)]">
+          <p className="text-sm text-[var(--signal-fg-secondary)]">
             No credit card required. 14-day trial included.
           </p>
         </div>
@@ -156,7 +156,7 @@ function SignupRight() {
           <div>
             <label
               htmlFor="signup-email"
-              className="block text-sm font-medium text-[var(--fgColor-default)] mb-1.5"
+              className="block text-sm font-medium text-[var(--signal-fg-primary)] mb-1.5"
             >
               Work email
             </label>
@@ -167,14 +167,14 @@ function SignupRight() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
-              className="w-full rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-2.5 text-sm text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:border-[var(--fgColor-accent)] transition-shadow"
+              className="w-full rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] px-4 py-2.5 text-sm text-[var(--signal-fg-primary)] placeholder:text-[var(--signal-fg-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:border-[var(--signal-fg-accent)] transition-shadow"
             />
           </div>
 
           <div>
             <label
               htmlFor="signup-password"
-              className="block text-sm font-medium text-[var(--fgColor-default)] mb-1.5"
+              className="block text-sm font-medium text-[var(--signal-fg-primary)] mb-1.5"
             >
               Password
             </label>
@@ -186,14 +186,14 @@ function SignupRight() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 8 characters"
-              className="w-full rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-4 py-2.5 text-sm text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)] focus:border-[var(--fgColor-accent)] transition-shadow"
+              className="w-full rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] px-4 py-2.5 text-sm text-[var(--signal-fg-primary)] placeholder:text-[var(--signal-fg-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)] focus:border-[var(--signal-fg-accent)] transition-shadow"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-success-emphasis)] hover:bg-[#1c8139] active:bg-[#197935] transition-colors duration-150 disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] active:bg-[#197935] transition-colors duration-150 disabled:opacity-50"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
             {submitting ? "Starting..." : "Start Free"}
@@ -204,10 +204,10 @@ function SignupRight() {
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[var(--borderColor-muted)]" />
+              <div className="w-full border-t border-[var(--signal-border-subtle)]" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-[var(--bgColor-default)] px-3 text-[var(--fgColor-subtle)]">
+              <span className="bg-[var(--signal-bg-primary)] px-3 text-[var(--signal-fg-tertiary)]">
                 Or continue with
               </span>
             </div>
@@ -215,25 +215,25 @@ function SignupRight() {
 
           <a
             href="https://app.featuresignals.com/auth/github"
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-5 py-2.5 text-sm font-medium text-[var(--fgColor-default)] hover:bg-[#eff2f5] transition-colors duration-150"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] px-5 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[#eff2f5] transition-colors duration-150"
           >
             <MarkGithubIcon size={16} />
             GitHub
           </a>
         </div>
 
-        <p className="mt-6 text-xs text-[var(--fgColor-subtle)] text-center">
+        <p className="mt-6 text-xs text-[var(--signal-fg-tertiary)] text-center">
           By signing up, you agree to our{" "}
           <a
             href="/terms-and-conditions"
-            className="text-[var(--fgColor-accent)] hover:underline"
+            className="text-[var(--signal-fg-accent)] hover:underline"
           >
             Terms
           </a>{" "}
           and{" "}
           <a
             href="/privacy-policy"
-            className="text-[var(--fgColor-accent)] hover:underline"
+            className="text-[var(--signal-fg-accent)] hover:underline"
           >
             Privacy Policy
           </a>
@@ -249,7 +249,7 @@ export default function SignupPage() {
     <CalculatorProvider>
       <div className="min-h-screen pt-16 flex">
         {/* Left: Value Demo */}
-        <div className="hidden lg:flex lg:w-1/2 bg-[var(--bgColor-inset)] border-r border-[var(--borderColor-default)]">
+        <div className="hidden lg:flex lg:w-1/2 bg-[var(--signal-bg-secondary)] border-r border-[var(--signal-border-default)]">
           <SignupLeft />
         </div>
 

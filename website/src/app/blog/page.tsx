@@ -29,20 +29,20 @@ function BlogHero() {
   return (
     <section
       id="hero"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="blog-hero-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
-        <p className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-4">
+        <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-4">
           Blog
         </p>
         <h1
           id="blog-hero-heading"
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--fgColor-default)] tracking-tight mb-4"
+          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
         >
           Engineering Blog
         </h1>
-        <p className="text-lg text-[var(--fgColor-muted)] max-w-xl mx-auto">
+        <p className="text-lg text-[var(--signal-fg-secondary)] max-w-xl mx-auto">
           Stories about feature flags, release infrastructure, and building
           better software.
         </p>

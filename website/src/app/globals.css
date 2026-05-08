@@ -81,8 +81,8 @@
    ================================================================ */
 
 @theme inline {
-  --color-background: var(--bgColor-default);
-  --color-foreground: var(--fgColor-default);
+  --color-background: var(--signal-bg-primary);
+  --color-foreground: var(--signal-fg-primary);
   --font-sans: var(--fontStack-system);
   --font-mono: var(--fontStack-monospace);
 
@@ -114,9 +114,9 @@
   --color-done-muted: #fbefff;
 
   /* Shadows as Tailwind-compatible */
-  --shadow-primer-resting: var(--shadow-resting-small);
-  --shadow-primer-floating: var(--shadow-floating-small);
-  --shadow-primer-floating-md: var(--shadow-floating-medium);
+  --shadow-primer-resting: var(--signal-shadow-sm);
+  --shadow-primer-floating: var(--signal-shadow-md);
+  --shadow-primer-floating-md: var(--signal-shadow-lg);
   --shadow-primer-floating-lg: var(--shadow-floating-large);
 
   /* Border radius */
@@ -218,8 +218,8 @@
    ================================================================ */
 
 body {
-  background: var(--bgColor-default);
-  color: var(--fgColor-default);
+  background: var(--signal-bg-primary);
+  color: var(--signal-fg-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "kern";
@@ -228,7 +228,7 @@ body {
 
 ::selection {
   background-color: #0969da33;
-  color: var(--fgColor-default);
+  color: var(--signal-fg-primary);
 }
 
 /* Primer dotted pattern for dark sections */
@@ -324,7 +324,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: var(--bgColor-accent-emphasis);
+  background: var(--signal-bg-accent-emphasis);
   cursor: pointer;
   margin-top: -5px;
   box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
@@ -337,14 +337,14 @@ input[type="range"]::-webkit-slider-runnable-track {
   width: 100%;
   height: 6px;
   cursor: pointer;
-  background: var(--borderColor-default);
+  background: var(--signal-border-default);
   border-radius: 3px;
 }
 input[type="range"]::-moz-range-thumb {
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: var(--bgColor-accent-emphasis);
+  background: var(--signal-bg-accent-emphasis);
   cursor: pointer;
   border: none;
   box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
@@ -353,7 +353,7 @@ input[type="range"]::-moz-range-track {
   width: 100%;
   height: 6px;
   cursor: pointer;
-  background: var(--borderColor-default);
+  background: var(--signal-border-default);
   border-radius: 3px;
 }
 
@@ -376,7 +376,7 @@ input[type="range"]::-moz-range-track {
   --fs-glass-shadow: 0 1px 3px 0 rgba(31, 35, 40, 0.06);
 
   /* FeatureSignals-specific borders */
-  --fs-border-default: var(--borderColor-default);
+  --fs-border-default: var(--signal-border-default);
 }
 
 /* ---- Glass Card — frosted glass surface ---- */
@@ -420,17 +420,17 @@ input[type="range"]::-moz-range-track {
   background: var(--fs-accent);
   color: var(--fs-accent-foreground);
   border: 1px solid transparent;
-  box-shadow: var(--shadow-resting-small);
+  box-shadow: var(--signal-shadow-sm);
 }
 
 .btn-primary:hover {
   background: var(--fs-accent-hover);
-  box-shadow: var(--shadow-resting-medium);
+  box-shadow: var(--signal-shadow-md);
 }
 
 .btn-primary:active {
   background: var(--fs-accent-hover);
-  box-shadow: var(--shadow-resting-xsmall);
+  box-shadow: var(--signal-shadow-xs);
   transform: scale(0.98);
 }
 
@@ -439,50 +439,50 @@ input[type="range"]::-moz-range-track {
   background: var(--fs-success);
   color: var(--fs-success-foreground);
   border: 1px solid transparent;
-  box-shadow: var(--shadow-resting-small);
+  box-shadow: var(--signal-shadow-sm);
 }
 
 .btn-primary-success:hover {
   background: var(--fs-success-hover);
-  box-shadow: var(--shadow-resting-medium);
+  box-shadow: var(--signal-shadow-md);
 }
 
 .btn-primary-success:active {
   background: var(--fs-success-hover);
-  box-shadow: var(--shadow-resting-xsmall);
+  box-shadow: var(--signal-shadow-xs);
   transform: scale(0.98);
 }
 
 /* Secondary — muted fill */
 .btn-secondary {
-  background: var(--bgColor-muted);
-  color: var(--fgColor-default);
-  border: 1px solid var(--borderColor-default);
+  background: var(--signal-bg-secondary);
+  color: var(--signal-fg-primary);
+  border: 1px solid var(--signal-border-default);
 }
 
 .btn-secondary:hover {
-  background: var(--bgColor-inset);
-  border-color: var(--borderColor-emphasis);
+  background: var(--signal-bg-secondary);
+  border-color: var(--signal-border-emphasis);
 }
 
 .btn-secondary:active {
-  background: var(--borderColor-default);
+  background: var(--signal-border-default);
   transform: scale(0.98);
 }
 
 /* Ghost — transparent with hover */
 .btn-ghost {
   background: transparent;
-  color: var(--fgColor-default);
+  color: var(--signal-fg-primary);
   border: 1px solid transparent;
 }
 
 .btn-ghost:hover {
-  background: var(--bgColor-muted);
+  background: var(--signal-bg-secondary);
 }
 
 .btn-ghost:active {
-  background: var(--borderColor-default);
+  background: var(--signal-border-default);
   transform: scale(0.98);
 }
 
@@ -491,8 +491,8 @@ input[type="range"]::-moz-range-track {
    ================================================================ */
 
 .premium-card {
-  background: var(--bgColor-default);
-  border: 1px solid var(--borderColor-default);
+  background: var(--signal-bg-primary);
+  border: 1px solid var(--signal-border-default);
   border-radius: var(--radius-medium);
   box-shadow:
     0 0 0 1px rgba(209, 217, 224, 0.3),
@@ -505,7 +505,7 @@ input[type="range"]::-moz-range-track {
 }
 
 .premium-card:hover {
-  border-color: var(--borderColor-accent-muted);
+  border-color: var(--signal-border-accent-muted);
   box-shadow:
     0 0 0 1px rgba(84, 174, 255, 0.3),
     0 1px 3px 0 rgba(31, 35, 40, 0.08),

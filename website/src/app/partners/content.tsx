@@ -227,18 +227,18 @@ const integrationCategories: IntegrationCategory[] = [
 function BenefitCard({ benefit, index }: { benefit: Benefit; index: number }) {
   return (
     <motion.div
-      className="flex items-start gap-4 p-5 rounded-xl bg-white border border-[var(--borderColor-default)]"
-      style={{ boxShadow: "var(--shadow-resting-small)" }}
+      className="flex items-start gap-4 p-5 rounded-xl bg-white border border-[var(--signal-border-default)]"
+      style={{ boxShadow: "var(--signal-shadow-sm)" }}
       {...fadeUpDelayed(index * 0.1)}
     >
-      <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-[var(--bgColor-accent-muted)]">
-        <benefit.icon size={18} className="text-[var(--fgColor-accent)]" />
+      <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-[var(--signal-bg-accent-muted)]">
+        <benefit.icon size={18} className="text-[var(--signal-fg-accent)]" />
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-1">
+        <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1">
           {benefit.title}
         </h3>
-        <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed">
+        <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
           {benefit.description}
         </p>
       </div>
@@ -256,19 +256,19 @@ function PartnerTypeCard({
   const Icon = partnerType.icon;
   return (
     <motion.div
-      className="flex flex-col rounded-xl border border-[var(--borderColor-default)] bg-white p-6 premium-card"
+      className="flex flex-col rounded-xl border border-[var(--signal-border-default)] bg-white p-6 premium-card"
       {...fadeUpDelayed(index * 0.12)}
     >
       <div className="flex items-center gap-3 mb-4">
-        <div className="shrink-0 flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--bgColor-accent-muted)]">
-          <Icon size={22} className="text-[var(--fgColor-accent)]" />
+        <div className="shrink-0 flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--signal-bg-accent-muted)]">
+          <Icon size={22} className="text-[var(--signal-fg-accent)]" />
         </div>
-        <h3 className="text-lg font-bold text-[var(--fgColor-default)]">
+        <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
           {partnerType.title}
         </h3>
       </div>
 
-      <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed mb-4 flex-1">
+      <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed mb-4 flex-1">
         {partnerType.description}
       </p>
 
@@ -276,7 +276,7 @@ function PartnerTypeCard({
         {partnerType.details.map((detail) => (
           <li
             key={detail}
-            className="flex items-start gap-2 text-sm text-[var(--fgColor-default)]"
+            className="flex items-start gap-2 text-sm text-[var(--signal-fg-primary)]"
           >
             <CheckIcon size={14} className="mt-0.5 shrink-0 text-emerald-500" />
             <span>{detail}</span>
@@ -286,7 +286,7 @@ function PartnerTypeCard({
 
       <a
         href={partnerType.ctaHref}
-        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] hover:bg-[#ccebff] transition-colors w-full text-center mt-auto"
+        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#ccebff] transition-colors w-full text-center mt-auto"
       >
         {partnerType.ctaLabel}
         <ArrowRightIcon size={14} />
@@ -303,17 +303,17 @@ function HeroSection() {
   return (
     <section
       id="partners-hero"
-      className="py-16 sm:py-24 bg-[var(--bgColor-default)]"
+      className="py-16 sm:py-24 bg-[var(--signal-bg-primary)]"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.h1
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--fgColor-default)]"
+          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--signal-fg-primary)]"
           {...fadeUp}
         >
           Partner with FeatureSignals
         </motion.h1>
         <motion.p
-          className="text-lg sm:text-xl text-[var(--fgColor-muted)] mt-4 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl text-[var(--signal-fg-secondary)] mt-4 max-w-2xl mx-auto"
           {...fadeUpDelayed(0.1)}
         >
           Unlock new opportunities by integrating with the open-source feature
@@ -332,18 +332,18 @@ function PartnerTypesSection() {
   return (
     <section
       id="partner-types"
-      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="partner-types-heading"
     >
       <div className="mx-auto max-w-6xl px-6">
         <motion.div className="text-center mb-12" {...fadeUp}>
           <h2
             id="partner-types-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Ways to partner
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             Three paths to build with us. Choose what fits your business.
           </p>
         </motion.div>
@@ -366,18 +366,18 @@ function BenefitsSection() {
   return (
     <section
       id="partner-benefits"
-      className="py-16 sm:py-20 bg-[var(--bgColor-default)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-primary)]"
       aria-labelledby="benefits-heading"
     >
       <div className="mx-auto max-w-4xl px-6">
         <motion.div className="text-center mb-12" {...fadeUp}>
           <h2
             id="benefits-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Partner benefits
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             Everything you need to build, market, and grow with FeatureSignals.
           </p>
         </motion.div>
@@ -400,18 +400,18 @@ function IntegrationCategoriesSection() {
   return (
     <section
       id="integration-categories"
-      className="py-16 sm:py-20 bg-[var(--bgColor-inset)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="integrations-heading"
     >
       <div className="mx-auto max-w-5xl px-6">
         <motion.div className="text-center mb-12" {...fadeUp}>
           <h2
             id="integrations-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
             Integration categories
           </h2>
-          <p className="text-[var(--fgColor-muted)] mt-2">
+          <p className="text-[var(--signal-fg-secondary)] mt-2">
             FeatureSignals plugs into your existing stack. Here&apos;s what we
             integrate with today.
           </p>
@@ -423,15 +423,15 @@ function IntegrationCategoriesSection() {
             return (
               <motion.div
                 key={cat.name}
-                className="rounded-xl border border-[var(--borderColor-default)] bg-white p-5"
-                style={{ boxShadow: "var(--shadow-resting-small)" }}
+                className="rounded-xl border border-[var(--signal-border-default)] bg-white p-5"
+                style={{ boxShadow: "var(--signal-shadow-sm)" }}
                 {...fadeUpDelayed(i * 0.08)}
               >
                 <div className="flex items-center gap-2.5 mb-3">
-                  <div className="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--bgColor-accent-muted)]">
-                    <Icon size={14} className="text-[var(--fgColor-accent)]" />
+                  <div className="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--signal-bg-accent-muted)]">
+                    <Icon size={14} className="text-[var(--signal-fg-accent)]" />
                   </div>
-                  <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+                  <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                     {cat.name}
                   </h3>
                 </div>
@@ -439,7 +439,7 @@ function IntegrationCategoriesSection() {
                   {cat.items.map((item) => (
                     <span
                       key={item}
-                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] border border-[var(--borderColor-muted)]"
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] border border-[var(--signal-border-subtle)]"
                     >
                       {item}
                     </span>
@@ -452,13 +452,13 @@ function IntegrationCategoriesSection() {
 
         {/* Open source note */}
         <motion.div className="mt-12 text-center" {...fadeUpDelayed(0.5)}>
-          <p className="text-sm text-[var(--fgColor-muted)]">
+          <p className="text-sm text-[var(--signal-fg-secondary)]">
             Don&apos;t see your tool? FeatureSignals is open source —{" "}
             <a
               href="https://github.com/dinesh-g1/featuresignals"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--fgColor-accent)] hover:underline font-medium"
+              className="text-[var(--signal-fg-accent)] hover:underline font-medium"
             >
               contribute an integration on GitHub
             </a>
@@ -518,7 +518,7 @@ function FinalCtaSection() {
         >
           <a
             href="/contact?reason=partnerships"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--bgColor-accent-emphasis)] hover:bg-[#0757ba] transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-accent-emphasis)] hover:bg-[#0757ba] transition-colors"
           >
             Become a Partner
             <ArrowRightIcon size={16} />

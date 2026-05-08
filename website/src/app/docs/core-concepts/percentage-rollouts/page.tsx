@@ -11,15 +11,15 @@ export const metadata: Metadata = {
 export default function PercentageRolloutsPage() {
   return (
     <div>
-      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3">
+      <h1 id="docs-main-heading" className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3">
         Percentage Rollouts
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         Percentage rollouts let you gradually release a feature to a subset of users. FeatureSignals uses <strong>consistent hashing</strong> to deterministically assign users to buckets.
       </p>
 
       <SectionHeading>How It Works</SectionHeading>
-      <ol className="list-decimal pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ol className="list-decimal pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li>A hash is computed from <InlineCode>flagKey + &quot;.&quot; + userKey</InlineCode> using MurmurHash3</li>
         <li>The hash maps to a bucket in the range <strong>0–9999</strong> (basis points)</li>
         <li>If the user&apos;s bucket is less than the rollout percentage, they&apos;re included</li>
@@ -36,7 +36,7 @@ export default function PercentageRolloutsPage() {
           <Tr><Td><InlineCode>10000</InlineCode></Td><Td>100%</Td></Tr>
         </tbody>
       </SimpleTable>
-      <p className="text-sm text-[var(--fgColor-muted)] mb-6">This provides granularity down to 0.01%.</p>
+      <p className="text-sm text-[var(--signal-fg-secondary)] mb-6">This provides granularity down to 0.01%.</p>
 
       <SectionHeading>Setting a Rollout</SectionHeading>
       <CodeBlock
@@ -48,7 +48,7 @@ export default function PercentageRolloutsPage() {
       />
 
       <SectionHeading>Consistency Guarantees</SectionHeading>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-6">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-6">
         <li><strong>Deterministic:</strong> The same <InlineCode>userKey</InlineCode> + <InlineCode>flagKey</InlineCode> always maps to the same bucket</li>
         <li><strong>Uniform distribution:</strong> MurmurHash3 provides excellent distribution</li>
         <li><strong>Cross-flag independence:</strong> Different flags use different hash inputs</li>
@@ -66,7 +66,7 @@ export default function PercentageRolloutsPage() {
       </SimpleTable>
 
       <SectionHeading>Rule-Level Rollouts</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">You can also set percentages on individual targeting rules:</p>
+      <p className="text-[var(--signal-fg-primary)] mb-4">You can also set percentages on individual targeting rules:</p>
       <CodeBlock
         language="json"
         code={`{
@@ -80,7 +80,7 @@ export default function PercentageRolloutsPage() {
   }]
 }`}
       />
-      <p className="text-sm text-[var(--fgColor-muted)] mb-6">This targets 50% of US users specifically.</p>
+      <p className="text-sm text-[var(--signal-fg-secondary)] mb-6">This targets 50% of US users specifically.</p>
 
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
@@ -90,7 +90,7 @@ export default function PercentageRolloutsPage() {
           { label: "Flag Lifecycle", href: "/docs/core-concepts/flag-lifecycle" },
         ].map((step) => (
           <li key={step.href}>
-            <Link href={step.href} className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium">
+            <Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium">
               <ArrowRightIcon size={14} /><span>{step.label}</span>
             </Link>
           </li>
@@ -101,20 +101,20 @@ export default function PercentageRolloutsPage() {
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">{children}</h2>;
+  return <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">{children}</h2>;
 }
 function InlineCode({ children }: { children: React.ReactNode }) {
-  return <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">{children}</code>;
+  return <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">{children}</code>;
 }
 function SimpleTable({ children }: { children: React.ReactNode }) {
-  return <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg mb-6"><table className="w-full text-sm text-left">{children}</table></div>;
+  return <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg mb-6"><table className="w-full text-sm text-left">{children}</table></div>;
 }
 function Th({ children }: { children: React.ReactNode }) {
-  return <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">{children}</th>;
+  return <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">{children}</th>;
 }
 function Tr({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">{children}</tr>;
+  return <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">{children}</tr>;
 }
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>;
+  return <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>;
 }

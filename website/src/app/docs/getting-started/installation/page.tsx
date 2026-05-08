@@ -14,18 +14,18 @@ export default function InstallationPage() {
     <div>
       <h1
         id="docs-main-heading"
-        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-3"
+        className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
       >
         Installation
       </h1>
-      <p className="text-lg text-[var(--fgColor-muted)] mb-8 leading-relaxed">
+      <p className="text-lg text-[var(--signal-fg-secondary)] mb-8 leading-relaxed">
         FeatureSignals can be installed via Docker Compose (recommended), standalone Docker, or
         built from source.
       </p>
 
       {/* Docker Compose */}
       <SectionHeading>Docker Compose (Recommended)</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-4">
+      <p className="text-[var(--signal-fg-primary)] mb-4">
         The fastest way to run the full stack locally:
       </p>
       <CodeBlock
@@ -34,7 +34,7 @@ export default function InstallationPage() {
 cd featuresignals
 docker compose up -d`}
       />
-      <p className="text-sm text-[var(--fgColor-muted)] mt-4 mb-6">This starts all services:</p>
+      <p className="text-sm text-[var(--signal-fg-secondary)] mt-4 mb-6">This starts all services:</p>
       <Table>
         <thead>
           <tr>
@@ -61,14 +61,14 @@ docker compose up -d`}
           </Tr>
         </tbody>
       </Table>
-      <p className="text-sm text-[var(--fgColor-muted)] mt-2">
+      <p className="text-sm text-[var(--signal-fg-secondary)] mt-2">
         Migrations run automatically via the <InlineCode>migrate</InlineCode> service.
       </p>
 
       {/* Standalone Docker */}
       <SectionHeading>Standalone Docker</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         API Server
       </h3>
       <CodeBlock
@@ -83,7 +83,7 @@ docker run -d \\
   featuresignals-server`}
       />
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Flag Engine
       </h3>
       <CodeBlock
@@ -96,7 +96,7 @@ docker run -d \\
   featuresignals-dashboard`}
       />
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Relay Proxy
       </h3>
       <CodeBlock
@@ -114,16 +114,16 @@ docker run -d \\
       {/* Build from Source */}
       <SectionHeading>Build from Source</SectionHeading>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-4 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-4 mb-3">
         Prerequisites
       </h3>
-      <ul className="list-disc pl-6 space-y-1 text-[var(--fgColor-default)] mb-4">
+      <ul className="list-disc pl-6 space-y-1 text-[var(--signal-fg-primary)] mb-4">
         <li>Go 1.22+</li>
         <li>Node.js 18+ and npm</li>
         <li>PostgreSQL 14+</li>
       </ul>
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-3">
         API Server
       </h3>
       <CodeBlock
@@ -133,7 +133,7 @@ go build -o featuresignals-server ./cmd/server
 ./featuresignals-server`}
       />
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Flag Engine
       </h3>
       <CodeBlock
@@ -144,10 +144,10 @@ npm run build
 npm start`}
       />
 
-      <h3 className="text-base font-semibold text-[var(--fgColor-default)] mt-6 mb-3">
+      <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mt-6 mb-3">
         Database Setup
       </h3>
-      <p className="text-[var(--fgColor-default)] mb-3">
+      <p className="text-[var(--signal-fg-primary)] mb-3">
         Create the database and run migrations:
       </p>
       <CodeBlock
@@ -162,22 +162,22 @@ migrate -path server/migrations \\
 
       {/* Verification */}
       <SectionHeading>Verifying the Installation</SectionHeading>
-      <p className="text-[var(--fgColor-default)] mb-3">
+      <p className="text-[var(--signal-fg-primary)] mb-3">
         After starting, verify the API is healthy:
       </p>
       <CodeBlock language="bash" code="curl http://localhost:8080/health" />
-      <p className="text-sm text-[var(--fgColor-muted)] mt-3 mb-2">Expected response:</p>
+      <p className="text-sm text-[var(--signal-fg-secondary)] mt-3 mb-2">Expected response:</p>
       <CodeBlock
         language="json"
         code={`{"status": "ok", "service": "featuresignals"}`}
       />
-      <p className="text-[var(--fgColor-default)] mt-4">
+      <p className="text-[var(--signal-fg-primary)] mt-4">
         Open{" "}
         <a
           href="http://localhost:3000"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[var(--fgColor-accent)] hover:underline"
+          className="text-[var(--signal-fg-accent)] hover:underline"
         >
           http://localhost:3000
         </a>{" "}
@@ -195,12 +195,12 @@ migrate -path server/migrations \\
           <li key={step.href}>
             <Link
               href={step.href}
-              className="flex items-center gap-2 text-[var(--fgColor-accent)] hover:underline text-sm font-medium"
+              className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
             >
               <ArrowRightIcon size={14} />
               <span>{step.label}</span>
             </Link>
-            <span className="text-xs text-[var(--fgColor-muted)] ml-6">
+            <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">
               — {step.desc}
             </span>
           </li>
@@ -216,7 +216,7 @@ migrate -path server/migrations \\
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold text-[var(--fgColor-default)] mt-10 mb-4 pb-2 border-b border-[var(--borderColor-default)]">
+    <h2 className="text-xl font-semibold text-[var(--signal-fg-primary)] mt-10 mb-4 pb-2 border-b border-[var(--signal-border-default)]">
       {children}
     </h2>
   );
@@ -224,7 +224,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--bgColor-inset)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]">
+    <code className="px-1.5 py-0.5 text-[0.85em] font-mono rounded bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]">
       {children}
     </code>
   );
@@ -232,7 +232,7 @@ function InlineCode({ children }: { children: React.ReactNode }) {
 
 function Table({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto border border-[var(--borderColor-default)] rounded-lg">
+    <div className="overflow-x-auto border border-[var(--signal-border-default)] rounded-lg">
       <table className="w-full text-sm text-left">{children}</table>
     </div>
   );
@@ -240,16 +240,16 @@ function Table({ children }: { children: React.ReactNode }) {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 font-semibold bg-[var(--bgColor-inset)] border-b border-[var(--borderColor-default)] text-[var(--fgColor-default)]">
+    <th className="px-4 py-2.5 font-semibold bg-[var(--signal-bg-secondary)] border-b border-[var(--signal-border-default)] text-[var(--signal-fg-primary)]">
       {children}
     </th>
   );
 }
 
 function Tr({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b border-[var(--borderColor-default)] last:border-b-0">{children}</tr>;
+  return <tr className="border-b border-[var(--signal-border-default)] last:border-b-0">{children}</tr>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-4 py-2.5 text-[var(--fgColor-default)]">{children}</td>;
+  return <td className="px-4 py-2.5 text-[var(--signal-fg-primary)]">{children}</td>;
 }

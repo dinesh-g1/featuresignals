@@ -12,18 +12,18 @@ import { AiJanitorSimulator } from "@/components/ai-janitor-simulator";
 
 const debtStats = [
   {
-    icon: <ClockIcon size={16} fill="var(--fgColor-attention)" />,
+    icon: <ClockIcon size={16} fill="var(--signal-fg-warning)" />,
     stat: "6 months",
     label: "Average time a stale flag sits in a codebase before anyone notices",
   },
   {
-    icon: <GitBranchIcon size={16} fill="var(--fgColor-done)" />,
+    icon: <GitBranchIcon size={16} fill="var(--signal-fg-info)" />,
     stat: "1 in 4",
     label:
       "Feature flags in production are dead — fully rolled out or abandoned, adding zero value",
   },
   {
-    icon: <TrashIcon size={16} fill="var(--fgColor-danger)" />,
+    icon: <TrashIcon size={16} fill="var(--signal-fg-danger)" />,
     stat: "3 PRs",
     label:
       "Average tech debt cleanup per stale flag: the flag check, the branch logic, and the tests",
@@ -42,14 +42,14 @@ export function CleanupPageContent() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-danger-muted)] text-[var(--fgColor-danger)] border border-[var(--borderColor-danger-muted)] mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-danger-muted)] text-[var(--signal-fg-danger)] border border-[var(--borderColor-danger-muted)] mb-6">
                 <LightBulbIcon size={12} />
                 Step 4 of 6
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--fgColor-default)] leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
                 Flags that outlive their purpose become technical debt.
               </h1>
-              <p className="text-lg text-[var(--fgColor-muted)] mt-4 leading-relaxed">
+              <p className="text-lg text-[var(--signal-fg-secondary)] mt-4 leading-relaxed">
                 Feature flags are born to die. When a flag has been at 100% for
                 six months, or hasn&apos;t been evaluated in a year, it&apos;s
                 no longer a feature flag — it&apos;s dead code. The AI Janitor
@@ -60,14 +60,14 @@ export function CleanupPageContent() {
               <div className="mt-6 space-y-4">
                 {debtStats.map((item, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--bgColor-inset)] border border-[var(--borderColor-default)]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)]">
                       {item.icon}
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-[var(--fgColor-default)]">
+                      <div className="text-lg font-bold text-[var(--signal-fg-primary)]">
                         {item.stat}
                       </div>
-                      <div className="text-sm text-[var(--fgColor-muted)]">
+                      <div className="text-sm text-[var(--signal-fg-secondary)]">
                         {item.label}
                       </div>
                     </div>
@@ -80,7 +80,7 @@ export function CleanupPageContent() {
                   href="https://docs.featuresignals.com/concepts/ai-janitor"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about the AI Janitor
                   <ArrowRightIcon size={14} />
@@ -105,9 +105,9 @@ export function CleanupPageContent() {
       </section>
 
       {/* Bottom nav */}
-      <section className="py-10 border-t border-[var(--borderColor-muted)] bg-[var(--bgColor-inset)]">
+      <section className="py-10 border-t border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-4 text-center">
+          <div className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider mb-4 text-center">
             The Feature Flag Lifecycle
           </div>
           <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
@@ -133,8 +133,8 @@ export function CleanupPageContent() {
                   href={step.href}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
                     step.active
-                      ? "bg-[var(--bgColor-danger-emphasis)] text-white"
-                      : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:bg-white border border-[var(--borderColor-default)]"
+                      ? "bg-[var(--signal-bg-danger-emphasis)] text-white"
+                      : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-white border border-[var(--signal-border-default)]"
                   }`}
                 >
                   <span aria-hidden="true">{step.icon}</span>
@@ -143,7 +143,7 @@ export function CleanupPageContent() {
                 {i < 4 && (
                   <ArrowRightIcon
                     size={12}
-                    className="text-[var(--fgColor-subtle)] hidden sm:block"
+                    className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />
                 )}
               </div>

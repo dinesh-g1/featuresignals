@@ -403,25 +403,25 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="integrations-hero-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.p
-          className="text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-4"
+          className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-4"
           {...fadeUp}
         >
           Integrations
         </motion.p>
         <motion.h1
           id="integrations-hero-heading"
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--fgColor-default)] tracking-tight mb-4"
+          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           {...fadeUp}
         >
           Works with your stack
         </motion.h1>
         <motion.p
-          className="text-lg text-[var(--fgColor-muted)] max-w-xl mx-auto"
+          className="text-lg text-[var(--signal-fg-secondary)] max-w-xl mx-auto"
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-64px" }}
@@ -447,7 +447,7 @@ function FilterBar({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="sticky top-[72px] z-30 bg-[var(--bgColor-default)] border-b border-[var(--borderColor-default)]">
+    <div className="sticky top-[72px] z-30 bg-[var(--signal-bg-primary)] border-b border-[var(--signal-border-default)]">
       <div className="mx-auto max-w-7xl px-6">
         <div
           className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide"
@@ -463,8 +463,8 @@ function FilterBar({
               className={cn(
                 "shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150",
                 activeFilter === tab.id
-                  ? "bg-[var(--bgColor-accent-emphasis)] text-[var(--fgColor-onEmphasis)]"
-                  : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+                  ? "bg-[var(--signal-bg-accent-emphasis)] text-[var(--signal-fg-on-emphasis)]"
+                  : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
               )}
             >
               {tab.label}
@@ -486,7 +486,7 @@ function IntegrationsContent({
   categories: IntegrationCategory[];
 }) {
   return (
-    <div className="py-16 sm:py-20 bg-[var(--bgColor-inset)]">
+    <div className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]">
       <div className="mx-auto max-w-7xl px-6">
         {filteredCategories.map((category, catIndex) => (
           <motion.section
@@ -504,15 +504,15 @@ function IntegrationsContent({
             }}
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 rounded-lg bg-[var(--bgColor-accent-muted)] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-[var(--signal-bg-accent-muted)] flex items-center justify-center">
                 <category.icon
                   size={18}
-                  className="text-[var(--fgColor-accent)]"
+                  className="text-[var(--signal-fg-accent)]"
                 />
               </div>
               <h2
                 id={`category-${category.id}`}
-                className="text-xl font-semibold text-[var(--fgColor-default)]"
+                className="text-xl font-semibold text-[var(--signal-fg-primary)]"
               >
                 {category.label}
               </h2>
@@ -522,7 +522,7 @@ function IntegrationsContent({
               {category.items.map((item, itemIndex) => (
                 <motion.div
                   key={item.name}
-                  className="group rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 premium-card"
+                  className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-5 premium-card"
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-20px" }}
@@ -532,10 +532,10 @@ function IntegrationsContent({
                     ease: [0.16, 1, 0.3, 1],
                   }}
                 >
-                  <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-1.5">
+                  <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1.5">
                     {item.name}
                   </h3>
-                  <p className="text-sm text-[var(--fgColor-muted)] leading-relaxed mb-3">
+                  <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed mb-3">
                     {item.description}
                   </p>
                   {item.external ? (
@@ -543,7 +543,7 @@ function IntegrationsContent({
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-accent)] hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
                     >
                       Learn more
                       <ArrowRightIcon size={12} />
@@ -551,7 +551,7 @@ function IntegrationsContent({
                   ) : (
                     <Link
                       href={item.href}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--fgColor-accent)] hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
                     >
                       Learn more
                       <ArrowRightIcon size={12} />
@@ -575,24 +575,24 @@ function OpenFeatureHighlight() {
   return (
     <section
       id="openfeature"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="openfeature-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
         <motion.div className="text-center max-w-2xl mx-auto" {...fadeUp}>
-          <div className="w-14 h-14 rounded-2xl bg-[var(--bgColor-done-muted)] flex items-center justify-center mx-auto mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-6">
             <OrganizationIcon
               size={28}
-              className="text-[var(--fgColor-done)]"
+              className="text-[var(--signal-fg-info)]"
             />
           </div>
           <h2
             id="openfeature-heading"
-            className="text-2xl sm:text-3xl font-bold text-[var(--fgColor-default)] tracking-tight mb-3"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-3"
           >
             OpenFeature Native. Zero vendor lock-in.
           </h2>
-          <p className="text-base text-[var(--fgColor-muted)] max-w-lg mx-auto mb-10">
+          <p className="text-base text-[var(--signal-fg-secondary)] max-w-lg mx-auto mb-10">
             All 8 FeatureSignals SDKs are OpenFeature-compliant providers. Your
             application code depends on the OpenFeature standard — not on us.
             Switch providers with one line of configuration.
@@ -638,13 +638,13 @@ function OpenFeatureHighlight() {
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
-              <div className="w-10 h-10 rounded-lg bg-[var(--bgColor-done-muted)] flex items-center justify-center mx-auto mb-3">
-                <item.icon size={20} className="text-[var(--fgColor-done)]" />
+              <div className="w-10 h-10 rounded-lg bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-3">
+                <item.icon size={20} className="text-[var(--signal-fg-info)]" />
               </div>
-              <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-1.5">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1.5">
                 {item.title}
               </h3>
-              <p className="text-xs text-[var(--fgColor-muted)] leading-relaxed">
+              <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed">
                 {item.description}
               </p>
             </motion.div>
@@ -660,7 +660,7 @@ function OpenFeatureHighlight() {
         >
           <Link
             href="/docs/sdks"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--fgColor-done)] hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--signal-fg-info)] hover:underline"
           >
             Explore OpenFeature SDKs
             <ArrowRightIcon size={14} />

@@ -35,13 +35,13 @@ export function CalculatorSlider({
       <div className="flex items-center justify-between mb-3">
         <label
           htmlFor={id}
-          className="text-sm font-semibold text-[var(--fgColor-default)]"
+          className="text-sm font-semibold text-[var(--signal-fg-primary)]"
         >
           {label}
         </label>
         <output
           htmlFor={id}
-          className="text-[var(--fgColor-accent)] font-mono font-bold text-xl tabular-nums"
+          className="text-[var(--signal-fg-accent)] font-mono font-bold text-xl tabular-nums"
           aria-live="polite"
         >
           {formatValue(value)}
@@ -58,21 +58,21 @@ export function CalculatorSlider({
         onChange={(e) => onChange(Number(e.target.value))}
         disabled={disabled}
         style={{
-          background: `linear-gradient(to right, var(--fgColor-accent) 0%, var(--fgColor-accent) ${pct}%, var(--borderColor-default) ${pct}%, var(--borderColor-default) 100%)`,
+          background: `linear-gradient(to right, var(--signal-fg-accent) 0%, var(--signal-fg-accent) ${pct}%, var(--signal-border-default) ${pct}%, var(--signal-border-default) 100%)`,
         }}
         className="w-full h-1.5 rounded-full appearance-none cursor-pointer
           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5
           [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full
           [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2
-          [&::-webkit-slider-thumb]:border-[var(--fgColor-accent)]
-          [&::-webkit-slider-thumb]:shadow-[var(--shadow-resting-small)]
+          [&::-webkit-slider-thumb]:border-[var(--signal-fg-accent)]
+          [&::-webkit-slider-thumb]:shadow-[var(--signal-shadow-sm)]
           [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:-mt-1.5
-          hover:[&::-webkit-slider-thumb]:shadow-[var(--shadow-floating-small)]
-          focus:[&::-webkit-slider-thumb]:ring-2 focus:[&::-webkit-slider-thumb]:ring-[var(--borderColor-accent-muted)]
+          hover:[&::-webkit-slider-thumb]:shadow-[var(--signal-shadow-md)]
+          focus:[&::-webkit-slider-thumb]:ring-2 focus:[&::-webkit-slider-thumb]:ring-[var(--signal-border-accent-muted)]
           focus:outline-none
           [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5
           [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
-          [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--fgColor-accent)]
+          [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--signal-fg-accent)]
           [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none
           [&::-moz-range-track]:bg-transparent [&::-moz-range-track]:h-1.5
           disabled:opacity-50 disabled:cursor-not-allowed"
@@ -83,7 +83,7 @@ export function CalculatorSlider({
         aria-valuetext={formatValue(value)}
       />
 
-      <div className="flex justify-between text-xs text-[var(--fgColor-subtle)] mt-2">
+      <div className="flex justify-between text-xs text-[var(--signal-fg-tertiary)] mt-2">
         <span>{minLabel}</span>
         <span>{maxLabel}</span>
       </div>

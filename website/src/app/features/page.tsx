@@ -120,7 +120,7 @@ function SectionLabel({
   text: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--fgColor-accent)] uppercase tracking-wider mb-3">
+    <span className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
       <Icon size={14} />
       {text}
     </span>
@@ -142,29 +142,29 @@ function FlagCard({
   status: "active" | "inactive";
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]">
+    <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]">
       <div className="flex items-center gap-3">
         <span
           className={cn(
             "w-2 h-2 rounded-full",
             status === "active"
-              ? "bg-[var(--bgColor-success-emphasis)]"
-              : "bg-[var(--borderColor-emphasis)]",
+              ? "bg-[var(--signal-bg-success-emphasis)]"
+              : "bg-[var(--signal-border-emphasis)]",
           )}
         />
         <div>
-          <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+          <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
             {name}
           </p>
-          <p className="text-xs text-[var(--fgColor-muted)]">{type}</p>
+          <p className="text-xs text-[var(--signal-fg-secondary)]">{type}</p>
         </div>
       </div>
       <span
         className={cn(
           "text-xs font-medium px-2 py-0.5 rounded-full",
           status === "active"
-            ? "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]"
-            : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+            ? "bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)]"
+            : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
         )}
       >
         {status === "active" ? "Active" : "Inactive"}
@@ -176,7 +176,7 @@ function FlagCard({
 /** Small card showing an operator pill */
 function OperatorPill({ op }: { op: string }) {
   return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)]">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)]">
       {op}
     </span>
   );
@@ -185,19 +185,19 @@ function OperatorPill({ op }: { op: string }) {
 /** Code block visual */
 function CodeBlock({ lines }: { lines: string[] }) {
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
         <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
         <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
         <span className="w-3 h-3 rounded-full bg-[#28c840]" />
-        <span className="ml-2 text-xs text-[var(--fgColor-muted)] font-mono">
+        <span className="ml-2 text-xs text-[var(--signal-fg-secondary)] font-mono">
           terminal
         </span>
       </div>
-      <div className="p-4 font-mono text-xs leading-relaxed text-[var(--fgColor-default)]">
+      <div className="p-4 font-mono text-xs leading-relaxed text-[var(--signal-fg-primary)]">
         {lines.map((line, i) => (
           <div key={i}>
-            <span className="text-[var(--fgColor-muted)] select-none mr-3">
+            <span className="text-[var(--signal-fg-secondary)] select-none mr-3">
               {String(i + 1).padStart(2, " ")}
             </span>
             {line}
@@ -237,7 +237,7 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden bg-[var(--bgColor-default)] bg-glow-orbs"
+      className="relative overflow-hidden bg-[var(--signal-bg-primary)] bg-glow-orbs"
       aria-labelledby="features-hero-heading"
     >
       {/* Subtle grid background */}
@@ -252,19 +252,19 @@ function HeroSection() {
           className="flex flex-wrap items-center justify-center gap-3 mb-10"
           {...fadeUp}
         >
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border-[var(--borderColor-success-muted)]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border-[var(--signal-border-success-muted)]">
             <ShieldCheckIcon size={14} />
             SOC 2 Type II
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border-[var(--borderColor-accent-muted)]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border-[var(--signal-border-accent-muted)]">
             <ZapIcon size={14} />
             Sub-ms Latency
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--bgColor-done-muted)] text-[var(--fgColor-done)] border-transparent">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)] border-transparent">
             <CodeIcon size={14} />
             OpenFeature Native
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)] border-[var(--borderColor-attention-muted)]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)] border-[var(--signal-border-warning-muted)]">
             <GitPullRequestIcon size={14} />
             Apache 2.0
           </span>
@@ -276,18 +276,18 @@ function HeroSection() {
           <div>
             <motion.h1
               id="features-hero-heading"
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.02em] text-[var(--fgColor-default)] leading-[1.08]"
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.02em] text-[var(--signal-fg-primary)] leading-[1.08]"
               {...fadeUp}
             >
               Release infrastructure for{" "}
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 teams that ship
               </span>
               .
             </motion.h1>
 
             <motion.p
-              className="text-lg text-[var(--fgColor-muted)] mt-5 leading-relaxed max-w-xl"
+              className="text-lg text-[var(--signal-fg-secondary)] mt-5 leading-relaxed max-w-xl"
               {...fadeUpDelayed(0.1)}
             >
               Everything you need to manage feature flags at scale — from
@@ -308,13 +308,13 @@ function HeroSection() {
               className="mt-8 hidden sm:block"
               {...fadeUpDelayed(0.3)}
             >
-              <p className="text-xs font-semibold text-[var(--fgColor-subtle)] uppercase tracking-wider mb-2">
+              <p className="text-xs font-semibold text-[var(--signal-fg-tertiary)] uppercase tracking-wider mb-2">
                 Quickstart
               </p>
-              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[var(--fs-bg-surface-inset)] border border-[var(--borderColor-default)] font-mono text-sm text-[var(--fgColor-default)]">
+              <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[var(--fs-bg-surface-inset)] border border-[var(--signal-border-default)] font-mono text-sm text-[var(--signal-fg-primary)]">
                 <TerminalIcon
                   size={14}
-                  className="text-[var(--fgColor-muted)] shrink-0"
+                  className="text-[var(--signal-fg-secondary)] shrink-0"
                 />
                 <span className="select-all">
                   docker run -p 8080:8080 featuresignals/server
@@ -331,14 +331,14 @@ function HeroSection() {
             transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           >
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
+              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card"
             >
               {/* Card header */}
-              <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-                <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+                <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                   Feature Flags
                 </p>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                   production &middot; 24 flags
                 </p>
               </div>
@@ -384,14 +384,14 @@ function FeatureFlagsSection() {
             <SectionLabel icon={RocketIcon} text="Feature Flags" />
             <h2
               id="feature-flags-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               The control plane for{" "}
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 every feature
               </span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Ship features with confidence using boolean, string, number, JSON,
               and multi-variant flags. Every flag type supports the full
               targeting, scheduling, and lifecycle management capabilities.
@@ -408,11 +408,11 @@ function FeatureFlagsSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -421,7 +421,7 @@ function FeatureFlagsSection() {
 
             <Link
               href="/docs/core-concepts/feature-flags"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about feature flags
               <ChevronRightIcon size={14} />
@@ -437,33 +437,33 @@ function FeatureFlagsSection() {
                   label: "Boolean",
                   desc: "Simple on/off toggles",
                   color:
-                    "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]",
+                    "bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)]",
                 },
                 {
                   icon: TerminalIcon,
                   label: "String",
                   desc: "Text-based configuration",
                   color:
-                    "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]",
+                    "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]",
                 },
                 {
                   icon: MeterIcon,
                   label: "Number",
                   desc: "Numeric thresholds",
                   color:
-                    "bg-[var(--bgColor-done-muted)] text-[var(--fgColor-done)]",
+                    "bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)]",
                 },
                 {
                   icon: DatabaseIcon,
                   label: "JSON",
                   desc: "Structured payloads",
                   color:
-                    "bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)]",
+                    "bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]",
                 },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-5 hover:border-[var(--borderColor-accent-muted)] hover:shadow-[var(--shadow-resting-medium)] transition-all duration-200"
+                  className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-5 hover:border-[var(--signal-border-accent-muted)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
                 >
                   <div
                     className={cn(
@@ -473,10 +473,10 @@ function FeatureFlagsSection() {
                   >
                     <item.icon size={18} />
                   </div>
-                  <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+                  <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                     {item.label}
                   </h3>
-                  <p className="text-xs text-[var(--fgColor-muted)] mt-1">
+                  <p className="text-xs text-[var(--signal-fg-secondary)] mt-1">
                     {item.desc}
                   </p>
                 </div>
@@ -497,7 +497,7 @@ function TargetingSection() {
   return (
     <section
       id="targeting"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="targeting-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -505,58 +505,58 @@ function TargetingSection() {
           {/* Left: Visual */}
           <motion.div {...fadeUp} className="order-last lg:order-first">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
-              style={{ boxShadow: "var(--shadow-resting-medium)" }}
+              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
+              style={{ boxShadow: "var(--signal-shadow-md)" }}
             >
-              <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-                <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+                <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                   Targeting Rule
                 </p>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                   Priority 1 &middot; Enabled
                 </p>
               </div>
               <div className="p-5 space-y-4">
                 {/* Condition rows */}
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="font-mono text-xs font-semibold text-[var(--fgColor-muted)] bg-[var(--bgColor-muted)] px-2 py-1 rounded">
+                  <span className="font-mono text-xs font-semibold text-[var(--signal-fg-secondary)] bg-[var(--signal-bg-secondary)] px-2 py-1 rounded">
                     IF
                   </span>
-                  <span className="font-mono text-xs text-[var(--fgColor-default)]">
+                  <span className="font-mono text-xs text-[var(--signal-fg-primary)]">
                     user.country
                   </span>
                   <OperatorPill op="eq" />
-                  <span className="font-mono text-xs text-[var(--fgColor-accent)]">
+                  <span className="font-mono text-xs text-[var(--signal-fg-accent)]">
                     &quot;US&quot;
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="font-mono text-xs font-semibold text-[var(--fgColor-muted)] bg-[var(--bgColor-muted)] px-2 py-1 rounded">
+                  <span className="font-mono text-xs font-semibold text-[var(--signal-fg-secondary)] bg-[var(--signal-bg-secondary)] px-2 py-1 rounded">
                     AND
                   </span>
-                  <span className="font-mono text-xs text-[var(--fgColor-default)]">
+                  <span className="font-mono text-xs text-[var(--signal-fg-primary)]">
                     user.plan
                   </span>
                   <OperatorPill op="in" />
-                  <span className="font-mono text-xs text-[var(--fgColor-accent)]">
+                  <span className="font-mono text-xs text-[var(--signal-fg-accent)]">
                     [&quot;pro&quot;, &quot;enterprise&quot;]
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="font-mono text-xs font-semibold text-[var(--fgColor-muted)] bg-[var(--bgColor-muted)] px-2 py-1 rounded">
+                  <span className="font-mono text-xs font-semibold text-[var(--signal-fg-secondary)] bg-[var(--signal-bg-secondary)] px-2 py-1 rounded">
                     AND
                   </span>
-                  <span className="font-mono text-xs text-[var(--fgColor-default)]">
+                  <span className="font-mono text-xs text-[var(--signal-fg-primary)]">
                     user.beta
                   </span>
                   <OperatorPill op="exists" />
                 </div>
                 {/* Then action */}
-                <div className="pt-3 border-t border-[var(--borderColor-default)] flex items-center gap-3 text-sm">
-                  <span className="font-mono text-xs font-semibold text-[var(--fgColor-success)] bg-[var(--bgColor-success-muted)] px-2 py-1 rounded">
+                <div className="pt-3 border-t border-[var(--signal-border-default)] flex items-center gap-3 text-sm">
+                  <span className="font-mono text-xs font-semibold text-[var(--signal-fg-success)] bg-[var(--signal-bg-success-muted)] px-2 py-1 rounded">
                     THEN
                   </span>
-                  <span className="text-xs text-[var(--fgColor-default)]">
+                  <span className="text-xs text-[var(--signal-fg-primary)]">
                     Serve <strong>true</strong>
                   </span>
                 </div>
@@ -569,12 +569,12 @@ function TargetingSection() {
             <SectionLabel icon={PeopleIcon} text="Targeting & Segments" />
             <h2
               id="targeting-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Target the right users,{" "}
-              <span className="text-[var(--fgColor-accent)]">every time</span>
+              <span className="text-[var(--signal-fg-accent)]">every time</span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Precise user targeting with 13 operators and reusable segments.
               Build once, apply everywhere. Priority-based evaluation ensures
               consistent, predictable behavior.
@@ -590,11 +590,11 @@ function TargetingSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -603,7 +603,7 @@ function TargetingSection() {
 
             <Link
               href="/docs/core-concepts/targeting-and-segments"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about targeting
               <ChevronRightIcon size={14} />
@@ -633,12 +633,12 @@ function ExperimentsSection() {
             <SectionLabel icon={BeakerIcon} text="A/B Experiments" />
             <h2
               id="experiments-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Measure what moves{" "}
-              <span className="text-[var(--fgColor-accent)]">your metrics</span>
+              <span className="text-[var(--signal-fg-accent)]">your metrics</span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Run experiments directly on your feature flags — no separate tool
               required. Weighted variants with deterministic assignment ensure
               consistent user experiences across sessions.
@@ -654,11 +654,11 @@ function ExperimentsSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -667,7 +667,7 @@ function ExperimentsSection() {
 
             <Link
               href="/docs/core-concepts/ab-experimentation"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about experiments
               <ChevronRightIcon size={14} />
@@ -677,13 +677,13 @@ function ExperimentsSection() {
           {/* Right: Variant distribution visual */}
           <motion.div
             {...fadeUpDelayed(0.1)}
-            className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
+            className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card"
           >
-            <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-              <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+              <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 checkout-redesign
               </p>
-              <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                 3 variants &middot; 50/30/20 split
               </p>
             </div>
@@ -692,28 +692,28 @@ function ExperimentsSection() {
                 {
                   label: "Control (original)",
                   pct: 50,
-                  color: "bg-[var(--bgColor-accent-emphasis)]",
+                  color: "bg-[var(--signal-bg-accent-emphasis)]",
                   users: "12,450",
                 },
                 {
                   label: "Variant A (new flow)",
                   pct: 30,
-                  color: "bg-[var(--bgColor-success-emphasis)]",
+                  color: "bg-[var(--signal-bg-success-emphasis)]",
                   users: "7,470",
                 },
                 {
                   label: "Variant B (simplified)",
                   pct: 20,
-                  color: "bg-[var(--bgColor-done-emphasis)]",
+                  color: "bg-[var(--signal-bg-info-emphasis)]",
                   users: "4,980",
                 },
               ].map((v) => (
                 <div key={v.label}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium text-[var(--fgColor-default)]">
+                    <span className="text-sm font-medium text-[var(--signal-fg-primary)]">
                       {v.label}
                     </span>
-                    <span className="text-xs text-[var(--fgColor-muted)] tabular-nums">
+                    <span className="text-xs text-[var(--signal-fg-secondary)] tabular-nums">
                       {v.pct}% &middot; {v.users} users
                     </span>
                   </div>
@@ -729,20 +729,20 @@ function ExperimentsSection() {
                 </div>
               ))}
               {/* Impressions counter */}
-              <div className="pt-4 border-t border-[var(--borderColor-default)] grid grid-cols-2 gap-3">
+              <div className="pt-4 border-t border-[var(--signal-border-default)] grid grid-cols-2 gap-3">
                 <div className="text-center p-3 rounded-lg bg-[var(--fs-bg-surface-inset)]">
-                  <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                  <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
                     24.9K
                   </p>
-                  <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                  <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                     Impressions
                   </p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-[var(--fs-bg-surface-inset)]">
-                  <p className="text-2xl font-bold text-[var(--fgColor-success)] tabular-nums">
+                  <p className="text-2xl font-bold text-[var(--signal-fg-success)] tabular-nums">
                     +3.2%
                   </p>
-                  <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                  <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                     Conversion lift
                   </p>
                 </div>
@@ -763,7 +763,7 @@ function AiJanitorSection() {
   return (
     <section
       id="ai-janitor"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="ai-janitor-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -774,20 +774,20 @@ function AiJanitorSection() {
             className="order-last lg:order-first flex flex-col gap-5"
           >
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
-              style={{ boxShadow: "var(--shadow-resting-medium)" }}
+              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
+              style={{ boxShadow: "var(--signal-shadow-md)" }}
             >
-              <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
+              <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
                 <div className="flex items-center gap-2">
                   <LightBulbIcon
                     size={14}
-                    className="text-[var(--fgColor-accent)]"
+                    className="text-[var(--signal-fg-accent)]"
                   />
-                  <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+                  <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                     AI Janitor Scan
                   </p>
                 </div>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                   Last scan: 2 hours ago &middot; 3 flags flagged
                 </p>
               </div>
@@ -799,7 +799,7 @@ function AiJanitorSection() {
                     type: "Release",
                     status: "Stale",
                     statusColor:
-                      "text-[var(--fgColor-attention)] bg-[var(--bgColor-attention-muted)]",
+                      "text-[var(--signal-fg-warning)] bg-[var(--signal-bg-warning-muted)]",
                   },
                   {
                     flag: "ai-search-beta",
@@ -807,7 +807,7 @@ function AiJanitorSection() {
                     type: "Experiment",
                     status: "Critical",
                     statusColor:
-                      "text-[var(--fgColor-danger)] bg-[var(--bgColor-danger-muted)]",
+                      "text-[var(--signal-fg-danger)] bg-[var(--signal-bg-danger-muted)]",
                   },
                   {
                     flag: "legacy-pdf-export",
@@ -815,18 +815,18 @@ function AiJanitorSection() {
                     type: "Ops",
                     status: "Stale",
                     statusColor:
-                      "text-[var(--fgColor-attention)] bg-[var(--bgColor-attention-muted)]",
+                      "text-[var(--signal-fg-warning)] bg-[var(--signal-bg-warning-muted)]",
                   },
                 ].map((item) => (
                   <div
                     key={item.flag}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+                      <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                         {item.flag}
                       </p>
-                      <p className="text-xs text-[var(--fgColor-muted)]">
+                      <p className="text-xs text-[var(--signal-fg-secondary)]">
                         {item.type} &middot; {item.age}
                       </p>
                     </div>
@@ -841,16 +841,16 @@ function AiJanitorSection() {
                   </div>
                 ))}
                 {/* PR preview */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bgColor-success-muted)] border border-[var(--borderColor-success-muted)]">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
                   <GitPullRequestIcon
                     size={16}
-                    className="text-[var(--fgColor-success)]"
+                    className="text-[var(--signal-fg-success)]"
                   />
                   <div>
-                    <p className="text-xs font-semibold text-[var(--fgColor-success)]">
+                    <p className="text-xs font-semibold text-[var(--signal-fg-success)]">
                       PR #284 opened
                     </p>
-                    <p className="text-xs text-[var(--fgColor-muted)]">
+                    <p className="text-xs text-[var(--signal-fg-secondary)]">
                       chore: remove stale flags (3 files)
                     </p>
                   </div>
@@ -864,14 +864,14 @@ function AiJanitorSection() {
             <SectionLabel icon={LightBulbIcon} text="AI Janitor" />
             <h2
               id="ai-janitor-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Stop flag rot{" "}
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 before it starts
               </span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               The AI Janitor autonomously scans your codebase for stale feature
               flags, categorizes them by risk, and opens cleanup pull requests —
               so your team can focus on shipping, not housekeeping.
@@ -888,11 +888,11 @@ function AiJanitorSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -901,7 +901,7 @@ function AiJanitorSection() {
 
             <Link
               href="/docs/advanced/ai-janitor"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about AI Janitor
               <ChevronRightIcon size={14} />
@@ -931,14 +931,14 @@ function MigrationSection() {
             <SectionLabel icon={GitBranchIcon} text="Migration Engine" />
             <h2
               id="migration-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Switch without{" "}
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 rewriting your codebase
               </span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Import your flags, environments, segments, and targeting rules
               from any major provider in minutes. Dry-run first to verify
               everything maps correctly. OpenFeature-native SDKs mean this is
@@ -956,11 +956,11 @@ function MigrationSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -969,7 +969,7 @@ function MigrationSection() {
 
             <Link
               href="/docs/advanced/migration"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about migration
               <ChevronRightIcon size={14} />
@@ -979,13 +979,13 @@ function MigrationSection() {
           {/* Right: Provider migration visual */}
           <motion.div {...fadeUpDelayed(0.1)} className="flex flex-col gap-5">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
+              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card"
             >
-              <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-                <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+                <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                   Migration Preview
                 </p>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                   Dry run &middot; 0 errors &middot; 142 flags ready
                 </p>
               </div>
@@ -1012,33 +1012,33 @@ function MigrationSection() {
                 ].map((row) => (
                   <div
                     key={row.from}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)]"
+                    className="flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)]"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-[var(--fgColor-default)]">
+                      <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                         {row.from}
                       </span>
                       <ArrowRightIcon
                         size={14}
-                        className="text-[var(--fgColor-muted)]"
+                        className="text-[var(--signal-fg-secondary)]"
                       />
-                      <span className="text-sm font-semibold text-[var(--fgColor-accent)]">
+                      <span className="text-sm font-semibold text-[var(--signal-fg-accent)]">
                         {row.to}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-[var(--fgColor-muted)]">
+                      <span className="text-xs text-[var(--signal-fg-secondary)]">
                         {row.flags} flags
                       </span>
-                      <span className="text-xs font-semibold text-[var(--fgColor-success)] bg-[var(--bgColor-success-muted)] px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-[var(--signal-fg-success)] bg-[var(--signal-bg-success-muted)] px-2 py-0.5 rounded-full">
                         {row.status}
                       </span>
                     </div>
                   </div>
                 ))}
                 {/* Export section */}
-                <div className="mt-4 pt-4 border-t border-[var(--borderColor-default)]">
-                  <p className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-3">
+                <div className="mt-4 pt-4 border-t border-[var(--signal-border-default)]">
+                  <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wider mb-3">
                     IaC Export Formats
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -1046,7 +1046,7 @@ function MigrationSection() {
                       (fmt) => (
                         <span
                           key={fmt}
-                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)]"
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)]"
                         >
                           {fmt}
                         </span>
@@ -1071,7 +1071,7 @@ function GovernanceSection() {
   return (
     <section
       id="governance"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="governance-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -1079,14 +1079,14 @@ function GovernanceSection() {
           {/* Left: Visual */}
           <motion.div {...fadeUp} className="order-last lg:order-first">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
-              style={{ boxShadow: "var(--shadow-resting-medium)" }}
+              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)] overflow-hidden"
+              style={{ boxShadow: "var(--signal-shadow-md)" }}
             >
-              <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-                <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+                <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                   Audit Log
                 </p>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                   All changes are tamper-evident and immutable
                 </p>
               </div>
@@ -1119,23 +1119,23 @@ function GovernanceSection() {
                 ].map((entry, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)]"
+                    className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]"
                   >
                     <div className="flex items-center gap-3">
                       <ShieldLockIcon
                         size={14}
-                        className="text-[var(--fgColor-muted)]"
+                        className="text-[var(--signal-fg-secondary)]"
                       />
                       <div>
-                        <p className="text-xs font-semibold text-[var(--fgColor-default)]">
+                        <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
                           {entry.action}
                         </p>
-                        <p className="text-[11px] text-[var(--fgColor-muted)]">
+                        <p className="text-[11px] text-[var(--signal-fg-secondary)]">
                           {entry.user} &middot; {entry.env}
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] text-[var(--fgColor-muted)] tabular-nums">
+                    <span className="text-[11px] text-[var(--signal-fg-secondary)] tabular-nums">
                       {entry.time}
                     </span>
                   </div>
@@ -1149,14 +1149,14 @@ function GovernanceSection() {
             <SectionLabel icon={ShieldCheckIcon} text="Governance & RBAC" />
             <h2
               id="governance-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Ship fast without{" "}
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 compromising compliance
               </span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Enterprise-grade access control, audit logging, and change
               management built into every plan. Know who changed what, when, and
               why — with tamper-evident records you can trust.
@@ -1173,11 +1173,11 @@ function GovernanceSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -1186,7 +1186,7 @@ function GovernanceSection() {
 
             <Link
               href="/docs/advanced/rbac"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about governance
               <ChevronRightIcon size={14} />
@@ -1216,14 +1216,14 @@ function AutomationSection() {
             <SectionLabel icon={WorkflowIcon} text="Automation & Webhooks" />
             <h2
               id="automation-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Automate your{" "}
-              <span className="text-[var(--fgColor-accent)]">
+              <span className="text-[var(--signal-fg-accent)]">
                 release pipeline
               </span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Connect FeatureSignals to your existing toolchain with webhooks,
               scheduling, and infrastructure as code providers. Flags respond to
               your pipeline — not the other way around.
@@ -1240,11 +1240,11 @@ function AutomationSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -1253,7 +1253,7 @@ function AutomationSection() {
 
             <Link
               href="/docs/advanced/approval-workflows"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about automation
               <ChevronRightIcon size={14} />
@@ -1263,13 +1263,13 @@ function AutomationSection() {
           {/* Right: Webhook event visual */}
           <motion.div
             {...fadeUpDelayed(0.1)}
-            className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] overflow-hidden premium-card"
+            className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card"
           >
-            <div className="px-5 py-4 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-              <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+              <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 Webhook Events
               </p>
-              <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                 3 active endpoints &middot; 99.8% delivery rate
               </p>
             </div>
@@ -1296,17 +1296,17 @@ function AutomationSection() {
               ].map((evt, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] p-4"
+                  className="rounded-lg border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)] p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-[var(--fgColor-accent)] font-mono">
+                    <span className="text-xs font-semibold text-[var(--signal-fg-accent)] font-mono">
                       {evt.event}
                     </span>
-                    <span className="text-[11px] text-[var(--fgColor-muted)]">
+                    <span className="text-[11px] text-[var(--signal-fg-secondary)]">
                       {evt.time}
                     </span>
                   </div>
-                  <div className="font-mono text-[11px] text-[var(--fgColor-muted)] bg-[var(--bgColor-muted)] p-2 rounded break-all leading-relaxed">
+                  <div className="font-mono text-[11px] text-[var(--signal-fg-secondary)] bg-[var(--signal-bg-secondary)] p-2 rounded break-all leading-relaxed">
                     {evt.payload}
                   </div>
                 </div>
@@ -1315,9 +1315,9 @@ function AutomationSection() {
               <div className="flex items-center gap-2 pt-2">
                 <ShieldCheckIcon
                   size={14}
-                  className="text-[var(--fgColor-success)]"
+                  className="text-[var(--signal-fg-success)]"
                 />
-                <span className="text-xs text-[var(--fgColor-muted)]">
+                <span className="text-xs text-[var(--signal-fg-secondary)]">
                   All payloads signed with HMAC-SHA256
                 </span>
               </div>
@@ -1352,7 +1352,7 @@ function IntegrationsSection() {
   return (
     <section
       id="integrations"
-      className="py-20 sm:py-28 bg-[var(--bgColor-default)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="integrations-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -1362,12 +1362,12 @@ function IntegrationsSection() {
             <SectionLabel icon={PackageIcon} text="Integrations" />
             <h2
               id="integrations-heading"
-              className="text-3xl sm:text-4xl font-bold text-[var(--fgColor-default)] tracking-tight"
+              className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Works with your{" "}
-              <span className="text-[var(--fgColor-accent)]">entire stack</span>
+              <span className="text-[var(--signal-fg-accent)]">entire stack</span>
             </h2>
-            <p className="text-base text-[var(--fgColor-muted)] mt-4 leading-relaxed max-w-lg">
+            <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Eight native SDKs, infrastructure as code providers, Git
               integrations, and SSO — all built on OpenFeature so you&apos;re
               never locked in.
@@ -1383,11 +1383,11 @@ function IntegrationsSection() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-[var(--fgColor-default)]"
+                  className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]"
                 >
                   <CheckCircleIcon
                     size={14}
-                    className="text-[var(--fgColor-success)] mt-0.5 shrink-0"
+                    className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                   />
                   {item}
                 </li>
@@ -1396,7 +1396,7 @@ function IntegrationsSection() {
 
             <Link
               href="/integrations"
-              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--fgColor-accent)] hover:underline"
+              className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               View all integrations
               <ChevronRightIcon size={14} />
@@ -1406,19 +1406,19 @@ function IntegrationsSection() {
           {/* Right: Technology grid */}
           <motion.div {...fadeUpDelayed(0.1)} className="flex flex-col gap-5">
             <div
-              className="rounded-2xl border border-[var(--borderColor-default)] bg-[var(--fs-bg-surface-inset)] p-6"
-              style={{ boxShadow: "var(--shadow-resting-medium)" }}
+              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--fs-bg-surface-inset)] p-6"
+              style={{ boxShadow: "var(--signal-shadow-md)" }}
             >
               {/* SDKs */}
               <div className="mb-5">
-                <p className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wider mb-3">
                   SDKs &amp; Languages
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {sdkLanguages.map((lang) => (
                     <span
                       key={lang}
-                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)]"
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)]"
                     >
                       {lang}
                     </span>
@@ -1428,14 +1428,14 @@ function IntegrationsSection() {
 
               {/* IaC */}
               <div className="mb-5">
-                <p className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wider mb-3">
                   Infrastructure as Code
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {iacTools.map((tool) => (
                     <span
                       key={tool}
-                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--bgColor-done-muted)] text-[var(--fgColor-done)] border border-transparent"
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)] border border-transparent"
                     >
                       {tool}
                     </span>
@@ -1445,14 +1445,14 @@ function IntegrationsSection() {
 
               {/* SSO */}
               <div className="mb-5">
-                <p className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wider mb-3">
                   SSO Providers
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {ssoProviders.map((provider) => (
                     <span
                       key={provider}
-                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)]"
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)]"
                     >
                       {provider}
                     </span>
@@ -1462,7 +1462,7 @@ function IntegrationsSection() {
 
               {/* Git providers */}
               <div>
-                <p className="text-xs font-semibold text-[var(--fgColor-muted)] uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wider mb-3">
                   Git Providers
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -1470,7 +1470,7 @@ function IntegrationsSection() {
                     (git) => (
                       <span
                         key={git}
-                        className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--bgColor-attention-muted)] text-[var(--fgColor-attention)] border border-[var(--borderColor-attention-muted)]"
+                        className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)] border border-[var(--signal-border-warning-muted)]"
                       >
                         {git}
                       </span>
