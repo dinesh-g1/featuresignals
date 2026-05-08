@@ -1,6 +1,13 @@
 # FeatureSignals Product Wiki — Activity Log
 
 > Chronological record
+## [2026-05-14 17:45] build | Phases A-E complete - Multi-phase overhaul summary
+
+Phase A: Applied Signal UI tokens to website, mass-replaced Primer variables.
+Phase B: Migrated all website icons from @primer/octicons-react to lucide-react.
+Phase D: Table upgrade with sticky headers, zebra striping, hover highlighting.
+Phase E: Enhanced API error responses with suggestion and docs_url fields.
+Remaining for future: Phase C docs restructuring, D.1-D.4,D.7 dashboard deepening, E.2-E.4 SDK/API, Phase F polish.
 
 ## [2026-05-14 16:30] build | Phase 0 - Signal UI Design System Independence COMPLETE
 
