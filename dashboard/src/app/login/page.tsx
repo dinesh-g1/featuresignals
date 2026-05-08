@@ -231,10 +231,10 @@ function LoginForm() {
 
   if (loadingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-default)]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-primary)]">
         <div className="flex flex-col items-center gap-3">
           <svg
-            className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]"
+            className="h-8 w-8 animate-spin text-[var(--signal-fg-accent)]"
             viewBox="0 0 24 24"
             fill="none"
           >
@@ -252,7 +252,7 @@ function LoginForm() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span className="text-sm text-[var(--fgColor-subtle)]">
+          <span className="text-sm text-[var(--signal-fg-tertiary)]">
             Loading...
           </span>
         </div>
@@ -261,11 +261,11 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-secondary)] px-4 py-12">
       <div className="w-full max-w-md">
         {/* Welcome + Brand */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bgColor-accent-emphasis)] shadow-md shadow-accent/20">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-emphasis)] shadow-md shadow-accent/20">
             <svg
               width="24"
               height="24"
@@ -280,10 +280,10 @@ function LoginForm() {
               />
             </svg>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-[var(--fgColor-default)]">
+          <h1 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
             Welcome back
           </h1>
-          <p className="mt-1.5 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-1.5 text-sm text-[var(--signal-fg-secondary)]">
             Sign in to your account to continue.
           </p>
         </div>
@@ -297,12 +297,12 @@ function LoginForm() {
             </div>
           )}
           {emailVerified && (
-            <div className="mb-5 rounded-xl border border-[var(--borderColor-success-muted)] bg-emerald-50 px-4 py-3 text-sm text-[var(--fgColor-success)]">
+            <div className="mb-5 rounded-xl border border-[var(--signal-border-success-muted)] bg-emerald-50 px-4 py-3 text-sm text-[var(--signal-fg-success)]">
               Email verified successfully! You can now sign in.
             </div>
           )}
           {ssoError && (
-            <div className="mb-5 rounded-xl border border-red-200 bg-[var(--bgColor-danger-muted)] px-4 py-3 text-sm text-red-700">
+            <div className="mb-5 rounded-xl border border-red-200 bg-[var(--signal-bg-danger-muted)] px-4 py-3 text-sm text-red-700">
               {decodeURIComponent(ssoError)}
             </div>
           )}
@@ -315,13 +315,13 @@ function LoginForm() {
                 errorType === "credentials" &&
                   "border-amber-200 bg-amber-50 text-amber-800",
                 errorType === "account_locked" &&
-                  "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+                  "border-red-200 bg-[var(--signal-bg-danger-muted)] text-red-700",
                 errorType === "sso_enforced" &&
-                  "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]",
+                  "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]",
                 !["credentials", "account_locked", "sso_enforced"].includes(
                   errorType,
                 ) &&
-                  "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+                  "border-red-200 bg-[var(--signal-bg-danger-muted)] text-red-700",
               )}
             >
               <div className="flex items-start gap-2.5">
@@ -340,7 +340,7 @@ function LoginForm() {
                     <button
                       type="button"
                       onClick={switchToSSO}
-                      className="mt-2 font-semibold text-[var(--fgColor-accent)] underline hover:text-[var(--fgColor-accent)]"
+                      className="mt-2 font-semibold text-[var(--signal-fg-accent)] underline hover:text-[var(--signal-fg-accent)]"
                     >
                       Sign in with SSO instead
                     </button>
@@ -371,12 +371,12 @@ function LoginForm() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="orgSlug"
-                    className="text-sm font-semibold text-[var(--fgColor-default)]"
+                    className="text-sm font-semibold text-[var(--signal-fg-primary)]"
                   >
                     Organization Slug
                   </label>
                   <div className="relative">
-                    <BuildingIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+                    <BuildingIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
                     <Input
                       id="orgSlug"
                       type="text"
@@ -395,7 +395,7 @@ function LoginForm() {
                       {ssoFieldError}
                     </p>
                   )}
-                  <p className="text-xs text-[var(--fgColor-subtle)]">
+                  <p className="text-xs text-[var(--signal-fg-tertiary)]">
                     Enter your organization&apos;s slug to discover your
                     identity provider.
                   </p>
@@ -442,7 +442,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={switchToEmail}
-                className="mt-5 flex w-full items-center justify-center gap-1.5 text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
+                className="mt-5 flex w-full items-center justify-center gap-1.5 text-sm text-[var(--signal-fg-secondary)] transition-colors hover:text-[var(--signal-fg-primary)]"
               >
                 <ArrowLeftIcon className="h-3.5 w-3.5" />
                 Back to email login
@@ -460,12 +460,12 @@ function LoginForm() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="email"
-                    className="text-sm font-semibold text-[var(--fgColor-default)]"
+                    className="text-sm font-semibold text-[var(--signal-fg-primary)]"
                   >
                     Email
                   </label>
                   <div className="relative">
-                    <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+                    <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
                     <Input
                       id="email"
                       name="email"
@@ -497,19 +497,19 @@ function LoginForm() {
                   <div className="flex items-center justify-between">
                     <label
                       htmlFor="password"
-                      className="text-sm font-semibold text-[var(--fgColor-default)]"
+                      className="text-sm font-semibold text-[var(--signal-fg-primary)]"
                     >
                       Password
                     </label>
                     <Link
                       href="/forgot-password"
-                      className="text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
+                      className="text-xs font-medium text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)] transition-colors"
                     >
                       Forgot password?
                     </Link>
                   </div>
                   <div className="relative">
-                    <LockIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+                    <LockIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
                     <Input
                       id="password"
                       name="password"
@@ -531,7 +531,7 @@ function LoginForm() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? (
@@ -591,10 +591,10 @@ function LoginForm() {
               {/* ===== DIVIDER ===== */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[var(--borderColor-default)]" />
+                  <div className="w-full border-t border-[var(--signal-border-default)]" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-3 text-[var(--fgColor-subtle)]">
+                  <span className="bg-white px-3 text-[var(--signal-fg-tertiary)]">
                     or continue with
                   </span>
                 </div>
@@ -604,18 +604,18 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={switchToSSO}
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--borderColor-default)] bg-white py-3 text-sm font-semibold text-[var(--fgColor-default)] shadow-sm transition-all hover:bg-[var(--bgColor-default)] hover:border-[var(--borderColor-emphasis)] hover:shadow-md"
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--signal-border-default)] bg-white py-3 text-sm font-semibold text-[var(--signal-fg-primary)] shadow-sm transition-all hover:bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-emphasis)] hover:shadow-md"
               >
-                <ShieldIcon className="h-4 w-4 text-[var(--fgColor-accent)]" />
+                <ShieldIcon className="h-4 w-4 text-[var(--signal-fg-accent)]" />
                 Sign in with SSO
               </button>
 
               {/* ===== SIGN UP LINK ===== */}
-              <p className="mt-6 text-center text-sm text-[var(--fgColor-muted)]">
+              <p className="mt-6 text-center text-sm text-[var(--signal-fg-secondary)]">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/register"
-                  className="font-semibold text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
+                  className="font-semibold text-[var(--signal-fg-accent)] transition-colors hover:text-[var(--signal-fg-accent)]"
                 >
                   Sign up
                 </Link>
@@ -625,14 +625,14 @@ function LoginForm() {
         </div>
 
         {/* ===== Trust Signals ===== */}
-        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-[var(--fgColor-subtle)]">
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-[var(--signal-fg-tertiary)]">
           <span className="flex items-center gap-1.5">
-            <SparklesIcon className="h-3 w-3 text-[var(--fgColor-accent)]" />
+            <SparklesIcon className="h-3 w-3 text-[var(--signal-fg-accent)]" />
             TLS Encrypted
           </span>
           <span className="text-stone-300">·</span>
           <span className="flex items-center gap-1.5">
-            <ShieldIcon className="h-3 w-3 text-[var(--fgColor-accent)]" />
+            <ShieldIcon className="h-3 w-3 text-[var(--signal-fg-accent)]" />
             RBAC
           </span>
           <span className="text-stone-300">·</span>
@@ -640,7 +640,7 @@ function LoginForm() {
         </div>
 
         {/* ===== Footer ===== */}
-        <p className="mt-4 text-center text-xs text-[var(--fgColor-subtle)]">
+        <p className="mt-4 text-center text-xs text-[var(--signal-fg-tertiary)]">
           &copy; {new Date().getFullYear()} FeatureSignals. All rights reserved.
         </p>
       </div>
@@ -652,10 +652,10 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-default)]">
+        <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-primary)]">
           <div className="flex flex-col items-center gap-3">
             <svg
-              className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]"
+              className="h-8 w-8 animate-spin text-[var(--signal-fg-accent)]"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -673,7 +673,7 @@ export default function LoginPage() {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span className="text-sm text-[var(--fgColor-subtle)]">
+            <span className="text-sm text-[var(--signal-fg-tertiary)]">
               Loading...
             </span>
           </div>

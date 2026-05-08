@@ -89,7 +89,7 @@ export default function FlagHealthPage() {
 
   const scoreColor =
     healthScore >= 80
-      ? "text-[var(--fgColor-success)]"
+      ? "text-[var(--signal-fg-success)]"
       : healthScore >= 50
         ? "text-amber-600"
         : "text-red-600";
@@ -98,7 +98,7 @@ export default function FlagHealthPage() {
       ? "bg-emerald-50 ring-emerald-100"
       : healthScore >= 50
         ? "bg-amber-50 ring-amber-100"
-        : "bg-[var(--bgColor-danger-muted)] ring-red-100";
+        : "bg-[var(--signal-bg-danger-muted)] ring-red-100";
 
   if (!projectId) {
     return (
@@ -131,17 +131,17 @@ export default function FlagHealthPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6">
         <div
           className={cn(
-            "rounded-xl border border-[var(--borderColor-default)] bg-white p-4 text-center ring-1 sm:p-6",
+            "rounded-xl border border-[var(--signal-border-default)] bg-white p-4 text-center ring-1 sm:p-6",
             scoreBg,
           )}
         >
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
             Health Score
           </p>
           <p className={cn("mt-2 text-3xl font-bold sm:text-5xl", scoreColor)}>
             {healthScore}
           </p>
-          <p className="mt-1 text-xs text-[var(--fgColor-muted)]">out of 100</p>
+          <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">out of 100</p>
         </div>
         <HealthStatCard
           label="Total Flags"
@@ -240,7 +240,7 @@ export default function FlagHealthPage() {
         title="No Expiration Set"
         subtitle={`${noExpiration.length} of ${flags.length} flags have no expiration date. Consider adding one to prevent flag debt.`}
       >
-        <div className="text-sm text-[var(--fgColor-muted)] px-4 py-4 sm:px-6">
+        <div className="text-sm text-[var(--signal-fg-secondary)] px-4 py-4 sm:px-6">
           {noExpiration.length === 0
             ? "All flags have expiration dates set."
             : `${noExpiration.length} flag${noExpiration.length > 1 ? "s" : ""} without expiration.`}
@@ -260,20 +260,20 @@ function HealthStatCard({
   color: string;
 }) {
   const colors: Record<string, string> = {
-    accent: "text-[var(--fgColor-accent)]",
-    emerald: "text-[var(--fgColor-success)]",
+    accent: "text-[var(--signal-fg-accent)]",
+    emerald: "text-[var(--signal-fg-success)]",
     amber: "text-amber-600",
     red: "text-red-600",
   };
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 text-center transition-all hover:shadow-lg hover:border-[var(--borderColor-emphasis)] sm:p-6">
-      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-white p-4 text-center transition-all hover:shadow-lg hover:border-[var(--signal-border-emphasis)] sm:p-6">
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
         {label}
       </p>
       <p
         className={cn(
           "mt-2 text-2xl font-bold sm:text-3xl",
-          colors[color] || "text-[var(--fgColor-default)]",
+          colors[color] || "text-[var(--signal-fg-primary)]",
         )}
       >
         {value}
@@ -292,10 +292,10 @@ function HealthSection({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="hover:shadow-lg hover:border-[var(--borderColor-emphasis)]">
+    <Card className="hover:shadow-lg hover:border-[var(--signal-border-emphasis)]">
       <CardHeader>
-        <h2 className="font-semibold text-[var(--fgColor-default)]">{title}</h2>
-        <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">{subtitle}</p>
+        <h2 className="font-semibold text-[var(--signal-fg-primary)]">{title}</h2>
+        <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">{subtitle}</p>
       </CardHeader>
       <div className="divide-y divide-slate-100">{children}</div>
     </Card>
@@ -314,19 +314,19 @@ function FlagRow({
   return (
     <Link
       href={`/flags/${flag.key}`}
-      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass sm:px-6"
+      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass sm:px-6"
     >
       <div className="min-w-0">
-        <p className="font-mono text-sm font-medium text-[var(--fgColor-default)]">
+        <p className="font-mono text-sm font-medium text-[var(--signal-fg-primary)]">
           {flag.key}
         </p>
-        <p className="text-xs text-[var(--fgColor-muted)] truncate">
+        <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
           {flag.name}
         </p>
       </div>
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <Badge variant={variant}>{badge}</Badge>
-        <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
+        <ChevronRightIcon className="h-4 w-4 text-[var(--signal-fg-tertiary)]" />
       </div>
     </Link>
   );

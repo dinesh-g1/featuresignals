@@ -154,19 +154,19 @@ export function SuperMode() {
         <div className="max-h-80 overflow-y-auto p-3 space-y-4">
           {/* Current State */}
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] mb-1">
               Current State
             </p>
-            <div className="space-y-1 text-xs text-[var(--fgColor-muted)]">
+            <div className="space-y-1 text-xs text-[var(--signal-fg-secondary)]">
               <p>
                 Plan:{" "}
-                <span className="font-semibold text-[var(--fgColor-default)]">
+                <span className="font-semibold text-[var(--signal-fg-primary)]">
                   {organization?.plan ?? "unknown"}
                 </span>
               </p>
               <p>
                 User:{" "}
-                <span className="font-mono text-[var(--fgColor-default)]">
+                <span className="font-mono text-[var(--signal-fg-primary)]">
                   {user?.email}
                 </span>
               </p>
@@ -181,7 +181,7 @@ export function SuperMode() {
 
           {/* Plan Simulation */}
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] mb-1.5">
               <EyeIcon className="inline h-3 w-3 mr-0.5" /> Plan Simulation
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -193,7 +193,7 @@ export function SuperMode() {
                     "rounded-md px-2 py-1 text-xs font-medium transition-colors",
                     simulatedPlan === plan
                       ? "bg-purple-100 text-purple-700 ring-1 ring-purple-300"
-                      : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]",
+                      : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
                   )}
                 >
                   {plan}
@@ -210,7 +210,7 @@ export function SuperMode() {
 
           {/* Feature Gate Overrides */}
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] mb-1.5">
               <ToggleLeftIcon className="inline h-3 w-3 mr-0.5" /> Feature
               Overrides
             </p>
@@ -230,7 +230,7 @@ export function SuperMode() {
                     "flex w-full items-center justify-between rounded-md px-2 py-1 text-xs transition-colors",
                     featureOverrides[feat] !== undefined
                       ? "bg-emerald-50 text-emerald-700"
-                      : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]",
+                      : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
                   )}
                 >
                   <span>{feat}</span>
@@ -244,13 +244,13 @@ export function SuperMode() {
 
           {/* Actions */}
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] mb-1.5">
               <BeakerIcon className="inline h-3 w-3 mr-0.5" /> Actions
             </p>
             <div className="space-y-1.5">
               <button
                 onClick={handleOnboardingReset}
-                className="flex w-full items-center gap-2 rounded-md bg-[var(--bgColor-muted)] px-2 py-1.5 text-xs font-medium text-[var(--fgColor-default)] transition-colors hover:bg-[var(--bgColor-muted)]"
+                className="flex w-full items-center gap-2 rounded-md bg-[var(--signal-bg-secondary)] px-2 py-1.5 text-xs font-medium text-[var(--signal-fg-primary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
               >
                 <RotateCcwIcon className="h-3 w-3" />
                 Reset Onboarding
@@ -263,7 +263,7 @@ export function SuperMode() {
                   setFeatureOverrides({});
                   toast("All super mode state cleared", "success");
                 }}
-                className="flex w-full items-center gap-2 rounded-md bg-[var(--bgColor-danger-muted)] px-2 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                className="flex w-full items-center gap-2 rounded-md bg-[var(--signal-bg-danger-muted)] px-2 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
               >
                 <XIcon className="h-3 w-3" />
                 Clear All Overrides
@@ -272,7 +272,7 @@ export function SuperMode() {
           </div>
 
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] mb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] mb-1.5">
               <BeakerIcon className="inline h-3 w-3 mr-0.5" /> A/B Experiments
             </p>
             <div className="space-y-2">
@@ -283,7 +283,7 @@ export function SuperMode() {
                 "empty_state_style",
               ].map((expName) => (
                 <div key={expName} className="text-xs">
-                  <span className="font-medium text-[var(--fgColor-muted)]">
+                  <span className="font-medium text-[var(--signal-fg-secondary)]">
                     {expName}
                   </span>
                   <div className="mt-0.5 flex flex-wrap gap-1">
@@ -295,7 +295,7 @@ export function SuperMode() {
                           sessionStorage.setItem(`fs-exp-${expKey}`, v);
                           toast(`Experiment ${expName} → ${v}`, "success");
                         }}
-                        className="rounded bg-[var(--bgColor-muted)] px-1.5 py-0.5 text-[10px] text-[var(--fgColor-muted)] hover:bg-purple-100 hover:text-purple-700"
+                        className="rounded bg-[var(--signal-bg-secondary)] px-1.5 py-0.5 text-[10px] text-[var(--signal-fg-secondary)] hover:bg-purple-100 hover:text-purple-700"
                       >
                         {v}
                       </button>

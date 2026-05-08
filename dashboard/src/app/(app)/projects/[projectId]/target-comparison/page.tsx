@@ -63,7 +63,7 @@ function AttrEditor({
               size="icon-sm"
               variant="ghost"
               onClick={() => setAttrs(attrs.filter((_, j) => j !== i))}
-              className="text-[var(--fgColor-subtle)] hover:text-red-500 self-end sm:self-auto"
+              className="text-[var(--signal-fg-tertiary)] hover:text-red-500 self-end sm:self-auto"
             >
               <XIcon className="h-4 w-4" />
             </Button>
@@ -72,7 +72,7 @@ function AttrEditor({
       ))}
       <button
         onClick={() => setAttrs([...attrs, { key: "", value: "" }])}
-        className="text-xs text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
+        className="text-xs text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)]"
       >
         + Add attribute
       </button>
@@ -181,11 +181,11 @@ export default function TargetComparisonPage() {
       <form
         onSubmit={handleCompare}
         noValidate
-        className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 sm:p-6"
+        className="rounded-xl border border-[var(--signal-border-default)] bg-white p-4 sm:p-6"
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
               Target A
             </h3>
             <Input
@@ -207,7 +207,7 @@ export default function TargetComparisonPage() {
             <AttrEditor attrs={attrsA} setAttrs={setAttrsA} />
           </div>
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
               Target B
             </h3>
             <Input
@@ -243,21 +243,21 @@ export default function TargetComparisonPage() {
         <>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="text-sm text-[var(--fgColor-muted)]">
+              <span className="text-sm text-[var(--signal-fg-secondary)]">
                 {results.length} flags evaluated
               </span>
               <span
-                className={`text-sm font-medium ${diffCount > 0 ? "text-amber-600" : "text-[var(--fgColor-success)]"}`}
+                className={`text-sm font-medium ${diffCount > 0 ? "text-amber-600" : "text-[var(--signal-fg-success)]"}`}
               >
                 {diffCount} difference{diffCount !== 1 ? "s" : ""}
               </span>
             </div>
-            <label className="flex items-center gap-2 text-sm text-[var(--fgColor-muted)]">
+            <label className="flex items-center gap-2 text-sm text-[var(--signal-fg-secondary)]">
               <input
                 type="checkbox"
                 checked={showDiffOnly}
                 onChange={(e) => setShowDiffOnly(e.target.checked)}
-                className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+                className="h-4 w-4 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
               />
               Show differences only
             </label>
@@ -267,7 +267,7 @@ export default function TargetComparisonPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+                  <tr className="border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
                     <th className="px-4 py-3 sm:px-6">Flag Key</th>
                     <th className="px-4 py-3">{keyA || "Target A"} Value</th>
                     <th className="px-4 py-3">{keyB || "Target B"} Value</th>
@@ -278,9 +278,9 @@ export default function TargetComparisonPage() {
                   {filtered?.map((r) => (
                     <tr
                       key={r.flag_key}
-                      className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-[var(--bgColor-accent-emphasis)]-glass"}`}
+                      className={`transition-colors ${r.is_different ? "bg-amber-50/30" : "hover:bg-[var(--signal-bg-accent-emphasis)]-glass"}`}
                     >
-                      <td className="px-4 py-3 font-mono font-medium text-[var(--fgColor-default)] sm:px-6">
+                      <td className="px-4 py-3 font-mono font-medium text-[var(--signal-fg-primary)] sm:px-6">
                         {r.flag_key}
                       </td>
                       <td className="px-4 py-3">

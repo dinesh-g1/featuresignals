@@ -68,15 +68,15 @@ export default function AnalyticsPage() {
           title="Analytics"
           description="Internal KPI dashboard — product health at a glance"
         />
-        <div className="flex gap-1 rounded-lg border border-[var(--borderColor-default)] bg-white p-1">
+        <div className="flex gap-1 rounded-lg border border-[var(--signal-border-default)] bg-white p-1">
           {PERIODS.map((p) => (
             <button
               key={p.value}
               onClick={() => setPeriod(p.value)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 period === p.value
-                  ? "bg-[var(--bgColor-accent-emphasis)] text-white shadow-sm"
-                  : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]"
+                  ? "bg-[var(--signal-bg-accent-emphasis)] text-white shadow-sm"
+                  : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
               }`}
             >
               {p.label}
@@ -129,7 +129,7 @@ export default function AnalyticsPage() {
 
           <Card>
             <CardHeader>
-              <h2 className="font-semibold text-[var(--fgColor-default)]">
+              <h2 className="font-semibold text-[var(--signal-fg-primary)]">
                 Acquisition Funnel
               </h2>
             </CardHeader>
@@ -144,13 +144,13 @@ export default function AnalyticsPage() {
                   const pct = Math.round((count / maxCount) * 100);
                   return (
                     <div key={event} className="flex items-center gap-3">
-                      <span className="w-32 shrink-0 text-sm text-[var(--fgColor-muted)]">
+                      <span className="w-32 shrink-0 text-sm text-[var(--signal-fg-secondary)]">
                         {label}
                       </span>
                       <div className="flex-1">
-                        <div className="h-7 overflow-hidden rounded-md bg-[var(--bgColor-muted)]">
+                        <div className="h-7 overflow-hidden rounded-md bg-[var(--signal-bg-secondary)]">
                           <div
-                            className={`flex h-full items-center rounded-md bg-[var(--bgColor-accent-emphasis)] px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
+                            className={`flex h-full items-center rounded-md bg-[var(--signal-bg-accent-emphasis)] px-2 text-xs font-medium text-white transition-all w-[${Math.max(pct, 2)}%]`}
                           >
                             {count}
                           </div>
@@ -166,7 +166,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <h2 className="font-semibold text-[var(--fgColor-default)]">
+                <h2 className="font-semibold text-[var(--signal-fg-primary)]">
                   Plan Distribution
                 </h2>
               </CardHeader>
@@ -177,17 +177,17 @@ export default function AnalyticsPage() {
                       key={plan}
                       className="flex items-center justify-between px-4 py-3 sm:px-6"
                     >
-                      <span className="text-sm font-medium capitalize text-[var(--fgColor-default)]">
+                      <span className="text-sm font-medium capitalize text-[var(--signal-fg-primary)]">
                         {plan}
                       </span>
-                      <span className="rounded-full bg-[var(--bgColor-accent-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--fgColor-accent)]">
+                      <span className="rounded-full bg-[var(--signal-bg-accent-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--signal-fg-accent)]">
                         {count}
                       </span>
                     </div>
                   ),
                 )}
                 {Object.keys(data.plan_distribution ?? {}).length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-[var(--fgColor-subtle)]">
+                  <p className="px-4 py-6 text-center text-sm text-[var(--signal-fg-tertiary)]">
                     No data yet
                   </p>
                 )}
@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <h2 className="font-semibold text-[var(--fgColor-default)]">
+                <h2 className="font-semibold text-[var(--signal-fg-primary)]">
                   Event Volume by Category
                 </h2>
               </CardHeader>
@@ -206,10 +206,10 @@ export default function AnalyticsPage() {
                     key={cat}
                     className="flex items-center justify-between px-4 py-3 sm:px-6"
                   >
-                    <span className="text-sm font-medium capitalize text-[var(--fgColor-default)]">
+                    <span className="text-sm font-medium capitalize text-[var(--signal-fg-primary)]">
                       {cat}
                     </span>
-                    <span className="text-sm tabular-nums text-[var(--fgColor-muted)]">
+                    <span className="text-sm tabular-nums text-[var(--signal-fg-secondary)]">
                       {count.toLocaleString()}
                     </span>
                   </div>

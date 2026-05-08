@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { TargetingRulesEditor } from "@/components/targeting-rules-editor";
-import { FlagHistory } from "@/components/flag-history";
+import { VisualRuleBuilder } from "@/components/visual-rule-builder";
+import { useEditorPreference } from "@/hooks/use-editor-preference";
+import { FlagTimeline } from "@/components/flag-timeline";
 import {
   Card,
   CardContent,
@@ -24,6 +26,8 @@ import {
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { toast } from "@/components/toast";
+import { useFlagToggle } from "@/hooks/use-flag-toggle";
+import { ProductionSafetyGate } from "@/components/production-safety-gate";
 import { ArrowLeftIcon, AlertIcon, XIcon } from "@/components/icons/nav-icons";
 import type {
   Flag,
@@ -46,6 +50,23 @@ export default function FlagDetailPage() {
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
   const [tab, setTab] = useState("overview");
+
+  // Safety-gated toggle
+  const selectedEnvName = envs.find((e) => e.id === selectedEnv)?.name ?? "Production";
+  const isSelectedEnvProduction = selectedEnvName.toLowerCase() === "production";
+  const {
+    toggle: detailToggle,
+    gateOpen: detailGateOpen,
+    closeGate: closeDetailGate,
+    gateContext: detailGateContext,
+    gateAction: detailGateAction,
+    handleGateConfirm: handleDetailGateConfirm,
+  } = useFlagToggle(projectId, selectedEnv || null, () => {
+    // Refetch flag state after toggle
+    if (token && projectId && selectedEnv) {
+      api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
+    }
+  });
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "" });
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -72,6 +93,7 @@ export default function FlagDetailPage() {
   } | null>(null);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const { editorMode, setEditorMode } = useEditorPreference();
 
   useEffect(() => {
     if (!token || !projectId) return;
@@ -186,16 +208,13 @@ export default function FlagDetailPage() {
   );
 
   async function toggleFlag() {
-    if (!token || !projectId || !selectedEnv) return;
-    try {
-      await api.updateFlagState(token, projectId, flagKey, selectedEnv, {
-        enabled: !state?.enabled,
-      });
-      api.getFlagState(token, projectId, flagKey, selectedEnv).then(setState);
-      toast(state?.enabled ? "Flag disabled" : "Flag enabled", "success");
-    } catch {
-      toast("Failed to toggle flag", "error");
-    }
+    if (!token || !projectId || !selectedEnv || !flag) return;
+    await detailToggle({
+      flagKey: flagKey,
+      flagName: flag.name ?? flagKey,
+      envName: selectedEnvName,
+      isProduction: isSelectedEnvProduction,
+    });
   }
 
   async function updateRollout(percentage: number) {
@@ -319,7 +338,7 @@ export default function FlagDetailPage() {
   if (fetchError || !flag) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="rounded-2xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-6 text-center max-w-md">
+        <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
           <AlertIcon className="h-8 w-8 text-red-400 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-red-800 mb-1">
             Flag not found
@@ -371,23 +390,23 @@ export default function FlagDetailPage() {
               size="icon-sm"
               variant="ghost"
               onClick={() => router.push(`/projects/${projectId}/flags`)}
-              className="text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] shrink-0"
+              className="text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] shrink-0"
             >
               <ArrowLeftIcon className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-bold font-mono text-[var(--fgColor-default)] truncate sm:text-2xl">
+            <h1 className="text-lg font-bold font-mono text-[var(--signal-fg-primary)] truncate sm:text-2xl">
               {flag.key}
             </h1>
           </div>
           <div className="mt-1 ml-9 flex flex-wrap items-center gap-2 sm:ml-11">
-            <span className="text-sm text-[var(--fgColor-muted)]">
+            <span className="text-sm text-[var(--signal-fg-secondary)]">
               {flag.name} &middot; {flag.flag_type}
             </span>
             {flag.category && <CategoryBadge category={flag.category} />}
             {flag.status && <StatusBadge status={flag.status} />}
           </div>
           <div className="mt-1 ml-9 sm:ml-11">
-            <span className="text-xs text-[var(--fgColor-subtle)]">
+            <span className="text-xs text-[var(--signal-fg-tertiary)]">
               Last modified {timeAgo(flag.updated_at)}
             </span>
           </div>
@@ -404,6 +423,16 @@ export default function FlagDetailPage() {
             onCheckedChange={toggleFlag}
             aria-label="Toggle flag"
           />
+
+          <ProductionSafetyGate
+            open={detailGateOpen}
+            onOpenChange={(open) => { if (!open) closeDetailGate(); }}
+            onConfirm={handleDetailGateConfirm}
+            flagName={detailGateContext?.flagName ?? ""}
+            flagKey={detailGateContext?.flagKey ?? ""}
+            action={detailGateAction}
+          />
+
           <Button
             size="sm"
             variant="secondary"
@@ -432,7 +461,7 @@ export default function FlagDetailPage() {
       </div>
 
       {confirmDelete && (
-        <Card className="border-red-200 bg-[var(--bgColor-danger-muted)] ring-1 ring-red-100">
+        <Card className="border-red-200 bg-[var(--signal-bg-danger-muted)] ring-1 ring-red-100">
           <CardContent>
             <p className="text-sm font-semibold text-red-800">
               Delete this flag?
@@ -519,9 +548,9 @@ export default function FlagDetailPage() {
       )}
 
       {showPromote && (
-        <Card className="border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] ring-1 ring-accent/10">
+        <Card className="border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-1 ring-accent/10">
           <CardContent>
-            <p className="text-sm font-medium text-[var(--fgColor-accent)]">
+            <p className="text-sm font-medium text-[var(--signal-fg-accent)]">
               Promote <span className="font-mono">{flag.key}</span> from{" "}
               <span className="font-semibold">
                 {envs.find((e) => e.id === selectedEnv)?.name || "current"}
@@ -557,7 +586,7 @@ export default function FlagDetailPage() {
       {editing && (
         <form
           onSubmit={handleEdit}
-          className="rounded-xl border border-[var(--borderColor-default)]/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
+          className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
         >
           <div>
             <Label>Name</Label>
@@ -603,7 +632,7 @@ export default function FlagDetailPage() {
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
             {state?.enabled && (
-              <Card className="border-red-200 bg-[var(--bgColor-danger-muted)]/50 ring-1 ring-red-100">
+              <Card className="border-red-200 bg-[var(--signal-bg-danger-muted)]/50 ring-1 ring-red-100">
                 <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-red-800">
@@ -636,7 +665,7 @@ export default function FlagDetailPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
               <Card className="p-4 sm:p-6">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Status
                 </h3>
                 <div className="mt-2 flex items-center gap-2">
@@ -646,32 +675,32 @@ export default function FlagDetailPage() {
                       state?.enabled ? "bg-emerald-500" : "bg-slate-300",
                     )}
                   />
-                  <p className="text-lg font-semibold text-[var(--fgColor-default)]">
+                  <p className="text-lg font-semibold text-[var(--signal-fg-primary)]">
                     {state?.enabled ? "Enabled" : "Disabled"}
                   </p>
                 </div>
               </Card>
               <Card className="p-4 sm:p-6">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Type
                 </h3>
-                <p className="mt-2 text-lg font-semibold capitalize text-[var(--fgColor-default)]">
+                <p className="mt-2 text-lg font-semibold capitalize text-[var(--signal-fg-primary)]">
                   {flag.flag_type}
                 </p>
               </Card>
               <Card className="p-4 sm:p-6">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Default Value
                 </h3>
-                <pre className="mt-2 overflow-x-auto rounded-lg bg-[var(--bgColor-muted)] p-2 text-sm font-mono text-[var(--fgColor-default)] ring-1 ring-slate-100">
+                <pre className="mt-2 overflow-x-auto rounded-lg bg-[var(--signal-bg-secondary)] p-2 text-sm font-mono text-[var(--signal-fg-primary)] ring-1 ring-slate-100">
                   {JSON.stringify(flag.default_value)}
                 </pre>
               </Card>
               <Card className="p-4 sm:p-6">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Description
                 </h3>
-                <p className="mt-2 text-sm text-[var(--fgColor-default)]">
+                <p className="mt-2 text-sm text-[var(--signal-fg-primary)]">
                   {flag.description || "No description"}
                 </p>
               </Card>
@@ -679,10 +708,10 @@ export default function FlagDetailPage() {
 
             <Card>
               <CardContent className="space-y-3">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Environments
                 </h3>
-                <p className="text-xs text-[var(--fgColor-subtle)]">
+                <p className="text-xs text-[var(--signal-fg-tertiary)]">
                   Toggle state for this flag across all environments.
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
@@ -695,8 +724,8 @@ export default function FlagDetailPage() {
                         className={cn(
                           "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
                           env.id === selectedEnv
-                            ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] ring-1 ring-accent/10"
-                            : "border-[var(--borderColor-default)] bg-white hover:bg-[var(--bgColor-muted)]",
+                            ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-1 ring-accent/10"
+                            : "border-[var(--signal-border-default)] bg-white hover:bg-[var(--signal-bg-secondary)]",
                         )}
                       >
                         <div
@@ -705,7 +734,7 @@ export default function FlagDetailPage() {
                             isEnabled ? "bg-emerald-500" : "bg-slate-300",
                           )}
                         />
-                        <span className="truncate font-medium text-[var(--fgColor-default)]">
+                        <span className="truncate font-medium text-[var(--signal-fg-primary)]">
                           {env.name}
                         </span>
                       </div>
@@ -717,17 +746,17 @@ export default function FlagDetailPage() {
 
             <Card>
               <CardContent className="space-y-3">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Prerequisites
                 </h3>
-                <p className="text-xs text-[var(--fgColor-subtle)]">
+                <p className="text-xs text-[var(--signal-fg-tertiary)]">
                   This flag will only evaluate when all prerequisite flags are
                   ON.
                 </p>
                 <div className="space-y-2">
                   {prereqs.map((pk, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="flex-1 rounded-lg bg-[var(--bgColor-muted)] px-3 py-1.5 text-sm font-mono text-[var(--fgColor-default)] ring-1 ring-[var(--borderColor-default)]">
+                      <span className="flex-1 rounded-lg bg-[var(--signal-bg-secondary)] px-3 py-1.5 text-sm font-mono text-[var(--signal-fg-primary)] ring-1 ring-[var(--signal-border-default)]">
                         {pk}
                       </span>
                       <Button
@@ -743,7 +772,7 @@ export default function FlagDetailPage() {
                               })
                               .then(setFlag);
                         }}
-                        className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
+                        className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
                       >
                         <XIcon className="h-4 w-4" />
                       </Button>
@@ -756,7 +785,7 @@ export default function FlagDetailPage() {
                     placeholder="Add prerequisite flag…"
                   />
                   {prereqs.length === 0 && (
-                    <p className="text-xs text-[var(--fgColor-subtle)] italic">
+                    <p className="text-xs text-[var(--signal-fg-tertiary)] italic">
                       No prerequisites configured. This flag evaluates
                       independently.
                     </p>
@@ -767,10 +796,10 @@ export default function FlagDetailPage() {
 
             <Card>
               <CardContent className="space-y-3">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Mutual Exclusion Group
                 </h3>
-                <p className="text-xs text-[var(--fgColor-subtle)]">
+                <p className="text-xs text-[var(--signal-fg-tertiary)]">
                   Flags in the same group are mutually exclusive -- only one can
                   be ON per user.
                 </p>
@@ -842,7 +871,7 @@ export default function FlagDetailPage() {
           <div className="space-y-4 sm:space-y-6">
             <Card>
               <CardContent className="space-y-4">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Percentage Rollout
                 </h3>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
@@ -856,13 +885,13 @@ export default function FlagDetailPage() {
                       onChange={(e) => updateRollout(parseInt(e.target.value))}
                       className="w-full accent-accent"
                     />
-                    <div className="mt-1 flex justify-between text-xs text-[var(--fgColor-subtle)]">
+                    <div className="mt-1 flex justify-between text-xs text-[var(--signal-fg-tertiary)]">
                       <span>0%</span>
                       <span>50%</span>
                       <span>100%</span>
                     </div>
                   </div>
-                  <span className="rounded-lg bg-[var(--bgColor-accent-muted)] px-3 py-1.5 text-sm font-mono font-semibold text-[var(--fgColor-accent)] ring-1 ring-accent/10 self-start sm:self-auto">
+                  <span className="rounded-lg bg-[var(--signal-bg-accent-muted)] px-3 py-1.5 text-sm font-mono font-semibold text-[var(--signal-fg-accent)] ring-1 ring-accent/10 self-start sm:self-auto">
                     {((state?.percentage_rollout || 0) / 100).toFixed(1)}%
                   </span>
                 </div>
@@ -871,23 +900,62 @@ export default function FlagDetailPage() {
 
             <Card>
               <CardContent>
-                <TargetingRulesEditor
-                  rules={state?.rules || []}
-                  segments={segments}
-                  flagType={flag.flag_type}
-                  onSave={saveRules}
-                />
+                {/* Editor mode toggle */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
+                    Targeting Rules
+                  </h3>
+                  <div className="inline-flex rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("simple")}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                        editorMode === "simple"
+                          ? "bg-white text-[var(--signal-fg-primary)] shadow-sm ring-1 ring-[var(--signal-border-default)]"
+                          : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]"
+                      }`}
+                    >
+                      Simple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("visual")}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                        editorMode === "visual"
+                          ? "bg-white text-[var(--signal-fg-primary)] shadow-sm ring-1 ring-[var(--signal-border-default)]"
+                          : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]"
+                      }`}
+                    >
+                      Visual
+                    </button>
+                  </div>
+                </div>
+                {editorMode === "visual" ? (
+                  <VisualRuleBuilder
+                    rules={state?.rules || []}
+                    segments={segments}
+                    flagType={flag.flag_type}
+                    onSave={saveRules}
+                  />
+                ) : (
+                  <TargetingRulesEditor
+                    rules={state?.rules || []}
+                    segments={segments}
+                    flagType={flag.flag_type}
+                    onSave={saveRules}
+                  />
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="space-y-4">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Schedule
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-[var(--fgColor-muted)] mb-1">
+                    <label className="block text-xs font-medium text-[var(--signal-fg-secondary)] mb-1">
                       Enable At
                     </label>
                     {state?.scheduled_enable_at ? (
@@ -910,7 +978,7 @@ export default function FlagDetailPage() {
                           type="datetime-local"
                           value={scheduleEnable}
                           onChange={(e) => setScheduleEnable(e.target.value)}
-                          className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-[var(--borderColor-emphasis)] focus:border-[var(--fgColor-accent)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
+                          className="flex-1 rounded-lg border border-[var(--signal-border-default)] bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-[var(--signal-border-emphasis)] focus:border-[var(--signal-fg-accent)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)]"
                         />
                         {scheduleEnable && (
                           <Button
@@ -930,12 +998,12 @@ export default function FlagDetailPage() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[var(--fgColor-muted)] mb-1">
+                    <label className="block text-xs font-medium text-[var(--signal-fg-secondary)] mb-1">
                       Disable At
                     </label>
                     {state?.scheduled_disable_at ? (
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <div className="flex-1 rounded-lg bg-[var(--bgColor-danger-muted)] px-3 py-2 text-sm text-red-700 ring-1 ring-red-100">
+                        <div className="flex-1 rounded-lg bg-[var(--signal-bg-danger-muted)] px-3 py-2 text-sm text-red-700 ring-1 ring-red-100">
                           <span className="font-medium">Scheduled: </span>
                           {formatDate(state.scheduled_disable_at)}
                         </div>
@@ -953,7 +1021,7 @@ export default function FlagDetailPage() {
                           type="datetime-local"
                           value={scheduleDisable}
                           onChange={(e) => setScheduleDisable(e.target.value)}
-                          className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-[var(--borderColor-emphasis)] focus:border-[var(--fgColor-accent)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
+                          className="flex-1 rounded-lg border border-[var(--signal-border-default)] bg-white px-3 py-1.5 text-sm shadow-sm transition-all hover:border-[var(--signal-border-emphasis)] focus:border-[var(--signal-fg-accent)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)]"
                         />
                         {scheduleDisable && (
                           <Button
@@ -978,10 +1046,10 @@ export default function FlagDetailPage() {
 
             <Card>
               <CardContent className="space-y-4">
-                <h3 className="text-sm font-medium text-[var(--fgColor-muted)]">
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Test Targeting
                 </h3>
-                <p className="text-xs text-[var(--fgColor-subtle)]">
+                <p className="text-xs text-[var(--signal-fg-tertiary)]">
                   Enter a target key to see which value this flag would return
                   based on current targeting rules.
                 </p>
@@ -1081,7 +1149,7 @@ export default function FlagDetailPage() {
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold",
                       testResult
                         ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-                        : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] ring-1 ring-[var(--borderColor-default)]",
+                        : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] ring-1 ring-[var(--signal-border-default)]",
                     )}
                   >
                     <div
@@ -1102,19 +1170,7 @@ export default function FlagDetailPage() {
         </TabsContent>
 
         <TabsContent value="history">
-          {flag && (
-            <FlagHistory
-              token={token}
-              projectId={projectId}
-              flagKey={flagKey}
-              flagId={flag.id}
-              onRollback={() => {
-                if (token && projectId) {
-                  api.getFlag(token, projectId, flagKey).then(setFlag);
-                }
-              }}
-            />
-          )}
+          {flag && <FlagTimeline flagId={flag.id} />}
         </TabsContent>
       </Tabs>
     </div>

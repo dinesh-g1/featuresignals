@@ -59,10 +59,10 @@ export default function UsagePage() {
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-[var(--borderColor-default)]" />
+            <div key={i} className="h-28 animate-pulse rounded-xl bg-[var(--signal-border-default)]" />
           ))}
         </div>
       </div>
@@ -74,8 +74,8 @@ export default function UsagePage() {
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold text-[var(--fgColor-default)]">Usage</h1>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <h1 className="text-xl font-bold text-[var(--signal-fg-primary)]">Usage</h1>
+          <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             {monthYear} · {planLabel} Plan
             {plan === "pro" && usage?.platform_fee_monthly
               ? ` · ${formatPaise(usage.platform_fee_monthly)}/month`
@@ -85,41 +85,41 @@ export default function UsagePage() {
 
         {/* Section 1: Resource Usage */}
         <section>
-          <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wide mb-3">
             Resources
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-[var(--fgColor-muted)]">Seats</p>
-                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Seats</p>
+                <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
                   {usage ? `${usage.seats_used}/${usage.seats_limit === -1 ? "∞" : usage.seats_limit}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-[var(--fgColor-muted)]">Projects</p>
-                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Projects</p>
+                <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
                   {usage ? `${usage.projects_used}/${usage.projects_limit === -1 ? "∞" : usage.projects_limit}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-[var(--fgColor-muted)]">Environments</p>
-                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Environments</p>
+                <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
                   {usage ? `${usage.environments_used}/${usage.environments_limit === -1 ? "∞" : usage.environments_limit}` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-[var(--fgColor-muted)]">Total Evaluations</p>
-                <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Total Evaluations</p>
+                <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
                   {metrics?.total_evaluations?.toLocaleString() ?? "—"}
                 </p>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-1">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-1">
                   Included in plan · no extra charge
                 </p>
               </CardContent>
@@ -130,7 +130,7 @@ export default function UsagePage() {
         {/* Section 2: Cost-Bearing Feature Credits */}
         {credits?.bearers?.length ? (
           <section>
-            <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wide mb-3">
               AI Janitor Credits
             </h2>
             <div className="space-y-3">
@@ -196,40 +196,40 @@ function CreditCard({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-[var(--fgColor-default)]">
+              <h3 className="font-semibold text-[var(--signal-fg-primary)]">
                 {bearer.display_name}
               </h3>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium">
                 {bearer.unit_name}
               </span>
             </div>
-            <p className="text-xs text-[var(--fgColor-muted)] mt-1">
+            <p className="text-xs text-[var(--signal-fg-secondary)] mt-1">
               {bearer.description}
             </p>
             <div className="mt-3 flex items-center gap-4">
               <div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Balance</p>
-                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Balance</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--signal-fg-primary)]">
                   {bearer.balance.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Included/mo</p>
-                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Included/mo</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--signal-fg-primary)]">
                   {bearer.included_per_month.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Lifetime</p>
-                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Lifetime</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--signal-fg-primary)]">
                   {bearer.lifetime_used.toLocaleString()}
                 </p>
               </div>
             </div>
             {bearer.included_per_month > 0 && (
-              <div className="mt-3 w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
+              <div className="mt-3 w-full h-2 rounded-full bg-[var(--signal-bg-secondary)] overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-[var(--fgColor-accent)] transition-all duration-500"
+                  className="h-full rounded-full bg-[var(--signal-fg-accent)] transition-all duration-500"
                   style={{ width: `${pct}%` }}
                   aria-label={`${pct}% of monthly credits used`}
                 />

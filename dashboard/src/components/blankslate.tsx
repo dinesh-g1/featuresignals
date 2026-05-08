@@ -30,7 +30,7 @@ interface BlankslateProps {
 }
 
 /**
- * Blankslate — Primer-style empty state component.
+ * Blankslate — empty state component with illustration + CTA.
  *
  * Used when a page/list has no data yet. Shows a large icon (48px),
  * title, description, primary CTA, and optional learn-more link.
@@ -57,29 +57,29 @@ export function Blankslate({
       className={cn(
         "flex flex-col items-center justify-center px-6 py-16 text-center animate-fade-in",
         variant === "bordered" &&
-          "rounded-[var(--radius-medium)] border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-[var(--shadow-resting-small)]",
+          "rounded-[var(--radius-medium)] border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-sm)]",
         className,
       )}
     >
       {/* Icon */}
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)] ring-1 ring-[var(--borderColor-accent-muted)] shadow-sm">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--signal-bg-accent-muted)] ring-1 ring-[var(--signal-border-accent-muted)] shadow-sm">
         {emoji ? (
           <span className="text-2xl leading-none" aria-hidden="true">
             {emoji}
           </span>
         ) : Icon ? (
-          <Icon className="h-8 w-8 text-[var(--fgColor-accent)]" />
+          <Icon className="h-8 w-8 text-[var(--signal-fg-accent)]" />
         ) : null}
       </div>
 
       {/* Title */}
-      <h3 className="mt-5 text-base font-semibold text-[var(--fgColor-default)]">
+      <h3 className="mt-5 text-base font-semibold text-[var(--signal-fg-primary)]">
         {title}
       </h3>
 
       {/* Description */}
       {description && (
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--fgColor-muted)]">
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--signal-fg-secondary)]">
           {description}
         </p>
       )}
@@ -101,7 +101,7 @@ export function Blankslate({
           href={learnMoreUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--fgColor-accent)] hover:underline transition-colors"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline transition-colors"
         >
           {learnMoreLabel || "Learn more"}
           <svg

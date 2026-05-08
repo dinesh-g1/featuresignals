@@ -117,7 +117,7 @@ export default function TargetInspectorPage() {
       <form
         onSubmit={handleInspect}
         noValidate
-        className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 space-y-4 sm:p-6"
+        className="rounded-xl border border-[var(--signal-border-default)] bg-white p-4 space-y-4 sm:p-6"
       >
         <div>
           <Label>Target Key</Label>
@@ -149,7 +149,7 @@ export default function TargetInspectorPage() {
             <button
               type="button"
               onClick={addAttr}
-              className="text-xs text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
+              className="text-xs text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)]"
             >
               + Add attribute
             </button>
@@ -178,7 +178,7 @@ export default function TargetInspectorPage() {
                     size="icon-sm"
                     variant="ghost"
                     onClick={() => removeAttr(i)}
-                    className="text-[var(--fgColor-subtle)] hover:text-red-500 self-end sm:self-auto"
+                    className="text-[var(--signal-fg-tertiary)] hover:text-red-500 self-end sm:self-auto"
                   >
                     <XIcon className="h-4 w-4" />
                   </Button>
@@ -197,7 +197,7 @@ export default function TargetInspectorPage() {
         <>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="relative flex-1">
-              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
               <Input
                 placeholder="Filter results..."
                 value={search}
@@ -205,7 +205,7 @@ export default function TargetInspectorPage() {
                 className="pl-10"
               />
             </div>
-            <span className="text-sm text-[var(--fgColor-muted)]">
+            <span className="text-sm text-[var(--signal-fg-secondary)]">
               {filtered?.length} flag{filtered?.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -214,7 +214,7 @@ export default function TargetInspectorPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-muted)]">
+                  <tr className="border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] text-left text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
                     <th className="px-4 py-3 sm:px-6">Flag Key</th>
                     <th className="px-4 py-3">Value</th>
                     <th className="hidden px-4 py-3 sm:table-cell">Reason</th>
@@ -226,9 +226,9 @@ export default function TargetInspectorPage() {
                   {filtered?.map((r) => (
                     <tr
                       key={r.flag_key}
-                      className="transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass"
+                      className="transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass"
                     >
-                      <td className="px-4 py-3 font-mono font-medium text-[var(--fgColor-default)] sm:px-6">
+                      <td className="px-4 py-3 font-mono font-medium text-[var(--signal-fg-primary)] sm:px-6">
                         {r.flag_key}
                       </td>
                       <td className="px-4 py-3">
@@ -244,10 +244,10 @@ export default function TargetInspectorPage() {
                           {String(r.value)}
                         </Badge>
                       </td>
-                      <td className="hidden px-4 py-3 text-[var(--fgColor-muted)] sm:table-cell">
+                      <td className="hidden px-4 py-3 text-[var(--signal-fg-secondary)] sm:table-cell">
                         {r.reason}
                       </td>
-                      <td className="hidden px-4 py-3 text-[var(--fgColor-muted)] md:table-cell">
+                      <td className="hidden px-4 py-3 text-[var(--signal-fg-secondary)] md:table-cell">
                         {r.variant_key || "—"}
                       </td>
                       <td className="hidden px-4 py-3 md:table-cell">

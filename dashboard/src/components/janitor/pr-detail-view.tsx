@@ -31,15 +31,15 @@ export function PRDetailView({
     : null;
 
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] p-4 space-y-3">
-      <h4 className="text-sm font-bold text-[var(--fgColor-default)] flex items-center gap-2">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-4 space-y-3">
+      <h4 className="text-sm font-bold text-[var(--signal-fg-primary)] flex items-center gap-2">
         <GitPullRequestIcon className="h-4 w-4" />
         Pull Request Details
       </h4>
 
       {prStatus && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--fgColor-muted)]">Status:</span>
+          <span className="text-xs text-[var(--signal-fg-secondary)]">Status:</span>
           <Badge
             variant={
               prStatus === "merged"
@@ -77,22 +77,22 @@ export function PRDetailView({
       )}
 
       {llmProvider && (
-        <div className="flex items-center gap-2 text-xs text-[var(--fgColor-muted)]">
+        <div className="flex items-center gap-2 text-xs text-[var(--signal-fg-secondary)]">
           <BrainIcon className="h-3.5 w-3.5 text-purple-500" />
           <span>
             Analyzed by:{" "}
-            <span className="font-medium text-[var(--fgColor-default)]">
+            <span className="font-medium text-[var(--signal-fg-primary)]">
               {llmProvider}
             </span>
             {llmModel && (
-              <span className="text-[var(--fgColor-subtle)]">
+              <span className="text-[var(--signal-fg-tertiary)]">
                 {" "}
                 ({llmModel})
               </span>
             )}
           </span>
           {confidencePercent !== null && (
-            <span className="ml-auto font-semibold text-[var(--fgColor-default)]">
+            <span className="ml-auto font-semibold text-[var(--signal-fg-primary)]">
               {confidencePercent}% confidence
             </span>
           )}

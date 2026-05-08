@@ -24,12 +24,12 @@ export function AuthLayout({
   return (
     <div className="flex min-h-screen">
       {/* Left panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[var(--bgColor-inset)] items-center justify-center">
+      <div className="hidden lg:flex lg:w-1/2 bg-[var(--signal-bg-secondary)] items-center justify-center">
         {left}
       </div>
 
       {/* Right panel */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center bg-[var(--bgColor-muted)] px-8 py-10 sm:px-12 lg:px-16 xl:px-20">
+      <div className="flex w-full lg:w-1/2 items-center justify-center bg-[var(--signal-bg-secondary)] px-8 py-10 sm:px-12 lg:px-16 xl:px-20">
         {children}
       </div>
     </div>

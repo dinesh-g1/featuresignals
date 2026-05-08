@@ -7,7 +7,7 @@ import { PrismLotus } from "@/components/prism-lotus";
 /* ---- existing border-spinner variant ---- */
 
 const spinnerVariants = cva(
-  "animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent",
+  "animate-spin rounded-full border-2 border-[var(--signal-border-accent-muted)] border-t-accent",
   {
     variants: {
       size: {

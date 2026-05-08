@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useAppStore } from "@/stores/app-store";
 import { PrismLotusIcon } from "@/components/prism-lotus";
+import { RoleBasedView } from "@/components/role-based-view";
 import { api } from "@/lib/api";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
 import {
@@ -86,16 +87,29 @@ const tools: NavItemDef[] = [
   { href: "/health", label: "Health", icon: HeartIcon },
 ];
 
-const sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
+// ─── Sidebar groups split by role visibility ──────────────────────
+
+/** Development groups — visible to all roles (developer, viewer, admin, owner) */
+const developmentGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
   {
     label: "Feature Management",
     items: featureManagement,
     defaultExpanded: true,
   },
+  { label: "Tools", items: tools, defaultExpanded: false },
+];
+
+/** Management groups — visible only to admins and owners */
+const managementGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
   { label: "Integrations", items: integrations, defaultExpanded: true },
   { label: "Team", items: team, defaultExpanded: true },
   { label: "Governance", items: governance, defaultExpanded: true },
-  { label: "Tools", items: tools, defaultExpanded: false },
+];
+
+/** All groups in flat order (kept for backward compatibility if needed) */
+const sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
+  ...developmentGroups,
+  ...managementGroups,
 ];
 
 // ─── Pin Icon ─────────────────────────────────────────────────────────
@@ -139,8 +153,8 @@ function SimpleNavItem({
       className={cn(
         "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
         active
-          ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border-l-[3px] border-l-[var(--fgColor-accent)] pl-[9px]"
-          : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] border-l-[3px] border-l-transparent pl-[9px]",
+          ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border-l-[3px] border-l-[var(--signal-fg-accent)] pl-[9px]"
+          : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] border-l-[3px] border-l-transparent pl-[9px]",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
@@ -168,8 +182,8 @@ function ProjectNavItem({
       className={cn(
         "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
         active
-          ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border-l-[3px] border-l-[var(--fgColor-accent)] pl-[9px]"
-          : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] border-l-[3px] border-l-transparent pl-[9px]",
+          ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border-l-[3px] border-l-[var(--signal-fg-accent)] pl-[9px]"
+          : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] border-l-[3px] border-l-transparent pl-[9px]",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
@@ -222,7 +236,7 @@ function NavGroup({
     <div>
       <button
         onClick={toggle}
-        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-default)] transition-colors"
+        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-primary)] transition-colors"
       >
         <ChevronDownIcon
           size={12}
@@ -274,10 +288,10 @@ function PinnedSection() {
   const toggle = () => setExpanded((p) => !p);
 
   return (
-    <div className="border-t border-[var(--borderColor-muted)]">
+    <div className="border-t border-[var(--signal-border-subtle)]">
       <button
         onClick={toggle}
-        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-default)] transition-colors"
+        className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-primary)] transition-colors"
       >
         <ChevronDownIcon
           size={12}
@@ -291,7 +305,7 @@ function PinnedSection() {
       {expanded && (
         <div className="px-3 pb-2 space-y-0.5">
           {pinnedItems.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-[var(--fgColor-subtle)]">
+            <p className="px-3 py-2 text-xs text-[var(--signal-fg-tertiary)]">
               No pinned items yet
             </p>
           ) : (
@@ -315,8 +329,8 @@ function PinnedSection() {
                   className={cn(
                     "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
                     active
-                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border-l-[3px] border-l-[var(--fgColor-accent)] pl-[9px]"
-                      : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] border-l-[3px] border-l-transparent pl-[9px]",
+                      ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border-l-[3px] border-l-[var(--signal-fg-accent)] pl-[9px]"
+                      : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] border-l-[3px] border-l-transparent pl-[9px]",
                   )}
                 >
                   <PinIcon className="h-4 w-4 shrink-0" />
@@ -335,15 +349,15 @@ function PinnedSection() {
 
 function DocsFooter() {
   return (
-    <div className="border-t border-[var(--borderColor-muted)] px-3 py-3 space-y-1">
-      <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
+    <div className="border-t border-[var(--signal-border-subtle)] px-3 py-3 space-y-1">
+      <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
         Docs & Help
       </p>
       <a
         href={DOCS_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
+        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] transition-colors"
       >
         <BookIcon className="h-4 w-4 shrink-0" />
         Documentation
@@ -353,7 +367,7 @@ function DocsFooter() {
         href={WEBSITE_URL + "/community"}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] transition-colors"
+        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] transition-colors"
       >
         <UsersIcon className="h-4 w-4 shrink-0" />
         Community
@@ -393,7 +407,7 @@ export function NavList() {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-[var(--bgColor-default)] border-r border-[var(--borderColor-default)]",
+          "fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-[var(--signal-bg-primary)] border-r border-[var(--signal-border-default)]",
           "md:sticky md:top-0 md:z-0 md:flex",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           "transition-transform duration-200",
@@ -402,14 +416,14 @@ export function NavList() {
         {/* Header — FeatureSignals brand, clickable → /projects */}
         <Link
           href="/projects"
-          className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--borderColor-muted)] hover:bg-[var(--bgColor-muted)] transition-colors"
+          className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--signal-border-subtle)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
         >
           <PrismLotusIcon size={32} className="shrink-0" />
           <div className="flex flex-col leading-none min-w-0 flex-1">
-            <span className="text-base font-bold tracking-tight whitespace-nowrap text-[var(--fgColor-default)]">
+            <span className="text-base font-bold tracking-tight whitespace-nowrap text-[var(--signal-fg-primary)]">
               Feature<span className="text-[#0969da]">Signals</span>
             </span>
-            <span className="text-[10px] font-medium tracking-wide text-[var(--fgColor-subtle)] uppercase mt-0.5 whitespace-nowrap truncate">
+            <span className="text-[10px] font-medium tracking-wide text-[var(--signal-fg-tertiary)] uppercase mt-0.5 whitespace-nowrap truncate">
               Enterprise Control Plane
             </span>
           </div>
@@ -418,7 +432,7 @@ export function NavList() {
               e.preventDefault();
               close();
             }}
-            className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] md:hidden"
+            className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] md:hidden"
             aria-label="Close sidebar"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -447,16 +461,33 @@ export function NavList() {
                 />
               </div>
 
-              <div className="my-3 mx-3 border-t border-[var(--borderColor-muted)]" />
+              <div className="my-3 mx-3 border-t border-[var(--signal-border-subtle)]" />
 
               <div className="space-y-1 px-3">
-                {sidebarGroups.map((group) => (
+                {/* Development section — visible to all roles */}
+                {developmentGroups.map((group) => (
                   <NavGroup
                     key={group.label}
                     group={group}
                     projectId={currentProjectId}
                   />
                 ))}
+
+                {/* Management section — admin/owner only */}
+                <RoleBasedView roles={["admin", "owner"]}>
+                  <div className="mt-4 mb-2">
+                    <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--signal-fg-tertiary)]/70">
+                      Management
+                    </p>
+                  </div>
+                  {managementGroups.map((group) => (
+                    <NavGroup
+                      key={group.label}
+                      group={group}
+                      projectId={currentProjectId}
+                    />
+                  ))}
+                </RoleBasedView>
               </div>
 
               <PinnedSection />

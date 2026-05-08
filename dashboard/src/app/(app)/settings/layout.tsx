@@ -39,12 +39,12 @@ export default function SettingsLayout({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-default)]">
+      <h1 className="text-2xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
         Settings
       </h1>
 
       <nav className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="flex gap-1 border-b border-[var(--borderColor-default)] min-w-max">
+        <div className="flex gap-1 border-b border-[var(--signal-border-default)] min-w-max">
           {settingsTabs.map((tab) => {
             const active = pathname === tab.href || pathname === tab.href + "/";
             const locked = tab.gatedFeature
@@ -65,10 +65,10 @@ export default function SettingsLayout({
                 className={cn(
                   "flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors sm:px-4 border-b-2 -mb-px",
                   locked
-                    ? "text-[var(--fgColor-subtle)] hover:text-amber-600 border-transparent"
+                    ? "text-[var(--signal-fg-tertiary)] hover:text-amber-600 border-transparent"
                     : active
-                      ? "border-[var(--fgColor-accent)] text-[var(--fgColor-accent)]"
-                      : "border-transparent text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-emphasis)]",
+                      ? "border-[var(--signal-fg-accent)] text-[var(--signal-fg-accent)]"
+                      : "border-transparent text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:border-[var(--signal-border-emphasis)]",
                 )}
               >
                 {tab.label}

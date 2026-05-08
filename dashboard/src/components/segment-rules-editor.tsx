@@ -81,7 +81,7 @@ export function SegmentRulesEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-[var(--fgColor-muted)]">Conditions</span>
+          <span className="text-xs font-medium text-[var(--signal-fg-secondary)]">Conditions</span>
           <Select
             value={matchType}
             onValueChange={handleMatchTypeChange}
@@ -92,7 +92,7 @@ export function SegmentRulesEditor({
         <div className="flex gap-2">
           <button
             onClick={addCondition}
-            className="text-xs font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
+            className="text-xs font-medium text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)]"
           >
             + Add Condition
           </button>
@@ -100,7 +100,7 @@ export function SegmentRulesEditor({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center rounded-lg bg-[var(--bgColor-accent-emphasis)] px-3 py-1 text-xs font-medium text-white shadow-sm transition-all hover:bg-[var(--bgColor-accent-emphasis)]-dark disabled:opacity-50"
+              className="inline-flex items-center rounded-lg bg-[var(--signal-bg-accent-emphasis)] px-3 py-1 text-xs font-medium text-white shadow-sm transition-all hover:bg-[var(--signal-bg-accent-emphasis)]-dark disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>
@@ -109,7 +109,7 @@ export function SegmentRulesEditor({
       </div>
 
       {rules.length === 0 ? (
-        <p className="text-xs text-[var(--fgColor-subtle)] italic py-2">
+        <p className="text-xs text-[var(--signal-fg-tertiary)] italic py-2">
           No conditions — this segment matches all users. Click &ldquo;+ Add
           Condition&rdquo; to define who belongs to this segment.
         </p>
@@ -118,7 +118,7 @@ export function SegmentRulesEditor({
           {rules.map((cond, i) => (
             <div
               key={i}
-              className="flex items-center gap-2 rounded-lg bg-[var(--bgColor-muted)] p-2.5 ring-1 ring-slate-100"
+              className="flex items-center gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-2.5 ring-1 ring-slate-100"
             >
               <input
                 type="text"
@@ -127,7 +127,7 @@ export function SegmentRulesEditor({
                   updateCondition(i, { attribute: e.target.value })
                 }
                 placeholder="attribute (e.g. plan)"
-                className="w-36 rounded-lg border border-[var(--borderColor-default)] bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-[var(--borderColor-emphasis)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
+                className="w-36 rounded-lg border border-[var(--signal-border-default)] bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-[var(--signal-border-emphasis)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)]"
               />
               <Select
                 value={cond.operator}
@@ -144,11 +144,11 @@ export function SegmentRulesEditor({
                   })
                 }
                 placeholder="value(s), comma-separated"
-                className="flex-1 rounded-lg border border-[var(--borderColor-default)] bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-[var(--borderColor-emphasis)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--borderColor-accent-muted)]"
+                className="flex-1 rounded-lg border border-[var(--signal-border-default)] bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-[var(--signal-border-emphasis)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)]"
               />
               <button
                 onClick={() => removeCondition(i)}
-                className="rounded-lg p-1 text-[var(--fgColor-subtle)] transition-colors hover:bg-[var(--bgColor-danger-muted)] hover:text-red-500"
+                className="rounded-lg p-1 text-[var(--signal-fg-tertiary)] transition-colors hover:bg-[var(--signal-bg-danger-muted)] hover:text-red-500"
               >
                 <XIcon className="h-3.5 w-3.5" />
               </button>

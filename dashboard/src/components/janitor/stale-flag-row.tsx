@@ -40,8 +40,8 @@ export function StaleFlagRow({
       className={cn(
         "group flex items-center justify-between rounded-xl border p-4 transition-all",
         flag.safe_to_remove
-          ? "border-[var(--borderColor-default)] bg-white hover:border-amber-200 hover:bg-amber-50/30"
-          : "border-[var(--borderColor-default)] bg-white/60 opacity-70",
+          ? "border-[var(--signal-border-default)] bg-white hover:border-amber-200 hover:bg-amber-50/30"
+          : "border-[var(--signal-border-default)] bg-white/60 opacity-70",
       )}
     >
       <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -50,12 +50,12 @@ export function StaleFlagRow({
           className={cn(
             "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
             flag.pr_status === "merged"
-              ? "bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)]"
+              ? "bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)]"
               : flag.pr_status === "open"
                 ? "bg-blue-100 text-blue-600"
                 : flag.safe_to_remove
                   ? "bg-amber-100 text-amber-600"
-                  : "bg-[var(--bgColor-muted)] text-[var(--fgColor-subtle)]",
+                  : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-tertiary)]",
           )}
         >
           {flag.pr_status === "merged" ? (
@@ -72,11 +72,11 @@ export function StaleFlagRow({
         {/* FlagIcon info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <code className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <code className="text-sm font-semibold text-[var(--signal-fg-primary)]">
               {flag.key}
             </code>
-            <span className="text-xs text-[var(--fgColor-subtle)]">·</span>
-            <span className="text-xs text-[var(--fgColor-muted)]">{flag.name}</span>
+            <span className="text-xs text-[var(--signal-fg-tertiary)]">·</span>
+            <span className="text-xs text-[var(--signal-fg-secondary)]">{flag.name}</span>
             <Badge
               variant={
                 flag.percentage_true >= 100
@@ -112,7 +112,7 @@ export function StaleFlagRow({
               </Badge>
             )}
           </div>
-          <div className="mt-1 flex items-center gap-3 text-xs text-[var(--fgColor-subtle)]">
+          <div className="mt-1 flex items-center gap-3 text-xs text-[var(--signal-fg-tertiary)]">
             <span>
               {flag.days_served} day{flag.days_served > 1 ? "s" : ""} at 100%
             </span>
@@ -152,7 +152,7 @@ export function StaleFlagRow({
         {flag.safe_to_remove && flag.pr_status !== "merged" && (
           <button
             onClick={() => onDismiss(flag.key)}
-            className="rounded-lg p-1.5 text-[var(--fgColor-subtle)] transition-colors hover:bg-[var(--bgColor-danger-muted)] hover:text-red-500"
+            className="rounded-lg p-1.5 text-[var(--signal-fg-tertiary)] transition-colors hover:bg-[var(--signal-bg-danger-muted)] hover:text-red-500"
             title="Dismiss"
           >
             <TrashIcon className="h-3.5 w-3.5" />

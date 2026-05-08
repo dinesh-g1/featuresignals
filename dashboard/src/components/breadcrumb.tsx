@@ -179,12 +179,12 @@ export function Breadcrumb() {
             return (
               <li key={idx} className="flex items-center gap-1">
                 {idx > 0 && (
-                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-[var(--fgColor-subtle)]" />
+                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-tertiary)]" />
                 )}
                 {segment.href && !isLast ? (
                   <Link
                     href={segment.href}
-                    className="truncate text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
+                    className="truncate text-sm text-[var(--signal-fg-secondary)] transition-colors hover:text-[var(--signal-fg-primary)]"
                   >
                     {segment.label}
                   </Link>
@@ -193,8 +193,8 @@ export function Breadcrumb() {
                     className={cn(
                       "truncate text-sm",
                       isLast
-                        ? "font-semibold text-[var(--fgColor-default)]"
-                        : "text-[var(--fgColor-muted)]",
+                        ? "font-semibold text-[var(--signal-fg-primary)]"
+                        : "text-[var(--signal-fg-secondary)]",
                     )}
                   >
                     {segment.label}

@@ -58,7 +58,7 @@ export function FeedbackWidget() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-16 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bgColor-accent-emphasis)] text-white shadow-lg transition-all hover:bg-[var(--bgColor-accent-emphasis)]-dark hover:shadow-xl sm:bottom-6"
+        className="fixed bottom-16 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white shadow-lg transition-all hover:bg-[var(--signal-bg-accent-emphasis)]-dark hover:shadow-xl sm:bottom-6"
         aria-label="Send feedback"
       >
         {open ? (
@@ -69,12 +69,12 @@ export function FeedbackWidget() {
       </button>
 
       {open && (
-        <div className="fixed bottom-28 right-4 z-40 w-80 rounded-xl border border-[var(--borderColor-default)] bg-white shadow-2xl sm:bottom-18">
+        <div className="fixed bottom-28 right-4 z-40 w-80 rounded-xl border border-[var(--signal-border-default)] bg-white shadow-2xl sm:bottom-18">
           <div className="border-b border-slate-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
               Send Feedback
             </h3>
-            <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
+            <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
               Help us improve FeatureSignals
             </p>
           </div>
@@ -88,8 +88,8 @@ export function FeedbackWidget() {
                   onClick={() => setType(t.value)}
                   className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                     type === t.value
-                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
-                      : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]"
+                      ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+                      : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]"
                   }`}
                 >
                   {t.label}
@@ -98,7 +98,7 @@ export function FeedbackWidget() {
             </div>
 
             <div className="flex items-center gap-1">
-              <span className="mr-1 text-xs text-[var(--fgColor-muted)]">
+              <span className="mr-1 text-xs text-[var(--signal-fg-secondary)]">
                 How do you feel?
               </span>
               {(
@@ -106,7 +106,7 @@ export function FeedbackWidget() {
                   {
                     value: "positive",
                     Icon: ThumbsUpIcon,
-                    activeColor: "text-[var(--fgColor-success)] bg-emerald-50",
+                    activeColor: "text-[var(--signal-fg-success)] bg-emerald-50",
                   },
                   {
                     value: "neutral",
@@ -117,7 +117,7 @@ export function FeedbackWidget() {
                     value: "negative",
                     Icon: ThumbsDownIcon,
                     activeColor:
-                      "text-red-600 bg-[var(--bgColor-danger-muted)]",
+                      "text-red-600 bg-[var(--signal-bg-danger-muted)]",
                   },
                 ] as const
               ).map((s) => (
@@ -130,7 +130,7 @@ export function FeedbackWidget() {
                   className={`rounded-md p-1.5 transition-colors ${
                     sentiment === s.value
                       ? s.activeColor
-                      : "text-[var(--fgColor-subtle)] hover:bg-[var(--bgColor-muted)]"
+                      : "text-[var(--signal-fg-tertiary)] hover:bg-[var(--signal-bg-secondary)]"
                   }`}
                 >
                   <s.Icon className="h-4 w-4" aria-hidden="true" />
@@ -153,13 +153,13 @@ export function FeedbackWidget() {
                     : "Tell us what's on your mind..."
               }
               rows={3}
-              className="w-full rounded-lg border border-[var(--borderColor-default)] px-3 py-2 text-sm text-[var(--fgColor-default)] placeholder-slate-400 focus:border-[var(--borderColor-accent-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
+              className="w-full rounded-lg border border-[var(--signal-border-default)] px-3 py-2 text-sm text-[var(--signal-fg-primary)] placeholder-slate-400 focus:border-[var(--signal-border-accent-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--signal-border-accent-muted)]"
             />
 
             <button
               type="submit"
               disabled={sending || !message.trim()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--bgColor-accent-emphasis)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-dark disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--signal-bg-accent-emphasis)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-dark disabled:opacity-50"
             >
               {sending ? (
                 <LoaderIcon className="h-4 w-4 animate-spin" />

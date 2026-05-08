@@ -130,11 +130,11 @@ export function WorkspaceHealth() {
   const score = getOverallScore(checks);
 
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-4 sm:p-5">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-white p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <ActivityIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
-          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+          <ActivityIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
+          <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
             Workspace Health
           </h3>
         </div>
@@ -145,7 +145,7 @@ export function WorkspaceHealth() {
               ? "bg-emerald-50 text-emerald-700"
               : score >= 50
                 ? "bg-amber-50 text-amber-700"
-                : "bg-[var(--bgColor-danger-muted)] text-red-700",
+                : "bg-[var(--signal-bg-danger-muted)] text-red-700",
           )}
         >
           {score}%
@@ -153,7 +153,7 @@ export function WorkspaceHealth() {
       </div>
 
       <div
-        className="h-1.5 w-full rounded-full bg-[var(--bgColor-muted)] mb-4"
+        className="h-1.5 w-full rounded-full bg-[var(--signal-bg-secondary)] mb-4"
         aria-valuenow={score}
         aria-valuemin={0}
         aria-valuemax={100}
@@ -166,7 +166,7 @@ export function WorkspaceHealth() {
               ? "bg-emerald-500"
               : score >= 50
                 ? "bg-amber-500"
-                : "bg-[var(--bgColor-danger-muted)]0",
+                : "bg-[var(--signal-bg-danger-muted)]0",
             `w-[${score}%]`,
           )}
         />
@@ -177,11 +177,11 @@ export function WorkspaceHealth() {
           <div key={check.label} className="flex items-center gap-2.5">
             <StatusIcon status={check.status} />
             <div className="min-w-0 flex-1">
-              <span className="text-xs font-medium text-[var(--fgColor-default)]">
+              <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
                 {check.label}
               </span>
               <span className="mx-1 text-slate-300">·</span>
-              <span className="text-xs text-[var(--fgColor-muted)]">{check.detail}</span>
+              <span className="text-xs text-[var(--signal-fg-secondary)]">{check.detail}</span>
             </div>
           </div>
         ))}

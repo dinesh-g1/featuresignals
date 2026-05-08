@@ -60,19 +60,19 @@ export function CreditPurchaseModal({
 
       {/* Modal */}
       <div
-        className="relative z-10 w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-[var(--borderColor-default)] overflow-hidden"
+        className="relative z-10 w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-[var(--signal-border-default)] overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label={`Purchase ${bearerName} credits`}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[var(--borderColor-default)]">
-          <h2 className="text-lg font-bold text-[var(--fgColor-default)]">
+        <div className="px-6 py-4 border-b border-[var(--signal-border-default)]">
+          <h2 className="text-lg font-bold text-[var(--signal-fg-primary)]">
             Purchase {bearerName} Credits
           </h2>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             Current balance:{" "}
-            <span className="font-semibold tabular-nums text-[var(--fgColor-default)]">
+            <span className="font-semibold tabular-nums text-[var(--signal-fg-primary)]">
               {currentBalance.toLocaleString()}
             </span>{" "}
             credits · {includedPerMonth.toLocaleString()} included/month
@@ -84,16 +84,16 @@ export function CreditPurchaseModal({
           {packs.map((pack) => (
             <div
               key={pack.id}
-              className="flex items-center justify-between p-4 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] hover:border-[var(--borderColor-accent-emphasis)] transition-colors"
+              className="flex items-center justify-between p-4 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-accent-emphasis)] transition-colors"
             >
               <div>
-                <p className="font-semibold text-[var(--fgColor-default)]">
+                <p className="font-semibold text-[var(--signal-fg-primary)]">
                   {pack.name}
                 </p>
-                <p className="text-sm text-[var(--fgColor-muted)]">
+                <p className="text-sm text-[var(--signal-fg-secondary)]">
                   {pack.credits.toLocaleString()} credits
                 </p>
-                <p className="text-xs text-[var(--fgColor-muted)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">
                   {pack.price_display} · ~
                   {(pack.price_paise / pack.credits / 100).toFixed(2)}/credit
                 </p>
@@ -115,8 +115,8 @@ export function CreditPurchaseModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]">
-          <div className="flex items-start gap-2 text-xs text-[var(--fgColor-muted)]">
+        <div className="px-6 py-3 border-t border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
+          <div className="flex items-start gap-2 text-xs text-[var(--signal-fg-secondary)]">
             <span>💡</span>
             <div>
               <p>Credits never expire. Unused credits roll over each month.</p>
@@ -124,7 +124,7 @@ export function CreditPurchaseModal({
                 Need more?{" "}
                 <a
                   href="mailto:sales@featuresignals.com"
-                  className="text-[var(--fgColor-accent)] underline"
+                  className="text-[var(--signal-fg-accent)] underline"
                 >
                   Contact sales
                 </a>{" "}

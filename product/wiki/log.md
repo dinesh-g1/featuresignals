@@ -2,6 +2,110 @@
 
 > Chronological record
 
+## [2026-05-14 16:30] build | Phase 0 - Signal UI Design System Independence COMPLETE
+
+Completed all Phase 0 tasks: Created signal.css with complete token architecture (color, typography, spacing, animation, shadow, radius), imported from globals.css, removed Primer token definitions, updated Tailwind theme to Signal UI, replaced all @primer/octicons-react imports with lucide-react (87 icon mappings, Pulse->Activity, Beaker->FlaskConical, Repo->FolderGit2), mass-replaced Primer CSS variables with Signal UI equivalents across ~80 files (~1,981 occurrences), removed @primer/octicons-react from package.json, cleaned all Primer references from component/CSS comments, created SIGNAL_UI.md, updated wiki index. TypeScript compiles clean. grep for primer returns zero results in source.
+
+## [2026-05-14 11:30] strategy | MASTER_PLAN.md — NNGroup research integration + Signal UI independent design system
+
+Major expansion: Added NNGroup empirical research foundation (P0.11, 10 Heuristics checklist), dashboard Sections H/I/J (Data Tables, Error Messages, Complex App Design), completely replaced Part 3 with Signal UI independent design system (semantic tokens, component specs, 4-phase migration plan, governance), added Phase 0 (Design System Independence week 1-2), extended metrics with 5 new rows. See MASTER_PLAN.md for full details.
+
+## [2026-05-14 09:00] build | Phase 8 — Role-Based Views & Simple/Advanced Flag
+
+Implemented Phase 8 (Progressive Disclosure & Polish). New: useUserRole hook, RoleBasedView, ViewerBanner, SimpleFlagCreate, role-aware nav-list. 48 tests pass.
+
+## [2026-05-12 16:00] build | Phase 6 + Quick Wins — Proactive Error Communication
+
+**Context:** Implemented Phase 6 of the Don Norman-inspired UX overhaul: proactive error communication — webhook failure alerts, SDK health indicators, visual flag timeline, inline error states, and enhanced error boundaries. Follows Don Norman's principle: **Visibility of System Status** — users should know when something is wrong, ideally before they discover it themselves.
+
+**Key deliverables:**
+- `dashboard/src/components/webhook-health.tsx` — Webhook health dashboard with status indicator (green/yellow/red/gray dots), recent deliveries table (last 10 with timestamp, URL, status code, response time, success/failure/pending icons), and dismissible failure alert banner (⚠️ "Webhook X has failed N times in the last hour. Last error: ..." with View details, Pause webhook, Dismiss actions). Uses `listWebhooks` and `listWebhookDeliveries` API endpoints.
+- `dashboard/src/components/sdk-health.tsx` — SDK connectivity monitor listing all environments with status dots (green=connected, yellow=disconnected, gray=never connected), evaluation counts, relative last-seen times, and "Test Connection" button that evaluates a demo flag through `inspectTarget` API.
+- `dashboard/src/components/flag-timeline.tsx` — Vertical visual timeline for each flag showing its full history: created, enabled/disabled, rules updated (with "View diff" link), promoted, deleted, scheduled changes. Color-coded dots and icons per event type. Fetches from audit API and filters client-side by flag ID and resource type.
+- `dashboard/src/components/ui/inline-error.tsx` — Small reusable error component with three variants: inline (compact red box with icon, message, optional Retry), banner (full-width warning banner at top, dismissible), toast (fires existing toast system). Used wherever API calls can fail.
+- `dashboard/src/app/(app)/error.tsx` — Improved error UI with friendly illustrations, plain-language error messages (maps common patterns: network, 401, 403, 404, 500), three clear actions (Try Again, Go to Dashboard, Contact Support), and digest reference for support.
+- `dashboard/src/app/global-error.tsx` — Same friendly error design for the global error boundary (root layout crashes).
+- `dashboard/src/__tests__/components/inline-error.test.tsx` — 11 tests (inline, banner, toast variants; retry, dismiss, className)
+- `dashboard/src/__tests__/components/webhook-health.test.tsx` — 9 tests (loading, error, empty, healthy, failing+alert banner, dismiss alert, disabled, delivery table, pause webhook)
+- `dashboard/src/__tests__/components/sdk-health.test.tsx` — 8 tests (loading, error, empty, connected, never-connected, test success, test failure, metrics unavailable gracefully)
+- `dashboard/src/__tests__/components/flag-timeline.test.tsx` — 11 tests (loading, error, empty, timeline events, event count badge, actor names, view diff link, full audit log link, filtering, no token)
+
+**Design decisions:**
+- Uses `lucide-react` icons (already installed) with proper names (`AlertTriangleIcon`, `XIcon`, `CheckIcon`, etc.) — NOT `@primer/octicons-react` for these new components per task requirements
+- All color-coded status dots: emerald=healthy/connected, amber=degraded/warning, red=failing/critical, gray=disabled/none
+- Error states use amber for warnings, red only for critical issues — noticeable but not alarming
+- Fully dark-mode compatible using existing CSS variable tokens (`--bgColor-*`, `--fgColor-*`, `--borderColor-*`)
+- Accessible: proper ARIA labels, `role="alert"` on error banners, keyboard-navigable dismiss buttons
+- Loading, error, empty, and success states handled for every component
+- All 39 new tests pass; no regressions
+
+**Implementation notes:**
+- Webhook health, SDK health, and flag timeline connect to existing API endpoints (`listWebhooks`, `listWebhookDeliveries`, `updateWebhook`, `getEvalMetrics`, `inspectTarget`, `listAudit`)
+- Flag timeline filters audit entries client-side by `resource_id` and `resource_type` since audit API does not support flag-level filtering
+- SDK health uses global eval metrics as a proxy for per-environment connectivity (per-env metrics not available yet)
+- Test Connection button uses `inspectTarget` API with a synthetic health check key
+- Error pages log full error details (in non-production) but only show friendly messages and digest reference to users
+- InlineError toast variant fires-and-forgets via the existing toast system using `useEffect`
+
+## [2026-05-12 14:00] build | Phase 1 — Instant Flag Onboarding Wizard ("The First 60 Seconds")
+
+**Context:** Implemented Phase 1 of the Don Norman-inspired UX overhaul: a 3-step onboarding wizard that closes the Gulf of Execution — new users go from signup to seeing a working feature flag in under 60 seconds.
+
+**Key deliverables:**
+- `dashboard/src/app/(app)/onboarding/page.tsx` — Complete rewrite from 5-step to 3-step wizard with step indicator, sessionStorage persistence, and edge-case handling
+- `dashboard/src/app/(app)/onboarding/wizard-steps.tsx` — Step components: Welcome (animated logo + value prop), Name Project (single input + auto-create org/env/flag/API key), Instant Flag (3-tab result view)
+- `dashboard/src/app/(app)/onboarding/instant-flag.tsx` — Satisfying large toggle switch with live evaluation via `inspectTarget` API, latency display, error states, and "What Just Happened?" educational breakdown
+- `dashboard/src/app/(app)/onboarding/sdk-snippet.tsx` — 7-language SDK snippet viewer with copy buttons, pre-filled API keys, install commands
+- `dashboard/src/__tests__/onboarding/onboarding.test.tsx` — 20 tests covering all 3 steps, API success/failure states, toggle interaction, copy functionality, tab navigation, and edge cases
+
+**Design decisions:**
+- Step 2 auto-creates Organization → Project → Production env → dark-mode flag → API key in a single form submit
+- Step 3 defaults to "Toggle the Flag" tab for immediate satisfaction; SDK snippet and explanation are secondary
+- SessionStorage persists wizard state across refreshes; cleared on completion
+- All CSS uses GitHub Primer design tokens (`--bgColor-*`, `--fgColor-*`, `--borderColor-*`); dark-mode compatible
+- Toggle animation: 300ms ease-out with green glow shadow when on, gray muted when off
+- Evaluation result uses `animate-scale-in` for satisfying appearance
+- Skip link available in steps 1-2; hidden in step 3
+
+## [2026-05-10 11:00] build | Phase 3 — Visual Rule Builder implementation
+
+**Context:** Implemented Phase 3 of the Don Norman-inspired UX overhaul: a block-based visual targeting rule editor with live preview, conflict detection, and smart operator suggestions. Inspired by Notion/Airtable filter UX patterns.
+
+**Key deliverables:**
+- `dashboard/src/components/visual-rule-builder.tsx` — Main visual rule editor with expandable rule blocks, inline condition editing, drag-reorder, percentage slider, adaptive serve-value input, conflict badges, and integrated live preview
+- `dashboard/src/components/rule-live-preview.tsx` — Client-side evaluation against 10 hardcoded sample users with match/mismatch indicators and per-condition failure diagnosis
+- `dashboard/src/components/rule-conflict-detector.tsx` — Pure-function conflict detection (dead rules, shadowed rules, overlapping rules), condition evaluator with 13 operators, reusable `evaluateRule`/`evaluateCondition` functions
+- `dashboard/src/hooks/use-editor-preference.ts` — localStorage-backed editor mode toggle ("visual" vs "simple") using `useSyncExternalStore`
+- `dashboard/src/__tests__/components/visual-rule-builder.test.tsx` — 26 tests covering rendering, add/remove rules, expand/collapse, keyboard navigation, reordering, conditions CRUD, segments, percentage slider, saving, conflict detection (dead/shadowed/overlap), live preview, and flag type handling
+- `dashboard/src/components/targeting-rules-editor.tsx` — Marked as `@legacy` with migration guidance
+
+**Design decisions:**
+- Same Props interface as legacy `TargetingRulesEditor` for drop-in replacement
+- Smart operator suggestions based on attribute name heuristics (email → string ops, age/count → numeric ops, beta/flag → boolean ops)
+- Delete confirmation pattern: two-click (click trash → click checkmark) to prevent accidental deletion
+- Reorder uses up/down arrow buttons rather than full HTML5 drag-and-drop (simpler, accessible, no library dependency)
+- Conflict detection runs client-side via `useMemo`, non-blocking informational warnings only
+- Live preview collapsible per-rule with independent expansion state
+- All icons from `lucide-react`, all interactive elements from Radix UI Select
+
+## [2026-05-10 16:00] strategy | Don Norman UX audit & 8-phase implementation plan
+
+**Context:** Deep research into Don Norman's design philosophy (The Design of Everyday Things, Emotional Design, Living with Complexity) and Nielsen Norman Group's 10 Usability Heuristics, applied to FeatureSignals product UX. Resulted in comprehensive UX strategy and implementation roadmap covering all user-facing touchpoints.
+
+**Key deliverables:**
+- `product/wiki/public/UX_STRATEGY.md` — Full UX strategy with 5 design principles, heuristic checklist, 8-phase roadmap
+- 10 major UX improvements identified across onboarding, evaluation visibility, targeting rules, flag management, environment safety, error communication, pricing trust, and progressive disclosure
+- 10 quick wins documented for immediate implementation
+
+**Core principles established:**
+1. Close the Gulfs (Execution & Evaluation) — every action must have visible feedback
+2. Prevent Errors — make wrong actions impossible or hard
+3. Knowledge in the World — never force users to remember
+4. Emotional Design — visceral, behavioral, and reflective levels
+5. Progressive Disclosure — start simple, reveal complexity as needed
+
+**Sources:** Don Norman's books, NNGroup heuristics, competitive analysis of LaunchDarkly/ConfigCat/Flagsmith/Unleash UX
+
 ## [2026-05-10 13:00] docs | Cloudflare cleanup — removed all non-DNS Cloudflare references from documentation
 
 **Context:** Cloudflare is now used for DNS only (no WAF, no CDN, no Pages, no edge proxying). All edge security is handled by the global router (Go binary, hostNetwork, autocert). This session removed outdated Cloudflare-as-service references and updated all documentation to reflect the current architecture.

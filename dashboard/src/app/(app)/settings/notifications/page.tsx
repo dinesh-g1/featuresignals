@@ -62,8 +62,8 @@ export default function NotificationsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <MailIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
-            <h2 className="font-semibold text-[var(--fgColor-default)]">
+            <MailIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
+            <h2 className="font-semibold text-[var(--signal-fg-primary)]">
               Email Preferences
             </h2>
           </div>
@@ -75,11 +75,11 @@ export default function NotificationsPage() {
               id="email-consent"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+              className="h-4 w-4 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
             />
             <label
               htmlFor="email-consent"
-              className="text-sm font-medium text-[var(--fgColor-default)]"
+              className="text-sm font-medium text-[var(--signal-fg-primary)]"
             >
               I agree to receive emails from FeatureSignals
             </label>
@@ -92,8 +92,8 @@ export default function NotificationsPage() {
                   key={p.value}
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all ${
                     preference === p.value
-                      ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] ring-1 ring-[var(--borderColor-accent-muted)]"
-                      : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]"
+                      ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-1 ring-[var(--signal-border-accent-muted)]"
+                      : "border-[var(--signal-border-default)] hover:border-[var(--signal-border-emphasis)]"
                   }`}
                 >
                   <input
@@ -102,13 +102,13 @@ export default function NotificationsPage() {
                     value={p.value}
                     checked={preference === p.value}
                     onChange={() => setPreference(p.value)}
-                    className="mt-0.5 h-4 w-4 border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+                    className="mt-0.5 h-4 w-4 border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
                   />
                   <div>
-                    <span className="text-sm font-medium text-[var(--fgColor-default)]">
+                    <span className="text-sm font-medium text-[var(--signal-fg-primary)]">
                       {p.label}
                     </span>
-                    <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
+                    <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
                       {p.description}
                     </p>
                   </div>

@@ -89,13 +89,13 @@ function DiffRow({
 
   return (
     <div className="grid grid-cols-3 gap-2 text-sm sm:gap-4">
-      <div className="text-[var(--fgColor-muted)]">{field.label}</div>
+      <div className="text-[var(--signal-fg-secondary)]">{field.label}</div>
       <div
         className={cn(
           "rounded px-2 py-1 font-mono text-xs",
           hasChanged
-            ? "bg-[var(--bgColor-danger-muted)] text-red-700 line-through"
-            : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+            ? "bg-[var(--signal-bg-danger-muted)] text-red-700 line-through"
+            : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
         )}
       >
         {formatValue(oldValue)}
@@ -105,7 +105,7 @@ function DiffRow({
           "rounded px-2 py-1 font-mono text-xs",
           hasChanged
             ? "bg-emerald-50 text-emerald-700"
-            : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+            : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
         )}
       >
         {formatValue(newValue)}
@@ -243,14 +243,14 @@ export function FlagHistory({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <ClockIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
+            <ClockIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
             Version History
             <Badge variant="default">{versions.length} versions</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {/* Header row for diff columns — desktop only */}
-          <div className="hidden grid-cols-3 gap-2 border-b border-slate-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-[var(--fgColor-subtle)] sm:grid sm:gap-4 sm:px-6">
+          <div className="hidden grid-cols-3 gap-2 border-b border-slate-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-[var(--signal-fg-tertiary)] sm:grid sm:gap-4 sm:px-6">
             <div>Field</div>
             <div>Previous</div>
             <div>Current</div>
@@ -269,14 +269,14 @@ export function FlagHistory({
                     <button
                       type="button"
                       onClick={() => toggleDiff(v.version)}
-                      className="flex items-center gap-2 text-sm font-medium text-[var(--fgColor-default)] hover:text-[var(--fgColor-accent)]"
+                      className="flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-primary)] hover:text-[var(--signal-fg-accent)]"
                       aria-expanded={expanded}
                       aria-label={`Version ${v.version}`}
                     >
                       {expanded ? (
-                        <ChevronDownIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
+                        <ChevronDownIcon className="h-4 w-4 text-[var(--signal-fg-tertiary)]" />
                       ) : (
-                        <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)]" />
+                        <ChevronRightIcon className="h-4 w-4 text-[var(--signal-fg-tertiary)]" />
                       )}
                       <Badge
                         variant={isLatest ? "success" : "default"}
@@ -286,12 +286,12 @@ export function FlagHistory({
                       </Badge>
                     </button>
 
-                    <div className="flex-1 text-xs text-[var(--fgColor-muted)]">
+                    <div className="flex-1 text-xs text-[var(--signal-fg-secondary)]">
                       {timeAgo(v.created_at)}
                     </div>
 
                     {v.changed_by && (
-                      <div className="hidden items-center gap-1 text-xs text-[var(--fgColor-muted)] sm:flex">
+                      <div className="hidden items-center gap-1 text-xs text-[var(--signal-fg-secondary)] sm:flex">
                         <UsersIcon className="h-3 w-3" />
                         {v.changed_by}
                       </div>
@@ -311,14 +311,14 @@ export function FlagHistory({
                   </div>
 
                   {v.change_reason && (
-                    <div className="ml-7 mt-1 text-xs italic text-[var(--fgColor-subtle)]">
+                    <div className="ml-7 mt-1 text-xs italic text-[var(--signal-fg-tertiary)]">
                       {v.change_reason}
                     </div>
                   )}
 
                   {/* Inline diff */}
                   {expanded && v.previous_config && (
-                    <div className="mt-3 space-y-1 rounded-lg bg-[var(--bgColor-muted)] p-3 text-xs sm:p-4">
+                    <div className="mt-3 space-y-1 rounded-lg bg-[var(--signal-bg-secondary)] p-3 text-xs sm:p-4">
                       {DIFF_FIELDS.map((field) => (
                         <DiffRow
                           key={field.key}

@@ -4,23 +4,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fgColor-accent)]/40 focus-visible:ring-offset-2 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal-fg-accent)]/40 focus-visible:ring-offset-2 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         primary:
-          "bg-[#1f883d] text-white shadow-[var(--shadow-resting-small)] hover:bg-[#1a7431] hover:-translate-y-px",
+          "bg-[#1f883d] text-white shadow-[var(--signal-shadow-sm)] hover:bg-[#1a7431] hover:-translate-y-px",
         default:
-          "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] shadow-[var(--shadow-resting-xsmall)] hover:bg-[#e8eaed] hover:-translate-y-px",
+          "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)] shadow-[var(--signal-shadow-xs)] hover:bg-[#e8eaed] hover:-translate-y-px",
         secondary:
-          "bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] border border-[var(--borderColor-default)] shadow-[var(--shadow-resting-xsmall)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]",
+          "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-secondary)] border border-[var(--signal-border-default)] shadow-[var(--signal-shadow-xs)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
         danger:
-          "bg-[var(--bgColor-danger-emphasis)] text-white shadow-[var(--shadow-resting-small)] hover:bg-[#a40e26] hover:-translate-y-px",
+          "bg-[var(--signal-bg-danger-emphasis)] text-white shadow-[var(--signal-shadow-sm)] hover:bg-[#a40e26] hover:-translate-y-px",
         "danger-ghost":
-          "text-[var(--fgColor-danger)] hover:bg-[var(--bgColor-danger-muted)]",
+          "text-[var(--signal-fg-danger)] hover:bg-[var(--signal-bg-danger-muted)]",
         ghost:
-          "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]",
-        link: "text-[var(--fgColor-accent)] underline-offset-4 hover:underline",
+          "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+        link: "text-[var(--signal-fg-accent)] underline-offset-4 hover:underline",
       },
       size: {
         xs: "h-7 px-2.5 text-[11px] gap-1.5 rounded-sm",
@@ -68,7 +68,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : "button";
 
-    // Primer pattern: never disabled, use aria-disabled + inactive visual state
+    // Signal UI pattern: never disabled, use aria-disabled + inactive visual state
     const isAriaDisabled = disabled || loading;
 
     if (asChild) {

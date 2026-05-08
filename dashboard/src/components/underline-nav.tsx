@@ -17,7 +17,7 @@ interface UnderlineNavProps {
 }
 
 /**
- * UnderlineNav — Primer-style sub-tab navigation.
+ * UnderlineNav — sub-tab navigation with active indicator.
  *
  * Active tab has a 2px solid bottom border in accent color.
  * Each tab IS a Link — URL changes.
@@ -31,7 +31,7 @@ export function UnderlineNav({
   return (
     <nav
       className={cn(
-        "flex border-b border-[var(--borderColor-default)] overflow-x-auto scrollbar-hide",
+        "flex border-b border-[var(--signal-border-default)] overflow-x-auto scrollbar-hide",
         className,
       )}
       aria-label="Sub-navigation"
@@ -45,8 +45,8 @@ export function UnderlineNav({
             className={cn(
               "relative flex items-center gap-1.5 px-2 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-100",
               isActive
-                ? "text-[var(--fgColor-default)]"
-                : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)]",
+                ? "text-[var(--signal-fg-primary)]"
+                : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
             )}
             aria-current={isActive ? "page" : undefined}
           >
@@ -56,8 +56,8 @@ export function UnderlineNav({
                 className={cn(
                   "inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                   isActive
-                    ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
-                    : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+                    ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+                    : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
                 )}
               >
                 {tab.count > 99 ? "99+" : tab.count}
@@ -65,7 +65,7 @@ export function UnderlineNav({
             )}
             {/* Active indicator — 2px solid bottom border */}
             {isActive && (
-              <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-[var(--bgColor-accent-emphasis)]" />
+              <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-[var(--signal-bg-accent-emphasis)]" />
             )}
           </Link>
         );

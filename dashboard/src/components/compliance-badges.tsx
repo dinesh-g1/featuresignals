@@ -38,7 +38,7 @@ export function ComplianceBadges({
         {badges.map((badge) => (
           <span
             key={badge.label}
-            className="inline-flex items-center gap-1 rounded-full bg-[var(--bgColor-muted)] px-2 py-0.5 text-[10px] font-medium text-[var(--fgColor-muted)]"
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-bg-secondary)] px-2 py-0.5 text-[10px] font-medium text-[var(--signal-fg-secondary)]"
           >
             <badge.icon className="h-2.5 w-2.5 shrink-0" />
             {badge.label}
@@ -53,13 +53,13 @@ export function ComplianceBadges({
       {badges.map((badge) => (
         <div
           key={badge.label}
-          className="flex items-start gap-3 rounded-lg border border-[var(--borderColor-default)] bg-white p-4 shadow-sm"
+          className="flex items-start gap-3 rounded-lg border border-[var(--signal-border-default)] bg-white p-4 shadow-sm"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bgColor-accent-muted)]">
-            <badge.icon className="h-4.5 w-4.5 text-[var(--fgColor-accent)]" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--signal-bg-accent-muted)]">
+            <badge.icon className="h-4.5 w-4.5 text-[var(--signal-fg-accent)]" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-[var(--fgColor-default)]">{badge.label}</p>
+            <p className="text-sm font-medium text-[var(--signal-fg-primary)]">{badge.label}</p>
           </div>
         </div>
       ))}

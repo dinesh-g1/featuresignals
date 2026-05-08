@@ -1,101 +1,24 @@
 @import "tailwindcss";
+@import "./signal.css";
 
 /* ================================================================
-   GitHub Primer Design System — CSS Custom Properties
-   Based on @primer/css v22 & primer.style foundations
-   Mirrors website/src/app/globals.css pattern
-   ================================================================ */
-
-:root {
-    /* --- Foreground --- */
-    --fgColor-default: #1f2328;
-    --fgColor-muted: #59636e;
-    --fgColor-subtle: #818b98;
-    --fgColor-accent: #0969da;
-    --fgColor-success: #1a7f37;
-    --fgColor-attention: #9a6700;
-    --fgColor-danger: #d1242f;
-    --fgColor-done: #8250df;
-    --fgColor-onEmphasis: #ffffff;
-    --fgColor-link: #0969da;
-
-    /* --- Background --- */
-    --bgColor-default: #ffffff;
-    --bgColor-inset: #f6f8fa;
-    --bgColor-muted: #f6f8fa;
-    --bgColor-emphasis: #25292e;
-    --bgColor-inverse: #25292e;
-    --bgColor-accent-emphasis: #0969da;
-    --bgColor-accent-muted: #ddf4ff;
-    --bgColor-success-emphasis: #1f883d;
-    --bgColor-success-muted: #dafbe1;
-    --bgColor-attention-emphasis: #9a6700;
-    --bgColor-attention-muted: #fff8c5;
-    --bgColor-danger-emphasis: #cf222e;
-    --bgColor-danger-muted: #ffebe9;
-    --bgColor-done-emphasis: #8250df;
-    --bgColor-done-muted: #fbefff;
-
-    /* --- Border --- */
-    --borderColor-default: #d1d9e0;
-    --borderColor-muted: #d1d9e0b3;
-    --borderColor-emphasis: #818b98;
-    --borderColor-accent-emphasis: #0969da;
-    --borderColor-accent-muted: #54aeff66;
-    --borderColor-success-emphasis: #1a7f37;
-    --borderColor-success-muted: #4ac26b66;
-    --borderColor-attention-emphasis: #9a6700;
-    --borderColor-attention-muted: #d4a72c66;
-    --borderColor-danger-emphasis: #cf222e;
-
-    /* --- Shadows (Primer resting & floating) --- */
-    --shadow-resting-xsmall: 0 1px 1px 0 #1f23280d;
-    --shadow-resting-small: 0 1px 1px 0 #1f23280a, 0 1px 2px 0 #1f232808;
-    --shadow-resting-medium: 0 1px 1px 0 #25292e1a, 0 3px 6px 0 #25292e1f;
-    --shadow-floating-small:
-        0 0 0 1px #d1d9e080, 0 6px 12px -3px #25292e0a, 0 6px 18px 0 #25292e1f;
-    --shadow-floating-medium:
-        0 0 0 1px #d1d9e000, 0 8px 16px -4px #25292e14,
-        0 4px 32px -4px #25292e14, 0 24px 48px -12px #25292e14,
-        0 48px 96px -24px #25292e14;
-    --shadow-floating-large: 0 0 0 1px #d1d9e000, 0 40px 80px 0 #25292e3d;
-    --shadow-floating-xlarge: 0 0 0 1px #d1d9e000, 0 56px 112px 0 #25292e52;
-
-    /* --- Radius --- */
-    --radius-small: 6px;
-    --radius-medium: 8px;
-    --radius-large: 12px;
-    --radius-xl: 16px;
-    --radius-2xl: 24px;
-    --radius-full: 9999px;
-
-    /* --- Typography --- */
-    --fontStack-system:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
-        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-    --fontStack-monospace:
-        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-        "Liberation Mono", monospace;
-}
-
-/* ================================================================
-   Tailwind v4 Theme — Primer Tokens
+   Tailwind v4 Theme — Signal UI Tokens
    ================================================================ */
 
 @theme inline {
-    --color-background: var(--bgColor-default);
-    --color-foreground: var(--fgColor-default);
-    --font-sans: var(--fontStack-system);
-    --font-mono: var(--fontStack-monospace);
+    --color-background: var(--signal-bg-primary);
+    --color-foreground: var(--signal-fg-primary);
+    --font-sans: var(--signal-font-sans);
+    --font-mono: var(--signal-font-mono);
 
-    /* Accent (GitHub Blue) */
+    /* Accent (Signal Blue) */
     --color-accent: #0969da;
     --color-accent-dark: #0757ba;
     --color-accent-light: #54aeff;
     --color-accent-muted: #ddf4ff;
     --color-accent-fg: #0969da;
 
-    /* Neutral scale (Primer grays) */
+    /* Neutral scale */
     --color-neutral-0: #ffffff;
     --color-neutral-50: #f6f8fa;
     --color-neutral-100: #eff2f5;
@@ -116,20 +39,22 @@
     --color-done-muted: #fbefff;
 
     /* Shadows as Tailwind-compatible */
-    --shadow-primer-resting: var(--shadow-resting-small);
-    --shadow-primer-floating: var(--shadow-floating-small);
-    --shadow-primer-floating-md: var(--shadow-floating-medium);
-    --shadow-primer-floating-lg: var(--shadow-floating-large);
+    --shadow-signal-resting: var(--signal-shadow-sm);
+    --shadow-signal-floating: var(--signal-shadow-md);
+    --shadow-signal-floating-md: var(--signal-shadow-lg);
+    --shadow-signal-floating-lg: var(--signal-shadow-xl);
 
     /* Border radius */
-    --radius-primer: var(--radius-medium);
-    --radius-primer-lg: var(--radius-large);
-    --radius-primer-xl: var(--radius-xl);
+    --radius-signal: var(--signal-radius-md);
+    --radius-signal-lg: var(--signal-radius-lg);
+    --radius-signal-xl: var(--signal-radius-xl);
 
     /* Animations */
-    --animate-fade-in: fade-in 0.2s ease-out;
-    --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    --animate-scale-in: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    --animate-fade-in: fade-in var(--signal-duration-fast) ease-out;
+    --animate-slide-up: slide-up var(--signal-duration-normal)
+        var(--signal-easing-default);
+    --animate-scale-in: scale-in var(--signal-duration-fast)
+        var(--signal-easing-default);
     --animate-shimmer: shimmer 2s linear infinite;
     --animate-ring-pulse: ring-pulse 2s ease-in-out infinite;
 }
@@ -254,21 +179,21 @@
    ================================================================ */
 
 body {
-    background: var(--bgColor-default);
-    color: var(--fgColor-default);
-    font-family: var(--fontStack-system);
+    background: var(--signal-bg-primary);
+    color: var(--signal-fg-primary);
+    font-family: var(--signal-font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
     background-color: #0969da33;
-    color: var(--fgColor-default);
+    color: var(--signal-fg-primary);
 }
 
-/* Focus visible — Primer blue accent */
+/* Focus visible — Signal UI accent ring */
 *:focus-visible {
-    outline: 2px solid var(--fgColor-accent);
+    outline: 2px solid var(--signal-fg-accent);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -280,7 +205,7 @@ button:focus-visible {
     outline: none;
 }
 
-/* Custom scrollbar — Primer tones */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -289,11 +214,11 @@ button:focus-visible {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: var(--borderColor-default);
+    background: var(--signal-border-default);
     border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--borderColor-emphasis);
+    background: var(--signal-border-emphasis);
 }
 
 /* Hide scrollbar utility */
@@ -305,7 +230,7 @@ button:focus-visible {
     scrollbar-width: none;
 }
 
-/* Primer range slider (for flag rot calculator, etc.) */
+/* Range slider */
 input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -318,7 +243,7 @@ input[type="range"]::-webkit-slider-thumb {
     height: 16px;
     width: 16px;
     border-radius: 50%;
-    background: var(--bgColor-accent-emphasis);
+    background: var(--signal-bg-accent-emphasis);
     cursor: pointer;
     margin-top: -5px;
     box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
@@ -331,14 +256,14 @@ input[type="range"]::-webkit-slider-runnable-track {
     width: 100%;
     height: 6px;
     cursor: pointer;
-    background: var(--borderColor-default);
+    background: var(--signal-border-default);
     border-radius: 3px;
 }
 input[type="range"]::-moz-range-thumb {
     height: 16px;
     width: 16px;
     border-radius: 50%;
-    background: var(--bgColor-accent-emphasis);
+    background: var(--signal-bg-accent-emphasis);
     cursor: pointer;
     border: none;
     box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
@@ -347,7 +272,7 @@ input[type="range"]::-moz-range-track {
     width: 100%;
     height: 6px;
     cursor: pointer;
-    background: var(--borderColor-default);
+    background: var(--signal-border-default);
     border-radius: 3px;
 }
 

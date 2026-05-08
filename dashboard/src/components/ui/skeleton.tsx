@@ -7,7 +7,7 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
-      className={cn("rounded-md bg-[var(--bgColor-muted)]/60 shimmer-bg", className)}
+      className={cn("rounded-md bg-[var(--signal-bg-secondary)]/60 shimmer-bg", className)}
       {...props}
     />
   );
@@ -36,7 +36,7 @@ export function SkeletonCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--borderColor-default)]/80 bg-white p-4 shadow-soft sm:p-6",
+        "rounded-xl border border-[var(--signal-border-default)]/80 bg-white p-4 shadow-soft sm:p-6",
         className,
       )}
     >
@@ -53,7 +53,7 @@ export function SkeletonCard({ className }: { className?: string }) {
 
 export function SkeletonTableRow({ cols = 4 }: { cols?: number }) {
   return (
-    <tr className="border-b border-[var(--borderColor-muted)]">
+    <tr className="border-b border-[var(--signal-border-subtle)]">
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="p-4">
           <Skeleton className={cn("h-4", i === 0 ? "w-3/4" : "w-1/2")} />
@@ -75,13 +75,13 @@ export function SkeletonTable({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--borderColor-default)]/80 bg-white shadow-soft overflow-hidden",
+        "rounded-xl border border-[var(--signal-border-default)]/80 bg-white shadow-soft overflow-hidden",
         className,
       )}
     >
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)]">
+          <tr className="border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]">
             {Array.from({ length: cols }).map((_, i) => (
               <th key={i} className="p-4">
                 <Skeleton className="h-3 w-20" />
@@ -114,8 +114,8 @@ export function PageSkeleton({ className }: { className?: string }) {
           <SkeletonCard key={i} />
         ))}
       </div>
-      <div className="rounded-xl border border-[var(--borderColor-default)]/80 bg-white shadow-soft">
-        <div className="border-b border-[var(--borderColor-muted)] p-4">
+      <div className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white shadow-soft">
+        <div className="border-b border-[var(--signal-border-subtle)] p-4">
           <Skeleton className="h-5 w-32" />
         </div>
         <div className="p-4 space-y-3">
@@ -148,7 +148,7 @@ export function FlagsPageSkeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-xl border border-[var(--borderColor-default)]/80 bg-white p-4 shadow-soft"
+            className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white p-4 shadow-soft"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -182,8 +182,8 @@ export function DashboardPageSkeleton() {
           <SkeletonCard key={i} />
         ))}
       </div>
-      <div className="rounded-xl border border-[var(--borderColor-default)]/80 bg-white shadow-soft">
-        <div className="border-b border-[var(--borderColor-muted)] px-4 py-3 sm:px-6">
+      <div className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white shadow-soft">
+        <div className="border-b border-[var(--signal-border-subtle)] px-4 py-3 sm:px-6">
           <Skeleton className="h-5 w-32" />
         </div>
         <div className="p-4 space-y-3 sm:p-6">
@@ -208,9 +208,9 @@ export function SettingsPageSkeleton() {
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-[var(--borderColor-default)]/80 bg-white shadow-soft"
+          className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white shadow-soft"
         >
-          <div className="border-b border-[var(--borderColor-muted)] px-4 py-3 sm:px-6">
+          <div className="border-b border-[var(--signal-border-subtle)] px-4 py-3 sm:px-6">
             <Skeleton className="h-5 w-40" />
           </div>
           <div className="p-4 space-y-4 sm:p-6">

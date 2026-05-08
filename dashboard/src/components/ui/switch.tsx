@@ -5,7 +5,7 @@ import * as SwitchPrimitive from "@radix-ui/react-switch";
 import { cn } from "@/lib/utils";
 
 /**
- * Primer ToggleSwitch — auto-saving pattern for boolean flags.
+ * ToggleSwitch — auto-saving pattern for boolean flags.
  *
  * - Green (#1f883d) when checked (ON)
  * - Gray (#d1d9e0) when unchecked (OFF)
@@ -22,9 +22,9 @@ const Switch = React.forwardRef<
     ref={ref}
     className={cn(
       "peer inline-flex shrink-0 cursor-pointer items-center rounded-full transition-all duration-200",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fgColor-accent)]/40 focus-visible:ring-offset-2",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal-fg-accent)]/40 focus-visible:ring-offset-2",
       "data-[state=checked]:bg-[#1f883d]",
-      "data-[state=unchecked]:bg-[var(--borderColor-default)]",
+      "data-[state=unchecked]:bg-[var(--signal-border-default)]",
       "disabled:cursor-not-allowed disabled:opacity-50",
       size === "sm" ? "h-5 w-9" : "h-7 w-12",
       className,

@@ -1,195 +1,199 @@
-/** Pixel-perfect GitHub Octicons */
+/** Signal UI Icons — powered by lucide-react, zero Primer dependency */
 import {
-  AlertFillIcon as _O_AlertFillIcon,
-  AlertIcon as _O_AlertIcon,
-  ArrowLeftIcon as _O_ArrowLeftIcon,
-  ArrowRightIcon as _O_ArrowRightIcon,
-  ArrowSwitchIcon as _O_ArrowSwitchIcon,
-  ArrowUpRightIcon as _O_ArrowUpRightIcon,
-  BeakerIcon as _O_BeakerIcon,
-  BellIcon as _O_BellIcon,
-  BookIcon as _O_BookIcon,
-  BugIcon as _O_BugIcon,
-  CalendarIcon as _O_CalendarIcon,
-  CheckCircleFillIcon as _O_CheckCircleFillIcon,
-  CheckIcon as _O_CheckIcon,
-  CheckboxIcon as _O_CheckboxIcon,
-  ChecklistIcon as _O_ChecklistIcon,
-  ChevronDownIcon as _O_ChevronDownIcon,
-  ChevronLeftIcon as _O_ChevronLeftIcon,
-  ChevronRightIcon as _O_ChevronRightIcon,
-  ChevronUpIcon as _O_ChevronUpIcon,
-  ClockIcon as _O_ClockIcon,
-  CloudIcon as _O_CloudIcon,
-  CodeIcon as _O_CodeIcon,
-  CommandPaletteIcon as _O_CommandPaletteIcon,
-  CommentDiscussionIcon as _O_CommentDiscussionIcon,
-  CopyIcon as _O_CopyIcon,
-  CreditCardIcon as _O_CreditCardIcon,
-  DashIcon as _O_DashIcon,
-  DownloadIcon as _O_DownloadIcon,
-  EyeClosedIcon as _O_EyeClosedIcon,
-  EyeIcon as _O_EyeIcon,
-  FileCodeIcon as _O_FileCodeIcon,
-  FileDirectoryIcon as _O_FileDirectoryIcon,
-  FilterIcon as _O_FilterIcon,
-  GearIcon as _O_GearIcon,
-  GitBranchIcon as _O_GitBranchIcon,
-  GitCompareIcon as _O_GitCompareIcon,
-  GitPullRequestIcon as _O_GitPullRequestIcon,
-  GlobeIcon as _O_GlobeIcon,
-  GrabberIcon as _O_GrabberIcon,
-  GraphBarHorizontalIcon as _O_GraphBarHorizontalIcon,
-  GraphIcon as _O_GraphIcon,
-  HeartFillIcon as _O_HeartFillIcon,
-  InfoIcon as _O_InfoIcon,
-  IterationsIcon as _O_IterationsIcon,
-  KebabHorizontalIcon as _O_KebabHorizontalIcon,
-  KeyIcon as _O_KeyIcon,
-  LightBulbIcon as _O_LightBulbIcon,
-  LinkExternalIcon as _O_LinkExternalIcon,
-  LinkIcon as _O_LinkIcon,
-  LockIcon as _O_LockIcon,
-  MailIcon as _O_MailIcon,
-  OrganizationIcon as _O_OrganizationIcon,
-  PaperAirplaneIcon as _O_PaperAirplaneIcon,
-  PencilIcon as _O_PencilIcon,
-  PeopleIcon as _O_PeopleIcon,
-  PersonAddIcon as _O_PersonAddIcon,
-  PersonIcon as _O_PersonIcon,
-  PlusCircleIcon as _O_PlusCircleIcon,
-  PlusIcon as _O_PlusIcon,
-  PulseIcon as _O_PulseIcon,
-  QuestionIcon as _O_QuestionIcon,
-  ReplyIcon as _O_ReplyIcon,
-  RepoForkedIcon as _O_RepoForkedIcon,
-  RepoIcon as _O_RepoIcon,
-  RocketIcon as _O_RocketIcon,
-  SearchIcon as _O_SearchIcon,
-  ServerIcon as _O_ServerIcon,
-  ShieldCheckIcon as _O_ShieldCheckIcon,
-  ShieldIcon as _O_ShieldIcon,
-  SignOutIcon as _O_SignOutIcon,
-  SlidersIcon as _O_SlidersIcon,
-  SparkleFillIcon as _O_SparkleFillIcon,
-  StackIcon as _O_StackIcon,
-  SyncIcon as _O_SyncIcon,
-  TableIcon as _O_TableIcon,
-  TerminalIcon as _O_TerminalIcon,
-  ThreeBarsIcon as _O_ThreeBarsIcon,
-  ThumbsdownIcon as _O_ThumbsdownIcon,
-  ThumbsupIcon as _O_ThumbsupIcon,
-  TrashIcon as _O_TrashIcon,
-  WebhookIcon as _O_WebhookIcon,
-  XCircleFillIcon as _O_XCircleFillIcon,
-  XIcon as _O_XIcon,
-  ZapIcon as _O_ZapIcon,
-} from "@primer/octicons-react";
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  ArrowLeftRight,
+  ArrowRight,
+  ArrowUpRight,
+  BarChart3,
+  Bell,
+  Book,
+  Bug,
+  Building,
+  Calendar,
+  Check,
+  CheckCircle,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Clock,
+  Cloud,
+  Code,
+  Command,
+  Copy,
+  CreditCard,
+  Download,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileCode,
+  Filter,
+  Flag,
+  FlaskConical,
+  FolderGit2,
+  FolderOpen,
+  GitBranch,
+  GitCompare,
+  GitFork,
+  GitPullRequest,
+  Globe,
+  GripVertical,
+  Heart,
+  HelpCircle,
+  Info,
+  Key,
+  Layers,
+  Lightbulb,
+  Link,
+  ListChecks,
+  Lock,
+  LogOut,
+  Mail,
+  Menu,
+  MessageSquarePlus,
+  Minus,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  PlusCircle,
+  RefreshCw,
+  Reply,
+  Rocket,
+  Search,
+  Send,
+  Server,
+  Settings,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  SquareCheck,
+  Table,
+  Terminal,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
+  TrendingUp,
+  User,
+  UserPlus,
+  Users,
+  Webhook,
+  X,
+  XCircle,
+  Zap,
+} from "lucide-react";
 
-export const ActivityIcon = _O_PulseIcon;
-export const AlertFillIcon = _O_AlertFillIcon;
-export const AlertIcon = _O_AlertIcon;
-export const ApiKeysIcon = _O_KeyIcon;
-export const ArrowLeftIcon = _O_ArrowLeftIcon;
-export const ArrowLeftRightIcon = _O_ArrowSwitchIcon;
-export const ArrowRightIcon = _O_ArrowRightIcon;
-export const ArrowUpDownIcon = _O_ArrowSwitchIcon;
-export const ArrowUpRightIcon = _O_ArrowUpRightIcon;
-export const AuditLogIcon = _O_ChecklistIcon;
-export const BarChartIcon = _O_GraphBarHorizontalIcon;
-export const BeakerIcon = _O_BeakerIcon;
-export const BellIcon = _O_BellIcon;
-export const BookIcon = _O_BookIcon;
-export const BrainIcon = _O_LightBulbIcon;
-export const BugIcon = _O_BugIcon;
-export const BuildingIcon = _O_OrganizationIcon;
-export const CalendarIcon = _O_CalendarIcon;
-export const CheckCircleFillIcon = _O_CheckCircleFillIcon;
-export const CheckIcon = _O_CheckIcon;
-export const CheckListIcon = _O_ChecklistIcon;
-export const ChevronDownIcon = _O_ChevronDownIcon;
-export const ChevronLeftIcon = _O_ChevronLeftIcon;
-export const ChevronRightIcon = _O_ChevronRightIcon;
-export const ChevronUpIcon = _O_ChevronUpIcon;
-export const ClipboardIcon = _O_ChecklistIcon;
-export const ClipboardListIcon = _O_ChecklistIcon;
-export const ClockIcon = _O_ClockIcon;
-export const CloudIcon = _O_CloudIcon;
-export const CodeIcon = _O_CodeIcon;
-export const CommandIcon = _O_CommandPaletteIcon;
-export const CopyIcon = _O_CopyIcon;
-export const CreditCardIcon = _O_CreditCardIcon;
-export const DashboardIcon = _O_TableIcon;
-export const DownloadIcon = _O_DownloadIcon;
-export const EnvironmentIcon = _O_GlobeIcon;
-export const ExternalLinkIcon = _O_LinkExternalIcon;
-export const EyeIcon = _O_EyeIcon;
-export const EyeOffIcon = _O_EyeClosedIcon;
-export const FileCodeIcon = _O_FileCodeIcon;
-export const FilterIcon = _O_FilterIcon;
-export const FlagCircleIcon = _O_CheckCircleFillIcon;
-export const FlagIcon = _O_IterationsIcon;
-export const FolderOpenIcon = _O_FileDirectoryIcon;
-export const GearIcon = _O_GearIcon;
-export const GitBranchIcon = _O_GitBranchIcon;
-export const GitCompareIcon = _O_GitCompareIcon;
-export const GitForkIcon = _O_RepoForkedIcon;
-export const GitPullRequestIcon = _O_GitPullRequestIcon;
-export const GlobeIcon = _O_GlobeIcon;
-export const GraphIcon = _O_GraphIcon;
-export const GripVerticalIcon = _O_GrabberIcon;
-export const HeartIcon = _O_HeartFillIcon;
-export const HeartPulseIcon = _O_HeartFillIcon;
-export const HelpCircleIcon = _O_QuestionIcon;
-export const InfoFillIcon = _O_InfoIcon;
-export const InfoIcon = _O_InfoIcon;
-export const KeyIcon = _O_KeyIcon;
-export const LayersIcon = _O_StackIcon;
-export const LayoutDashboardIcon = _O_TableIcon;
-export const LightbulbIcon = _O_LightBulbIcon;
-export const LineChartIcon = _O_GraphIcon;
-export const LinkIcon = _O_LinkIcon;
-export const LoaderIcon = _O_SyncIcon;
-export const LockIcon = _O_LockIcon;
-export const LogOutIcon = _O_SignOutIcon;
-export const MailIcon = _O_MailIcon;
-export const MessageSquarePlusIcon = _O_CommentDiscussionIcon;
-export const MinusIcon = _O_DashIcon;
-export const MoreIcon = _O_KebabHorizontalIcon;
-export const NavFlagIcon = _O_IterationsIcon;
-export const PencilIcon = _O_PencilIcon;
-export const PersonIcon = _O_PersonIcon;
-export const PieChartIcon = _O_GraphIcon;
-export const PlusCircleIcon = _O_PlusCircleIcon;
-export const PlusIcon = _O_PlusIcon;
-export const PulseIcon = _O_PulseIcon;
-export const RefreshIcon = _O_SyncIcon;
-export const RocketIcon = _O_RocketIcon;
-export const RotateCcwIcon = _O_ReplyIcon;
-export const SearchIcon = _O_SearchIcon;
-export const SegmentIcon = _O_StackIcon;
-export const SendIcon = _O_PaperAirplaneIcon;
-export const ServerIcon = _O_ServerIcon;
-export const Settings2Icon = _O_GearIcon;
-export const SettingsIcon = _O_GearIcon;
-export const ShieldCheckIcon = _O_ShieldCheckIcon;
-export const ShieldIcon = _O_ShieldIcon;
-export const SlidersHorizontalIcon = _O_SlidersIcon;
-export const SparklesIcon = _O_SparkleFillIcon;
-export const TeamIcon = _O_PeopleIcon;
-export const TerminalIcon = _O_TerminalIcon;
-export const ThreeBarsIcon = _O_ThreeBarsIcon;
-export const ThumbsDownIcon = _O_ThumbsdownIcon;
-export const ThumbsUpIcon = _O_ThumbsupIcon;
-export const ToggleLeftIcon = _O_CheckboxIcon;
-export const TrashIcon = _O_TrashIcon;
-export const TrendingUpIcon = _O_ArrowUpRightIcon;
-export const UserPlusIcon = _O_PersonAddIcon;
-export const UserSearchIcon = _O_SearchIcon;
-export const UsersIcon = _O_PeopleIcon;
-export const UsersRoundIcon = _O_PeopleIcon;
-export const WebhookIcon = _O_WebhookIcon;
-export const XCircleFillIcon = _O_XCircleFillIcon;
-export const XIcon = _O_XIcon;
-export const ZapIcon = _O_ZapIcon;
-export const ProjectIcon = _O_RepoIcon;
+/* ------------------------------------------------------------------ */
+/*  Primary named exports (used directly by pages & components)        */
+/* ------------------------------------------------------------------ */
+
+export const ActivityIcon = Activity;
+export const AlertFillIcon = AlertTriangle;
+export const AlertIcon = AlertTriangle;
+export const ApiKeysIcon = Key;
+export const ArrowLeftIcon = ArrowLeft;
+export const ArrowLeftRightIcon = ArrowLeftRight;
+export const ArrowRightIcon = ArrowRight;
+export const ArrowUpDownIcon = ArrowLeftRight;
+export const ArrowUpRightIcon = ArrowUpRight;
+export const AuditLogIcon = ListChecks;
+export const BarChartIcon = BarChart3;
+export const BeakerIcon = FlaskConical;
+export const BellIcon = Bell;
+export const BookIcon = Book;
+export const BrainIcon = Lightbulb;
+export const BugIcon = Bug;
+export const BuildingIcon = Building;
+export const CalendarIcon = Calendar;
+export const CheckCircleFillIcon = CheckCircle;
+export const CheckIcon = Check;
+export const CheckListIcon = ListChecks;
+export const ChevronDownIcon = ChevronDown;
+export const ChevronLeftIcon = ChevronLeft;
+export const ChevronRightIcon = ChevronRight;
+export const ChevronUpIcon = ChevronUp;
+export const ClipboardIcon = ListChecks;
+export const ClipboardListIcon = ListChecks;
+export const ClockIcon = Clock;
+export const CloudIcon = Cloud;
+export const CodeIcon = Code;
+export const CommandIcon = Command;
+export const CopyIcon = Copy;
+export const CreditCardIcon = CreditCard;
+export const DashboardIcon = Table;
+export const DownloadIcon = Download;
+export const EnvironmentIcon = Globe;
+export const ExternalLinkIcon = ExternalLink;
+export const EyeIcon = Eye;
+export const EyeOffIcon = EyeOff;
+export const FileCodeIcon = FileCode;
+export const FilterIcon = Filter;
+export const FlagCircleIcon = CheckCircle;
+export const FlagIcon = Flag;
+export const FolderOpenIcon = FolderOpen;
+export const GearIcon = Settings;
+export const GitBranchIcon = GitBranch;
+export const GitCompareIcon = GitCompare;
+export const GitForkIcon = GitFork;
+export const GitPullRequestIcon = GitPullRequest;
+export const GlobeIcon = Globe;
+export const GraphIcon = Activity;
+export const GripVerticalIcon = GripVertical;
+export const HeartIcon = Heart;
+export const HeartPulseIcon = Activity;
+export const HelpCircleIcon = HelpCircle;
+export const InfoFillIcon = Info;
+export const InfoIcon = Info;
+export const KeyIcon = Key;
+export const LayersIcon = Layers;
+export const LayoutDashboardIcon = Table;
+export const LightbulbIcon = Lightbulb;
+export const LineChartIcon = TrendingUp;
+export const LinkIcon = Link;
+export const LoaderIcon = RefreshCw;
+export const LockIcon = Lock;
+export const LogOutIcon = LogOut;
+export const MailIcon = Mail;
+export const MessageSquarePlusIcon = MessageSquarePlus;
+export const MinusIcon = Minus;
+export const MoreIcon = MoreHorizontal;
+export const NavFlagIcon = Flag;
+export const PencilIcon = Pencil;
+export const PersonIcon = User;
+export const PieChartIcon = Activity;
+export const PlusCircleIcon = PlusCircle;
+export const PlusIcon = Plus;
+export const PulseIcon = Activity;
+export const RefreshIcon = RefreshCw;
+export const RocketIcon = Rocket;
+export const RotateCcwIcon = Reply;
+export const SearchIcon = Search;
+export const SegmentIcon = Layers;
+export const SendIcon = Send;
+export const ServerIcon = Server;
+export const Settings2Icon = Settings;
+export const SettingsIcon = Settings;
+export const ShieldCheckIcon = ShieldCheck;
+export const ShieldIcon = Shield;
+export const SlidersHorizontalIcon = SlidersHorizontal;
+export const SparklesIcon = Sparkles;
+export const TeamIcon = Users;
+export const TerminalIcon = Terminal;
+export const ThreeBarsIcon = Menu;
+export const ThumbsDownIcon = ThumbsDown;
+export const ThumbsUpIcon = ThumbsUp;
+export const ToggleLeftIcon = SquareCheck;
+export const TrashIcon = Trash2;
+export const TrendingUpIcon = TrendingUp;
+export const UserPlusIcon = UserPlus;
+export const UserSearchIcon = Search;
+export const UsersIcon = Users;
+export const UsersRoundIcon = Users;
+export const WebhookIcon = Webhook;
+export const XCircleFillIcon = XCircle;
+export const XIcon = X;
+export const ZapIcon = Zap;
+export const ProjectIcon = FolderGit2;

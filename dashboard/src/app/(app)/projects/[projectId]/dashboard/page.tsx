@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { cn, timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SDKHealth } from "@/components/sdk-health";
 import {
   AlertIcon,
   CheckCircleFillIcon,
@@ -110,7 +111,7 @@ function StatTile({
 }) {
   return (
     <Link href={href} className="group block">
-      <Card className="h-full transition-all duration-150 hover:shadow-md hover:border-[var(--borderColor-emphasis)] cursor-pointer">
+      <Card className="h-full transition-all duration-150 hover:shadow-md hover:border-[var(--signal-border-emphasis)] cursor-pointer">
         <CardContent className="p-4 flex items-center gap-4">
           <div
             className={cn(
@@ -121,12 +122,12 @@ function StatTile({
             <Icon className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-2xl font-bold text-[var(--fgColor-default)] tabular-nums">
+            <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
               {count}
             </p>
-            <p className="text-xs text-[var(--fgColor-muted)]">{label}</p>
+            <p className="text-xs text-[var(--signal-fg-secondary)]">{label}</p>
           </div>
-          <ChevronRightIcon className="h-4 w-4 shrink-0 text-[var(--fgColor-subtle)] opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
+          <ChevronRightIcon className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
         </CardContent>
       </Card>
     </Link>
@@ -198,7 +199,7 @@ function BeginnersGuide({
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
             <SparklesIcon className="h-4 w-4 text-blue-600" />
           </div>
-          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+          <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
             Getting Started
           </h3>
         </div>
@@ -213,7 +214,7 @@ function BeginnersGuide({
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                   step.done
                     ? "bg-emerald-100 text-emerald-600"
-                    : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+                    : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
                 )}
               >
                 {step.done ? (
@@ -223,10 +224,10 @@ function BeginnersGuide({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--fgColor-default)]">
+                <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
                   {step.label}
                 </p>
-                <p className="text-xs text-[var(--fgColor-subtle)]">
+                <p className="text-xs text-[var(--signal-fg-tertiary)]">
                   {step.desc}
                 </p>
               </div>
@@ -317,13 +318,13 @@ export default function DashboardPage() {
   if (!projectId) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)]">
-          <SparklesIcon className="h-8 w-8 text-[var(--fgColor-accent)]" />
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--signal-bg-accent-muted)]">
+          <SparklesIcon className="h-8 w-8 text-[var(--signal-fg-accent)]" />
         </div>
-        <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+        <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
           Select a project
         </h2>
-        <p className="mt-1 max-w-sm text-sm text-[var(--fgColor-muted)]">
+        <p className="mt-1 max-w-sm text-sm text-[var(--signal-fg-secondary)]">
           Choose a project from the top bar to see its dashboard and manage
           resources.
         </p>
@@ -334,12 +335,12 @@ export default function DashboardPage() {
   if (snap.loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-28 animate-pulse rounded-xl bg-[var(--borderColor-default)]"
+              className="h-28 animate-pulse rounded-xl bg-[var(--signal-border-default)]"
             />
           ))}
         </div>
@@ -354,10 +355,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-[var(--fgColor-default)]">
+          <h1 className="text-xl font-bold text-[var(--signal-fg-primary)]">
             {organization?.name || "Project"} Dashboard
           </h1>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             {flags.length} flags · {segments.length} segments ·{" "}
             {environments.length} environments · {members.length} members
           </p>
@@ -385,7 +386,7 @@ export default function DashboardPage() {
           icon={FlagIcon}
           label="Feature Flags"
           count={flags.length}
-          color="bg-[var(--bgColor-accent-emphasis)]"
+          color="bg-[var(--signal-bg-accent-emphasis)]"
         />
         <StatTile
           href={`/projects/${projectId}/segments`}
@@ -410,49 +411,52 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* SDK Connectivity health card */}
+      <SDKHealth />
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Integrations stats */}
         <Card>
           <CardContent className="p-5">
-            <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-4">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-4">
               Integrations
             </h3>
             <div className="space-y-3">
               <Link
                 href={`/projects/${projectId}/api-keys`}
-                className="flex items-center justify-between rounded-lg p-3 hover:bg-[var(--bgColor-muted)] transition-colors group"
+                className="flex items-center justify-between rounded-lg p-3 hover:bg-[var(--signal-bg-secondary)] transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <ApiKeysIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
-                  <span className="text-sm text-[var(--fgColor-default)]">
+                  <ApiKeysIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
+                  <span className="text-sm text-[var(--signal-fg-primary)]">
                     API Keys
                   </span>
                 </div>
-                <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronRightIcon className="h-4 w-4 text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
               <Link
                 href={`/projects/${projectId}/webhooks`}
-                className="flex items-center justify-between rounded-lg p-3 hover:bg-[var(--bgColor-muted)] transition-colors group"
+                className="flex items-center justify-between rounded-lg p-3 hover:bg-[var(--signal-bg-secondary)] transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <WebhookIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
-                  <span className="text-sm text-[var(--fgColor-default)]">
+                  <WebhookIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
+                  <span className="text-sm text-[var(--signal-fg-primary)]">
                     Webhooks
                   </span>
                 </div>
-                <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronRightIcon className="h-4 w-4 text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
               <Link
                 href={`/projects/${projectId}/approvals`}
-                className="flex items-center justify-between rounded-lg p-3 hover:bg-[var(--bgColor-muted)] transition-colors group"
+                className="flex items-center justify-between rounded-lg p-3 hover:bg-[var(--signal-bg-secondary)] transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <CheckListIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
-                  <span className="text-sm text-[var(--fgColor-default)]">
+                  <CheckListIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
+                  <span className="text-sm text-[var(--signal-fg-primary)]">
                     Approvals
                   </span>
                 </div>
-                <ChevronRightIcon className="h-4 w-4 text-[var(--fgColor-subtle)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronRightIcon className="h-4 w-4 text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
             </div>
           </CardContent>
@@ -462,18 +466,18 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 Recent Activity
               </h3>
               <Link
                 href="/activity"
-                className="text-xs font-medium text-[var(--fgColor-accent)] hover:underline"
+                className="text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
               >
                 View all →
               </Link>
             </div>
             {audit.length === 0 ? (
-              <p className="text-sm text-[var(--fgColor-muted)] py-4 text-center">
+              <p className="text-sm text-[var(--signal-fg-secondary)] py-4 text-center">
                 No recent activity in this project.
               </p>
             ) : (
@@ -481,16 +485,16 @@ export default function DashboardPage() {
                 {audit.slice(0, 6).map((entry) => (
                   <div
                     key={entry.id}
-                    className="flex items-start gap-3 rounded-lg p-2 hover:bg-[var(--bgColor-muted)] transition-colors"
+                    className="flex items-start gap-3 rounded-lg p-2 hover:bg-[var(--signal-bg-secondary)] transition-colors"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--bgColor-muted)]">
-                      <AuditLogIcon className="h-3.5 w-3.5 text-[var(--fgColor-muted)]" />
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--signal-bg-secondary)]">
+                      <AuditLogIcon className="h-3.5 w-3.5 text-[var(--signal-fg-secondary)]" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-[var(--fgColor-default)] truncate">
+                      <p className="text-sm text-[var(--signal-fg-primary)] truncate">
                         {entry.action} on {entry.resource_type}
                       </p>
-                      <p className="text-xs text-[var(--fgColor-subtle)]">
+                      <p className="text-xs text-[var(--signal-fg-tertiary)]">
                         {timeAgo(entry.created_at)}
                       </p>
                     </div>
@@ -505,7 +509,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <Card>
         <CardContent className="p-5">
-          <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-3">
+          <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-3">
             Quick Actions
           </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

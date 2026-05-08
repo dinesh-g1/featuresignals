@@ -75,9 +75,9 @@ export function CreateProjectDialog({
     >
       <DialogContent className="sm:max-w-md !p-0 overflow-hidden">
         {/* Gradient icon header */}
-        <div className="relative px-6 pt-8 pb-6 bg-gradient-to-b from-[var(--bgColor-accent-muted)]/40 to-transparent">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[var(--borderColor-default)]">
-            <BuildingIcon className="h-7 w-7 text-[var(--fgColor-accent)]" />
+        <div className="relative px-6 pt-8 pb-6 bg-gradient-to-b from-[var(--signal-bg-accent-muted)]/40 to-transparent">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[var(--signal-border-default)]">
+            <BuildingIcon className="h-7 w-7 text-[var(--signal-fg-accent)]" />
           </div>
         </div>
 
@@ -105,11 +105,11 @@ export function CreateProjectDialog({
               autoFocus
             />
             {fieldError && (
-              <p className="mt-2 text-xs font-medium text-[var(--fgColor-danger)]">
+              <p className="mt-2 text-xs font-medium text-[var(--signal-fg-danger)]">
                 {fieldError}
               </p>
             )}
-            <p className="mt-2 text-xs leading-relaxed text-[var(--fgColor-muted)]">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--signal-fg-secondary)]">
               Projects group your flags, environments, and segments together.
               Choose a name that reflects your application or team.
             </p>

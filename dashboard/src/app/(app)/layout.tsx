@@ -7,6 +7,7 @@ import { ContextBar } from "@/components/context-bar";
 import { AuthGuard } from "@/components/auth-guard";
 import { CommandPalette } from "@/components/command-palette";
 import { toast, ToastContainer } from "@/components/toast";
+import { EnvColorBar } from "@/components/env-color-bar";
 import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
 import { UpgradeBanner } from "@/components/upgrade-banner";
@@ -14,6 +15,7 @@ import { ProductTour } from "@/components/product-tour";
 import { DashboardFooter } from "@/components/dashboard-footer";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { SuperMode } from "@/components/super-mode";
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Logo } from "@/components/logo";
@@ -36,10 +38,10 @@ function UpgradeRequiredListener() {
 function MobileHeader() {
   const open = useSidebarStore((s) => s.open);
   return (
-    <div className="flex h-14 items-center border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)]/90 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
+    <div className="flex h-14 items-center border-b border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]/90 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
       <button
         onClick={open}
-        className="rounded-md p-1.5 text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]"
+        className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
         aria-label="Open sidebar"
       >
         <svg
@@ -87,8 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Redirect project-scoped pages when no project is selected
   useEffect(() => {
-    const isProjectRoute =
-      pathname && /^\/projects\/[^/]+\//.test(pathname);
+    const isProjectRoute = pathname && /^\/projects\/[^/]+\//.test(pathname);
     if (!currentProjectId && isProjectRoute) {
       router.replace("/projects");
     }
@@ -100,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <UpgradeBanner />
       <VerificationBanner />
 
-      <div className="flex h-screen flex-col md:flex-row bg-[var(--bgColor-inset)]">
+      <div className="flex h-screen flex-col md:flex-row bg-[var(--signal-bg-secondary)]">
         {/* Sidebar — always visible, content adapts to context */}
         <NavList />
 
@@ -111,6 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <ContextBar />
 
           <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+            <EnvColorBar />
             {children}
           </main>
 
@@ -124,6 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <TourGate />
       <FeedbackWidget />
       <SuperMode />
+      <KeyboardShortcutsDialog />
     </AuthGuard>
   );
 }

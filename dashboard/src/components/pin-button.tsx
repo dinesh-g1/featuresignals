@@ -53,8 +53,8 @@ export function PinButton({
       onClick={handleToggle}
       disabled={loading}
       className={cn(
-        "rounded p-0.5 transition-colors hover:bg-[var(--bgColor-muted)]",
-        pinned ? "text-amber-500" : "text-[var(--fgColor-subtle)] opacity-0 group-hover:opacity-100",
+        "rounded p-0.5 transition-colors hover:bg-[var(--signal-bg-secondary)]",
+        pinned ? "text-amber-500" : "text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100",
         className,
       )}
       title={pinned ? "Unpin" : "Pin"}

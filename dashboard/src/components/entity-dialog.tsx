@@ -96,7 +96,7 @@ export function CreateEnvironmentDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Environment</DialogTitle>
-          <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <div className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             Add a new deployment environment for managing flag states
             independently.
           </div>
@@ -236,7 +236,7 @@ export function EditEnvironmentDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Environment</DialogTitle>
-          <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <div className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             Update environment details. Changes may affect API keys and flag
             states.
           </div>
@@ -343,14 +343,14 @@ export function DeleteDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-red-600">{title}</DialogTitle>
-          <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <div className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             {description && (
-              <p className="font-semibold text-[var(--fgColor-default)]">
+              <p className="font-semibold text-[var(--signal-fg-primary)]">
                 {description}
               </p>
             )}
             {consequences.length > 0 && (
-              <div className="bg-[var(--bgColor-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
+              <div className="bg-[var(--signal-bg-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
                 <p className="font-semibold text-red-800 mb-1">This will:</p>
                 <ul className="list-disc list-inside space-y-1 text-red-700">
                   {consequences.map((c, i) => (

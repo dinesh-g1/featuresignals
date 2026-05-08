@@ -34,11 +34,11 @@ export function VerificationBanner() {
   }
 
   return (
-    <div className="border-b border-[var(--borderColor-attention-muted)] bg-[var(--bgColor-attention-muted)] px-4 py-3">
+    <div className="border-b border-[var(--signal-border-warning-muted)] bg-[var(--signal-bg-warning-muted)] px-4 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <svg
-            className="h-5 w-5 flex-shrink-0 text-[var(--fgColor-attention)]"
+            className="h-5 w-5 flex-shrink-0 text-[var(--signal-fg-warning)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -49,13 +49,13 @@ export function VerificationBanner() {
               d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
             />
           </svg>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--fgColor-attention)]">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--signal-fg-warning)]">
             <span className="flex items-center gap-1.5">
               Verify your email
               <button
                 onClick={handleResendEmail}
                 disabled={sending}
-                className="font-medium text-[var(--fgColor-attention)] underline underline-offset-2 transition-colors hover:text-[var(--fgColor-default)] disabled:opacity-50"
+                className="font-medium text-[var(--signal-fg-warning)] underline underline-offset-2 transition-colors hover:text-[var(--signal-fg-primary)] disabled:opacity-50"
               >
                 {sending ? "Sending..." : "Resend"}
               </button>
@@ -64,7 +64,7 @@ export function VerificationBanner() {
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="flex-shrink-0 rounded p-1 text-[var(--fgColor-subtle)] transition-colors hover:bg-[var(--bgColor-attention-muted)]/60 hover:text-[var(--fgColor-attention)]"
+          className="flex-shrink-0 rounded p-1 text-[var(--signal-fg-tertiary)] transition-colors hover:bg-[var(--signal-bg-warning-muted)]/60 hover:text-[var(--signal-fg-warning)]"
           aria-label="Dismiss"
         >
           <svg

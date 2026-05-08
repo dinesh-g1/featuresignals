@@ -68,10 +68,10 @@ export default function SupportPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-xl font-bold text-[var(--fgColor-default)]">
+        <h1 className="text-xl font-bold text-[var(--signal-fg-primary)]">
           Support
         </h1>
-        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+        <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
           Find help, documentation, and ways to get in touch.
         </p>
       </div>
@@ -82,13 +82,13 @@ export default function SupportPage() {
           return (
             <Card key={cat.title}>
               <CardContent className="p-5">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-                  <Icon className="h-5 w-5 text-[var(--fgColor-accent)]" />
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                  <Icon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
                 </div>
-                <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+                <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                   {cat.title}
                 </h3>
-                <p className="mt-1 text-xs text-[var(--fgColor-muted)]">
+                <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
                   {cat.description}
                 </p>
                 <ul className="mt-3 space-y-1.5">
@@ -99,7 +99,7 @@ export default function SupportPage() {
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-[var(--fgColor-accent)] hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-[var(--signal-fg-accent)] hover:underline"
                         >
                           {link.label}
                           <ExternalLinkIcon className="h-3 w-3" />
@@ -107,7 +107,7 @@ export default function SupportPage() {
                       ) : link.href.startsWith("mailto:") ? (
                         <a
                           href={link.href}
-                          className="inline-flex items-center gap-1 text-sm text-[var(--fgColor-accent)] hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-[var(--signal-fg-accent)] hover:underline"
                         >
                           <MailIcon className="h-3 w-3" />
                           {link.label}
@@ -115,7 +115,7 @@ export default function SupportPage() {
                       ) : (
                         <Link
                           href={link.href}
-                          className="inline-flex items-center gap-1 text-sm text-[var(--fgColor-accent)] hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-[var(--signal-fg-accent)] hover:underline"
                         >
                           {link.label}
                           <ArrowRightIcon className="h-3 w-3" />

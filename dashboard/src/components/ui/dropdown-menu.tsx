@@ -16,7 +16,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-[var(--borderColor-default)]/60 bg-white/95 p-1 shadow-xl shadow-slate-200/50 backdrop-blur-lg ring-1 ring-slate-100/50 animate-scale-in",
+        "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-[var(--signal-border-default)]/60 bg-white/95 p-1 shadow-xl shadow-slate-200/50 backdrop-blur-lg ring-1 ring-slate-100/50 animate-scale-in",
         className,
       )}
       {...props}
@@ -37,8 +37,8 @@ const DropdownMenuItem = React.forwardRef<
       "relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-150",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       variant === "destructive"
-        ? "text-red-600 data-[highlighted]:bg-[var(--bgColor-danger-muted)] data-[highlighted]:text-red-700"
-        : "text-[var(--fgColor-default)] data-[highlighted]:bg-[var(--bgColor-accent-muted)] data-[highlighted]:text-[var(--fgColor-accent)]",
+        ? "text-red-600 data-[highlighted]:bg-[var(--signal-bg-danger-muted)] data-[highlighted]:text-red-700"
+        : "text-[var(--signal-fg-primary)] data-[highlighted]:bg-[var(--signal-bg-accent-muted)] data-[highlighted]:text-[var(--signal-fg-accent)]",
       className,
     )}
     {...props}
@@ -52,7 +52,7 @@ const DropdownMenuSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-[var(--bgColor-muted)]", className)}
+    className={cn("-mx-1 my-1 h-px bg-[var(--signal-bg-secondary)]", className)}
     {...props}
   />
 ));
@@ -65,7 +65,7 @@ const DropdownMenuLabel = React.forwardRef<
   <DropdownMenuPrimitive.Label
     ref={ref}
     className={cn(
-      "px-3 py-1.5 text-xs font-semibold text-[var(--fgColor-subtle)]",
+      "px-3 py-1.5 text-xs font-semibold text-[var(--signal-fg-tertiary)]",
       className,
     )}
     {...props}

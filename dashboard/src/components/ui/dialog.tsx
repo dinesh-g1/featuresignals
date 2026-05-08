@@ -56,8 +56,8 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2",
-        "rounded-[var(--radius-large)] border border-[var(--borderColor-default)]",
-        "bg-[var(--bgColor-default)] shadow-[var(--shadow-floating-medium)]",
+        "rounded-[var(--radius-large)] border border-[var(--signal-border-default)]",
+        "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)]",
         "focus:outline-none",
         "data-[state=open]:animate-scale-in data-[state=closed]:animate-fade-out",
         className,
@@ -65,7 +65,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1.5 text-[var(--fgColor-subtle)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fgColor-accent)]/40">
+      <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1.5 text-[var(--signal-fg-tertiary)] transition-colors hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal-fg-accent)]/40">
         <CloseIcon />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -83,7 +83,7 @@ function DialogHeader({
   return (
     <div
       className={cn(
-        "border-b border-[var(--borderColor-default)] px-6 py-4",
+        "border-b border-[var(--signal-border-default)] px-6 py-4",
         className,
       )}
       {...props}
@@ -98,7 +98,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-semibold text-[var(--fgColor-default)]",
+      "text-base font-semibold text-[var(--signal-fg-primary)]",
       className,
     )}
     {...props}
@@ -112,7 +112,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("mt-1 text-sm text-[var(--fgColor-muted)]", className)}
+    className={cn("mt-1 text-sm text-[var(--signal-fg-secondary)]", className)}
     {...props}
   />
 ));
@@ -136,7 +136,7 @@ function DialogFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-2 border-t border-[var(--borderColor-default)] px-6 py-3",
+        "flex items-center justify-end gap-2 border-t border-[var(--signal-border-default)] px-6 py-3",
         className,
       )}
       {...props}

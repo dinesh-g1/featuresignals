@@ -50,12 +50,12 @@ export default function LimitsPage() {
   if (loading) {
     return (
       <div className="space-y-4 animate-fade-in">
-        <div className="h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="h-24 animate-pulse rounded-xl bg-[var(--borderColor-default)]"
+              className="h-24 animate-pulse rounded-xl bg-[var(--signal-border-default)]"
             />
           ))}
         </div>
@@ -71,23 +71,23 @@ export default function LimitsPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Header with plan info */}
       <div>
-        <h1 className="text-xl font-bold text-[var(--fgColor-default)]">
+        <h1 className="text-xl font-bold text-[var(--signal-fg-primary)]">
           Limits
         </h1>
-        <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+        <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
           {planLabel} Plan
           {plan === "pro" && (
             <span> · INR 1,999/month</span>
           )}
           {plan === "free" && (
-            <span> · <Link href="/settings/billing" className="text-[var(--fgColor-accent)] underline">Upgrade to Pro</Link> for unlimited</span>
+            <span> · <Link href="/settings/billing" className="text-[var(--signal-fg-accent)] underline">Upgrade to Pro</Link> for unlimited</span>
           )}
         </p>
       </div>
 
       {/* Section 1: Resource Limits */}
       <section>
-        <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wide mb-3">
           Resources
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -103,7 +103,7 @@ export default function LimitsPage() {
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-[var(--fgColor-default)]">
+                    <span className="text-sm font-medium text-[var(--signal-fg-primary)]">
                       {LABELS[l.resource] ?? l.resource}
                     </span>
                     <span
@@ -111,14 +111,14 @@ export default function LimitsPage() {
                         "text-sm font-bold tabular-nums",
                         isNearLimit
                           ? "text-amber-600"
-                          : "text-[var(--fgColor-default)]",
+                          : "text-[var(--signal-fg-primary)]",
                       )}
                     >
                       {isUnlimited ? "∞" : `${l.used}/${l.max}`}
                     </span>
                   </div>
                   {!isUnlimited && (
-                    <div className="w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-[var(--signal-bg-secondary)] overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-500",
@@ -126,14 +126,14 @@ export default function LimitsPage() {
                             ? "bg-red-500"
                             : pct >= 80
                               ? "bg-amber-500"
-                              : "bg-[var(--fgColor-accent)]",
+                              : "bg-[var(--signal-fg-accent)]",
                         )}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                   )}
                   {isUnlimited && (
-                    <p className="text-xs text-[var(--fgColor-muted)] italic">
+                    <p className="text-xs text-[var(--signal-fg-secondary)] italic">
                       Unlimited on this plan
                     </p>
                   )}
@@ -152,7 +152,7 @@ export default function LimitsPage() {
       {/* Section 2: Credit Limits */}
       {credits?.bearers?.length ? (
         <section>
-          <h2 className="text-sm font-semibold text-[var(--fgColor-muted)] uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-semibold text-[var(--signal-fg-secondary)] uppercase tracking-wide mb-3">
             AI Janitor Credits
           </h2>
           <div className="space-y-3">
@@ -178,49 +178,49 @@ function CreditLimitCard({ bearer, plan }: { bearer: CreditBearer; plan: string 
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-[var(--fgColor-default)]">
+              <h3 className="font-semibold text-[var(--signal-fg-primary)]">
                 {bearer.display_name}
               </h3>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium">
                 {bearer.unit_name}
               </span>
             </div>
-            <p className="text-xs text-[var(--fgColor-muted)] mt-1">{bearer.description}</p>
+            <p className="text-xs text-[var(--signal-fg-secondary)] mt-1">{bearer.description}</p>
 
             <div className="mt-3 grid grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Included/month</p>
-                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Included/month</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--signal-fg-primary)]">
                   {included.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Balance</p>
-                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Balance</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--signal-fg-primary)]">
                   {bearer.balance.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[var(--fgColor-muted)]">Lifetime used</p>
-                <p className="text-lg font-bold tabular-nums text-[var(--fgColor-default)]">
+                <p className="text-xs text-[var(--signal-fg-secondary)]">Lifetime used</p>
+                <p className="text-lg font-bold tabular-nums text-[var(--signal-fg-primary)]">
                   {bearer.lifetime_used.toLocaleString()}
                 </p>
               </div>
             </div>
 
             {included > 0 && (
-              <div className="mt-3 w-full h-2 rounded-full bg-[var(--bgColor-muted)] overflow-hidden">
+              <div className="mt-3 w-full h-2 rounded-full bg-[var(--signal-bg-secondary)] overflow-hidden">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
-                    pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-[var(--fgColor-accent)]",
+                    pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-[var(--signal-fg-accent)]",
                   )}
                   style={{ width: `${pct}%` }}
                 />
               </div>
             )}
 
-            <p className="mt-2 text-xs text-[var(--fgColor-muted)]">
+            <p className="mt-2 text-xs text-[var(--signal-fg-secondary)]">
               {plan === "free"
                 ? `Free plan: ${included} credits/month. Upgrade to Pro for 200/month.`
                 : plan === "pro"

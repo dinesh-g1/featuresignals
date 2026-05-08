@@ -151,12 +151,12 @@ export default function APIKeysPage() {
       </div>
 
       {newKey && (
-        <Card className="border-[var(--borderColor-success-muted)] bg-emerald-50 p-4 ring-1 ring-emerald-100">
-          <p className="text-sm font-medium text-[var(--fgColor-success)]">
+        <Card className="border-[var(--signal-border-success-muted)] bg-emerald-50 p-4 ring-1 ring-emerald-100">
+          <p className="text-sm font-medium text-[var(--signal-fg-success)]">
             API key created. Copy it now — it won&apos;t be shown again.
           </p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="flex-1 rounded-lg bg-[var(--bgColor-success-muted)] p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">
+            <code className="flex-1 rounded-lg bg-[var(--signal-bg-success-muted)] p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">
               {newKey}
             </code>
             <Button
@@ -170,7 +170,7 @@ export default function APIKeysPage() {
           </div>
           <button
             onClick={() => setNewKey(null)}
-            className="mt-2 text-xs font-medium text-[var(--fgColor-success)] transition-colors hover:text-emerald-700"
+            className="mt-2 text-xs font-medium text-[var(--signal-fg-success)] transition-colors hover:text-emerald-700"
           >
             Dismiss
           </button>
@@ -242,11 +242,11 @@ export default function APIKeysPage() {
               return (
                 <div
                   key={k.id}
-                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-[var(--bgColor-accent-emphasis)]-glass"}`}
+                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-[var(--signal-bg-accent-emphasis)]-glass"}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-[var(--fgColor-default)]">
+                      <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
                         {k.name}
                       </p>
                       {isExpired && !isRevoked && (
@@ -258,10 +258,10 @@ export default function APIKeysPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
+                    <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
                       {k.key_prefix}... &middot; {k.type}
                     </p>
-                    <p className="mt-0.5 text-xs text-[var(--fgColor-subtle)]">
+                    <p className="mt-0.5 text-xs text-[var(--signal-fg-tertiary)]">
                       {k.last_used_at ? (
                         `Last used ${formatRelativeTime(k.last_used_at)}`
                       ) : (

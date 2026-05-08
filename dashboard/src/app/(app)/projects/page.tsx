@@ -165,12 +165,12 @@ export default function ProjectsPage() {
   if (loading) {
     return (
       <div className="p-8">
-        <div className="mb-8 h-8 w-48 animate-pulse rounded bg-[var(--borderColor-default)]" />
+        <div className="mb-8 h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-[120px] animate-pulse rounded-xl bg-[var(--borderColor-default)]"
+              className="h-[120px] animate-pulse rounded-xl bg-[var(--signal-border-default)]"
             />
           ))}
         </div>
@@ -182,7 +182,7 @@ export default function ProjectsPage() {
   if (error && projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="rounded-2xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-6 text-center max-w-md">
+        <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
           <h2 className="text-lg font-bold text-red-800 mb-1">
             Failed to load projects
           </h2>
@@ -201,13 +201,13 @@ export default function ProjectsPage() {
       {/* Empty state — centered in viewport */}
       {projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)] text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--bgColor-accent-muted)] to-[var(--bgColor-accent-muted)]/50 ring-1 ring-[var(--borderColor-accent-muted)]/50 shadow-sm">
-            <BuildingIcon className="h-10 w-10 text-[var(--fgColor-accent)]" />
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--signal-bg-accent-muted)] to-[var(--signal-bg-accent-muted)]/50 ring-1 ring-[var(--signal-border-accent-muted)]/50 shadow-sm">
+            <BuildingIcon className="h-10 w-10 text-[var(--signal-fg-accent)]" />
           </div>
-          <h2 className="text-xl font-bold text-[var(--fgColor-default)]">
+          <h2 className="text-xl font-bold text-[var(--signal-fg-primary)]">
             No projects yet
           </h2>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--fgColor-muted)]">
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--signal-fg-secondary)]">
             Create your first project to start managing feature flags,
             environments, and segments — all in one place.
           </p>
@@ -225,10 +225,10 @@ export default function ProjectsPage() {
         <>
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-[var(--fgColor-default)]">
+            <h1 className="text-2xl font-bold text-[var(--signal-fg-primary)]">
               Projects
             </h1>
-            <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+            <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
               Projects group your flags, environments, and segments together.
             </p>
           </div>
@@ -241,7 +241,7 @@ export default function ProjectsPage() {
                   key={project.id}
                   className={cn(
                     "group relative p-6 transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col items-center justify-center min-h-[120px]",
-                    isActive && "ring-2 ring-[var(--fgColor-accent)]",
+                    isActive && "ring-2 ring-[var(--signal-fg-accent)]",
                   )}
                   onClick={() => handleSelectProject(project)}
                 >
@@ -252,7 +252,7 @@ export default function ProjectsPage() {
                         e.stopPropagation();
                         openEdit(project);
                       }}
-                      className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-accent)]"
+                      className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-accent)]"
                       title="Edit project"
                     >
                       <PencilIcon className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ export default function ProjectsPage() {
                         e.stopPropagation();
                         openDelete(project);
                       }}
-                      className="rounded-md p-1.5 text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-danger)]"
+                      className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-danger)]"
                       title="Delete project"
                     >
                       <TrashIcon className="h-3.5 w-3.5" />
@@ -274,22 +274,22 @@ export default function ProjectsPage() {
                     className={cn(
                       "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
                       isActive
-                        ? "bg-[var(--bgColor-accent-muted)]"
-                        : "bg-[var(--bgColor-muted)] group-hover:bg-[var(--bgColor-accent-muted)]",
+                        ? "bg-[var(--signal-bg-accent-muted)]"
+                        : "bg-[var(--signal-bg-secondary)] group-hover:bg-[var(--signal-bg-accent-muted)]",
                     )}
                   >
                     <BuildingIcon
                       className={cn(
                         "h-5 w-5",
                         isActive
-                          ? "text-[var(--fgColor-accent)]"
-                          : "text-[var(--fgColor-muted)] group-hover:text-[var(--fgColor-accent)]",
+                          ? "text-[var(--signal-fg-accent)]"
+                          : "text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-accent)]",
                       )}
                     />
                   </div>
 
                   {/* Name */}
-                  <h3 className="font-semibold text-[var(--fgColor-default)] text-center truncate max-w-full">
+                  <h3 className="font-semibold text-[var(--signal-fg-primary)] text-center truncate max-w-full">
                     {project.name}
                   </h3>
                 </Card>
@@ -299,7 +299,7 @@ export default function ProjectsPage() {
             {/* Create Project card */}
             <button
               onClick={openCreate}
-              className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--borderColor-default)] flex flex-col items-center justify-center gap-2 text-[var(--fgColor-muted)] hover:border-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-all duration-200"
+              className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--signal-border-default)] flex flex-col items-center justify-center gap-2 text-[var(--signal-fg-secondary)] hover:border-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)] transition-all duration-200"
             >
               <PlusIcon className="h-8 w-8" />
               <span className="text-sm font-medium">Create Project</span>
@@ -311,8 +311,8 @@ export default function ProjectsPage() {
       {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-            <BuildingIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+            <BuildingIcon className="h-6 w-6 text-[var(--signal-fg-accent)]" />
           </div>
           <DialogHeader className="text-center">
             <DialogTitle>
@@ -334,7 +334,7 @@ export default function ProjectsPage() {
                 autoFocus
               />
               {fieldError && (
-                <p className="mt-1.5 text-xs text-[var(--fgColor-danger)]">
+                <p className="mt-1.5 text-xs text-[var(--signal-fg-danger)]">
                   {fieldError}
                 </p>
               )}
@@ -348,7 +348,7 @@ export default function ProjectsPage() {
                 placeholder="my-awesome-app"
                 className="mt-1.5 font-mono text-sm"
               />
-              <p className="mt-1.5 text-xs text-[var(--fgColor-muted)]">
+              <p className="mt-1.5 text-xs text-[var(--signal-fg-secondary)]">
                 Used in API URLs. Leave blank to auto-generate from name.
               </p>
             </div>
@@ -387,9 +387,9 @@ export default function ProjectsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-red-600">Delete project</DialogTitle>
-            <div className="mt-1 text-sm text-[var(--fgColor-muted)]">
+            <div className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
               Are you sure you want to delete{" "}
-              <span className="font-semibold text-[var(--fgColor-default)]">
+              <span className="font-semibold text-[var(--signal-fg-primary)]">
                 {deleting?.name}
               </span>
               ? This will permanently delete all flags, environments, and
@@ -402,9 +402,9 @@ export default function ProjectsPage() {
               type="checkbox"
               checked={deleteConfirmed}
               onChange={(e) => setDeleteConfirmed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[var(--borderColor-default)] text-[var(--fgColor-danger)] focus:ring-[var(--fgColor-danger)]"
+              className="mt-0.5 h-4 w-4 rounded border-[var(--signal-border-default)] text-[var(--signal-fg-danger)] focus:ring-[var(--signal-fg-danger)]"
             />
-            <span className="text-sm text-[var(--fgColor-muted)]">
+            <span className="text-sm text-[var(--signal-fg-secondary)]">
               I understand that deleting this project will permanently remove
               all flags, environments, segments, and associated data. This
               action cannot be undone.

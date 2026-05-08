@@ -32,7 +32,7 @@ export function FormField({
         <p className="text-xs text-red-500" role="alert">{error}</p>
       )}
       {!error && hint && (
-        <p className="text-xs text-[var(--fgColor-subtle)]">{hint}</p>
+        <p className="text-xs text-[var(--signal-fg-tertiary)]">{hint}</p>
       )}
     </div>
   );

@@ -46,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full scroll-smooth">
       <head />
-      <body className="min-h-full flex flex-col bg-[var(--bgColor-default)] text-[var(--fgColor-default)] font-sans antialiased selection:bg-[var(--bgColor-accent-emphasis)] selection:text-white">
+      <body className="min-h-full flex flex-col bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] font-sans antialiased selection:bg-[var(--signal-bg-accent-emphasis)] selection:text-white">
         {children}
       </body>
     </html>

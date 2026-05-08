@@ -58,7 +58,7 @@ export function GitProviderCard({
   const Icon = config.icon;
 
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-5 transition-all hover:shadow-soft">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-white p-5 transition-all hover:shadow-soft">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -71,7 +71,7 @@ export function GitProviderCard({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-[var(--fgColor-default)]">
+              <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
                 {config.name}
               </h4>
               {connected ? (
@@ -81,16 +81,16 @@ export function GitProviderCard({
               ) : (
                 <Badge
                   variant="default"
-                  className="text-[10px] bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]"
+                  className="text-[10px] bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]"
                 >
                   Not connected
                 </Badge>
               )}
             </div>
             {connected && name && (
-              <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
                 Connected as "
-                <span className="font-medium text-[var(--fgColor-default)]">
+                <span className="font-medium text-[var(--signal-fg-primary)]">
                   {name}
                 </span>
                 "
@@ -103,7 +103,7 @@ export function GitProviderCard({
         </div>
         {connected && (
           <button
-            className="rounded-lg p-1.5 text-[var(--fgColor-subtle)] hover:bg-[var(--bgColor-muted)]"
+            className="rounded-lg p-1.5 text-[var(--signal-fg-tertiary)] hover:bg-[var(--signal-bg-secondary)]"
             title="Settings"
           >
             <SettingsIcon className="h-4 w-4" />
@@ -112,7 +112,7 @@ export function GitProviderCard({
       </div>
 
       {connected && lastScanned && (
-        <p className="mt-3 text-xs text-[var(--fgColor-subtle)]">
+        <p className="mt-3 text-xs text-[var(--signal-fg-tertiary)]">
           Last scanned: {timeAgo(lastScanned)}
         </p>
       )}
@@ -135,7 +135,7 @@ export function GitProviderCard({
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-xs text-red-600 hover:text-red-700 hover:bg-[var(--bgColor-danger-muted)]"
+                className="text-xs text-red-600 hover:text-red-700 hover:bg-[var(--signal-bg-danger-muted)]"
                 onClick={onDisconnect}
               >
                 <TrashIcon className="h-3 w-3 mr-1" />

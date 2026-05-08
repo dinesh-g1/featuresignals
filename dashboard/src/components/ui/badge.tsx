@@ -6,11 +6,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[var(--bgColor-default)] text-[var(--fgColor-muted)] ring-stone-200/80",
+        default: "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-secondary)] ring-stone-200/80",
         primary: "bg-teal-50 text-teal-700 ring-teal-200/60",
         success: "bg-emerald-50 text-emerald-700 ring-emerald-200/60",
         warning: "bg-amber-50 text-amber-700 ring-amber-200/60",
-        danger: "bg-[var(--bgColor-danger-muted)] text-red-700 ring-red-200/60",
+        danger: "bg-[var(--signal-bg-danger-muted)] text-red-700 ring-red-200/60",
         info: "bg-blue-50 text-blue-700 ring-blue-200/60",
         purple: "bg-purple-50 text-purple-700 ring-purple-200/60",
         orange: "bg-orange-50 text-orange-700 ring-orange-200/60",

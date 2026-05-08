@@ -24,7 +24,7 @@ export function ErrorDisplay({
     <div
       className={cn(
         "flex flex-col items-center justify-center px-4 text-center animate-fade-in",
-        fullPage ? "min-h-screen bg-[var(--bgColor-muted)]" : "py-16 sm:py-24",
+        fullPage ? "min-h-screen bg-[var(--signal-bg-secondary)]" : "py-16 sm:py-24",
       )}
     >
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-red-100 ring-1 ring-red-200/60 shadow-sm">
@@ -39,14 +39,14 @@ export function ErrorDisplay({
 
       <h1
         className={cn(
-          "font-semibold text-[var(--fgColor-default)]",
+          "font-semibold text-[var(--signal-fg-primary)]",
           statusCode != null ? "mt-3 text-xl" : "mt-5 text-xl",
         )}
       >
         {title}
       </h1>
 
-      <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--fgColor-muted)]">
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--signal-fg-secondary)]">
         {message}
       </p>
 

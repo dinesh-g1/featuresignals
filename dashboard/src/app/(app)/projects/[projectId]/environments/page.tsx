@@ -223,10 +223,10 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
               <GlobeIcon className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 {currentProject?.name}
               </p>
-              <p className="text-xs text-[var(--fgColor-muted)] font-mono">
+              <p className="text-xs text-[var(--signal-fg-secondary)] font-mono">
                 {currentProject?.slug}
               </p>
             </div>
@@ -256,14 +256,14 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                 key={env.id}
                 className={`group relative p-4 sm:p-5 transition-all hover:shadow-md ${
                   isActive
-                    ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)] ring-2 ring-[var(--borderColor-accent-muted)]"
-                    : "hover:border-[var(--borderColor-accent-muted)]"
+                    ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-2 ring-[var(--signal-border-accent-muted)]"
+                    : "hover:border-[var(--signal-border-accent-muted)]"
                 }`}
               >
                 {/* Active indicator */}
                 {isActive && (
                   <div className="absolute -top-1.5 -right-1.5">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--bgColor-accent-emphasis)] text-white shadow-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white shadow-sm">
                       <CheckCircleFillIcon className="h-3.5 w-3.5" />
                     </div>
                   </div>
@@ -275,17 +275,17 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                     className={`mt-0.5 h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow-sm bg-[${env.color}]`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--fgColor-default)]">
+                    <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                       {env.name}
                     </p>
-                    <p className="mt-0.5 font-mono text-xs text-[var(--fgColor-muted)]">
+                    <p className="mt-0.5 font-mono text-xs text-[var(--signal-fg-secondary)]">
                       {env.slug}
                     </p>
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-xs text-[var(--fgColor-muted)] mb-3">
+                <div className="flex items-center gap-4 text-xs text-[var(--signal-fg-secondary)] mb-3">
                   <div className="flex items-center gap-1">
                     <KeyIcon className="h-3.5 w-3.5" />
                     <span>API keys</span>
@@ -297,7 +297,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t border-[var(--borderColor-default)]">
+                <div className="flex gap-2 pt-3 border-t border-[var(--signal-border-default)]">
                   {!isActive && (
                     <Button
                       variant="secondary"
@@ -321,7 +321,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
                     variant="ghost"
                     size="sm"
                     onClick={() => openDeleteDialog(env)}
-                    className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
+                    className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
                     title="Delete environment"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />

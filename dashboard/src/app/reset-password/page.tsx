@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
   if (loadingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--signal-border-accent-muted)] border-t-accent" />
       </div>
     );
   }
@@ -160,7 +160,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--bgColor-accent-emphasis)]/7 blur-3xl" />
+          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--signal-bg-accent-emphasis)]/7 blur-3xl" />
         </div>
         <Card className="relative w-full max-w-md space-y-6 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
           <div className="text-center">
@@ -170,10 +170,10 @@ export default function ResetPasswordPage() {
           </div>
           <div className="flex flex-col items-center gap-4 text-center">
             <CheckCircleFillIcon className="h-12 w-12 text-emerald-500" />
-            <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+            <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
               Password reset successful
             </h2>
-            <p className="text-sm text-[var(--fgColor-muted)]">
+            <p className="text-sm text-[var(--signal-fg-secondary)]">
               Redirecting to sign in
               {redirectCountdown > 0 ? ` in ${redirectCountdown}s` : "..."}
             </p>
@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5 px-4">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--bgColor-accent-emphasis)]/7 blur-3xl" />
+        <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--signal-bg-accent-emphasis)]/7 blur-3xl" />
         <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-purple-400/[0.05] blur-3xl" />
       </div>
       <Card className="relative w-full max-w-md space-y-8 p-6 shadow-xl shadow-slate-200/50 ring-1 ring-slate-100/80 sm:p-8">
@@ -197,13 +197,13 @@ export default function ResetPasswordPage() {
           <h1 className="bg-gradient-to-r from-accent-dark to-accent bg-clip-text text-2xl font-bold tracking-tight text-transparent">
             FeatureSignals
           </h1>
-          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-2 text-sm text-[var(--signal-fg-secondary)]">
             Enter the code from your email
           </p>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100">
+          <div className="rounded-lg bg-[var(--signal-bg-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100">
             {error}
           </div>
         )}
@@ -211,7 +211,7 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* OTP Inputs */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[var(--fgColor-default)]">
+            <label className="block text-sm font-medium text-[var(--signal-fg-primary)]">
               Verification code
             </label>
             <div className="flex gap-2 justify-center">
@@ -227,10 +227,10 @@ export default function ResetPasswordPage() {
                   value={digit}
                   onChange={(e) => handleOTPChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fgColor-accent)] focus:border-[var(--fgColor-accent)] ${
+                  className={`w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--signal-fg-accent)] focus:border-[var(--signal-fg-accent)] ${
                     fieldErrors.otp
-                      ? "border-red-300 bg-[var(--bgColor-danger-muted)]"
-                      : "border-[var(--borderColor-default)] bg-white"
+                      ? "border-red-300 bg-[var(--signal-bg-danger-muted)]"
+                      : "border-[var(--signal-border-default)] bg-white"
                   }`}
                   aria-label={`Digit ${index + 1}`}
                 />
@@ -247,7 +247,7 @@ export default function ResetPasswordPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="newPassword"
-              className="block text-sm font-medium text-[var(--fgColor-default)]"
+              className="block text-sm font-medium text-[var(--signal-fg-primary)]"
             >
               New password
             </label>
@@ -261,17 +261,17 @@ export default function ResetPasswordPage() {
                   if (fieldErrors.newPassword)
                     setFieldErrors({ ...fieldErrors, newPassword: undefined });
                 }}
-                className={`w-full rounded-lg border-2 px-3 py-2.5 pr-10 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fgColor-accent)] focus:border-[var(--fgColor-accent)] ${
+                className={`w-full rounded-lg border-2 px-3 py-2.5 pr-10 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--signal-fg-accent)] focus:border-[var(--signal-fg-accent)] ${
                   fieldErrors.newPassword
-                    ? "border-red-300 bg-[var(--bgColor-danger-muted)]"
-                    : "border-[var(--borderColor-default)] bg-white"
+                    ? "border-red-300 bg-[var(--signal-bg-danger-muted)]"
+                    : "border-[var(--signal-border-default)] bg-white"
                 }`}
                 aria-invalid={!!fieldErrors.newPassword}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)]"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -293,7 +293,7 @@ export default function ResetPasswordPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-[var(--fgColor-default)]"
+              className="block text-sm font-medium text-[var(--signal-fg-primary)]"
             >
               Confirm password
             </label>
@@ -310,17 +310,17 @@ export default function ResetPasswordPage() {
                       confirmPassword: undefined,
                     });
                 }}
-                className={`w-full rounded-lg border-2 px-3 py-2.5 pr-10 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--fgColor-accent)] focus:border-[var(--fgColor-accent)] ${
+                className={`w-full rounded-lg border-2 px-3 py-2.5 pr-10 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--signal-fg-accent)] focus:border-[var(--signal-fg-accent)] ${
                   fieldErrors.confirmPassword
-                    ? "border-red-300 bg-[var(--bgColor-danger-muted)]"
-                    : "border-[var(--borderColor-default)] bg-white"
+                    ? "border-red-300 bg-[var(--signal-bg-danger-muted)]"
+                    : "border-[var(--signal-border-default)] bg-white"
                 }`}
                 aria-invalid={!!fieldErrors.confirmPassword}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)]"
                 tabIndex={-1}
               >
                 {showConfirmPassword ? (
@@ -352,7 +352,7 @@ export default function ResetPasswordPage() {
         <Link href="/login">
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-1.5 text-sm text-[var(--fgColor-muted)] transition-colors hover:text-[var(--fgColor-default)]"
+            className="flex w-full items-center justify-center gap-1.5 text-sm text-[var(--signal-fg-secondary)] transition-colors hover:text-[var(--signal-fg-primary)]"
           >
             <ArrowLeftIcon className="h-3.5 w-3.5" />
             Back to login

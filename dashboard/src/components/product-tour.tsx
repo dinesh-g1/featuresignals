@@ -222,18 +222,18 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
         ref={tooltipRef}
         className={
           hasTarget
-            ? "absolute z-10 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-[var(--borderColor-default)] bg-white p-4 shadow-2xl transition-all duration-300 sm:p-5"
-            : "fixed left-1/2 top-1/2 z-10 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--borderColor-default)] bg-white p-4 shadow-2xl sm:p-5"
+            ? "absolute z-10 w-[min(20rem,calc(100vw-1.5rem))] rounded-xl border border-[var(--signal-border-default)] bg-white p-4 shadow-2xl transition-all duration-300 sm:p-5"
+            : "fixed left-1/2 top-1/2 z-10 w-[min(20rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--signal-border-default)] bg-white p-4 shadow-2xl sm:p-5"
         }
         style={hasTarget ? tooltipPos : undefined}
       >
         <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">{step.title}</h3>
-          <span className="text-xs text-[var(--fgColor-subtle)]">
+          <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">{step.title}</h3>
+          <span className="text-xs text-[var(--signal-fg-tertiary)]">
             {currentStep + 1} of {TOUR_STEPS.length}
           </span>
         </div>
-        <p className="mb-3 text-sm leading-relaxed text-[var(--fgColor-muted)] sm:mb-4">
+        <p className="mb-3 text-sm leading-relaxed text-[var(--signal-fg-secondary)] sm:mb-4">
           {step.description}
         </p>
 
@@ -244,10 +244,10 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
               key={i}
               className={`h-1.5 rounded-full transition-all ${
                 i === currentStep
-                  ? "w-6 bg-[var(--bgColor-accent-emphasis)]"
+                  ? "w-6 bg-[var(--signal-bg-accent-emphasis)]"
                   : i < currentStep
-                    ? "w-1.5 bg-[var(--bgColor-accent-emphasis)]/40"
-                    : "w-1.5 bg-[var(--bgColor-muted)]"
+                    ? "w-1.5 bg-[var(--signal-bg-accent-emphasis)]/40"
+                    : "w-1.5 bg-[var(--signal-bg-secondary)]"
               }`}
             />
           ))}
@@ -256,7 +256,7 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
         <div className="flex items-center justify-between">
           <button
             onClick={finish}
-            className="text-xs font-medium text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-muted)]"
+            className="text-xs font-medium text-[var(--signal-fg-tertiary)] transition-colors hover:text-[var(--signal-fg-secondary)]"
           >
             Skip tour
           </button>
@@ -264,14 +264,14 @@ export function ProductTour({ onComplete }: { onComplete?: () => void }) {
             {currentStep > 0 && (
               <button
                 onClick={() => setCurrentStep((s) => s - 1)}
-                className="rounded-lg border border-[var(--borderColor-default)] px-3 py-1.5 text-xs font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
+                className="rounded-lg border border-[var(--signal-border-default)] px-3 py-1.5 text-xs font-medium text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
               >
                 Back
               </button>
             )}
             <button
               onClick={handleNext}
-              className="rounded-lg bg-[var(--bgColor-accent-emphasis)] px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-[var(--bgColor-accent-emphasis)]-dark"
+              className="rounded-lg bg-[var(--signal-bg-accent-emphasis)] px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-[var(--signal-bg-accent-emphasis)]-dark"
             >
               {isLast ? "Finish" : "Next"}
             </button>

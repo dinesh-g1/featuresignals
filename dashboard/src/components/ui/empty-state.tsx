@@ -36,16 +36,16 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bgColor-accent-muted)] ring-1 ring-[var(--borderColor-accent-muted)] shadow-sm">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--signal-bg-accent-muted)] ring-1 ring-[var(--signal-border-accent-muted)] shadow-sm">
         {emoji ? (
           <span className="text-xl leading-none">{emoji}</span>
         ) : (
-          <Icon className="h-7 w-7 text-[var(--fgColor-accent)]" />
+          <Icon className="h-7 w-7 text-[var(--signal-fg-accent)]" />
         )}
       </div>
-      <p className="mt-4 text-sm font-semibold text-[var(--fgColor-default)]">{title}</p>
+      <p className="mt-4 text-sm font-semibold text-[var(--signal-fg-primary)]">{title}</p>
       {description && (
-        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-[var(--fgColor-subtle)]">
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-[var(--signal-fg-tertiary)]">
           {description}
         </p>
       )}
@@ -55,7 +55,7 @@ export function EmptyState({
           href={docsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)] transition-colors"
+          className="mt-3 inline-flex items-center gap-1 text-xs text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)] transition-colors"
         >
           {docsLabel || "Learn more in docs"}
           <ExternalLinkIcon className="h-3 w-3" />

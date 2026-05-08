@@ -146,7 +146,7 @@ export default function JanitorPage() {
       <PageHeader
         title={
           <div className="flex items-center gap-2">
-            <JanitorIcon className="h-6 w-6 text-[var(--fgColor-accent)]" />
+            <JanitorIcon className="h-6 w-6 text-[var(--signal-fg-accent)]" />
             <span>AI Janitor</span>
           </div>
         }
@@ -156,7 +156,7 @@ export default function JanitorPage() {
           <DocsLink href="/docs/advanced/ai-janitor" label="📚 Docs" />
           <Link
             href="/settings/integrations"
-            className="inline-flex items-center gap-1 rounded-lg border border-[var(--borderColor-default)] px-3 py-1.5 text-xs font-semibold text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
+            className="inline-flex items-center gap-1 rounded-lg border border-[var(--signal-border-default)] px-3 py-1.5 text-xs font-semibold text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
           >
             ⚙️ Settings
           </Link>
@@ -202,14 +202,14 @@ export default function JanitorPage() {
         <CardContent className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-                <SearchIcon className="h-5 w-5 text-[var(--fgColor-accent)]" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                <SearchIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-[var(--fgColor-default)]">
+                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
                   1. Scan
                 </h4>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
                   The Janitor scans your codebase for flags that have been
                   permanently serving 100% &quot;True&quot; or 0%
                   &quot;False&quot; across all environments.
@@ -217,28 +217,28 @@ export default function JanitorPage() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-                <BrainIcon className="h-5 w-5 text-[var(--fgColor-accent)]" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                <BrainIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-[var(--fgColor-default)]">
+                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
                   2. AI Analyze
                 </h4>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
                   DeepSeek AI analyzes multi-file references, validates safe
                   removal paths, and provides confidence scores for each flag.
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bgColor-accent-muted)]">
-                <GitPullRequestIcon className="h-5 w-5 text-[var(--fgColor-accent)]" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                <GitPullRequestIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-[var(--fgColor-default)]">
+                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
                   3. Generate PR
                 </h4>
-                <p className="text-xs text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
+                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
                   With one click, the Janitor generates a pull request that
                   removes the flag condition block from your code, preserving
                   the active branch.
@@ -277,7 +277,7 @@ export default function JanitorPage() {
             "rounded-xl border p-4 flex items-center justify-between",
             stats?.stale_flags && stats.stale_flags > 0
               ? "border-amber-200 bg-amber-50"
-              : "border-[var(--borderColor-success-muted)] bg-emerald-50",
+              : "border-[var(--signal-border-success-muted)] bg-emerald-50",
           )}
         >
           <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function JanitorPage() {
                 "text-sm font-medium",
                 stats?.stale_flags && stats.stale_flags > 0
                   ? "text-amber-800"
-                  : "text-[var(--fgColor-success)]",
+                  : "text-[var(--signal-fg-success)]",
               )}
             >
               {stats?.stale_flags && stats.stale_flags > 0
@@ -319,7 +319,7 @@ export default function JanitorPage() {
                 : "All clean — no stale flags detected"}
             </span>
             {stats?.last_scan && (
-              <span className="text-xs text-[var(--fgColor-subtle)] ml-2">
+              <span className="text-xs text-[var(--signal-fg-tertiary)] ml-2">
                 Last scan: {new Date(stats.last_scan).toLocaleDateString()}
               </span>
             )}
@@ -333,7 +333,7 @@ export default function JanitorPage() {
 
       {/* Error state */}
       {flagsError && (
-        <div className="rounded-xl border border-red-200 bg-[var(--bgColor-danger-muted)] p-4 flex items-center gap-3">
+        <div className="rounded-xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-4 flex items-center gap-3">
           <AlertIcon className="h-5 w-5 text-red-500 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-medium text-red-800">
@@ -349,7 +349,7 @@ export default function JanitorPage() {
 
       {/* Filter Tabs */}
       {!showWizard && !flagsError && (
-        <div className="flex items-center gap-2 border-b border-[var(--borderColor-default)] pb-2">
+        <div className="flex items-center gap-2 border-b border-[var(--signal-border-default)] pb-2">
           {[
             { value: "all" as const, label: "All Flags", count: flags.length },
             {
@@ -365,8 +365,8 @@ export default function JanitorPage() {
               className={cn(
                 "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors -mb-2.25",
                 filter === tab.value
-                  ? "border-b-2 border-[var(--fgColor-accent)] text-[var(--fgColor-accent)]"
-                  : "text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)]",
+                  ? "border-b-2 border-[var(--signal-fg-accent)] text-[var(--signal-fg-accent)]"
+                  : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
               )}
             >
               {tab.label}
@@ -374,8 +374,8 @@ export default function JanitorPage() {
                 className={cn(
                   "inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                   filter === tab.value
-                    ? "bg-[var(--bgColor-accent-emphasis)] text-white"
-                    : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+                    ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+                    : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
                 )}
               >
                 {tab.count}
@@ -394,13 +394,13 @@ export default function JanitorPage() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="animate-pulse rounded-xl border border-[var(--borderColor-default)] p-4"
+                  className="animate-pulse rounded-xl border border-[var(--signal-border-default)] p-4"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-[var(--bgColor-muted)]" />
+                    <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)]" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 w-48 rounded bg-[var(--bgColor-muted)]" />
-                      <div className="h-3 w-32 rounded bg-[var(--bgColor-muted)]" />
+                      <div className="h-4 w-48 rounded bg-[var(--signal-bg-secondary)]" />
+                      <div className="h-3 w-32 rounded bg-[var(--signal-bg-secondary)]" />
                     </div>
                   </div>
                 </div>
@@ -448,12 +448,12 @@ export default function JanitorPage() {
       <Card>
         <CardContent className="p-5">
           <div className="flex items-start gap-3">
-            <JanitorIcon className="h-5 w-5 text-[var(--fgColor-accent)] shrink-0 mt-0.5" />
+            <JanitorIcon className="h-5 w-5 text-[var(--signal-fg-accent)] shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-bold text-[var(--fgColor-default)] mb-1">
+              <h4 className="text-sm font-bold text-[var(--signal-fg-primary)] mb-1">
                 About the AI Janitor
               </h4>
-              <p className="text-xs text-[var(--fgColor-muted)] leading-relaxed">
+              <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed">
                 The AI Janitor analyzes your codebase at the repository level
                 using Git provider integration. It safely removes flag condition
                 blocks while preserving the active branch. The result is a

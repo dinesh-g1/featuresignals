@@ -188,13 +188,13 @@ function OTPInput({
             onPaste={handlePaste}
             onFocus={() => setFocusedIdx(i)}
             className={cn(
-              "w-10 h-12 sm:w-12 sm:h-14 rounded-lg border-2 text-center text-lg sm:text-2xl font-bold text-[var(--fgColor-default)] transition-all select-none bg-white",
-              "focus:outline-none focus:ring-[3px] focus:ring-[var(--fgColor-accent)]/10",
+              "w-10 h-12 sm:w-12 sm:h-14 rounded-lg border-2 text-center text-lg sm:text-2xl font-bold text-[var(--signal-fg-primary)] transition-all select-none bg-white",
+              "focus:outline-none focus:ring-[3px] focus:ring-[var(--signal-fg-accent)]/10",
               isFocused && !isFilled
-                ? "border-[var(--fgColor-accent)] shadow-[0_0_0_3px_rgba(13,148,136,0.15)]"
+                ? "border-[var(--signal-fg-accent)] shadow-[0_0_0_3px_rgba(13,148,136,0.15)]"
                 : isFilled
-                  ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-muted)]"
-                  : "border-[var(--borderColor-emphasis)] shadow-sm",
+                  ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]"
+                  : "border-[var(--signal-border-emphasis)] shadow-sm",
             )}
             aria-label={`Digit ${i + 1}`}
           />
@@ -237,12 +237,12 @@ function ResendCooldown({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--bgColor-muted)]">
+      <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--signal-bg-secondary)]">
         <div
-          className={`h-full rounded-full bg-[var(--bgColor-accent-emphasis)] transition-all duration-1000 w-[${progress}%]`}
+          className={`h-full rounded-full bg-[var(--signal-bg-accent-emphasis)] transition-all duration-1000 w-[${progress}%]`}
         />
       </div>
-      <p className="text-xs text-[var(--fgColor-subtle)]">
+      <p className="text-xs text-[var(--signal-fg-tertiary)]">
         Resend code in {countdown}s
       </p>
     </div>
@@ -335,7 +335,7 @@ function ValuePanel() {
   return (
     <div className="max-w-lg mx-auto">
       {/* Badge */}
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--bgColor-success-muted)] text-[var(--fgColor-success)] border border-[var(--borderColor-success-muted)] mb-8">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)] mb-8">
         <svg
           className="h-3.5 w-3.5"
           viewBox="0 0 24 24"
@@ -351,10 +351,10 @@ function ValuePanel() {
       </div>
 
       {/* Headline */}
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--fgColor-default)] mb-4">
+      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-4">
         Feature flags that don&apos;t punish growth.
       </h1>
-      <p className="text-base text-[var(--fgColor-muted)] mb-10 leading-relaxed">
+      <p className="text-base text-[var(--signal-fg-secondary)] mb-10 leading-relaxed">
         Unlimited seats. Flat pricing. Sub-millisecond latency. Everything you
         need to ship faster, at a fraction of the cost.
       </p>
@@ -363,14 +363,14 @@ function ValuePanel() {
       <div className="space-y-5">
         {VALUE_PROPS.map((prop) => (
           <div key={prop.title} className="flex gap-3.5">
-            <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] flex items-center justify-center">
+            <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] flex items-center justify-center">
               {prop.icon}
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 {prop.title}
               </h3>
-              <p className="text-sm text-[var(--fgColor-muted)] mt-0.5 leading-relaxed">
+              <p className="text-sm text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
                 {prop.description}
               </p>
             </div>
@@ -379,14 +379,14 @@ function ValuePanel() {
       </div>
 
       {/* Trust bar */}
-      <div className="mt-10 pt-7 border-t border-[var(--borderColor-muted)]">
+      <div className="mt-10 pt-7 border-t border-[var(--signal-border-subtle)]">
         <div className="flex flex-wrap items-center gap-2.5">
           {["Apache 2.0", "8 SDKs", "OpenFeature", "SOC 2"].map((item) => (
             <span
               key={item}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bgColor-muted)] text-[var(--fgColor-subtle)] border border-[var(--borderColor-default)]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-tertiary)] border border-[var(--signal-border-default)]"
             >
-              <CheckIcon className="h-3 w-3 text-[var(--fgColor-success)]" />
+              <CheckIcon className="h-3 w-3 text-[var(--signal-fg-success)]" />
               {item}
             </span>
           ))}
@@ -417,8 +417,8 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4 py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--borderColor-accent-muted)] border-t-accent" />
+        <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-secondary)] px-4 py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--signal-border-accent-muted)] border-t-accent" />
         </div>
       }
     >
@@ -629,27 +629,27 @@ function RegisterForm() {
       <Card className="w-full space-y-5 p-7 sm:p-9 shadow-sm">
         {/* Mobile headline (hidden on desktop since ValuePanel shows it) */}
         <div className="text-center lg:hidden">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--fgColor-accent)]">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--signal-fg-accent)]">
             FeatureSignals
           </h1>
-          <p className="mt-2 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-2 text-sm text-[var(--signal-fg-secondary)]">
             {step === "form" ? "Create your account" : "Verify your email"}
           </p>
         </div>
 
         {/* Desktop heading */}
         <div className="hidden lg:block text-center">
-          <h2 className="text-xl font-bold tracking-tight text-[var(--fgColor-default)]">
+          <h2 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
             {step === "form" ? "Create your account" : "Verify your email"}
           </h2>
-          <p className="mt-1.5 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-1.5 text-sm text-[var(--signal-fg-secondary)]">
             Start your 14-day Pro trial. No credit card required.
           </p>
         </div>
 
         {planIntent === "pro" && step === "form" && (
-          <div className="rounded-lg bg-[var(--bgColor-accent-muted)] border border-[var(--borderColor-accent-muted)] px-4 py-3 text-center">
-            <p className="text-sm font-medium text-[var(--fgColor-accent)]">
+          <div className="rounded-lg bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)] px-4 py-3 text-center">
+            <p className="text-sm font-medium text-[var(--signal-fg-accent)]">
               Start your <span className="font-bold">14-day Pro trial</span> —
               subscribe anytime during or after
             </p>
@@ -669,8 +669,8 @@ function RegisterForm() {
                     className={cn(
                       "h-0.5 w-12 sm:w-16",
                       isCompleted || isCurrent
-                        ? "bg-[var(--bgColor-accent-emphasis)]/60"
-                        : "bg-[var(--bgColor-muted)]",
+                        ? "bg-[var(--signal-bg-accent-emphasis)]/60"
+                        : "bg-[var(--signal-bg-secondary)]",
                     )}
                   />
                 )}
@@ -681,8 +681,8 @@ function RegisterForm() {
                       isCompleted
                         ? "bg-emerald-500 text-white"
                         : isCurrent
-                          ? "bg-[var(--bgColor-accent-emphasis)] text-white ring-4 ring-accent/10"
-                          : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+                          ? "bg-[var(--signal-bg-accent-emphasis)] text-white ring-4 ring-accent/10"
+                          : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
                     )}
                   >
                     {isCompleted ? <CheckIcon className="h-4 w-4" /> : i + 1}
@@ -691,10 +691,10 @@ function RegisterForm() {
                     className={cn(
                       "text-xs font-medium",
                       isCurrent
-                        ? "text-[var(--fgColor-accent)]"
+                        ? "text-[var(--signal-fg-accent)]"
                         : isCompleted
-                          ? "text-[var(--fgColor-success)]"
-                          : "text-[var(--fgColor-subtle)]",
+                          ? "text-[var(--signal-fg-success)]"
+                          : "text-[var(--signal-fg-tertiary)]",
                     )}
                   >
                     {label}
@@ -707,7 +707,7 @@ function RegisterForm() {
 
         {error && (
           <div
-            className="flex items-start gap-2 rounded-lg bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
+            className="flex items-start gap-2 rounded-lg bg-[var(--signal-bg-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
             role="alert"
           >
             <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
@@ -859,10 +859,10 @@ function RegisterForm() {
 
             {/* Data region - full width */}
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-[var(--fgColor-default)]">
+              <legend className="text-sm font-medium text-[var(--signal-fg-primary)]">
                 Data Region <span className="text-red-500">*</span>
               </legend>
-              <p className="text-xs text-[var(--fgColor-subtle)]">
+              <p className="text-xs text-[var(--signal-fg-tertiary)]">
                 Choose where your data is stored for compliance
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -872,8 +872,8 @@ function RegisterForm() {
                     className={cn(
                       "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all",
                       form.data_region === region.code
-                        ? "border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)] shadow-sm"
-                        : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]",
+                        ? "border-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] shadow-sm"
+                        : "border-[var(--signal-border-default)] hover:border-[var(--signal-border-emphasis)]",
                     )}
                   >
                     <input
@@ -896,8 +896,8 @@ function RegisterForm() {
                       className={cn(
                         "text-xs font-medium",
                         form.data_region === region.code
-                          ? "text-[var(--fgColor-accent)]"
-                          : "text-[var(--fgColor-muted)]",
+                          ? "text-[var(--signal-fg-accent)]"
+                          : "text-[var(--signal-fg-secondary)]",
                       )}
                     >
                       {region.name}
@@ -921,13 +921,13 @@ function RegisterForm() {
             </Button>
 
             <div className="text-center">
-              <p className="text-xs text-[var(--fgColor-subtle)]">
+              <p className="text-xs text-[var(--signal-fg-tertiary)]">
                 By signing up you agree to our Terms of Service and Privacy
                 Policy.
               </p>
-              <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+              <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                 You will start with a{" "}
-                <span className="font-semibold text-[var(--fgColor-accent)]">
+                <span className="font-semibold text-[var(--signal-fg-accent)]">
                   14-day free trial
                 </span>{" "}
                 with full Pro features.
@@ -940,20 +940,20 @@ function RegisterForm() {
         {step === "otp" && (
           <div className="space-y-5">
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bgColor-accent-muted)]">
-                <MailIcon className="h-7 w-7 text-[var(--fgColor-accent)]" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--signal-bg-accent-muted)]">
+                <MailIcon className="h-7 w-7 text-[var(--signal-fg-accent)]" />
               </div>
-              <p className="mt-4 text-sm text-[var(--fgColor-muted)]">
+              <p className="mt-4 text-sm text-[var(--signal-fg-secondary)]">
                 We sent a 6-digit verification code to
                 <br />
-                <span className="font-medium text-[var(--fgColor-default)]">
+                <span className="font-medium text-[var(--signal-fg-primary)]">
                   {form.email}
                 </span>
               </p>
               {/* Wrong email? Go back — preserves form data */}
               <button
                 onClick={handleBackToForm}
-                className="mt-1 inline-flex items-center gap-1 text-xs text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-accent)]"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-[var(--signal-fg-tertiary)] transition-colors hover:text-[var(--signal-fg-accent)]"
                 type="button"
               >
                 <ArrowLeftIcon className="h-3 w-3" />
@@ -966,7 +966,7 @@ function RegisterForm() {
             {/* OTP error message */}
             {otpError && (
               <div
-                className="flex items-start gap-2 rounded-lg bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
+                className="flex items-start gap-2 rounded-lg bg-[var(--signal-bg-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
                 role="alert"
               >
                 <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
@@ -993,11 +993,11 @@ function RegisterForm() {
         )}
 
         {step === "form" && (
-          <p className="text-center text-sm text-[var(--fgColor-muted)]">
+          <p className="text-center text-sm text-[var(--signal-fg-secondary)]">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-[var(--fgColor-accent)] transition-colors hover:text-[var(--fgColor-accent)]"
+              className="font-medium text-[var(--signal-fg-accent)] transition-colors hover:text-[var(--signal-fg-accent)]"
             >
               Sign in
             </Link>
@@ -1005,7 +1005,7 @@ function RegisterForm() {
         )}
 
         {/* Trust signals */}
-        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-[var(--fgColor-subtle)]">
+        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-[var(--signal-fg-tertiary)]">
           <svg
             className="h-3 w-3 text-emerald-500"
             viewBox="0 0 24 24"

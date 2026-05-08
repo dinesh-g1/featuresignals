@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-05-06
-> **Total pages:** 19 (7 public, 8 private, 4 internal, 0 archive)
+> **Updated:** 2026-05-14
+> **Total pages:** 21 (9 public, 8 private, 4 internal, 0 archive)
 
 ---
 
@@ -43,6 +43,14 @@
 | Page | Status | Summary | Inbound Links |
 |------|--------|---------|---------------|
 | [[COMPLIANCE.md]] | `current` | Compliance posture (all certifications marked "planned, not achieved"), data protection (TLS 1.3, AES-256, bcrypt, SHA-256), security standards (auth, RBAC, rate limiting, input validation), 9 compliance frameworks (SOC 2, ISO 27001, ISO 27701, GDPR, CCPA, HIPAA, CSA STAR, DPF, DORA) with controls mapping and roadmap, privacy (DPA, data subject rights, sub-processors), 5-layer defense-in-depth security architecture | 0 |
+
+| [[SIGNAL_UI.md]] | `current` | Complete design token architecture (color, typography, spacing, animation, shadow, radius), component specification (Button, Table with all states), interaction patterns (10 universal rules), content voice rules, icon migration map (Primer → lucide-react), design system governance | 1 |
+
+### UX & Design
+
+| Page | Status | Summary | Inbound Links |
+|------|--------|---------|---------------|
+| [[UX_STRATEGY.md]] | `current` | Don Norman-inspired UX strategy — 5 design principles (Close the Gulfs, Error Prevention, Knowledge in the World, Emotional Design, Progressive Disclosure), heuristic compliance checklist, 8-phase implementation roadmap, competitive UX differentiators | 0 |
 
 ---
 

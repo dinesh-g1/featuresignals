@@ -257,18 +257,18 @@ export default function WebhooksPage() {
   }
 
   function getStatusCodeColor(status: number) {
-    if (status >= 200 && status < 300) return "text-[var(--fgColor-success)]";
+    if (status >= 200 && status < 300) return "text-[var(--signal-fg-success)]";
     if (status >= 400 && status < 500) return "text-amber-600";
     if (status >= 500) return "text-red-600";
-    return "text-[var(--fgColor-muted)]";
+    return "text-[var(--signal-fg-secondary)]";
   }
 
   function getStatusCodeBg(status: number) {
     if (status >= 200 && status < 300)
-      return "bg-[var(--bgColor-success-muted)] text-emerald-700";
+      return "bg-[var(--signal-bg-success-muted)] text-emerald-700";
     if (status >= 400 && status < 500) return "bg-amber-100 text-amber-700";
     if (status >= 500) return "bg-red-100 text-red-700";
-    return "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]";
+    return "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]";
   }
 
   function copyPayload() {
@@ -283,7 +283,7 @@ export default function WebhooksPage() {
     <div className="space-y-6">
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+          <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
             Webhooks
           </h2>
           <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
@@ -295,7 +295,7 @@ export default function WebhooksPage() {
           <form
             onSubmit={handleCreate}
             noValidate
-            className="mb-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4 space-y-3"
+            className="mb-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 space-y-3"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -387,8 +387,8 @@ export default function WebhooksPage() {
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors",
                       form.events.includes(evt)
-                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] ring-[var(--borderColor-accent-muted)]"
-                        : "bg-white text-[var(--fgColor-muted)] ring-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)]",
+                        ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] ring-[var(--signal-border-accent-muted)]"
+                        : "bg-white text-[var(--signal-fg-secondary)] ring-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)]",
                     )}
                   >
                     {evt}
@@ -418,8 +418,8 @@ export default function WebhooksPage() {
                 )}
               </Button>
               {showPayloadPreview && (
-                <div className="mt-3 rounded-lg border border-[var(--borderColor-default)] bg-white overflow-hidden">
-                  <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-slate-100 bg-[var(--bgColor-muted)]">
+                <div className="mt-3 rounded-lg border border-[var(--signal-border-default)] bg-white overflow-hidden">
+                  <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-slate-100 bg-[var(--signal-bg-secondary)]">
                     {EVENT_TYPES.map((evt) => (
                       <button
                         key={evt}
@@ -428,8 +428,8 @@ export default function WebhooksPage() {
                         className={cn(
                           "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
                           selectedPreviewEvent === evt
-                            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
-                            : "bg-white text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)]",
+                            ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+                            : "bg-white text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
                         )}
                       >
                         {evt}
@@ -438,14 +438,14 @@ export default function WebhooksPage() {
                     <button
                       type="button"
                       onClick={copyPayload}
-                      className="ml-auto rounded px-2 py-0.5 text-[10px] font-medium bg-white text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] flex items-center gap-1"
+                      className="ml-auto rounded px-2 py-0.5 text-[10px] font-medium bg-white text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] flex items-center gap-1"
                       title="Copy to clipboard"
                     >
                       <CopyIcon className="h-3 w-3" />
                       Copy
                     </button>
                   </div>
-                  <pre className="p-3 text-xs text-[var(--fgColor-default)] overflow-x-auto max-h-64 overflow-y-auto text-[11px] leading-relaxed font-mono">
+                  <pre className="p-3 text-xs text-[var(--signal-fg-primary)] overflow-x-auto max-h-64 overflow-y-auto text-[11px] leading-relaxed font-mono">
                     {JSON.stringify(
                       SAMPLE_PAYLOADS[selectedPreviewEvent],
                       null,
@@ -483,7 +483,7 @@ export default function WebhooksPage() {
               description="Webhooks send real-time HTTP notifications when flags change. Connect your CI/CD pipeline, Slack, or monitoring tools."
               docsUrl={DOCS_LINKS.webhooks}
               docsLabel="Webhook setup guide"
-              className="rounded-lg border border-dashed border-[var(--borderColor-emphasis)]"
+              className="rounded-lg border border-dashed border-[var(--signal-border-emphasis)]"
             />
           ) : (
             webhooks.map((wh) => {
@@ -492,7 +492,7 @@ export default function WebhooksPage() {
 
               return (
                 <div key={wh.id}>
-                  <div className="flex flex-col gap-2 rounded-lg bg-[var(--bgColor-muted)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass sm:flex-row sm:items-center sm:justify-between">
                     <div
                       className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
                       onClick={() => loadDeliveries(wh.id)}
@@ -504,10 +504,10 @@ export default function WebhooksPage() {
                         )}
                       />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-[var(--fgColor-default)]">
+                        <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
                           {wh.name}
                         </p>
-                        <p className="text-xs text-[var(--fgColor-muted)] truncate">
+                        <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
                           {wh.url}
                         </p>
                       </div>
@@ -531,7 +531,7 @@ export default function WebhooksPage() {
                         size="icon-sm"
                         onClick={() => handleTest(wh)}
                         disabled={isTesting}
-                        className="text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-accent)] hover:bg-[var(--bgColor-accent-muted)]"
+                        className="text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)]"
                         title="Test webhook"
                       >
                         {isTesting ? (
@@ -579,14 +579,14 @@ export default function WebhooksPage() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => setDeleting(wh.id)}
-                          className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
+                          className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
                       )}
                       <ChevronDownIcon
                         className={cn(
-                          "h-4 w-4 text-[var(--fgColor-subtle)] transition-transform",
+                          "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform",
                           expandedId === wh.id && "rotate-180",
                         )}
                       />
@@ -594,7 +594,7 @@ export default function WebhooksPage() {
 
                     {/* Test result display */}
                     {testResult && (
-                      <div className="px-3 py-2 rounded-lg border border-[var(--borderColor-default)] bg-white text-xs flex items-center gap-2">
+                      <div className="px-3 py-2 rounded-lg border border-[var(--signal-border-default)] bg-white text-xs flex items-center gap-2">
                         {testResult.success ? (
                           <CheckIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                         ) : (
@@ -608,7 +608,7 @@ export default function WebhooksPage() {
                         >
                           {testResult.status || "ERR"}
                         </span>
-                        <span className="text-[var(--fgColor-muted)] truncate">
+                        <span className="text-[var(--signal-fg-secondary)] truncate">
                           {testResult.message ||
                             (testResult.success ? "OK" : "Failed")}
                         </span>
@@ -617,15 +617,15 @@ export default function WebhooksPage() {
                   </div>
 
                   {expandedId === wh.id && (
-                    <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--borderColor-default)] bg-white">
+                    <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--signal-border-default)] bg-white">
                       <div className="px-4 py-2 border-b border-slate-100">
-                        <p className="text-xs font-semibold text-[var(--fgColor-muted)]">
+                        <p className="text-xs font-semibold text-[var(--signal-fg-secondary)]">
                           Recent Deliveries
                         </p>
                       </div>
                       {deliveries.length === 0 ? (
                         <div className="px-4 py-6 text-center">
-                          <p className="text-xs text-[var(--fgColor-subtle)]">
+                          <p className="text-xs text-[var(--signal-fg-tertiary)]">
                             No deliveries yet.
                           </p>
                         </div>
@@ -639,7 +639,7 @@ export default function WebhooksPage() {
                                     className={cn(
                                       "inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold shrink-0",
                                       d.success
-                                        ? "bg-[var(--bgColor-success-muted)] text-emerald-700"
+                                        ? "bg-[var(--signal-bg-success-muted)] text-emerald-700"
                                         : "bg-red-100 text-red-700",
                                     )}
                                   >
@@ -649,7 +649,7 @@ export default function WebhooksPage() {
                                       <XIcon className="h-3 w-3" />
                                     )}
                                   </span>
-                                  <span className="text-xs font-medium text-[var(--fgColor-default)]">
+                                  <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
                                     {d.event_type}
                                   </span>
                                   <span
@@ -660,22 +660,22 @@ export default function WebhooksPage() {
                                   >
                                     {d.response_status || "err"}
                                   </span>
-                                  <span className="text-[10px] text-[var(--fgColor-subtle)]">
+                                  <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
                                     {d.attempt > 0
                                       ? `Retry ${d.attempt} of ${d.max_attempts}`
                                       : `Attempt 1 of ${d.max_attempts}`}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-[var(--fgColor-subtle)] ml-7 sm:ml-0">
+                                <span className="text-[10px] text-[var(--signal-fg-tertiary)] ml-7 sm:ml-0">
                                   {timeAgo(d.delivered_at)}
                                 </span>
                               </div>
                               {d.response_body && (
                                 <details className="mt-2 ml-7">
-                                  <summary className="text-[10px] text-[var(--fgColor-subtle)] cursor-pointer hover:text-[var(--fgColor-muted)]">
+                                  <summary className="text-[10px] text-[var(--signal-fg-tertiary)] cursor-pointer hover:text-[var(--signal-fg-secondary)]">
                                     Response body
                                   </summary>
-                                  <pre className="mt-1 p-2 rounded bg-[var(--bgColor-muted)] border border-slate-100 text-[10px] font-mono text-[var(--fgColor-muted)] overflow-x-auto whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+                                  <pre className="mt-1 p-2 rounded bg-[var(--signal-bg-secondary)] border border-slate-100 text-[10px] font-mono text-[var(--signal-fg-secondary)] overflow-x-auto whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
                                     {d.response_body}
                                   </pre>
                                 </details>

@@ -57,7 +57,7 @@ export function DocsLink({ href, label = "Docs", className }: DocsLinkProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-1 text-xs text-[var(--fgColor-subtle)] transition-colors hover:text-[var(--fgColor-accent)]",
+        "inline-flex items-center gap-1 text-xs text-[var(--signal-fg-tertiary)] transition-colors hover:text-[var(--signal-fg-accent)]",
         className,
       )}
     >

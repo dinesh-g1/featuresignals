@@ -221,9 +221,9 @@ export default function ActivityPage() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowExportMenu(false)}
                 />
-                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-[var(--borderColor-default)] bg-white py-1 shadow-lg">
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-[var(--signal-border-default)] bg-white py-1 shadow-lg">
                   <button
-                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
+                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
                     onClick={() => {
                       setShowExportMenu(false);
                       handleExport("csv");
@@ -233,7 +233,7 @@ export default function ActivityPage() {
                     Export CSV
                   </button>
                   <button
-                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]"
+                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
                     onClick={() => {
                       setShowExportMenu(false);
                       handleExport("json");
@@ -255,7 +255,7 @@ export default function ActivityPage() {
           className={`rounded-lg px-4 py-3 text-sm font-medium ${
             integrityResult.ok
               ? "border border-green-200 bg-green-50 text-green-700"
-              : "border border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700"
+              : "border border-red-200 bg-[var(--signal-bg-danger-muted)] text-red-700"
           }`}
         >
           {integrityResult.ok
@@ -269,7 +269,7 @@ export default function ActivityPage() {
         <select
           value={monthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2 text-sm text-[var(--fgColor-default)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
+          className="rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] px-3 py-2 text-sm text-[var(--signal-fg-primary)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--signal-border-accent-muted)]"
         >
           {monthOptions.map((o) => (
             <option key={o.value} value={o.value}>
@@ -280,7 +280,7 @@ export default function ActivityPage() {
       </div>
 
       <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
         <Input
           type="text"
           placeholder="Search by action or resource type..."
@@ -332,7 +332,7 @@ export default function ActivityPage() {
         )}
       </div>
 
-      <Card className="hover:shadow-lg hover:border-[var(--borderColor-emphasis)]">
+      <Card className="hover:shadow-lg hover:border-[var(--signal-border-emphasis)]">
         <div className="divide-y divide-slate-100">
           {filtered.length === 0 ? (
             <Blankslate
@@ -368,10 +368,10 @@ export default function ActivityPage() {
                     <TableCell className="font-mono text-xs">
                       {entry.resource_type}
                     </TableCell>
-                    <TableCell className="text-xs text-[var(--fgColor-muted)]">
+                    <TableCell className="text-xs text-[var(--signal-fg-secondary)]">
                       {entry.actor_type || "—"}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-[var(--fgColor-subtle)]">
+                    <TableCell className="text-right text-xs text-[var(--signal-fg-tertiary)]">
                       {timeAgo(entry.created_at)}
                     </TableCell>
                   </TableRow>
@@ -392,7 +392,7 @@ export default function ActivityPage() {
           >
             Previous
           </Button>
-          <span className="text-xs text-[var(--fgColor-muted)]">
+          <span className="text-xs text-[var(--signal-fg-secondary)]">
             Showing {filtered.length === 0 ? 0 : offset + 1} -{" "}
             {offset + filtered.length} of {entries.length}
           </span>

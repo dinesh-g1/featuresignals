@@ -35,12 +35,12 @@ export default function SSOCallbackPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-secondary)] px-4">
         <div className="w-full max-w-md rounded-lg border border-red-200 bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-red-600">{error}</p>
           <Link
             href="/login"
-            className="mt-4 inline-block text-sm font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
+            className="mt-4 inline-block text-sm font-medium text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)]"
           >
             Back to login
           </Link>
@@ -50,10 +50,10 @@ export default function SSOCallbackPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bgColor-muted)]">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-secondary)]">
       <div className="flex flex-col items-center gap-3">
-        <LoaderIcon className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]" />
-        <p className="text-sm text-[var(--fgColor-muted)]">
+        <LoaderIcon className="h-8 w-8 animate-spin text-[var(--signal-fg-accent)]" />
+        <p className="text-sm text-[var(--signal-fg-secondary)]">
           Completing SSO login...
         </p>
       </div>

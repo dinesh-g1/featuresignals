@@ -104,7 +104,7 @@ export default function UsageInsightsPage() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="relative flex-1">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fgColor-subtle)]" />
+          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
           <Input
             placeholder="Search by flag key..."
             value={search}
@@ -112,7 +112,7 @@ export default function UsageInsightsPage() {
             className="pl-10"
           />
         </div>
-        <span className="text-sm text-[var(--fgColor-muted)]">
+        <span className="text-sm text-[var(--signal-fg-secondary)]">
           {filtered.length} flag{filtered.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -134,7 +134,7 @@ export default function UsageInsightsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className="cursor-pointer hover:text-[var(--fgColor-default)]"
+                  className="cursor-pointer hover:text-[var(--signal-fg-primary)]"
                   onClick={() => handleSort("flag_key")}
                 >
                   Flag Key{" "}
@@ -142,7 +142,7 @@ export default function UsageInsightsPage() {
                     (sortDir === "asc" ? "\u2191" : "\u2193")}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer hover:text-[var(--fgColor-default)]"
+                  className="cursor-pointer hover:text-[var(--signal-fg-primary)]"
                   onClick={() => handleSort("true_percentage")}
                 >
                   True %{" "}
@@ -156,7 +156,7 @@ export default function UsageInsightsPage() {
                   False Count
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer hover:text-[var(--fgColor-default)]"
+                  className="cursor-pointer hover:text-[var(--signal-fg-primary)]"
                   onClick={() => handleSort("total_count")}
                 >
                   Total{" "}
@@ -168,28 +168,28 @@ export default function UsageInsightsPage() {
             <TableBody>
               {filtered.map((ins) => (
                 <TableRow key={ins.flag_key}>
-                  <TableCell className="font-mono font-medium text-[var(--fgColor-default)]">
+                  <TableCell className="font-mono font-medium text-[var(--signal-fg-primary)]">
                     {ins.flag_key}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-16 rounded-full bg-[var(--bgColor-muted)] overflow-hidden sm:w-24">
+                      <div className="h-2 w-16 rounded-full bg-[var(--signal-bg-secondary)] overflow-hidden sm:w-24">
                         <div
                           className={`h-full rounded-full bg-emerald-500 transition-all w-[${Math.min(ins.true_percentage ?? 0, 100)}%]`}
                         />
                       </div>
-                      <span className="text-xs font-medium text-[var(--fgColor-muted)]">
+                      <span className="text-xs font-medium text-[var(--signal-fg-secondary)]">
                         {(ins.true_percentage ?? 0).toFixed(1)}%
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden text-[var(--fgColor-success)] font-medium sm:table-cell">
+                  <TableCell className="hidden text-[var(--signal-fg-success)] font-medium sm:table-cell">
                     {(ins.true_count ?? 0).toLocaleString()}
                   </TableCell>
-                  <TableCell className="hidden text-[var(--fgColor-muted)] sm:table-cell">
+                  <TableCell className="hidden text-[var(--signal-fg-secondary)] sm:table-cell">
                     {(ins.false_count ?? 0).toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-[var(--fgColor-default)] font-medium">
+                  <TableCell className="text-[var(--signal-fg-primary)] font-medium">
                     {(ins.total_count ?? 0).toLocaleString()}
                   </TableCell>
                 </TableRow>

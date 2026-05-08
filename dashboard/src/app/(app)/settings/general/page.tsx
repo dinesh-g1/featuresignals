@@ -169,25 +169,25 @@ export default function SettingsGeneralPage() {
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]">
               <BuildingIcon className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <h2 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 Organization
               </h2>
-              <p className="text-xs text-[var(--fgColor-muted)]">Your workspace details</p>
+              <p className="text-xs text-[var(--signal-fg-secondary)]">Your workspace details</p>
             </div>
           </div>
           <dl className="space-y-3">
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-[var(--fgColor-muted)]">Name</dt>
-              <dd className="text-sm font-medium text-[var(--fgColor-default)]">
+              <dt className="text-sm text-[var(--signal-fg-secondary)]">Name</dt>
+              <dd className="text-sm font-medium text-[var(--signal-fg-primary)]">
                 {organization?.name || "—"}
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-[var(--fgColor-muted)]">Plan</dt>
+              <dt className="text-sm text-[var(--signal-fg-secondary)]">Plan</dt>
               <dd>
                 <Badge
                   variant={planVariant}
@@ -198,8 +198,8 @@ export default function SettingsGeneralPage() {
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-[var(--fgColor-muted)]">Projects</dt>
-              <dd className="text-sm font-medium text-[var(--fgColor-default)]">
+              <dt className="text-sm text-[var(--signal-fg-secondary)]">Projects</dt>
+              <dd className="text-sm font-medium text-[var(--signal-fg-primary)]">
                 {projects.length}
               </dd>
             </div>
@@ -212,10 +212,10 @@ export default function SettingsGeneralPage() {
               <FolderOpenIcon className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[var(--fgColor-default)]">
+              <h2 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 Current Project
               </h2>
-              <p className="text-xs text-[var(--fgColor-muted)]">
+              <p className="text-xs text-[var(--signal-fg-secondary)]">
                 Selected in the context bar
               </p>
             </div>
@@ -223,20 +223,20 @@ export default function SettingsGeneralPage() {
           {currentProject ? (
             <dl className="space-y-3">
               <div className="flex items-center justify-between">
-                <dt className="text-sm text-[var(--fgColor-muted)]">Name</dt>
-                <dd className="text-sm font-medium text-[var(--fgColor-default)]">
+                <dt className="text-sm text-[var(--signal-fg-secondary)]">Name</dt>
+                <dd className="text-sm font-medium text-[var(--signal-fg-primary)]">
                   {currentProject.name}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-sm text-[var(--fgColor-muted)]">Slug</dt>
-                <dd className="font-mono text-sm text-[var(--fgColor-muted)]">
+                <dt className="text-sm text-[var(--signal-fg-secondary)]">Slug</dt>
+                <dd className="font-mono text-sm text-[var(--signal-fg-secondary)]">
                   {currentProject.slug}
                 </dd>
               </div>
             </dl>
           ) : (
-            <p className="text-sm text-[var(--fgColor-subtle)]">
+            <p className="text-sm text-[var(--signal-fg-tertiary)]">
               No project selected. Use the context bar above to pick one.
             </p>
           )}
@@ -247,8 +247,8 @@ export default function SettingsGeneralPage() {
       <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-[var(--fgColor-default)]">Projects</h2>
-            <p className="text-xs text-[var(--fgColor-muted)] mt-0.5">
+            <h2 className="text-base font-semibold text-[var(--signal-fg-primary)]">Projects</h2>
+            <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
               Manage all projects in your organization. Deleting a project
               removes all environments, flags, and segments within it.
             </p>
@@ -261,10 +261,10 @@ export default function SettingsGeneralPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <LoaderIcon className="h-5 w-5 animate-spin text-[var(--fgColor-accent)]" />
+            <LoaderIcon className="h-5 w-5 animate-spin text-[var(--signal-fg-accent)]" />
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-[var(--fgColor-subtle)] py-8 text-center">
+          <p className="text-sm text-[var(--signal-fg-tertiary)] py-8 text-center">
             No projects yet. Create your first one to get started.
           </p>
         ) : (
@@ -276,8 +276,8 @@ export default function SettingsGeneralPage() {
                   key={project.id}
                   className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
                     isActive
-                      ? "border-[var(--borderColor-accent-muted)] bg-[var(--bgColor-accent-emphasis)]-glass"
-                      : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]"
+                      ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-emphasis)]-glass"
+                      : "border-[var(--signal-border-default)] hover:border-[var(--signal-border-emphasis)]"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -285,15 +285,15 @@ export default function SettingsGeneralPage() {
                       <FolderOpenIcon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--fgColor-default)] truncate">
+                      <p className="text-sm font-semibold text-[var(--signal-fg-primary)] truncate">
                         {project.name}
                         {isActive && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-[var(--bgColor-accent-muted)] px-2 py-0.5 text-[11px] font-medium text-[var(--fgColor-accent)]">
+                          <span className="ml-2 inline-flex items-center rounded-full bg-[var(--signal-bg-accent-muted)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal-fg-accent)]">
                             Active
                           </span>
                         )}
                       </p>
-                      <p className="font-mono text-xs text-[var(--fgColor-muted)]">
+                      <p className="font-mono text-xs text-[var(--signal-fg-secondary)]">
                         {project.slug}
                       </p>
                     </div>
@@ -311,7 +311,7 @@ export default function SettingsGeneralPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => openDeleteDialog(project)}
-                      className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
+                      className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
                       title="Delete project"
                     >
                       <TrashIcon className="h-3.5 w-3.5" />
@@ -328,10 +328,10 @@ export default function SettingsGeneralPage() {
       <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[var(--fgColor-default)]">
+            <h3 className="text-base font-semibold text-[var(--signal-fg-primary)]">
               Manage Environments
             </h3>
-            <p className="text-sm text-[var(--fgColor-muted)] mt-1">
+            <p className="text-sm text-[var(--signal-fg-secondary)] mt-1">
               Create, edit, and delete environments for the current project.
             </p>
           </div>
@@ -383,7 +383,7 @@ export default function SettingsGeneralPage() {
                 placeholder="auto-generated from name"
                 className="mt-1"
               />
-              <p className="text-xs text-[var(--fgColor-muted)] mt-1">
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-1">
                 Leave blank to auto-generate
               </p>
             </div>
@@ -484,11 +484,11 @@ export default function SettingsGeneralPage() {
             </DialogTitle>
             <DialogDescription asChild>
               <div className="mt-3 space-y-3">
-                <p className="font-semibold text-[var(--fgColor-default)]">
+                <p className="font-semibold text-[var(--signal-fg-primary)]">
                   Are you sure you want to delete &ldquo;{deletingProject?.name}
                   &rdquo;?
                 </p>
-                <div className="bg-[var(--bgColor-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
+                <div className="bg-[var(--signal-bg-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
                   <p className="font-semibold text-red-800 mb-1">
                     This action will permanently delete:
                   </p>

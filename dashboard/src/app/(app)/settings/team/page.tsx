@@ -237,7 +237,7 @@ export default function TeamPage() {
       <UpgradeNudge context="seats" />
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+          <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
             Team Members
           </h2>
           <Button size="sm" onClick={() => setShowInvite(!showInvite)}>
@@ -249,7 +249,7 @@ export default function TeamPage() {
           <form
             onSubmit={handleInvite}
             noValidate
-            className="mb-4 rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] p-4 space-y-3"
+            className="mb-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 space-y-3"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -327,30 +327,30 @@ export default function TeamPage() {
             <EmptyState
               icon={UsersIcon}
               title="No team members"
-              className="rounded-lg border border-dashed border-[var(--borderColor-emphasis)]"
+              className="rounded-lg border border-dashed border-[var(--signal-border-emphasis)]"
             />
           ) : (
             members.map((member) => (
               <div key={member.id}>
                 <div
-                  className="flex flex-col gap-2 rounded-lg bg-[var(--bgColor-muted)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--bgColor-accent-emphasis)]-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
                   onClick={() => toggleExpand(member.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bgColor-accent-muted)] text-xs font-bold text-[var(--fgColor-accent)] shrink-0">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--signal-bg-accent-muted)] text-xs font-bold text-[var(--signal-fg-accent)] shrink-0">
                       {member.name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--fgColor-default)]">
+                      <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
                         {member.name}
                       </p>
-                      <p className="text-xs text-[var(--fgColor-muted)] truncate">
+                      <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
                         {member.email}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0 flex-wrap">
-                    <span className="text-xs text-[var(--fgColor-subtle)] hidden sm:inline">
+                    <span className="text-xs text-[var(--signal-fg-tertiary)] hidden sm:inline">
                       {formatRelativeTime(
                         (member as unknown as Record<string, string>)
                           .last_active_at ??
@@ -418,7 +418,7 @@ export default function TeamPage() {
                             e.stopPropagation();
                             setRemoving(member.id);
                           }}
-                          className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
+                          className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
                           title="Remove member"
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -427,7 +427,7 @@ export default function TeamPage() {
 
                     <ChevronDownIcon
                       className={cn(
-                        "h-4 w-4 text-[var(--fgColor-subtle)] transition-transform duration-200",
+                        "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform duration-200",
                         expandedPerms === member.id && "rotate-180",
                       )}
                     />
@@ -435,26 +435,26 @@ export default function TeamPage() {
                 </div>
 
                 {expandedPerms === member.id && envs.length > 0 && (
-                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--borderColor-default)] bg-white p-3 animate-fade-in">
-                    <p className="text-xs font-semibold text-[var(--fgColor-muted)] mb-2">
+                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--signal-border-default)] bg-white p-3 animate-fade-in">
+                    <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] mb-2">
                       Environment Permissions
                     </p>
                     <div className="space-y-1">
                       {envs.map((env) => (
                         <div
                           key={env.id}
-                          className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-[var(--bgColor-muted)] sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-[var(--signal-bg-secondary)] sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex items-center gap-2">
                             <div
                               className={`h-2.5 w-2.5 rounded-full shrink-0 bg-[${env.color}]`}
                             />
-                            <span className="text-xs font-medium text-[var(--fgColor-default)]">
+                            <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
                               {env.name}
                             </span>
                           </div>
                           <div className="flex items-center gap-4 ml-4 sm:ml-0">
-                            <label className="flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
+                            <label className="flex items-center gap-1.5 text-xs text-[var(--signal-fg-secondary)]">
                               <input
                                 type="checkbox"
                                 checked={getPermValue(
@@ -469,11 +469,11 @@ export default function TeamPage() {
                                     "can_toggle",
                                   )
                                 }
-                                className="h-3.5 w-3.5 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+                                className="h-3.5 w-3.5 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
                               />
                               Toggle
                             </label>
-                            <label className="flex items-center gap-1.5 text-xs text-[var(--fgColor-muted)]">
+                            <label className="flex items-center gap-1.5 text-xs text-[var(--signal-fg-secondary)]">
                               <input
                                 type="checkbox"
                                 checked={getPermValue(
@@ -488,7 +488,7 @@ export default function TeamPage() {
                                     "can_edit_rules",
                                   )
                                 }
-                                className="h-3.5 w-3.5 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+                                className="h-3.5 w-3.5 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
                               />
                               Edit Rules
                             </label>
@@ -505,7 +505,7 @@ export default function TeamPage() {
 
         {pendingInvites.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-sm font-semibold text-[var(--fgColor-default)] mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-3 flex items-center gap-2">
               <MailIcon className="h-4 w-4" />
               Pending Invitations ({pendingInvites.length})
             </h3>
@@ -520,10 +520,10 @@ export default function TeamPage() {
                       {invite.email.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--fgColor-default)] truncate">
+                      <p className="text-sm font-medium text-[var(--signal-fg-primary)] truncate">
                         {invite.email}
                       </p>
-                      <p className="text-xs text-[var(--fgColor-muted)]">
+                      <p className="text-xs text-[var(--signal-fg-secondary)]">
                         Invited {formatRelativeTime(invite.invited_at)}
                       </p>
                     </div>

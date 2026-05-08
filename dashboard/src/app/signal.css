@@ -1,0 +1,192 @@
+/* ================================================================
+   Signal UI Design System — FeatureSignals Independent Design Tokens
+   Zero dependency on GitHub Primer. Grounded in Don Norman + NNGroup.
+
+   Semantic naming: tokens describe PURPOSE, not color value.
+   "Knowledge in the world" (Norman, DOET pp. 74-122)
+   ================================================================ */
+
+:root {
+  /* ==============================================================
+     3.1.1 Color Tokens — Semantic, Not Chromatic
+     ============================================================== */
+
+  /* --- Foreground --- */
+  --signal-fg-primary: #1f2328;
+  --signal-fg-secondary: #59636e;
+  --signal-fg-tertiary: #818b98;
+  --signal-fg-accent: #0969da;
+  --signal-fg-success: #1a7f37;
+  --signal-fg-warning: #9a6700;
+  --signal-fg-danger: #d1242f;
+  --signal-fg-info: #8250df;
+  --signal-fg-on-emphasis: #ffffff;
+
+  /* --- Background --- */
+  --signal-bg-primary: #ffffff;
+  --signal-bg-secondary: #f6f8fa;
+  --signal-bg-tertiary: #f6f8fa;
+  --signal-bg-inverse: #25292e;
+  --signal-bg-accent-emphasis: #0969da;
+  --signal-bg-accent-muted: #ddf4ff;
+  --signal-bg-success-emphasis: #1f883d;
+  --signal-bg-success-muted: #dafbe1;
+  --signal-bg-warning-emphasis: #9a6700;
+  --signal-bg-warning-muted: #fff8c5;
+  --signal-bg-danger-emphasis: #cf222e;
+  --signal-bg-danger-muted: #ffebe9;
+  --signal-bg-info-emphasis: #8250df;
+  --signal-bg-info-muted: #fbefff;
+
+  /* --- Border --- */
+  --signal-border-default: #d1d9e0;
+  --signal-border-subtle: #d1d9e0b3;
+  --signal-border-emphasis: #818b98;
+  --signal-border-accent-emphasis: #0969da;
+  --signal-border-accent-muted: #54aeff66;
+  --signal-border-success-emphasis: #1a7f37;
+  --signal-border-success-muted: #4ac26b66;
+  --signal-border-warning-emphasis: #9a6700;
+  --signal-border-warning-muted: #d4a72c66;
+  --signal-border-danger-emphasis: #cf222e;
+
+  /* ==============================================================
+     3.1.2 Typography Scale
+     ============================================================== */
+
+  /* --- Size Scale --- */
+  --signal-text-xs: 12px;
+  --signal-text-xs-line-height: 16px;
+  --signal-text-sm: 14px;
+  --signal-text-sm-line-height: 20px;
+  --signal-text-base: 16px;
+  --signal-text-base-line-height: 24px;
+  --signal-text-lg: 18px;
+  --signal-text-lg-line-height: 28px;
+  --signal-text-xl: 24px;
+  --signal-text-xl-line-height: 32px;
+  --signal-text-2xl: 30px;
+  --signal-text-2xl-line-height: 40px;
+  --signal-text-mono: 14px;
+  --signal-text-mono-line-height: 20px;
+
+  /* --- Font Stacks --- */
+  --signal-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --signal-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", "JetBrains Mono", monospace;
+
+  /* ==============================================================
+     3.1.3 Spacing Scale (4px base)
+     ============================================================== */
+
+  --signal-space-1: 4px;
+  --signal-space-2: 8px;
+  --signal-space-3: 12px;
+  --signal-space-4: 16px;
+  --signal-space-5: 24px;
+  --signal-space-6: 32px;
+  --signal-space-8: 48px;
+  --signal-space-12: 64px;
+
+  /* ==============================================================
+     3.1.4 Animation Tokens
+     ============================================================== */
+
+  --signal-duration-instant: 100ms;
+  --signal-duration-fast: 150ms;
+  --signal-duration-normal: 250ms;
+  --signal-duration-slow: 400ms;
+  --signal-easing-default: cubic-bezier(0.16, 1, 0.3, 1);
+  --signal-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ==============================================================
+     3.1.5 Shadow Tokens
+     ============================================================== */
+
+  --signal-shadow-none: none;
+  --signal-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --signal-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --signal-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --signal-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
+  --signal-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04);
+
+  /* ==============================================================
+     3.1.6 Radius Tokens
+     ============================================================== */
+
+  --signal-radius-none: 0;
+  --signal-radius-sm: 4px;
+  --signal-radius-md: 8px;
+  --signal-radius-lg: 12px;
+  --signal-radius-xl: 16px;
+  --signal-radius-full: 9999px;
+
+  /* ==============================================================
+     Compatibility Aliases — Primer → Signal UI
+     Kept as parallel deployment until Phase 0.4 removal.
+     After Phase 0.4, these aliases will be removed.
+     ============================================================== */
+
+  /* --- Foreground aliases --- */
+  --fgColor-default: var(--signal-fg-primary);
+  --fgColor-muted: var(--signal-fg-secondary);
+  --fgColor-subtle: var(--signal-fg-tertiary);
+  --fgColor-accent: var(--signal-fg-accent);
+  --fgColor-success: var(--signal-fg-success);
+  --fgColor-attention: var(--signal-fg-warning);
+  --fgColor-danger: var(--signal-fg-danger);
+  --fgColor-done: var(--signal-fg-info);
+  --fgColor-onEmphasis: var(--signal-fg-on-emphasis);
+  --fgColor-link: var(--signal-fg-accent);
+
+  /* --- Background aliases --- */
+  --bgColor-default: var(--signal-bg-primary);
+  --bgColor-inset: var(--signal-bg-secondary);
+  --bgColor-muted: var(--signal-bg-secondary);
+  --bgColor-emphasis: var(--signal-bg-inverse);
+  --bgColor-inverse: var(--signal-bg-inverse);
+  --bgColor-accent-emphasis: var(--signal-bg-accent-emphasis);
+  --bgColor-accent-muted: var(--signal-bg-accent-muted);
+  --bgColor-success-emphasis: var(--signal-bg-success-emphasis);
+  --bgColor-success-muted: var(--signal-bg-success-muted);
+  --bgColor-attention-emphasis: var(--signal-bg-warning-emphasis);
+  --bgColor-attention-muted: var(--signal-bg-warning-muted);
+  --bgColor-danger-emphasis: var(--signal-bg-danger-emphasis);
+  --bgColor-danger-muted: var(--signal-bg-danger-muted);
+  --bgColor-done-emphasis: var(--signal-bg-info-emphasis);
+  --bgColor-done-muted: var(--signal-bg-info-muted);
+
+  /* --- Border aliases --- */
+  --borderColor-default: var(--signal-border-default);
+  --borderColor-muted: var(--signal-border-subtle);
+  --borderColor-emphasis: var(--signal-border-emphasis);
+  --borderColor-accent-emphasis: var(--signal-border-accent-emphasis);
+  --borderColor-accent-muted: var(--signal-border-accent-muted);
+  --borderColor-success-emphasis: var(--signal-border-success-emphasis);
+  --borderColor-success-muted: var(--signal-border-success-muted);
+  --borderColor-attention-emphasis: var(--signal-border-warning-emphasis);
+  --borderColor-attention-muted: var(--signal-border-warning-muted);
+  --borderColor-danger-emphasis: var(--signal-border-danger-emphasis);
+
+  /* --- Shadow aliases --- */
+  --shadow-resting-xsmall: var(--signal-shadow-xs);
+  --shadow-resting-small: var(--signal-shadow-sm);
+  --shadow-resting-medium: var(--signal-shadow-md);
+  --shadow-floating-small: var(--signal-shadow-md);
+  --shadow-floating-medium: var(--signal-shadow-lg);
+  --shadow-floating-large: var(--signal-shadow-xl);
+  --shadow-floating-xlarge: var(--signal-shadow-xl);
+
+  /* --- Radius aliases --- */
+  --radius-small: var(--signal-radius-sm);
+  --radius-medium: var(--signal-radius-md);
+  --radius-large: var(--signal-radius-lg);
+  --radius-xl: var(--signal-radius-xl);
+  --radius-2xl: 24px;
+  --radius-full: var(--signal-radius-full);
+
+  /* --- Typography aliases --- */
+  --fontStack-system: var(--signal-font-sans);
+  --fontStack-monospace: var(--signal-font-mono);
+}

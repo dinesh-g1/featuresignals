@@ -15,16 +15,16 @@ export function SkeletonListRow({ className }: { className?: string }) {
       )}
     >
       {/* Icon placeholder */}
-      <div className="h-8 w-8 rounded-lg bg-[var(--bgColor-muted)] shimmer-bg shrink-0" />
+      <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)] shimmer-bg shrink-0" />
       {/* Text lines */}
       <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="h-4 w-40 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-3 w-24 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
+        <div className="h-4 w-40 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-3 w-24 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
       </div>
       {/* Trailing actions */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="h-5 w-14 rounded-full bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-5 w-16 rounded-full bg-[var(--bgColor-muted)] shimmer-bg" />
+        <div className="h-5 w-14 rounded-full bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-5 w-16 rounded-full bg-[var(--signal-bg-secondary)] shimmer-bg" />
       </div>
     </div>
   );
@@ -44,7 +44,7 @@ export function SkeletonList({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--borderColor-default)] bg-white shadow-sm overflow-hidden",
+        "rounded-xl border border-[var(--signal-border-default)] bg-white shadow-sm overflow-hidden",
         className,
       )}
     >
@@ -62,22 +62,22 @@ export function SkeletonList({
  */
 export function SkeletonEnvCard() {
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white p-5 shadow-sm animate-pulse">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-white p-5 shadow-sm animate-pulse">
       <div className="flex items-start gap-3 mb-4">
-        <div className="mt-0.5 h-4 w-4 rounded-full bg-[var(--bgColor-muted)] shimmer-bg shrink-0" />
+        <div className="mt-0.5 h-4 w-4 rounded-full bg-[var(--signal-bg-secondary)] shimmer-bg shrink-0" />
         <div className="flex-1 space-y-1.5">
-          <div className="h-4 w-24 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-          <div className="h-3 w-16 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
+          <div className="h-4 w-24 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+          <div className="h-3 w-16 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
         </div>
       </div>
       <div className="flex items-center gap-4 mb-3">
-        <div className="h-3 w-16 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-3 w-20 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
+        <div className="h-3 w-16 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-3 w-20 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
       </div>
-      <div className="flex gap-2 pt-3 border-t border-[var(--borderColor-muted)]">
-        <div className="h-8 flex-1 rounded-lg bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-8 w-8 rounded-lg bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-8 w-8 rounded-lg bg-[var(--bgColor-muted)] shimmer-bg" />
+      <div className="flex gap-2 pt-3 border-t border-[var(--signal-border-subtle)]">
+        <div className="h-8 flex-1 rounded-lg bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)] shimmer-bg" />
       </div>
     </div>
   );
@@ -103,11 +103,11 @@ export function PageHeaderSkeleton() {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6 animate-pulse">
       <div className="space-y-2">
-        <div className="h-4 w-64 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-7 w-40 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-        <div className="h-4 w-72 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
+        <div className="h-4 w-64 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-7 w-40 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+        <div className="h-4 w-72 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
       </div>
-      <div className="h-9 w-28 rounded-lg bg-[var(--bgColor-muted)] shimmer-bg shrink-0" />
+      <div className="h-9 w-28 rounded-lg bg-[var(--signal-bg-secondary)] shimmer-bg shrink-0" />
     </div>
   );
 }
@@ -123,13 +123,13 @@ export function DataTableSkeleton({
   cols?: number;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--borderColor-default)] bg-white shadow-sm overflow-hidden animate-pulse">
+    <div className="rounded-xl border border-[var(--signal-border-default)] bg-white shadow-sm overflow-hidden animate-pulse">
       {/* Header */}
-      <div className="border-b border-[var(--borderColor-muted)] bg-[var(--bgColor-default)] px-4 py-3 flex items-center gap-4">
+      <div className="border-b border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)] px-4 py-3 flex items-center gap-4">
         {Array.from({ length: cols }).map((_, i) => (
           <div
             key={i}
-            className="h-3 rounded bg-[var(--bgColor-muted)] shimmer-bg"
+            className="h-3 rounded bg-[var(--signal-bg-secondary)] shimmer-bg"
             style={{ width: i === 0 ? "120px" : "80px" }}
           />
         ))}
@@ -138,10 +138,10 @@ export function DataTableSkeleton({
       <div className="divide-y divide-stone-100">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="px-4 py-3 flex items-center gap-4">
-            <div className="h-5 w-20 rounded-full bg-[var(--bgColor-muted)] shimmer-bg" />
-            <div className="h-4 w-32 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-            <div className="h-4 w-24 rounded bg-[var(--bgColor-muted)] shimmer-bg" />
-            <div className="h-4 w-16 rounded bg-[var(--bgColor-muted)] shimmer-bg ml-auto" />
+            <div className="h-5 w-20 rounded-full bg-[var(--signal-bg-secondary)] shimmer-bg" />
+            <div className="h-4 w-32 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+            <div className="h-4 w-24 rounded bg-[var(--signal-bg-secondary)] shimmer-bg" />
+            <div className="h-4 w-16 rounded bg-[var(--signal-bg-secondary)] shimmer-bg ml-auto" />
           </div>
         ))}
       </div>

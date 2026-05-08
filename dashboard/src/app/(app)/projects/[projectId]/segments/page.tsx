@@ -343,21 +343,21 @@ function SegmentsContent({
                     className={cn(
                       "flex flex-col gap-2 px-4 py-3 transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4",
                       isExpanded
-                        ? "bg-[var(--bgColor-accent-muted)]"
-                        : "hover:bg-[var(--bgColor-accent-muted)]",
+                        ? "bg-[var(--signal-bg-accent-muted)]"
+                        : "hover:bg-[var(--signal-bg-accent-muted)]",
                     )}
                     onClick={() => setExpanded(isExpanded ? null : seg.key)}
                   >
                     <div className="min-w-0">
-                      <p className="font-mono text-sm font-medium text-[var(--fgColor-default)]">
+                      <p className="font-mono text-sm font-medium text-[var(--signal-fg-primary)]">
                         {seg.key}
                       </p>
-                      <p className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
+                      <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
                         {seg.name} &middot; Match {seg.match_type} &middot;{" "}
                         {seg.rules?.length || 0} rules
                       </p>
                       {seg.description && (
-                        <p className="mt-0.5 text-xs text-[var(--fgColor-subtle)]">
+                        <p className="mt-0.5 text-xs text-[var(--signal-fg-tertiary)]">
                           {seg.description}
                         </p>
                       )}
@@ -392,21 +392,21 @@ function SegmentsContent({
                             setDeleting(seg.key);
                           }}
                           title="Delete segment"
-                          className="text-[var(--fgColor-subtle)] hover:text-red-500 hover:bg-[var(--bgColor-danger-muted)]"
+                          className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
                       )}
                       <ChevronDownIcon
                         className={cn(
-                          "h-4 w-4 text-[var(--fgColor-subtle)] transition-transform duration-200",
+                          "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform duration-200",
                           isExpanded && "rotate-180",
                         )}
                       />
                     </div>
                   </div>
                   {isExpanded && (
-                    <div className="border-t border-slate-100 px-4 py-4 bg-[var(--bgColor-muted)]/50 sm:px-6 animate-fade-in">
+                    <div className="border-t border-slate-100 px-4 py-4 bg-[var(--signal-bg-secondary)]/50 sm:px-6 animate-fade-in">
                       <SegmentRulesEditor
                         rules={seg.rules ?? []}
                         matchType={seg.match_type}

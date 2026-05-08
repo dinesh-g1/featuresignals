@@ -59,16 +59,16 @@ function SSOUpgradeGate() {
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
         <LockIcon className="h-8 w-8 text-amber-500" />
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-[var(--fgColor-default)]">
+      <h2 className="mt-4 text-lg font-semibold text-[var(--signal-fg-primary)]">
         SSO requires {plan} plan
       </h2>
-      <p className="mt-2 max-w-sm text-sm text-[var(--fgColor-muted)]">
+      <p className="mt-2 max-w-sm text-sm text-[var(--signal-fg-secondary)]">
         Enterprise SSO with SAML/OIDC support is available on the {plan} plan
         and above.
       </p>
       <Button
         onClick={() => router.push("/settings/billing")}
-        className="mt-6 bg-[var(--bgColor-accent-emphasis)] hover:bg-[var(--bgColor-accent-emphasis)]-dark"
+        className="mt-6 bg-[var(--signal-bg-accent-emphasis)] hover:bg-[var(--signal-bg-accent-emphasis)]-dark"
       >
         Upgrade to {plan}
       </Button>
@@ -215,7 +215,7 @@ export default function SSOSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <LoaderIcon className="h-6 w-6 animate-spin text-[var(--fgColor-subtle)]" />
+        <LoaderIcon className="h-6 w-6 animate-spin text-[var(--signal-fg-tertiary)]" />
       </div>
     );
   }
@@ -224,10 +224,10 @@ export default function SSOSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--fgColor-default)]">
+          <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
             Single Sign-On (SSO)
           </h2>
-          <p className="mt-1 text-sm text-[var(--fgColor-muted)]">
+          <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
             Configure SAML 2.0 or OpenID Connect for your organization.
           </p>
         </div>
@@ -240,13 +240,13 @@ export default function SSOSettingsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-[var(--bgColor-danger-muted)] p-3 text-sm text-red-700">
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-[var(--signal-bg-danger-muted)] p-3 text-sm text-red-700">
           <XCircleFillIcon className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--borderColor-success-muted)] bg-emerald-50 p-3 text-sm text-emerald-700">
+        <div className="flex items-center gap-2 rounded-lg border border-[var(--signal-border-success-muted)] bg-emerald-50 p-3 text-sm text-emerald-700">
           <CheckCircleFillIcon className="h-4 w-4 shrink-0" />
           {success}
         </div>
@@ -268,14 +268,14 @@ export default function SSOSettingsPage() {
                   className={cn(
                     "flex-1 rounded-lg border-2 p-4 text-left transition-all",
                     form.provider_type === type
-                      ? "border-[var(--fgColor-accent)] bg-[var(--bgColor-accent-muted)]"
-                      : "border-[var(--borderColor-default)] hover:border-[var(--borderColor-emphasis)]",
+                      ? "border-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)]"
+                      : "border-[var(--signal-border-default)] hover:border-[var(--signal-border-emphasis)]",
                   )}
                 >
-                  <div className="text-sm font-semibold text-[var(--fgColor-default)]">
+                  <div className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                     {type === "oidc" ? "OpenID Connect" : "SAML 2.0"}
                   </div>
-                  <div className="mt-0.5 text-xs text-[var(--fgColor-muted)]">
+                  <div className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
                     {type === "oidc"
                       ? "Okta, Google Workspace, Azure AD, Auth0"
                       : "Okta, OneLogin, PingFederate, ADFS"}
@@ -297,7 +297,7 @@ export default function SSOSettingsPage() {
                   onChange={(e) => updateForm("issuer_url", e.target.value)}
                   className="mt-1"
                 />
-                <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                   The OpenID Connect discovery endpoint
                   (/.well-known/openid-configuration will be appended)
                 </p>
@@ -312,7 +312,7 @@ export default function SSOSettingsPage() {
                     className="mt-1"
                   />
                   {config?.has_client_secret && !form.client_secret && (
-                    <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                    <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                       Client ID is set
                     </p>
                   )}
@@ -330,7 +330,7 @@ export default function SSOSettingsPage() {
                     className="mt-1"
                   />
                   {config?.has_client_secret && !form.client_secret && (
-                    <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                    <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                       Leave blank to keep existing secret
                     </p>
                   )}
@@ -351,7 +351,7 @@ export default function SSOSettingsPage() {
                   onChange={(e) => updateForm("metadata_url", e.target.value)}
                   className="mt-1"
                 />
-                <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                   URL to your IdP&apos;s SAML metadata. Alternatively, paste
                   metadata XML below.
                 </p>
@@ -366,10 +366,10 @@ export default function SSOSettingsPage() {
                   placeholder="Paste IdP metadata XML here..."
                   value={form.metadata_xml}
                   onChange={(e) => updateForm("metadata_xml", e.target.value)}
-                  className="mt-1 w-full rounded-md border border-[var(--borderColor-default)] bg-white px-3 py-2 text-sm font-mono focus:border-[var(--fgColor-accent)] focus:ring-1 focus:ring-[var(--fgColor-accent)] focus:outline-none"
+                  className="mt-1 w-full rounded-md border border-[var(--signal-border-default)] bg-white px-3 py-2 text-sm font-mono focus:border-[var(--signal-fg-accent)] focus:ring-1 focus:ring-[var(--signal-fg-accent)] focus:outline-none"
                 />
                 {config?.has_metadata_xml && !form.metadata_xml && (
-                  <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                  <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                     Metadata XML is already stored. Leave blank to keep.
                   </p>
                 )}
@@ -402,10 +402,10 @@ export default function SSOSettingsPage() {
                   placeholder="-----BEGIN CERTIFICATE-----..."
                   value={form.certificate}
                   onChange={(e) => updateForm("certificate", e.target.value)}
-                  className="mt-1 w-full rounded-md border border-[var(--borderColor-default)] bg-white px-3 py-2 text-sm font-mono focus:border-[var(--fgColor-accent)] focus:ring-1 focus:ring-[var(--fgColor-accent)] focus:outline-none"
+                  className="mt-1 w-full rounded-md border border-[var(--signal-border-default)] bg-white px-3 py-2 text-sm font-mono focus:border-[var(--signal-fg-accent)] focus:ring-1 focus:ring-[var(--signal-fg-accent)] focus:outline-none"
                 />
                 {config?.has_certificate && !form.certificate && (
-                  <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                  <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                     Certificate is already stored. Leave blank to keep.
                   </p>
                 )}
@@ -414,8 +414,8 @@ export default function SSOSettingsPage() {
           )}
 
           {/* Common settings */}
-          <div className="border-t border-[var(--borderColor-default)] pt-5">
-            <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">Settings</h3>
+          <div className="border-t border-[var(--signal-border-default)] pt-5">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">Settings</h3>
             <div className="mt-3 space-y-3">
               <div>
                 <Label htmlFor="default_role">
@@ -425,13 +425,13 @@ export default function SSOSettingsPage() {
                   id="default_role"
                   value={form.default_role}
                   onChange={(e) => updateForm("default_role", e.target.value)}
-                  className="mt-1 w-full rounded-md border border-[var(--borderColor-default)] bg-white px-3 py-2 text-sm focus:border-[var(--fgColor-accent)] focus:ring-1 focus:ring-[var(--fgColor-accent)] focus:outline-none sm:w-48"
+                  className="mt-1 w-full rounded-md border border-[var(--signal-border-default)] bg-white px-3 py-2 text-sm focus:border-[var(--signal-fg-accent)] focus:ring-1 focus:ring-[var(--signal-fg-accent)] focus:outline-none sm:w-48"
                 >
                   <option value="developer">Developer</option>
                   <option value="viewer">Viewer</option>
                   <option value="admin">Admin</option>
                 </select>
-                <p className="mt-1 text-xs text-[var(--fgColor-subtle)]">
+                <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
                   Role assigned to users who sign in via SSO for the first time.
                 </p>
               </div>
@@ -441,13 +441,13 @@ export default function SSOSettingsPage() {
                   type="checkbox"
                   checked={form.enabled}
                   onChange={(e) => updateForm("enabled", e.target.checked)}
-                  className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+                  className="h-4 w-4 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
                 />
                 <div>
-                  <span className="text-sm font-medium text-[var(--fgColor-default)]">
+                  <span className="text-sm font-medium text-[var(--signal-fg-primary)]">
                     Enable SSO
                   </span>
-                  <p className="text-xs text-[var(--fgColor-subtle)]">
+                  <p className="text-xs text-[var(--signal-fg-tertiary)]">
                     Allow team members to sign in via your identity provider.
                   </p>
                 </div>
@@ -458,13 +458,13 @@ export default function SSOSettingsPage() {
                   type="checkbox"
                   checked={form.enforce}
                   onChange={(e) => updateForm("enforce", e.target.checked)}
-                  className="h-4 w-4 rounded border-[var(--borderColor-emphasis)] text-[var(--fgColor-accent)] focus:ring-[var(--fgColor-accent)]"
+                  className="h-4 w-4 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
                 />
                 <div>
-                  <span className="text-sm font-medium text-[var(--fgColor-default)]">
+                  <span className="text-sm font-medium text-[var(--signal-fg-primary)]">
                     Enforce SSO
                   </span>
-                  <p className="text-xs text-[var(--fgColor-subtle)]">
+                  <p className="text-xs text-[var(--signal-fg-tertiary)]">
                     Block email/password login for all members. Organization
                     owners can still use password login as a break-glass
                     mechanism.
@@ -491,8 +491,8 @@ export default function SSOSettingsPage() {
               className={cn(
                 "flex items-center gap-2 rounded-lg border p-3 text-sm",
                 testResult.success
-                  ? "border-[var(--borderColor-success-muted)] bg-emerald-50 text-emerald-700"
-                  : "border-red-200 bg-[var(--bgColor-danger-muted)] text-red-700",
+                  ? "border-[var(--signal-border-success-muted)] bg-emerald-50 text-emerald-700"
+                  : "border-red-200 bg-[var(--signal-bg-danger-muted)] text-red-700",
               )}
             >
               {testResult.success ? (
@@ -505,7 +505,7 @@ export default function SSOSettingsPage() {
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 border-t border-[var(--borderColor-default)] pt-5">
+          <div className="flex items-center gap-3 border-t border-[var(--signal-border-default)] pt-5">
             <Button onClick={handleSave} disabled={saving}>
               {saving && <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />}
               {config ? "Update Configuration" : "Save Configuration"}
@@ -531,10 +531,10 @@ export default function SSOSettingsPage() {
       {/* SP info for admins configuring IdP */}
       {config && form.provider_type === "saml" && (
         <Card className="p-5">
-          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+          <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
             Service Provider Details
           </h3>
-          <p className="mt-1 text-xs text-[var(--fgColor-muted)]">
+          <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
             Use these values when configuring FeatureSignals in your Identity
             Provider.
           </p>
@@ -553,10 +553,10 @@ export default function SSOSettingsPage() {
 
       {config && form.provider_type === "oidc" && (
         <Card className="p-5">
-          <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+          <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
             OIDC Redirect URI
           </h3>
-          <p className="mt-1 text-xs text-[var(--fgColor-muted)]">
+          <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
             Add this redirect URI to your OIDC application settings.
           </p>
           <div className="mt-3">
@@ -582,15 +582,15 @@ function CopyField({ label, value }: { label: string; value: string }) {
 
   return (
     <div>
-      <p className="text-xs font-medium text-[var(--fgColor-muted)]">{label}</p>
+      <p className="text-xs font-medium text-[var(--signal-fg-secondary)]">{label}</p>
       <div className="mt-1 flex items-center gap-2">
-        <code className="flex-1 rounded bg-[var(--bgColor-muted)] px-3 py-1.5 text-xs text-[var(--fgColor-default)] select-all">
+        <code className="flex-1 rounded bg-[var(--signal-bg-secondary)] px-3 py-1.5 text-xs text-[var(--signal-fg-primary)] select-all">
           {value}
         </code>
         <button
           type="button"
           onClick={handleCopy}
-          className="shrink-0 rounded-md border border-[var(--borderColor-default)] px-2.5 py-1.5 text-xs font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
+          className="shrink-0 rounded-md border border-[var(--signal-border-default)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
         >
           {copied ? "Copied" : "Copy"}
         </button>

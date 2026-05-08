@@ -9,6 +9,7 @@ import { EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
 import { UserMenu } from "@/components/user-menu";
+import { DocsPanelTrigger } from "@/components/docs-panel";
 import {
   SearchIcon,
   ChevronDownIcon,
@@ -79,8 +80,8 @@ function ProjectDropdown() {
         className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all",
           open
-            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)]"
-            : "bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] hover:border-[var(--borderColor-emphasis)]",
+            ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)]"
+            : "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)] hover:border-[var(--signal-border-emphasis)]",
         )}
       >
         <span className="truncate max-w-[140px]">
@@ -91,30 +92,30 @@ function ProjectDropdown() {
             "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
             open && "rotate-180",
             open
-              ? "text-[var(--fgColor-accent)]"
-              : "text-[var(--fgColor-subtle)]",
+              ? "text-[var(--signal-fg-accent)]"
+              : "text-[var(--signal-fg-tertiary)]",
           )}
         />
       </button>
 
       {open && (
         <div className="absolute left-0 top-full mt-1.5 w-64 z-50 animate-slide-up">
-          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
+          <div className="rounded-xl border border-[var(--signal-border-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
             {/* Search */}
             <div className="relative mb-1">
-              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--fgColor-subtle)]" />
+              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] pl-8 pr-3 py-1.5 text-xs text-[var(--fgColor-default)] placeholder:text-[var(--fgColor-subtle)] focus:border-[var(--fgColor-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--borderColor-accent-muted)]"
+                className="w-full rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] pl-8 pr-3 py-1.5 text-xs text-[var(--signal-fg-primary)] placeholder:text-[var(--signal-fg-tertiary)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--signal-border-accent-muted)]"
               />
             </div>
 
             <div className="max-h-48 overflow-y-auto space-y-0.5">
               {filtered.length === 0 && (
-                <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
+                <p className="px-2 py-4 text-xs text-[var(--signal-fg-tertiary)] text-center">
                   {search ? `No projects match "${search}"` : "No projects yet"}
                 </p>
               )}
@@ -125,13 +126,13 @@ function ProjectDropdown() {
                   className={cn(
                     "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                     p.id === currentProjectId
-                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium"
-                      : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]",
+                      ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium"
+                      : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-primary)]",
                   )}
                 >
                   <span className="truncate">{p.name}</span>
                   {p.id === currentProjectId && (
-                    <CheckIcon className="h-3.5 w-3.5 text-[var(--fgColor-accent)] shrink-0" />
+                    <CheckIcon className="h-3.5 w-3.5 text-[var(--signal-fg-accent)] shrink-0" />
                   )}
                 </button>
               ))}
@@ -143,7 +144,7 @@ function ProjectDropdown() {
   );
 }
 
-// ─── Environment Dropdown (no colored dots) ────────────────────────
+// ─── Environment Dropdown (with color dots) ────────────────────────
 
 function EnvironmentDropdown() {
   const token = useAppStore((s) => s.token);
@@ -202,10 +203,17 @@ function EnvironmentDropdown() {
         className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all",
           open
-            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] border border-[var(--borderColor-accent-muted)]"
-            : "bg-[var(--bgColor-default)] text-[var(--fgColor-default)] border border-[var(--borderColor-default)] hover:bg-[var(--bgColor-muted)] hover:border-[var(--borderColor-emphasis)]",
+            ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)]"
+            : "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)] hover:border-[var(--signal-border-emphasis)]",
         )}
       >
+        {selected?.color && (
+          <span
+            className="inline-block h-2 w-2 rounded-full shrink-0 ring-1 ring-black/10"
+            style={{ backgroundColor: selected.color }}
+            aria-hidden="true"
+          />
+        )}
         <span className="truncate max-w-[120px]">
           {selected?.name || "Select Environment"}
         </span>
@@ -214,18 +222,18 @@ function EnvironmentDropdown() {
             "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
             open && "rotate-180",
             open
-              ? "text-[var(--fgColor-accent)]"
-              : "text-[var(--fgColor-subtle)]",
+              ? "text-[var(--signal-fg-accent)]"
+              : "text-[var(--signal-fg-tertiary)]",
           )}
         />
       </button>
 
       {open && (
         <div className="absolute left-0 top-full mt-1.5 w-48 z-50 animate-slide-up">
-          <div className="rounded-xl border border-[var(--borderColor-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
+          <div className="rounded-xl border border-[var(--signal-border-default)] bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-lg ring-1 ring-stone-100 p-2">
             <div className="max-h-48 overflow-y-auto space-y-0.5">
               {envs.length === 0 && (
-                <p className="px-2 py-4 text-xs text-[var(--fgColor-subtle)] text-center">
+                <p className="px-2 py-4 text-xs text-[var(--signal-fg-tertiary)] text-center">
                   No environments yet.
                 </p>
               )}
@@ -237,15 +245,22 @@ function EnvironmentDropdown() {
                     setOpen(false);
                   }}
                   className={cn(
-                    "w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                    "w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                     e.id === currentEnvId
-                      ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)] font-medium"
-                      : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-default)]",
+                      ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium"
+                      : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-primary)]",
                   )}
                 >
-                  <span className="truncate">{e.name}</span>
+                  {e.color && (
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-full shrink-0 ring-1 ring-black/10"
+                      style={{ backgroundColor: e.color }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="truncate flex-1">{e.name}</span>
                   {e.id === currentEnvId && (
-                    <CheckIcon className="h-3.5 w-3.5 text-[var(--fgColor-accent)] shrink-0" />
+                    <CheckIcon className="h-3.5 w-3.5 text-[var(--signal-fg-accent)] shrink-0" />
                   )}
                 </button>
               ))}
@@ -267,13 +282,13 @@ function OmniSearchButton() {
           mod.openCommandPalette(),
         );
       }}
-      className="flex items-center gap-2.5 bg-[var(--bgColor-default)] border border-[var(--borderColor-default)] text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)] hover:border-[var(--borderColor-emphasis)] hover:bg-[var(--bgColor-muted)] hover:shadow-sm px-4 py-2 rounded-lg text-sm transition-all w-full max-w-lg cursor-text"
+      className="flex items-center gap-2.5 bg-[var(--signal-bg-primary)] border border-[var(--signal-border-default)] text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] hover:border-[var(--signal-border-emphasis)] hover:bg-[var(--signal-bg-secondary)] hover:shadow-sm px-4 py-2 rounded-lg text-sm transition-all w-full max-w-lg cursor-text"
     >
       <SearchIcon className="h-4 w-4 shrink-0" />
       <span className="flex-1 text-left text-sm">
         Search flags, segments, environments...
       </span>
-      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-[var(--bgColor-muted)] border border-[var(--borderColor-default)] px-1.5 py-0.5 rounded text-[var(--fgColor-subtle)]">
+      <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)] px-1.5 py-0.5 rounded text-[var(--signal-fg-tertiary)]">
         <span className="text-[9px]">⌘</span>K
       </kbd>
     </button>
@@ -330,8 +345,8 @@ function ActivityBell() {
         className={cn(
           "relative rounded-lg p-2 transition-all",
           open || isActive
-            ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
-            : "text-[var(--fgColor-muted)] hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]",
+            ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+            : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
         )}
         aria-label="Activity"
         title="Activity"
@@ -344,10 +359,10 @@ function ActivityBell() {
           {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-xl border border-[var(--borderColor-default)] bg-white shadow-[var(--shadow-floating-medium)] animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-xl border border-[var(--signal-border-default)] bg-white shadow-[var(--signal-shadow-lg)] animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--borderColor-muted)]">
-              <h3 className="text-sm font-semibold text-[var(--fgColor-default)]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--signal-border-subtle)]">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 Recent Activity
               </h3>
               <button
@@ -355,7 +370,7 @@ function ActivityBell() {
                   setOpen(false);
                   router.push("/activity");
                 }}
-                className="text-xs font-medium text-[var(--fgColor-accent)] hover:underline"
+                className="text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
               >
                 View all
               </button>
@@ -364,7 +379,7 @@ function ActivityBell() {
             {/* Entries */}
             <div className="max-h-64 overflow-y-auto py-1">
               {entries.length === 0 ? (
-                <p className="px-4 py-6 text-xs text-[var(--fgColor-muted)] text-center">
+                <p className="px-4 py-6 text-xs text-[var(--signal-fg-secondary)] text-center">
                   No recent activity.
                 </p>
               ) : (
@@ -375,15 +390,15 @@ function ActivityBell() {
                       setOpen(false);
                       router.push("/activity");
                     }}
-                    className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-[var(--bgColor-muted)] transition-colors"
+                    className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-[var(--signal-bg-secondary)] transition-colors"
                   >
                     <span className="mt-0.5 shrink-0">
-                      <AuditLogIcon className="h-4 w-4 text-[var(--fgColor-muted)]" />
+                      <AuditLogIcon className="h-4 w-4 text-[var(--signal-fg-secondary)]" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-[var(--fgColor-default)] truncate">
+                      <p className="text-sm text-[var(--signal-fg-primary)] truncate">
                         <span className="font-medium">{entry.action}</span>
-                        <span className="text-[var(--fgColor-muted)]">
+                        <span className="text-[var(--signal-fg-secondary)]">
                           {" "}
                           on{" "}
                         </span>
@@ -391,7 +406,7 @@ function ActivityBell() {
                           {entry.resource_type}
                         </span>
                       </p>
-                      <p className="text-xs text-[var(--fgColor-subtle)] mt-0.5">
+                      <p className="text-xs text-[var(--signal-fg-tertiary)] mt-0.5">
                         {timeAgo(entry.created_at)}
                       </p>
                     </div>
@@ -401,13 +416,13 @@ function ActivityBell() {
             </div>
 
             {/* Footer link */}
-            <div className="border-t border-[var(--borderColor-muted)] px-4 py-2.5">
+            <div className="border-t border-[var(--signal-border-subtle)] px-4 py-2.5">
               <button
                 onClick={() => {
                   setOpen(false);
                   router.push("/activity");
                 }}
-                className="w-full text-center text-xs font-medium text-[var(--fgColor-accent)] hover:underline py-1"
+                className="w-full text-center text-xs font-medium text-[var(--signal-fg-accent)] hover:underline py-1"
               >
                 View all activity →
               </button>
@@ -425,7 +440,7 @@ export function ContextBar() {
   const currentProjectId = useAppStore((s) => s.currentProjectId);
 
   return (
-    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--borderColor-default)]/60 flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-40 shrink-0">
+    <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--signal-border-default)]/60 flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-40 shrink-0">
       {/* Left: Project + Environment breadcrumb */}
       <div className="flex items-center gap-2 text-sm min-w-0">
         <ProjectDropdown />
@@ -443,8 +458,9 @@ export function ContextBar() {
         <OmniSearchButton />
       </div>
 
-      {/* Right: Activity Bell + User Menu */}
+      {/* Right: Docs + Activity Bell + User Menu */}
       <div className="flex items-center gap-3 shrink-0">
+        <DocsPanelTrigger />
         <ActivityBell />
         <UserMenu />
       </div>

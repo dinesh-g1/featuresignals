@@ -129,16 +129,16 @@ export function UserMenu() {
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
           "flex items-center gap-2 rounded-full p-1 transition-all",
-          "hover:bg-[var(--bgColor-muted)] hover:ring-2 hover:ring-[var(--borderColor-emphasis)]",
+          "hover:bg-[var(--signal-bg-secondary)] hover:ring-2 hover:ring-[var(--signal-border-emphasis)]",
           open &&
-            "bg-[var(--bgColor-muted)] ring-2 ring-[var(--fgColor-accent)]",
+            "bg-[var(--signal-bg-secondary)] ring-2 ring-[var(--signal-fg-accent)]",
         )}
         aria-label="User menu"
         aria-expanded={open}
         aria-haspopup="true"
       >
         <div
-          className="h-7 w-7 rounded-full bg-[var(--bgColor-accent-emphasis)] text-white flex items-center justify-center text-xs font-bold shadow-sm"
+          className="h-7 w-7 rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white flex items-center justify-center text-xs font-bold shadow-sm"
           title={user?.name || "User"}
         >
           {initials}
@@ -153,16 +153,16 @@ export function UserMenu() {
 
           <div
             ref={menuRef}
-            className="absolute right-0 top-full mt-2 z-50 w-56 rounded-xl border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] shadow-lg animate-in fade-in slide-in-from-top-2 duration-150"
+            className="absolute right-0 top-full mt-2 z-50 w-56 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-lg animate-in fade-in slide-in-from-top-2 duration-150"
             role="menu"
             aria-orientation="vertical"
           >
             {/* User info header */}
-            <div className="px-4 py-3 border-b border-[var(--borderColor-muted)]">
-              <p className="text-sm font-semibold text-[var(--fgColor-default)] truncate">
+            <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
+              <p className="text-sm font-semibold text-[var(--signal-fg-primary)] truncate">
                 {user?.name || "User"}
               </p>
-              <p className="text-xs text-[var(--fgColor-muted)] truncate mt-0.5">
+              <p className="text-xs text-[var(--signal-fg-secondary)] truncate mt-0.5">
                 {user?.email || ""}
               </p>
               <span
@@ -172,7 +172,7 @@ export function UserMenu() {
                     ? "bg-purple-100 text-purple-700"
                     : plan === "pro"
                       ? "bg-blue-100 text-blue-700"
-                      : "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)]",
+                      : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
                 )}
               >
                 {plan}
@@ -186,7 +186,7 @@ export function UserMenu() {
                   return (
                     <div
                       key={`divider-${idx}`}
-                      className="my-1 border-t border-[var(--borderColor-muted)]"
+                      className="my-1 border-t border-[var(--signal-border-subtle)]"
                     />
                   );
                 }
@@ -212,8 +212,8 @@ export function UserMenu() {
                     className={cn(
                       "flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors text-left",
                       isSignOut
-                        ? "text-[var(--fgColor-danger)] hover:bg-[var(--bgColor-danger-muted)]"
-                        : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+                        ? "text-[var(--signal-fg-danger)] hover:bg-[var(--signal-bg-danger-muted)]"
+                        : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
                     )}
                     role="menuitem"
                   >
@@ -221,13 +221,13 @@ export function UserMenu() {
                       className={cn(
                         "h-4 w-4 shrink-0",
                         isSignOut
-                          ? "text-[var(--fgColor-danger)]"
-                          : "text-[var(--fgColor-muted)]",
+                          ? "text-[var(--signal-fg-danger)]"
+                          : "text-[var(--signal-fg-secondary)]",
                       )}
                     />
                     <span className="flex-1">{item.label}</span>
                     {item.external && (
-                      <ExternalLinkIcon className="h-3 w-3 shrink-0 text-[var(--fgColor-subtle)]" />
+                      <ExternalLinkIcon className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
                     )}
                   </button>
                 );

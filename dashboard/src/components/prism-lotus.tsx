@@ -75,7 +75,7 @@ function SignalRing({
         .ring-default .ring-ring { stroke: white; }
         .ring-default .ring-dot  { fill: white; }
 
-        .ring-monochrome .ring-bg   { fill: var(--fgColor-default); }
+        .ring-monochrome .ring-bg   { fill: var(--signal-fg-primary); }
         .ring-monochrome .ring-ring { stroke: white; }
         .ring-monochrome .ring-dot  { fill: white; }
 
@@ -123,11 +123,11 @@ function Wordmark({
     colorScheme === "white"
       ? "text-white"
       : colorScheme === "monochrome"
-        ? "text-[var(--fgColor-default)]"
+        ? "text-[var(--signal-fg-primary)]"
         : "text-[#0969da]";
 
   const mainColor =
-    colorScheme === "white" ? "text-white/90" : "text-[var(--fgColor-default)]";
+    colorScheme === "white" ? "text-white/90" : "text-[var(--signal-fg-primary)]";
 
   return (
     <div className="flex flex-col leading-none">
@@ -136,7 +136,7 @@ function Wordmark({
         <span className={accentColor}>Signals</span>
       </span>
       {sizeKey === "xl" && (
-        <span className="text-[10px] font-medium tracking-[0.2em] text-[var(--fgColor-subtle)] uppercase mt-0.5">
+        <span className="text-[10px] font-medium tracking-[0.2em] text-[var(--signal-fg-tertiary)] uppercase mt-0.5">
           Enterprise Control Plane
         </span>
       )}

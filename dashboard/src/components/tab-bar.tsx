@@ -17,7 +17,7 @@ export function TabBar() {
 
   return (
     <nav
-      className="flex items-center gap-0.5 border-b border-[var(--borderColor-default)] bg-[var(--bgColor-default)]/80 backdrop-blur-md px-4 sm:px-6 shrink-0"
+      className="flex items-center gap-0.5 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]/80 backdrop-blur-md px-4 sm:px-6 shrink-0"
       aria-label="Organization navigation"
     >
       {tabs.map((tab) => {
@@ -30,8 +30,8 @@ export function TabBar() {
             className={cn(
               "px-3 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap",
               active
-                ? "border-[var(--fgColor-accent)] text-[var(--fgColor-accent)]"
-                : "border-transparent text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)] hover:border-[var(--borderColor-emphasis)]",
+                ? "border-[var(--signal-fg-accent)] text-[var(--signal-fg-accent)]"
+                : "border-transparent text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:border-[var(--signal-border-emphasis)]",
             )}
           >
             {tab.label}

@@ -5,7 +5,7 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-xl border border-[var(--borderColor-default)]/70 bg-white shadow-sm shadow-stone-900/5">
+  <div className="relative w-full overflow-auto rounded-xl border border-[var(--signal-border-default)]/70 bg-white shadow-sm shadow-stone-900/5">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}
@@ -21,7 +21,7 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("[&_tr]:border-b [&_tr]:border-[var(--borderColor-muted)]", className)}
+    className={cn("[&_tr]:border-b [&_tr]:border-[var(--signal-border-subtle)]", className)}
     {...props}
   />
 ));
@@ -46,7 +46,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t border-[var(--borderColor-muted)] bg-[var(--bgColor-default)]/50 font-medium [&>tr]:last:border-b-0",
+      "border-t border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]/50 font-medium [&>tr]:last:border-b-0",
       className,
     )}
     {...props}
@@ -61,7 +61,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-[var(--borderColor-muted)]/70 transition-colors hover:bg-[var(--bgColor-default)]/60 data-[state=selected]:bg-[var(--bgColor-accent-muted)]",
+      "border-b border-[var(--signal-border-subtle)]/70 transition-colors hover:bg-[var(--signal-bg-primary)]/60 data-[state=selected]:bg-[var(--signal-bg-accent-muted)]",
       className,
     )}
     {...props}
@@ -76,7 +76,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-4 text-left align-middle text-xs font-semibold uppercase tracking-[0.05em] text-[var(--fgColor-muted)] [&:has([role=checkbox])]:pr-0",
+      "h-10 px-4 text-left align-middle text-xs font-semibold uppercase tracking-[0.05em] text-[var(--signal-fg-secondary)] [&:has([role=checkbox])]:pr-0",
       className,
     )}
     {...props}
@@ -91,7 +91,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-4 align-middle text-sm text-[var(--fgColor-default)] [&:has([role=checkbox])]:pr-0",
+      "p-4 align-middle text-sm text-[var(--signal-fg-primary)] [&:has([role=checkbox])]:pr-0",
       className,
     )}
     {...props}
@@ -105,7 +105,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-xs text-[var(--fgColor-muted)]", className)}
+    className={cn("mt-4 text-xs text-[var(--signal-fg-secondary)]", className)}
     {...props}
   />
 ));

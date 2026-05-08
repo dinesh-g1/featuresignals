@@ -12,8 +12,8 @@ export default function MagicLinkCallbackPage() {
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
           <div className="flex flex-col items-center gap-3">
-            <LoaderIcon className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]" />
-            <p className="text-sm text-[var(--fgColor-muted)]">Loading...</p>
+            <LoaderIcon className="h-8 w-8 animate-spin text-[var(--signal-fg-accent)]" />
+            <p className="text-sm text-[var(--signal-fg-secondary)]">Loading...</p>
           </div>
         </div>
       }
@@ -58,7 +58,7 @@ function MagicLinkCallbackContent() {
           <p className="text-sm text-red-600">{error}</p>
           <Link
             href="/login"
-            className="mt-4 inline-block text-sm font-medium text-[var(--fgColor-accent)] hover:text-[var(--fgColor-accent)]"
+            className="mt-4 inline-block text-sm font-medium text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)]"
           >
             Back to login
           </Link>
@@ -70,8 +70,8 @@ function MagicLinkCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-accent/5">
       <div className="flex flex-col items-center gap-3">
-        <LoaderIcon className="h-8 w-8 animate-spin text-[var(--fgColor-accent)]" />
-        <p className="text-sm text-[var(--fgColor-muted)]">Logging you in...</p>
+        <LoaderIcon className="h-8 w-8 animate-spin text-[var(--signal-fg-accent)]" />
+        <p className="text-sm text-[var(--signal-fg-secondary)]">Logging you in...</p>
       </div>
     </div>
   );

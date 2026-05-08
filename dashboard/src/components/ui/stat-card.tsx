@@ -52,7 +52,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--borderColor-default)]/60 bg-white p-4 shadow-sm ring-1 ring-slate-100/50 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg sm:p-6",
+        "rounded-xl border border-[var(--signal-border-default)]/60 bg-white p-4 shadow-sm ring-1 ring-slate-100/50 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg sm:p-6",
         c.hoverShadow,
         className,
       )}
@@ -65,10 +65,10 @@ export function StatCard({
           />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-[var(--fgColor-muted)] sm:text-sm">
+          <p className="text-xs font-medium text-[var(--signal-fg-secondary)] sm:text-sm">
             {label}
           </p>
-          <p className="text-2xl font-bold tabular-nums tracking-tight text-[var(--fgColor-default)] sm:text-3xl">
+          <p className="text-2xl font-bold tabular-nums tracking-tight text-[var(--signal-fg-primary)] sm:text-3xl">
             {value}
           </p>
         </div>

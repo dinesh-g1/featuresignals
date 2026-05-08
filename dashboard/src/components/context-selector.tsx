@@ -46,7 +46,7 @@ function getEnvBadgeClass(slug: string): string {
   const key = slug?.toLowerCase() || "";
   return (
     ENV_COLORS[key] ||
-    "bg-[var(--bgColor-muted)] text-[var(--fgColor-muted)] border-[var(--borderColor-default)]"
+    "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] border-[var(--signal-border-default)]"
   );
 }
 
@@ -179,14 +179,14 @@ function Combobox({
           setOpen(!open);
           if (!open) setTimeout(() => inputRef.current?.focus(), 50);
         }}
-        className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)] hover:text-[var(--fgColor-default)]"
+        className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="shrink-0 text-[var(--fgColor-subtle)]">{icon}</span>
+        <span className="shrink-0 text-[var(--signal-fg-tertiary)]">{icon}</span>
         {selectedItem ? (
           <span className="flex items-center gap-1.5 truncate">
-            <span className="truncate text-[var(--fgColor-default)]">
+            <span className="truncate text-[var(--signal-fg-primary)]">
               {selectedItem.label}
             </span>
             {selectedItem.badgeText && (
@@ -201,11 +201,11 @@ function Combobox({
             )}
           </span>
         ) : (
-          <span className="text-[var(--fgColor-subtle)]">{placeholder}</span>
+          <span className="text-[var(--signal-fg-tertiary)]">{placeholder}</span>
         )}
         <ChevronDownIcon
           className={cn(
-            "h-3.5 w-3.5 shrink-0 text-[var(--fgColor-subtle)] transition-transform",
+            "h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-tertiary)] transition-transform",
             open && "rotate-180",
           )}
         />
@@ -214,18 +214,18 @@ function Combobox({
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute left-0 z-[9999] w-56 overflow-hidden rounded-lg border border-[var(--borderColor-default)] bg-white shadow-xl top-full translate-y-1"
+          className="absolute left-0 z-[9999] w-56 overflow-hidden rounded-lg border border-[var(--signal-border-default)] bg-white shadow-xl top-full translate-y-1"
           role="listbox"
         >
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-slate-100 px-2 py-1.5">
-            <SearchIcon className="h-3.5 w-3.5 shrink-0 text-[var(--fgColor-subtle)]" />
+            <SearchIcon className="h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-tertiary)]" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search…"
-              className="flex-1 border-0 bg-transparent text-xs text-[var(--fgColor-default)] placeholder-slate-400 focus:outline-none"
+              className="flex-1 border-0 bg-transparent text-xs text-[var(--signal-fg-primary)] placeholder-slate-400 focus:outline-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && filteredItems.length === 1) {
                   onValueChange(filteredItems[0].value);
@@ -237,7 +237,7 @@ function Combobox({
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="shrink-0 rounded p-0.5 text-[var(--fgColor-subtle)] hover:text-[var(--fgColor-muted)]"
+                className="shrink-0 rounded p-0.5 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)]"
               >
                 <XIcon className="h-3 w-3" />
               </button>
@@ -248,7 +248,7 @@ function Combobox({
           <div ref={listRef} className="max-h-48 overflow-y-auto py-1">
             {recentItems.length > 0 && !debouncedQuery && (
               <div>
-                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--fgColor-subtle)]">
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
                   Recent
                 </p>
                 {recentItems.map((item, idx) => (
@@ -263,16 +263,16 @@ function Combobox({
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
                       item.value === value
-                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
-                        : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+                        ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+                        : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
                     )}
                     role="option"
                     aria-selected={item.value === value}
                   >
-                    <ClockIcon className="h-3 w-3 shrink-0 text-[var(--fgColor-subtle)]" />
+                    <ClockIcon className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.value === value && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--bgColor-accent-emphasis)]" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--signal-bg-accent-emphasis)]" />
                     )}
                   </button>
                 ))}
@@ -280,7 +280,7 @@ function Combobox({
             )}
 
             {displayItems.length === 0 ? (
-              <div className="px-3 py-4 text-center text-xs text-[var(--fgColor-subtle)]">
+              <div className="px-3 py-4 text-center text-xs text-[var(--signal-fg-tertiary)]">
                 {emptyLabel}
               </div>
             ) : (
@@ -303,17 +303,17 @@ function Combobox({
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
                       highlighted === globalIdx
-                        ? "bg-[var(--bgColor-accent-muted)] text-[var(--fgColor-accent)]"
+                        ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
                         : item.value === value
-                          ? "bg-[var(--bgColor-muted)] text-[var(--fgColor-default)]"
-                          : "text-[var(--fgColor-default)] hover:bg-[var(--bgColor-muted)]",
+                          ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+                          : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
                     )}
                     role="option"
                     aria-selected={item.value === value}
                   >
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.value === value && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--bgColor-accent-emphasis)]" />
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--signal-bg-accent-emphasis)]" />
                     )}
                   </button>
                 );
@@ -330,7 +330,7 @@ function Combobox({
                     onEmptyAction();
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
+                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
                 >
                   <PlusIcon className="h-3 w-3" />
                   {emptyLabel.includes("Create") ? emptyLabel : `Create new`}
@@ -342,7 +342,7 @@ function Combobox({
                     onCreate();
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--fgColor-muted)] transition-colors hover:bg-[var(--bgColor-muted)]"
+                  className="flex w-full items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
                 >
                   <PlusIcon className="h-3 w-3" />
                   Create new…
@@ -455,7 +455,7 @@ export function ContextSelector() {
           {projects.length === 0 ? (
             <button
               onClick={() => setProjectDialogOpen(true)}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:bg-[var(--bgColor-accent-muted)]"
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--signal-fg-accent)] transition-colors hover:bg-[var(--signal-bg-accent-muted)]"
             >
               <PlusIcon className="h-4 w-4" />
               Create Project
@@ -484,7 +484,7 @@ export function ContextSelector() {
             {envs.length === 0 ? (
               <button
                 onClick={() => setEnvDialogOpen(true)}
-                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--fgColor-accent)] transition-colors hover:bg-[var(--bgColor-accent-muted)]"
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-[var(--signal-fg-accent)] transition-colors hover:bg-[var(--signal-bg-accent-muted)]"
               >
                 <PlusIcon className="h-4 w-4" />
                 Create Environment
