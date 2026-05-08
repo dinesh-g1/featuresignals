@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Check,
-  DownloadIcon,
-  CloudIcon,
+  Download,
+  Cloud,
   Heart,
 } from "lucide-react";
 import {
@@ -257,7 +257,7 @@ function PricingCard({
       {isFeatured && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-accent-emphasis)] text-white shadow-sm">
-            <CloudIcon size={12} />
+            <Cloud size={12} />
             Most Popular
           </span>
         </div>
@@ -313,7 +313,7 @@ function PricingCard({
           }`}
         >
           {cta.label}
-          {cta.href.includes("docs.") && <DownloadIcon size={14} />}
+          {cta.href.includes("docs.") && <Download size={14} />}
         </a>
       ) : (
         <Link

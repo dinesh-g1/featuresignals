@@ -6,7 +6,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Package,
-  DownloadIcon,
+  Download,
 } from "lucide-react";
 import { MigrationPreview } from "@/components/migration-preview";
 
@@ -22,7 +22,7 @@ const migrationFacts = [
     desc: "All 8 SDKs support OpenFeature. Swap providers without changing a single line of application code. No vendor lock-in. Ever.",
   },
   {
-    icon: <DownloadIcon size={16} fill="var(--signal-fg-success)" />,
+    icon: <Download size={16} fill="var(--signal-fg-success)" />,
     title: "Export your data, anytime",
     desc: "Your flags, your data. Export everything in standard formats. We make it easy to leave — which is why most teams never do.",
   },

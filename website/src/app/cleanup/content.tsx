@@ -6,7 +6,7 @@ import {
   ArrowRight,
   Clock,
   GitBranch,
-  TrashIcon,
+  Trash2,
 } from "lucide-react";
 import { AiJanitorSimulator } from "@/components/ai-janitor-simulator";
 
@@ -23,7 +23,7 @@ const debtStats = [
       "Feature flags in production are dead — fully rolled out or abandoned, adding zero value",
   },
   {
-    icon: <TrashIcon size={16} fill="var(--signal-fg-danger)" />,
+    icon: <Trash2 size={16} fill="var(--signal-fg-danger)" />,
     stat: "3 PRs",
     label:
       "Average tech debt cleanup per stale flag: the flag check, the branch logic, and the tests",

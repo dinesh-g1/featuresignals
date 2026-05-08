@@ -9,12 +9,12 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  CloudIcon,
+  Cloud,
   Heart,
-  DownloadIcon,
+  Download,
   ShieldCheck,
   Rocket,
-  QuestionIcon,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -612,7 +612,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
                 : "bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)]",
             )}
           >
-            {isFeatured && <CloudIcon size={12} />}
+            {isFeatured && <Cloud size={12} />}
             {tier.badge}
           </span>
         </div>
@@ -663,7 +663,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
           )}
         >
           {tier.cta.label}
-          {tier.cta.href.includes("docs.") && <DownloadIcon size={14} />}
+          {tier.cta.href.includes("docs.") && <Download size={14} />}
         </a>
       ) : (
         <Link
@@ -673,7 +673,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
           )}
         >
           {tier.cta.label}
-          {tier.cta.href.includes("docs.") && <DownloadIcon size={14} />}
+          {tier.cta.href.includes("docs.") && <Download size={14} />}
         </Link>
       )}
     </motion.div>
@@ -972,7 +972,7 @@ function FaqSection() {
       <div className="mx-auto max-w-3xl px-6">
         <motion.div className="text-center mb-10" {...fadeUp}>
           <div className="inline-flex items-center gap-2 mb-4">
-            <QuestionIcon size={24} className="text-[var(--signal-fg-accent)]" />
+            <HelpCircle size={24} className="text-[var(--signal-fg-accent)]" />
           </div>
           <h2
             id="faq-heading"
@@ -1045,7 +1045,7 @@ function OpenSourcePromiseSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             {
-              icon: <DownloadIcon size={20} fill="#54aeff" />,
+              icon: <Download size={20} fill="#54aeff" />,
               title: "Apache 2.0",
               desc: "Free forever. Use it, fork it, ship it. No copyleft. No restrictions.",
             },

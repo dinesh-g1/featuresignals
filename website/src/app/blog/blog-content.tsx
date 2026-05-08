@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, RssIcon, Clock } from "lucide-react";
+import { ArrowRight, Rss, Clock } from "lucide-react";
 import type { BlogPost, BlogCategory } from "@/lib/blog-posts";
 import { allCategories } from "@/lib/blog-posts";
 import { cn } from "@/lib/utils";
@@ -205,7 +205,7 @@ function SubscribeSection() {
       <div className="mx-auto max-w-xl px-6 text-center">
         <motion.div {...fadeUp}>
           <div className="w-12 h-12 rounded-xl bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mx-auto mb-5">
-            <RssIcon size={22} className="text-[var(--signal-fg-accent)]" />
+            <Rss size={22} className="text-[var(--signal-fg-accent)]" />
           </div>
           <h2
             id="subscribe-heading"
@@ -221,7 +221,7 @@ function SubscribeSection() {
             href="/blog/rss.xml"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#cae8ff] transition-colors"
           >
-            <RssIcon size={16} />
+            <Rss size={16} />
             RSS Feed
           </a>
         </motion.div>

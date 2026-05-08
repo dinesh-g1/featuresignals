@@ -5,7 +5,6 @@ import {
   Rocket,
   Zap,
   ShieldCheck,
-  ShieldCheck,
   GitPullRequest,
   Activity,
   Code,
@@ -236,18 +235,10 @@ function HeroSection() {
           className="flex flex-wrap items-center justify-center gap-3 mb-10"
           {...fadeUp}
         >
-          <Badge
-            icon={ShieldCheck}
-            text="SOC 2 Type II"
-            variant="success"
-          />
+          <Badge icon={ShieldCheck} text="SOC 2 Type II" variant="success" />
           <Badge icon={Zap} text="Sub-ms Latency" variant="accent" />
           <Badge icon={Code} text="OpenFeature Native" variant="done" />
-          <Badge
-            icon={GitPullRequest}
-            text="Apache 2.0"
-            variant="attention"
-          />
+          <Badge icon={GitPullRequest} text="Apache 2.0" variant="attention" />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -1085,7 +1076,9 @@ function AbTestingSection() {
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Measure what moves{" "}
-              <span className="text-[var(--signal-fg-accent)]">your metrics</span>
+              <span className="text-[var(--signal-fg-accent)]">
+                your metrics
+              </span>
             </h2>
             <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Ship hypotheses, not guesses. Run A/B experiments directly on your

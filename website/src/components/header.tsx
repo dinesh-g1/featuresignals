@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ThreeBarsIcon, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -479,7 +479,7 @@ export function Header() {
             className="lg:hidden p-2 -mr-2 rounded-md text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
             aria-label="Open menu"
           >
-            <ThreeBarsIcon size={20} />
+            <Menu size={20} />
           </button>
         </nav>
       </div>

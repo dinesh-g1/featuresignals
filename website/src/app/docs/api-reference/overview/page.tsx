@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  PlayIcon,
-  KeyIcon,
-  LockIcon,
+  Play,
+  Key,
+  Lock,
 } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 import apiCategories from "@/data/api-endpoints";
@@ -52,7 +52,7 @@ export default function ApiOverviewPage() {
           border: "1px solid var(--signal-border-accent-emphasis)",
         }}
       >
-        <PlayIcon size={16} />
+        <Play size={16} />
         <span>Open Interactive Playground</span>
         <ArrowRight size={14} />
       </Link>
@@ -163,9 +163,9 @@ export default function ApiOverviewPage() {
                       style={{ color: "var(--signal-fg-secondary)" }}
                     >
                       {a === "Bearer JWT" ? (
-                        <LockIcon size={10} />
+                        <Lock size={10} />
                       ) : (
-                        <KeyIcon size={10} />
+                        <Key size={10} />
                       )}
                       {a}
                     </span>

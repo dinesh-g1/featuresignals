@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { CopyIcon, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   type SupportedLanguage,
@@ -390,7 +390,7 @@ export function CodeBlock({
             </>
           ) : (
             <>
-              <CopyIcon size={12} />
+              <Copy size={12} />
               <span>Copy</span>
             </>
           )}
@@ -479,7 +479,7 @@ export function CodeEditor({
             </>
           ) : (
             <>
-              <CopyIcon size={12} />
+              <Copy size={12} />
               <span>Copy</span>
             </>
           )}

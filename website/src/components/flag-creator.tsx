@@ -4,11 +4,11 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
-  PlusIcon,
+  Plus,
   ChevronRight,
   Rocket,
   Code,
-  InfoIcon,
+  Info,
   FileCode,
 } from "lucide-react";
 
@@ -40,7 +40,7 @@ const TYPE_OPTIONS: {
   {
     value: "number",
     label: "Number",
-    icon: <InfoIcon size={14} fill="var(--signal-fg-accent)" />,
+    icon: <Info size={14} fill="var(--signal-fg-accent)" />,
   },
   {
     value: "json",
@@ -291,7 +291,7 @@ export function FlagCreator() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
               style={{ boxShadow: "0 1px 0 0 #1f232826" }}
             >
-              <PlusIcon size={16} />
+              <Plus size={16} />
               Create Flag
             </button>
           </motion.form>

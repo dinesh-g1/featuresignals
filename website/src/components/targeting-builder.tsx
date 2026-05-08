@@ -3,8 +3,8 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  PlusIcon,
-  TrashIcon,
+  Plus,
+  Trash2,
   Zap,
   ChevronRight,
   Check,
@@ -243,7 +243,7 @@ export function TargetingBuilder() {
           onClick={addRule}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150"
         >
-          <PlusIcon size={14} />
+          <Plus size={14} />
           Add Rule
         </button>
       </div>
@@ -305,7 +305,7 @@ export function TargetingBuilder() {
                   className="ml-2 p-1 rounded text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-danger)] hover:bg-[var(--signal-bg-danger-muted)] transition-colors shrink-0"
                   aria-label="Remove rule"
                 >
-                  <TrashIcon size={14} />
+                  <Trash2 size={14} />
                 </button>
               </motion.div>
             ))

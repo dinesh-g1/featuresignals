@@ -4,11 +4,11 @@ import { useState, useCallback } from "react";
 import {
   ChevronDown,
   ChevronRight,
-  PlayIcon,
-  CopyIcon,
+  Play,
+  Copy,
   Check,
-  LockIcon,
-  KeyIcon,
+  Lock,
+  Key,
 } from "lucide-react";
 import type { ApiEndpoint, ApiCategory } from "@/data/api-endpoints";
 
@@ -145,7 +145,7 @@ function AuthBadge({ auth }: { auth: string }) {
   if (!auth || auth === "None") return null;
 
   const isApiKey = auth.toLowerCase().includes("api key");
-  const Icon = isApiKey ? KeyIcon : LockIcon;
+  const Icon = isApiKey ? Key : Lock;
 
   return (
     <span
@@ -329,7 +329,7 @@ function InlineTryIt({
         }}
       >
         <span className="text-xs font-semibold text-[var(--signal-fg-primary)] flex items-center gap-1.5">
-          <PlayIcon size={12} />
+          <Play size={12} />
           Try it
         </span>
         <div className="flex items-center gap-1.5">
@@ -346,7 +346,7 @@ function InlineTryIt({
             {copyState.copied ? (
               <Check size={12} />
             ) : (
-              <CopyIcon size={12} />
+              <Copy size={12} />
             )}
             {copyState.copied ? "Copied" : "Copy curl"}
           </button>
@@ -372,7 +372,7 @@ function InlineTryIt({
               </>
             ) : (
               <>
-                <PlayIcon size={12} />
+                <Play size={12} />
                 Send Request
               </>
             )}
@@ -663,7 +663,7 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
           aria-hidden="true"
         />
         <span className="text-[var(--signal-fg-secondary)] flex items-center gap-1.5">
-          <LockIcon size={14} />
+          <Lock size={14} />
           {authTypes}
         </span>
       </div>

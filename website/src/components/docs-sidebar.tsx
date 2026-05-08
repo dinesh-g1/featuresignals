@@ -5,15 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChevronRight,
-  ThreeBarsIcon,
+  Menu,
   X,
-  BookIcon,
+  Book,
   Rocket,
   Lightbulb,
   Code,
-  KeyIcon,
+  Key,
   ShieldCheck,
-  ServerIcon,
+  Server,
   Workflow,
   Package,
 } from "lucide-react";
@@ -102,7 +102,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "API Reference",
-    icon: KeyIcon,
+    icon: Key,
     links: [
       { label: "Overview", href: "/docs/api-reference/overview" },
       ...apiCategories.map((cat) => ({
@@ -165,7 +165,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "Deployment",
-    icon: ServerIcon,
+    icon: Server,
     links: [
       {
         label: "Docker Compose",
@@ -270,7 +270,7 @@ export function DocsSidebar() {
         }
         aria-expanded={mobileOpen}
       >
-        {mobileOpen ? <X size={20} /> : <ThreeBarsIcon size={20} />}
+        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Mobile overlay */}
@@ -315,7 +315,7 @@ export function DocsSidebar() {
             className="flex items-center gap-2 font-semibold text-[var(--signal-fg-primary)]"
             onClick={() => setMobileOpen(false)}
           >
-            <BookIcon size={18} />
+            <Book size={18} />
             <span>Documentation</span>
           </Link>
           <button
@@ -339,7 +339,7 @@ export function DocsSidebar() {
                 : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
             )}
           >
-            <BookIcon size={16} />
+            <Book size={16} />
             <span>Docs Home</span>
           </Link>
 

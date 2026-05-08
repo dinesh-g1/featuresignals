@@ -1,26 +1,26 @@
-import type { Icon } from "lucide-react";
+import type { ComponentType } from "react";
 import {
-  IterationsIcon,
+  Flag,
   FlaskConical,
   ShieldCheck,
-  CloudIcon,
-  StackIcon,
-  BookIcon,
+  Cloud,
+  Layers,
+  Book,
   Terminal,
   Package,
   GitBranch,
   Rocket,
   Lightbulb,
-  WebhookIcon,
-  SearchIcon,
-  LockIcon,
+  Webhook,
+  Search,
+  Lock,
 } from "lucide-react";
 
 export interface NavItem {
   title: string;
   description: string;
   href: string;
-  icon: Icon;
+  icon: ComponentType<{ size?: number; className?: string }>;
   external?: boolean;
   badge?: string;
 }
@@ -30,7 +30,7 @@ export const platformItems: NavItem[] = [
     title: "Core Features",
     description: "Flag engine, targeting, rollouts, A/B testing",
     href: "/features",
-    icon: IterationsIcon,
+    icon: Flag,
   },
   {
     title: "AI Janitor",
@@ -49,13 +49,13 @@ export const platformItems: NavItem[] = [
     title: "Integrations",
     description: "Terraform, Slack, GitHub, Jira, Datadog, webhooks",
     href: "/features/integrations",
-    icon: WebhookIcon,
+    icon: Webhook,
   },
   {
     title: "Use Cases",
     description: "CI/CD, canary releases, kill switches, experimentation",
     href: "/use-cases",
-    icon: StackIcon,
+    icon: Layers,
   },
 ];
 
@@ -64,13 +64,13 @@ export const learnMoreItems: NavItem[] = [
     title: "Pricing",
     description: "Flat-rate pricing. Unlimited MAUs. Never per-seat.",
     href: "/pricing",
-    icon: StackIcon,
+    icon: Layers,
   },
   {
     title: "Documentation",
     description: "Getting started, GitOps, OpenFeature guides",
     href: "https://docs.featuresignals.com",
-    icon: BookIcon,
+    icon: Book,
     external: true,
   },
 ];
@@ -80,7 +80,7 @@ export const developerItems: NavItem[] = [
     title: "Documentation",
     description: "Getting started, concepts, architecture guides",
     href: "https://docs.featuresignals.com",
-    icon: BookIcon,
+    icon: Book,
     external: true,
   },
   {
@@ -101,7 +101,7 @@ export const developerItems: NavItem[] = [
     title: "Terraform Provider",
     description: "Manage flags as infrastructure code",
     href: "https://registry.terraform.io/providers/featuresignals",
-    icon: CloudIcon,
+    icon: Cloud,
     external: true,
   },
   {

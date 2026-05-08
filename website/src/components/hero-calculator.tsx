@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  DownloadIcon,
+  Download,
   ShieldCheck,
 } from "lucide-react";
 import { CalculatorSlider } from "@/components/ui/calculator-slider";
@@ -121,7 +121,7 @@ export function HeroCalculator() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)] transition-colors"
                 style={{ boxShadow: "0 1px 0 0 #1f23280a" }}
               >
-                <DownloadIcon size={16} />
+                <Download size={16} />
                 Self-host in 3 minutes
               </a>
             </div>

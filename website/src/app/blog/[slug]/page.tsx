@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import { posts, getPostBySlug, type BlogSection } from "@/lib/blog-posts";
 import { CodeBlock } from "@/components/ui/code-editor";
 import { cn } from "@/lib/utils";
@@ -122,7 +122,7 @@ export default async function BlogPostPage({
           <span className="hidden sm:inline">{post.author.role}</span>
           <span className="text-[var(--signal-border-emphasis)]">·</span>
           <span className="flex items-center gap-1">
-            <CalendarIcon size={12} />
+            <Calendar size={12} />
             {post.date}
           </span>
           <span className="text-[var(--signal-border-emphasis)]">·</span>

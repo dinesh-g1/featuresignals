@@ -4,17 +4,17 @@ import { motion } from "framer-motion";
 import {
   Code,
   Users,
-  CloudIcon,
+  Cloud,
   Rocket,
   ShieldCheck,
-  BookIcon,
-  MegaphoneIcon,
-  GiftIcon,
+  Book,
+  Megaphone,
+  Gift,
   ArrowRight,
   Check,
   GitBranch,
-  ServerIcon,
-  TelescopeIcon,
+  Server,
+  Telescope,
   MessageSquarePlus,
 } from "lucide-react";
 import Link from "next/link";
@@ -82,7 +82,7 @@ const partnerTypes: PartnerType[] = [
     ctaHref: "/contact?reason=partnerships",
   },
   {
-    icon: CloudIcon,
+    icon: Cloud,
     title: "Cloud Marketplaces",
     description:
       "Make FeatureSignals available through the cloud platforms your customers already use.",
@@ -116,19 +116,19 @@ const benefits: Benefit[] = [
       "Get early access to new features, APIs, and SDKs before they ship. Influence the product roadmap with your integration feedback.",
   },
   {
-    icon: MegaphoneIcon,
+    icon: Megaphone,
     title: "Co-Marketing",
     description:
       "Joint case studies, webinars, blog posts, and social promotion. Get listed on our partners page and reach 500+ engineering teams.",
   },
   {
-    icon: BookIcon,
+    icon: Book,
     title: "Technical Support",
     description:
       "Dedicated partner engineering support with a Slack channel, quarterly architecture reviews, and integration testing assistance.",
   },
   {
-    icon: GiftIcon,
+    icon: Gift,
     title: "Revenue Sharing",
     description:
       "Solution partners earn 20% recurring commission on referred customers for the first 12 months. No caps. No quotas.",
@@ -175,12 +175,12 @@ const integrationCategories: IntegrationCategory[] = [
   },
   {
     name: "Infrastructure",
-    icon: ServerIcon,
+    icon: Server,
     items: ["Terraform", "Pulumi", "Ansible", "Crossplane", "AWS CDK", "CDKTF"],
   },
   {
     name: "Monitoring",
-    icon: TelescopeIcon,
+    icon: Telescope,
     items: [
       "Datadog",
       "Grafana",

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Code,
-  ServerIcon,
+  Server,
   Rocket,
   ShieldCheck,
   Activity,
@@ -16,14 +16,14 @@ import {
   CheckCircle,
   ArrowRight,
   Globe,
-  KeyIcon,
+  Key,
   Users,
   Workflow,
   Box,
-  CloudIcon,
-  BellIcon,
-  MegaphoneIcon,
-  BroadcastIcon,
+  Cloud,
+  Bell,
+  Megaphone,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +110,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "iac",
     label: "Infrastructure as Code",
-    icon: ServerIcon,
+    icon: Server,
     items: [
       {
         name: "Terraform",

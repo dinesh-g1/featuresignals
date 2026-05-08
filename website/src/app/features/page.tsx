@@ -5,7 +5,6 @@ import {
   Rocket,
   Zap,
   ShieldCheck,
-  ShieldCheck,
   GitPullRequest,
   Code,
   Lightbulb,
@@ -67,13 +66,7 @@ function CtaPrimary({
   className?: string;
 }) {
   return (
-    <a
-      href={href}
-      className={cn(
-        "btn-primary-success",
-        className,
-      )}
-    >
+    <a href={href} className={cn("btn-primary-success", className)}>
       {children}
       <ArrowRight size={16} />
     </a>
@@ -89,10 +82,7 @@ function CtaSecondary({
   children?: React.ReactNode;
   className?: string;
 }) {
-  const cls = cn(
-    "btn-secondary",
-    className,
-  );
+  const cls = cn("btn-secondary", className);
 
   if (href.startsWith("/")) {
     return (
@@ -330,9 +320,7 @@ function HeroSection() {
             viewport={{ once: true, margin: "-64px" }}
             transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div
-              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card"
-            >
+            <div className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card">
               {/* Card header */}
               <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
                 <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
@@ -636,7 +624,9 @@ function ExperimentsSection() {
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Measure what moves{" "}
-              <span className="text-[var(--signal-fg-accent)]">your metrics</span>
+              <span className="text-[var(--signal-fg-accent)]">
+                your metrics
+              </span>
             </h2>
             <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Run experiments directly on your feature flags — no separate tool
@@ -978,9 +968,7 @@ function MigrationSection() {
 
           {/* Right: Provider migration visual */}
           <motion.div {...fadeUpDelayed(0.1)} className="flex flex-col gap-5">
-            <div
-              className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card"
-            >
+            <div className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] overflow-hidden premium-card">
               <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
                 <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                   Migration Preview
@@ -1365,7 +1353,9 @@ function IntegrationsSection() {
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
             >
               Works with your{" "}
-              <span className="text-[var(--signal-fg-accent)]">entire stack</span>
+              <span className="text-[var(--signal-fg-accent)]">
+                entire stack
+              </span>
             </h2>
             <p className="text-base text-[var(--signal-fg-secondary)] mt-4 leading-relaxed max-w-lg">
               Eight native SDKs, infrastructure as code providers, Git
@@ -1523,10 +1513,7 @@ function FinalCtaSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <a
-              href={REGISTER_URL}
-              className="btn-primary-success"
-            >
+            <a href={REGISTER_URL} className="btn-primary-success">
               Start Free — No Credit Card
               <ArrowRight size={16} />
             </a>

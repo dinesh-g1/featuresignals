@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Rocket,
   ArrowRight,
-  DownloadIcon,
+  Download,
   ShieldCheck,
 } from "lucide-react";
 
@@ -85,7 +85,7 @@ export function FinalCta() {
             rel="noopener noreferrer"
             className="btn-secondary text-white border-white/20 hover:border-white/40 hover:bg-white/10"
           >
-            <DownloadIcon size={16} />
+            <Download size={16} />
             Self-Host in 3 Minutes
           </a>
         </motion.div>

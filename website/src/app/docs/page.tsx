@@ -3,11 +3,11 @@ import Link from "next/link";
 import {
   Rocket,
   Code,
-  KeyIcon,
+  Key,
   Lightbulb,
   GitBranch,
-  ServerIcon,
-  BookIcon,
+  Server,
+  Book,
   ShieldCheck,
   FlaskConical,
   Activity,
@@ -38,7 +38,7 @@ const quickLinks = [
     title: "API Reference",
     description: "REST API for flag management, evaluation, webhooks, and administration.",
     href: "/docs/api-reference/overview",
-    icon: KeyIcon,
+    icon: Key,
   },
   {
     title: "AI Janitor",
@@ -56,7 +56,7 @@ const quickLinks = [
     title: "Deployment",
     description: "Deploy via Docker Compose, self-host, or configure for production.",
     href: "/docs/deployment/docker-compose",
-    icon: ServerIcon,
+    icon: Server,
   },
 ];
 
@@ -157,7 +157,7 @@ export default function DocsPage() {
       {/* Help footer */}
       <div className="mt-16 p-6 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
         <div className="flex items-start gap-3">
-          <BookIcon size={20} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
+          <Book size={20} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <div>
             <h3 className="font-semibold text-[var(--signal-fg-primary)] mb-1">
               Can&apos;t find what you&apos;re looking for?
