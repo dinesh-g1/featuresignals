@@ -7,7 +7,7 @@ export {
   CardContent,
   CardFooter,
 } from "./card";
-export { Input } from "./input";
+export { Input, type InputProps } from "./input";
 export { Select, type SelectOption, type SelectProps } from "./select";
 export {
   Badge,
@@ -20,7 +20,7 @@ export { EmptyState } from "./empty-state";
 export { LoadingSpinner } from "./loading-spinner";
 export { PageHeader, PageHeaderTabs, StatCard } from "./page-header";
 export { Label } from "./label";
-export { Textarea } from "./textarea";
+export { Textarea, type TextareaProps } from "./textarea";
 export { ErrorDisplay, type ErrorDisplayProps } from "./error-display";
 export { InlineError, type InlineErrorProps } from "./inline-error";
 export {
@@ -53,6 +53,7 @@ export {
   TableCell,
 } from "./table";
 export { FormField } from "./form-field";
+export { FormLayout, FormSection, AdvancedFields } from "./form";
 export { Switch } from "./switch";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 export {

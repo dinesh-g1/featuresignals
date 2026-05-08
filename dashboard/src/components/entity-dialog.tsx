@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/ui/form-field";
 import { LoaderIcon } from "@/components/icons/nav-icons";
 import { ENVIRONMENT_COLORS } from "@/lib/constants";
 import type { Environment } from "@/lib/types";
@@ -102,8 +103,12 @@ export function CreateEnvironmentDialog({
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="create-env-name">Environment Name</Label>
+          <FormField
+            label="Environment Name"
+            htmlFor="create-env-name"
+            error={fieldError}
+            required
+          >
             <Input
               id="create-env-name"
               value={name}
@@ -111,14 +116,9 @@ export function CreateEnvironmentDialog({
                 setName(e.target.value);
                 setFieldError("");
               }}
-              placeholder="e.g. Production, Staging, Development"
-              className="mt-1"
               autoFocus
             />
-            {fieldError && (
-              <p className="text-xs text-red-500 mt-1">{fieldError}</p>
-            )}
-          </div>
+          </FormField>
           <div>
             <Label>Color</Label>
             <div className="mt-2 flex gap-2">
@@ -242,8 +242,12 @@ export function EditEnvironmentDialog({
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="edit-env-name">Environment Name</Label>
+          <FormField
+            label="Environment Name"
+            htmlFor="edit-env-name"
+            error={fieldError}
+            required
+          >
             <Input
               id="edit-env-name"
               value={name}
@@ -251,13 +255,9 @@ export function EditEnvironmentDialog({
                 setName(e.target.value);
                 setFieldError("");
               }}
-              className="mt-1"
               autoFocus
             />
-            {fieldError && (
-              <p className="text-xs text-red-500 mt-1">{fieldError}</p>
-            )}
-          </div>
+          </FormField>
           <div>
             <Label>Color</Label>
             <div className="mt-2 flex gap-2">

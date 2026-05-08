@@ -5,7 +5,9 @@ import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, Button, Badge } from "@/components/ui";
+import { showFeedback } from "@/components/action-feedback";
+import { PageHeader } from "@/components/page-header";
+import { Card, Button, Badge } from "@/components/ui";
 import {
   CreateEnvironmentDialog,
   EditEnvironmentDialog,
@@ -128,7 +130,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
     const env = await api.createEnvironment(token, currentProjectId, data);
     EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
     setCurrentEnv(env.id);
-    toast("Environment created", "success");
+    showFeedback("Environment created", "success");
     refetch();
     onRefresh();
     return env;
@@ -148,7 +150,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
       data,
     );
     EventBus.dispatch(EVENTS.ENVIRONMENTS_CHANGED);
-    toast("Environment updated", "success");
+    showFeedback("Environment updated", "success");
     refetch();
     onRefresh();
     return env;
@@ -164,7 +166,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
         setCurrentEnv(null);
       }
       setDeletingEnv(null);
-      toast("Environment deleted", "success");
+      showFeedback("Environment deleted", "success");
       refetch();
       onRefresh();
     } catch (err: unknown) {
@@ -179,7 +181,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
 
   function quickSelect(env: Environment) {
     setCurrentEnv(env.id);
-    toast(`Switched to ${env.name}`, "success");
+    showFeedback(`Switched to ${env.name}`, "info");
   }
 
   if (loading) {
@@ -207,11 +209,16 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
       <PageHeader
         title="Environments"
         description={`Manage deployment environments for ${currentProject?.name || "this project"}`}
-        actions={
+        primaryAction={
           <Button onClick={openCreateDialog}>
             <PlusIcon className="mr-2 h-4 w-4" />
             New Environment
           </Button>
+        }
+        statusBadge={
+          <span className="inline-flex items-center rounded-full bg-[var(--signal-bg-secondary)] px-2.5 py-0.5 text-xs font-medium text-[var(--signal-fg-secondary)] ring-1 ring-inset ring-[var(--signal-border-default)]">
+            {envs.length} environment{envs.length !== 1 ? "s" : ""}
+          </span>
         }
       />
 

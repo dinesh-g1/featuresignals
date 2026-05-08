@@ -90,7 +90,8 @@ func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	all := dto.ProjectSliceFromDomain(projects)
 	p := dto.ParsePagination(r)
 	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	links := domain.LinksForProjectsCollection()
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
 }
 
 func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +99,12 @@ func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	httputil.JSON(w, http.StatusOK, dto.ProjectFromDomain(project))
+	resp := dto.ProjectFromDomain(project)
+	respWithLinks := map[string]interface{}{
+		"project": resp,
+		"_links":  domain.LinksForProject(project.ID),
+	}
+	httputil.JSON(w, http.StatusOK, respWithLinks)
 }
 
 func (h *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -252,7 +258,8 @@ func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	all := dto.EnvironmentSliceFromDomain(envs)
 	p := dto.ParsePagination(r)
 	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	links := domain.LinksForEnvironmentsCollection(projectID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
 }
 
 func (h *EnvironmentHandler) Delete(w http.ResponseWriter, r *http.Request) {

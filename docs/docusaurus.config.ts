@@ -110,28 +110,23 @@ const config: Config = {
           position: "left",
         },
         {
-          type: "docSidebar",
-          sidebarId: "docs",
+          type: "dropdown",
+          label: "Docs",
           position: "left",
-          label: "Integration Guide",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "sdks",
-          position: "left",
-          label: "SDKs",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "api",
-          position: "left",
-          label: "API Reference",
-        },
-        {
-          type: "docSidebar",
-          sidebarId: "compliance",
-          position: "left",
-          label: "Security & Compliance",
+          items: [
+            {
+              label: "Concepts — Understand",
+              to: "/intro",
+            },
+            {
+              label: "Guides — Build & Deploy",
+              to: "/getting-started/quickstart",
+            },
+            {
+              label: "Reference — API, SDKs & More",
+              to: "/api-reference/overview",
+            },
+          ],
         },
         {
           href: "https://github.com/dinesh-g1/featuresignals",

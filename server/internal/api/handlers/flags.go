@@ -216,7 +216,8 @@ func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
 	all := dto.FlagSliceFromDomain(flags)
 	p := dto.ParsePagination(r)
 	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	links := domain.LinksForFlagsCollection(projectID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
 }
 
 func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -236,7 +237,13 @@ func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, dto.FlagFromDomain(flag))
+	resp := dto.FlagFromDomain(flag)
+	// Embed HATEOAS links directly into the flag response for discoverability
+	respWithLinks := map[string]interface{}{
+		"flag":   resp,
+		"_links": domain.LinksForFlag(projectID, flagKey),
+	}
+	httputil.JSON(w, http.StatusOK, respWithLinks)
 }
 
 func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {

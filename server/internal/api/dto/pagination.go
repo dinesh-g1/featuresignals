@@ -4,6 +4,8 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+
+	"github.com/featuresignals/server/internal/domain"
 )
 
 const (
@@ -108,8 +110,9 @@ type PaginationInfo struct {
 }
 
 type PaginatedResponse[T any] struct {
-	Data []T            `json:"data"`
-	Meta PaginationMeta `json:"meta"`
+	Data  []T            `json:"data"`
+	Meta  PaginationMeta `json:"meta"`
+	Links domain.Links    `json:"_links,omitempty"`
 	// ── Backward-compatible flat fields ──────────────────────────
 	Total   int  `json:"total"`
 	Limit   int  `json:"limit"`
@@ -117,7 +120,7 @@ type PaginatedResponse[T any] struct {
 	HasMore bool `json:"has_more"`
 }
 
-func NewPaginatedResponse[T any](items []T, total, limit, offset int) PaginatedResponse[T] {
+func NewPaginatedResponse[T any](items []T, total, limit, offset int, links ...domain.Link) PaginatedResponse[T] {
 	if items == nil {
 		items = make([]T, 0)
 	}
@@ -131,6 +134,11 @@ func NewPaginatedResponse[T any](items []T, total, limit, offset int) PaginatedR
 		lastPage = int(math.Ceil(float64(total) / float64(limit)))
 	}
 
+	linksField := domain.Links(links)
+	if linksField == nil {
+		linksField = domain.Links{}
+	}
+
 	return PaginatedResponse[T]{
 		Data:  items,
 		Total: total,
@@ -142,6 +150,7 @@ func NewPaginatedResponse[T any](items []T, total, limit, offset int) PaginatedR
 				LastPage:     lastPage,
 			},
 		},
+		Links:   linksField,
 		Limit:   limit,
 		Offset:  offset,
 		HasMore: offset+len(items) < total,

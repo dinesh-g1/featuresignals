@@ -10,6 +10,7 @@ import { Select, type SelectOption } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FormField } from "@/components/ui/form-field";
 import { ProgressiveDisclosure } from "@/components/ui/progressive-disclosure";
+import { FieldHelp } from "@/components/field-help";
 import { toast } from "@/components/toast";
 import {
   FlagIcon,
@@ -220,15 +221,19 @@ export function SimpleFlagCreate({
     >
       {/* ── Flag Name ──────────────────────────────────────────── */}
       <FormField label="Flag name" htmlFor={nameId} required>
-        <Input
-          id={nameId}
-          type="text"
-          placeholder="e.g. Dark Mode"
-          value={name}
-          onChange={handleNameChange}
-          disabled={submitting}
-          autoFocus
-        />
+        <div className="flex items-center gap-1.5">
+          <Input
+            id={nameId}
+            type="text"
+            
+            value={name}
+            onChange={handleNameChange}
+            disabled={submitting}
+            autoFocus
+            className="flex-1"
+          />
+          <FieldHelp docsKey="flags" label="flag name" />
+        </div>
       </FormField>
 
       {/* ── Flag Key ───────────────────────────────────────────── */}
@@ -238,26 +243,33 @@ export function SimpleFlagCreate({
         required
         hint="Used in your code to reference this flag. Auto-generated from name."
       >
-        <Input
-          id={keyId}
-          type="text"
-          placeholder="e.g. dark-mode"
-          value={key}
-          onChange={handleKeyChange}
-          disabled={submitting}
-          className="font-mono text-sm"
-        />
+        <div className="flex items-center gap-1.5">
+          <Input
+            id={keyId}
+            type="text"
+            
+            value={key}
+            onChange={handleKeyChange}
+            disabled={submitting}
+            className="font-mono text-sm flex-1"
+          />
+          <FieldHelp docsKey="flags" label="flag key" />
+        </div>
       </FormField>
 
       {/* ── Flag Type ──────────────────────────────────────────── */}
       <FormField label="Flag type" htmlFor={typeId}>
-        <Select
-          value={flagType}
-          onValueChange={setFlagType}
-          options={FLAG_TYPE_OPTIONS}
-          icon={FLAG_TYPE_ICONS[flagType]}
-          disabled={submitting}
-        />
+        <div className="flex items-center gap-1.5">
+          <Select
+            value={flagType}
+            onValueChange={setFlagType}
+            options={FLAG_TYPE_OPTIONS}
+            icon={FLAG_TYPE_ICONS[flagType]}
+            disabled={submitting}
+            className="flex-1"
+          />
+          <FieldHelp docsKey="flags" label="flag types" />
+        </div>
       </FormField>
 
       {/* ── Description ────────────────────────────────────────── */}
@@ -266,14 +278,18 @@ export function SimpleFlagCreate({
         htmlFor={descId}
         hint="Optional. Describe what this flag controls."
       >
-        <Input
-          id={descId}
-          type="text"
-          placeholder="e.g. Controls the new dark mode theme across the dashboard"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={submitting}
-        />
+        <div className="flex items-center gap-1.5">
+          <Input
+            id={descId}
+            type="text"
+            
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={submitting}
+            className="flex-1"
+          />
+          <FieldHelp docsKey="flags" label="flag description" />
+        </div>
       </FormField>
 
       {/* ── On/Off Toggle ──────────────────────────────────────── */}
@@ -312,7 +328,7 @@ export function SimpleFlagCreate({
           >
             <Input
               type="text"
-              placeholder="e.g. beta, ui, payment"
+              
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               disabled={submitting}

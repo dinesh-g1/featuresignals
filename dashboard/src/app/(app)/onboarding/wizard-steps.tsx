@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   SparklesIcon,
@@ -292,31 +293,25 @@ export function StepNameProject({
       </div>
 
       <form noValidate onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
+        <FormField
+          label="Project Name"
+          htmlFor="onboarding-project-name"
+          error={fieldError}
+          required
+        >
           <Input
+            id="onboarding-project-name"
             value={projectName}
             onChange={(e) => {
               setProjectName(e.target.value);
               setFieldError("");
               setApiError(null);
             }}
-            placeholder="My App"
             className="text-lg h-12"
-            aria-invalid={!!fieldError}
-            aria-describedby={fieldError ? "project-name-error" : undefined}
             autoFocus
             disabled={creating}
           />
-          {fieldError && (
-            <p
-              id="project-name-error"
-              className="text-xs text-[var(--signal-fg-danger)]"
-              role="alert"
-            >
-              {fieldError}
-            </p>
-          )}
-        </div>
+        </FormField>
 
         {/* Preview */}
         <PreviewCard

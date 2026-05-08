@@ -18,7 +18,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  BuildingIcon, FolderOpenIcon, PlusIcon, PencilIcon, TrashIcon, ArrowRightIcon, AlertIcon, LoaderIcon
+  BuildingIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  ArrowRightIcon,
+  AlertIcon,
+  LoaderIcon,
 } from "@/components/icons/nav-icons";
 import { toast } from "@/components/toast";
 import Link from "next/link";
@@ -176,18 +183,24 @@ export default function SettingsGeneralPage() {
               <h2 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 Organization
               </h2>
-              <p className="text-xs text-[var(--signal-fg-secondary)]">Your workspace details</p>
+              <p className="text-xs text-[var(--signal-fg-secondary)]">
+                Your workspace details
+              </p>
             </div>
           </div>
           <dl className="space-y-3">
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-[var(--signal-fg-secondary)]">Name</dt>
+              <dt className="text-sm text-[var(--signal-fg-secondary)]">
+                Name
+              </dt>
               <dd className="text-sm font-medium text-[var(--signal-fg-primary)]">
                 {organization?.name || "—"}
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-[var(--signal-fg-secondary)]">Plan</dt>
+              <dt className="text-sm text-[var(--signal-fg-secondary)]">
+                Plan
+              </dt>
               <dd>
                 <Badge
                   variant={planVariant}
@@ -198,7 +211,9 @@ export default function SettingsGeneralPage() {
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-[var(--signal-fg-secondary)]">Projects</dt>
+              <dt className="text-sm text-[var(--signal-fg-secondary)]">
+                Projects
+              </dt>
               <dd className="text-sm font-medium text-[var(--signal-fg-primary)]">
                 {projects.length}
               </dd>
@@ -223,13 +238,17 @@ export default function SettingsGeneralPage() {
           {currentProject ? (
             <dl className="space-y-3">
               <div className="flex items-center justify-between">
-                <dt className="text-sm text-[var(--signal-fg-secondary)]">Name</dt>
+                <dt className="text-sm text-[var(--signal-fg-secondary)]">
+                  Name
+                </dt>
                 <dd className="text-sm font-medium text-[var(--signal-fg-primary)]">
                   {currentProject.name}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-sm text-[var(--signal-fg-secondary)]">Slug</dt>
+                <dt className="text-sm text-[var(--signal-fg-secondary)]">
+                  Slug
+                </dt>
                 <dd className="font-mono text-sm text-[var(--signal-fg-secondary)]">
                   {currentProject.slug}
                 </dd>
@@ -247,7 +266,9 @@ export default function SettingsGeneralPage() {
       <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-[var(--signal-fg-primary)]">Projects</h2>
+            <h2 className="text-base font-semibold text-[var(--signal-fg-primary)]">
+              Projects
+            </h2>
             <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
               Manage all projects in your organization. Deleting a project
               removes all environments, flags, and segments within it.

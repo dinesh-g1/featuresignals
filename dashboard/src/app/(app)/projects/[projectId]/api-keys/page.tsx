@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
+import { FormField, FormLayout } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -180,46 +181,42 @@ export default function APIKeysPage() {
       <form
         onSubmit={handleCreate}
         noValidate
-        className="flex flex-col gap-2 sm:flex-row"
       >
-        <Input
-          value={form.name}
-          onChange={(e) => {
-            setFieldError("");
-            setForm({ ...form, name: e.target.value });
-          }}
-          placeholder="Key name"
-          required
-          aria-invalid={!!fieldError}
-          aria-describedby={fieldError ? "api-key-name-error" : undefined}
-          className="flex-1"
-        />
-        {fieldError && (
-          <p
-            className="text-xs text-red-500"
-            role="alert"
-            id="api-key-name-error"
+        <FormLayout>
+          <FormField
+            label="Key Name"
+            error={fieldError}
+            required
+            hint="A human-readable name to identify this API key"
           >
-            {fieldError}
-          </p>
-        )}
-        <div className="sm:w-auto">
-          <Select
-            value={form.type}
-            onValueChange={(val) => setForm({ ...form, type: val })}
-            options={KEY_TYPE_OPTIONS}
-          />
-        </div>
-        <Input
-          type="datetime-local"
-          value={form.expires_at}
-          onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-          placeholder="Expires (optional)"
-          className="sm:w-auto"
-        />
-        <Button type="submit" className="shrink-0">
-          Create Key
-        </Button>
+            <Input
+              value={form.name}
+              onChange={(e) => {
+                setFieldError("");
+                setForm({ ...form, name: e.target.value });
+              }}
+              required
+            />
+          </FormField>
+          <FormField label="Key Type" hint="Server keys can evaluate all flags. Client keys are safe for browser use.">
+            <Select
+              value={form.type}
+              onValueChange={(val) => setForm({ ...form, type: val })}
+              options={KEY_TYPE_OPTIONS}
+            />
+          </FormField>
+          <FormField
+            label="Expiration"
+            hint="Optional. Leave blank for a key that never expires."
+          >
+            <Input
+              type="datetime-local"
+              value={form.expires_at}
+              onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+            />
+          </FormField>
+          <Button type="submit">Create Key</Button>
+        </FormLayout>
       </form>
 
       <Card>

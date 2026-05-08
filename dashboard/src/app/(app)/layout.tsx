@@ -7,6 +7,7 @@ import { ContextBar } from "@/components/context-bar";
 import { AuthGuard } from "@/components/auth-guard";
 import { CommandPalette } from "@/components/command-palette";
 import { toast, ToastContainer } from "@/components/toast";
+import { ActionFeedbackContainer } from "@/components/action-feedback";
 import { EnvColorBar } from "@/components/env-color-bar";
 import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
@@ -19,6 +20,7 @@ import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog"
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Logo } from "@/components/logo";
+import { useAxe } from '@/lib/axe';
 
 function UpgradeRequiredListener() {
   const router = useRouter();
@@ -83,6 +85,7 @@ function TourGate() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  useAxe();
   const router = useRouter();
   const pathname = usePathname();
   const currentProjectId = useAppStore((s) => s.currentProjectId);
@@ -111,7 +114,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Top bar: Logo + Project/Env + Search + Bell + User — identical everywhere */}
           <ContextBar />
 
-          <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+          <main
+            id="main-content"
+            className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6"
+          >
             <EnvColorBar />
             {children}
           </main>
@@ -122,6 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <CommandPalette />
       <ToastContainer />
+      <ActionFeedbackContainer />
       <UpgradeRequiredListener />
       <TourGate />
       <FeedbackWidget />

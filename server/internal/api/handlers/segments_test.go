@@ -212,11 +212,19 @@ func TestSegmentHandler_Get(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 
-	var seg domain.Segment
-	json.Unmarshal(w.Body.Bytes(), &seg)
+	var body struct {
+		Segment domain.Segment `json:"segment"`
+		Links   []domain.Link  `json:"_links"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 
-	if seg.Name != "My Segment" {
-		t.Errorf("expected 'My Segment', got '%s'", seg.Name)
+	if body.Segment.Name != "My Segment" {
+		t.Errorf("expected 'My Segment', got '%s'", body.Segment.Name)
+	}
+	if len(body.Links) == 0 {
+		t.Error("expected HATEOAS links in response")
 	}
 }
 

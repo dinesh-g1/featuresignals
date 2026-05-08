@@ -31,7 +31,9 @@ describe("EnhancedEmptyState", () => {
     it("shows default description", () => {
       render(<EnhancedEmptyState variant="no-flags" title="No flags yet" />);
 
-      expect(screen.getByText(/create your first feature flag/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/create your first flag to start managing features/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -69,7 +71,12 @@ describe("EnhancedEmptyState", () => {
 
   describe("all-archived variant", () => {
     it("renders archive emoji", () => {
-      render(<EnhancedEmptyState variant="all-archived" title="All flags are archived" />);
+      render(
+        <EnhancedEmptyState
+          variant="all-archived"
+          title="All flags are archived"
+        />,
+      );
 
       expect(screen.getByText("📦")).toBeInTheDocument();
     });
@@ -124,8 +131,12 @@ describe("EnhancedEmptyState", () => {
         />,
       );
 
-      expect(screen.getByRole("button", { name: "Primary" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Secondary" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Primary" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Secondary" }),
+      ).toBeInTheDocument();
     });
   });
 });

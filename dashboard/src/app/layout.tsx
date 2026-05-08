@@ -47,6 +47,13 @@ export default function RootLayout({
     <html lang="en" className="h-full scroll-smooth">
       <head />
       <body className="min-h-full flex flex-col bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] font-sans antialiased selection:bg-[var(--signal-bg-accent-emphasis)] selection:text-white">
+        {/* Skip-to-content link — visible on focus for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-[var(--signal-bg-accent-emphasis)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg focus:outline-none"
+        >
+          Skip to content
+        </a>
         {children}
       </body>
     </html>

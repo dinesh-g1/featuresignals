@@ -23,6 +23,8 @@ import {
   LoaderIcon,
 } from "@/components/icons/nav-icons";
 import { toast } from "@/components/toast";
+import { showFeedback } from "@/components/action-feedback";
+import { PageHeader } from "@/components/page-header";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -112,14 +114,14 @@ export default function ProjectsPage() {
           name: name.trim(),
           slug: slug.trim() || undefined,
         });
-        toast("Project updated", "success");
+        showFeedback("Project updated.", "success");
       } else {
         const project = await api.createProject(token, {
           name: name.trim(),
           slug: slug.trim() || undefined,
         });
         setCurrentProject(project.id);
-        toast("Project created", "success");
+        showFeedback("Project created.", "success");
       }
       window.dispatchEvent(new Event("fs:projects:changed"));
       setDialogOpen(false);
@@ -138,7 +140,7 @@ export default function ProjectsPage() {
     try {
       setSubmitting(true);
       await api.deleteProject(token, deleting.id);
-      toast("Project deleted", "success");
+      showFeedback("Project deleted.", "success");
       if (projectId === deleting.id) {
         setCurrentProject("");
       }
@@ -223,15 +225,21 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <>
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-[var(--signal-fg-primary)]">
-              Projects
-            </h1>
-            <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
-              Projects group your flags, environments, and segments together.
-            </p>
-          </div>
+          <PageHeader
+            title="Projects"
+            description="Projects group your flags, environments, and segments together."
+            primaryAction={
+              <Button onClick={openCreate} variant="primary">
+                <PlusIcon className="h-4 w-4 mr-1.5" />
+                Create project
+              </Button>
+            }
+            statusBadge={
+              <span className="inline-flex items-center rounded-full bg-[var(--signal-bg-secondary)] px-2.5 py-0.5 text-xs font-medium text-[var(--signal-fg-secondary)] ring-1 ring-inset ring-[var(--signal-border-default)]">
+                {projects.length} project{projects.length !== 1 ? "s" : ""}
+              </span>
+            }
+          />
           {/* Project cards grid */}
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {projects.map((project) => {
@@ -254,8 +262,9 @@ export default function ProjectsPage() {
                       }}
                       className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-accent)]"
                       title="Edit project"
+                      aria-label={`Edit ${project.name}`}
                     >
-                      <PencilIcon className="h-3.5 w-3.5" />
+                      <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -264,8 +273,9 @@ export default function ProjectsPage() {
                       }}
                       className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-danger)]"
                       title="Delete project"
+                      aria-label={`Delete ${project.name}`}
                     >
-                      <TrashIcon className="h-3.5 w-3.5" />
+                      <TrashIcon className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </div>
 
@@ -302,7 +312,7 @@ export default function ProjectsPage() {
               className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--signal-border-default)] flex flex-col items-center justify-center gap-2 text-[var(--signal-fg-secondary)] hover:border-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)] transition-all duration-200"
             >
               <PlusIcon className="h-8 w-8" />
-              <span className="text-sm font-medium">Create Project</span>
+              <span className="text-sm font-medium">Create project</span>
             </button>
           </div>
         </>

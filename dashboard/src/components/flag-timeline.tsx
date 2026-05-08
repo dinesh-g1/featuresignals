@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn, timeAgo } from "@/lib/utils";
@@ -400,11 +401,11 @@ export function FlagTimeline({ flagId }: FlagTimelineProps) {
         {/* View full audit log link */}
         <div className="border-t border-[var(--signal-border-default)] px-4 py-3 sm:px-6">
           <Button variant="ghost" size="sm" className="text-xs" asChild>
-            <a href="/activity" className="inline-flex items-center gap-1">
+            <Link href="/activity" className="inline-flex items-center gap-1">
               <HistoryIcon className="h-3 w-3" />
               View full audit log
               <ChevronRightIcon className="h-3 w-3" />
-            </a>
+            </Link>
           </Button>
         </div>
       </CardContent>

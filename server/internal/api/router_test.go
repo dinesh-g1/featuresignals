@@ -611,7 +611,7 @@ func TestNonexistentRoute_Returns404(t *testing.T) {
 		t.Errorf("404 Content-Type: expected application/json, got %q", ct)
 	}
 
-	var body map[string]string
+	var body map[string]interface{}
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("404 response is not valid JSON: %v", err)
 	}
@@ -637,7 +637,7 @@ func TestMethodNotAllowed_Returns405(t *testing.T) {
 		t.Errorf("405 Content-Type: expected application/json, got %q", ct)
 	}
 
-	var body map[string]string
+	var body map[string]interface{}
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("405 response is not valid JSON: %v", err)
 	}

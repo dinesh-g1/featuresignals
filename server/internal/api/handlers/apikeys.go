@@ -213,7 +213,8 @@ func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
 	all := dto.APIKeySliceFromDomain(keys)
 	p := dto.ParsePagination(r)
 	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	links := domain.LinksForAPIKeysCollection(env.ID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
 }
 
 func (h *APIKeyHandler) Revoke(w http.ResponseWriter, r *http.Request) {

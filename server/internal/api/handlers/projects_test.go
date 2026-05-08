@@ -155,11 +155,19 @@ func TestProjectHandler_Get(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var project domain.Project
-	json.Unmarshal(w.Body.Bytes(), &project)
+	var body struct {
+		Project domain.Project   `json:"project"`
+		Links   []domain.Link    `json:"_links"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 
-	if project.Name != "Test" {
-		t.Errorf("expected 'Test', got '%s'", project.Name)
+	if body.Project.Name != "Test" {
+		t.Errorf("expected 'Test', got '%s'", body.Project.Name)
+	}
+	if len(body.Links) == 0 {
+		t.Error("expected HATEOAS links in response")
 	}
 }
 

@@ -9,6 +9,17 @@ import { VisualRuleBuilder } from "@/components/visual-rule-builder";
 import { useEditorPreference } from "@/hooks/use-editor-preference";
 import { FlagTimeline } from "@/components/flag-timeline";
 import {
+  EvalDecisionTree,
+  buildEvalStepsFromInspect,
+} from "@/components/eval-decision-tree";
+import { EvalReasonBadge } from "@/components/eval-reason-badge";
+import { EvalTraceViewer } from "@/components/eval-trace-viewer";
+import type {
+  EvalStep,
+  EvalFinalResult,
+} from "@/components/eval-decision-tree";
+import type { EvalTraceStep } from "@/components/eval-trace-viewer";
+import {
   Card,
   CardContent,
   Button,
@@ -23,9 +34,13 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  FormField,
+  FormLayout,
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { toast } from "@/components/toast";
+import { showFeedback } from "@/components/action-feedback";
+import { PageHeader } from "@/components/page-header";
 import { useFlagToggle } from "@/hooks/use-flag-toggle";
 import { ProductionSafetyGate } from "@/components/production-safety-gate";
 import { ArrowLeftIcon, AlertIcon, XIcon } from "@/components/icons/nav-icons";
@@ -49,11 +64,13 @@ export default function FlagDetailPage() {
   const [state, setState] = useState<FlagState | null>(null);
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState("evaluation");
 
   // Safety-gated toggle
-  const selectedEnvName = envs.find((e) => e.id === selectedEnv)?.name ?? "Production";
-  const isSelectedEnvProduction = selectedEnvName.toLowerCase() === "production";
+  const selectedEnvName =
+    envs.find((e) => e.id === selectedEnv)?.name ?? "Production";
+  const isSelectedEnvProduction =
+    selectedEnvName.toLowerCase() === "production";
   const {
     toggle: detailToggle,
     gateOpen: detailGateOpen,
@@ -232,7 +249,7 @@ export default function FlagDetailPage() {
       const updated = await api.updateFlag(token, projectId, flagKey, editForm);
       setFlag(updated);
       setEditing(false);
-      toast("Flag updated", "success");
+      showFeedback("Flag updated", "success");
     } catch {
       toast("Failed to update flag", "error");
     }
@@ -257,7 +274,7 @@ export default function FlagDetailPage() {
       );
       setShowPromote(false);
       setPromoteTarget("");
-      toast("Flag promoted successfully", "success");
+      showFeedback("Flag promoted", "success");
     } catch {
       toast("Failed to promote flag", "error");
     } finally {
@@ -383,82 +400,74 @@ export default function FlagDetailPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => router.push(`/projects/${projectId}/flags`)}
-              className="text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] shrink-0"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-bold font-mono text-[var(--signal-fg-primary)] truncate sm:text-2xl">
-              {flag.key}
-            </h1>
+      <PageHeader
+        title={<span className="font-mono">{flag.key}</span>}
+        description={`${flag.name} · ${flag.flag_type} · Last modified ${timeAgo(flag.updated_at)}`}
+        breadcrumb={[
+          { label: "Flags", href: `/projects/${projectId}/flags` },
+          { label: flag.key, href: "" },
+        ]}
+        primaryAction={
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedEnv}
+              onValueChange={setSelectedEnv}
+              options={envOptions}
+              placeholder="Select environment…"
+            />
+            <Switch
+              checked={state?.enabled ?? false}
+              onCheckedChange={toggleFlag}
+              aria-label="Toggle flag"
+            />
           </div>
-          <div className="mt-1 ml-9 flex flex-wrap items-center gap-2 sm:ml-11">
-            <span className="text-sm text-[var(--signal-fg-secondary)]">
-              {flag.name} &middot; {flag.flag_type}
-            </span>
+        }
+        secondaryActions={
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setShowPromote(!showPromote);
+                setPromoteTarget("");
+              }}
+            >
+              Promote
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setEditing(!editing)}
+            >
+              {editing ? "Cancel Edit" : "Edit"}
+            </Button>
+            <Button
+              size="sm"
+              variant="danger-ghost"
+              onClick={() => setConfirmDelete(true)}
+            >
+              Delete
+            </Button>
+          </div>
+        }
+        statusBadge={
+          <div className="flex items-center gap-1.5">
             {flag.category && <CategoryBadge category={flag.category} />}
             {flag.status && <StatusBadge status={flag.status} />}
           </div>
-          <div className="mt-1 ml-9 sm:ml-11">
-            <span className="text-xs text-[var(--signal-fg-tertiary)]">
-              Last modified {timeAgo(flag.updated_at)}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-9 sm:ml-0">
-          <Select
-            value={selectedEnv}
-            onValueChange={setSelectedEnv}
-            options={envOptions}
-            placeholder="Select environment…"
-          />
-          <Switch
-            checked={state?.enabled ?? false}
-            onCheckedChange={toggleFlag}
-            aria-label="Toggle flag"
-          />
+        }
+      />
 
-          <ProductionSafetyGate
-            open={detailGateOpen}
-            onOpenChange={(open) => { if (!open) closeDetailGate(); }}
-            onConfirm={handleDetailGateConfirm}
-            flagName={detailGateContext?.flagName ?? ""}
-            flagKey={detailGateContext?.flagKey ?? ""}
-            action={detailGateAction}
-          />
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setShowPromote(!showPromote);
-              setPromoteTarget("");
-            }}
-          >
-            Promote
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setEditing(!editing)}
-          >
-            Edit
-          </Button>
-          <Button
-            size="sm"
-            variant="danger-ghost"
-            onClick={() => setConfirmDelete(true)}
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
+      <ProductionSafetyGate
+        open={detailGateOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDetailGate();
+        }}
+        onConfirm={handleDetailGateConfirm}
+        flagName={detailGateContext?.flagName ?? ""}
+        flagKey={detailGateContext?.flagKey ?? ""}
+        action={detailGateAction}
+      />
 
       {confirmDelete && (
         <Card className="border-red-200 bg-[var(--signal-bg-danger-muted)] ring-1 ring-red-100">
@@ -586,48 +595,64 @@ export default function FlagDetailPage() {
       {editing && (
         <form
           onSubmit={handleEdit}
-          className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
+          className="rounded-xl border border-[var(--signal-border-default)]/80 bg-white p-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
         >
-          <div>
-            <Label>Name</Label>
-            <Input
-              value={editForm.name}
-              onChange={(e) =>
-                setEditForm({ ...editForm, name: e.target.value })
-              }
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea
-              value={editForm.description}
-              onChange={(e) =>
-                setEditForm({ ...editForm, description: e.target.value })
-              }
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit">Save Changes</Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setEditing(false)}
+          <FormLayout>
+            <FormField label="Name" htmlFor="edit-flag-name" required>
+              <Input
+                id="edit-flag-name"
+                value={editForm.name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+              />
+            </FormField>
+            <FormField
+              label="Description"
+              htmlFor="edit-flag-desc"
+              hint="Optional. Describe what this flag controls."
             >
-              Cancel
-            </Button>
-          </div>
+              <Textarea
+                id="edit-flag-desc"
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+                rows={3}
+              />
+            </FormField>
+            <div className="flex gap-2 pt-1">
+              <Button type="submit">Save Changes</Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </FormLayout>
         </form>
       )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
           <TabsTrigger value="targeting">Targeting</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="evaluation">
+          <FlagEvaluationView
+            flag={flag}
+            state={state}
+            testTargetKey={testTargetKey}
+            testResult={testResult}
+            setTestTargetKey={setTestTargetKey}
+            setTestResult={setTestResult}
+          />
+        </TabsContent>
 
         <TabsContent value="overview">
           <div className="space-y-4 sm:space-y-6">
@@ -953,7 +978,7 @@ export default function FlagDetailPage() {
                 <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
                   Schedule
                 </h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-[var(--signal-fg-secondary)] mb-1">
                       Enable At
@@ -1173,6 +1198,234 @@ export default function FlagDetailPage() {
           {flag && <FlagTimeline flagId={flag.id} />}
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ─── Sub-Component: Evaluation View ─────────────────────────────────
+
+function FlagEvaluationView({
+  flag,
+  state,
+  testTargetKey,
+  testResult,
+  setTestTargetKey,
+  setTestResult,
+}: {
+  flag: Flag;
+  state: FlagState | null;
+  testTargetKey: string;
+  testResult: boolean | null;
+  setTestTargetKey: (v: string) => void;
+  setTestResult: (v: boolean | null) => void;
+}) {
+  const rules = state?.rules || [];
+  const isEnabled = state?.enabled ?? false;
+
+  // Build decision tree steps from flag state
+  const evalData = useMemo(() => {
+    if (!state) return null;
+    return buildEvalStepsFromInspect(
+      {
+        enabled: isEnabled,
+        rules: rules.map((r) => ({
+          id: r.id,
+          priority: r.priority,
+          description: r.description,
+          conditions: r.conditions,
+          segment_keys: r.segment_keys,
+          value: r.value,
+        })),
+        percentage_rollout: state.percentage_rollout,
+        prerequisites: flag.prerequisites,
+        mutual_exclusion_group: flag.mutual_exclusion_group,
+      },
+      {
+        reason: isEnabled
+          ? rules.length > 0
+            ? "Waiting for evaluation — enter a target key to test"
+            : "No targeting rules configured"
+          : "Flag is disabled",
+        value: flag.default_value,
+      },
+      flag.default_value,
+    );
+  }, [state, flag, isEnabled, rules]);
+
+  // Build trace steps from eval data
+  const traceSteps: EvalTraceStep[] = useMemo(() => {
+    if (!evalData) return [];
+    return evalData.steps.map((s) => ({
+      label: s.label,
+      type: s.type,
+      result: s.result,
+      latencyMs: s.latency_ms,
+    }));
+  }, [evalData]);
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Reason Badge */}
+      <Card className="p-4 sm:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
+              Current State
+            </h3>
+            <p className="mt-1 text-2xl font-bold text-[var(--signal-fg-primary)]">
+              {isEnabled ? "Enabled" : "Disabled"}
+            </p>
+          </div>
+          <EvalReasonBadge
+            reason={
+              isEnabled
+                ? rules.length > 0
+                  ? "Rule-based targeting active"
+                  : "Default value"
+                : "Flag disabled"
+            }
+            value={flag.default_value}
+            variant={isEnabled && rules.length > 0 ? "rule" : "default"}
+          />
+        </div>
+      </Card>
+
+      {/* Trace Viewer */}
+      {traceSteps.length > 0 && (
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)] mb-3">
+            Evaluation Path
+          </h3>
+          <EvalTraceViewer steps={traceSteps} compact />
+        </Card>
+      )}
+
+      {/* Decision Tree */}
+      {evalData && (
+        <Card className="p-4 sm:p-6">
+          <EvalDecisionTree
+            steps={evalData.steps}
+            finalResult={evalData.finalResult}
+            animate={false}
+          />
+        </Card>
+      )}
+
+      {/* Test Targeting */}
+      <Card className="p-4 sm:p-6">
+        <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)] mb-3">
+          Test Targeting
+        </h3>
+        <p className="text-xs text-[var(--signal-fg-tertiary)] mb-3">
+          Enter a target key to see which value this flag would return based on
+          current targeting rules.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
+          <div className="flex-1">
+            <Label htmlFor="eval-test-target-key">Target Key</Label>
+            <Input
+              id="eval-test-target-key"
+              type="text"
+              value={testTargetKey}
+              onChange={(e) => {
+                setTestTargetKey(e.target.value);
+                setTestResult(null);
+              }}
+              placeholder="e.g. user-123"
+              className="mt-1 font-mono"
+            />
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!testTargetKey || !state) {
+                setTestResult(null);
+                return;
+              }
+              const rules = state.rules || [];
+              let matched = false;
+              for (const rule of rules) {
+                if (rule.segment_keys && rule.segment_keys.length > 0) {
+                  matched = true;
+                  break;
+                }
+                if (rule.conditions && rule.conditions.length > 0) {
+                  for (const cond of rule.conditions) {
+                    if (cond.attribute === "key") {
+                      if (
+                        cond.operator === "eq" &&
+                        cond.values.includes(testTargetKey)
+                      ) {
+                        matched = true;
+                        break;
+                      }
+                      if (
+                        cond.operator === "contains" &&
+                        cond.values.some((v: string) =>
+                          testTargetKey.includes(v),
+                        )
+                      ) {
+                        matched = true;
+                        break;
+                      }
+                      if (
+                        cond.operator === "starts_with" &&
+                        cond.values.some((v: string) =>
+                          testTargetKey.startsWith(v),
+                        )
+                      ) {
+                        matched = true;
+                        break;
+                      }
+                      if (
+                        cond.operator === "ends_with" &&
+                        cond.values.some((v: string) =>
+                          testTargetKey.endsWith(v),
+                        )
+                      ) {
+                        matched = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (matched) break;
+                }
+              }
+              if (!matched) {
+                const dv = flag.default_value;
+                setTestResult(typeof dv === "boolean" ? dv : Boolean(dv));
+              } else {
+                setTestResult(true);
+              }
+            }}
+            disabled={!testTargetKey}
+          >
+            Evaluate
+          </Button>
+        </div>
+        {testResult !== null && (
+          <div
+            className={cn(
+              "mt-4 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold",
+              testResult
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] ring-1 ring-[var(--signal-border-default)]",
+            )}
+          >
+            <div
+              className={cn(
+                "h-3 w-3 rounded-full",
+                testResult ? "bg-emerald-500" : "bg-slate-400",
+              )}
+            />
+            Result for{" "}
+            <span className="font-mono text-xs">{testTargetKey}</span>:{" "}
+            <span className="font-mono text-base">
+              {testResult ? "TRUE" : "FALSE"}
+            </span>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

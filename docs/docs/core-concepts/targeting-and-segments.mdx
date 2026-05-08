@@ -43,44 +43,7 @@ A targeting rule consists of:
 | Regex | `regex` | Regular expression match |
 | Exists | `exists` | Attribute is present |
 
-### Example: Target Beta Users in the US
-
-```json
-{
-  "rules": [
-    {
-      "priority": 1,
-      "description": "Beta users in US",
-      "match_type": "all",
-      "conditions": [
-        {"attribute": "country", "operator": "eq", "values": ["US"]},
-        {"attribute": "beta", "operator": "eq", "values": ["true"]}
-      ],
-      "value": true,
-      "percentage": 10000
-    }
-  ]
-}
-```
-
-### How Conditions Evaluate
-
-- **`match_type: "all"`** — All conditions must be true (AND)
-- **`match_type: "any"`** — At least one condition must be true (OR)
-
-Conditions compare against attributes in the evaluation context:
-
-```typescript
-client.boolVariation('my-flag', {
-  key: 'user-123',
-  attributes: {
-    country: 'US',
-    beta: 'true',
-    plan: 'enterprise',
-    age: '30',
-  },
-}, false);
-```
+<TargetingRuleDemo />
 
 ## Segments
 

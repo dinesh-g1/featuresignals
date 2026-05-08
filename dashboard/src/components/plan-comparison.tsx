@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useId } from "react";
+import Link from "next/link";
 import { Check, Minus, ArrowRight, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -248,7 +249,9 @@ function MobilePlanCard({
           <h3 className="text-base font-semibold text-[var(--signal-fg-primary)]">
             {plan.name}
           </h3>
-          <p className="text-sm text-[var(--signal-fg-secondary)]">{plan.tagline}</p>
+          <p className="text-sm text-[var(--signal-fg-secondary)]">
+            {plan.tagline}
+          </p>
         </div>
         {isCurrentPlan && (
           <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-bg-accent-muted)] px-2.5 py-0.5 text-xs font-semibold text-[var(--signal-fg-accent)]">
@@ -257,7 +260,9 @@ function MobilePlanCard({
           </span>
         )}
       </div>
-      <p className="mt-3 text-xs text-[var(--signal-fg-tertiary)]">{plan.price}</p>
+      <p className="mt-3 text-xs text-[var(--signal-fg-tertiary)]">
+        {plan.price}
+      </p>
 
       {/* Feature list */}
       <ul className="mt-4 space-y-2.5">
@@ -426,12 +431,12 @@ export function PlanComparison({ className }: PlanComparisonProps) {
             >
               Start Free <ArrowRight className="h-4 w-4" />
             </a>
-            <a
+            <Link
               href="/settings/billing"
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-medium)] border border-[var(--signal-border-default)] px-5 py-2.5 text-sm font-semibold text-[var(--signal-fg-primary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
             >
               Upgrade to Pro <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </>
         ) : currentPlan === "pro" ? (
           <p className="text-sm text-[var(--signal-fg-success)] font-medium">

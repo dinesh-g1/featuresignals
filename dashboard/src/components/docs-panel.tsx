@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useRef,
-  useEffect,
-} from "react";
+import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { DOCS_LINKS } from "@/components/docs-link";
@@ -39,7 +35,14 @@ const PAGE_DOCS_MAP: Record<string, DocsSection[]> = {
       description:
         "Define who sees what with rules, segments, and percentage rollouts.",
       href: DOCS_LINKS.targeting,
-      keywords: ["target", "rule", "condition", "segment", "percentage", "rollout"],
+      keywords: [
+        "target",
+        "rule",
+        "condition",
+        "segment",
+        "percentage",
+        "rollout",
+      ],
     },
     {
       title: "A/B Experiments",
@@ -112,8 +115,7 @@ const PAGE_DOCS_MAP: Record<string, DocsSection[]> = {
   "/team": [
     {
       title: "Roles & Permissions",
-      description:
-        "RBAC with environment-level control for team members.",
+      description: "RBAC with environment-level control for team members.",
       href: DOCS_LINKS.rbac,
       keywords: ["role", "permission", "team", "member", "rbac", "access"],
     },
@@ -146,7 +148,16 @@ const GLOBAL_DOCS: DocsSection[] = [
     title: "SDK Overview",
     description: "Go, Node, Python, Java, React, Vue — all supported SDKs.",
     href: DOCS_LINKS.sdks,
-    keywords: ["sdk", "client", "library", "go", "node", "python", "java", "react"],
+    keywords: [
+      "sdk",
+      "client",
+      "library",
+      "go",
+      "node",
+      "python",
+      "java",
+      "react",
+    ],
   },
   {
     title: "API Reference",
@@ -215,9 +226,11 @@ function fuzzyMatch(query: string, section: DocsSection): number {
 interface DocsPanelProps {
   open: boolean;
   onClose: () => void;
+  /** Optional URL to highlight — the matching doc will be shown at the top */
+  highlightedUrl?: string;
 }
 
-export function DocsPanel({ open, onClose }: DocsPanelProps) {
+export function DocsPanel({ open, onClose, highlightedUrl }: DocsPanelProps) {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -274,6 +287,11 @@ export function DocsPanel({ open, onClose }: DocsPanelProps) {
     return true;
   });
 
+  // Find the highlighted doc (if any) to show at the top
+  const highlightedDoc = highlightedUrl
+    ? uniqueDocs.find((d) => d.href === highlightedUrl)
+    : undefined;
+
   let filteredDocs = uniqueDocs;
   if (query.trim()) {
     const scored = uniqueDocs
@@ -281,6 +299,10 @@ export function DocsPanel({ open, onClose }: DocsPanelProps) {
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score);
     filteredDocs = scored.map(({ doc }) => doc);
+  } else if (highlightedDoc) {
+    // Move highlighted doc to the top, keep the rest
+    const rest = uniqueDocs.filter((d) => d.href !== highlightedDoc.href);
+    filteredDocs = [highlightedDoc, ...rest];
   }
 
   if (!open) return null;
@@ -362,29 +384,37 @@ export function DocsPanel({ open, onClose }: DocsPanelProps) {
             </div>
           ) : (
             <ul className="space-y-3">
-              {filteredDocs.map((doc) => (
-                <li key={doc.href}>
-                  <a
-                    href={doc.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "block rounded-lg border border-transparent p-3 transition-colors",
-                      "hover:border-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)]",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-medium text-[var(--signal-fg-primary)]">
-                        {doc.title}
-                      </h3>
-                      <ExternalLinkIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-tertiary)]" />
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed text-[var(--signal-fg-tertiary)]">
-                      {doc.description}
-                    </p>
-                  </a>
-                </li>
-              ))}
+              {filteredDocs.map((doc, idx) => {
+                const isHighlighted =
+                  highlightedDoc &&
+                  doc.href === highlightedDoc.href &&
+                  idx === 0;
+                return (
+                  <li key={doc.href}>
+                    <a
+                      href={doc.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "block rounded-lg border p-3 transition-colors",
+                        isHighlighted
+                          ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-1 ring-[var(--signal-border-accent-muted)]"
+                          : "border-transparent hover:border-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)]",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-medium text-[var(--signal-fg-primary)]">
+                          {doc.title}
+                        </h3>
+                        <ExternalLinkIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-tertiary)]" />
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--signal-fg-tertiary)]">
+                        {doc.description}
+                      </p>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -411,17 +441,27 @@ export function DocsPanel({ open, onClose }: DocsPanelProps) {
 
 // ─── Trigger ─────────────────────────────────────────────────────────────
 
-let globalPanelSetter: ((open: boolean) => void) | null = null;
+let globalPanelSetter: ((open: boolean, targetUrl?: string) => void) | null =
+  null;
 
-export function openDocsPanel() {
-  globalPanelSetter?.(true);
+/**
+ * Programmatically open the documentation panel, optionally highlighting
+ * a specific documentation URL.
+ */
+export function openDocsPanel(targetUrl?: string) {
+  globalPanelSetter?.(true, targetUrl);
 }
 
 export function DocsPanelTrigger() {
   const [open, setOpen] = useState(false);
+  const [targetUrl, setTargetUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    globalPanelSetter = setOpen;
+    globalPanelSetter = (o: boolean, url?: string) => {
+      setOpen(o);
+      if (url) setTargetUrl(url);
+      if (!o) setTargetUrl(undefined);
+    };
     return () => {
       globalPanelSetter = null;
     };
@@ -460,7 +500,14 @@ export function DocsPanelTrigger() {
           ?
         </kbd>
       </button>
-      <DocsPanel open={open} onClose={() => setOpen(false)} />
+      <DocsPanel
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          setTargetUrl(undefined);
+        }}
+        highlightedUrl={targetUrl}
+      />
     </>
   );
 }

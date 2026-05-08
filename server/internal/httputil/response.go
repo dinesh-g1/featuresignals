@@ -3,6 +3,8 @@ package httputil
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/featuresignals/server/internal/domain"
 )
 
 // ErrorResponse follows the NNGroup error message framework:
@@ -10,14 +12,16 @@ import (
 // - message: human-readable, constructive (never "An error occurred")
 // - suggestion: concrete fix ("Try using 'dark-mode' instead")
 // - docs_url: link to relevant documentation page
+// - _links: HATEOAS links to relevant documentation or recovery endpoints
 type ErrorResponse struct {
-	Error      string `json:"error"`
-	Code       string `json:"code,omitempty"`
-	Message    string `json:"message,omitempty"`
-	Suggestion string `json:"suggestion,omitempty"`
-	DocsURL    string `json:"docs_url,omitempty"`
-	Details    string `json:"details,omitempty"`
-	RequestID  string `json:"request_id,omitempty"`
+	Error      string       `json:"error"`
+	Code       string       `json:"code,omitempty"`
+	Message    string       `json:"message,omitempty"`
+	Suggestion string       `json:"suggestion,omitempty"`
+	DocsURL    string       `json:"docs_url,omitempty"`
+	Details    string       `json:"details,omitempty"`
+	RequestID  string       `json:"request_id,omitempty"`
+	Links      domain.Links `json:"_links,omitempty"`
 }
 
 // EnhancedError is a builder for rich error responses.
@@ -66,6 +70,7 @@ func Error(w http.ResponseWriter, status int, message string) {
 		Error:     message,
 		Message:   message,
 		RequestID: reqID,
+		Links:     domain.LinksForError(""),
 	})
 }
 
@@ -80,6 +85,7 @@ func WriteEnhancedError(w http.ResponseWriter, e *EnhancedError) {
 		DocsURL:    e.DocsURL,
 		Details:    e.Details,
 		RequestID:  reqID,
+		Links:      domain.LinksForError(e.DocsURL),
 	})
 }
 

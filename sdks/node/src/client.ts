@@ -1,5 +1,9 @@
 import { EventEmitter } from "events";
 import type { EvalContext } from "./context.ts";
+import type { EvaluationDetail } from "./evaluation.ts";
+import { EvaluationReason } from "./evaluation.ts";
+import { AnomalyDetector } from "./anomaly.ts";
+import type { AnomalyDetectorConfig, WarnHandler, Warning } from "./anomaly.ts";
 
 export interface ClientOptions {
   /** Base URL of the FeatureSignals API. */
@@ -17,6 +21,13 @@ export interface ClientOptions {
   timeoutMs: number;
   /** Default evaluation context. */
   context: EvalContext;
+  /** Callback for anomaly warnings. Enables the built-in AnomalyDetector. */
+  onWarning?: WarnHandler;
+  /** Custom anomaly detector configuration. Implies onWarning. */
+  anomaly?: {
+    detector?: AnomalyDetector;
+    config?: Partial<AnomalyDetectorConfig>;
+  };
 }
 
 const DEFAULT_OPTIONS: Omit<ClientOptions, "envKey"> = {
@@ -32,6 +43,7 @@ export interface ClientEvents {
   ready: [];
   error: [Error];
   update: [Record<string, unknown>];
+  warning: [Warning];
 }
 
 /**
@@ -42,9 +54,10 @@ export interface ClientEvents {
  * per evaluation after init.
  *
  * Events:
- *  - `ready`  — emitted once after the first successful flag fetch
- *  - `error`  — emitted on fetch/stream failures
- *  - `update` — emitted each time the flag map is refreshed
+ *  - `ready`   — emitted once after the first successful flag fetch
+ *  - `error`   — emitted on fetch/stream failures
+ *  - `update`  — emitted each time the flag map is refreshed
+ *  - `warning` — emitted when the AnomalyDetector fires a warning
  */
 export class FeatureSignalsClient extends EventEmitter {
   private static readonly SSE_BACKOFF_MAX_MS = 30_000;
@@ -59,13 +72,30 @@ export class FeatureSignalsClient extends EventEmitter {
   private sseAbort?: AbortController;
   private sseAttempt = 0;
   private closed = false;
+  private anomaly: AnomalyDetector | null = null;
 
-  constructor(sdkKey: string, options: Pick<ClientOptions, "envKey"> & Partial<Omit<ClientOptions, "envKey">>) {
+  constructor(
+    sdkKey: string,
+    options: Pick<ClientOptions, "envKey"> &
+      Partial<Omit<ClientOptions, "envKey">>,
+  ) {
     super();
     if (!sdkKey) throw new Error("sdkKey is required");
-    if (!options?.envKey) throw new Error("options.envKey is required (e.g. 'production')");
+    if (!options?.envKey)
+      throw new Error("options.envKey is required (e.g. 'production')");
     this.sdkKey = sdkKey;
     this.options = { ...DEFAULT_OPTIONS, ...options } as ClientOptions;
+
+    // Set up anomaly detection.
+    if (options.anomaly?.detector) {
+      this.anomaly = options.anomaly.detector;
+    } else if (options.onWarning || options.anomaly?.config) {
+      const handler: WarnHandler = (w: Warning) => {
+        if (options.onWarning) options.onWarning(w);
+        this.emit("warning", w);
+      };
+      this.anomaly = new AnomalyDetector(options.anomaly?.config, handler);
+    }
 
     // Initial fetch, then start background updates.
     this.refresh()
@@ -83,17 +113,44 @@ export class FeatureSignalsClient extends EventEmitter {
 
   boolVariation(key: string, ctx: EvalContext, fallback: boolean): boolean {
     const val = this.flags[key];
-    return typeof val === "boolean" ? val : fallback;
+    if (typeof val === "boolean") {
+      this.recordEval(key);
+      return val;
+    }
+    if (val === undefined) {
+      this.recordNotFound(key);
+    } else {
+      this.recordEval(key);
+    }
+    return fallback;
   }
 
   stringVariation(key: string, ctx: EvalContext, fallback: string): string {
     const val = this.flags[key];
-    return typeof val === "string" ? val : fallback;
+    if (typeof val === "string") {
+      this.recordEval(key);
+      return val;
+    }
+    if (val === undefined) {
+      this.recordNotFound(key);
+    } else {
+      this.recordEval(key);
+    }
+    return fallback;
   }
 
   numberVariation(key: string, ctx: EvalContext, fallback: number): number {
     const val = this.flags[key];
-    return typeof val === "number" ? val : fallback;
+    if (typeof val === "number") {
+      this.recordEval(key);
+      return val;
+    }
+    if (val === undefined) {
+      this.recordNotFound(key);
+    } else {
+      this.recordEval(key);
+    }
+    return fallback;
   }
 
   /**
@@ -105,8 +162,197 @@ export class FeatureSignalsClient extends EventEmitter {
    * call-site if strict validation is needed.
    */
   jsonVariation<T = unknown>(key: string, ctx: EvalContext, fallback: T): T {
-    return (this.flags[key] as T) ?? fallback;
+    const val = this.flags[key];
+    if (val !== undefined) {
+      this.recordEval(key);
+      return val as T;
+    }
+    this.recordNotFound(key);
+    return fallback;
   }
+
+  // ── Rich evaluation (returns detail objects) ─────────────────
+
+  /** Evaluate a boolean flag and return full detail. */
+  boolDetail(
+    key: string,
+    ctx: EvalContext,
+    fallback: boolean,
+  ): EvaluationDetail {
+    const start = performance.now();
+    const val = this.flags[key];
+    const elapsed = performance.now() - start;
+
+    if (val === undefined) {
+      this.recordNotFound(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.DEFAULT,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: null,
+      };
+    }
+
+    if (typeof val !== "boolean") {
+      this.recordEval(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.ERROR,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: new Error(`Flag '${key}' is not a boolean`),
+      };
+    }
+
+    this.recordEval(key);
+    return {
+      flagKey: key,
+      value: val,
+      reason: EvaluationReason.CACHED,
+      ruleId: "",
+      ruleIndex: -1,
+      evaluationTimeMs: elapsed,
+      error: null,
+    };
+  }
+
+  /** Evaluate a string flag and return full detail. */
+  stringDetail(
+    key: string,
+    ctx: EvalContext,
+    fallback: string,
+  ): EvaluationDetail {
+    const start = performance.now();
+    const val = this.flags[key];
+    const elapsed = performance.now() - start;
+
+    if (val === undefined) {
+      this.recordNotFound(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.DEFAULT,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: null,
+      };
+    }
+
+    if (typeof val !== "string") {
+      this.recordEval(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.ERROR,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: new Error(`Flag '${key}' is not a string`),
+      };
+    }
+
+    this.recordEval(key);
+    return {
+      flagKey: key,
+      value: val,
+      reason: EvaluationReason.CACHED,
+      ruleId: "",
+      ruleIndex: -1,
+      evaluationTimeMs: elapsed,
+      error: null,
+    };
+  }
+
+  /** Evaluate a numeric flag and return full detail. */
+  numberDetail(
+    key: string,
+    ctx: EvalContext,
+    fallback: number,
+  ): EvaluationDetail {
+    const start = performance.now();
+    const val = this.flags[key];
+    const elapsed = performance.now() - start;
+
+    if (val === undefined) {
+      this.recordNotFound(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.DEFAULT,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: null,
+      };
+    }
+
+    if (typeof val !== "number") {
+      this.recordEval(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.ERROR,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: new Error(`Flag '${key}' is not a number`),
+      };
+    }
+
+    this.recordEval(key);
+    return {
+      flagKey: key,
+      value: val,
+      reason: EvaluationReason.CACHED,
+      ruleId: "",
+      ruleIndex: -1,
+      evaluationTimeMs: elapsed,
+      error: null,
+    };
+  }
+
+  /** Evaluate a JSON flag and return full detail. */
+  jsonDetail(
+    key: string,
+    ctx: EvalContext,
+    fallback: unknown,
+  ): EvaluationDetail {
+    const start = performance.now();
+    const val = this.flags[key];
+    const elapsed = performance.now() - start;
+
+    if (val === undefined) {
+      this.recordNotFound(key);
+      return {
+        flagKey: key,
+        value: fallback,
+        reason: EvaluationReason.DEFAULT,
+        ruleId: "",
+        ruleIndex: -1,
+        evaluationTimeMs: elapsed,
+        error: null,
+      };
+    }
+
+    this.recordEval(key);
+    return {
+      flagKey: key,
+      value: val,
+      reason: EvaluationReason.CACHED,
+      ruleId: "",
+      ruleIndex: -1,
+      evaluationTimeMs: elapsed,
+      error: null,
+    };
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────
 
   allFlags(): Record<string, unknown> {
     return { ...this.flags };
@@ -137,6 +383,20 @@ export class FeatureSignalsClient extends EventEmitter {
     if (this.sseAbort) this.sseAbort.abort();
   }
 
+  // ── Anomaly helpers ───────────────────────────────────────
+
+  private recordEval(key: string): void {
+    if (this.anomaly) {
+      this.anomaly.recordEvaluation(key);
+    }
+  }
+
+  private recordNotFound(key: string): void {
+    if (this.anomaly) {
+      this.anomaly.recordMissing(key);
+    }
+  }
+
   // ── Internal ───────────────────────────────────────────────
 
   /** Fetch flags from the server. Exported for testing. */
@@ -146,7 +406,10 @@ export class FeatureSignalsClient extends EventEmitter {
     const url = `${this.options.baseURL}/v1/client/${envKey}/flags?key=${ctxKey}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      this.options.timeoutMs,
+    );
 
     try {
       const res = await fetch(url, {
@@ -255,13 +518,16 @@ export class FeatureSignalsClient extends EventEmitter {
     }
   }
 
-  /** Exponential backoff with random jitter: base × 2^attempt, capped, +0–25 % jitter. */
+  /** Exponential backoff with random jitter:
+   *  base × 2^attempt, capped, +0–25 % jitter. */
   private backoffDelay(attempt: number): number {
     const base = Math.min(
-      this.options.sseRetryMs * Math.pow(FeatureSignalsClient.SSE_BACKOFF_MULTIPLIER, attempt),
+      this.options.sseRetryMs *
+        Math.pow(FeatureSignalsClient.SSE_BACKOFF_MULTIPLIER, attempt),
       FeatureSignalsClient.SSE_BACKOFF_MAX_MS,
     );
-    const jitter = base * FeatureSignalsClient.SSE_JITTER_FACTOR * Math.random();
+    const jitter =
+      base * FeatureSignalsClient.SSE_JITTER_FACTOR * Math.random();
     return base + jitter;
   }
 

@@ -53,7 +53,7 @@ const titleMap: Record<EmptyStateVariant, string> = {
 
 const descriptionMap: Record<EmptyStateVariant, string> = {
   "no-flags":
-    "Create your first feature flag to get started with feature management.",
+    "Create your first flag to start managing features.",
   "no-search-results": "",
   "all-archived":
     "All your feature flags are archived. Create a new flag or restore one from the archive.",

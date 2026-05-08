@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import { Select } from "@/components/ui/select";
+import { FieldHelp } from "@/components/field-help";
 import {
   PlusIcon,
   TrashIcon,
@@ -366,6 +367,7 @@ export function TargetingRulesEditor({
                             <label className="text-xs font-medium text-[var(--signal-fg-secondary)]">
                               Conditions
                             </label>
+                            <FieldHelp docsKey="targeting" label="conditions" />
                             <Select
                               value={rule.match_type || "all"}
                               onValueChange={(val) =>
@@ -402,6 +404,7 @@ export function TargetingRulesEditor({
                                     })
                                   }
                                   placeholder="attribute (e.g. plan)"
+                                  aria-label="Condition attribute"
                                   className="w-36 rounded-lg border border-[var(--signal-border-default)] bg-white px-2 py-1.5 text-xs font-mono shadow-sm transition-all hover:border-[var(--signal-border-emphasis)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--signal-border-accent-muted)]"
                                 />
                                 <Select

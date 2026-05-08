@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldHelp } from "@/components/field-help";
 import { GlobeIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
 import { EVENTS, ENVIRONMENT_COLORS } from "@/lib/constants";
@@ -129,9 +130,15 @@ export function CreateEnvironmentDialog({
         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5">
           {/* Name */}
           <div className="max-w-sm mx-auto w-full">
-            <Label htmlFor="create-env-name" className="text-sm font-semibold">
-              Environment name
-            </Label>
+            <div className="flex items-center gap-1.5">
+              <Label
+                htmlFor="create-env-name"
+                className="text-sm font-semibold"
+              >
+                Environment name
+              </Label>
+              <FieldHelp docsKey="environments" label="environments" />
+            </div>
             <Input
               id="create-env-name"
               value={name}

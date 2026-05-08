@@ -10,10 +10,20 @@ import {
 } from "@/hooks/use-data";
 import { SegmentRulesEditor } from "@/components/segment-rules-editor";
 import { toast } from "@/components/toast";
-import { PageHeader, Card, Button, Input, Label } from "@/components/ui";
+import { showFeedback } from "@/components/action-feedback";
+import { PageHeader } from "@/components/page-header";
+import {
+  Card,
+  Button,
+  Input,
+  Label,
+  FormField,
+  FormLayout,
+} from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { InlineCreateForm } from "@/components/ui/inline-create-form";
 import { TrashIcon, ChevronDownIcon } from "@/components/icons/nav-icons";
+import { FieldHelp } from "@/components/field-help";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { ContextualHint, HINTS } from "@/components/contextual-hint";
 import { DOCS_LINKS } from "@/components/docs-link";
@@ -82,7 +92,7 @@ export default function SegmentsPage() {
       await createSegment.mutate({ ...form, rules: [] });
       setShowCreate(false);
       setForm({ key: "", name: "", description: "", match_type: "all" });
-      toast("Segment created", "success");
+      showFeedback("Segment created", "success");
       refetch();
     } catch (err: unknown) {
       toast(
@@ -96,7 +106,7 @@ export default function SegmentsPage() {
     try {
       await deleteSegment.mutate(segKey);
       setDeleting(null);
-      toast("Segment deleted", "success");
+      showFeedback("Segment deleted", "success");
       refetch();
     } catch (err: unknown) {
       toast(
@@ -118,7 +128,7 @@ export default function SegmentsPage() {
         rules,
         match_type: matchType,
       });
-      toast("Segment rules saved", "success");
+      showFeedback("Segment rules saved", "success");
       refetch();
     } catch (err: unknown) {
       toast(
@@ -217,10 +227,15 @@ function SegmentsContent({
         title="Segments"
         description="Reusable audience definitions for targeting"
         docsUrl={DOCS_LINKS.segments}
-        actions={
+        primaryAction={
           <Button onClick={() => setShowCreate(!showCreate)}>
             Create Segment
           </Button>
+        }
+        statusBadge={
+          <span className="inline-flex items-center rounded-full bg-[var(--signal-bg-secondary)] px-2.5 py-0.5 text-xs font-medium text-[var(--signal-fg-secondary)] ring-1 ring-inset ring-[var(--signal-border-default)]">
+            {segments.length} segment{segments.length !== 1 ? "s" : ""}
+          </span>
         }
       />
 
@@ -228,40 +243,34 @@ function SegmentsContent({
 
       {showCreate && (
         <InlineCreateForm variant="accent">
-          <form onSubmit={handleCreate} noValidate className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label>Key</Label>
-                <Input
-                  value={form.key}
-                  onChange={(e) => {
-                    setForm({ ...form, key: e.target.value });
-                    if (fieldErrors.key)
-                      setFieldErrors({ ...fieldErrors, key: undefined });
-                  }}
-                  onBlur={(_e) => {
-                    if (!form.key && form.name) {
-                      setForm({ ...form, key: suggestSlug(form.name) });
-                    }
-                  }}
-                  placeholder="beta-users"
-                  required
-                  className="mt-1"
-                  aria-invalid={!!fieldErrors.key}
-                  aria-describedby={fieldErrors.key ? "key-error" : undefined}
-                />
-                {fieldErrors.key && (
-                  <p
-                    className="text-xs text-red-500"
-                    role="alert"
-                    id="key-error"
-                  >
-                    {fieldErrors.key}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label>Name</Label>
+          <form onSubmit={handleCreate} noValidate>
+            <FormLayout>
+              <FormField
+                label="Key"
+                error={fieldErrors.key}
+                required
+                hint="Used in your code to reference this segment. Auto-generated from name."
+              >
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    value={form.key}
+                    onChange={(e) => {
+                      setForm({ ...form, key: e.target.value });
+                      if (fieldErrors.key)
+                        setFieldErrors({ ...fieldErrors, key: undefined });
+                    }}
+                    onBlur={(_e) => {
+                      if (!form.key && form.name) {
+                        setForm({ ...form, key: suggestSlug(form.name) });
+                      }
+                    }}
+                    required
+                    className="font-mono flex-1"
+                  />
+                  <FieldHelp docsKey="segments" label="segment key" />
+                </div>
+              </FormField>
+              <FormField label="Name" error={fieldErrors.name} required>
                 <Input
                   value={form.name}
                   onChange={(e) => {
@@ -269,54 +278,38 @@ function SegmentsContent({
                     if (fieldErrors.name)
                       setFieldErrors({ ...fieldErrors, name: undefined });
                   }}
-                  placeholder="Beta users"
                   required
-                  className="mt-1"
-                  aria-invalid={!!fieldErrors.name}
-                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
                 />
-                {fieldErrors.name && (
-                  <p
-                    className="text-xs text-red-500"
-                    role="alert"
-                    id="name-error"
-                  >
-                    {fieldErrors.name}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Input
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                placeholder="Users enrolled in beta program"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label>Match Type</Label>
-              <div className="mt-1">
+              </FormField>
+              <FormField
+                label="Description"
+                hint="Optional. Describe what this segment is for."
+              >
+                <Input
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                />
+              </FormField>
+              <FormField label="Match Type">
                 <Select
                   value={form.match_type}
                   onValueChange={(val) => setForm({ ...form, match_type: val })}
                   options={MATCH_TYPE_OPTIONS}
                 />
+              </FormField>
+              <div className="flex gap-2 pt-1">
+                <Button type="submit">Create</Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreate(false)}
+                >
+                  Cancel
+                </Button>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit">Create</Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setShowCreate(false)}
-              >
-                Cancel
-              </Button>
-            </div>
+            </FormLayout>
           </form>
         </InlineCreateForm>
       )}

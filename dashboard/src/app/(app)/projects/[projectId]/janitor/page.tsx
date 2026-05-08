@@ -16,6 +16,7 @@ import { StaleFlagRow } from "@/components/janitor/stale-flag-row";
 import { SetupWizard } from "@/components/janitor/setup-wizard";
 import { ScanProgressOverlay } from "@/components/janitor/scan-progress-overlay";
 import { LLMStatusBadge } from "@/components/janitor/llm-status-badge";
+import { JanitorSuggestions } from "@/components/janitor/janitor-suggestions";
 import { DocsLink } from "@/components/docs-link";
 import {
   SearchIcon,
@@ -33,7 +34,9 @@ export default function JanitorPage() {
   const token = useAppStore((s) => s.token);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
 
-  const [filter, setFilter] = useState<"all" | "safe" | "prs">("all");
+  const [filter, setFilter] = useState<"all" | "safe" | "prs" | "suggestions">(
+    "all",
+  );
   const [scanning, setScanning] = useState(false);
   const [activeScanId, setActiveScanId] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(false);
@@ -130,10 +133,15 @@ export default function JanitorPage() {
   const safeCount = flags.filter((f) => f.safe_to_remove).length;
   const openPRCount = flags.filter((f) => f.pr_status === "open").length;
 
+  const suggestionCount = flags.filter(
+    (f) => !f.dismissed && f.safe_to_remove,
+  ).length;
+
   // Determine which filters to apply locally
   const filteredFlags = flags.filter((f) => {
     if (filter === "safe") return f.safe_to_remove;
     if (filter === "prs") return f.pr_status === "open";
+    if (filter === "suggestions") return !f.dismissed && f.safe_to_remove;
     return true;
   });
 
@@ -353,6 +361,11 @@ export default function JanitorPage() {
           {[
             { value: "all" as const, label: "All Flags", count: flags.length },
             {
+              value: "suggestions" as const,
+              label: "Suggestions",
+              count: suggestionCount,
+            },
+            {
               value: "safe" as const,
               label: "Safe to Remove",
               count: safeCount,
@@ -385,8 +398,24 @@ export default function JanitorPage() {
         </div>
       )}
 
-      {/* Stale Flags List */}
-      {!showWizard && !flagsError && (
+      {/* Augmentation-Mode Suggestions View */}
+      {!showWizard && !flagsError && filter === "suggestions" && !isLoading && (
+        <JanitorSuggestions
+          flags={flags}
+          onDismiss={handleDismiss}
+          onKeep={(flagKey) => {
+            // "Keep this flag" — dismisses the suggestion without archiving
+            dismissFlag(flagKey, "kept_by_user");
+          }}
+          onArchive={(flagKey) => {
+            // Accept the suggestion — generate PR for removal
+            handleGeneratePR(flagKey);
+          }}
+        />
+      )}
+
+      {/* Stale Flags List (non-suggestions tabs) */}
+      {!showWizard && !flagsError && filter !== "suggestions" && (
         <div className="space-y-3">
           {isLoading ? (
             // Loading skeleton

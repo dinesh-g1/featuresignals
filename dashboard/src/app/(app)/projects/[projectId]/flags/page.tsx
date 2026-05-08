@@ -6,8 +6,9 @@ import { api } from "@/lib/api";
 import { EventBus } from "@/lib/event-bus";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
+import { showFeedback } from "@/components/action-feedback";
+import { PageHeader } from "@/components/page-header";
 import {
-  PageHeader,
   Card,
   Button,
   Input,
@@ -17,6 +18,8 @@ import {
   Label,
   Switch,
   FlagsPageSkeleton,
+  FormField,
+  FormLayout,
 } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { Textarea, ErrorDisplay } from "@/components/ui";
@@ -297,7 +300,7 @@ function FlagsInner() {
         default_value: "false",
       });
       EventBus.dispatch("flags:changed");
-      toast("Flag created", "success");
+      showFeedback("Flag created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
     }
@@ -308,7 +311,7 @@ function FlagsInner() {
     setDeleting(null);
     if (result !== undefined) {
       EventBus.dispatch("flags:changed");
-      toast("Flag deleted", "success");
+      showFeedback("Flag deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
     }
@@ -664,7 +667,7 @@ function FlagsWithData({
         default_value: "false",
       });
       EventBus.dispatch("flags:changed");
-      toast("Flag created", "success");
+      showFeedback("Flag created", "success");
     } else if (createFlag.error) {
       toast(createFlag.error, "error");
     }
@@ -675,7 +678,7 @@ function FlagsWithData({
     setDeleting(null);
     if (result !== undefined) {
       EventBus.dispatch("flags:changed");
-      toast("Flag deleted", "success");
+      showFeedback("Flag deleted", "success");
     } else if (deleteFlag.error) {
       toast(deleteFlag.error, "error");
     }
@@ -943,14 +946,16 @@ function FlagsContent({
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
-        title="⚑ Feature Flags"
+        title="Feature Flags"
         description={`${(flags ?? []).length} flags in this project — Manage, toggle, and govern your feature rollout`}
-      >
-        <Button onClick={() => setShowCreate(!showCreate)}>
-          <FlagIcon className="h-4 w-4" />
-          Create Flag
-        </Button>
-      </PageHeader>
+        primaryAction={
+          <Button onClick={() => setShowCreate(!showCreate)}>
+            <FlagIcon className="h-4 w-4 mr-1.5" />
+            Create flag
+          </Button>
+        }
+        docsUrl={DOCS_LINKS.flags}
+      />
 
       <ContextualHint hint={HINTS.flagsFirstVisit} />
       <UpgradeNudge context="projects" />
@@ -959,11 +964,15 @@ function FlagsContent({
         <form
           onSubmit={handleCreate}
           noValidate
-          className="rounded-xl border border-[var(--signal-border-accent-muted)] bg-white p-4 space-y-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
+          className="rounded-xl border border-[var(--signal-border-accent-muted)] bg-white p-4 shadow-sm ring-1 ring-accent/10 sm:p-6"
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Key</Label>
+          <FormLayout>
+            <FormField
+              label="Key"
+              error={fieldErrors.key}
+              required
+              hint="Used in your code to reference this flag. Auto-generated from name."
+            >
               <Input
                 value={newFlag.key}
                 onChange={(e) => {
@@ -971,20 +980,11 @@ function FlagsContent({
                   if (fieldErrors.key)
                     setFieldErrors({ ...fieldErrors, key: undefined });
                 }}
-                placeholder="new-checkout-flow"
                 required
-                aria-invalid={!!fieldErrors.key}
-                aria-describedby={fieldErrors.key ? "key-error" : undefined}
-                className="mt-1"
+                className="font-mono"
               />
-              {fieldErrors.key && (
-                <p id="key-error" className="mt-1 text-xs text-red-500">
-                  {fieldErrors.key}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label>Name</Label>
+            </FormField>
+            <FormField label="Name" error={fieldErrors.name} required>
               <Input
                 value={newFlag.name}
                 onChange={(e) => {
@@ -992,160 +992,131 @@ function FlagsContent({
                   if (fieldErrors.name)
                     setFieldErrors({ ...fieldErrors, name: undefined });
                 }}
-                placeholder="New Checkout Flow"
                 required
-                aria-invalid={!!fieldErrors.name}
-                aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                className="mt-1"
               />
-              {fieldErrors.name && (
-                <p id="name-error" className="mt-1 text-sm text-red-600">
-                  {fieldErrors.name}
-                </p>
-              )}
-              {suggestedKey && !fieldErrors.name && (
-                <p className="text-xs text-[var(--signal-fg-tertiary)] mt-1">
-                  Suggested key:{" "}
-                  <code className="font-mono">{suggestedKey}</code>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Type</Label>
-              <div className="mt-1">
-                <Select
-                  value={newFlag.flag_type}
-                  onValueChange={handleTypeChange}
-                  options={CREATE_TYPE_OPTIONS}
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Category</Label>
-              <div className="mt-1">
-                <Select
-                  value={newFlag.category}
-                  onValueChange={(val) =>
-                    setNewFlag({ ...newFlag, category: val })
-                  }
-                  options={CREATE_CATEGORY_OPTIONS}
-                />
-              </div>
-            </div>
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Input
-              value={newFlag.description}
-              onChange={(e) =>
-                setNewFlag({ ...newFlag, description: e.target.value })
-              }
-              placeholder="Optional description"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>Default Value</Label>
-            <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 mb-1">
-              {newFlag.flag_type === "boolean" &&
-                "The value returned when the flag is disabled."}
-              {newFlag.flag_type === "string" &&
-                "A string value returned when the flag is disabled."}
-              {newFlag.flag_type === "number" &&
-                "A numeric value returned when the flag is disabled."}
-              {newFlag.flag_type === "json" &&
-                "A JSON object or array returned when the flag is disabled."}
-              {newFlag.flag_type === "ab" &&
-                "Fallback value when no variant is matched."}
-            </p>
-            {newFlag.flag_type === "boolean" ? (
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={newFlag.default_value === "true"}
-                  onCheckedChange={(checked) =>
-                    setNewFlag({
-                      ...newFlag,
-                      default_value: checked ? "true" : "false",
-                    })
-                  }
-                />
-                <span className="text-sm font-mono text-[var(--signal-fg-primary)]">
-                  {newFlag.default_value}
-                </span>
-              </div>
-            ) : newFlag.flag_type === "string" ? (
-              <Input
-                value={
-                  newFlag.default_value.startsWith('"')
-                    ? JSON.parse(newFlag.default_value)
-                    : newFlag.default_value
-                }
-                onChange={(e) =>
-                  setNewFlag({
-                    ...newFlag,
-                    default_value: JSON.stringify(e.target.value),
-                  })
-                }
-                placeholder='e.g. "Welcome back!"'
-                className="mt-1 font-mono"
-              />
-            ) : newFlag.flag_type === "number" ? (
-              <Input
-                type="number"
-                value={newFlag.default_value}
-                onChange={(e) =>
-                  setNewFlag({
-                    ...newFlag,
-                    default_value: e.target.value || "0",
-                  })
-                }
-                placeholder="0"
-                className="mt-1 font-mono"
-              />
-            ) : (
-              <Textarea
-                value={newFlag.default_value}
-                onChange={(e) => {
-                  setNewFlag({ ...newFlag, default_value: e.target.value });
-                  if (fieldErrors.default_value)
-                    setFieldErrors({
-                      ...fieldErrors,
-                      default_value: undefined,
-                    });
-                }}
-                placeholder='e.g. {"theme": "dark"}'
-                rows={3}
-                aria-invalid={!!fieldErrors.default_value}
-                aria-describedby={
-                  fieldErrors.default_value ? "default_value-error" : undefined
-                }
-                className="mt-1 font-mono text-sm"
-              />
-            )}
-            {fieldErrors.default_value && (
-              <p id="default_value-error" className="mt-1 text-xs text-red-500">
-                {fieldErrors.default_value}
+            </FormField>
+            {suggestedKey && !fieldErrors.name && (
+              <p className="text-xs text-[var(--signal-fg-tertiary)] -mt-3">
+                Suggested key: <code className="font-mono">{suggestedKey}</code>
               </p>
             )}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              disabled={createFlag.loading}
-              loading={createFlag.loading}
+            <FormField label="Type">
+              <Select
+                value={newFlag.flag_type}
+                onValueChange={handleTypeChange}
+                options={CREATE_TYPE_OPTIONS}
+              />
+            </FormField>
+            <FormField label="Category">
+              <Select
+                value={newFlag.category}
+                onValueChange={(val) =>
+                  setNewFlag({ ...newFlag, category: val })
+                }
+                options={CREATE_CATEGORY_OPTIONS}
+              />
+            </FormField>
+            <FormField
+              label="Description"
+              hint="Optional. Describe what this flag controls."
             >
-              {createFlag.loading ? "Creating..." : "Create Flag"}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setShowCreate(false)}
+              <Input
+                value={newFlag.description}
+                onChange={(e) =>
+                  setNewFlag({ ...newFlag, description: e.target.value })
+                }
+              />
+            </FormField>
+            <FormField
+              label="Default Value"
+              error={fieldErrors.default_value}
+              hint={
+                newFlag.flag_type === "boolean"
+                  ? "The value returned when the flag is disabled."
+                  : newFlag.flag_type === "string"
+                    ? "A string value returned when the flag is disabled."
+                    : newFlag.flag_type === "number"
+                      ? "A numeric value returned when the flag is disabled."
+                      : newFlag.flag_type === "json"
+                        ? "A JSON object or array returned when the flag is disabled."
+                        : "Fallback value when no variant is matched."
+              }
             >
-              Cancel
-            </Button>
-          </div>
+              {newFlag.flag_type === "boolean" ? (
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={newFlag.default_value === "true"}
+                    onCheckedChange={(checked) =>
+                      setNewFlag({
+                        ...newFlag,
+                        default_value: checked ? "true" : "false",
+                      })
+                    }
+                  />
+                  <span className="text-sm font-mono text-[var(--signal-fg-primary)]">
+                    {newFlag.default_value}
+                  </span>
+                </div>
+              ) : newFlag.flag_type === "string" ? (
+                <Input
+                  value={
+                    newFlag.default_value.startsWith('"')
+                      ? JSON.parse(newFlag.default_value)
+                      : newFlag.default_value
+                  }
+                  onChange={(e) =>
+                    setNewFlag({
+                      ...newFlag,
+                      default_value: JSON.stringify(e.target.value),
+                    })
+                  }
+                  className="font-mono"
+                />
+              ) : newFlag.flag_type === "number" ? (
+                <Input
+                  type="number"
+                  value={newFlag.default_value}
+                  onChange={(e) =>
+                    setNewFlag({
+                      ...newFlag,
+                      default_value: e.target.value || "0",
+                    })
+                  }
+                  className="font-mono"
+                />
+              ) : (
+                <Textarea
+                  value={newFlag.default_value}
+                  onChange={(e) => {
+                    setNewFlag({ ...newFlag, default_value: e.target.value });
+                    if (fieldErrors.default_value)
+                      setFieldErrors({
+                        ...fieldErrors,
+                        default_value: undefined,
+                      });
+                  }}
+                  rows={3}
+                  className="font-mono text-sm"
+                />
+              )}
+            </FormField>
+            <div className="flex gap-2 pt-1">
+              <Button
+                type="submit"
+                disabled={createFlag.loading}
+                loading={createFlag.loading}
+              >
+                {createFlag.loading ? "Creating..." : "Create flag"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowCreate(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </FormLayout>
         </form>
       )}
 

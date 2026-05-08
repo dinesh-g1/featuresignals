@@ -141,7 +141,8 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	all := dto.SegmentSliceFromDomain(segments)
 	p := dto.ParsePagination(r)
 	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	links := domain.LinksForSegmentsCollection(projectID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
 }
 
 func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +159,12 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusNotFound, "segment not found")
 		return
 	}
-	httputil.JSON(w, http.StatusOK, dto.SegmentFromDomain(seg))
+	resp := dto.SegmentFromDomain(seg)
+	respWithLinks := map[string]interface{}{
+		"segment": resp,
+		"_links":  domain.LinksForSegment(projectID, segKey),
+	}
+	httputil.JSON(w, http.StatusOK, respWithLinks)
 }
 
 func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {

@@ -51,7 +51,10 @@ type Client struct {
 	onReady      func()
 	onError      func(error)
 	onUpdate     func(map[string]interface{})
+	onWarn       WarnHandler
 	userCtx      EvalContext
+
+	anomaly *AnomalyDetector
 
 	eventSubsMu sync.Mutex
 	eventSubs   []chan<- clientEvent
@@ -108,6 +111,26 @@ func WithOnUpdate(fn func(map[string]interface{})) Option {
 // WithContext sets the default EvalContext used when fetching flags.
 func WithContext(ctx EvalContext) Option {
 	return func(c *Client) { c.userCtx = ctx }
+}
+
+// WithWarnHandler registers a callback for anomaly warnings from the
+// built-in AnomalyDetector. The anomaly detector is automatically enabled
+// when this option is used (with default thresholds). See
+// AnomalyDetectorConfig for customising thresholds.
+func WithWarnHandler(fn WarnHandler) Option {
+	return func(c *Client) {
+		c.onWarn = fn
+		c.anomaly = NewAnomalyDetector(nil, fn)
+	}
+}
+
+// WithAnomalyDetector sets a fully customised AnomalyDetector. This
+// overrides any handler set via WithWarnHandler.
+func WithAnomalyDetector(detector *AnomalyDetector) Option {
+	return func(c *Client) {
+		c.anomaly = detector
+		c.onWarn = detector.handler
+	}
 }
 
 // NewClient creates and initialises a FeatureSignals client.
@@ -426,4 +449,7 @@ func (c *Client) logError(msg string, err error) {
 		c.onError(err)
 	}
 	c.emitClientEvent(clientEvent{kind: clientEventError, err: err})
+	// Also route to anomaly detector for drift detection if it's a connection failure.
+	// The detector doesn't track connection errors directly, but recordMissing
+	// is called per-flag on the evaluation path when flags aren't found.
 }

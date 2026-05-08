@@ -100,7 +100,7 @@ export function CreateProjectDialog({
                 setName(e.target.value);
                 setFieldError("");
               }}
-              placeholder="e.g. My Awesome App"
+              
               className="mt-2 h-11 text-[15px]"
               autoFocus
             />
