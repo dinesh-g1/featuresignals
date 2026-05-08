@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   PlusIcon,
   TrashIcon,
-  ZapIcon,
-  ChevronRightIcon,
-  CheckIcon,
-  AlertIcon,
-} from "@primer/octicons-react";
+  Zap,
+  ChevronRight,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import {
   evaluateFlag,
   type FlagRule,
@@ -137,7 +137,7 @@ export function TargetingBuilder() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--signal-bg-info-muted)]">
-            <ZapIcon size={16} fill="var(--signal-fg-info)" />
+            <Zap size={16} fill="var(--signal-fg-info)" />
           </div>
           <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
             Targeting Rules
@@ -234,7 +234,7 @@ export function TargetingBuilder() {
 
         {addError && (
           <p className="text-xs text-[var(--signal-fg-danger)] mb-2 flex items-center gap-1">
-            <AlertIcon size={12} />
+            <AlertTriangle size={12} />
             {addError}
           </p>
         )}
@@ -275,7 +275,7 @@ export function TargetingBuilder() {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {i === matchedRuleIndex && (
-                    <CheckIcon size={14} fill="var(--signal-fg-success)" />
+                    <Check size={14} fill="var(--signal-fg-success)" />
                   )}
                   <span className="font-medium text-[var(--signal-fg-primary)] shrink-0">
                     IF
@@ -331,7 +331,7 @@ export function TargetingBuilder() {
             animate={{ scale: 1, opacity: 1 }}
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]"
           >
-            <ZapIcon size={10} />
+            <Zap size={10} />
             {evalResult.latencyMs.toFixed(2)}ms
           </motion.span>
         </div>
@@ -360,7 +360,7 @@ export function TargetingBuilder() {
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150"
       >
         Roll it out gradually
-        <ChevronRightIcon size={16} />
+        <ChevronRight size={16} />
       </a>
     </div>
   );

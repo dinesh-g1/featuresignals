@@ -2,26 +2,26 @@
 
 import { motion } from "framer-motion";
 import {
-  GoalIcon,
-  ArrowRightIcon,
-  ChecklistIcon,
-  ShieldCheckIcon,
-} from "@primer/octicons-react";
+  Target,
+  ArrowRight,
+  ListChecks,
+  ShieldCheck,
+} from "lucide-react";
 import { TargetingBuilder } from "@/components/targeting-builder";
 
 const targetingBenefits = [
   {
-    icon: <GoalIcon size={16} fill="var(--signal-fg-info)" />,
+    icon: <Target size={16} fill="var(--signal-fg-info)" />,
     title: "Attribute-based rules",
     desc: "Target by any user property — plan, country, email domain, beta status, or custom attributes.",
   },
   {
-    icon: <ChecklistIcon size={16} fill="var(--signal-fg-success)" />,
+    icon: <ListChecks size={16} fill="var(--signal-fg-success)" />,
     title: "First-match wins",
     desc: "Rules are evaluated in order. The first matching rule determines the result. Predictable and debuggable.",
   },
   {
-    icon: <ShieldCheckIcon size={16} fill="var(--signal-fg-accent)" />,
+    icon: <ShieldCheck size={16} fill="var(--signal-fg-accent)" />,
     title: "Default safety net",
     desc: "Every flag has a default value. If no rules match, the default is served. No surprises in production.",
   },
@@ -53,7 +53,7 @@ export function TargetPageContent() {
               }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)] border border-[var(--borderColor-done-emphasis)] border-opacity-20 mb-6">
-                <GoalIcon size={12} />
+                <Target size={12} />
                 Step 2 of 6
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
@@ -94,7 +94,7 @@ export function TargetPageContent() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about targeting rules
-                  <ArrowRightIcon size={14} />
+                  <ArrowRight size={14} />
                 </a>
               </div>
             </motion.div>
@@ -139,7 +139,7 @@ export function TargetPageContent() {
                   {step.label}
                 </a>
                 {i < 4 && (
-                  <ArrowRightIcon
+                  <ArrowRight
                     size={12}
                     className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { CopyIcon, CheckIcon } from "@primer/octicons-react";
+import { CopyIcon, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   type SupportedLanguage,
@@ -385,7 +385,7 @@ export function CodeBlock({
         >
           {copied ? (
             <>
-              <CheckIcon size={12} />
+              <Check size={12} />
               <span>Copied</span>
             </>
           ) : (
@@ -474,7 +474,7 @@ export function CodeEditor({
         >
           {copied ? (
             <>
-              <CheckIcon size={12} />
+              <Check size={12} />
               <span>Copied</span>
             </>
           ) : (

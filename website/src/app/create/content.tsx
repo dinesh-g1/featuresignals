@@ -2,11 +2,11 @@
 
 import { motion } from "framer-motion";
 import {
-  RocketIcon,
-  ArrowRightIcon,
-  WorkflowIcon,
-  GitBranchIcon,
-} from "@primer/octicons-react";
+  Rocket,
+  ArrowRight,
+  Workflow,
+  GitBranch,
+} from "lucide-react";
 import { FlagCreator } from "@/components/flag-creator";
 
 const lifecycleSteps = [
@@ -30,7 +30,7 @@ export function CreatePageContent() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)] mb-6">
-                <RocketIcon size={12} />
+                <Rocket size={12} />
                 Step 1 of 6
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
@@ -46,7 +46,7 @@ export function CreatePageContent() {
 
               <div className="mt-6 space-y-3">
                 <div className="text-sm font-semibold text-[var(--signal-fg-primary)] flex items-center gap-2">
-                  <WorkflowIcon size={14} fill="var(--signal-fg-accent)" />
+                  <Workflow size={14} fill="var(--signal-fg-accent)" />
                   The full lifecycle:
                 </div>
                 <ol className="space-y-2">
@@ -72,7 +72,7 @@ export function CreatePageContent() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about flag configuration
-                  <ArrowRightIcon size={14} />
+                  <ArrowRight size={14} />
                 </a>
               </div>
             </motion.div>
@@ -130,7 +130,7 @@ export function CreatePageContent() {
                   {step.label}
                 </a>
                 {i < 4 && (
-                  <ArrowRightIcon
+                  <ArrowRight
                     size={12}
                     className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />

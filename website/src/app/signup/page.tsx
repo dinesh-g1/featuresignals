@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRightIcon,
-  CheckIcon,
-  MarkGithubIcon,
-  ShieldCheckIcon,
-  ZapIcon,
-} from "@primer/octicons-react";
+  ArrowRight,
+  Check,
+  Github,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import {
   CalculatorProvider,
   useCalculatorContext,
@@ -69,7 +69,7 @@ function SignupLeft() {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)] mb-6">
-          <ZapIcon size={12} />
+          <Zap size={12} />
           Live savings estimate
         </div>
 
@@ -102,7 +102,7 @@ function SignupLeft() {
               key={item}
               className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-secondary)]"
             >
-              <CheckIcon
+              <Check
                 size={16}
                 fill="var(--signal-fg-success)"
                 className="mt-0.5 shrink-0"
@@ -197,7 +197,7 @@ function SignupRight() {
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
             {submitting ? "Starting..." : "Start Free"}
-            {!submitting && <ArrowRightIcon size={16} />}
+            {!submitting && <ArrowRight size={16} />}
           </button>
         </form>
 
@@ -217,7 +217,7 @@ function SignupRight() {
             href="https://app.featuresignals.com/auth/github"
             className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] px-5 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[#eff2f5] transition-colors duration-150"
           >
-            <MarkGithubIcon size={16} />
+            <Github size={16} />
             GitHub
           </a>
         </div>

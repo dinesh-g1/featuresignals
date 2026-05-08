@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon, LightBulbIcon } from "@primer/octicons-react";
+import { ArrowRight, Lightbulb } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "AI Janitor",
@@ -105,7 +105,7 @@ export default function AiJanitorPage() {
       {/* Human-in-the-loop */}
       <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-warning-muted)] bg-[var(--signal-bg-warning-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--signal-fg-warning)] mt-0.5 shrink-0" />
+          <Lightbulb size={18} className="text-[var(--signal-fg-warning)] mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1">
               Human-in-the-loop design
@@ -132,7 +132,7 @@ export default function AiJanitorPage() {
             href={step.href}
             className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>{step.label}</span>
           </Link>
         ))}

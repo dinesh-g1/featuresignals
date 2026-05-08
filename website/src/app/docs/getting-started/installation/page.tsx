@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = {
@@ -197,7 +197,7 @@ migrate -path server/migrations \\
               href={step.href}
               className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
             >
-              <ArrowRightIcon size={14} />
+              <ArrowRight size={14} />
               <span>{step.label}</span>
             </Link>
             <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">

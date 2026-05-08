@@ -4,15 +4,15 @@ import { useState, useRef, FormEvent, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  MailIcon,
-  CommentDiscussionIcon,
-  OrganizationIcon,
-  ShieldLockIcon,
-  LocationIcon,
-  ChevronRightIcon,
-  CheckIcon,
-  AlertIcon,
-} from "@primer/octicons-react";
+  Mail,
+  MessageSquarePlus,
+  Building,
+  ShieldCheck,
+  MapPin,
+  ChevronRight,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ==========================================================================
@@ -38,7 +38,7 @@ const fadeUp = {
 
 const contactReasons = [
   {
-    icon: MailIcon,
+    icon: Mail,
     title: "Sales",
     description:
       "Interested in Enterprise plans, custom deployments, or volume pricing?",
@@ -46,14 +46,14 @@ const contactReasons = [
     accent: "accent" as const,
   },
   {
-    icon: CommentDiscussionIcon,
+    icon: MessageSquarePlus,
     title: "Support",
     description: "Already a customer? Get priority assistance from our team.",
     reason: "support",
     accent: "success" as const,
   },
   {
-    icon: OrganizationIcon,
+    icon: Building,
     title: "Partnerships",
     description:
       "Explore technology integrations or solution partnership opportunities.",
@@ -61,7 +61,7 @@ const contactReasons = [
     accent: "done" as const,
   },
   {
-    icon: ShieldLockIcon,
+    icon: ShieldCheck,
     title: "Security",
     description: "Report a vulnerability or security concern confidentially.",
     reason: "security",
@@ -267,7 +267,7 @@ function ContactFormSection() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-lg bg-[var(--signal-bg-accent-muted)] flex items-center justify-center shrink-0">
-                  <LocationIcon
+                  <MapPin
                     size={18}
                     className="text-[var(--signal-fg-accent)]"
                   />
@@ -522,7 +522,7 @@ function ContactForm() {
             animate={{ pathLength: 1 }}
             transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
           >
-            <CheckIcon size={32} className="text-[var(--signal-fg-success)]" />
+            <Check size={32} className="text-[var(--signal-fg-success)]" />
           </motion.div>
         </motion.div>
         <h3 className="text-xl font-bold text-[var(--signal-fg-primary)] mb-2">
@@ -706,7 +706,7 @@ function ContactForm() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <AlertIcon
+            <AlertTriangle
               size={16}
               className="text-[var(--signal-fg-danger)] shrink-0"
             />
@@ -755,7 +755,7 @@ function ContactForm() {
           ) : (
             <>
               Send Message
-              <ChevronRightIcon size={16} />
+              <ChevronRight size={16} />
             </>
           )}
         </button>

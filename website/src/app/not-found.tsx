@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SearchIcon, HomeIcon } from "@primer/octicons-react";
+import { SearchIcon, HomeIcon } from "lucide-react";
 
 /**
  * 404 Page — fun, on-brand, not corporate.

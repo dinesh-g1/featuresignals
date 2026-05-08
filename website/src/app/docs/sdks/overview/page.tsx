@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = {
@@ -270,7 +270,7 @@ client.Dispose(); // C#`}
             href={step.href}
             className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>{step.label}</span>
           </Link>
         ))}

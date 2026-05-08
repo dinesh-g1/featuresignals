@@ -3,12 +3,12 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRightIcon,
-  ShieldLockIcon,
-  AlertIcon,
-  CheckIcon,
-  SyncIcon,
-} from "@primer/octicons-react";
+  ArrowRight,
+  ShieldCheck,
+  AlertTriangle,
+  Check,
+  RefreshCw,
+} from "lucide-react";
 import { type CompetitorProvider, formatUSD, formatINR } from "@/lib/pricing";
 
 // ---------------------------------------------------------------------------
@@ -223,19 +223,19 @@ export function MigrationPreview() {
               >
                 {status === "loading" ? (
                   <>
-                    <SyncIcon size={16} className="animate-spin" />
+                    <RefreshCw size={16} className="animate-spin" />
                     Connecting...
                   </>
                 ) : (
                   <>
-                    <ArrowRightIcon size={16} />
+                    <ArrowRight size={16} />
                     Connect &amp; Preview Migration
                   </>
                 )}
               </button>
 
               <p className="text-xs text-[var(--signal-fg-tertiary)] text-center flex items-center justify-center gap-1.5">
-                <ShieldLockIcon size={12} />
+                <ShieldCheck size={12} />
                 Your data is never stored. Preview only.
               </p>
             </div>
@@ -256,7 +256,7 @@ export function MigrationPreview() {
                 className="rounded-2xl border border-[var(--signal-border-default)] bg-white p-12 text-center"
                 style={{ boxShadow: "var(--signal-shadow-sm)" }}
               >
-                <SyncIcon
+                <RefreshCw
                   size={32}
                   className="animate-spin mx-auto mb-4 text-[var(--signal-fg-accent)]"
                 />
@@ -281,7 +281,7 @@ export function MigrationPreview() {
                 role="alert"
               >
                 <div className="flex items-start gap-3">
-                  <AlertIcon
+                  <AlertTriangle
                     size={16}
                     className="shrink-0 mt-0.5 text-[var(--signal-fg-danger)]"
                   />
@@ -350,7 +350,7 @@ export function MigrationPreview() {
                 {/* Arrow */}
                 <div className="flex items-center justify-center">
                   <div className="text-center">
-                    <ArrowRightIcon
+                    <ArrowRight
                       size={24}
                       className="mx-auto text-[var(--signal-fg-success)]"
                     />
@@ -430,7 +430,7 @@ export function MigrationPreview() {
                   >
                     {saved ? (
                       <>
-                        <CheckIcon size={16} />
+                        <Check size={16} />
                         Comparison Saved
                       </>
                     ) : (
@@ -449,7 +449,7 @@ export function MigrationPreview() {
                       className="inline-flex items-start gap-2 px-4 py-3 rounded-lg bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)] text-sm text-[var(--signal-fg-primary)]"
                       role="status"
                     >
-                      <CheckIcon
+                      <Check
                         size={14}
                         className="shrink-0 mt-0.5 text-[var(--signal-fg-success)]"
                       />

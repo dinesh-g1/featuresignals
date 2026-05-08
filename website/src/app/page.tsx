@@ -4,26 +4,25 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
-  RocketIcon,
-  LightBulbIcon,
-  SyncIcon,
-  ShieldLockIcon,
-  GraphIcon,
-  ContainerIcon,
-  CodeIcon,
-  GearIcon,
-  ShieldCheckIcon,
-  CheckIcon,
-  CheckCircleIcon,
-  StarFillIcon,
-  HeartFillIcon,
-  CommentDiscussionIcon,
-  XIcon,
-  ArrowRightIcon,
-  ZapIcon,
-  LinkExternalIcon,
-  PeopleIcon,
-} from "@primer/octicons-react";
+  Rocket,
+  Lightbulb,
+  RefreshCw,
+  ShieldCheck,
+  Activity,
+  Box,
+  Code,
+  Settings,
+  Check,
+  CheckCircle,
+  Star,
+  Heart,
+  MessageSquarePlus,
+  X,
+  ArrowRight,
+  Zap,
+  ExternalLink,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ==========================================================================
@@ -278,7 +277,9 @@ function HeroSection() {
                     <p className="text-2xl font-bold text-[var(--signal-fg-primary)]">
                       12.4M
                     </p>
-                    <p className="text-sm text-[var(--signal-fg-secondary)]">evals</p>
+                    <p className="text-sm text-[var(--signal-fg-secondary)]">
+                      evals
+                    </p>
                   </div>
                 </div>
 
@@ -299,7 +300,7 @@ function HeroSection() {
                       );
                     }}
                   >
-                    <CheckIcon size={14} />
+                    <Check size={14} />
                   </button>
                 </div>
               </div>
@@ -353,37 +354,37 @@ interface CapabilityCard {
 
 const capabilities: CapabilityCard[] = [
   {
-    icon: RocketIcon,
+    icon: Rocket,
     title: "Release with Confidence",
     description:
       "Deploy behind feature flags. Roll out gradually to 1%, 10%, 100%. Kill any feature instantly — no redeploy, no downtime.",
   },
   {
-    icon: LightBulbIcon,
+    icon: Lightbulb,
     title: "Automate Cleanup",
     description:
       "The AI Janitor scans your codebase, finds stale flags, and opens PRs to remove them automatically.",
   },
   {
-    icon: SyncIcon,
+    icon: RefreshCw,
     title: "Migrate Without Risk",
     description:
       "Import flags, environments, and targeting rules from LaunchDarkly, ConfigCat, or Flagsmith in minutes.",
   },
   {
-    icon: ShieldLockIcon,
+    icon: ShieldCheck,
     title: "Govern Every Change",
     description:
       "RBAC with per-environment permissions. Tamper-evident audit logs. Change approval workflows. SSO.",
   },
   {
-    icon: GraphIcon,
+    icon: Activity,
     title: "Experiment at Scale",
     description:
       "Weighted variants with impression tracking. A/B test anything — built into every plan.",
   },
   {
-    icon: ContainerIcon,
+    icon: Box,
     title: "Deploy Anywhere",
     description:
       "Single Go binary. Docker or bare metal. Cloud or self-hosted. Apache 2.0.",
@@ -395,7 +396,7 @@ function CapabilityCardsSection() {
     <section id="capabilities" className="py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
-          <SectionLabel icon={RocketIcon} text="Platform Capabilities" />
+          <SectionLabel icon={Rocket} text="Platform Capabilities" />
           <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Everything you need to ship
           </h2>
@@ -536,7 +537,7 @@ function HowItWorksSection() {
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
-          <SectionLabel icon={SyncIcon} text="How It Works" />
+          <SectionLabel icon={RefreshCw} text="How It Works" />
           <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             How it works
           </h2>
@@ -650,7 +651,8 @@ function HowItWorksSection() {
                 </span>
                 <span className="text-[var(--signal-fg-accent)]">const</span>{" "}
                 <span>enabled</span> ={" "}
-                <span className="text-[var(--signal-fg-accent)]">await</span> fs.
+                <span className="text-[var(--signal-fg-accent)]">await</span>{" "}
+                fs.
                 <span className="text-[var(--signal-fg-info)]">isEnabled</span>(
               </div>
               <div>
@@ -700,25 +702,25 @@ interface PersonaFeature {
 const personaFeatures: Record<string, PersonaFeature[]> = {
   developers: [
     {
-      icon: ZapIcon,
+      icon: Zap,
       title: "Sub-millisecond evaluation in 8 languages",
       description:
         "Go, Node.js, Python, Java, .NET, Ruby, React, Vue — all with native SDKs optimized for minimal overhead.",
     },
     {
-      icon: CodeIcon,
+      icon: Code,
       title: "One-line SDK integration",
       description:
         "Import, initialize, evaluate. The simplest integration of any feature flag platform.",
     },
     {
-      icon: LinkExternalIcon,
+      icon: ExternalLink,
       title: "OpenFeature native — zero vendor lock-in",
       description:
         "All SDKs implement the OpenFeature standard. Swap providers with a single line of config.",
     },
     {
-      icon: ContainerIcon,
+      icon: Box,
       title: "Local evaluation from in-memory cache",
       description:
         "Flags evaluate locally in under 1ms. No network round-trips on the hot path.",
@@ -726,25 +728,25 @@ const personaFeatures: Record<string, PersonaFeature[]> = {
   ],
   platform: [
     {
-      icon: GearIcon,
+      icon: Settings,
       title: "Terraform, Pulumi, Ansible providers for GitOps",
       description:
         "Manage flags as code in your existing infrastructure pipelines. Full GitOps support.",
     },
     {
-      icon: ContainerIcon,
+      icon: Box,
       title: "Relay proxy for edge caching and high availability",
       description:
         "Deploy relay proxies at the edge for sub-millisecond evaluation across all regions.",
     },
     {
-      icon: SyncIcon,
+      icon: RefreshCw,
       title: "Webhooks, scheduling, CI/CD integration",
       description:
         "Trigger deployments, notifications, and automated workflows on flag changes.",
     },
     {
-      icon: RocketIcon,
+      icon: Rocket,
       title: "Multi-environment management with flag promotion",
       description:
         "Promote flags from dev → staging → production with confidence. Environment-specific targeting.",
@@ -752,25 +754,25 @@ const personaFeatures: Record<string, PersonaFeature[]> = {
   ],
   security: [
     {
-      icon: ShieldCheckIcon,
+      icon: ShieldCheck,
       title: "RBAC with 4 built-in roles and per-environment permissions",
       description:
         "Admin, Editor, Viewer, and custom roles with granular environment-level access control.",
     },
     {
-      icon: ShieldLockIcon,
+      icon: ShieldCheck,
       title: "Tamper-evident audit logging with before/after diffs",
       description:
         "Every change is recorded with actor identity, timestamp, and full before/after state diff.",
     },
     {
-      icon: CheckIcon,
+      icon: Check,
       title: "SSO (SAML/OIDC), SCIM, MFA enforcement",
       description:
         "Enterprise authentication with Okta, Azure AD, Google Workspace, and any SAML/OIDC provider.",
     },
     {
-      icon: CheckCircleIcon,
+      icon: CheckCircle,
       title: "SOC 2 Type II, GDPR, HIPAA compliance ready",
       description:
         "Auditor-ready compliance posture with data residency controls and DPA support.",
@@ -828,7 +830,7 @@ function PersonaFeaturesSection() {
     <section id="personas" className="py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-12" {...fadeUp}>
-          <SectionLabel icon={PeopleIcon} text="Built For Your Team" />
+          <SectionLabel icon={Users} text="Built For Your Team" />
           <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Built for every team
           </h2>
@@ -926,18 +928,33 @@ function PersonaFeaturesSection() {
    ========================================================================== */
 
 const ossMetrics = [
-  { value: "500+", label: "GitHub Stars", href: "https://github.com/dinesh-g1/featuresignals" },
+  {
+    value: "500+",
+    label: "GitHub Stars",
+    href: "https://github.com/dinesh-g1/featuresignals",
+  },
   { value: "8", label: "SDK Languages", href: "/integrations#sdks" },
-  { value: "Apache 2.0", label: "Open Source License", href: "https://github.com/dinesh-g1/featuresignals/blob/main/LICENSE" },
-  { value: "OpenFeature", label: "Certified Provider", href: "https://openfeature.dev/ecosystem" },
+  {
+    value: "Apache 2.0",
+    label: "Open Source License",
+    href: "https://github.com/dinesh-g1/featuresignals/blob/main/LICENSE",
+  },
+  {
+    value: "OpenFeature",
+    label: "Certified Provider",
+    href: "https://openfeature.dev/ecosystem",
+  },
 ];
 
 function OpenSourceProofSection() {
   return (
-    <section id="open-source" className="py-20 md:py-28 bg-[var(--signal-bg-secondary)]">
+    <section
+      id="open-source"
+      className="py-20 md:py-28 bg-[var(--signal-bg-secondary)]"
+    >
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <motion.div className="text-center mb-14" {...fadeUp}>
-          <SectionLabel icon={StarFillIcon} text="Open Source First" />
+          <SectionLabel icon={Star} text="Open Source First" />
           <h2 className="text-3xl md:text-4xl font-bold text-[var(--signal-fg-primary)]">
             Built in the open. Trusted by the community.
           </h2>
@@ -952,18 +969,33 @@ function OpenSourceProofSection() {
               key={metric.label}
               href={metric.href}
               target={metric.href.startsWith("http") ? "_blank" : undefined}
-              rel={metric.href.startsWith("http") ? "noopener noreferrer" : undefined}
+              rel={
+                metric.href.startsWith("http")
+                  ? "noopener noreferrer"
+                  : undefined
+              }
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-48px" }}
-              transition={{ duration: 0.4, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: 0.4,
+                delay: 0.05 * i,
+                ease: [0.16, 1, 0.3, 1],
+              }}
               whileHover={{ scale: 1.05 }}
               className="flex flex-col items-center gap-2 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow text-center group"
             >
-              <span className={cn(
-                "text-3xl font-bold",
-                ["text-[var(--signal-fg-accent)]", "text-[var(--signal-fg-info)]", "text-[var(--signal-fg-success)]", "text-[var(--signal-fg-warning)]"][i % 4],
-              )}>
+              <span
+                className={cn(
+                  "text-3xl font-bold",
+                  [
+                    "text-[var(--signal-fg-accent)]",
+                    "text-[var(--signal-fg-info)]",
+                    "text-[var(--signal-fg-success)]",
+                    "text-[var(--signal-fg-warning)]",
+                  ][i % 4],
+                )}
+              >
                 {metric.value}
               </span>
               <span className="text-sm text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-primary)] transition-colors">
@@ -973,7 +1005,10 @@ function OpenSourceProofSection() {
           ))}
         </div>
 
-        <motion.blockquote className="mt-12 max-w-2xl mx-auto text-center" {...fadeUpDelayed(0.3)}>
+        <motion.blockquote
+          className="mt-12 max-w-2xl mx-auto text-center"
+          {...fadeUpDelayed(0.3)}
+        >
           {/* Real user quote will go here when available */}
         </motion.blockquote>
       </div>
@@ -1084,7 +1119,7 @@ function PricingOverviewSection() {
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white px-3 py-1 text-xs font-semibold">
-                    <StarFillIcon size={12} />
+                    <Star size={12} />
                     {plan.badge}
                   </span>
                 </div>
@@ -1115,7 +1150,7 @@ function PricingOverviewSection() {
                     key={feature}
                     className="flex items-start gap-2 text-sm text-[var(--signal-fg-primary)]"
                   >
-                    <CheckIcon
+                    <Check
                       size={14}
                       className="text-[var(--signal-fg-success)] mt-0.5 shrink-0"
                     />
@@ -1145,7 +1180,7 @@ function PricingOverviewSection() {
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline underline-offset-4"
           >
             View full pricing
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
           </Link>
         </motion.div>
       </div>

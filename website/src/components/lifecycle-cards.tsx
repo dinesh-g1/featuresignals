@@ -3,13 +3,13 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  RocketIcon,
-  GoalIcon,
-  GraphIcon,
-  LightBulbIcon,
-  SyncIcon,
-  ArrowRightIcon,
-} from "@primer/octicons-react";
+  Rocket,
+  Target,
+  Activity,
+  Lightbulb,
+  RefreshCw,
+  ArrowRight,
+} from "lucide-react";
 
 const lifecycleSteps = [
   {
@@ -18,7 +18,7 @@ const lifecycleSteps = [
     description:
       "Define flag keys, types, and default values. Start the lifecycle.",
     href: "/create",
-    icon: <RocketIcon size={20} fill="#ffffff" />,
+    icon: <Rocket size={20} fill="#ffffff" />,
     bgColor: "var(--signal-bg-accent-emphasis)",
     mutedBg: "var(--signal-bg-accent-muted)",
     fgColor: "var(--signal-fg-accent)",
@@ -30,7 +30,7 @@ const lifecycleSteps = [
     description:
       "Route features to the right users with attribute-based rules.",
     href: "/target",
-    icon: <GoalIcon size={20} fill="#ffffff" />,
+    icon: <Target size={20} fill="#ffffff" />,
     bgColor: "var(--signal-bg-info-emphasis)",
     mutedBg: "var(--signal-bg-info-muted)",
     fgColor: "var(--signal-fg-info)",
@@ -42,7 +42,7 @@ const lifecycleSteps = [
     description:
       "Ship with confidence using gradual percentage rollouts and canary releases.",
     href: "/rollout",
-    icon: <GraphIcon size={20} fill="#ffffff" />,
+    icon: <Activity size={20} fill="#ffffff" />,
     bgColor: "var(--signal-bg-warning-emphasis)",
     mutedBg: "var(--signal-bg-warning-muted)",
     fgColor: "var(--signal-fg-warning)",
@@ -54,7 +54,7 @@ const lifecycleSteps = [
     description:
       "AI Janitor detects stale flags and generates PRs to remove them.",
     href: "/cleanup",
-    icon: <LightBulbIcon size={20} fill="#ffffff" />,
+    icon: <Lightbulb size={20} fill="#ffffff" />,
     bgColor: "var(--signal-bg-danger-emphasis)",
     mutedBg: "var(--signal-bg-danger-muted)",
     fgColor: "var(--signal-fg-danger)",
@@ -66,7 +66,7 @@ const lifecycleSteps = [
     description:
       "Import flags from LaunchDarkly, ConfigCat, Flagsmith, or Unleash.",
     href: "/migrate",
-    icon: <SyncIcon size={20} fill="#ffffff" />,
+    icon: <RefreshCw size={20} fill="#ffffff" />,
     bgColor: "var(--signal-bg-success-emphasis)",
     mutedBg: "var(--signal-bg-success-muted)",
     fgColor: "var(--signal-fg-success)",
@@ -153,7 +153,7 @@ export function LifecycleCards() {
                   style={{ color: step.fgColor }}
                 >
                   Explore
-                  <ArrowRightIcon size={12} />
+                  <ArrowRight size={12} />
                 </div>
               </Link>
             </motion.div>
@@ -174,7 +174,7 @@ export function LifecycleCards() {
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
             Start the lifecycle
-            <ArrowRightIcon size={16} />
+            <ArrowRight size={16} />
           </Link>
         </motion.div>
       </div>

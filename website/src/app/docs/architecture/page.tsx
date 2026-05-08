@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = { title: "Architecture Overview", description: "Technical architecture overview of FeatureSignals — hexagonal design, evaluation engine, caching, and real-time updates." };
@@ -42,7 +42,7 @@ Flag Engine / API → Update flag in PostgreSQL
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
         {[{ label: "Evaluation Engine", href: "/docs/architecture/evaluation-engine" }, { label: "Relay Proxy", href: "/docs/advanced/relay-proxy" }, { label: "SDK Overview", href: "/docs/sdks/overview" }].map((step) => (
-          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
+          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRight size={14} /><span>{step.label}</span></Link></li>
         ))}
       </ul>
     </div>

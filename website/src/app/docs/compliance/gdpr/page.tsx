@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = {
@@ -88,7 +88,7 @@ curl -X DELETE https://api.featuresignals.com/v1/users/me \\
               href={step.href}
               className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
             >
-              <ArrowRightIcon size={14} />
+              <ArrowRight size={14} />
               <span>{step.label}</span>
             </Link>
           </li>

@@ -3,14 +3,14 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckIcon,
+  Check,
   PlusIcon,
-  ChevronRightIcon,
-  RocketIcon,
-  CodeIcon,
+  ChevronRight,
+  Rocket,
+  Code,
   InfoIcon,
-  FileCodeIcon,
-} from "@primer/octicons-react";
+  FileCode,
+} from "lucide-react";
 
 type FlagType = "boolean" | "string" | "number" | "json";
 
@@ -30,12 +30,12 @@ const TYPE_OPTIONS: {
   {
     value: "boolean",
     label: "Boolean",
-    icon: <RocketIcon size={14} fill="var(--signal-fg-accent)" />,
+    icon: <Rocket size={14} fill="var(--signal-fg-accent)" />,
   },
   {
     value: "string",
     label: "String",
-    icon: <CodeIcon size={14} fill="var(--signal-fg-accent)" />,
+    icon: <Code size={14} fill="var(--signal-fg-accent)" />,
   },
   {
     value: "number",
@@ -45,7 +45,7 @@ const TYPE_OPTIONS: {
   {
     value: "json",
     label: "JSON",
-    icon: <FileCodeIcon size={14} fill="var(--signal-fg-accent)" />,
+    icon: <FileCode size={14} fill="var(--signal-fg-accent)" />,
   },
 ];
 
@@ -139,7 +139,7 @@ export function FlagCreator() {
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--signal-bg-accent-muted)]">
-                <RocketIcon size={16} fill="var(--signal-fg-accent)" />
+                <Rocket size={16} fill="var(--signal-fg-accent)" />
               </div>
               <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
                 Create a Flag
@@ -311,7 +311,7 @@ export function FlagCreator() {
               }}
             >
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-3">
-                <CheckIcon size={24} fill="var(--signal-fg-success)" />
+                <Check size={24} fill="var(--signal-fg-success)" />
               </div>
               <h3 className="text-lg font-bold text-[var(--signal-fg-success)] mb-1">
                 Flag Created
@@ -389,7 +389,7 @@ export function FlagCreator() {
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150 flex-1"
               >
                 Now let&apos;s target it
-                <ChevronRightIcon size={16} />
+                <ChevronRight size={16} />
               </a>
               <button
                 onClick={handleReset}

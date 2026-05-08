@@ -3,12 +3,12 @@
 import { useState, useCallback, useMemo, useId } from "react";
 import { motion } from "framer-motion";
 import {
-  ChevronRightIcon,
-  PeopleIcon,
-  RocketIcon,
-  ShieldCheckIcon,
-  ZapIcon,
-} from "@primer/octicons-react";
+  ChevronRight,
+  Users,
+  Rocket,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 
 interface RingStage {
   label: string;
@@ -81,7 +81,7 @@ export function RolloutSlider() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--signal-bg-accent-muted)]">
-          <RocketIcon size={16} fill="var(--signal-fg-accent)" />
+          <Rocket size={16} fill="var(--signal-fg-accent)" />
         </div>
         <div>
           <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
@@ -247,7 +247,7 @@ export function RolloutSlider() {
             >
               {percentage >= 8 && (
                 <span>
-                  <PeopleIcon size={12} /> {usersReceiving.toLocaleString()}
+                  <Users size={12} /> {usersReceiving.toLocaleString()}
                 </span>
               )}
             </motion.div>
@@ -274,11 +274,11 @@ export function RolloutSlider() {
           }`}
         >
           {percentage === 100 ? (
-            <ShieldCheckIcon size={16} fill="var(--signal-fg-success)" />
+            <ShieldCheck size={16} fill="var(--signal-fg-success)" />
           ) : percentage === 0 ? (
-            <ZapIcon size={16} fill="var(--signal-fg-tertiary)" />
+            <Zap size={16} fill="var(--signal-fg-tertiary)" />
           ) : (
-            <RocketIcon size={16} fill="var(--signal-fg-warning)" />
+            <Rocket size={16} fill="var(--signal-fg-warning)" />
           )}
           <div>
             <div className="text-xs font-semibold text-[var(--signal-fg-primary)]">
@@ -307,7 +307,7 @@ export function RolloutSlider() {
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f232826" }}
           >
-            <RocketIcon size={16} />
+            <Rocket size={16} />
             Start Canary Release
           </button>
         )}
@@ -316,7 +316,7 @@ export function RolloutSlider() {
           className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-fg-accent)] hover:bg-[#0757ba] transition-colors duration-150"
         >
           Clean up when done
-          <ChevronRightIcon size={16} />
+          <ChevronRight size={16} />
         </a>
       </div>
     </div>

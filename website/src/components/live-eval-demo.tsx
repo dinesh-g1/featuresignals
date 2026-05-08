@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ZapIcon } from "@primer/octicons-react";
+import { Zap } from "lucide-react";
 import { CodeEditor } from "@/components/ui/code-editor";
 import {
   evaluateFlag,
@@ -29,7 +29,7 @@ function LatencyBadge({ latencyMs }: { latencyMs: number }) {
           : "bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]"
       }`}
     >
-      <ZapIcon size={12} />
+      <Zap size={12} />
       {latencyMs.toFixed(2)}ms
       {isSubMs && (
         <span className="text-[10px] font-normal">(sub-millisecond ✓)</span>

@@ -3,12 +3,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LightBulbIcon,
-  CheckIcon,
-  GitBranchIcon,
-  ClockIcon,
-  ArrowRightIcon,
-} from "@primer/octicons-react";
+  Lightbulb,
+  Check,
+  GitBranch,
+  Clock,
+  ArrowRight,
+} from "lucide-react";
 
 /** A file in the sample codebase */
 interface CodebaseFile {
@@ -172,7 +172,7 @@ export function AiJanitorSimulator() {
           >
             {/* Header */}
             <div className="px-5 py-3 border-b border-[var(--signal-border-subtle)] bg-white/80 flex items-center gap-2">
-              <GitBranchIcon size={16} fill="var(--signal-fg-secondary)" />
+              <GitBranch size={16} fill="var(--signal-fg-secondary)" />
               <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                 src/
               </span>
@@ -236,7 +236,7 @@ export function AiJanitorSimulator() {
                           }}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)] border border-[var(--signal-border-warning-muted)]"
                         >
-                          <LightBulbIcon size={12} />
+                          <Lightbulb size={12} />
                           Stale
                         </motion.span>
                       ) : (
@@ -248,7 +248,7 @@ export function AiJanitorSimulator() {
                             ease: [0.16, 1, 0.3, 1],
                           }}
                         >
-                          <CheckIcon size={16} fill="var(--signal-fg-success)" />
+                          <Check size={16} fill="var(--signal-fg-success)" />
                         </motion.span>
                       )
                     ) : (
@@ -293,7 +293,7 @@ export function AiJanitorSimulator() {
 
             {scanPhase === "idle" && (
               <div className="text-center py-12">
-                <LightBulbIcon
+                <Lightbulb
                   size={32}
                   fill="var(--signal-fg-tertiary)"
                   className="mx-auto mb-3"
@@ -317,7 +317,7 @@ export function AiJanitorSimulator() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                     >
-                      <LightBulbIcon size={12} />
+                      <Lightbulb size={12} />
                       {revealedFlags} stale flag{revealedFlags !== 1 ? "s" : ""}{" "}
                       found
                     </motion.span>
@@ -349,7 +349,7 @@ export function AiJanitorSimulator() {
                               {flag.name}
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-xs text-[var(--signal-fg-secondary)]">
-                              <ClockIcon size={12} />
+                              <Clock size={12} />
                               <span>
                                 Last used: {flag.lastUsedDays} days ago
                               </span>
@@ -358,7 +358,7 @@ export function AiJanitorSimulator() {
                               {flag.detail}
                             </p>
                             <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)]">
-                              <GitBranchIcon size={12} />
+                              <GitBranch size={12} />
                               PR #{flag.prNumber} generated
                             </div>
                           </div>
@@ -393,7 +393,7 @@ export function AiJanitorSimulator() {
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div className="flex items-center gap-2">
-                    <CheckIcon size={16} fill="var(--signal-fg-success)" />
+                    <Check size={16} fill="var(--signal-fg-success)" />
                     <span className="text-sm font-semibold text-[var(--signal-fg-success)]">
                       Scan complete
                     </span>
@@ -449,14 +449,14 @@ export function AiJanitorSimulator() {
                             {flag.name}
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-xs text-[var(--signal-fg-secondary)]">
-                            <ClockIcon size={12} />
+                            <Clock size={12} />
                             <span>Last used: {flag.lastUsedDays} days ago</span>
                           </div>
                           <p className="text-xs text-[var(--signal-fg-tertiary)] mt-1">
                             {flag.detail}
                           </p>
                           <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)]">
-                            <GitBranchIcon size={12} />
+                            <GitBranch size={12} />
                             PR #{flag.prNumber} generated
                           </div>
                         </div>
@@ -487,7 +487,7 @@ export function AiJanitorSimulator() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              <LightBulbIcon size={16} />
+              <Lightbulb size={16} />
               Try with a sample codebase
             </motion.button>
           )}
@@ -512,9 +512,9 @@ export function AiJanitorSimulator() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)] transition-colors duration-150"
             style={{ boxShadow: "0 1px 0 0 #1f23280a" }}
           >
-            <GitBranchIcon size={16} />
+            <GitBranch size={16} />
             Connect your GitHub repo
-            <ArrowRightIcon size={16} />
+            <ArrowRight size={16} />
           </a>
         </div>
       </div>

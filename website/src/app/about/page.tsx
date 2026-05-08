@@ -3,19 +3,19 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  ZapIcon,
-  GitPullRequestIcon,
-  ShieldCheckIcon,
-  LightBulbIcon,
-  HeartFillIcon,
-  PeopleIcon,
-  GlobeIcon,
-  OrganizationIcon,
-  LawIcon,
-  ClockIcon,
-  RocketIcon,
-  CheckCircleIcon,
-} from "@primer/octicons-react";
+  Zap,
+  GitPullRequest,
+  ShieldCheck,
+  Lightbulb,
+  Heart,
+  Users,
+  Globe,
+  Building,
+  Scale,
+  Clock,
+  Rocket,
+  CheckCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ==========================================================================
@@ -42,31 +42,31 @@ const fadeUpDelayed = (delay: number) => ({
 
 const principles = [
   {
-    icon: ZapIcon,
+    icon: Zap,
     title: "Performance as a feature",
     description:
       "Sub-millisecond evaluation. Every flag check matters. We optimise relentlessly because your users shouldn't wait on a feature flag.",
   },
   {
-    icon: GitPullRequestIcon,
+    icon: GitPullRequest,
     title: "Open by default",
     description:
       "Apache 2.0. Self-host or cloud. Your choice. Our code is open, our roadmap is public, and our community shapes the product.",
   },
   {
-    icon: ShieldCheckIcon,
+    icon: ShieldCheck,
     title: "No vendor lock-in",
     description:
       "OpenFeature native. Leave anytime. Your application code depends on an open standard, not on us. Switching is a config change, not a rewrite.",
   },
   {
-    icon: LightBulbIcon,
+    icon: Lightbulb,
     title: "AI as an accelerator",
     description:
       "The AI Janitor automates technical debt cleanup — finding stale flags and removing them. AI augments developers; it doesn't replace them.",
   },
   {
-    icon: LawIcon,
+    icon: Scale,
     title: "Transparent pricing",
     description:
       "Flat rate. No per-seat penalties. No surprise bills. Enterprise features are included, not nickel-and-dimed. Pricing that respects your budget.",
@@ -357,7 +357,7 @@ function TeamSection() {
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
           <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mx-auto mb-6">
-            <PeopleIcon size={28} className="text-[var(--signal-fg-accent)]" />
+            <Users size={28} className="text-[var(--signal-fg-accent)]" />
           </div>
           <h2
             id="team-heading"
@@ -391,7 +391,7 @@ function BackersSection() {
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
           <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-6">
-            <RocketIcon size={28} className="text-[var(--signal-fg-info)]" />
+            <Rocket size={28} className="text-[var(--signal-fg-info)]" />
           </div>
           <h2
             id="backers-heading"

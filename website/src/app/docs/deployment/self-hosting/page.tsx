@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = { title: "Self-Hosting Guide", description: "Self-host FeatureSignals on your own infrastructure with full control over data and configuration." };
@@ -51,7 +51,7 @@ docker compose -f docker-compose.yml up -d`} />
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
         {[{ label: "Configuration", href: "/docs/deployment/configuration" }, { label: "Docker Compose", href: "/docs/deployment/docker-compose" }].map((step) => (
-          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
+          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRight size={14} /><span>{step.label}</span></Link></li>
         ))}
       </ul>
     </div>

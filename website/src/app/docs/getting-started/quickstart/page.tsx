@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { RocketIcon, LightBulbIcon, ArrowRightIcon } from "@primer/octicons-react";
+import { Rocket, Lightbulb, ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = {
@@ -25,7 +25,7 @@ export default function QuickstartPage() {
       {/* Callout */}
       <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
+          <Lightbulb size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-1">
               Try without installing
@@ -332,7 +332,7 @@ const enabled = useFlag("new-checkout", false);
             href="/docs/getting-started/create-your-first-flag"
             className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>Create Your First Flag</span>
           </Link>
           <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">
@@ -344,7 +344,7 @@ const enabled = useFlag("new-checkout", false);
             href="/docs/core-concepts/feature-flags"
             className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>Core Concepts</span>
           </Link>
           <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">
@@ -356,7 +356,7 @@ const enabled = useFlag("new-checkout", false);
             href="/docs/sdks/overview"
             className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>SDK Documentation</span>
           </Link>
           <span className="text-xs text-[var(--signal-fg-secondary)] ml-6">

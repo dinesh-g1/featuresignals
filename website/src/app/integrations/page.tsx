@@ -4,27 +4,27 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  CodeIcon,
+  Code,
   ServerIcon,
-  RocketIcon,
-  ShieldLockIcon,
-  GraphIcon,
-  CommentDiscussionIcon,
-  GitBranchIcon,
-  OrganizationIcon,
-  PackageIcon,
-  CheckCircleIcon,
-  ArrowRightIcon,
-  GlobeIcon,
+  Rocket,
+  ShieldCheck,
+  Activity,
+  MessageSquarePlus,
+  GitBranch,
+  Building,
+  Package,
+  CheckCircle,
+  ArrowRight,
+  Globe,
   KeyIcon,
-  PeopleIcon,
-  WorkflowIcon,
-  ContainerIcon,
+  Users,
+  Workflow,
+  Box,
   CloudIcon,
   BellIcon,
   MegaphoneIcon,
   BroadcastIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ==========================================================================
@@ -49,7 +49,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "sdks",
     label: "SDKs",
-    icon: CodeIcon,
+    icon: Code,
     items: [
       {
         name: "Go",
@@ -141,7 +141,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "cicd",
     label: "CI/CD",
-    icon: RocketIcon,
+    icon: Rocket,
     items: [
       {
         name: "GitHub Actions",
@@ -178,7 +178,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "sso",
     label: "Identity Providers",
-    icon: ShieldLockIcon,
+    icon: ShieldCheck,
     items: [
       {
         name: "Okta",
@@ -221,7 +221,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "monitoring",
     label: "Monitoring & Logging",
-    icon: GraphIcon,
+    icon: Activity,
     items: [
       {
         name: "Datadog",
@@ -252,7 +252,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "communication",
     label: "Communication",
-    icon: CommentDiscussionIcon,
+    icon: MessageSquarePlus,
     items: [
       {
         name: "Slack",
@@ -283,7 +283,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "git",
     label: "Git Providers",
-    icon: GitBranchIcon,
+    icon: GitBranch,
     items: [
       {
         name: "GitHub",
@@ -314,7 +314,7 @@ const categories: IntegrationCategory[] = [
   {
     id: "openfeature",
     label: "OpenFeature",
-    icon: OrganizationIcon,
+    icon: Building,
     items: [
       {
         name: "OpenFeature Native",
@@ -546,7 +546,7 @@ function IntegrationsContent({
                       className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
                     >
                       Learn more
-                      <ArrowRightIcon size={12} />
+                      <ArrowRight size={12} />
                     </a>
                   ) : (
                     <Link
@@ -554,7 +554,7 @@ function IntegrationsContent({
                       className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
                     >
                       Learn more
-                      <ArrowRightIcon size={12} />
+                      <ArrowRight size={12} />
                     </Link>
                   )}
                 </motion.div>
@@ -581,7 +581,7 @@ function OpenFeatureHighlight() {
       <div className="mx-auto max-w-7xl px-6">
         <motion.div className="text-center max-w-2xl mx-auto" {...fadeUp}>
           <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-6">
-            <OrganizationIcon
+            <Building
               size={28}
               className="text-[var(--signal-fg-info)]"
             />
@@ -602,25 +602,25 @@ function OpenFeatureHighlight() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-10">
           {[
             {
-              icon: CodeIcon,
+              icon: Code,
               title: "One API",
               description:
                 "Write against the OpenFeature unified API. Works across 8 languages. Consistent evaluation semantics everywhere.",
             },
             {
-              icon: WorkflowIcon,
+              icon: Workflow,
               title: "Swap Anytime",
               description:
                 "Change your feature flag provider by updating one configuration line. No code rewrites. No migration projects.",
             },
             {
-              icon: CheckCircleIcon,
+              icon: CheckCircle,
               title: "CNCF Standard",
               description:
                 "OpenFeature is a CNCF incubating project. Backed by Google, Microsoft, Dynatrace, and more.",
             },
             {
-              icon: ContainerIcon,
+              icon: Box,
               title: "Multi-Provider",
               description:
                 "Run FeatureSignals alongside another provider. Use each for what it does best. OpenFeature makes it seamless.",
@@ -663,7 +663,7 @@ function OpenFeatureHighlight() {
             className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--signal-fg-info)] hover:underline"
           >
             Explore OpenFeature SDKs
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
           </Link>
         </motion.p>
       </div>

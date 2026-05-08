@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XIcon, LinkExternalIcon } from "@primer/octicons-react";
+import { X, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +87,7 @@ export function AnnouncementBanner({
                   >
                     {ctaLabel}
                     {ctaHref.startsWith("http") && (
-                      <LinkExternalIcon size={11} />
+                      <ExternalLink size={11} />
                     )}
                   </Link>
                 )}
@@ -104,7 +104,7 @@ export function AnnouncementBanner({
                     className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:text-[#0757ba] transition-colors"
                   >
                     {link.label}
-                    {link.external && <LinkExternalIcon size={10} />}
+                    {link.external && <ExternalLink size={10} />}
                   </Link>
                 ))}
               </div>
@@ -115,7 +115,7 @@ export function AnnouncementBanner({
                 className="shrink-0 p-1.5 -mr-1.5 rounded-md text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
                 aria-label="Dismiss banner"
               >
-                <XIcon size={14} />
+                <X size={14} />
               </button>
             </div>
           </div>

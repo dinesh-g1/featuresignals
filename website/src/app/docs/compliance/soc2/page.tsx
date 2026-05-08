@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = { title: "SOC 2 Controls Matrix", description: "FeatureSignals SOC 2 Trust Service Criteria controls matrix mapping technical controls to audit requirements." };
 
@@ -49,7 +49,7 @@ export default function Soc2Page() {
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
         {[{ label: "GDPR", href: "/docs/compliance/gdpr" }, { label: "HIPAA", href: "/docs/compliance/hipaa" }, { label: "Security Overview", href: "/docs/compliance/security-overview" }].map((step) => (
-          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
+          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRight size={14} /><span>{step.label}</span></Link></li>
         ))}
       </ul>
     </div>

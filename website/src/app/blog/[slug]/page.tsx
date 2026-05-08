@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon, ClockIcon, CalendarIcon } from "@primer/octicons-react";
+import { ArrowLeft, Clock, CalendarIcon } from "lucide-react";
 import { posts, getPostBySlug, type BlogSection } from "@/lib/blog-posts";
 import { CodeBlock } from "@/components/ui/code-editor";
 import { cn } from "@/lib/utils";
@@ -78,7 +78,7 @@ export default async function BlogPostPage({
           href="/blog"
           className="inline-flex items-center gap-1.5 text-sm text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors"
         >
-          <ArrowLeftIcon size={14} />
+          <ArrowLeft size={14} />
           Back to blog
         </Link>
       </div>
@@ -127,7 +127,7 @@ export default async function BlogPostPage({
           </span>
           <span className="text-[var(--signal-border-emphasis)]">·</span>
           <span className="flex items-center gap-1">
-            <ClockIcon size={12} />
+            <Clock size={12} />
             {post.readTime}
           </span>
         </div>
@@ -152,7 +152,7 @@ export default async function BlogPostPage({
           href="/blog"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
         >
-          <ArrowLeftIcon size={14} />
+          <ArrowLeft size={14} />
           Read more articles
         </Link>
       </footer>

@@ -2,22 +2,22 @@
 
 import { motion } from "framer-motion";
 import {
-  LightBulbIcon,
-  ArrowRightIcon,
-  ClockIcon,
-  GitBranchIcon,
+  Lightbulb,
+  ArrowRight,
+  Clock,
+  GitBranch,
   TrashIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 import { AiJanitorSimulator } from "@/components/ai-janitor-simulator";
 
 const debtStats = [
   {
-    icon: <ClockIcon size={16} fill="var(--signal-fg-warning)" />,
+    icon: <Clock size={16} fill="var(--signal-fg-warning)" />,
     stat: "6 months",
     label: "Average time a stale flag sits in a codebase before anyone notices",
   },
   {
-    icon: <GitBranchIcon size={16} fill="var(--signal-fg-info)" />,
+    icon: <GitBranch size={16} fill="var(--signal-fg-info)" />,
     stat: "1 in 4",
     label:
       "Feature flags in production are dead — fully rolled out or abandoned, adding zero value",
@@ -43,7 +43,7 @@ export function CleanupPageContent() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-danger-muted)] text-[var(--signal-fg-danger)] border border-[var(--borderColor-danger-muted)] mb-6">
-                <LightBulbIcon size={12} />
+                <Lightbulb size={12} />
                 Step 4 of 6
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
@@ -83,7 +83,7 @@ export function CleanupPageContent() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about the AI Janitor
-                  <ArrowRightIcon size={14} />
+                  <ArrowRight size={14} />
                 </a>
               </div>
             </motion.div>
@@ -141,7 +141,7 @@ export function CleanupPageContent() {
                   {step.label}
                 </a>
                 {i < 4 && (
-                  <ArrowRightIcon
+                  <ArrowRight
                     size={12}
                     className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />

@@ -3,10 +3,10 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRightIcon,
+  ArrowRight,
   DownloadIcon,
-  ShieldCheckIcon,
-} from "@primer/octicons-react";
+  ShieldCheck,
+} from "lucide-react";
 import { CalculatorSlider } from "@/components/ui/calculator-slider";
 import {
   type CompetitorProvider,
@@ -72,7 +72,7 @@ export function HeroCalculator() {
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)]">
-            <ShieldCheckIcon size={14} />
+            <ShieldCheck size={14} />
             SOC 2
           </span>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)]">
@@ -112,7 +112,7 @@ export function HeroCalculator() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors"
                 style={{ boxShadow: "0 1px 0 0 #1f232826" }}
               >
-                See it in action <ArrowRightIcon size={16} />
+                See it in action <ArrowRight size={16} />
               </a>
               <a
                 href="https://docs.featuresignals.com/getting-started/quickstart"

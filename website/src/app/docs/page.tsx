@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  RocketIcon,
-  CodeIcon,
+  Rocket,
+  Code,
   KeyIcon,
-  LightBulbIcon,
-  GitBranchIcon,
+  Lightbulb,
+  GitBranch,
   ServerIcon,
   BookIcon,
-  ShieldCheckIcon,
-  BeakerIcon,
-  GraphIcon,
-  WorkflowIcon,
-  ArrowRightIcon,
-} from "@primer/octicons-react";
+  ShieldCheck,
+  FlaskConical,
+  Activity,
+  Workflow,
+  ArrowRight,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Documentation",
@@ -26,13 +26,13 @@ const quickLinks = [
     title: "Getting Started",
     description: "Get FeatureSignals running locally in under 5 minutes.",
     href: "/docs/getting-started/quickstart",
-    icon: RocketIcon,
+    icon: Rocket,
   },
   {
     title: "SDK Overview",
     description: "Integrate with Go, Node.js, Python, Java, .NET, Ruby, React, or Vue.",
     href: "/docs/sdks/overview",
-    icon: CodeIcon,
+    icon: Code,
   },
   {
     title: "API Reference",
@@ -44,13 +44,13 @@ const quickLinks = [
     title: "AI Janitor",
     description: "Automatically detect and clean up stale feature flags with AI.",
     href: "/docs/advanced/ai-janitor",
-    icon: LightBulbIcon,
+    icon: Lightbulb,
   },
   {
     title: "Migration Guide",
     description: "Import from LaunchDarkly, ConfigCat, Flagsmith, or Unleash.",
     href: "/docs/platform/migration",
-    icon: GitBranchIcon,
+    icon: GitBranch,
   },
   {
     title: "Deployment",
@@ -144,7 +144,7 @@ export default function DocsPage() {
               href={topic.href}
               className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors group"
             >
-              <ArrowRightIcon
+              <ArrowRight
                 size={14}
                 className="text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-accent)] transition-colors shrink-0"
               />
@@ -181,7 +181,7 @@ export default function DocsPage() {
               className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               <span>Browse Discussions</span>
-              <ArrowRightIcon size={14} />
+              <ArrowRight size={14} />
             </a>
           </div>
         </div>

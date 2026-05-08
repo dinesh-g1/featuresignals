@@ -2,14 +2,14 @@
 
 import { useState, useCallback } from "react";
 import {
-  ChevronDownIcon,
-  ChevronRightIcon,
+  ChevronDown,
+  ChevronRight,
   PlayIcon,
   CopyIcon,
-  CheckIcon,
+  Check,
   LockIcon,
   KeyIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 import type { ApiEndpoint, ApiCategory } from "@/data/api-endpoints";
 
 /* ------------------------------------------------------------------ */
@@ -344,7 +344,7 @@ function InlineTryIt({
             title="Copy curl command"
           >
             {copyState.copied ? (
-              <CheckIcon size={12} />
+              <Check size={12} />
             ) : (
               <CopyIcon size={12} />
             )}
@@ -715,9 +715,9 @@ export function ApiReferenceSection({ category }: { category: ApiCategory }) {
                   {/* Expand chevron */}
                   <span className="shrink-0 text-[var(--signal-fg-secondary)]">
                     {isExpanded ? (
-                      <ChevronDownIcon size={14} />
+                      <ChevronDown size={14} />
                     ) : (
-                      <ChevronRightIcon size={14} />
+                      <ChevronRight size={14} />
                     )}
                   </span>
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRightIcon } from "@primer/octicons-react";
+import { ArrowRight } from "lucide-react";
 
 const REGISTER_URL = "https://app.featuresignals.com/register";
 
@@ -50,7 +50,7 @@ export function MobileCtaBar() {
               className="inline-flex items-center gap-1.5 shrink-0 rounded-md px-4 h-9 text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:opacity-90 active:opacity-80 transition-opacity"
             >
               Start Free
-              <ArrowRightIcon size={14} />
+              <ArrowRight size={14} />
             </a>
           </div>
         </motion.div>

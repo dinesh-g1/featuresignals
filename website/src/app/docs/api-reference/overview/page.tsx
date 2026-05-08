@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowRightIcon,
+  ArrowRight,
   PlayIcon,
   KeyIcon,
   LockIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 import apiCategories from "@/data/api-endpoints";
 
@@ -54,7 +54,7 @@ export default function ApiOverviewPage() {
       >
         <PlayIcon size={16} />
         <span>Open Interactive Playground</span>
-        <ArrowRightIcon size={14} />
+        <ArrowRight size={14} />
       </Link>
 
       {/* Base URL */}
@@ -334,7 +334,7 @@ export default function ApiOverviewPage() {
             href={step.href}
             className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>{step.label}</span>
           </Link>
         ))}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LightBulbIcon, ArrowRightIcon } from "@primer/octicons-react";
+import { Lightbulb, ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = { title: "Webhooks", description: "Configure webhook endpoints to receive real-time notifications when feature flags change." };
@@ -13,7 +13,7 @@ export default function WebhooksPage() {
 
       <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
+          <Lightbulb size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <p className="text-sm text-[var(--signal-fg-secondary)]">Configure webhooks in{" "}
             <a href="https://app.featuresignals.com/settings/webhooks" className="text-[var(--signal-fg-accent)] hover:underline font-medium">Settings → Webhooks →</a>
           </p>
@@ -51,7 +51,7 @@ def verify_signature(payload: bytes, signature: str, secret: str) -> bool:
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
         {[{ label: "Audit Logging", href: "/docs/advanced/audit-logging" }, { label: "RBAC", href: "/docs/advanced/rbac" }].map((step) => (
-          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
+          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRight size={14} /><span>{step.label}</span></Link></li>
         ))}
       </ul>
     </div>

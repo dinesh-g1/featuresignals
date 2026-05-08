@@ -4,19 +4,19 @@ import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ChevronRightIcon,
+  ChevronRight,
   ThreeBarsIcon,
-  XIcon,
+  X,
   BookIcon,
-  RocketIcon,
-  LightBulbIcon,
-  CodeIcon,
+  Rocket,
+  Lightbulb,
+  Code,
   KeyIcon,
-  ShieldCheckIcon,
+  ShieldCheck,
   ServerIcon,
-  WorkflowIcon,
-  PackageIcon,
-} from "@primer/octicons-react";
+  Workflow,
+  Package,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import apiCategories from "@/data/api-endpoints";
@@ -40,7 +40,7 @@ interface NavSection {
 const docsNavigation: NavSection[] = [
   {
     label: "Getting Started",
-    icon: RocketIcon,
+    icon: Rocket,
     links: [
       { label: "Quickstart", href: "/docs/getting-started/quickstart" },
       { label: "Installation", href: "/docs/getting-started/installation" },
@@ -52,7 +52,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "Core Concepts",
-    icon: LightBulbIcon,
+    icon: Lightbulb,
     links: [
       {
         label: "Feature Flags",
@@ -86,7 +86,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "SDKs",
-    icon: CodeIcon,
+    icon: Code,
     links: [
       { label: "Overview", href: "/docs/sdks/overview" },
       { label: "Go", href: "/docs/sdks/go" },
@@ -118,7 +118,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "Platform",
-    icon: WorkflowIcon,
+    icon: Workflow,
     links: [
       {
         label: "AI Janitor",
@@ -151,7 +151,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "Architecture",
-    icon: PackageIcon,
+    icon: Package,
     links: [
       {
         label: "Overview",
@@ -183,7 +183,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "Compliance",
-    icon: ShieldCheckIcon,
+    icon: ShieldCheck,
     links: [
       {
         label: "Security Overview",
@@ -196,7 +196,7 @@ const docsNavigation: NavSection[] = [
   },
   {
     label: "Tutorials",
-    icon: RocketIcon,
+    icon: Rocket,
     links: [
       {
         label: "Feature Flag a Checkout",
@@ -270,7 +270,7 @@ export function DocsSidebar() {
         }
         aria-expanded={mobileOpen}
       >
-        {mobileOpen ? <XIcon size={20} /> : <ThreeBarsIcon size={20} />}
+        {mobileOpen ? <X size={20} /> : <ThreeBarsIcon size={20} />}
       </button>
 
       {/* Mobile overlay */}
@@ -323,7 +323,7 @@ export function DocsSidebar() {
             className="p-2 rounded-md hover:bg-[var(--signal-bg-secondary)] transition-colors"
             aria-label="Close sidebar"
           >
-            <XIcon size={18} />
+            <X size={18} />
           </button>
         </div>
 
@@ -363,7 +363,7 @@ export function DocsSidebar() {
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-xs text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors"
           >
-            <PackageIcon size={14} />
+            <Package size={14} />
             <span>Ask the community on GitHub Discussions</span>
           </a>
         </div>
@@ -409,7 +409,7 @@ function SidebarSection({
           <Icon size={14} />
           <span>{section.label}</span>
         </span>
-        <ChevronRightIcon
+        <ChevronRight
           size={14}
           className={cn(
             "transition-transform duration-200",

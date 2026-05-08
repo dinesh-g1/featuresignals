@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon, ShieldCheckIcon } from "@primer/octicons-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Security Overview",
@@ -29,7 +29,7 @@ export default function SecurityOverviewPage() {
       {/* Info callout */}
       <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <ShieldCheckIcon
+          <ShieldCheck
             size={18}
             className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0"
           />
@@ -440,7 +440,7 @@ export default function SecurityOverviewPage() {
             href={step.href}
             className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors font-medium"
           >
-            <ArrowRightIcon size={14} />
+            <ArrowRight size={14} />
             <span>{step.label}</span>
           </Link>
         ))}

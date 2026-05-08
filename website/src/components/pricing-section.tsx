@@ -4,11 +4,11 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  CheckIcon,
+  Check,
   DownloadIcon,
   CloudIcon,
-  HeartIcon,
-} from "@primer/octicons-react";
+  Heart,
+} from "lucide-react";
 import {
   type CompetitorProvider,
   calculateSavings,
@@ -20,7 +20,7 @@ import { useRegionalPricing } from "@/lib/use-regional-pricing";
 function CheckListItem({ text }: { text: string }) {
   return (
     <li className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]">
-      <CheckIcon size={16} className="mt-0.5 shrink-0 text-emerald-500" />
+      <Check size={16} className="mt-0.5 shrink-0 text-emerald-500" />
       <span>{text}</span>
     </li>
   );
@@ -171,7 +171,7 @@ export function PricingSection() {
           transition={{ duration: 0.45, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
-            <HeartIcon size={16} className="text-emerald-500" />
+            <Heart size={16} className="text-emerald-500" />
             <p className="text-sm text-[var(--signal-fg-primary)]">
               <span className="font-semibold text-emerald-600">
                 No lock-in. Ever.

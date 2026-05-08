@@ -1,20 +1,20 @@
-import type { Icon } from "@primer/octicons-react";
+import type { Icon } from "lucide-react";
 import {
   IterationsIcon,
-  BeakerIcon,
-  ShieldCheckIcon,
+  FlaskConical,
+  ShieldCheck,
   CloudIcon,
   StackIcon,
   BookIcon,
-  TerminalIcon,
-  PackageIcon,
-  GitBranchIcon,
-  RocketIcon,
-  LightBulbIcon,
+  Terminal,
+  Package,
+  GitBranch,
+  Rocket,
+  Lightbulb,
   WebhookIcon,
   SearchIcon,
   LockIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 
 export interface NavItem {
   title: string;
@@ -36,14 +36,14 @@ export const platformItems: NavItem[] = [
     title: "AI Janitor",
     description: "Autonomous stale flag detection & PR generation",
     href: "/features/ai",
-    icon: LightBulbIcon,
+    icon: Lightbulb,
     badge: "New",
   },
   {
     title: "Security & Governance",
     description: "RBAC, audit logs, SSO, CAB approvals, compliance",
     href: "/features/security",
-    icon: ShieldCheckIcon,
+    icon: ShieldCheck,
   },
   {
     title: "Integrations",
@@ -87,14 +87,14 @@ export const developerItems: NavItem[] = [
     title: "API Reference",
     description: "REST API & OpenAPI playground",
     href: "https://docs.featuresignals.com/api-playground",
-    icon: TerminalIcon,
+    icon: Terminal,
     external: true,
   },
   {
     title: "SDKs (8 Languages)",
     description: "Go, Node, Python, Java, C#, Ruby, React, Vue",
     href: "https://docs.featuresignals.com/sdks/overview",
-    icon: PackageIcon,
+    icon: Package,
     external: true,
   },
   {
@@ -108,7 +108,7 @@ export const developerItems: NavItem[] = [
     title: "GitHub",
     description: "Source code, issues, contributions welcome",
     href: "https://github.com/dinesh-g1/featuresignals",
-    icon: GitBranchIcon,
+    icon: GitBranch,
     external: true,
   },
 ];

@@ -2,22 +2,22 @@
 
 import { motion } from "framer-motion";
 import {
-  SyncIcon,
-  ArrowRightIcon,
-  ShieldCheckIcon,
-  PackageIcon,
+  RefreshCw,
+  ArrowRight,
+  ShieldCheck,
+  Package,
   DownloadIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 import { MigrationPreview } from "@/components/migration-preview";
 
 const migrationFacts = [
   {
-    icon: <SyncIcon size={16} fill="var(--signal-fg-accent)" />,
+    icon: <RefreshCw size={16} fill="var(--signal-fg-accent)" />,
     title: "Minutes, not months",
     desc: "Connect your existing provider. Our migration tool scans your flags, environments, and segments. Preview the results. Migrate with one click.",
   },
   {
-    icon: <PackageIcon size={16} fill="var(--signal-fg-info)" />,
+    icon: <Package size={16} fill="var(--signal-fg-info)" />,
     title: "OpenFeature native",
     desc: "All 8 SDKs support OpenFeature. Swap providers without changing a single line of application code. No vendor lock-in. Ever.",
   },
@@ -54,7 +54,7 @@ export function MigratePageContent() {
               }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)] mb-6">
-                <SyncIcon size={12} />
+                <RefreshCw size={12} />
                 Step 5 of 6
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
@@ -94,7 +94,7 @@ export function MigratePageContent() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about migration
-                  <ArrowRightIcon size={14} />
+                  <ArrowRight size={14} />
                 </a>
               </div>
             </motion.div>
@@ -139,7 +139,7 @@ export function MigratePageContent() {
                   {step.label}
                 </a>
                 {i < 4 && (
-                  <ArrowRightIcon
+                  <ArrowRight
                     size={12}
                     className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />

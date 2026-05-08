@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ThreeBarsIcon, XIcon } from "@primer/octicons-react";
+import { ThreeBarsIcon, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -514,7 +514,7 @@ export function Header() {
                   className="p-2 rounded-md hover:bg-[var(--signal-bg-secondary)] transition-colors"
                   aria-label="Close menu"
                 >
-                  <XIcon size={20} />
+                  <X size={20} />
                 </button>
               </Dialog.Close>
             </div>

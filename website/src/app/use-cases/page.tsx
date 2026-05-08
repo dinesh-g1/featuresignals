@@ -2,25 +2,25 @@
 
 import { motion } from "framer-motion";
 import {
-  RocketIcon,
-  ZapIcon,
-  ShieldCheckIcon,
-  ShieldLockIcon,
-  GitPullRequestIcon,
-  GraphIcon,
-  CodeIcon,
-  SyncIcon,
-  CheckCircleIcon,
-  ArrowRightIcon,
-  HeartFillIcon,
-  ChevronRightIcon,
-  PeopleIcon,
-  GitBranchIcon,
-  BeakerIcon,
-  WorkflowIcon,
-  CheckIcon,
-  XIcon,
-} from "@primer/octicons-react";
+  Rocket,
+  Zap,
+  ShieldCheck,
+  ShieldCheck,
+  GitPullRequest,
+  Activity,
+  Code,
+  RefreshCw,
+  CheckCircle,
+  ArrowRight,
+  Heart,
+  ChevronRight,
+  Users,
+  GitBranch,
+  FlaskConical,
+  Workflow,
+  Check,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -76,7 +76,7 @@ function CtaPrimary({
       )}
     >
       {children}
-      <ArrowRightIcon size={16} />
+      <ArrowRight size={16} />
     </a>
   );
 }
@@ -237,14 +237,14 @@ function HeroSection() {
           {...fadeUp}
         >
           <Badge
-            icon={ShieldCheckIcon}
+            icon={ShieldCheck}
             text="SOC 2 Type II"
             variant="success"
           />
-          <Badge icon={ZapIcon} text="Sub-ms Latency" variant="accent" />
-          <Badge icon={CodeIcon} text="OpenFeature Native" variant="done" />
+          <Badge icon={Zap} text="Sub-ms Latency" variant="accent" />
+          <Badge icon={Code} text="OpenFeature Native" variant="done" />
           <Badge
-            icon={GitPullRequestIcon}
+            icon={GitPullRequest}
             text="Apache 2.0"
             variant="attention"
           />
@@ -454,7 +454,7 @@ function ProgressiveDeliverySection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Text */}
           <motion.div {...fadeUp}>
-            <SectionLabel icon={GraphIcon} text="Progressive Delivery" />
+            <SectionLabel icon={Activity} text="Progressive Delivery" />
             <h2
               id="progressive-delivery-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -488,7 +488,7 @@ function ProgressiveDeliverySection() {
             </div>
 
             <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)]">
-              <ZapIcon size={14} className="text-[var(--signal-fg-accent)]" />
+              <Zap size={14} className="text-[var(--signal-fg-accent)]" />
               <span className="text-xs font-medium text-[var(--signal-fg-accent)]">
                 Sub-millisecond evaluation means zero added latency
               </span>
@@ -561,7 +561,7 @@ function ProgressiveDeliverySection() {
                 {/* Kill switch button visual */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--signal-bg-danger-muted)] border border-[var(--signal-border-danger-emphasis)]">
                   <div className="flex items-center gap-2">
-                    <XIcon size={14} className="text-[var(--signal-fg-danger)]" />
+                    <X size={14} className="text-[var(--signal-fg-danger)]" />
                     <span className="text-sm font-semibold text-[var(--signal-fg-danger)]">
                       Kill Switch
                     </span>
@@ -702,12 +702,12 @@ function CanaryReleasesSection() {
                       >
                         <div className="flex items-center justify-center gap-1 mb-0.5">
                           {metric.ok ? (
-                            <CheckCircleIcon
+                            <CheckCircle
                               size={12}
                               className="text-[var(--signal-fg-success)]"
                             />
                           ) : (
-                            <XIcon
+                            <X
                               size={12}
                               className="text-[var(--signal-fg-danger)]"
                             />
@@ -729,7 +729,7 @@ function CanaryReleasesSection() {
 
           {/* Right: Text */}
           <motion.div {...fadeUpDelayed(0.1)}>
-            <SectionLabel icon={PeopleIcon} text="Canary Releases" />
+            <SectionLabel icon={Users} text="Canary Releases" />
             <h2
               id="canary-releases-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -765,7 +765,7 @@ function CanaryReleasesSection() {
               className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about canary releases
-              <ChevronRightIcon size={14} />
+              <ChevronRight size={14} />
             </Link>
           </motion.div>
         </div>
@@ -844,7 +844,7 @@ function KillSwitchSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Text */}
           <motion.div {...fadeUp}>
-            <SectionLabel icon={ShieldLockIcon} text="Kill Switch" />
+            <SectionLabel icon={ShieldCheck} text="Kill Switch" />
             <h2
               id="kill-switch-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -878,7 +878,7 @@ function KillSwitchSection() {
             </div>
 
             <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--signal-bg-danger-muted)] border border-[var(--borderColor-danger-muted)]">
-              <ZapIcon size={14} className="text-[var(--signal-fg-danger)]" />
+              <Zap size={14} className="text-[var(--signal-fg-danger)]" />
               <span className="text-xs font-medium text-[var(--signal-fg-danger)]">
                 Kill actions propagate to all SDK instances in under 100ms
               </span>
@@ -1079,7 +1079,7 @@ function AbTestingSection() {
 
           {/* Right: Text */}
           <motion.div {...fadeUpDelayed(0.1)}>
-            <SectionLabel icon={BeakerIcon} text="A/B Testing" />
+            <SectionLabel icon={FlaskConical} text="A/B Testing" />
             <h2
               id="ab-testing-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -1115,7 +1115,7 @@ function AbTestingSection() {
               className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about A/B testing
-              <ChevronRightIcon size={14} />
+              <ChevronRight size={14} />
             </Link>
           </motion.div>
         </div>
@@ -1175,7 +1175,7 @@ function MigrationSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Text */}
           <motion.div {...fadeUp}>
-            <SectionLabel icon={GitBranchIcon} text="Migration" />
+            <SectionLabel icon={GitBranch} text="Migration" />
             <h2
               id="migration-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -1213,7 +1213,7 @@ function MigrationSection() {
               className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about migration
-              <ChevronRightIcon size={14} />
+              <ChevronRight size={14} />
             </Link>
           </motion.div>
 
@@ -1241,7 +1241,7 @@ function MigrationSection() {
                       <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                         {provider.from}
                       </span>
-                      <ArrowRightIcon
+                      <ArrowRight
                         size={14}
                         className="text-[var(--signal-fg-secondary)]"
                       />
@@ -1264,7 +1264,7 @@ function MigrationSection() {
                 ))}
 
                 <div className="flex items-center gap-2 pt-2 justify-center">
-                  <CheckIcon
+                  <Check
                     size={14}
                     className="text-[var(--signal-fg-success)]"
                   />
@@ -1326,7 +1326,7 @@ function GitOpsSection() {
             >
               <div className="px-5 py-4 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
                 <div className="flex items-center gap-2">
-                  <GitPullRequestIcon
+                  <GitPullRequest
                     size={14}
                     className="text-[var(--signal-fg-accent)]"
                   />
@@ -1391,7 +1391,7 @@ function GitOpsSection() {
                     CI/CD Pipeline
                   </p>
                   <div className="flex items-center gap-3 text-sm">
-                    <CheckCircleIcon
+                    <CheckCircle
                       size={14}
                       className="text-[var(--signal-fg-success)]"
                     />
@@ -1400,7 +1400,7 @@ function GitOpsSection() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <CheckCircleIcon
+                    <CheckCircle
                       size={14}
                       className="text-[var(--signal-fg-success)]"
                     />
@@ -1409,7 +1409,7 @@ function GitOpsSection() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <SyncIcon
+                    <RefreshCw
                       size={14}
                       className="text-[var(--signal-fg-accent)]"
                     />
@@ -1424,7 +1424,7 @@ function GitOpsSection() {
 
           {/* Right: Text */}
           <motion.div {...fadeUpDelayed(0.1)}>
-            <SectionLabel icon={WorkflowIcon} text="GitOps" />
+            <SectionLabel icon={Workflow} text="GitOps" />
             <h2
               id="gitops-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -1462,7 +1462,7 @@ function GitOpsSection() {
               className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about GitOps
-              <ChevronRightIcon size={14} />
+              <ChevronRight size={14} />
             </Link>
           </motion.div>
         </div>
@@ -1533,7 +1533,7 @@ function EnterpriseGovernanceSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Text */}
           <motion.div {...fadeUp}>
-            <SectionLabel icon={ShieldCheckIcon} text="Enterprise Governance" />
+            <SectionLabel icon={ShieldCheck} text="Enterprise Governance" />
             <h2
               id="enterprise-governance-heading"
               className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -1570,7 +1570,7 @@ function EnterpriseGovernanceSection() {
               className="inline-flex items-center gap-1.5 mt-6 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
             >
               Learn more about enterprise governance
-              <ChevronRightIcon size={14} />
+              <ChevronRight size={14} />
             </Link>
           </motion.div>
 
@@ -1628,7 +1628,7 @@ function EnterpriseGovernanceSection() {
                           {row.roles.map((has, j) => (
                             <td key={j} className="text-center px-3 py-2">
                               {has ? (
-                                <CheckIcon
+                                <Check
                                   size={14}
                                   className="text-[var(--signal-fg-success)] inline"
                                 />
@@ -1689,7 +1689,7 @@ function FinalCtaSection() {
 
       <div className="relative mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <RocketIcon
+          <Rocket
             size={40}
             fill="#54aeff"
             className="mx-auto mb-6"
@@ -1715,7 +1715,7 @@ function FinalCtaSection() {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:opacity-90 transition-opacity shadow-[0_1px_0_0_#1f232826]"
             >
               Start Free — No Credit Card
-              <ArrowRightIcon size={16} />
+              <ArrowRight size={16} />
             </a>
             <a
               href={SALES_EMAIL}
@@ -1729,7 +1729,7 @@ function FinalCtaSection() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[#8b949e] hover:text-white transition-colors"
             >
-              <GitPullRequestIcon size={16} />
+              <GitPullRequest size={16} />
               Star on GitHub
             </a>
           </div>
@@ -1737,7 +1737,7 @@ function FinalCtaSection() {
           <p className="text-xs text-[#59636e] mt-6">
             Free forever for up to 50 flags. No credit card required.{" "}
             <span className="inline-flex items-center gap-1">
-              <HeartFillIcon size={10} className="text-red-400" />
+              <Heart size={10} className="text-red-400" />
               Open source under Apache 2.0.
             </span>
           </p>

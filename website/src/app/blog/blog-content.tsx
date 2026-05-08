@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRightIcon, RssIcon, ClockIcon } from "@primer/octicons-react";
+import { ArrowRight, RssIcon, Clock } from "lucide-react";
 import type { BlogPost, BlogCategory } from "@/lib/blog-posts";
 import { allCategories } from "@/lib/blog-posts";
 import { cn } from "@/lib/utils";
@@ -175,7 +175,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
         <div className="flex items-center gap-3 text-xs text-[var(--signal-fg-secondary)]">
           <span>{post.date}</span>
           <span className="flex items-center gap-1">
-            <ClockIcon size={12} />
+            <Clock size={12} />
             {post.readTime}
           </span>
         </div>
@@ -184,7 +184,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
           className="inline-flex items-center gap-1 text-xs font-medium text-[var(--signal-fg-accent)] hover:underline shrink-0"
         >
           Read more
-          <ArrowRightIcon size={12} />
+          <ArrowRight size={12} />
         </Link>
       </div>
     </motion.article>

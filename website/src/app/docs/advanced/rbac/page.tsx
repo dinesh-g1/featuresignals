@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LightBulbIcon, ArrowRightIcon } from "@primer/octicons-react";
+import { Lightbulb, ArrowRight } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-editor";
 
 export const metadata: Metadata = { title: "Role-Based Access Control", description: "RBAC with owner, admin, developer, and viewer roles plus per-environment permissions." };
@@ -13,7 +13,7 @@ export default function RbacPage() {
 
       <div className="p-4 mb-8 rounded-lg border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]">
         <div className="flex items-start gap-3">
-          <LightBulbIcon size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
+          <Lightbulb size={18} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
           <p className="text-sm text-[var(--signal-fg-secondary)]">Manage team roles in{" "}
             <a href="https://app.featuresignals.com/settings/team" className="text-[var(--signal-fg-accent)] hover:underline font-medium">Settings → Team →</a>
           </p>
@@ -39,7 +39,7 @@ export default function RbacPage() {
       <SectionHeading>Next Steps</SectionHeading>
       <ul className="space-y-2">
         {[{ label: "Audit Logging", href: "/docs/advanced/audit-logging" }, { label: "Approval Workflows", href: "/docs/advanced/approval-workflows" }].map((step) => (
-          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRightIcon size={14} /><span>{step.label}</span></Link></li>
+          <li key={step.href}><Link href={step.href} className="flex items-center gap-2 text-[var(--signal-fg-accent)] hover:underline text-sm font-medium"><ArrowRight size={14} /><span>{step.label}</span></Link></li>
         ))}
       </ul>
     </div>

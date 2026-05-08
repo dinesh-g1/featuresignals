@@ -2,11 +2,11 @@
 
 import { motion } from "framer-motion";
 import {
-  RocketIcon,
-  ArrowRightIcon,
+  Rocket,
+  ArrowRight,
   DownloadIcon,
-  ShieldCheckIcon,
-} from "@primer/octicons-react";
+  ShieldCheck,
+} from "lucide-react";
 
 export function FinalCta() {
   return (
@@ -29,7 +29,7 @@ export function FinalCta() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         >
-          <RocketIcon
+          <Rocket
             size={40}
             fill="#54aeff"
             className="mx-auto mb-6"
@@ -77,7 +77,7 @@ export function FinalCta() {
             className="btn-primary-success"
           >
             Start Free — No Credit Card
-            <ArrowRightIcon size={16} />
+            <ArrowRight size={16} />
           </a>
           <a
             href="https://docs.featuresignals.com/getting-started/quickstart"
@@ -106,7 +106,7 @@ export function FinalCta() {
               border: "1px solid #373e47",
             }}
           >
-            <ShieldCheckIcon size={12} />
+            <ShieldCheck size={12} />
             Apache-2.0
           </span>
           <span

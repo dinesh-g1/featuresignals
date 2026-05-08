@@ -2,27 +2,27 @@
 
 import { motion } from "framer-motion";
 import {
-  RocketIcon,
-  ArrowRightIcon,
-  ShieldCheckIcon,
-  PeopleIcon,
-  ZapIcon,
-} from "@primer/octicons-react";
+  Rocket,
+  ArrowRight,
+  ShieldCheck,
+  Users,
+  Zap,
+} from "lucide-react";
 import { RolloutSlider } from "@/components/rollout-slider";
 
 const rolloutPrinciples = [
   {
-    icon: <PeopleIcon size={16} fill="var(--signal-fg-accent)" />,
+    icon: <Users size={16} fill="var(--signal-fg-accent)" />,
     title: "Canary releases",
     desc: "Roll out to 5% of users first. Watch error rates. If clean, expand to 25%, 50%, then 100%. Roll back instantly if needed.",
   },
   {
-    icon: <ShieldCheckIcon size={16} fill="var(--signal-fg-success)" />,
+    icon: <ShieldCheck size={16} fill="var(--signal-fg-success)" />,
     title: "Ring deployment model",
     desc: "Internal team → beta users → half production → full rollout. Each ring validates before the next. Progressive delivery built in.",
   },
   {
-    icon: <ZapIcon size={16} fill="var(--signal-fg-warning)" />,
+    icon: <Zap size={16} fill="var(--signal-fg-warning)" />,
     title: "Instant rollback",
     desc: "Set the slider back to 0%. All users immediately return to the default variant. No deploy, no revert PR, no waiting for CI.",
   },
@@ -41,7 +41,7 @@ export function RolloutPageContent() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)] border border-[var(--signal-border-warning-muted)] mb-6">
-                <RocketIcon size={12} />
+                <Rocket size={12} />
                 Step 3 of 6
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[var(--signal-fg-primary)] leading-[1.1]">
@@ -81,7 +81,7 @@ export function RolloutPageContent() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
                   Learn more about gradual rollouts
-                  <ArrowRightIcon size={14} />
+                  <ArrowRight size={14} />
                 </a>
               </div>
             </motion.div>
@@ -139,7 +139,7 @@ export function RolloutPageContent() {
                   {step.label}
                 </a>
                 {i < 4 && (
-                  <ArrowRightIcon
+                  <ArrowRight
                     size={12}
                     className="text-[var(--signal-fg-tertiary)] hidden sm:block"
                   />

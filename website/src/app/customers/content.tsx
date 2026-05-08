@@ -3,15 +3,15 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  PeopleIcon,
-  RocketIcon,
-  CodeIcon,
-  ShieldCheckIcon,
-  ArrowRightIcon,
-  ClockIcon,
-  GraphIcon,
-  HeartIcon,
-} from "@primer/octicons-react";
+  Users,
+  Rocket,
+  Code,
+  ShieldCheck,
+  ArrowRight,
+  Clock,
+  Activity,
+  Heart,
+} from "lucide-react";
 
 /* ==========================================================================
    Animation Presets
@@ -36,10 +36,10 @@ const fadeUpDelayed = (delay: number) => ({
    ========================================================================== */
 
 const metrics = [
-  { value: "500+", label: "Teams", icon: PeopleIcon },
-  { value: "10M+", label: "Evaluations / day", icon: GraphIcon },
-  { value: "8", label: "SDK languages", icon: CodeIcon },
-  { value: "99.95%", label: "Uptime", icon: ShieldCheckIcon },
+  { value: "500+", label: "Teams", icon: Users },
+  { value: "10M+", label: "Evaluations / day", icon: Activity },
+  { value: "8", label: "SDK languages", icon: Code },
+  { value: "99.95%", label: "Uptime", icon: ShieldCheck },
 ];
 
 /* ==========================================================================
@@ -178,7 +178,7 @@ function StoryCard({ story, index }: { story: Story; index: number }) {
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline mt-auto"
         >
           Read story
-          <ArrowRightIcon size={14} />
+          <ArrowRight size={14} />
         </a>
       </div>
     </motion.div>
@@ -270,7 +270,7 @@ function FeaturedStorySection() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]">
-                    <ClockIcon size={12} />
+                    <Clock size={12} />
                     Challenge
                   </span>
                 </div>
@@ -282,7 +282,7 @@ function FeaturedStorySection() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)]">
-                    <RocketIcon size={12} />
+                    <Rocket size={12} />
                     Solution
                   </span>
                 </div>
@@ -376,7 +376,7 @@ function StoryGridSection() {
         {/* CTA */}
         <motion.div className="mt-16 text-center" {...fadeUpDelayed(0.5)}>
           <div className="inline-flex flex-col items-center gap-3 p-8 rounded-2xl bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-default)]">
-            <HeartIcon size={24} className="text-[var(--signal-fg-accent)]" />
+            <Heart size={24} className="text-[var(--signal-fg-accent)]" />
             <p className="text-[var(--signal-fg-primary)] font-semibold">
               Ready to become our next customer story?
             </p>
@@ -386,7 +386,7 @@ function StoryGridSection() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors"
               >
                 Start Free Trial
-                <ArrowRightIcon size={14} />
+                <ArrowRight size={14} />
               </a>
               <a
                 href="/contact?reason=sales"
@@ -426,7 +426,7 @@ function FinalCtaSection() {
 
       <div className="relative mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <RocketIcon
+          <Rocket
             size={40}
             fill="#54aeff"
             className="mx-auto mb-6"
@@ -453,7 +453,7 @@ function FinalCtaSection() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-success-emphasis)] hover:bg-[#1c8139] transition-colors"
           >
             Start Free
-            <ArrowRightIcon size={16} />
+            <ArrowRight size={16} />
           </a>
           <Link
             href="/pricing"

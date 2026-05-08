@@ -5,17 +5,17 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import * as Accordion from "@radix-ui/react-accordion";
 import {
-  CheckIcon,
-  XIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
+  Check,
+  X,
+  ChevronDown,
+  ChevronRight,
   CloudIcon,
-  HeartIcon,
+  Heart,
   DownloadIcon,
-  ShieldCheckIcon,
-  RocketIcon,
+  ShieldCheck,
+  Rocket,
   QuestionIcon,
-} from "@primer/octicons-react";
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ==========================================================================
@@ -560,7 +560,7 @@ const faqItems: FaqItem[] = [
 function CheckListItem({ text }: { text: string }) {
   return (
     <li className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]">
-      <CheckIcon size={16} className="mt-0.5 shrink-0 text-emerald-500" />
+      <Check size={16} className="mt-0.5 shrink-0 text-emerald-500" />
       <span>{text}</span>
     </li>
   );
@@ -569,9 +569,9 @@ function CheckListItem({ text }: { text: string }) {
 function FeatureValue({ value }: { value: string | boolean }) {
   if (typeof value === "boolean") {
     return value ? (
-      <CheckIcon size={16} className="text-emerald-500" />
+      <Check size={16} className="text-emerald-500" />
     ) : (
-      <XIcon size={16} className="text-[var(--signal-fg-tertiary)]" />
+      <X size={16} className="text-[var(--signal-fg-tertiary)]" />
     );
   }
   if (value === "BYO") {
@@ -761,7 +761,7 @@ function FeatureComparisonTable() {
                 >
                   <td colSpan={5} className="py-3 pr-4">
                     <div className="flex items-center gap-2">
-                      <ChevronDownIcon
+                      <ChevronDown
                         size={14}
                         className={cn(
                           "text-[var(--signal-fg-secondary)] transition-transform duration-200",
@@ -829,7 +829,7 @@ function FaqAccordion() {
           <Accordion.Header asChild>
             <Accordion.Trigger className="flex items-center justify-between w-full py-5 text-left text-base font-semibold text-[var(--signal-fg-primary)] hover:text-[var(--signal-fg-accent)] transition-colors group cursor-pointer">
               <span className="pr-4">{item.question}</span>
-              <ChevronDownIcon
+              <ChevronDown
                 size={16}
                 className="shrink-0 text-[var(--signal-fg-secondary)] transition-transform duration-200 group-data-[state=open]:rotate-180"
               />
@@ -910,7 +910,7 @@ function PricingTiersSection() {
           {...fadeUpDelayed(0.4)}
         >
           <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
-            <HeartIcon size={16} className="text-emerald-500" />
+            <Heart size={16} className="text-emerald-500" />
             <p className="text-sm text-[var(--signal-fg-primary)]">
               <span className="font-semibold text-emerald-600">
                 No lock-in. Ever.
@@ -998,7 +998,7 @@ function FaqSection() {
             href="/contact?reason=sales"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#ccebff] transition-colors"
           >
-            <ChevronRightIcon size={14} />
+            <ChevronRight size={14} />
             Contact Sales
           </Link>
         </motion.div>
@@ -1024,7 +1024,7 @@ function OpenSourcePromiseSection() {
 
       <div className="relative mx-auto max-w-4xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <ShieldCheckIcon
+          <ShieldCheck
             size={40}
             fill="#8250df"
             className="mx-auto mb-6"
@@ -1050,17 +1050,17 @@ function OpenSourcePromiseSection() {
               desc: "Free forever. Use it, fork it, ship it. No copyleft. No restrictions.",
             },
             {
-              icon: <HeartIcon size={20} fill="#54aeff" />,
+              icon: <Heart size={20} fill="#54aeff" />,
               title: "No Vendor Lock-In",
               desc: "Self-host or cloud. Switch anytime. OpenFeature-native SDKs.",
             },
             {
-              icon: <ShieldCheckIcon size={20} fill="#54aeff" />,
+              icon: <ShieldCheck size={20} fill="#54aeff" />,
               title: "Full Feature Parity",
               desc: "Self-hosted gets everything. No crippleware. No enterprise-only features.",
             },
             {
-              icon: <RocketIcon size={20} fill="#54aeff" />,
+              icon: <Rocket size={20} fill="#54aeff" />,
               title: "Single Binary",
               desc: "One Go binary. Deploy in 3 minutes. No Kubernetes required.",
             },

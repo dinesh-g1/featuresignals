@@ -2,21 +2,21 @@
 
 import { motion } from "framer-motion";
 import {
-  CodeIcon,
-  PeopleIcon,
+  Code,
+  Users,
   CloudIcon,
-  RocketIcon,
-  ShieldCheckIcon,
+  Rocket,
+  ShieldCheck,
   BookIcon,
   MegaphoneIcon,
   GiftIcon,
-  ArrowRightIcon,
-  CheckIcon,
-  GitBranchIcon,
+  ArrowRight,
+  Check,
+  GitBranch,
   ServerIcon,
   TelescopeIcon,
-  CommentDiscussionIcon,
-} from "@primer/octicons-react";
+  MessageSquarePlus,
+} from "lucide-react";
 import Link from "next/link";
 
 /* ==========================================================================
@@ -52,7 +52,7 @@ interface PartnerType {
 
 const partnerTypes: PartnerType[] = [
   {
-    icon: CodeIcon,
+    icon: Code,
     title: "Technology Partners",
     description:
       "Build integrations that extend FeatureSignals and reach engineering teams worldwide.",
@@ -67,7 +67,7 @@ const partnerTypes: PartnerType[] = [
     ctaHref: "/contact?reason=partnerships",
   },
   {
-    icon: PeopleIcon,
+    icon: Users,
     title: "Solution Partners",
     description:
       "Help organizations adopt feature flags and progressive delivery at scale.",
@@ -110,7 +110,7 @@ interface Benefit {
 
 const benefits: Benefit[] = [
   {
-    icon: RocketIcon,
+    icon: Rocket,
     title: "Early Access",
     description:
       "Get early access to new features, APIs, and SDKs before they ship. Influence the product roadmap with your integration feedback.",
@@ -148,7 +148,7 @@ interface IntegrationCategory {
 const integrationCategories: IntegrationCategory[] = [
   {
     name: "Identity Providers",
-    icon: ShieldCheckIcon,
+    icon: ShieldCheck,
     items: [
       "Okta",
       "Azure AD",
@@ -162,7 +162,7 @@ const integrationCategories: IntegrationCategory[] = [
   },
   {
     name: "CI/CD",
-    icon: GitBranchIcon,
+    icon: GitBranch,
     items: [
       "GitHub Actions",
       "GitLab CI",
@@ -193,7 +193,7 @@ const integrationCategories: IntegrationCategory[] = [
   },
   {
     name: "Communication",
-    icon: CommentDiscussionIcon,
+    icon: MessageSquarePlus,
     items: [
       "Slack",
       "Discord",
@@ -205,7 +205,7 @@ const integrationCategories: IntegrationCategory[] = [
   },
   {
     name: "SDKs & Runtimes",
-    icon: CodeIcon,
+    icon: Code,
     items: [
       "Go",
       "Node.js",
@@ -278,7 +278,7 @@ function PartnerTypeCard({
             key={detail}
             className="flex items-start gap-2 text-sm text-[var(--signal-fg-primary)]"
           >
-            <CheckIcon size={14} className="mt-0.5 shrink-0 text-emerald-500" />
+            <Check size={14} className="mt-0.5 shrink-0 text-emerald-500" />
             <span>{detail}</span>
           </li>
         ))}
@@ -289,7 +289,7 @@ function PartnerTypeCard({
         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#ccebff] transition-colors w-full text-center mt-auto"
       >
         {partnerType.ctaLabel}
-        <ArrowRightIcon size={14} />
+        <ArrowRight size={14} />
       </a>
     </motion.div>
   );
@@ -494,7 +494,7 @@ function FinalCtaSection() {
 
       <div className="relative mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <PeopleIcon
+          <Users
             size={40}
             fill="#8250df"
             className="mx-auto mb-6"
@@ -521,7 +521,7 @@ function FinalCtaSection() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-[var(--signal-bg-accent-emphasis)] hover:bg-[#0757ba] transition-colors"
           >
             Become a Partner
-            <ArrowRightIcon size={16} />
+            <ArrowRight size={16} />
           </a>
           <Link
             href="/docs/integrations"
