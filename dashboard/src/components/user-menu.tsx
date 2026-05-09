@@ -15,6 +15,7 @@ import {
   ExternalLinkIcon,
 } from "@/components/icons/nav-icons";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
+import { path } from "@/lib/paths";
 
 interface MenuItem {
   label: string;
@@ -117,7 +118,7 @@ export function UserMenu() {
       onClick: () => {
         setOpen(false);
         logout();
-        router.push("/login");
+        router.push(path("/login"));
       },
     },
   ];
@@ -232,7 +233,7 @@ export function UserMenu() {
                   </button>
                 );
 
-                
+
               })}
             </div>
           </div>

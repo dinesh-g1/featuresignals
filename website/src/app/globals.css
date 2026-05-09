@@ -1,128 +1,203 @@
 @import "tailwindcss";
 
 /* ================================================================
-   GitHub Primer Design System — CSS Custom Properties
-   Based on @primer/css v22 & primer.style foundations
+   Signal UI Design System — CSS Custom Properties
+   Independent design system grounded in Don Norman's principles
+   and NNGroup empirical research. Zero Primer dependency.
    ================================================================ */
 
 :root {
-  /* --- Foreground --- */
-  --fgColor-default: #1f2328;
-  --fgColor-muted: #59636e;
-  --fgColor-subtle: #818b98;
-  --fgColor-accent: #0969da;
-  --fgColor-success: #1a7f37;
-  --fgColor-attention: #9a6700;
-  --fgColor-danger: #d1242f;
-  --fgColor-done: #8250df;
-  --fgColor-onEmphasis: #ffffff;
-  --fgColor-link: #0969da;
+  /* ---- Foreground ---- */
+  --signal-fg-primary: #1a1a2e;
+  --signal-fg-secondary: #4a5568;
+  --signal-fg-tertiary: #6b7c8a;
+  --signal-fg-accent: #1a56db;
+  --signal-fg-success: #057a55;
+  --signal-fg-danger: #c81e1e;
+  --signal-fg-warning: #b45309;
+  --signal-fg-info: #3f83f8;
+  --signal-fg-on-emphasis: #ffffff;
+  --signal-fg-link: #1a56db;
 
-  /* --- Background --- */
-  --bgColor-default: #ffffff;
-  --bgColor-inset: #f6f8fa;
-  --bgColor-muted: #f6f8fa;
-  --bgColor-emphasis: #25292e;
-  --bgColor-inverse: #25292e;
-  --bgColor-accent-emphasis: #0969da;
-  --bgColor-accent-muted: #ddf4ff;
-  --bgColor-success-emphasis: #1f883d;
-  --bgColor-success-muted: #dafbe1;
-  --bgColor-attention-emphasis: #9a6700;
-  --bgColor-attention-muted: #fff8c5;
-  --bgColor-danger-emphasis: #cf222e;
-  --bgColor-danger-muted: #ffebe9;
-  --bgColor-done-emphasis: #8250df;
-  --bgColor-done-muted: #fbefff;
+  /* ---- Background ---- */
+  --signal-bg-primary: #ffffff;
+  --signal-bg-secondary: #f8fafc;
+  --signal-bg-tertiary: #f1f5f9;
+  --signal-bg-accent-emphasis: #1a56db;
+  --signal-bg-accent-muted: #eff6ff;
+  --signal-bg-accent-hover: #1e40af;
+  --signal-bg-success-emphasis: #057a55;
+  --signal-bg-success-muted: #f0fdf4;
+  --signal-bg-success-hover: #046c44;
+  --signal-bg-danger-emphasis: #c81e1e;
+  --signal-bg-danger-muted: #fef2f2;
+  --signal-bg-danger-hover: #9b1c1c;
+  --signal-bg-warning-emphasis: #b45309;
+  --signal-bg-warning-muted: #fffbeb;
+  --signal-bg-info-emphasis: #3f83f8;
+  --signal-bg-info-muted: #eff6ff;
+  --signal-bg-inverse: #0f172a;
+  --signal-bg-inverse-secondary: #1e293b;
 
-  /* --- Border --- */
-  --borderColor-default: #d1d9e0;
-  --borderColor-muted: #d1d9e0b3;
-  --borderColor-emphasis: #818b98;
-  --borderColor-accent-emphasis: #0969da;
-  --borderColor-accent-muted: #54aeff66;
-  --borderColor-success-emphasis: #1a7f37;
-  --borderColor-success-muted: #4ac26b66;
-  --borderColor-attention-emphasis: #9a6700;
-  --borderColor-attention-muted: #d4a72c66;
-  --borderColor-danger-emphasis: #cf222e;
+  /* ---- Border ---- */
+  --signal-border-default: #e2e8f0;
+  --signal-border-subtle: #e2e8f080;
+  --signal-border-emphasis: #94a3b8;
+  --signal-border-accent-emphasis: #1a56db;
+  --signal-border-accent-muted: #93c5fd66;
+  --signal-border-success-emphasis: #057a55;
+  --signal-border-success-muted: #86efac66;
+  --signal-border-danger-emphasis: #c81e1e;
+  --signal-border-warning-emphasis: #b45309;
 
-  /* --- Shadows (Primer resting & floating) --- */
-  --shadow-resting-xsmall: 0 1px 1px 0 #1f23280d;
-  --shadow-resting-small: 0 1px 1px 0 #1f23280a, 0 1px 2px 0 #1f232808;
-  --shadow-resting-medium: 0 1px 1px 0 #25292e1a, 0 3px 6px 0 #25292e1f;
-  --shadow-floating-small:
-    0 0 0 1px #d1d9e080, 0 6px 12px -3px #25292e0a, 0 6px 18px 0 #25292e1f;
-  --shadow-floating-medium:
-    0 0 0 1px #d1d9e000, 0 8px 16px -4px #25292e14, 0 4px 32px -4px #25292e14,
-    0 24px 48px -12px #25292e14, 0 48px 96px -24px #25292e14;
-  --shadow-floating-large: 0 0 0 1px #d1d9e000, 0 40px 80px 0 #25292e3d;
-  --shadow-floating-xlarge: 0 0 0 1px #d1d9e000, 0 56px 112px 0 #25292e52;
+  /* ---- Shadow (layered, premium feel) ---- */
+  --signal-shadow-none: none;
+  --signal-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --signal-shadow-sm:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --signal-shadow-md:
+    0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --signal-shadow-lg:
+    0 10px 15px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
+  --signal-shadow-xl:
+    0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04);
 
-  /* --- Radius --- */
-  --radius-small: 6px;
-  --radius-medium: 8px;
-  --radius-large: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
-  --radius-full: 9999px;
+  /* ---- Radius ---- */
+  --signal-radius-none: 0;
+  --signal-radius-sm: 6px;
+  --signal-radius-md: 8px;
+  --signal-radius-lg: 12px;
+  --signal-radius-xl: 16px;
+  --signal-radius-2xl: 24px;
+  --signal-radius-full: 9999px;
 
-  /* --- Typography --- */
-  --fontStack-system:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
-    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --fontStack-monospace:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+  /* ---- Typography Scale ---- */
+  --signal-text-xs: 0.75rem;
+  --signal-text-xs--line-height: 1rem;
+  --signal-text-sm: 0.875rem;
+  --signal-text-sm--line-height: 1.25rem;
+  --signal-text-base: 1rem;
+  --signal-text-base--line-height: 1.5rem;
+  --signal-text-lg: 1.125rem;
+  --signal-text-lg--line-height: 1.75rem;
+  --signal-text-xl: 1.5rem;
+  --signal-text-xl--line-height: 2rem;
+  --signal-text-2xl: 1.875rem;
+  --signal-text-2xl--line-height: 2.5rem;
+  --signal-text-3xl: 2.25rem;
+  --signal-text-3xl--line-height: 2.75rem;
+  --signal-text-4xl: 3rem;
+  --signal-text-4xl--line-height: 3.5rem;
+
+  --signal-font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
+  --signal-font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     monospace;
+
+  /* ---- Font Weights ---- */
+  --signal-font-weight-normal: 400;
+  --signal-font-weight-medium: 500;
+  --signal-font-weight-semibold: 600;
+  --signal-font-weight-bold: 700;
+
+  /* ---- Tracking (letter-spacing) ---- */
+  --signal-tracking-tight: -0.025em;
+  --signal-tracking-normal: 0;
+  --signal-tracking-wide: 0.025em;
+
+  /* ---- Animation ---- */
+  --signal-duration-instant: 100ms;
+  --signal-duration-fast: 150ms;
+  --signal-duration-normal: 250ms;
+  --signal-duration-slow: 400ms;
+  --signal-duration-slower: 600ms;
+  --signal-easing-default: cubic-bezier(0.16, 1, 0.3, 1);
+  --signal-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --signal-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ---- Spacing (4px base scale) ---- */
+  --signal-space-1: 0.25rem;
+  --signal-space-2: 0.5rem;
+  --signal-space-3: 0.75rem;
+  --signal-space-4: 1rem;
+  --signal-space-5: 1.5rem;
+  --signal-space-6: 2rem;
+  --signal-space-7: 2.5rem;
+  --signal-space-8: 3rem;
+  --signal-space-9: 3.5rem;
+  --signal-space-10: 3.75rem;
+  --signal-space-11: 3.875rem;
+  --signal-space-12: 4rem;
+
+  /* ---- Z-Index Scale ---- */
+  --signal-z-dropdown: 50;
+  --signal-z-sticky: 100;
+  --signal-z-overlay: 200;
+  --signal-z-modal: 300;
+  --signal-z-toast: 400;
 }
 
 /* ================================================================
-   Tailwind v4 Theme — Primer Tokens
+   Tailwind v4 @theme — Signal UI Token Mappings
    ================================================================ */
 
 @theme inline {
+  /* Core surface tokens */
   --color-background: var(--signal-bg-primary);
   --color-foreground: var(--signal-fg-primary);
-  --font-sans: var(--fontStack-system);
-  --font-mono: var(--fontStack-monospace);
+  --font-sans: var(--signal-font-sans);
+  --font-mono: var(--signal-font-mono);
 
-  /* Accent (GitHub Blue) */
-  --color-accent: #0969da;
-  --color-accent-dark: #0757ba;
-  --color-accent-light: #54aeff;
-  --color-accent-muted: #ddf4ff;
-  --color-accent-fg: #0969da;
+  /* Accent (Signal Blue) */
+  --color-accent: #1a56db;
+  --color-accent-dark: #1e40af;
+  --color-accent-light: #3f83f8;
+  --color-accent-muted: #eff6ff;
+  --color-accent-fg: #1a56db;
 
-  /* Neutral scale (Primer grays) */
+  /* Neutral scale (warm grays for Signal UI) */
   --color-neutral-0: #ffffff;
-  --color-neutral-50: #f6f8fa;
-  --color-neutral-100: #eff2f5;
-  --color-neutral-200: #d1d9e0;
-  --color-neutral-300: #818b98;
-  --color-neutral-400: #59636e;
-  --color-neutral-500: #25292e;
-  --color-neutral-600: #1f2328;
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
 
   /* Semantic */
-  --color-success: #1f883d;
-  --color-success-muted: #dafbe1;
-  --color-attention: #9a6700;
-  --color-attention-muted: #fff8c5;
-  --color-danger: #cf222e;
-  --color-danger-muted: #ffebe9;
-  --color-done: #8250df;
-  --color-done-muted: #fbefff;
+  --color-success: #057a55;
+  --color-success-muted: #f0fdf4;
+  --color-success-fg: #057a55;
+  --color-warning: #b45309;
+  --color-warning-muted: #fffbeb;
+  --color-warning-fg: #b45309;
+  --color-danger: #c81e1e;
+  --color-danger-muted: #fef2f2;
+  --color-danger-fg: #c81e1e;
+  --color-info: #3f83f8;
+  --color-info-muted: #eff6ff;
+  --color-info-fg: #3f83f8;
 
-  /* Shadows as Tailwind-compatible */
-  --shadow-primer-resting: var(--signal-shadow-sm);
-  --shadow-primer-floating: var(--signal-shadow-md);
-  --shadow-primer-floating-md: var(--signal-shadow-lg);
-  --shadow-primer-floating-lg: var(--shadow-floating-large);
+  /* Shadows */
+  --shadow-sm: var(--signal-shadow-sm);
+  --shadow-md: var(--signal-shadow-md);
+  --shadow-lg: var(--signal-shadow-lg);
+  --shadow-xl: var(--signal-shadow-xl);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.12);
 
   /* Border radius */
-  --radius-primer: var(--radius-medium);
-  --radius-primer-lg: var(--radius-large);
-  --radius-primer-xl: var(--radius-xl);
+  --radius-sm: var(--signal-radius-sm);
+  --radius-md: var(--signal-radius-md);
+  --radius-lg: var(--signal-radius-lg);
+  --radius-xl: var(--signal-radius-xl);
+  --radius-2xl: var(--signal-radius-2xl);
 
   /* Animations */
   --animate-fade-in: fade-in 0.3s ease-out;
@@ -134,9 +209,133 @@
 }
 
 /* ================================================================
-   Keyframes
+   Dark Mode — Signal UI Token Overrides
+   Calm Technology: respect system preference, no forced toggle
    ================================================================ */
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Foreground */
+    --signal-fg-primary: #e2e8f0;
+    --signal-fg-secondary: #94a3b8;
+    --signal-fg-tertiary: #64748b;
+    --signal-fg-accent: #60a5fa;
+    --signal-fg-success: #34d399;
+    --signal-fg-danger: #f87171;
+    --signal-fg-warning: #fbbf24;
+    --signal-fg-info: #60a5fa;
+    --signal-fg-on-emphasis: #ffffff;
+    --signal-fg-link: #60a5fa;
+
+    /* Background */
+    --signal-bg-primary: #0f172a;
+    --signal-bg-secondary: #1e293b;
+    --signal-bg-tertiary: #334155;
+    --signal-bg-accent-emphasis: #1d4ed8;
+    --signal-bg-accent-muted: #1e3a5f;
+    --signal-bg-accent-hover: #2563eb;
+    --signal-bg-success-emphasis: #065f46;
+    --signal-bg-success-muted: #052e16;
+    --signal-bg-success-hover: #047857;
+    --signal-bg-danger-emphasis: #991b1b;
+    --signal-bg-danger-muted: #450a0a;
+    --signal-bg-danger-hover: #b91c1c;
+    --signal-bg-warning-emphasis: #92400e;
+    --signal-bg-warning-muted: #422006;
+    --signal-bg-info-emphasis: #1e40af;
+    --signal-bg-info-muted: #172554;
+    --signal-bg-inverse: #f8fafc;
+    --signal-bg-inverse-secondary: #e2e8f0;
+
+    /* Border */
+    --signal-border-default: #334155;
+    --signal-border-subtle: #33415580;
+    --signal-border-emphasis: #64748b;
+    --signal-border-accent-emphasis: #3b82f6;
+    --signal-border-accent-muted: #1e3a5f;
+    --signal-border-success-emphasis: #059669;
+    --signal-border-success-muted: #064e3b66;
+    --signal-border-danger-emphasis: #dc2626;
+    --signal-border-warning-emphasis: #d97706;
+
+    /* Shadow — darker and deeper in dark mode */
+    --signal-shadow-none: none;
+    --signal-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --signal-shadow-sm:
+      0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --signal-shadow-md:
+      0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --signal-shadow-lg:
+      0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+    --signal-shadow-xl:
+      0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* ================================================================
+   Base Element Styles
+   Norman Principle: Visceral Design — smooth, polished rendering
+   ================================================================ */
+
+body {
+  background: var(--signal-bg-primary);
+  color: var(--signal-fg-primary);
+  font-family: var(--signal-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern", "liga", "calt";
+  text-rendering: optimizeLegibility;
+}
+
+/* Selection — branded highlight */
+::selection {
+  background-color: #1a56db26;
+  color: var(--signal-fg-primary);
+}
+
+/* Code block selection — high contrast on dark backgrounds */
+.code-block-selection ::selection,
+.code-block-selection ::-moz-selection {
+  background: var(--signal-bg-accent-emphasis);
+  color: #ffffff;
+}
+.code-block-selection ::-webkit-selection {
+  background: var(--signal-bg-accent-emphasis);
+  color: #ffffff;
+}
+
+/* ================================================================
+   Norman Principle: Calm Technology
+   Respect reduced motion preferences
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ================================================================
+   Norman Principle: Knowledge in the World
+   Focus rings that are impossible to miss
+   ================================================================ */
+
+*:focus-visible {
+  outline: 2px solid var(--signal-fg-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ================================================================
+   Keyframes — Signal UI Animation Library
+   ================================================================ */
+
+/* Fade in — simplest entry */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -146,6 +345,7 @@
   }
 }
 
+/* Slide up — natural upward reveal */
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -157,6 +357,7 @@
   }
 }
 
+/* Scale in — subtle zoom entry for modals and cards */
 @keyframes scale-in {
   from {
     opacity: 0;
@@ -168,6 +369,7 @@
   }
 }
 
+/* Reveal — clip-path unveil for hero sections */
 @keyframes reveal {
   from {
     opacity: 0;
@@ -181,87 +383,7 @@
   }
 }
 
-/* Accordion open/close animations */
-@keyframes accordion-down {
-  from {
-    height: 0;
-    opacity: 0;
-  }
-  to {
-    height: var(--radix-accordion-content-height);
-    opacity: 1;
-  }
-}
-
-@keyframes accordion-up {
-  from {
-    height: var(--radix-accordion-content-height);
-    opacity: 1;
-  }
-  to {
-    height: 0;
-    opacity: 0;
-  }
-}
-
-/* Accordion animation utilities (Radix) */
-.animate-accordion-down {
-  animation: accordion-down 0.2s ease-out;
-}
-
-.animate-accordion-up {
-  animation: accordion-up 0.2s ease-out;
-}
-
-/* ================================================================
-   Dark Mode — Primer Token Overrides
-   ================================================================ */
-
-body {
-  background: var(--signal-bg-primary);
-  color: var(--signal-fg-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "kern";
-  text-rendering: optimizeLegibility;
-}
-
-::selection {
-  background-color: #0969da33;
-  color: var(--signal-fg-primary);
-}
-
-/* Primer dotted pattern for dark sections */
-.bg-dotted-dark {
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    rgba(255, 255, 255, 0.08) 1px,
-    transparent 0
-  );
-  background-size: 24px 24px;
-}
-
-/* Primer grid pattern */
-.bg-grid-subtle {
-  background-image:
-    linear-gradient(rgba(31, 35, 40, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 35, 40, 0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-/* Smooth scrollbar */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* ================================================================
-   Announcement Banner Keyframes
-   ================================================================ */
-
+/* Slide down — for banners and notifications */
 @keyframes slide-down {
   from {
     opacity: 0;
@@ -273,6 +395,7 @@ body {
   }
 }
 
+/* Marquee — continuous horizontal scroll for announcement tickers */
 @keyframes marquee {
   0% {
     transform: translateX(0);
@@ -282,20 +405,31 @@ body {
   }
 }
 
-/* ================================================================
-   Focus Ring — Primer-style accessible focus indicator
-   ================================================================ */
-
-*:focus-visible {
-  outline: 2px solid #0969da;
-  outline-offset: 2px;
-  border-radius: 3px;
+/* Accordion open (Radix compatible) */
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
 }
 
-/* ================================================================
-   Nav dropdown animation utilities
-   ================================================================ */
+/* Accordion close (Radix compatible) */
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
 
+/* Dropdown enter — for navigation menus and popovers */
 @keyframes dropdown-enter {
   from {
     opacity: 0;
@@ -307,153 +441,225 @@ body {
   }
 }
 
+/* ================================================================
+   Animation Utility Classes
+   ================================================================ */
+
+.animate-fade-in {
+  animation: fade-in var(--signal-duration-normal) ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up var(--signal-duration-slow) var(--signal-easing-default);
+}
+
+.animate-scale-in {
+  animation: scale-in var(--signal-duration-fast) ease-out;
+}
+
+.animate-reveal {
+  animation: reveal var(--signal-duration-slower) var(--signal-easing-default)
+    both;
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
 .animate-dropdown-enter {
   animation: dropdown-enter 0.15s ease-out;
 }
 
-/* Custom range slider for Flag Rot Calculator (Primer-styled) */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-  width: 100%;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 16px;
-  width: 16px;
-  border-radius: 50%;
-  background: var(--signal-bg-accent-emphasis);
-  cursor: pointer;
-  margin-top: -5px;
-  box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
-  transition: box-shadow 0.15s ease;
-}
-input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 1px 6px rgba(9, 105, 218, 0.5);
-}
-input[type="range"]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 6px;
-  cursor: pointer;
-  background: var(--signal-border-default);
-  border-radius: 3px;
-}
-input[type="range"]::-moz-range-thumb {
-  height: 16px;
-  width: 16px;
-  border-radius: 50%;
-  background: var(--signal-bg-accent-emphasis);
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 1px 3px rgba(9, 105, 218, 0.3);
-}
-input[type="range"]::-moz-range-track {
-  width: 100%;
-  height: 6px;
-  cursor: pointer;
-  background: var(--signal-border-default);
-  border-radius: 3px;
+.animate-marquee {
+  animation: marquee 30s linear infinite;
 }
 
 /* ================================================================
-   Premium Design System — FeatureSignals Custom Tokens & Utilities
+   Premium Utility Classes
+   Norman Principle: Visceral Design — surfaces that feel premium
    ================================================================ */
 
-:root {
-  /* --- FeatureSignals Brand Tokens --- */
-  --fs-accent: #0969da;
-  --fs-accent-hover: #0757ba;
-  --fs-accent-foreground: #ffffff;
-  --fs-success: #1f883d;
-  --fs-success-hover: #1a6d34;
-  --fs-success-foreground: #ffffff;
-
-  /* Glass surfaces */
-  --fs-glass-bg: rgba(255, 255, 255, 0.72);
-  --fs-glass-border: rgba(209, 217, 224, 0.5);
-  --fs-glass-shadow: 0 1px 3px 0 rgba(31, 35, 40, 0.06);
-
-  /* FeatureSignals-specific borders */
-  --fs-border-default: var(--signal-border-default);
-}
-
-/* ---- Glass Card — frosted glass surface ---- */
+/* ---- Glass Card — frosted glass surface with backdrop blur ---- */
 .glass-card {
-  background: var(--fs-glass-bg);
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--fs-glass-border);
-  border-radius: var(--radius-medium);
-  box-shadow: var(--fs-glass-shadow);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: var(--signal-radius-md);
+  box-shadow: var(--signal-shadow-xs);
 }
 
-/* ---- Premium Buttons ---- */
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(51, 65, 85, 0.5);
+    box-shadow: var(--signal-shadow-xs);
+  }
+}
 
-/* Base shared by all premium buttons */
+/* ---- Premium Card — layered shadow with hover lift ---- */
+.premium-card {
+  background: var(--signal-bg-primary);
+  border: 1px solid var(--signal-border-default);
+  border-radius: var(--signal-radius-md);
+  box-shadow:
+    0 0 0 1px rgba(226, 232, 240, 0.3),
+    0 1px 3px 0 rgba(0, 0, 0, 0.06),
+    0 6px 12px -3px rgba(0, 0, 0, 0.04);
+  transition:
+    border-color var(--signal-duration-normal) var(--signal-easing-default),
+    box-shadow var(--signal-duration-normal) var(--signal-easing-default),
+    transform var(--signal-duration-normal) var(--signal-easing-default);
+}
+
+.premium-card:hover {
+  border-color: var(--signal-border-accent-muted);
+  box-shadow:
+    0 0 0 1px rgba(147, 197, 253, 0.3),
+    0 1px 3px 0 rgba(0, 0, 0, 0.08),
+    0 8px 16px -4px rgba(0, 0, 0, 0.1),
+    0 24px 48px -12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .premium-card {
+    box-shadow:
+      0 0 0 1px rgba(51, 65, 85, 0.3),
+      0 1px 3px 0 rgba(0, 0, 0, 0.2),
+      0 6px 12px -3px rgba(0, 0, 0, 0.15);
+  }
+
+  .premium-card:hover {
+    border-color: var(--signal-border-accent-muted);
+    box-shadow:
+      0 0 0 1px rgba(59, 130, 246, 0.2),
+      0 1px 3px 0 rgba(0, 0, 0, 0.3),
+      0 8px 16px -4px rgba(0, 0, 0, 0.25),
+      0 24px 48px -12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* ---- Gradient Text — for hero headlines ---- */
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--signal-fg-accent) 0%,
+    #7c3aed 50%,
+    #db2777 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---- Section Container — consistent max-width wrapper ---- */
+.section-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--signal-space-4);
+  padding-right: var(--signal-space-4);
+}
+
+@media (min-width: 640px) {
+  .section-container {
+    padding-left: var(--signal-space-6);
+    padding-right: var(--signal-space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-container {
+    padding-left: var(--signal-space-8);
+    padding-right: var(--signal-space-8);
+  }
+}
+
+/* ================================================================
+   Premium Button System
+   Norman Principles:
+   - Signifiers + Feedback: hover lift, active press, focus ring
+   - Error Prevention: loading state prevents double-submit
+   - Knowledge in the World: visual weight communicates hierarchy
+   ================================================================ */
+
+/* ---- Shared button base ---- */
 .btn-primary,
-.btn-primary-success,
 .btn-secondary,
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-medium);
-  font-weight: 500;
-  transition: all 0.15s ease;
+  gap: var(--signal-space-2);
+  border-radius: var(--signal-radius-md);
+  font-weight: var(--signal-font-weight-medium);
+  font-size: var(--signal-text-sm);
+  line-height: var(--signal-text-sm--line-height);
+  padding: var(--signal-space-2) var(--signal-space-4);
+  transition: all var(--signal-duration-fast) var(--signal-easing-default);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+  position: relative;
+  text-decoration: none;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-primary-success {
+    width: auto;
+  }
 }
 
 .btn-primary:focus-visible,
-.btn-primary-success:focus-visible,
 .btn-secondary:focus-visible,
 .btn-ghost:focus-visible {
-  outline: 2px solid var(--fs-accent);
+  outline: 2px solid var(--signal-fg-accent);
   outline-offset: 2px;
 }
 
-/* Primary — solid accent */
+/* Error Prevention: disabled states via aria-disabled */
+.btn-primary[aria-disabled="true"],
+.btn-secondary[aria-disabled="true"],
+.btn-ghost[aria-disabled="true"],
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-ghost:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ---- btn-primary — solid accent, highest visual weight ---- */
 .btn-primary {
-  background: var(--fs-accent);
-  color: var(--fs-accent-foreground);
+  background: var(--signal-bg-accent-emphasis);
+  color: #ffffff;
   border: 1px solid transparent;
   box-shadow: var(--signal-shadow-sm);
 }
 
 .btn-primary:hover {
-  background: var(--fs-accent-hover);
+  background: var(--signal-bg-accent-hover);
   box-shadow: var(--signal-shadow-md);
+  transform: translateY(-1px);
 }
 
 .btn-primary:active {
-  background: var(--fs-accent-hover);
+  background: var(--signal-bg-accent-hover);
   box-shadow: var(--signal-shadow-xs);
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
-/* Primary Success — solid green */
-.btn-primary-success {
-  background: var(--fs-success);
-  color: var(--fs-success-foreground);
-  border: 1px solid transparent;
-  box-shadow: var(--signal-shadow-sm);
-}
-
-.btn-primary-success:hover {
-  background: var(--fs-success-hover);
-  box-shadow: var(--signal-shadow-md);
-}
-
-.btn-primary-success:active {
-  background: var(--fs-success-hover);
-  box-shadow: var(--signal-shadow-xs);
-  transform: scale(0.98);
-}
-
-/* Secondary — muted fill */
+/* ---- btn-secondary — muted fill, balanced weight ---- */
 .btn-secondary {
   background: var(--signal-bg-secondary);
   color: var(--signal-fg-primary);
@@ -467,74 +673,82 @@ input[type="range"]::-moz-range-track {
 
 .btn-secondary:active {
   background: var(--signal-border-default);
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
-/* Ghost — transparent with hover */
+/* ---- btn-ghost — transparent, minimal weight ---- */
 .btn-ghost {
   background: transparent;
-  color: var(--signal-fg-primary);
+  color: var(--signal-fg-secondary);
   border: 1px solid transparent;
 }
 
 .btn-ghost:hover {
   background: var(--signal-bg-secondary);
+  color: var(--signal-fg-primary);
 }
 
 .btn-ghost:active {
   background: var(--signal-border-default);
-  transform: scale(0.98);
+  transform: scale(0.97);
+}
+
+/* ---- btn-primary-success — green CTA, highest-contrast action ---- */
+.btn-primary-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--signal-space-2);
+  border-radius: var(--signal-radius-md);
+  font-weight: 600;
+  font-size: var(--signal-text-sm);
+  line-height: var(--signal-text-sm--line-height);
+  padding: var(--signal-space-2) var(--signal-space-4);
+  background: var(--signal-bg-success-emphasis);
+  color: #ffffff;
+  border: 1px solid transparent;
+  box-shadow: var(--signal-shadow-sm);
+  transition: all var(--signal-duration-fast) var(--signal-easing-default);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  width: 100%;
+}
+
+.btn-primary-success:hover {
+  background: var(--signal-bg-success-hover);
+  box-shadow: var(--signal-shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary-success:active {
+  background: var(--signal-bg-success-hover);
+  box-shadow: var(--signal-shadow-xs);
+  transform: scale(0.97);
+}
+
+.btn-primary-success:focus-visible {
+  outline: 2px solid var(--signal-fg-accent);
+  outline-offset: 2px;
+}
+
+.btn-primary-success[aria-disabled="true"],
+.btn-primary-success:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 /* ================================================================
-   Premium Card — layered shadows, refined border, subtle lift
+   Background Effects
+   Norman Principle: Calm Technology — ambient, not distracting
    ================================================================ */
 
-.premium-card {
-  background: var(--signal-bg-primary);
-  border: 1px solid var(--signal-border-default);
-  border-radius: var(--radius-medium);
-  box-shadow:
-    0 0 0 1px rgba(209, 217, 224, 0.3),
-    0 1px 3px 0 rgba(31, 35, 40, 0.06),
-    0 6px 12px -3px rgba(31, 35, 40, 0.04);
-  transition:
-    border-color 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.25s ease;
-}
-
-.premium-card:hover {
-  border-color: var(--signal-border-accent-muted);
-  box-shadow:
-    0 0 0 1px rgba(84, 174, 255, 0.3),
-    0 1px 3px 0 rgba(31, 35, 40, 0.08),
-    0 8px 16px -4px rgba(31, 35, 40, 0.1),
-    0 24px 48px -12px rgba(31, 35, 40, 0.08);
-}
-
-/* ---- Glass Card Hover — hover elevation for glass cards ---- */
-
-.glass-card-hover {
-  transition:
-    border-color 0.25s ease,
-    box-shadow 0.25s ease,
-    background 0.25s ease;
-}
-
-.glass-card-hover:hover {
-  border-color: rgba(84, 174, 255, 0.35);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow:
-    0 0 0 1px rgba(84, 174, 255, 0.15),
-    0 8px 24px -6px rgba(31, 35, 40, 0.12);
-}
-
-/* ---- Background Effects ---- */
-
-/* Glow orbs — ambient gradient glows for hero sections */
+/* ---- bg-glow-orbs — ambient gradient glows for hero sections ---- */
 .bg-glow-orbs {
   position: relative;
+  overflow: hidden;
 }
 
 .bg-glow-orbs::before {
@@ -546,10 +760,11 @@ input[type="range"]::-moz-range-track {
   height: 70%;
   background: radial-gradient(
     ellipse at center,
-    rgba(9, 105, 218, 0.06) 0%,
+    rgba(26, 86, 219, 0.07) 0%,
     transparent 70%
   );
   pointer-events: none;
+  z-index: 0;
 }
 
 .bg-glow-orbs::after {
@@ -561,34 +776,35 @@ input[type="range"]::-moz-range-track {
   height: 55%;
   background: radial-gradient(
     ellipse at center,
-    rgba(31, 136, 61, 0.04) 0%,
+    rgba(5, 122, 85, 0.05) 0%,
     transparent 70%
   );
   pointer-events: none;
+  z-index: 0;
 }
 
-/* Gradient mesh dark — premium dark section background */
+/* ---- bg-gradient-mesh-dark — premium dark section background ---- */
 .bg-gradient-mesh-dark {
-  background-color: #0d1117;
+  background-color: var(--signal-bg-inverse);
   background-image:
     radial-gradient(
       ellipse at 20% 50%,
-      rgba(9, 105, 218, 0.08) 0%,
+      rgba(26, 86, 219, 0.1) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse at 80% 20%,
-      rgba(84, 174, 255, 0.05) 0%,
+      rgba(63, 131, 248, 0.06) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse at 50% 80%,
-      rgba(31, 136, 61, 0.04) 0%,
+      rgba(5, 122, 85, 0.05) 0%,
       transparent 50%
     );
 }
 
-/* Dots dark — subtle dot pattern overlay for dark sections */
+/* ---- bg-dots-dark — subtle dot pattern for dark sections ---- */
 .bg-dots-dark {
   background-image: radial-gradient(
     circle at 1px 1px,
@@ -596,4 +812,174 @@ input[type="range"]::-moz-range-track {
     transparent 0
   );
   background-size: 24px 24px;
+}
+
+/* ---- bg-grid-subtle — subtle grid pattern for light sections ---- */
+.bg-grid-subtle {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bg-grid-subtle {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  }
+}
+
+/* ---- Legacy alias: bg-dotted-dark → bg-dots-dark ---- */
+.bg-dotted-dark {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
+/* ================================================================
+   Custom Range Slider — Signal UI styled
+   ================================================================ */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: var(--signal-border-default);
+  border-radius: 3px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--signal-bg-accent-emphasis);
+  cursor: pointer;
+  margin-top: -5px;
+  box-shadow: 0 1px 3px rgba(26, 86, 219, 0.3);
+  transition: box-shadow var(--signal-duration-fast) ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 1px 6px rgba(26, 86, 219, 0.5);
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--signal-fg-accent);
+  outline-offset: 3px;
+}
+
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: var(--signal-border-default);
+  border-radius: 3px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--signal-bg-accent-emphasis);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(26, 86, 219, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  box-shadow: 0 1px 6px rgba(26, 86, 219, 0.5);
+}
+
+input[type="range"]:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--signal-fg-accent);
+  outline-offset: 3px;
+}
+
+/* ================================================================
+   Scrollbar Utilities
+   ================================================================ */
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ================================================================
+   Typography Utility — Signal UI heading hierarchy
+   Supports F-pattern scanning with clear progression
+   ================================================================ */
+
+.signal-h1 {
+  font-size: var(--signal-text-4xl);
+  line-height: var(--signal-text-4xl--line-height);
+  font-weight: var(--signal-font-weight-bold);
+  letter-spacing: var(--signal-tracking-tight);
+}
+
+.signal-h2 {
+  font-size: var(--signal-text-3xl);
+  line-height: var(--signal-text-3xl--line-height);
+  font-weight: var(--signal-font-weight-bold);
+  letter-spacing: var(--signal-tracking-tight);
+}
+
+.signal-h3 {
+  font-size: var(--signal-text-xl);
+  line-height: var(--signal-text-xl--line-height);
+  font-weight: var(--signal-font-weight-semibold);
+}
+
+.signal-body {
+  font-size: var(--signal-text-base);
+  line-height: var(--signal-text-base--line-height);
+}
+
+.signal-body-sm {
+  font-size: var(--signal-text-sm);
+  line-height: var(--signal-text-sm--line-height);
+}
+
+.signal-caption {
+  font-size: var(--signal-text-xs);
+  line-height: var(--signal-text-xs--line-height);
+  color: var(--signal-fg-tertiary);
+}
+
+.signal-mono {
+  font-family: var(--signal-font-mono);
+  font-size: var(--signal-text-sm);
+  line-height: var(--signal-text-sm--line-height);
+}
+
+/* ================================================================
+   Accessibility — Screen Reader Only
+   ================================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

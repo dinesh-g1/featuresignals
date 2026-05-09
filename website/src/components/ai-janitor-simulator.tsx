@@ -2,13 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Lightbulb,
-  Check,
-  GitBranch,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
+import { Lightbulb, Check, GitBranch, Clock, ArrowRight } from "lucide-react";
 
 /** A file in the sample codebase */
 interface CodebaseFile {
@@ -335,8 +329,8 @@ export function AiJanitorSimulator() {
                     return (
                       <motion.div
                         key={flag.name}
-                        initial={{ opacity: 0, y: 12, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: "auto" }}
+                        initial={{ y: 12, height: 0 }}
+                        animate={{ y: 0, height: "auto" }}
                         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                         className="rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 overflow-hidden"
                       >
@@ -470,7 +464,9 @@ export function AiJanitorSimulator() {
             {/* Error state */}
             {error && (
               <div className="rounded-lg border border-[var(--signal-border-danger-emphasis)] bg-[var(--signal-bg-danger-muted)] p-4 mt-4">
-                <p className="text-sm text-[var(--signal-fg-danger)]">{error}</p>
+                <p className="text-sm text-[var(--signal-fg-danger)]">
+                  {error}
+                </p>
               </div>
             )}
           </div>

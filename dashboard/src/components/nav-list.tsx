@@ -10,6 +10,7 @@ import { PrismLotusIcon } from "@/components/prism-lotus";
 import { RoleBasedView } from "@/components/role-based-view";
 import { api } from "@/lib/api";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
+import { path } from "@/lib/paths";
 import {
   FlagIcon,
   SegmentIcon,
@@ -49,42 +50,42 @@ interface NavGroupDef {
 // ─── Org-level nav items (when no project selected) ───────────────────
 
 const orgNavItems: NavItemDef[] = [
-  { href: "/projects", label: "Projects", icon: ProjectIcon },
-  { href: "/usage", label: "Usage", icon: BarChartIcon },
-  { href: "/activity", label: "Activity", icon: ActivityIcon },
-  { href: "/limits", label: "Limits", icon: CheckListIcon },
-  { href: "/support", label: "Support", icon: HelpCircleIcon },
+  { href: path("/projects"), label: "Projects", icon: ProjectIcon },
+  { href: path("/usage"), label: "Usage", icon: BarChartIcon },
+  { href: path("/activity"), label: "Activity", icon: ActivityIcon },
+  { href: path("/limits"), label: "Limits", icon: CheckListIcon },
+  { href: path("/support"), label: "Support", icon: HelpCircleIcon },
 ];
 
 // ─── Project-level nav groups (when project selected) ─────────────────
 
 const featureManagement: NavItemDef[] = [
-  { href: "/flags", label: "Flags", icon: FlagIcon },
-  { href: "/segments", label: "Segments", icon: SegmentIcon },
-  { href: "/environments", label: "Env Config", icon: EnvironmentIcon },
+  { href: path("/flags"), label: "Flags", icon: FlagIcon },
+  { href: path("/segments"), label: "Segments", icon: SegmentIcon },
+  { href: path("/environments"), label: "Env Config", icon: EnvironmentIcon },
 ];
 
 const integrations: NavItemDef[] = [
-  { href: "/api-keys", label: "API Keys", icon: ApiKeysIcon },
-  { href: "/webhooks", label: "Webhooks", icon: WebhookIcon },
+  { href: path("/api-keys"), label: "API Keys", icon: ApiKeysIcon },
+  { href: path("/webhooks"), label: "Webhooks", icon: WebhookIcon },
 ];
 
 const team: NavItemDef[] = [
-  { href: "/team", label: "Members", icon: TeamIcon },
+  { href: path("/team"), label: "Members", icon: TeamIcon },
 ];
 
 const governance: NavItemDef[] = [
-  { href: "/approvals", label: "Approvals", icon: CheckListIcon },
+  { href: path("/approvals"), label: "Approvals", icon: CheckListIcon },
 ];
 
 const tools: NavItemDef[] = [
-  { href: "/janitor", label: "AI Janitor", icon: SparklesIcon },
-  { href: "/env-comparison", label: "Env Comparison", icon: SearchIcon },
-  { href: "/target-inspector", label: "Target Inspector", icon: SearchIcon },
-  { href: "/target-comparison", label: "Target Compare", icon: SearchIcon },
-  { href: "/analytics", label: "Analytics", icon: GraphIcon },
-  { href: "/metrics", label: "Metrics", icon: GraphIcon },
-  { href: "/health", label: "Health", icon: HeartIcon },
+  { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
+  { href: path("/env-comparison"), label: "Env Comparison", icon: SearchIcon },
+  { href: path("/target-inspector"), label: "Target Inspector", icon: SearchIcon },
+  { href: path("/target-comparison"), label: "Target Compare", icon: SearchIcon },
+  { href: path("/analytics"), label: "Analytics", icon: GraphIcon },
+  { href: path("/metrics"), label: "Metrics", icon: GraphIcon },
+  { href: path("/health"), label: "Health", icon: HeartIcon },
 ];
 
 // ─── Sidebar groups split by role visibility ──────────────────────
@@ -424,7 +425,7 @@ export function NavList() {
               Feature<span className="text-[#0969da]">Signals</span>
             </span>
             <span className="text-[10px] font-medium tracking-wide text-[var(--signal-fg-tertiary)] uppercase mt-0.5 whitespace-nowrap truncate">
-              Enterprise Control Plane
+              FlagEngine
             </span>
           </div>
           <button

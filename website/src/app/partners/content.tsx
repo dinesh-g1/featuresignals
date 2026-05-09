@@ -25,6 +25,7 @@ import Link from "next/link";
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-80px" },
   transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
@@ -32,6 +33,7 @@ const fadeUp = {
 
 const fadeUpDelayed = (delay: number) => ({
   initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
   transition: { duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] as const },
@@ -429,7 +431,10 @@ function IntegrationCategoriesSection() {
               >
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--signal-bg-accent-muted)]">
-                    <Icon size={14} className="text-[var(--signal-fg-accent)]" />
+                    <Icon
+                      size={14}
+                      className="text-[var(--signal-fg-accent)]"
+                    />
                   </div>
                   <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
                     {cat.name}
@@ -506,7 +511,7 @@ function FinalCtaSection() {
           >
             Become a partner
           </h2>
-          <p className="text-lg mb-10" style={{ color: "#8b949e" }}>
+          <p className="text-lg mb-10 text-white/60">
             Join our partner ecosystem and help engineering teams ship faster
             with open-source feature flags. We&apos;ll respond within 48 hours.
           </p>

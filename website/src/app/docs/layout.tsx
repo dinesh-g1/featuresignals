@@ -3,8 +3,8 @@ import { DocsSidebar } from "@/components/docs-sidebar";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Documentation | FeatureSignals",
-    default: "Documentation | FeatureSignals",
+    default: "Documentation",
+    template: "%s | FeatureSignals Docs",
   },
   description:
     "FeatureSignals documentation — learn about feature flags, SDKs, API reference, AI Janitor, deployment, and compliance.",

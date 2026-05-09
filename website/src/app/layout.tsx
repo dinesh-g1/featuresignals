@@ -65,7 +65,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <head />
-      <body className="min-h-screen flex flex-col bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] font-sans antialiased">
+      <body className="min-h-screen flex flex-col bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] font-sans antialiased overflow-x-hidden">
         {/* Announcement Banner */}
         {DEFAULT_ANNOUNCEMENT.DISPLAY && (
           <AnnouncementBanner

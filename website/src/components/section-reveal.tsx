@@ -25,6 +25,7 @@ export function SectionReveal({
   return (
     <motion.div
       initial={{ opacity: 0, y: yOffset }}
+      animate={{ opacity: 1, y: 0 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{
@@ -58,6 +59,7 @@ export function StaggerChildren({
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-60px" }}
         transition={{
@@ -78,6 +80,7 @@ export function StaggerChildren({
         <motion.div
           key={i}
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{

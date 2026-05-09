@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -15,6 +16,7 @@ import { PrismLotus } from "@/components/prism-lotus";
 interface NavLink {
   label: string;
   href: string;
+  description?: string;
 }
 
 interface DropdownColumn {
@@ -28,16 +30,38 @@ interface DropdownColumn {
 
 const platformColumns: DropdownColumn[] = [
   {
-    title: "Platform",
+    title: "Product",
     items: [
-      { label: "Feature Flags", href: "/features#feature-flags" },
-      { label: "A/B Experiments", href: "/features#experiments" },
-      { label: "AI Janitor", href: "/features#ai-janitor" },
-      { label: "Migration Engine", href: "/features#migration" },
-      { label: "Governance", href: "/features#governance" },
-      { label: "Integrations", href: "/integrations" },
-      { label: "Docs", href: "/docs" },
-      { label: "Quickstart", href: "/docs/getting-started/quickstart" },
+      {
+        label: "Feature Flags",
+        href: "/features#feature-flags",
+        description: "Targeted rollouts & kill switches",
+      },
+      {
+        label: "A/B Experiments",
+        href: "/features#experiments",
+        description: "Data-driven product decisions",
+      },
+      {
+        label: "AI Janitor",
+        href: "/features#ai-janitor",
+        description: "Automated stale flag cleanup",
+      },
+      {
+        label: "Migration Engine",
+        href: "/features#migration",
+        description: "Import from any provider",
+      },
+      {
+        label: "Governance & RBAC",
+        href: "/features#governance",
+        description: "Enterprise access control",
+      },
+      {
+        label: "Integrations",
+        href: "/integrations",
+        description: "Connect your stack",
+      },
     ],
   },
   {
@@ -47,30 +71,41 @@ const platformColumns: DropdownColumn[] = [
         label: "Progressive Delivery",
         href: "/use-cases#progressive-delivery",
       },
-      { label: "Kill Switches", href: "/use-cases#kill-switch" },
-      { label: "Canary Releases", href: "/use-cases#canary-releases" },
-      { label: "GitOps", href: "/use-cases#gitops" },
-      { label: "Enterprise SSO", href: "/features#governance" },
-      { label: "Compliance", href: "/features#compliance" },
-      { label: "Self-Hosting", href: "/docs/deployment/self-hosting" },
+      {
+        label: "Kill Switches",
+        href: "/use-cases#kill-switch",
+      },
+      {
+        label: "Canary Releases",
+        href: "/use-cases#canary-releases",
+      },
+      {
+        label: "GitOps",
+        href: "/use-cases#gitops",
+      },
+      {
+        label: "Enterprise SSO",
+        href: "/features#governance",
+      },
+      {
+        label: "Self-Hosting",
+        href: "/docs/deployment/self-hosting",
+      },
     ],
   },
 ];
 
-const customersItems: NavLink[] = [
-  { label: "Customer Stories", href: "/customers" },
-  { label: "Case Studies", href: "/customers" },
-  { label: "Wall of Love", href: "/customers" },
-];
-
-const partnersItems: NavLink[] = [
-  { label: "Technology Partners", href: "/partners" },
-  { label: "Integration Partners", href: "/integrations" },
-  { label: "Become a Partner", href: "/partners" },
+const docsItems: NavLink[] = [
+  { label: "Documentation", href: "/docs" },
+  { label: "Quickstart", href: "/docs/getting-started/quickstart" },
+  { label: "API Reference", href: "/docs/api-reference/overview" },
+  { label: "SDKs", href: "/docs/sdks/overview" },
+  { label: "Terraform Provider", href: "/integrations#iac" },
+  { label: "OpenFeature", href: "/integrations#openfeature" },
 ];
 
 /* ------------------------------------------------------------------ */
-/*  PlusMinus Icon — Tailscale's open/close indicator                 */
+/*  PlusMinus Icon — open/close indicator                             */
 /* ------------------------------------------------------------------ */
 
 function PlusMinusIcon({ open }: { open: boolean }) {
@@ -90,7 +125,7 @@ function PlusMinusIcon({ open }: { open: boolean }) {
         strokeWidth="1.25"
         strokeLinecap="round"
       />
-      {/* vertical line — animates to form + / - */}
+      {/* vertical line — animates to form + / − */}
       <motion.path
         d="M7 2.9165V11.0832"
         stroke="currentColor"
@@ -105,7 +140,7 @@ function PlusMinusIcon({ open }: { open: boolean }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Simple Dropdown — used for Customers & Partners                   */
+/*  Simple Dropdown                                                   */
 /* ------------------------------------------------------------------ */
 
 function SimpleDropdown({
@@ -113,16 +148,21 @@ function SimpleDropdown({
   items,
   open,
   setOpen,
+  active,
+  href,
 }: {
   label: string;
   items: NavLink[];
   open: boolean;
   setOpen: (v: boolean) => void;
+  active: boolean;
+  href?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [focusIndex, setFocusIndex] = useState(-1);
 
-  // Mouse enters container (button OR panel) → open + cancel close
   const handleEnter = () => {
     if (closeTimer.current) {
       clearTimeout(closeTimer.current);
@@ -131,10 +171,56 @@ function SimpleDropdown({
     setOpen(true);
   };
 
-  // Mouse leaves container → schedule close after 400ms
   const handleLeave = () => {
-    closeTimer.current = setTimeout(() => setOpen(false), 400);
+    closeTimer.current = setTimeout(() => {
+      setOpen(false);
+      setFocusIndex(-1);
+    }, 400);
   };
+
+  // Keyboard: arrow keys navigate, enter/space select, escape closes
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!open) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setFocusIndex((prev) => Math.min(prev + 1, items.length - 1));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setFocusIndex((prev) => Math.max(prev - 1, 0));
+        break;
+      case "Home":
+        e.preventDefault();
+        setFocusIndex(0);
+        break;
+      case "End":
+        e.preventDefault();
+        setFocusIndex(items.length - 1);
+        break;
+      case "Escape":
+        e.preventDefault();
+        setOpen(false);
+        setFocusIndex(-1);
+        break;
+    }
+  };
+
+  // Focus the item at focusIndex
+  useEffect(() => {
+    if (open && focusIndex >= 0 && listRef.current) {
+      const items = listRef.current.querySelectorAll<HTMLAnchorElement>("a");
+      items[focusIndex]?.focus();
+    }
+  }, [open, focusIndex]);
+
+  const labelClasses = cn(
+    "flex items-center gap-1 rounded-md h-10 px-3 text-sm font-medium transition-colors",
+    open || active
+      ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+      : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+  );
 
   return (
     <div
@@ -142,21 +228,24 @@ function SimpleDropdown({
       ref={containerRef}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+      onKeyDown={handleKeyDown}
     >
-      <button
-        onClick={() => setOpen(!open)}
-        className={cn(
-          "flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-          open
-            ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
-            : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
-        )}
-        aria-expanded={open}
-        aria-haspopup="true"
-      >
-        {label}
-        <PlusMinusIcon open={open} />
-      </button>
+      {href ? (
+        <Link href={href} className={labelClasses}>
+          {label}
+          <PlusMinusIcon open={open} />
+        </Link>
+      ) : (
+        <button
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-haspopup="true"
+          className={labelClasses}
+        >
+          {label}
+          <PlusMinusIcon open={open} />
+        </button>
+      )}
 
       <AnimatePresence>
         {open && (
@@ -165,17 +254,28 @@ function SimpleDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-1 w-56 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-[var(--shadow-floating-large)] py-2 z-50"
+            className="absolute left-0 top-full mt-1 w-56 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] py-2 z-50"
+            role="menu"
           >
-            <ul className="flex flex-col">
-              {items.map((item) => (
-                <li key={item.label}>
+            <ul ref={listRef} className="flex flex-col" role="none">
+              {items.map((item, i) => (
+                <li key={item.label} role="none">
                   <Link
                     href={item.href}
-                    onClick={() => setOpen(false)}
-                    className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
+                    onClick={() => {
+                      setOpen(false);
+                      setFocusIndex(-1);
+                    }}
+                    role="menuitem"
+                    tabIndex={i === focusIndex ? 0 : -1}
+                    className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors focus-visible:outline-none focus-visible:bg-[var(--signal-bg-secondary)]"
                   >
                     {item.label}
+                    {item.description && (
+                      <span className="block text-xs text-[var(--signal-fg-secondary)] font-normal mt-0.5">
+                        {item.description}
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}
@@ -194,14 +294,15 @@ function SimpleDropdown({
 function PlatformDropdown({
   open,
   setOpen,
+  active,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
+  active: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Mouse enters container (button OR panel) → open + cancel close
   const handleEnter = () => {
     if (closeTimer.current) {
       clearTimeout(closeTimer.current);
@@ -210,10 +311,12 @@ function PlatformDropdown({
     setOpen(true);
   };
 
-  // Mouse leaves container → schedule close after 400ms
   const handleLeave = () => {
     closeTimer.current = setTimeout(() => setOpen(false), 400);
   };
+
+  // Collect all items for keyboard navigation
+  const allItems = platformColumns.flatMap((col) => col.items);
 
   return (
     <div
@@ -224,14 +327,14 @@ function PlatformDropdown({
     >
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
         className={cn(
-          "flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-          open
+          "flex items-center gap-1 rounded-md h-10 px-3 text-sm font-medium transition-colors",
+          open || active
             ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
             : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
         )}
-        aria-expanded={open}
-        aria-haspopup="true"
       >
         Platform
         <PlusMinusIcon open={open} />
@@ -245,28 +348,35 @@ function PlatformDropdown({
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="absolute left-1/2 top-full mt-2 -translate-x-1/2 z-50"
+            role="menu"
           >
-            <div className="w-[560px] shadow-[var(--shadow-floating-large)] overflow-hidden rounded-2xl border border-[var(--signal-border-default)]">
+            <div className="w-[600px] overflow-hidden rounded-2xl border border-[var(--signal-border-default)] shadow-[var(--signal-shadow-lg)]">
               {/* Main grid — 2 columns */}
-              <div className="shadow-[var(--signal-shadow-sm)] grid grid-cols-2 gap-6 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-8">
+              <div className="grid grid-cols-2 gap-6 border-b border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-8">
                 {platformColumns.map((col) => (
                   <div key={col.title} className="flex flex-col gap-4">
-                    {/* Column header: text + horizontal line */}
+                    {/* Column header */}
                     <div className="flex items-center gap-2.5 px-3">
-                      <p className="font-medium whitespace-nowrap text-[14px] uppercase tracking-[0.6px] text-[var(--signal-fg-secondary)]">
+                      <p className="font-medium whitespace-nowrap text-[13px] uppercase tracking-[0.6px] text-[var(--signal-fg-secondary)]">
                         {col.title}
                       </p>
                       <div className="h-px w-full bg-[var(--signal-border-default)]" />
                     </div>
-                    <ul className="flex flex-col gap-1">
+                    <ul className="flex flex-col gap-0.5" role="none">
                       {col.items.map((item) => (
-                        <li key={item.label}>
+                        <li key={item.label} role="none">
                           <Link
                             href={item.href}
                             onClick={() => setOpen(false)}
-                            className="block rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
+                            role="menuitem"
+                            className="block rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors focus-visible:outline-none focus-visible:bg-[var(--signal-bg-secondary)]"
                           >
-                            {item.label}
+                            <span className="block">{item.label}</span>
+                            {item.description && (
+                              <span className="block text-xs text-[var(--signal-fg-secondary)] font-normal mt-0.5">
+                                {item.description}
+                              </span>
+                            )}
                           </Link>
                         </li>
                       ))}
@@ -275,21 +385,22 @@ function PlatformDropdown({
                 ))}
               </div>
 
-              {/* Bottom promo bar */}
-              <div className="bg-[var(--signal-bg-secondary)] p-8">
+              {/* Bottom promo */}
+              <div className="bg-[var(--signal-bg-secondary)] p-6">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-[14px] uppercase tracking-[0.6px] text-[var(--signal-fg-secondary)]">
+                    <p className="font-medium text-[13px] uppercase tracking-[0.6px] text-[var(--signal-fg-secondary)]">
                       New: AI Janitor v2
                     </p>
                     <p className="text-sm text-[var(--signal-fg-secondary)] leading-snug mt-0.5">
-                      Smarter detection, automated PRs, cross-repo cleanup.
+                      Smarter stale flag detection, automated cleanup PRs,
+                      cross-repo visibility.
                     </p>
                   </div>
                   <Link
                     href="/features#ai-janitor"
                     onClick={() => setOpen(false)}
-                    className="inline-flex shrink-0 items-center justify-center rounded-md px-3 h-9 text-sm font-medium bg-[var(--signal-bg-inverse)] text-[var(--signal-fg-on-emphasis)] border border-transparent shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow"
+                    className="inline-flex shrink-0 items-center justify-center rounded-md px-4 h-10 text-sm font-medium bg-[var(--signal-bg-inverse)] text-[var(--signal-fg-on-emphasis)] border border-transparent shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)] transition-shadow"
                   >
                     Learn more
                   </Link>
@@ -304,6 +415,34 @@ function PlatformDropdown({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Nav Link (direct, no dropdown)                                    */
+/* ------------------------------------------------------------------ */
+
+function NavLink({
+  href,
+  label,
+  active,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-1 rounded-md h-10 px-3 text-sm font-medium transition-colors",
+        active
+          ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+          : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Mobile Nav Link                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -311,11 +450,13 @@ function MobileNavLink({
   href,
   label,
   onClick,
+  active,
   className,
 }: {
   href: string;
   label: string;
   onClick: () => void;
+  active?: boolean;
   className?: string;
 }) {
   return (
@@ -323,7 +464,10 @@ function MobileNavLink({
       href={href}
       onClick={onClick}
       className={cn(
-        "block w-full rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors",
+        "block w-full rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+        active
+          ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+          : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
         className,
       )}
     >
@@ -333,35 +477,70 @@ function MobileNavLink({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Mobile Accordion Section                                           */
+/*  Mobile Accordion Section                                          */
 /* ------------------------------------------------------------------ */
 
 function MobileAccordion({
   title,
   items,
   closeMobile,
+  active,
+  href,
 }: {
   title: string;
   items: NavLink[];
   closeMobile: () => void;
+  active?: boolean;
+  href?: string;
 }) {
   const [open, setOpen] = useState(false);
 
+  const accordionLabelClasses = cn(
+    "flex items-center justify-between w-full rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+    open || active
+      ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+      : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+  );
+
   return (
     <div>
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
-      >
-        {title}
-        <PlusMinusIcon open={open} />
-      </button>
+      {href ? (
+        <div className="flex items-center gap-0">
+          <Link
+            href={href}
+            onClick={closeMobile}
+            className={cn(accordionLabelClasses, "flex-1")}
+          >
+            {title}
+          </Link>
+          <button
+            onClick={() => setOpen(!open)}
+            className={cn(
+              "shrink-0 rounded-md px-2 py-2.5 text-sm font-medium transition-colors",
+              open || active
+                ? "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]"
+                : "text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+            )}
+            aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
+          >
+            <PlusMinusIcon open={open} />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setOpen(!open)}
+          className={accordionLabelClasses}
+        >
+          {title}
+          <PlusMinusIcon open={open} />
+        </button>
+      )}
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
@@ -387,9 +566,9 @@ function MobileAccordion({
 /* ================================================================== */
 
 export function Header() {
+  const pathname = usePathname();
   const [platformOpen, setPlatformOpen] = useState(false);
-  const [customersOpen, setCustomersOpen] = useState(false);
-  const [partnersOpen, setPartnersOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
@@ -399,8 +578,7 @@ export function Header() {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setPlatformOpen(false);
-        setCustomersOpen(false);
-        setPartnersOpen(false);
+        setDocsOpen(false);
         setMobileOpen(false);
       }
     }
@@ -408,14 +586,17 @@ export function Header() {
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
-  const closeAllDropdowns = useCallback(() => {
-    setPlatformOpen(false);
-    setCustomersOpen(false);
-    setPartnersOpen(false);
-  }, []);
+  // Determine active states based on current path
+  const isPlatformActive =
+    pathname?.startsWith("/features") ||
+    pathname?.startsWith("/use-cases") ||
+    pathname?.startsWith("/integrations");
+  const isPricingActive = pathname === "/pricing";
+  const isDocsActive = pathname?.startsWith("/docs");
+  const isBlogActive = pathname?.startsWith("/blog");
 
   return (
-    <header className="sticky top-0 z-40 glass-card !rounded-none !border-0 !border-b !border-[var(--fs-border-default)] !shadow-sm">
+    <header className="sticky top-0 z-40 glass-card !rounded-none !border-0 !border-b !border-[var(--signal-border-subtle)]">
       {/* Announcement Banner slot — rendered by parent layout */}
       <div id="announcement-banner-slot" />
 
@@ -434,41 +615,37 @@ export function Header() {
           className="hidden lg:flex items-center gap-1"
           aria-label="Main navigation"
         >
-          <PlatformDropdown open={platformOpen} setOpen={setPlatformOpen} />
-
-          <SimpleDropdown
-            label="Customers"
-            items={customersItems}
-            open={customersOpen}
-            setOpen={setCustomersOpen}
+          <PlatformDropdown
+            open={platformOpen}
+            setOpen={setPlatformOpen}
+            active={isPlatformActive}
           />
 
           <SimpleDropdown
-            label="Partners"
-            items={partnersItems}
-            open={partnersOpen}
-            setOpen={setPartnersOpen}
+            label="Docs"
+            items={docsItems}
+            open={docsOpen}
+            setOpen={setDocsOpen}
+            active={isDocsActive}
+            href="/docs"
           />
 
-          <Link
-            href="/pricing"
-            className="flex items-center gap-1 rounded-md px-3 py-2.5 text-sm font-medium text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors"
-          >
-            Pricing
-          </Link>
+          <NavLink href="/pricing" label="Pricing" active={isPricingActive} />
+
+          <NavLink href="/blog" label="Blog" active={isBlogActive} />
         </nav>
 
         {/* Right CTAs */}
         <nav className="flex items-center gap-1 font-medium">
           <Link
             href="https://app.featuresignals.com/login"
-            className="btn-ghost !h-9 !text-sm hidden sm:inline-flex"
+            className="h-10 px-5 text-sm font-semibold rounded-lg text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors whitespace-nowrap hidden sm:inline-flex items-center"
           >
             Sign In
           </Link>
           <Link
             href="https://app.featuresignals.com/register"
-            className="btn-primary-success whitespace-nowrap !h-9 !px-4 !text-sm"
+            className="h-10 px-5 text-sm font-semibold rounded-lg bg-[var(--signal-bg-success-emphasis)] text-white hover:bg-[#046c44] transition-colors shadow-[var(--signal-shadow-sm)] whitespace-nowrap inline-flex items-center"
           >
             Start Free
           </Link>
@@ -490,7 +667,7 @@ export function Header() {
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
           <Dialog.Content
             aria-describedby="mobile-menu-description"
-            className="fixed right-0 top-0 z-50 h-full w-80 max-w-[calc(100vw-2rem)] bg-[var(--signal-bg-primary)] shadow-[var(--shadow-floating-xlarge)] p-6 overflow-y-auto"
+            className="fixed right-0 top-0 z-50 h-full w-80 max-w-[calc(100vw-2rem)] bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-xl)] p-6 overflow-y-auto"
           >
             <Dialog.Title className="sr-only">Navigation Menu</Dialog.Title>
             <Dialog.Description
@@ -520,43 +697,49 @@ export function Header() {
             </div>
 
             <nav className="space-y-1">
-              {/* Platform — accordion with columns */}
               <MobileAccordion
                 title="Platform"
                 items={platformColumns.flatMap((c) => c.items)}
                 closeMobile={closeMobile}
+                active={isPlatformActive}
               />
 
               <MobileAccordion
-                title="Customers"
-                items={customersItems}
+                title="Docs"
+                items={docsItems}
                 closeMobile={closeMobile}
-              />
-
-              <MobileAccordion
-                title="Partners"
-                items={partnersItems}
-                closeMobile={closeMobile}
+                active={isDocsActive}
+                href="/docs"
               />
 
               <MobileNavLink
                 href="/pricing"
                 label="Pricing"
                 onClick={closeMobile}
+                active={isPricingActive}
+              />
+
+              <MobileNavLink
+                href="/blog"
+                label="Blog"
+                onClick={closeMobile}
+                active={isBlogActive}
               />
 
               <hr className="my-3 border-[var(--signal-border-default)]" />
 
-              <MobileNavLink
+              <Link
                 href="https://app.featuresignals.com/login"
-                label="Sign In"
                 onClick={closeMobile}
-              />
+                className="h-10 px-5 text-sm font-semibold rounded-lg text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] transition-colors whitespace-nowrap inline-flex items-center w-full justify-center"
+              >
+                Sign In
+              </Link>
 
               <Link
                 href="https://app.featuresignals.com/register"
                 onClick={closeMobile}
-                className="btn-primary-success w-full mt-2"
+                className="h-10 px-5 text-sm font-semibold rounded-lg bg-[var(--signal-bg-success-emphasis)] text-white hover:bg-[#046c44] transition-colors shadow-[var(--signal-shadow-sm)] whitespace-nowrap inline-flex items-center w-full justify-center mt-2"
               >
                 Start Free
               </Link>

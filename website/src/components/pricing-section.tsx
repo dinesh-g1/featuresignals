@@ -3,12 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import {
-  Check,
-  Download,
-  Cloud,
-  Heart,
-} from "lucide-react";
+import { Check, Download, Cloud, Heart } from "lucide-react";
 import {
   type CompetitorProvider,
   calculateSavings,
@@ -47,6 +42,7 @@ export function PricingSection() {
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
@@ -166,6 +162,7 @@ export function PricingSection() {
         <motion.div
           className="mt-12 text-center max-w-xl mx-auto"
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.45, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -240,6 +237,7 @@ function PricingCard({
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}

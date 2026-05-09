@@ -368,6 +368,7 @@ const filterTabs: FilterTab[] = [
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-64px" },
   transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
@@ -423,6 +424,7 @@ function HeroSection() {
         <motion.p
           className="text-lg text-[var(--signal-fg-secondary)] max-w-xl mx-auto"
           initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-64px" }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -495,6 +497,7 @@ function IntegrationsContent({
             className={cn(catIndex > 0 && "mt-16")}
             aria-labelledby={`category-${category.id}`}
             initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{
@@ -524,6 +527,7 @@ function IntegrationsContent({
                   key={item.name}
                   className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-5 premium-card"
                   initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-20px" }}
                   transition={{
@@ -581,10 +585,7 @@ function OpenFeatureHighlight() {
       <div className="mx-auto max-w-7xl px-6">
         <motion.div className="text-center max-w-2xl mx-auto" {...fadeUp}>
           <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-6">
-            <Building
-              size={28}
-              className="text-[var(--signal-fg-info)]"
-            />
+            <Building size={28} className="text-[var(--signal-fg-info)]" />
           </div>
           <h2
             id="openfeature-heading"
@@ -630,6 +631,7 @@ function OpenFeatureHighlight() {
               key={item.title}
               className="text-center"
               initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{
@@ -654,6 +656,7 @@ function OpenFeatureHighlight() {
         <motion.p
           className="text-center mt-10"
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-30px" }}
           transition={{ duration: 0.4, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}

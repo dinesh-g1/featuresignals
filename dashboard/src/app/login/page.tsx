@@ -281,10 +281,10 @@ function LoginForm() {
             </svg>
           </div>
           <h1 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
-            Welcome back
+            Sign in to FeatureSignals
           </h1>
-          <p className="mt-1.5 text-sm text-[var(--signal-fg-secondary)]">
-            Sign in to your account to continue.
+          <p className="mt-1 text-sm text-[var(--signal-fg-tertiary)]">
+            FlagEngine · Enterprise Control Plane
           </p>
         </div>
 

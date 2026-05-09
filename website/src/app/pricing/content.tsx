@@ -1,30 +1,56 @@
 "use client";
 
-import { Fragment, useState, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import * as Accordion from "@radix-ui/react-accordion";
 import {
   Check,
-  X,
   ChevronDown,
   ChevronRight,
-  Cloud,
+  ArrowRight,
+  Shield,
+  Zap,
+  Users,
+  Building2,
+  Server,
   Heart,
-  Download,
-  ShieldCheck,
-  Rocket,
   HelpCircle,
 } from "lucide-react";
+
+/** GitHub logo — inline SVG (no brand icon in lucide-react) */
+function GithubIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        fillRule="evenodd"
+        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+      />
+    </svg>
+  );
+}
 import { cn } from "@/lib/utils";
+import {
+  type CompetitorProvider,
+  calculateSavings,
+  formatUSD,
+  PROVIDER_META,
+} from "@/lib/pricing";
 
 /* ==========================================================================
    Constants
    ========================================================================== */
 
 const REGISTER_URL = "https://app.featuresignals.com/register";
-const DOCS_QUICKSTART = "/docs/getting-started/quickstart";
-const SALES_EMAIL = "/contact?reason=sales";
+const DOCS_QUICKSTART =
+  "https://docs.featuresignals.com/getting-started/quickstart";
+const CONTACT_SALES = "/contact?reason=sales";
 const ANNUAL_DISCOUNT_PCT = 17;
 
 /* ==========================================================================
@@ -33,6 +59,7 @@ const ANNUAL_DISCOUNT_PCT = 17;
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-80px" },
   transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
@@ -40,6 +67,7 @@ const fadeUp = {
 
 const fadeUpDelayed = (delay: number) => ({
   initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
   transition: { duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] as const },
@@ -57,46 +85,49 @@ interface Tier {
   features: string[];
   cta: { label: string; href: string; external?: boolean };
   highlight?: boolean;
-  badge?: string;
   annualLabel?: string;
+  icon: React.ReactNode;
 }
 
 const tiers: Tier[] = [
   {
     name: "Free",
     price: "$0",
-    period: "forever",
-    description: "For individuals and small teams getting started.",
+    period: "/month forever",
+    description:
+      "For individuals and small teams getting started. Up to 50 flags. No credit card required.",
     features: [
+      "Up to 50 feature flags",
       "1 project, 2 environments, 3 team members",
-      "Unlimited feature flags & evaluations",
-      "AI Janitor: 25 actions/month",
-      "Community support",
       "All 8 SDKs + OpenFeature",
+      "Community support",
+      "Apache 2.0 license",
+      "Self-hosted is free forever",
     ],
     cta: { label: "Start Free", href: REGISTER_URL, external: true },
+    icon: <Zap size={20} className="text-emerald-500" />,
   },
   {
     name: "Pro",
     price: "$29",
     period: "/month flat",
-    description: "For growing engineering teams.",
+    description: "For growing engineering teams. Unlimited everything.",
     features: [
-      "Unlimited projects, environments, team members",
-      "AI Janitor: 200 actions/month",
-      "RBAC, audit logs, approvals",
-      "Webhooks & scheduling",
-      "Relay proxy (1 included)",
-      "Priority email support",
+      "Unlimited projects & environments",
+      "Unlimited team members",
+      "AI Janitor: stale flag removal",
+      "RBAC & audit logs",
+      "Webhooks & integrations",
+      "Email support",
     ],
     cta: {
-      label: "Start Pro Trial",
+      label: "Start Free Trial",
       href: `${REGISTER_URL}?plan=pro`,
       external: true,
     },
     highlight: true,
-    badge: "Most Popular",
-    annualLabel: "$290/year (save 17%)",
+    annualLabel: `$${Math.round(29 * 12 * (1 - ANNUAL_DISCOUNT_PCT / 100))}/year (save ${ANNUAL_DISCOUNT_PCT}%)`,
+    icon: <Zap size={20} className="text-[var(--signal-fg-accent)]" />,
   },
   {
     name: "Enterprise",
@@ -104,390 +135,15 @@ const tiers: Tier[] = [
     period: "",
     description: "For large teams with custom requirements.",
     features: [
-      "SSO / SAML / OIDC",
-      "99.9% SLA with penalties",
-      "Dedicated support (4h SLA)",
-      "SCIM provisioning",
+      "Everything in Pro",
+      "SSO (SAML/OIDC) & SCIM",
+      "99.9% uptime SLA",
+      "Dedicated support engineer",
+      "On-prem / air-gapped deployment",
       "Invoice billing (NET-30)",
-      "On-prem deployment support",
-      "Custom AI Janitor pools",
     ],
-    cta: { label: "Contact Sales", href: SALES_EMAIL, external: true },
-  },
-  {
-    name: "Self-Hosted",
-    price: "Free",
-    period: "forever",
-    description: "Apache 2.0. Run on your infrastructure.",
-    features: [
-      "Full feature parity",
-      "Unlimited everything",
-      "AI Janitor included",
-      "No license fees",
-      "Single Go binary",
-      "Deploy in 3 minutes",
-    ],
-    cta: { label: "Deploy Now", href: DOCS_QUICKSTART },
-    badge: "100% Open Source",
-  },
-];
-
-/* ==========================================================================
-   Feature Comparison Table Data
-   ========================================================================== */
-
-interface FeatureRow {
-  feature: string;
-  free: string | boolean;
-  pro: string | boolean;
-  enterprise: string | boolean;
-  selfHosted: string | boolean;
-}
-
-interface FeatureCategory {
-  name: string;
-  rows: FeatureRow[];
-}
-
-const featureCategories: FeatureCategory[] = [
-  {
-    name: "Core Platform",
-    rows: [
-      {
-        feature: "Feature flags",
-        free: "Unlimited",
-        pro: "Unlimited",
-        enterprise: "Unlimited",
-        selfHosted: "Unlimited",
-      },
-      {
-        feature: "Flag types (boolean, string, number, JSON)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Environments",
-        free: "2",
-        pro: "Unlimited",
-        enterprise: "Unlimited",
-        selfHosted: "Unlimited",
-      },
-      {
-        feature: "Projects",
-        free: "1",
-        pro: "Unlimited",
-        enterprise: "Unlimited",
-        selfHosted: "Unlimited",
-      },
-      {
-        feature: "Team members",
-        free: "3",
-        pro: "Unlimited",
-        enterprise: "Unlimited",
-        selfHosted: "Unlimited",
-      },
-      {
-        feature: "Evaluations",
-        free: "Unlimited",
-        pro: "Unlimited",
-        enterprise: "Unlimited",
-        selfHosted: "Unlimited",
-      },
-    ],
-  },
-  {
-    name: "Targeting & Rollouts",
-    rows: [
-      {
-        feature: "Targeting operators (>, <, =, in, regex)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Segments",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Percentage rollouts",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Prerequisites",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Mutual exclusion groups",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-    ],
-  },
-  {
-    name: "Experiments",
-    rows: [
-      {
-        feature: "A/B testing",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Weighted variants",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Impression tracking",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-    ],
-  },
-  {
-    name: "AI Janitor",
-    rows: [
-      {
-        feature: "Stale flag detection",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Auto-PR generation",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Git provider support (GitHub, GitLab, Bitbucket)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "LLM flexibility (OpenAI, Anthropic, self-hosted)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Actions per month",
-        free: "25",
-        pro: "200",
-        enterprise: "Custom pools",
-        selfHosted: "Unlimited",
-      },
-    ],
-  },
-  {
-    name: "Governance",
-    rows: [
-      {
-        feature: "Roles (Admin, Member, Viewer)",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "RBAC",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Per-environment permissions",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Audit logging",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Approvals (change requests)",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-    ],
-  },
-  {
-    name: "Security",
-    rows: [
-      {
-        feature: "SSO / SAML / OIDC",
-        free: false,
-        pro: false,
-        enterprise: true,
-        selfHosted: "BYO",
-      },
-      {
-        feature: "MFA",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: "BYO",
-      },
-      {
-        feature: "SCIM provisioning",
-        free: false,
-        pro: false,
-        enterprise: true,
-        selfHosted: false,
-      },
-      {
-        feature: "IP allowlisting",
-        free: false,
-        pro: false,
-        enterprise: true,
-        selfHosted: "BYO",
-      },
-      {
-        feature: "API keys",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "JWT authentication",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-    ],
-  },
-  {
-    name: "Integrations",
-    rows: [
-      {
-        feature: "SDKs (Go, Node, Python, Java, .NET, Ruby, React, Vue)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "OpenFeature provider",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "IaC (Terraform, Pulumi)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Webhooks",
-        free: false,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "CI/CD (GitHub Actions, GitLab CI)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-    ],
-  },
-  {
-    name: "Deployment",
-    rows: [
-      {
-        feature: "Cloud",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: "Self-managed",
-      },
-      {
-        feature: "Self-hosted",
-        free: "N/A",
-        pro: "N/A",
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Relay proxy",
-        free: false,
-        pro: "1 included",
-        enterprise: "Unlimited",
-        selfHosted: "Self-managed",
-      },
-      {
-        feature: "SSE streaming",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-    ],
-  },
-  {
-    name: "Support",
-    rows: [
-      {
-        feature: "Community (Discord, GitHub)",
-        free: true,
-        pro: true,
-        enterprise: true,
-        selfHosted: true,
-      },
-      {
-        feature: "Email support",
-        free: false,
-        pro: "Priority",
-        enterprise: "Dedicated 4h SLA",
-        selfHosted: false,
-      },
-      {
-        feature: "SLA",
-        free: false,
-        pro: false,
-        enterprise: "99.9% with penalties",
-        selfHosted: "Self-managed",
-      },
-    ],
+    cta: { label: "Talk to Us", href: CONTACT_SALES, external: true },
+    icon: <Building2 size={20} className="text-[var(--signal-fg-info)]" />,
   },
 ];
 
@@ -502,34 +158,39 @@ interface FaqItem {
 
 const faqItems: FaqItem[] = [
   {
-    question: "How does pricing work? Do you charge per seat?",
+    question: "What happens if I exceed the Free plan limits?",
     answer:
-      "FeatureSignals Pro is a flat $29/month — unlimited seats, unlimited projects, unlimited flags. We don't charge per seat, per flag, or per evaluation. The only metered resource is AI Janitor actions, with generous free tiers on every plan. Enterprise pricing is custom and includes additional compliance, support, and SLA guarantees.",
+      "You'll be prompted to upgrade. We never auto-charge you. If you exceed AI Janitor credits on Free, additional actions are queued for the next cycle. If you exceed project or team member limits, we'll reach out and ask you to upgrade — nothing is ever interrupted without warning.",
   },
   {
-    question: "What's included in the Free plan?",
+    question: "Can I self-host the Pro features?",
     answer:
-      "The Free plan includes 1 project, 2 environments, 3 team members, unlimited feature flags, unlimited evaluations, 25 AI Janitor actions per month, community support, and access to all 8 SDKs plus OpenFeature. It's designed for individuals and small teams to experience the full platform without time limits.",
+      "Yes. Pro features are available in the self-hosted version under Apache 2.0. The self-hosted binary includes the full feature set — RBAC, audit logs, webhooks, AI Janitor — everything. You only need to bring your own LLM API keys for the AI Janitor. No license fees. No phone-home.",
+  },
+  {
+    question: "What's included in Enterprise?",
+    answer:
+      "Enterprise includes SSO (SAML/OIDC), SCIM provisioning, a 99.9% uptime SLA with financial penalties, a dedicated support engineer with 4-hour response SLA, on-premises and air-gapped deployment support, invoice billing (NET-30), and custom AI Janitor pools. We'll quote you upfront — typically $150–500/month depending on scale. No hidden fees.",
+  },
+  {
+    question: "Do you offer annual discounts?",
+    answer:
+      "Yes. Pay annually and save 17% (2 months free). Pro annually is $290/year instead of $348 ($29/month × 12). Enterprise contracts are annual by default with NET-30 invoicing. Self-hosted is always free under Apache 2.0.",
+  },
+  {
+    question: "Is there a free trial for Enterprise?",
+    answer:
+      "Yes. We offer a 30-day pilot with full Enterprise features — SSO, SCIM, dedicated support, SLA, everything. No credit card required. At the end of the pilot, we'll discuss your needs and provide an upfront quote. No obligation to continue.",
   },
   {
     question: "How does the AI Janitor credit system work?",
     answer:
-      "AI Janitor actions include stale flag detection scans, automated pull request generation, and flag removal suggestions. Free includes 25 actions/month, Pro includes 200 actions/month, and Enterprise gets custom pools. Credit packs are also available on all plans: Starter (50 credits), Team (250), and Scale (1,500). Self-hosted users get unlimited AI Janitor actions since they bring their own LLM keys.",
+      "AI Janitor actions include stale flag detection scans, automated pull request generation, and flag removal suggestions. Free includes 25 actions/month, Pro includes 200 actions/month, and Enterprise gets custom pools. Credit packs are available on all plans: Starter (50 credits), Team (250), and Scale (1,500). Self-hosted users get unlimited AI Janitor actions since they bring their own LLM keys.",
   },
   {
-    question: "Can I switch between plans?",
+    question: "Can I switch between Cloud and Self-Hosted?",
     answer:
-      "Absolutely. You can upgrade from Free to Pro at any time — your data, flags, and configuration carry over seamlessly. Downgrading from Pro to Free is also supported, though you may need to reduce projects or team members to fit the Free plan limits. Enterprise contracts have annual terms. Self-hosted and Cloud are interoperable: switch anytime without data export.",
-  },
-  {
-    question: "Is self-hosted really free?",
-    answer:
-      "Yes. FeatureSignals Self-Hosted is Apache 2.0 licensed — free forever, full feature parity, no license fees, no seat limits, no usage caps. It's a single Go binary that deploys in 3 minutes. You only pay for your own infrastructure. The AI Janitor is included; you provide your own LLM API keys (OpenAI, Anthropic, or self-hosted models).",
-  },
-  {
-    question: "What's the difference between Pro and Enterprise?",
-    answer:
-      "Pro is designed for growing engineering teams that need unlimited projects, RBAC, audit logs, approvals, webhooks, and priority email support — all at a flat $29/month. Enterprise adds SSO/SAML/OIDC, SCIM provisioning, a 99.9% SLA with financial penalties, dedicated support with a 4-hour response SLA, invoice billing (NET-30), on-prem deployment support, and custom AI Janitor pools.",
+      "Absolutely. Cloud and Self-Hosted are fully interoperable. Export your data anytime and import it into a self-hosted instance — or vice versa. All SDKs support OpenFeature, so you can swap providers without changing application code. No vendor lock-in, ever.",
   },
   {
     question: "Do you offer discounts for startups or nonprofits?",
@@ -537,19 +198,9 @@ const faqItems: FaqItem[] = [
       "Yes. We offer a 50% discount on Pro for eligible startups (under $5M in funding, fewer than 20 employees) and free Pro plans for registered nonprofits. Contact sales@featuresignals.com to apply. We also offer academic discounts for university research groups.",
   },
   {
-    question: "How does the migration from LaunchDarkly work?",
+    question: "How does migration from LaunchDarkly or other platforms work?",
     answer:
-      "FeatureSignals provides an automated migration tool that imports your feature flags, segments, targeting rules, and environments from LaunchDarkly (and other platforms). The migration preserves flag keys so your SDK code doesn't need to change. Since FeatureSignals is OpenFeature-native, you can also use the OpenFeature provider to swap providers without touching application code. See our migration guide for step-by-step instructions.",
-  },
-  {
-    question: "What happens if I exceed my plan limits?",
-    answer:
-      "We don't hard-cut you off. If you exceed AI Janitor credits, additional actions are queued and processed in the next billing cycle. If you exceed project or team member limits on the Free plan, you'll receive a notification asking you to upgrade. We never surprise you with overage charges — we'll reach out to discuss upgrading before anything is interrupted.",
-  },
-  {
-    question: "Can I pay annually?",
-    answer:
-      "Yes. Annual billing is available on Pro at $290/year — a 17% discount over monthly billing ($29/month × 12 = $348). Enterprise contracts are annual by default with NET-30 invoicing. Self-hosted is always free. Contact sales for custom Enterprise pricing and multi-year agreements.",
+      "FeatureSignals provides an automated migration tool that imports your feature flags, segments, targeting rules, and environments from LaunchDarkly, ConfigCat, Flagsmith, and other platforms. The migration preserves flag keys so your SDK code doesn't need to change. Since FeatureSignals is OpenFeature-native, you can also use the OpenFeature provider to swap providers incrementally. See our migration guide for step-by-step instructions.",
   },
 ];
 
@@ -557,292 +208,25 @@ const faqItems: FaqItem[] = [
    Helper Components
    ========================================================================== */
 
-function CheckListItem({ text }: { text: string }) {
+function CheckListItem({ text, muted }: { text: string; muted?: boolean }) {
   return (
-    <li className="flex items-start gap-2.5 text-sm text-[var(--signal-fg-primary)]">
-      <Check size={16} className="mt-0.5 shrink-0 text-emerald-500" />
-      <span>{text}</span>
-    </li>
-  );
-}
-
-function FeatureValue({ value }: { value: string | boolean }) {
-  if (typeof value === "boolean") {
-    return value ? (
-      <Check size={16} className="text-emerald-500" />
-    ) : (
-      <X size={16} className="text-[var(--signal-fg-tertiary)]" />
-    );
-  }
-  if (value === "BYO") {
-    return (
-      <span className="text-xs font-medium text-[var(--signal-fg-secondary)] italic">
-        BYO
-      </span>
-    );
-  }
-  return <span className="text-sm text-[var(--signal-fg-primary)]">{value}</span>;
-}
-
-/* ==========================================================================
-   Tier Card Component
-   ========================================================================== */
-
-function TierCard({ tier, index }: { tier: Tier; index: number }) {
-  const isFeatured = tier.highlight;
-
-  return (
-    <motion.div
-      {...fadeUpDelayed(index * 0.1)}
+    <li
       className={cn(
-        "relative flex flex-col p-6",
-        isFeatured
-          ? "premium-card-featured !shadow-accent border-2 border-[var(--fs-border-accent-strong)] md:-mt-3 md:mb-3"
-          : "premium-card",
+        "flex items-start gap-2.5 text-sm",
+        muted
+          ? "text-[var(--signal-fg-tertiary)]"
+          : "text-[var(--signal-fg-primary)]",
       )}
     >
-      {/* Badge */}
-      {tier.badge && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold shadow-sm",
-              isFeatured
-                ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
-                : "bg-[var(--signal-bg-info-muted)] text-[var(--signal-fg-info)]",
-            )}
-          >
-            {isFeatured && <Cloud size={12} />}
-            {tier.badge}
-          </span>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className={cn("mb-4", isFeatured && "text-center")}>
-        <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
-          {tier.name}
-        </h3>
-        <p className="text-sm text-[var(--signal-fg-secondary)] mt-1">
-          {tier.description}
-        </p>
-      </div>
-
-      {/* Price */}
-      <div className="mb-4">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-[var(--signal-fg-primary)]">
-            {tier.price}
-          </span>
-          {tier.period && (
-            <span className="text-sm text-[var(--signal-fg-secondary)]">
-              {tier.period}
-            </span>
-          )}
-        </div>
-        {tier.annualLabel && (
-          <p className="text-xs text-emerald-600 font-medium mt-1">
-            {tier.annualLabel}
-          </p>
+      <Check
+        size={16}
+        className={cn(
+          "mt-0.5 shrink-0",
+          muted ? "text-[var(--signal-fg-tertiary)]" : "text-emerald-500",
         )}
-      </div>
-
-      {/* Features */}
-      <ul className="space-y-2.5 flex-1 mb-5">
-        {tier.features.map((f) => (
-          <CheckListItem key={f} text={f} />
-        ))}
-      </ul>
-
-      {/* CTA */}
-      {tier.cta.external || tier.cta.href.startsWith("mailto") ? (
-        <a
-          href={tier.cta.href}
-          className={cn(
-            isFeatured ? "btn-primary-success w-full" : "btn-secondary w-full",
-          )}
-        >
-          {tier.cta.label}
-          {tier.cta.href.includes("docs.") && <Download size={14} />}
-        </a>
-      ) : (
-        <Link
-          href={tier.cta.href}
-          className={cn(
-            isFeatured ? "btn-primary-success w-full" : "btn-secondary w-full",
-          )}
-        >
-          {tier.cta.label}
-          {tier.cta.href.includes("docs.") && <Download size={14} />}
-        </Link>
-      )}
-    </motion.div>
-  );
-}
-
-/* ==========================================================================
-   Feature Comparison Table
-   ========================================================================== */
-
-function FeatureComparisonTable() {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(["Core Platform"]),
-  );
-
-  const toggleCategory = useCallback((name: string) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-      return next;
-    });
-  }, []);
-
-  const expandAll = useCallback(() => {
-    setExpandedCategories(new Set(featureCategories.map((c) => c.name)));
-  }, []);
-
-  const collapseAll = useCallback(() => {
-    setExpandedCategories(new Set());
-  }, []);
-
-  const allExpanded = expandedCategories.size === featureCategories.length;
-
-  return (
-    <div className="overflow-x-auto">
-      {/* Expand/Collapse All */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={allExpanded ? collapseAll : expandAll}
-          className="text-xs font-medium text-[var(--signal-fg-accent)] hover:underline"
-        >
-          {allExpanded ? "Collapse All" : "Expand All"}
-        </button>
-      </div>
-
-      {/* Table */}
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="border-b border-[var(--signal-border-default)]">
-            <th className="py-3 pr-4 text-sm font-semibold text-[var(--signal-fg-primary)] sticky left-0 bg-white z-10">
-              Feature
-            </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-primary)] text-center">
-              Free
-            </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-accent)] text-center bg-[var(--signal-bg-accent-muted)]/30">
-              Pro
-            </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-primary)] text-center">
-              Enterprise
-            </th>
-            <th className="py-3 px-3 text-sm font-semibold text-[var(--signal-fg-info)] text-center">
-              Self-Hosted
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {featureCategories.map((category) => {
-            const isExpanded = expandedCategories.has(category.name);
-            return (
-              <Fragment key={category.name}>
-                {/* Category header row */}
-                <tr
-                  className={cn(
-                    "border-b border-[var(--signal-border-default)] cursor-pointer transition-colors",
-                    isExpanded
-                      ? "bg-[var(--fs-bg-accent-subtle)] hover:bg-[var(--fs-bg-surface-hover)]"
-                      : "hover:bg-[var(--fs-bg-surface-hover)]",
-                  )}
-                  onClick={() => toggleCategory(category.name)}
-                >
-                  <td colSpan={5} className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <ChevronDown
-                        size={14}
-                        className={cn(
-                          "text-[var(--signal-fg-secondary)] transition-transform duration-200",
-                          isExpanded && "rotate-180",
-                        )}
-                      />
-                      <span className="text-sm font-semibold text-[var(--signal-fg-primary)]">
-                        {category.name}
-                      </span>
-                      <span className="text-xs text-[var(--signal-fg-secondary)]">
-                        ({category.rows.length} features)
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-                {/* Feature rows */}
-                {isExpanded &&
-                  category.rows.map((row, idx) => (
-                    <tr
-                      key={row.feature}
-                      className={cn(
-                        "border-b border-[var(--signal-border-subtle)] hover:bg-[var(--signal-bg-secondary)] transition-colors",
-                        idx % 2 === 0 && "bg-[var(--fs-bg-surface)]",
-                      )}
-                    >
-                      <td className="py-2.5 pr-4 text-sm text-[var(--signal-fg-primary)] sticky left-0 bg-white">
-                        {row.feature}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <FeatureValue value={row.free} />
-                      </td>
-                      <td className="py-2.5 px-3 text-center bg-[var(--signal-bg-accent-muted)]/15">
-                        <FeatureValue value={row.pro} />
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <FeatureValue value={row.enterprise} />
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <FeatureValue value={row.selfHosted} />
-                      </td>
-                    </tr>
-                  ))}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/* ==========================================================================
-   FAQ Accordion
-   ========================================================================== */
-
-function FaqAccordion() {
-  return (
-    <Accordion.Root type="single" collapsible className="max-w-3xl mx-auto">
-      {faqItems.map((item, i) => (
-        <Accordion.Item
-          key={i}
-          value={`faq-${i}`}
-          className="premium-card mb-3 last:mb-0 border-[var(--fs-border-subtle)]"
-        >
-          <Accordion.Header asChild>
-            <Accordion.Trigger className="flex items-center justify-between w-full py-5 text-left text-base font-semibold text-[var(--signal-fg-primary)] hover:text-[var(--signal-fg-accent)] transition-colors group cursor-pointer">
-              <span className="pr-4">{item.question}</span>
-              <ChevronDown
-                size={16}
-                className="shrink-0 text-[var(--signal-fg-secondary)] transition-transform duration-200 group-data-[state=open]:rotate-180"
-              />
-            </Accordion.Trigger>
-          </Accordion.Header>
-          <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <p className="pb-5 text-[var(--signal-fg-secondary)] leading-relaxed text-sm">
-              {item.answer}
-            </p>
-          </Accordion.Content>
-        </Accordion.Item>
-      ))}
-    </Accordion.Root>
+      />
+      <span>{text}</span>
+    </li>
   );
 }
 
@@ -854,21 +238,48 @@ function HeroSection() {
   return (
     <section
       id="pricing-hero"
-      className="relative py-16 sm:py-24 bg-[var(--signal-bg-primary)] bg-glow-orbs"
+      className="relative py-16 sm:py-24 bg-[var(--signal-bg-primary)] bg-glow-orbs overflow-hidden"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
+        {/* Headline */}
         <motion.h1
           className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--signal-fg-primary)]"
           {...fadeUp}
         >
-          Plans that scale with your team
+          Simple, transparent pricing.
+          <br />
+          <span className="text-[var(--signal-fg-accent)]">No surprises.</span>
         </motion.h1>
+
+        {/* Subheadline */}
         <motion.p
-          className="text-lg sm:text-xl text-[var(--signal-fg-secondary)] mt-4 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl text-[var(--signal-fg-secondary)] mt-5 max-w-2xl mx-auto"
           {...fadeUpDelayed(0.1)}
         >
-          From startups to enterprises. Free to start. No per-seat penalties.
+          Flat-rate pricing. Unlimited seats. No per-MAU billing. No hidden
+          fees. Never.
         </motion.p>
+
+        {/* Trust badges */}
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-3 mt-8"
+          {...fadeUpDelayed(0.2)}
+        >
+          {[
+            { icon: <Shield size={14} />, label: "SOC 2" },
+            { icon: <Check size={14} />, label: "OpenFeature" },
+            { icon: <GithubIcon size={14} />, label: "Apache 2.0" },
+            { icon: <Heart size={14} />, label: "No dark patterns" },
+          ].map((badge) => (
+            <span
+              key={badge.label}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-emerald-700 border border-[var(--signal-border-success-muted)]"
+            >
+              {badge.icon}
+              {badge.label}
+            </span>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
@@ -877,6 +288,110 @@ function HeroSection() {
 /* ==========================================================================
    Section: Pricing Tiers
    ========================================================================== */
+
+function TierCard({ tier, index }: { tier: Tier; index: number }) {
+  const isHighlighted = tier.highlight;
+
+  return (
+    <motion.div
+      {...fadeUpDelayed(index * 0.1)}
+      className={cn(
+        "relative flex flex-col rounded-xl p-6",
+        isHighlighted
+          ? "border-2 border-[var(--signal-border-accent-emphasis)] bg-[var(--signal-bg-primary)] md:-mt-2 md:mb-2"
+          : "border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]",
+      )}
+      style={{
+        boxShadow: isHighlighted
+          ? "var(--signal-shadow-lg)"
+          : "var(--signal-shadow-sm)",
+      }}
+    >
+      {/* Pro trial indicator — honest, not a "Most Popular" badge */}
+      {isHighlighted && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border border-[var(--signal-border-accent-muted)]">
+            7-day free trial · No credit card
+          </span>
+        </div>
+      )}
+
+      {/* Icon + Name */}
+      <div className="flex items-center gap-2.5 mb-3">
+        {tier.icon}
+        <h3 className="text-lg font-bold text-[var(--signal-fg-primary)]">
+          {tier.name}
+        </h3>
+      </div>
+
+      {/* Description */}
+      <p className="text-sm text-[var(--signal-fg-secondary)] mb-5">
+        {tier.description}
+      </p>
+
+      {/* Price */}
+      <div className="mb-5">
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
+            {tier.price}
+          </span>
+          {tier.period && (
+            <span className="text-sm text-[var(--signal-fg-secondary)]">
+              {tier.period}
+            </span>
+          )}
+        </div>
+        {tier.annualLabel && (
+          <p className="text-xs text-emerald-600 font-medium mt-1.5">
+            {tier.annualLabel}
+          </p>
+        )}
+      </div>
+
+      {/* Features */}
+      <ul className="space-y-2.5 flex-1 mb-6">
+        {tier.features.map((f) => (
+          <CheckListItem key={f} text={f} />
+        ))}
+      </ul>
+
+      {/* CTA */}
+      {tier.cta.external || tier.cta.href.startsWith("mailto") ? (
+        <a
+          href={tier.cta.href}
+          className={cn(
+            "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-150 w-full",
+            isHighlighted
+              ? "h-12 px-8 text-base bg-[var(--signal-bg-success-emphasis)] text-white shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)]"
+              : "h-11 px-6 bg-[var(--signal-bg-primary)] border border-[var(--signal-border-default)] text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+          )}
+        >
+          {tier.cta.label}
+          {tier.name === "Enterprise" && <ArrowRight size={14} />}
+        </a>
+      ) : (
+        <Link
+          href={tier.cta.href}
+          className={cn(
+            "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-150 w-full",
+            isHighlighted
+              ? "h-12 px-8 text-base bg-[var(--signal-bg-success-emphasis)] text-white shadow-[var(--signal-shadow-sm)] hover:shadow-[var(--signal-shadow-md)]"
+              : "h-11 px-6 bg-[var(--signal-bg-primary)] border border-[var(--signal-border-default)] text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+          )}
+        >
+          {tier.cta.label}
+        </Link>
+      )}
+
+      {/* Free trial note for Pro */}
+      {isHighlighted && (
+        <p className="text-xs text-center text-[var(--signal-fg-tertiary)] mt-3">
+          7-day free trial. No credit card required.
+        </p>
+      )}
+    </motion.div>
+  );
+}
 
 function PricingTiersSection() {
   return (
@@ -893,30 +408,59 @@ function PricingTiersSection() {
           >
             Choose your plan
           </h2>
-          <p className="text-[var(--signal-fg-secondary)] mt-2">
-            Transparent pricing. No hidden fees. No lock-in.
+          <p className="text-[var(--signal-fg-secondary)] mt-2 max-w-xl mx-auto">
+            Every price is exact. No asterisks. No &ldquo;starting at&rdquo;
+            unless it&rsquo;s literally the starting price.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        {/* 3-column pricing grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {tiers.map((tier, i) => (
             <TierCard key={tier.name} tier={tier} index={i} />
           ))}
         </div>
 
+        {/* Self-Hosted banner — prominent, separate */}
+        <motion.div className="mt-8 max-w-4xl mx-auto" {...fadeUpDelayed(0.35)}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 rounded-xl bg-[var(--signal-bg-primary)] border border-[var(--signal-border-default)] shadow-[var(--signal-shadow-sm)]">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--signal-bg-info-muted)] flex items-center justify-center">
+              <Server size={20} className="text-[var(--signal-fg-info)]" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-[var(--signal-fg-primary)]">
+                Self-Hosted — Free Forever
+              </h3>
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
+                Apache 2.0 license. Full feature parity. Single Go binary.
+                Deploy in 3 minutes. No license fees, no phone-home, no limits.
+              </p>
+            </div>
+            <a
+              href={DOCS_QUICKSTART}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-[var(--signal-fg-info)] bg-[var(--signal-bg-info-muted)] hover:bg-[#ede0ff] transition-colors shrink-0"
+            >
+              <GithubIcon size={14} />
+              Deploy Now
+            </a>
+          </div>
+        </motion.div>
+
         {/* No lock-in promise */}
         <motion.div
-          className="mt-12 text-center max-w-xl mx-auto"
-          {...fadeUpDelayed(0.4)}
+          className="mt-10 text-center max-w-xl mx-auto"
+          {...fadeUpDelayed(0.45)}
         >
           <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
             <Heart size={16} className="text-emerald-500" />
             <p className="text-sm text-[var(--signal-fg-primary)]">
               <span className="font-semibold text-emerald-600">
-                No lock-in. Ever.
+                No dark patterns. Open source core. No vendor lock-in.
               </span>{" "}
-              Switch between Self-Hosted and Cloud anytime. All SDKs support
-              OpenFeature — swap providers without changing code.
+              Switch between Cloud and Self-Hosted anytime. Export your data.
+              Leave anytime.
             </p>
           </div>
         </motion.div>
@@ -926,33 +470,318 @@ function PricingTiersSection() {
 }
 
 /* ==========================================================================
-   Section: Feature Comparison Table
+   Section: Enterprise Transparency
    ========================================================================== */
 
-function FeatureComparisonSection() {
+function EnterpriseTransparencySection() {
   return (
     <section
-      id="feature-comparison"
+      id="enterprise-transparency"
+      className="py-12 sm:py-16 bg-[var(--signal-bg-secondary)]"
+      aria-labelledby="enterprise-transparency-heading"
+    >
+      <div className="mx-auto max-w-3xl px-6">
+        <motion.div
+          className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-6 max-w-3xl mx-auto"
+          {...fadeUp}
+        >
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--signal-bg-info-muted)] flex items-center justify-center">
+              <Building2 size={20} className="text-[var(--signal-fg-info)]" />
+            </div>
+            <div>
+              <h3
+                id="enterprise-transparency-heading"
+                className="text-base font-bold text-[var(--signal-fg-primary)]"
+              >
+                Enterprise pricing transparency
+              </h3>
+              <p className="text-sm text-[var(--signal-fg-secondary)] mt-2 leading-relaxed">
+                We tell you the price upfront. Typically $150–500/month
+                depending on scale, SSO requirements, and deployment model. No
+                &ldquo;call for pricing&rdquo; games — we quote within one
+                business day. Enterprise includes SSO (SAML/OIDC), SCIM
+                provisioning, 99.9% uptime SLA, dedicated support engineer, and
+                on-prem / air-gapped deployment options.{" "}
+                <Link
+                  href={CONTACT_SALES}
+                  className="text-[var(--signal-fg-accent)] hover:underline font-medium inline-flex items-center gap-0.5"
+                >
+                  Talk to us
+                  <ArrowRight size={14} />
+                </Link>
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   Section: Cost Comparison Calculator
+   ========================================================================== */
+
+function CostComparisonCalculator() {
+  const [teamSize, setTeamSize] = useState(50);
+  const [provider, setProvider] = useState<CompetitorProvider>("launchdarkly");
+
+  const savingsResult = useMemo(
+    () => calculateSavings({ teamSize, provider }),
+    [teamSize, provider],
+  );
+
+  const handleSliderChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTeamSize(Number(e.target.value));
+    },
+    [],
+  );
+
+  const savingsPercentFormatted =
+    savingsResult.savings.percent > 0
+      ? `${savingsResult.savings.percent}%`
+      : "0%";
+
+  return (
+    <section
+      id="cost-comparison"
       className="py-16 sm:py-20 bg-[var(--signal-bg-primary)]"
       aria-labelledby="comparison-heading"
     >
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-3xl px-6">
+        {/* Header */}
         <motion.div className="text-center mb-10" {...fadeUp}>
           <h2
             id="comparison-heading"
             className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
           >
-            Feature comparison
+            See how much you&rsquo;d save
           </h2>
           <p className="text-[var(--signal-fg-secondary)] mt-2">
-            Everything you need to evaluate, ship, and clean up — across every
-            plan.
+            Honest comparison against real competitor pricing — updated
+            regularly.
           </p>
         </motion.div>
 
-        <motion.div {...fadeUpDelayed(0.15)}>
-          <FeatureComparisonTable />
+        {/* Calculator card */}
+        <motion.div
+          className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 sm:p-8 shadow-[var(--signal-shadow-md)]"
+          {...fadeUpDelayed(0.1)}
+        >
+          {/* Team size slider */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <label
+                htmlFor="team-size-slider"
+                className="text-sm font-semibold text-[var(--signal-fg-primary)]"
+              >
+                Team size
+              </label>
+              <span className="text-sm font-bold text-[var(--signal-fg-accent)] tabular-nums">
+                {teamSize} engineers
+              </span>
+            </div>
+            <input
+              id="team-size-slider"
+              type="range"
+              min={5}
+              max={500}
+              step={5}
+              value={teamSize}
+              onChange={handleSliderChange}
+              className="w-full"
+              aria-label={`Team size: ${teamSize} engineers`}
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-[var(--signal-fg-tertiary)]">
+                5
+              </span>
+              <span className="text-xs text-[var(--signal-fg-tertiary)]">
+                500
+              </span>
+            </div>
+          </div>
+
+          {/* Competitor selector */}
+          <div className="mb-6">
+            <label
+              htmlFor="competitor-select"
+              className="block text-sm font-semibold text-[var(--signal-fg-primary)] mb-2"
+            >
+              Compare against
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(Object.keys(PROVIDER_META) as CompetitorProvider[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setProvider(p)}
+                  className={cn(
+                    "px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 border",
+                    provider === p
+                      ? "border-[var(--signal-border-accent-emphasis)] bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] shadow-[var(--signal-shadow-xs)]"
+                      : "border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] text-[var(--signal-fg-secondary)] hover:border-[var(--signal-border-emphasis)]",
+                  )}
+                >
+                  {PROVIDER_META[p].name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="rounded-lg bg-[var(--signal-bg-secondary)] p-5 border border-[var(--signal-border-subtle)]">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-[var(--signal-fg-tertiary)] mb-1">
+                  FeatureSignals Pro
+                </p>
+                <p className="text-2xl font-bold text-emerald-600 tabular-nums">
+                  {formatUSD(savingsResult.featureSignals.monthly)}
+                  <span className="text-sm font-normal text-emerald-600">
+                    /mo
+                  </span>
+                </p>
+                <p className="text-xs text-[var(--signal-fg-tertiary)] mt-0.5">
+                  {formatUSD(savingsResult.featureSignals.annual)}/year
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[var(--signal-fg-tertiary)] mb-1">
+                  {savingsResult.competitor.name}
+                </p>
+                <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
+                  {formatUSD(savingsResult.competitor.monthly)}
+                  <span className="text-sm font-normal text-[var(--signal-fg-secondary)]">
+                    /mo
+                  </span>
+                </p>
+                <p className="text-xs text-[var(--signal-fg-tertiary)] mt-0.5">
+                  {formatUSD(savingsResult.competitor.annual)}/year
+                </p>
+              </div>
+            </div>
+
+            {/* Savings highlight */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)]">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+                <ArrowRight size={14} className="text-white -rotate-45" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-emerald-700">
+                  Save{" "}
+                  <span className="tabular-nums">
+                    {formatUSD(savingsResult.savings.annual)}
+                  </span>
+                  /year ({savingsPercentFormatted})
+                </p>
+                <p className="text-xs text-emerald-600 mt-0.5">
+                  {savingsResult.formula}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Disclaimer */}
+          <p className="text-xs text-[var(--signal-fg-tertiary)] mt-4 text-center">
+            Based on publicly available pricing as of January 2026. We update
+            this regularly. If you find an error,{" "}
+            <a
+              href="mailto:sales@featuresignals.com"
+              className="text-[var(--signal-fg-accent)] hover:underline"
+            >
+              let us know
+            </a>
+            .
+          </p>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   Section: Trust & Transparency
+   ========================================================================== */
+
+const trustPrinciples = [
+  {
+    icon: <Users size={22} />,
+    title: "No per-seat pricing",
+    description:
+      "Your bill shouldn't grow just because your team does. Pro is $29/month flat — whether you have 5 engineers or 500.",
+  },
+  {
+    icon: <Zap size={22} />,
+    title: "No MAU-based billing",
+    description:
+      "We don't penalize you for having successful products. Unlimited evaluations. Unlimited feature flags. No overages.",
+  },
+  {
+    icon: <GithubIcon size={22} />,
+    title: "Open source core",
+    description:
+      "The core feature flag engine is Apache 2.0. Free forever. Auditable. Forkable. No proprietary lock-in.",
+  },
+  {
+    icon: <Server size={22} />,
+    title: "Self-host without limits",
+    description:
+      "Run it on your own infrastructure. Same features. No phone-home. No license fees. Single Go binary, deploy in 3 minutes.",
+  },
+  {
+    icon: <Shield size={22} />,
+    title: "No vendor lock-in",
+    description:
+      "OpenFeature native. Export your data anytime. Leave anytime. All SDKs support OpenFeature — swap providers without changing code.",
+  },
+];
+
+function TrustSection() {
+  return (
+    <section
+      id="trust"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
+      aria-labelledby="trust-heading"
+    >
+      <div className="mx-auto max-w-5xl px-6">
+        <motion.div className="text-center mb-12" {...fadeUp}>
+          <h2
+            id="trust-heading"
+            className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
+          >
+            Why our pricing is different
+          </h2>
+          <p className="text-[var(--signal-fg-secondary)] mt-2 max-w-xl mx-auto">
+            Feature flag infrastructure should be transparent, fair, and
+            predictable. Here&rsquo;s how we&rsquo;re different.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {trustPrinciples.map((principle, i) => (
+            <motion.div
+              key={principle.title}
+              className="flex gap-4 p-5 rounded-xl bg-[var(--signal-bg-primary)] border border-[var(--signal-border-default)] shadow-[var(--signal-shadow-sm)]"
+              {...fadeUpDelayed(0.1 + i * 0.08)}
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--signal-bg-accent-muted)] flex items-center justify-center">
+                <span className="text-[var(--signal-fg-accent)]">
+                  {principle.icon}
+                </span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[var(--signal-fg-primary)] mb-1">
+                  {principle.title}
+                </h3>
+                <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed">
+                  {principle.description}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -962,11 +791,40 @@ function FeatureComparisonSection() {
    Section: FAQ
    ========================================================================== */
 
+function FaqAccordion() {
+  return (
+    <Accordion.Root type="single" collapsible className="max-w-3xl mx-auto">
+      {faqItems.map((item, i) => (
+        <Accordion.Item
+          key={i}
+          value={`faq-${i}`}
+          className="mb-3 last:mb-0 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-sm)] overflow-hidden"
+        >
+          <Accordion.Header asChild>
+            <Accordion.Trigger className="flex items-center justify-between w-full px-5 py-4 text-left text-sm font-semibold text-[var(--signal-fg-primary)] hover:text-[var(--signal-fg-accent)] transition-colors group cursor-pointer">
+              <span className="pr-4">{item.question}</span>
+              <ChevronDown
+                size={16}
+                className="shrink-0 text-[var(--signal-fg-secondary)] transition-transform duration-200 group-data-[state=open]:rotate-180"
+              />
+            </Accordion.Trigger>
+          </Accordion.Header>
+          <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <p className="px-5 pb-5 text-[var(--signal-fg-secondary)] leading-relaxed text-sm">
+              {item.answer}
+            </p>
+          </Accordion.Content>
+        </Accordion.Item>
+      ))}
+    </Accordion.Root>
+  );
+}
+
 function FaqSection() {
   return (
     <section
       id="faq"
-      className="py-16 sm:py-20 bg-[var(--signal-bg-secondary)]"
+      className="py-16 sm:py-20 bg-[var(--signal-bg-primary)]"
       aria-labelledby="faq-heading"
     >
       <div className="mx-auto max-w-3xl px-6">
@@ -981,7 +839,7 @@ function FaqSection() {
             Frequently asked questions
           </h2>
           <p className="text-[var(--signal-fg-secondary)] mt-2">
-            Everything you need to know about FeatureSignals pricing.
+            Honest answers. No marketing spin.
           </p>
         </motion.div>
 
@@ -995,7 +853,7 @@ function FaqSection() {
             Still have questions?
           </p>
           <Link
-            href="/contact?reason=sales"
+            href={CONTACT_SALES}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] hover:bg-[#ccebff] transition-colors"
           >
             <ChevronRight size={14} />
@@ -1008,81 +866,76 @@ function FaqSection() {
 }
 
 /* ==========================================================================
-   Section: Open-Source Promise
+   Section: Final CTA
    ========================================================================== */
 
-function OpenSourcePromiseSection() {
+function FinalCtaSection() {
   return (
     <section
-      id="open-source-promise"
+      id="final-cta"
       className="relative py-20 sm:py-28 overflow-hidden bg-gradient-mesh-dark"
-      aria-labelledby="oss-heading"
+      aria-labelledby="final-cta-heading"
     >
       {/* Dotted overlay */}
-      <div className="absolute inset-0 bg-dots-dark" aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-dots-dark pointer-events-none"
+        aria-hidden="true"
+      />
 
-
-      <div className="relative mx-auto max-w-4xl px-6 text-center">
+      <div className="relative mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <ShieldCheck
-            size={40}
-            fill="#8250df"
-            className="mx-auto mb-6"
-            aria-hidden="true"
-          />
           <h2
-            id="oss-heading"
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4"
+            id="final-cta-heading"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-4"
           >
-            The Open-Source Promise
+            Start free. No credit card. No time limit.
           </h2>
-          <p className="text-lg mb-12" style={{ color: "#8b949e" }}>
-            We believe feature flags are infrastructure. Infrastructure should
-            be open, auditable, and owned by you — not a vendor.
+          <p className="text-lg mb-10 text-white/60">
+            Or compare us against your current provider below.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* CTAs */}
+        <motion.div
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12"
+          {...fadeUpDelayed(0.1)}
+        >
+          <a
+            href={REGISTER_URL}
+            className="inline-flex items-center justify-center gap-2 h-12 px-8 text-base font-semibold rounded-lg bg-[var(--signal-bg-success-emphasis)] text-white shadow-[var(--signal-shadow-md)] hover:opacity-90 transition-all"
+          >
+            Start Free
+            <ArrowRight size={16} />
+          </a>
+          <a
+            href="#cost-comparison"
+            className="inline-flex items-center justify-center gap-2 h-12 px-8 text-base font-semibold rounded-lg text-white border border-white/50 hover:border-white/60 hover:bg-white/10 transition-all"
+          >
+            Compare vs Your Current Provider
+            <ChevronRight size={16} />
+          </a>
+        </motion.div>
+
+        {/* Trust badges */}
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-3"
+          {...fadeUpDelayed(0.2)}
+        >
           {[
-            {
-              icon: <Download size={20} fill="#54aeff" />,
-              title: "Apache 2.0",
-              desc: "Free forever. Use it, fork it, ship it. No copyleft. No restrictions.",
-            },
-            {
-              icon: <Heart size={20} fill="#54aeff" />,
-              title: "No Vendor Lock-In",
-              desc: "Self-host or cloud. Switch anytime. OpenFeature-native SDKs.",
-            },
-            {
-              icon: <ShieldCheck size={20} fill="#54aeff" />,
-              title: "Full Feature Parity",
-              desc: "Self-hosted gets everything. No crippleware. No enterprise-only features.",
-            },
-            {
-              icon: <Rocket size={20} fill="#54aeff" />,
-              title: "Single Binary",
-              desc: "One Go binary. Deploy in 3 minutes. No Kubernetes required.",
-            },
-          ].map((item, i) => (
-            <motion.div
-              key={item.title}
-              className="text-left p-5 rounded-xl glass-card-dark"
-              {...fadeUpDelayed(0.1 + i * 0.1)}
+            { icon: <GithubIcon size={12} />, label: "Apache 2.0" },
+            { icon: <Shield size={12} />, label: "SOC 2" },
+            { icon: <Check size={12} />, label: "OpenFeature" },
+            { icon: <Server size={12} />, label: "Self-Hosted Free" },
+          ].map((badge) => (
+            <span
+              key={badge.label}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/60 border border-white/30"
             >
-              <div className="mb-3">{item.icon}</div>
-              <h3 className="text-sm font-semibold text-white mb-1">
-                {item.title}
-              </h3>
-              <p
-                className="text-xs leading-relaxed"
-                style={{ color: "#8b949e" }}
-              >
-                {item.desc}
-              </p>
-            </motion.div>
+              {badge.icon}
+              {badge.label}
+            </span>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -1097,9 +950,11 @@ export function PricingPageContent() {
     <>
       <HeroSection />
       <PricingTiersSection />
-      <FeatureComparisonSection />
+      <EnterpriseTransparencySection />
+      <CostComparisonCalculator />
+      <TrustSection />
       <FaqSection />
-      <OpenSourcePromiseSection />
+      <FinalCtaSection />
     </>
   );
 }

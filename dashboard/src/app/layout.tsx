@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { DocsProvider } from "@/contexts/docs-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.featuresignals.com"),
   title: {
-    template: "%s | FeatureSignals",
-    default: "FeatureSignals | Enterprise Feature FlagIcon Control Plane",
+    template: "%s | FlagEngine | FeatureSignals",
+    default: "FlagEngine | FeatureSignals",
   },
   description:
     "The enterprise control plane for mission-critical feature flags. Sub-millisecond evaluation, automated tech-debt cleanup, OpenFeature native, Terraform-integrated.",
@@ -54,7 +55,7 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {children}
+        <DocsProvider>{children}</DocsProvider>
       </body>
     </html>
   );

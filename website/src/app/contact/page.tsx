@@ -27,6 +27,7 @@ const WEB3FORMS_ENDPOINT = "https://api.web3forms.com/submit";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-64px" },
   transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
@@ -173,6 +174,7 @@ function HeroSection() {
         <motion.p
           className="text-lg text-[var(--signal-fg-secondary)] max-w-xl mx-auto"
           initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-64px" }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -222,6 +224,7 @@ function ContactFormSection() {
                     key={item.title}
                     className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-5 premium-card"
                     initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: "-40px" }}
                     transition={{
@@ -257,6 +260,7 @@ function ContactFormSection() {
             <motion.div
               className="rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-5"
               initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{
@@ -293,6 +297,7 @@ function ContactFormSection() {
             <motion.div
               className="flex items-center gap-2 px-1"
               initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{

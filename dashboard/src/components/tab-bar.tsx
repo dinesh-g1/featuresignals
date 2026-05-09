@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { path } from "@/lib/paths";
 
 const tabs = [
-  { href: "/projects", label: "Projects" },
-  { href: "/usage", label: "Usage" },
-  { href: "/activity", label: "Activities" },
-  { href: "/limits", label: "Limits" },
-  { href: "/support", label: "Support" },
+  { href: path("/projects"), label: "Projects" },
+  { href: path("/usage"), label: "Usage" },
+  { href: path("/activity"), label: "Activities" },
+  { href: path("/limits"), label: "Limits" },
+  { href: path("/support"), label: "Support" },
 ] as const;
 
 export function TabBar() {

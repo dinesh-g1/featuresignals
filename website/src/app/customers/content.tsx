@@ -19,6 +19,7 @@ import {
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-80px" },
   transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const },
@@ -26,6 +27,7 @@ const fadeUp = {
 
 const fadeUpDelayed = (delay: number) => ({
   initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
   transition: { duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] as const },
@@ -438,7 +440,7 @@ function FinalCtaSection() {
           >
             Join 500+ engineering teams
           </h2>
-          <p className="text-lg mb-10" style={{ color: "#8b949e" }}>
+          <p className="text-lg mb-10 text-white/60">
             Ship faster with feature flags that don&apos;t slow you down. Free
             to start. No per-seat penalties.
           </p>

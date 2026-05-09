@@ -1,4 +1,5 @@
 import { useAppStore } from "@/stores/app-store";
+import { path } from "@/lib/paths";
 import type {
   CreditsResponse,
   CreditHistoryResponse,
@@ -87,7 +88,7 @@ function handleSessionExpired() {
   const { logout } = useAppStore.getState();
   logout();
   if (typeof window !== "undefined") {
-    window.location.href = "/login?session_expired=true";
+    window.location.href = path("/login?session_expired=true");
   }
 }
 

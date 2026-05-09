@@ -31,6 +31,7 @@ import Link from "next/link";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-64px" },
   transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
@@ -38,6 +39,7 @@ const fadeUp = {
 
 const fadeUpDelayed = (delay: number) => ({
   initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-64px" },
   transition: { duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] as const },
@@ -316,6 +318,7 @@ function HeroSection() {
           {/* Right: Interactive visual card */}
           <motion.div
             initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-64px" }}
             transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
@@ -1506,7 +1509,7 @@ function FinalCtaSection() {
             Ready to take control of your release infrastructure?
           </h2>
 
-          <p className="text-base sm:text-lg text-[#8b949e] mt-4 max-w-xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-white/60 mt-4 max-w-xl mx-auto leading-relaxed">
             Open source. Sub-millisecond. No vendor lock-in. Start free on our
             cloud or self-host in minutes. Every feature on this page is
             available in every plan.
@@ -1519,7 +1522,7 @@ function FinalCtaSection() {
             </a>
             <a
               href={SALES_EMAIL}
-              className="btn-secondary !text-white !bg-white/10 !border-white/15 hover:!bg-white/15"
+              className="btn-secondary !text-white !bg-white/10 !border-white/50 hover:!bg-white/15 hover:!border-white/60"
             >
               Contact Sales
             </a>
@@ -1527,14 +1530,14 @@ function FinalCtaSection() {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[#8b949e] hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white/60 hover:text-white transition-colors"
             >
               <GitPullRequest size={16} />
               Star on GitHub
             </a>
           </div>
 
-          <p className="text-xs text-[#59636e] mt-6">
+          <p className="text-xs text-white/60 mt-6">
             Free forever for up to 50 flags. No credit card required.{" "}
             <span className="inline-flex items-center gap-1">
               <Heart size={10} className="text-red-400" />

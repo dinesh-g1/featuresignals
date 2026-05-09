@@ -2,6 +2,112 @@
 
 > Chronological record
 
+## [2026-05-15 22:00] fix | Norman-Inspired Contrast & Mobile UX Fixes
+
+**Context:** Applied Don Norman "Knowledge in the World" and affordance principles to fix
+subtle contrast issues on dark backgrounds and improve mobile responsiveness across the
+marketing website. Three fixes applied:
+
+**Fix 1 — Dark-Section Button Contrast:**
+- `page.tsx`: `btnDarkSecondary` border `white/50→white/60`, hover `white/15→white/20`
+- `page.tsx`: FinalCtaSection free-tier text `white/50→white/60`
+- `page.tsx`: LiveEvalDemoSection latency display `white/50→white/60`
+- `features/page.tsx`, `use-cases/page.tsx`: free-tier text `white/50→white/60`
+- `final-cta.tsx`: secondary button border `white/40→white/50`; badge inline styles
+  (`#b0b8c4` / `#475569`) replaced with Tailwind `text-white/60 border-white/30`
+- `pricing/content.tsx`: same badge color de-hardcoding + button border `white/40→white/50`
+- `footer.tsx`: TrustBadge base colors increased (`white/10→white/20` border,
+  `white/20→white/40` hover border, `white/40→white/50` text)
+
+**Fix 2 — Code Block Indentation:**
+- `CodeBlock.tsx`: Added `tabSize: 4` to `<pre>` style for proper tab rendering
+- Verified tokenizer preserves leading whitespace character-by-character
+
+**Fix 3 — Mobile Responsiveness:**
+- `layout.tsx`: Added `overflow-x-hidden` to `<body>` to prevent horizontal scroll
+- `globals.css`: Global button classes (`.btn-primary`, `.btn-secondary`, `.btn-ghost`,
+  `.btn-primary-success`) now `width: 100%` on mobile, `width: auto` at `sm+`
+- `page.tsx`: Homepage button classes (`btnPrimary`, `btnSecondary`, `btnDarkPrimary`,
+  `btnDarkSecondary`) now include `w-full sm:w-auto`
+- Docs sidebar confirmed: closes on route change, Escape key, and overlay click
+
+**Norman Principles Applied:**
+- **Knowledge in the World**: Button borders now visible on dark backgrounds; selected
+  state communicated through clear border/background changes
+- **Affordances**: CTA buttons are the most visually prominent elements; hover states
+  provide clear interactive feedback
+- **Gulf of Evaluation**: System state changes visible via hover/active transitions
+
+**Build verification:** `cd website && npx tsc --noEmit` passes with zero errors.
+
+**Files changed:**
+- `website/src/app/page.tsx`
+- `website/src/app/features/page.tsx`
+- `website/src/app/use-cases/page.tsx`
+- `website/src/app/pricing/content.tsx`
+- `website/src/components/final-cta.tsx`
+- `website/src/components/footer.tsx`
+- `website/src/components/docs/CodeBlock.tsx`
+- `website/src/app/layout.tsx`
+- `website/src/app/globals.css`
+
+## [2026-05-15 21:30] component | CodeBlock MDX component for documentation pages
+
+**Context:** Created `website/src/components/docs/CodeBlock.tsx`, a shared MDX component for
+syntax-highlighted code blocks in documentation pages. Follows the same pattern as Callout.tsx
+(same directory, same Signal UI CSS variable discipline).
+
+**Implementation details:**
+- Lightweight regex-based tokenizer: comment, string, keyword, number detection
+- Language badge with 40+ language label mappings
+- Copy button with lucide-react Clipboard/Check icons and 2s "Copied!" feedback
+- Optional line number gutter and filename/title bar
+- Zero hardcoded hex values — all colors from Signal UI CSS custom properties
+- Uses cn() from @/lib/utils, Tailwind v4 CSS variable syntax
+- Named + default exports, strict TypeScript (no any, no console.log)
+
+**Files changed:**
+- Created `website/src/components/docs/CodeBlock.tsx`
+
+## [2026-05-15 20:00] overhaul | Complete Website Norman-Inspired Overhaul — Phase B Full Implementation
+
+**Context:** Complete website overhaul applying Don Norman principles from MASTER_PLAN.md Part 0-2 and Signal UI design system from Part 3. Goal: transform website from Tailscale/Sanity-inspired design to ultra-premium NNGroup-level experience.
+
+### Design System Foundation — Signal UI Independence
+- Replaced ALL Primer CSS variable naming with Signal UI semantic tokens (98 tokens across 9 categories)
+- Created 11 premium utility classes: glass-card, premium-card, gradient-text, btn-primary/secondary/ghost, bg-glow-orbs, bg-gradient-mesh-dark, bg-dots-dark, bg-grid-subtle
+- Norman principles in CSS: prefers-reduced-motion, semantic focus rings, aria-disabled semantics
+- All custom property naming is semantic (purpose-based), per Norman's Knowledge in the World principle
+
+### Homepage — 10-Section Complete Redesign
+- Hero: "Ship faster. Break nothing. Pay less than lunch." with MiniEvalDemo live toggle
+- 4-step How It Works visual narrative (Create → Target → Ship → Watch)
+- Persona Tabs with AnimatePresence + keyboard navigation
+- Live Eval Demo bridging Gulf of Evaluation
+- Pricing: removed "Most Popular" dark pattern, added cost comparison
+- Comparison Table: factual, never disparages competitors
+- All 10 NNGroup heuristics applied across every section
+
+### Header & Footer — Trust-Building Infrastructure
+- Header: simplified nav, sticky glass effect, keyboard accessible dropdowns, active states via usePathname()
+- Footer "The Trust Footer": live evaluation counter, green status dot, trust badges, prominent Apache 2.0 message
+
+### Pricing Page — Radical Honesty Overhaul
+- Removed ALL dark patterns: no Most Popular badges, no fake urgency
+- Live Cost Comparison Calculator with team size slider + competitor selector
+- Trust & Transparency section with 5 principles
+- 9-item FAQ with Radix accordion
+- Self-hosted prominently: "Apache 2.0. Free forever."
+
+### Norman Principles Applied
+- P0.1-P0.11: All foundational principles applied across website
+- Two Gulfs bridged via live demos and clear feedback
+- Three levels of emotional design: visceral (beautiful), behavioral (effective), reflective (pride)
+- Humanity-centered: honest pricing, no dark patterns, accessible, open source
+
+### Build Verification
+- next build succeeds with zero errors, all 50+ routes generated
+
 ## [2026-05-08 17:00] build | Remaining Phases C-F Complete — All MASTER_PLAN tasks implemented
 
 **Context:** Implemented all remaining phases from MASTER_PLAN.md Part 4 that were listed as "Remaining for Future Sessions." Used parallel sub-agent delegation for efficiency across all 4 phases.

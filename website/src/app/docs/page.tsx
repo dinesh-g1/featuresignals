@@ -1,189 +1,143 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  Rocket,
-  Code,
-  Key,
-  Lightbulb,
-  GitBranch,
-  Server,
-  Book,
-  ShieldCheck,
-  FlaskConical,
-  Activity,
-  Workflow,
-  ArrowRight,
-} from "lucide-react";
+import { Book, Rocket, Lightbulb, Code, Key, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Documentation",
   description:
-    "FeatureSignals documentation — learn about feature flags, SDKs, API reference, AI Janitor, deployment, and compliance.",
+    "Learn how to use FeatureSignals to ship faster, break nothing, and pay less than lunch.",
+  openGraph: {
+    title: "FeatureSignals Documentation",
+    description:
+      "The control plane for software delivery. Sub-millisecond feature flags, AI-powered stale flag detection, and OpenFeature-native SDKs.",
+  },
 };
 
 const quickLinks = [
   {
-    title: "Getting Started",
-    description: "Get FeatureSignals running locally in under 5 minutes.",
-    href: "/docs/getting-started/quickstart",
     icon: Rocket,
+    title: "Getting Started",
+    description:
+      "Install FeatureSignals in 5 minutes and create your first feature flag.",
+    href: "/docs/getting-started/quickstart",
   },
   {
-    title: "SDK Overview",
-    description: "Integrate with Go, Node.js, Python, Java, .NET, Ruby, React, or Vue.",
-    href: "/docs/sdks/overview",
-    icon: Code,
-  },
-  {
-    title: "API Reference",
-    description: "REST API for flag management, evaluation, webhooks, and administration.",
-    href: "/docs/api-reference/overview",
-    icon: Key,
-  },
-  {
-    title: "AI Janitor",
-    description: "Automatically detect and clean up stale feature flags with AI.",
-    href: "/docs/advanced/ai-janitor",
     icon: Lightbulb,
+    title: "Core Concepts",
+    description:
+      "Understand feature flags, toggle categories, targeting, rollouts, and A/B experimentation.",
+    href: "/docs/core-concepts/feature-flags",
   },
   {
-    title: "Migration Guide",
-    description: "Import from LaunchDarkly, ConfigCat, Flagsmith, or Unleash.",
-    href: "/docs/platform/migration",
-    icon: GitBranch,
+    icon: Code,
+    title: "SDKs",
+    description:
+      "Integrate with Go, Node.js, Python, Java, .NET, Ruby, React, Vue, or OpenFeature.",
+    href: "/docs/sdks/overview",
   },
   {
-    title: "Deployment",
-    description: "Deploy via Docker Compose, self-host, or configure for production.",
-    href: "/docs/deployment/docker-compose",
-    icon: Server,
+    icon: Key,
+    title: "API Reference",
+    description:
+      "Full REST API documentation with interactive playground for every endpoint.",
+    href: "/docs/api-reference/overview",
   },
 ];
 
-const popularTopics = [
-  { label: "Create Your First Flag", href: "/docs/getting-started/create-your-first-flag" },
-  { label: "Feature Flag Concepts", href: "/docs/core-concepts/feature-flags" },
-  { label: "Toggle Categories", href: "/docs/core-concepts/toggle-categories" },
-  { label: "Targeting & Segments", href: "/docs/core-concepts/targeting-and-segments" },
-  { label: "Percentage Rollouts", href: "/docs/core-concepts/percentage-rollouts" },
-  { label: "A/B Experimentation", href: "/docs/core-concepts/ab-experimentation" },
-  { label: "Flag Lifecycle", href: "/docs/core-concepts/flag-lifecycle" },
-  { label: "OpenFeature Support", href: "/docs/sdks/openfeature" },
-  { label: "Authentication", href: "/docs/api-reference/authentication" },
-  { label: "Webhooks", href: "/docs/platform/webhooks" },
-  { label: "Audit Logging", href: "/docs/platform/audit-logging" },
-  { label: "RBAC", href: "/docs/platform/rbac" },
-  { label: "Self-Hosting Guide", href: "/docs/deployment/self-hosting" },
-  { label: "Configuration Reference", href: "/docs/deployment/configuration" },
-  { label: "Security Overview", href: "/docs/compliance/security-overview" },
-  { label: "GDPR Compliance", href: "/docs/compliance/gdpr" },
-];
-
-export default function DocsPage() {
+export default function DocsHomePage() {
   return (
     <div>
       {/* Hero */}
-      <div className="mb-12">
+      <div className="mb-10">
         <h1
           id="docs-main-heading"
-          className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-4"
+          className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-3"
         >
           Documentation
         </h1>
         <p className="text-lg text-[var(--signal-fg-secondary)] max-w-2xl leading-relaxed">
-          FeatureSignals is an <strong>open-source, AI-powered feature flag management platform</strong>{" "}
-          built for modern engineering teams. Ship features safely with targeted rollouts, run
-          data-driven A/B experiments, clean stale flags automatically with AI, and recover from
-          incidents in seconds — all without vendor lock-in or surprise bills.
+          Learn how to use FeatureSignals to ship faster, break nothing, and pay
+          less than lunch. Everything you need to go from zero to production
+          with feature flags — no PhD required.
         </p>
       </div>
 
-      {/* Quick Links Grid */}
-      <section className="mb-14" aria-labelledby="quick-links-heading">
-        <h2
-          id="quick-links-heading"
-          className="text-xl font-semibold text-[var(--signal-fg-primary)] mb-6"
-        >
-          Quick Links
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {quickLinks.map((link) => (
+      {/* Quick-link cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+        {quickLinks.map((link) => {
+          const Icon = link.icon;
+          return (
             <Link
               key={link.href}
               href={link.href}
-              className="group flex flex-col p-5 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-accent-emphasis)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
+              className="group block p-5 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-accent-muted)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center justify-center w-9 h-9 rounded-md bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]">
-                  <link.icon size={18} />
-                </span>
-                <h3 className="font-semibold text-[var(--signal-fg-primary)] group-hover:text-[var(--signal-fg-accent)] transition-colors">
-                  {link.title}
-                </h3>
+              <div className="flex items-start gap-4">
+                <div className="flex items-center justify-center w-10 h-10 rounded-md bg-[var(--signal-bg-accent-muted)] shrink-0">
+                  <Icon size={20} className="text-[var(--signal-fg-accent)]" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-1 group-hover:text-[var(--signal-fg-accent)] transition-colors">
+                    {link.title}
+                  </h3>
+                  <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
+                    {link.description}
+                  </p>
+                </div>
+                <ArrowRight
+                  size={16}
+                  className="text-[var(--signal-fg-tertiary)] group-hover:text-[var(--signal-fg-accent)] group-hover:translate-x-0.5 transition-all mt-1 shrink-0"
+                />
               </div>
-              <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
-                {link.description}
-              </p>
             </Link>
-          ))}
-        </div>
-      </section>
+          );
+        })}
+      </div>
 
-      {/* Popular Topics */}
-      <section aria-labelledby="popular-topics-heading">
-        <h2
-          id="popular-topics-heading"
-          className="text-xl font-semibold text-[var(--signal-fg-primary)] mb-6"
-        >
-          Popular Topics
+      {/* Browse all sections */}
+      <div className="border-t border-[var(--signal-border-default)] pt-8">
+        <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)] mb-4">
+          Browse by Section
         </h2>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {popularTopics.map((topic) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[
+            { label: "Introduction", href: "/docs/intro" },
+            {
+              label: "Core Concepts",
+              href: "/docs/core-concepts/feature-flags",
+            },
+            { label: "Architecture", href: "/docs/architecture/overview" },
+            {
+              label: "Getting Started",
+              href: "/docs/getting-started/quickstart",
+            },
+            {
+              label: "Tutorials",
+              href: "/docs/tutorials/feature-flag-checkout",
+            },
+            { label: "FlagEngine Guides", href: "/docs/dashboard/overview" },
+            { label: "AI Janitor", href: "/docs/advanced/ai-janitor" },
+            { label: "Platform", href: "/docs/advanced/relay-proxy" },
+            { label: "IaC", href: "/docs/iac/overview" },
+            { label: "Deployment", href: "/docs/deployment/docker-compose" },
+            { label: "SDKs", href: "/docs/sdks/overview" },
+            { label: "API Reference", href: "/docs/api-reference/overview" },
+            {
+              label: "Security & Compliance",
+              href: "/docs/compliance/security-overview",
+            },
+            { label: "Enterprise", href: "/docs/enterprise/overview" },
+            { label: "Glossary", href: "/docs/GLOSSARY" },
+          ].map((section) => (
             <Link
-              key={topic.href}
-              href={topic.href}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-accent)] transition-colors group"
+              key={section.href}
+              href={section.href}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)] transition-colors"
             >
-              <ArrowRight
-                size={14}
-                className="text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-accent)] transition-colors shrink-0"
-              />
-              <span>{topic.label}</span>
+              <Book size={14} className="shrink-0" />
+              <span>{section.label}</span>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* Help footer */}
-      <div className="mt-16 p-6 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)]">
-        <div className="flex items-start gap-3">
-          <Book size={20} className="text-[var(--signal-fg-accent)] mt-0.5 shrink-0" />
-          <div>
-            <h3 className="font-semibold text-[var(--signal-fg-primary)] mb-1">
-              Can&apos;t find what you&apos;re looking for?
-            </h3>
-            <p className="text-sm text-[var(--signal-fg-secondary)] mb-3">
-              Ask the community on GitHub Discussions, or{" "}
-              <a
-                href="https://github.com/dinesh-g1/featuresignals/issues/new"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--signal-fg-accent)] hover:underline"
-              >
-                open an issue
-              </a>{" "}
-              on GitHub.
-            </p>
-            <a
-              href="https://github.com/dinesh-g1/featuresignals/discussions"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
-            >
-              <span>Browse Discussions</span>
-              <ArrowRight size={14} />
-            </a>
-          </div>
         </div>
       </div>
     </div>

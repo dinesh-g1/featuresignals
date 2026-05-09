@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { path } from "@/lib/paths";
 import { NavList } from "@/components/nav-list";
 import { ContextBar } from "@/components/context-bar";
 import { AuthGuard } from "@/components/auth-guard";
@@ -94,7 +95,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const isProjectRoute = pathname && /^\/projects\/[^/]+\//.test(pathname);
     if (!currentProjectId && isProjectRoute) {
-      router.replace("/projects");
+      router.replace(path("/projects"));
     }
   }, [currentProjectId, pathname, router]);
 

@@ -42,6 +42,18 @@ export const DOCS_LINKS = {
   iacCrossplane: `${DOCS_BASE}/iac/crossplane`,
   iacCdktf: `${DOCS_BASE}/iac/cdk`,
   iacExport: `${DOCS_BASE}/iac/migration-export`,
+  // New direct-slug keys for FieldHelp docSlug prop
+  flagTypes: `${DOCS_BASE}/core-concepts/toggle-categories`,
+  flagKeys: `${DOCS_BASE}/core-concepts/feature-flags`,
+  matchTypes: `${DOCS_BASE}/core-concepts/targeting-and-segments`,
+  operators: `${DOCS_BASE}/core-concepts/targeting-and-segments`,
+  customAttributes: `${DOCS_BASE}/core-concepts/targeting-and-segments`,
+  percentageRollouts: `${DOCS_BASE}/core-concepts/percentage-rollouts`,
+  experiments: `${DOCS_BASE}/core-concepts/ab-experimentation`,
+  environmentTypes: `${DOCS_BASE}/core-concepts/projects-and-environments`,
+  scanConfig: `${DOCS_BASE}/advanced/ai-janitor-configuration`,
+  builtInRoles: `${DOCS_BASE}/advanced/rbac`,
+  eventTypes: `${DOCS_BASE}/api-reference/webhooks`,
 } as const;
 
 interface DocsLinkProps {

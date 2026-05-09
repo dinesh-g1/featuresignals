@@ -63,9 +63,9 @@ export function AnnouncementBanner({
     <AnimatePresence>
       {!dismissed && (
         <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
+          initial={{ height: 0 }}
+          animate={{ height: "auto" }}
+          exit={{ height: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
           className={cn(
             "relative overflow-hidden border-b border-[var(--signal-border-accent-muted)]",
@@ -86,9 +86,7 @@ export function AnnouncementBanner({
                     className="inline-flex items-center gap-1 shrink-0 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--signal-bg-accent-emphasis)] text-white hover:bg-[#0757ba] transition-colors"
                   >
                     {ctaLabel}
-                    {ctaHref.startsWith("http") && (
-                      <ExternalLink size={11} />
-                    )}
+                    {ctaHref.startsWith("http") && <ExternalLink size={11} />}
                   </Link>
                 )}
               </div>

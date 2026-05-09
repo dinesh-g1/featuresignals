@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
+import { path } from "@/lib/paths";
 
 const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
@@ -39,7 +40,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       );
     } catch {
       logout();
-      router.replace("/login?session_expired=true");
+      router.replace(path("/login?session_expired=true"));
     }
   }, [setAuth, logout, router]);
 
@@ -67,7 +68,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (hydrated && !token) {
-      router.replace("/login");
+      router.replace(path("/login"));
     }
   }, [hydrated, token, router]);
 

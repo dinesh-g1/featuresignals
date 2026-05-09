@@ -86,6 +86,7 @@ export function LifecycleCards() {
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
@@ -108,6 +109,7 @@ export function LifecycleCards() {
             <motion.div
               key={step.title}
               initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{
@@ -149,7 +151,8 @@ export function LifecycleCards() {
                 </p>
 
                 {/* Arrow on hover */}
-                <div className="flex items-center gap-1 text-xs font-medium transition-all duration-200 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
+                <div
+                  className="flex items-center gap-1 text-xs font-medium transition-all duration-200 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
                   style={{ color: step.fgColor }}
                 >
                   Explore
@@ -164,6 +167,7 @@ export function LifecycleCards() {
         <motion.div
           className="mt-12 text-center"
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.45, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}

@@ -1,12 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Rocket,
-  ArrowRight,
-  Download,
-  ShieldCheck,
-} from "lucide-react";
+import { Rocket, ArrowRight, Download, ShieldCheck } from "lucide-react";
 
 export function FinalCta() {
   return (
@@ -25,6 +20,7 @@ export function FinalCta() {
         {/* Rocket icon */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
@@ -42,6 +38,7 @@ export function FinalCta() {
           id="final-cta-heading"
           className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-4"
           initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -51,9 +48,9 @@ export function FinalCta() {
 
         {/* Subtitle */}
         <motion.p
-          className="text-lg mb-10"
-          style={{ color: "#8b949e" }}
+          className="text-lg mb-10 text-white/60"
           initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.45, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -68,6 +65,7 @@ export function FinalCta() {
         <motion.div
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14"
           initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.45, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -83,7 +81,7 @@ export function FinalCta() {
             href="https://docs.featuresignals.com/getting-started/quickstart"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-secondary text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+            className="btn-secondary text-white border-white/50 hover:border-white/60 hover:bg-white/10"
           >
             <Download size={16} />
             Self-Host in 3 Minutes
@@ -94,49 +92,22 @@ export function FinalCta() {
         <motion.div
           className="flex flex-wrap items-center justify-center gap-3"
           initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.4, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "#8b949e",
-              border: "1px solid #373e47",
-            }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/60 border border-white/30">
             <ShieldCheck size={12} />
             Apache-2.0
           </span>
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "#8b949e",
-              border: "1px solid #373e47",
-            }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/60 border border-white/30">
             8 SDKs
           </span>
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "#8b949e",
-              border: "1px solid #373e47",
-            }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/60 border border-white/30">
             Sub-millisecond
           </span>
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "#8b949e",
-              border: "1px solid #373e47",
-            }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/60 border border-white/30">
             14-day Pro trial
           </span>
         </motion.div>

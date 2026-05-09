@@ -59,6 +59,7 @@ const allCategoriesWithAll: Array<BlogCategory | "All"> = [
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-64px" },
   transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
@@ -136,6 +137,7 @@ function PostCard({ post, index }: { post: BlogPost; index: number }) {
     <motion.article
       className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 premium-card glass-card-hover flex flex-col"
       initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{
