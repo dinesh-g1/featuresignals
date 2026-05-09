@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Server mode (not static export) — required for the Docs Content API
-  // and CDN-friendly redirects. Deployed as a Node.js server behind the
-  // global reverse proxy at featuresignals.com.
+  output: "export",
   images: {
     unoptimized: true,
   },

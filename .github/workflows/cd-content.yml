@@ -48,16 +48,16 @@ jobs:
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
           echo "✅ SSH key installed to ${{ secrets.SSH_HOST }}"
 
-      # ── Website ─────────────────────────────────────────────────
-      - name: Build website (Next.js static export)
+      # ── Website (includes docs) ───────────────────────────────
+      - name: Build website (Next.js static export + docs)
         if: ${{ inputs.run_website == 'true' }}
         run: |
           cd website
           npm ci
           npm run build
-          bash scripts/fix-double-dots.sh out
           ls -la out/ 2>/dev/null || { echo "❌ website/out/ not found — build failed"; exit 1; }
           echo "✅ Website built ($(ls out/ | wc -l) top-level items)"
+          echo "✅ Docs content API: $(ls out/docs/api/content/ 2>/dev/null | wc -l) JSON files"
 
       - name: Deploy website to VM
         if: ${{ inputs.run_website == 'true' }}
@@ -79,35 +79,8 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "ls -la /data/www/website/index.html && echo '✅ website/index.html OK'"
-
-      # ── Docs ────────────────────────────────────────────────────
-      - name: Build docs (Docusaurus)
-        if: ${{ inputs.run_docs == 'true' }}
-        run: |
-          cd docs
-          npm ci
-          npm run build
-          ls -la build/ 2>/dev/null || { echo "❌ docs/build/ not found — build failed"; exit 1; }
-          echo "✅ Docs built ($(ls build/ | wc -l) top-level items)"
-
-      - name: Deploy docs to VM
-        if: ${{ inputs.run_docs == 'true' }}
-        run: |
           ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "rm -rf /data/www/docs/*" 2>/dev/null || true
-
-          tar czf /tmp/docs-content.tar.gz -C docs/build .
-          scp -i ~/.ssh/deploy-key -q /tmp/docs-content.tar.gz \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
-          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "tar xzf /tmp/docs-content.tar.gz -C /data/www/docs/ && rm /tmp/docs-content.tar.gz"
-          echo "✅ Docs deployed to /data/www/docs/"
-
-      - name: Verify docs
-        if: ${{ inputs.run_docs == 'true' }}
-        run: |
-          ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "ls -la /data/www/docs/index.html && echo '✅ docs/index.html OK'"
+            "ls -la /data/www/website/docs/index.html && echo '✅ website/docs/index.html OK'"
 
       # ── Summary ─────────────────────────────────────────────────
       - name: Summary
