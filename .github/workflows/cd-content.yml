@@ -40,6 +40,10 @@ jobs:
         with:
           fetch-depth: 1
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Install SSH key
         run: |
           mkdir -p ~/.ssh
