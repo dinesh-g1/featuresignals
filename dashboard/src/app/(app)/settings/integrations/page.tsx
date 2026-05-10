@@ -449,7 +449,7 @@ docker run -d \\
         <CodeBlock code={edgeSnippet} language="bash" />
 
         <a
-          href="https://docs.featuresignals.com/architecture/edge-relay"
+          href="https://featuresignals.com/docs/architecture/edge-relay"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)] transition-colors"

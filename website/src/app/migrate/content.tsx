@@ -88,7 +88,7 @@ export function MigratePageContent() {
 
               <div className="mt-6">
                 <a
-                  href="https://docs.featuresignals.com/migration"
+                  href="https://featuresignals.com/docs/migration"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"

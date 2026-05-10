@@ -65,10 +65,10 @@ export default function ShippingPolicyPage() {
             Python, Java, .NET, Ruby, React, Vue) are available for immediate
             download from{" "}
             <a
-              href="https://docs.featuresignals.com"
+              href="https://featuresignals.com/docs"
               className="text-accent hover:underline"
             >
-              docs.featuresignals.com
+              featuresignals.com/docs
             </a>{" "}
             and via package registries (npm, PyPI, Maven Central, NuGet,
             RubyGems).
@@ -78,10 +78,10 @@ export default function ShippingPolicyPage() {
             reference, SDK guides, and integration tutorials are available 24/7
             at{" "}
             <a
-              href="https://docs.featuresignals.com"
+              href="https://featuresignals.com/docs"
               className="text-accent hover:underline"
             >
-              docs.featuresignals.com
+              featuresignals.com/docs
             </a>
             . No delivery wait time applies.
           </li>
@@ -165,10 +165,10 @@ export default function ShippingPolicyPage() {
             <strong>Documentation:</strong> Self-hosting guides, configuration
             reference, and deployment examples are available at{" "}
             <a
-              href="https://docs.featuresignals.com"
+              href="https://featuresignals.com/docs"
               className="text-accent hover:underline"
             >
-              docs.featuresignals.com
+              featuresignals.com/docs
             </a>
             .
           </li>
@@ -382,7 +382,8 @@ export default function ShippingPolicyPage() {
             Vivekananda Technology Labs
           </p>
           <p className="text-stone-600">
-            Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad, Telangana – 500104, India
+            Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,
+            Telangana – 500104, India
           </p>
           <p className="text-stone-600">
             Email:{" "}

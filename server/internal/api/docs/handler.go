@@ -158,7 +158,7 @@ func (h *DocsHandler) Index(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
 		"service":    "FeatureSignals API",
 		"docs":       "/docs/openapi.json",
-		"playground": "https://docs.featuresignals.com/api-playground",
+		"playground": "https://featuresignals.com/docs/api-playground",
 		"swagger":    "/v1/docs",
 		"version":    "1.0.0",
 	})

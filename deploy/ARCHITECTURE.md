@@ -87,8 +87,7 @@ Request → Connection Limiter (100/IP)
         → Rate Limiter (sliding window)
         → Security Headers (HSTS, CSP, XFO, etc.)
         → Host-based Router
-            ├── featuresignals.com      → static files
-            ├── docs.featuresignals.com → static files
+            ├── featuresignals.com      → static files (website + docs at /docs)
             ├── api.featuresignals.com  → reverse proxy to server:8080
             ├── app.featuresignals.com  → reverse proxy to dashboard:3000
             └── signoz.featuresignals.com → reverse proxy to signoz:3301
@@ -167,8 +166,7 @@ All A records point to the VPS IP (e.g., `138.201.154.133`):
 
 | Domain | Service | SSL |
 |--------|---------|-----|
-| `featuresignals.com` | Website (static) | Let's Encrypt |
-| `docs.featuresignals.com` | Documentation (static) | Let's Encrypt |
+| `featuresignals.com` | Website + Docs (static) | Let's Encrypt |
 | `api.featuresignals.com` | API server (proxy) | Let's Encrypt |
 | `app.featuresignals.com` | Dashboard (proxy) | Let's Encrypt |
 | `signoz.featuresignals.com` | SigNoz (proxy) | Let's Encrypt |

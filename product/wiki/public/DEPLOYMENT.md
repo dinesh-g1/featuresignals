@@ -310,16 +310,15 @@ Managed at Cloudflare (DNS only — no edge proxying, no CDN). Cloudflare is use
 
 | Record | Type | Proxy | Value | Purpose |
 |--------|------|-------|-------|--------|
-| `featuresignals.com` | A | DNS only | `95.217.167.243` | Marketing website (static files, K3s pod) |
+| `featuresignals.com` | A | DNS only | `95.217.167.243` | Marketing website + documentation (static files, K3s pod) |
 | `www.featuresignals.com` | CNAME | DNS only | `featuresignals.com` | WWW redirect |
-| `docs.featuresignals.com` | A | DNS only | `95.217.167.243` | Documentation site (static files, K3s pod) |
 | `api.featuresignals.com` | A | DNS only | `95.217.167.243` | FeatureSignals API (Go server, port 8080) |
 | `app.featuresignals.com` | A | DNS only | `95.217.167.243` | Dashboard (Next.js SSR, port 3000) |
 | `signoz.featuresignals.com` | A | DNS only | `95.217.167.243` | SigNoz UI (port 3301) |
 
 All records point to the same IP. The global router (hostNetwork on the K3s node) routes by domain name to the correct upstream service. All TLS certificates are managed automatically by the global router's autocert (Let's Encrypt).
 
-> **Migration note (April 2026):** Previously, `featuresignals.com` and `docs.featuresignals.com` were proxied through Cloudflare (orange cloud, Cloudflare Pages). Moving to DNS-only simplified the architecture by removing Cloudflare as a traffic dependency. The global router's built-in WAF and rate limiting replace the edge-level protections. Website and docs are now served as static files by the global router on the K3s node.
+> **Migration note (April 2026):** Previously, `featuresignals.com` and `docs.featuresignals.com` were proxied through Cloudflare (orange cloud, Cloudflare Pages). Moving to DNS-only simplified the architecture by removing Cloudflare as a traffic dependency. The global router's built-in WAF and rate limiting replace the edge-level protections. Website and docs (now at `/docs/`) are served as static files by the global router on the K3s node. The old `docs.featuresignals.com` subdomain 301 redirects to `featuresignals.com/docs/`.
 
 ### 4.2 Global Router
 
@@ -349,7 +348,7 @@ No external ACME client, no cert-manager, no Caddy. The global router handles al
 
 ### 4.4 Static Content Serving
 
-Website (`featuresignals.com`) and docs (`docs.featuresignals.com`) are served as static files by the global router. The content lives on a persistent volume (`/mnt/data/www/`) and is updated via CI/CD (the `deploy-website` and `deploy-docs` Dagger functions copy built files to the volume).
+Website (`featuresignals.com`) and docs (`featuresignals.com/docs`) are served as static files by the global router. The content lives on a persistent volume (`/mnt/data/www/`) and is updated via CI/CD (the `deploy-website` and `deploy-docs` Dagger functions copy built files to the volume).
 
 ### 4.5 Firewall Rules (Hetzner Cloud Firewall)
 
@@ -686,7 +685,7 @@ No extensions required. Connection pooling via `pgxpool`.
 
 ### Infrastructure Configuration
 - `deploy/lb/setup.md` — Hetzner LB settings (TCP L4, ports, health check), DNS records table, TLS/cert-manager, Caddy config for api/app/edge, Cloudflare DNS (orange vs grey cloud), SigNoz auth proxy options (basic auth, OAuth2, network policy)
-- `deploy/k3s/caddyfile-prod.conf` — Caddy config for featuresignals.com (static), docs.featuresignals.com (static), signoz.featuresignals.com (reverse proxy to 46.224.31.37:31603) — all with security headers
+- `deploy/k3s/caddyfile-prod.conf` — Caddy config for featuresignals.com (static), signoz.featuresignals.com (reverse proxy to 46.224.31.37:31603) — all with security headers
 - `deploy/k3s/signoz-README.md` — SigNoz Helm install, port-forward access, OTEL env vars, ClickHouse data retention (30d traces, 7d logs)
 - `deploy/k8s/Makefile` (via top-level Makefile) — k3s-install, infra-deploy, app-deploy, app-deploy-staging, app-deploy-production, db-migrate, backup-now, cert-renew targets
 

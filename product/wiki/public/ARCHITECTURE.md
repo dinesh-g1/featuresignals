@@ -501,7 +501,7 @@ Four-layer defense-in-depth model. Each layer validates independently — no tru
 | **Rate limiting** | Per-IP sliding window rate limiter. Path-aware: static assets (`.css`, `.js`, `.svg`, `.png`, `.ico`, `.woff2`) bypass rate limits entirely. API routes get strict limits (20/min auth, 100/min mutations, 1000/min eval). |
 | **Connection limiting** | Max 100 concurrent connections per IP. Prevents connection exhaustion attacks. |
 | **Security headers** | `Strict-Transport-Security` (max-age=31536000, includeSubDomains), `Content-Security-Policy` (restrictive per-service), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`. All set by the global router before proxying. |
-| **Host-based routing** | Routes requests to correct upstream service by domain: `api.featuresignals.com` → Go server (8080), `app.featuresignals.com` → Next.js SSR (3000), `signoz.featuresignals.com` → SigNoz UI (3301), `featuresignals.com` and `docs.featuresignals.com` → static file serving (website/docs). |
+| **Host-based routing** | Routes requests to correct upstream service by domain: `api.featuresignals.com` → Go server (8080), `app.featuresignals.com` → Next.js SSR (3000), `signoz.featuresignals.com` → SigNoz UI (3301), `featuresignals.com` → static file serving (website + docs at /docs). |
 | **Health monitoring** | `/ops/health` endpoint returns JSON with upstream service health checks. |
 
 ### Layer 2: API Server
@@ -528,7 +528,6 @@ Defined in `server/internal/api/middleware/cors.go`:
 var allowedOrigins = map[string]bool{
     "https://app.featuresignals.com":  true,
     "https://featuresignals.com":      true,
-    "https://docs.featuresignals.com": true,
     "http://localhost:3000":           true,
     "http://localhost:3001":           true,
     "http://127.0.0.1:3000":          true,
@@ -562,7 +561,6 @@ var allowedOrigins = map[string]bool{
 | Record | Type | Proxy | Value |
 |---|---|---|---|
 | `featuresignals.com` | A | DNS only | `95.217.167.243` |
-| `docs.featuresignals.com` | A | DNS only | `95.217.167.243` |
 | `api.featuresignals.com` | A | DNS only | `95.217.167.243` |
 | `app.featuresignals.com` | A | DNS only | `95.217.167.243` |
 | `signoz.featuresignals.com` | A | DNS only | `95.217.167.243` |

@@ -1,13 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Lightbulb,
-  ArrowRight,
-  Clock,
-  GitBranch,
-  Trash2,
-} from "lucide-react";
+import { Lightbulb, ArrowRight, Clock, GitBranch, Trash2 } from "lucide-react";
 import { AiJanitorSimulator } from "@/components/ai-janitor-simulator";
 
 const debtStats = [
@@ -77,7 +71,7 @@ export function CleanupPageContent() {
 
               <div className="mt-6">
                 <a
-                  href="https://docs.featuresignals.com/concepts/ai-janitor"
+                  href="https://featuresignals.com/docs/concepts/ai-janitor"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"

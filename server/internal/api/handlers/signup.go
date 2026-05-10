@@ -326,7 +326,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 				"OrgName":      org.Name,
 				"DashboardURL": h.dashboardURL,
 				"MagicLinkURL": magicURL,
-				"DocsURL":      "https://docs.featuresignals.com",
+				"DocsURL":      "https://featuresignals.com/docs",
 			},
 		})
 	}()

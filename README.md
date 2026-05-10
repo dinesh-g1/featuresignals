@@ -5,7 +5,7 @@
   </p>
   <p align="center">
     <a href="https://featuresignals.com">Website</a> &middot;
-    <a href="https://docs.featuresignals.com">Documentation</a> &middot;
+    <a href="https://featuresignals.com/docs">Documentation</a> &middot;
     <a href="https://app.featuresignals.com">Dashboard</a> &middot;
     <a href="https://github.com/dinesh-g1/featuresignals/issues">Issues</a>
   </p>
@@ -312,7 +312,7 @@ featuresignals/
 │   └── Makefile
 ├── dashboard/               # Next.js admin UI
 ├── website/                 # Astro marketing site (featuresignals.com)
-├── docs/                    # Docusaurus documentation (docs.featuresignals.com)
+├── docs/                    # Documentation (featuresignals.com/docs)
 ├── sdks/
 │   ├── go/                  # Go SDK
 │   ├── node/                # Node.js/TypeScript SDK

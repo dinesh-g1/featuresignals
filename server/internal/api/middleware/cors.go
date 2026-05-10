@@ -6,14 +6,12 @@ import (
 
 // allowedOrigins is the strict allowlist for CORS.
 // No wildcards. Each origin must be explicitly listed.
-// docs.featuresignals.com is included because the API playground
-// embedded in docs makes XHR requests to api.featuresignals.com.
+// docs are now served at featuresignals.com/docs, so no separate origin needed.
 var allowedOrigins = map[string]bool{
-	"https://app.featuresignals.com":  true,
-	"https://featuresignals.com":      true,
-	"https://docs.featuresignals.com": true,  // API playground
-	"http://localhost:3000":           true,  // dev dashboard
-	"http://localhost:3001":           true,  // dev ops-portal
+	"https://app.featuresignals.com": true,
+	"https://featuresignals.com":     true,
+	"http://localhost:3000":          true, // dev dashboard
+	"http://localhost:3001":          true, // dev ops-portal
 	"http://127.0.0.1:3000":          true,
 }
 
@@ -26,6 +24,8 @@ func CORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		// Validate origin against allowlist.
+		// docs are now at featuresignals.com/docs (same origin), so no
+		// separate docs origin is needed for CORS.
 		// If the origin is not allowed, we simply set no CORS headers,
 		// and the browser will block the cross-origin request.
 		if allowedOrigins[origin] {

@@ -2,11 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Download,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowRight, Download, ShieldCheck } from "lucide-react";
 import { CalculatorSlider } from "@/components/ui/calculator-slider";
 import {
   type CompetitorProvider,
@@ -115,7 +111,7 @@ export function HeroCalculator() {
                 See it in action <ArrowRight size={16} />
               </a>
               <a
-                href="https://docs.featuresignals.com/getting-started/quickstart"
+                href="https://featuresignals.com/docs/getting-started/quickstart"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)] transition-colors"

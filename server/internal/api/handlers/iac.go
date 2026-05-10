@@ -110,7 +110,7 @@ func (h *IaCHandler) ListProviders(w http.ResponseWriter, r *http.Request) {
 			Name:          gen.Name(),
 			FileExtension: gen.FileExtension(),
 			Status:        "active",
-			DocsURL:       "https://docs.featuresignals.com/iac/" + name,
+			DocsURL:       "https://featuresignals.com/docs/iac/" + name,
 			Version:       "1.0.0",
 		})
 	}

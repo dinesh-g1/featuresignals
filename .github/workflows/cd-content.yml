@@ -84,7 +84,7 @@ jobs:
           ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "ls -la /data/www/website/index.html && echo '✅ website/index.html OK'"
           ssh -i ~/.ssh/deploy-key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "ls -la /data/www/website/docs.html && echo '✅ website/docs.html OK'"
+            "ls -la /data/www/website/docs/index.html && echo '✅ website/docs/index.html OK'"
 
       # ── Summary ─────────────────────────────────────────────────
       - name: Summary

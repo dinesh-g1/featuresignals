@@ -78,7 +78,7 @@ export function FinalCta() {
             <ArrowRight size={16} />
           </a>
           <a
-            href="https://docs.featuresignals.com/getting-started/quickstart"
+            href="https://featuresignals.com/docs/getting-started/quickstart"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary text-white border-white/50 hover:border-white/60 hover:bg-white/10"

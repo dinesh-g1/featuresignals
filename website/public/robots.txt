@@ -1,13 +1,24 @@
+# FeatureSignals robots.txt
+# All public pages are crawlable. Documentation lives at /docs/.
+
 User-agent: *
 Allow: /
+Allow: /docs/
 Disallow: /api/
 Disallow: /_next/
 Disallow: /out/
 
+# Block AI crawlers that ignore robots.txt conventions
 User-agent: GPTBot
 Disallow: /
 
 User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
 Disallow: /
 
 Sitemap: https://featuresignals.com/sitemap.xml

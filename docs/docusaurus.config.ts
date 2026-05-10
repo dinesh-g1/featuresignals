@@ -2,7 +2,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
-const DOCS_SITE_URL = "https://docs.featuresignals.com";
+const DOCS_SITE_URL = "https://featuresignals.com/docs";
 const DASHBOARD_URL = "https://app.featuresignals.com";
 const WEBSITE_URL = "https://featuresignals.com";
 

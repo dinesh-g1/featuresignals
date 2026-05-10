@@ -359,10 +359,10 @@ export default function CancellationPolicyPage() {
             <strong>API access:</strong> All exports are also available
             programmatically via our Management API. See{" "}
             <a
-              href="https://docs.featuresignals.com"
+              href="https://featuresignals.com/docs"
               className="text-accent hover:underline"
             >
-              docs.featuresignals.com
+              featuresignals.com/docs
             </a>{" "}
             for API documentation.
           </li>
@@ -500,7 +500,8 @@ export default function CancellationPolicyPage() {
             Vivekananda Technology Labs
           </p>
           <p className="text-stone-600">
-            Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad, Telangana – 500104, India
+            Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda, Hyderabad,
+            Telangana – 500104, India
           </p>
           <p className="text-stone-600">
             Billing:{" "}

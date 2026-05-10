@@ -66,7 +66,7 @@ export interface PageHeaderProps {
  *   primaryAction={<Button onClick={create}>Create Flag</Button>}
  *   secondaryActions={<Button variant="ghost">Import</Button>}
  *   statusBadge={<Badge>12 flags</Badge>}
- *   docsUrl="https://docs.featuresignals.com/flags"
+ *   docsUrl="https://featuresignals.com/docs/flags"
  * />
  * ```
  */

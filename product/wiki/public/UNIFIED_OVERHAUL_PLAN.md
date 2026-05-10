@@ -22,7 +22,7 @@ confidence: high
 
 This plan covers three interconnected transformations grounded in Don Norman's design philosophy:
 
-1. **Docs Migration**: Consolidate `docs.featuresignals.com` (Docusaurus, 99 pages) into `featuresignals.com/docs` (Next.js MDX). One surface, one design language.
+1. **Docs Migration**: Consolidate `docs.featuresignals.com` (Docusaurus, 99 pages) into `featuresignals.com/docs` (Next.js MDX). One surface, one design language. ✅ COMPLETED
 2. **Dashboard Rebrand → FlagEngine**: Move from `app.featuresignals.com` to `featuresignals.com/flagengine`. The name "FlagEngine" reflects what the product IS — an engine that evaluates flags — rather than what it LOOKS like (a dashboard). Per Norman's Emotional Design: the reflective level ("I use a tool called FlagEngine") carries more weight than "I use a dashboard."
 3. **FlagEngine-Docs Integration**: Contextual documentation panels that open inside FlagEngine without navigation loss. Users click `?` on any field and get the relevant docs, right there. This bridges the Gulf of Execution ("How do I configure this?") without leaving the task context.
 
@@ -33,7 +33,7 @@ This plan covers three interconnected transformations grounded in Don Norman's d
 ### P0.1: One Surface, One Mental Model
 > "Complexity is a fact of life; complication is a choice." — Living with Complexity, p. 4
 
-Currently, users navigate three disconnected surfaces: `featuresignals.com` (website), `docs.featuresignals.com` (docs), `app.featuresignals.com` (dashboard). Each has different navigation, different visual language, different URL patterns. This is **complication we chose**. The fix: everything lives at `featuresignals.com/*`, sharing the same Signal UI design tokens, same navigation patterns, same content voice.
+Currently, users navigate three disconnected surfaces: `featuresignals.com` (website), `app.featuresignals.com` (dashboard). Previously `docs.featuresignals.com` was also separate. Each has different navigation, different visual language, different URL patterns. This is **complication we chose**. The fix: everything lives at `featuresignals.com/*`, sharing the same Signal UI design tokens, same navigation patterns, same content voice. ✅ Docs migration completed.
 
 ### P0.2: Bridge the Two Gulfs Without Leaving Context
 > DOET, pp. 38-40
@@ -63,14 +63,14 @@ Every FlagEngine field should have accessible help (`?` icon) that reveals docum
 
 ### 1.1 Current State
 
-| Aspect | Docusaurus (`docs.featuresignals.com`) | Website (`featuresignals.com/docs`) |
+| Aspect | Docusaurus (`docs.featuresignals.com`, sunset) | Website (`featuresignals.com/docs`, active) |
 |--------|--------------------------------------|-------------------------------------|
 | Pages | 99 markdown files (97 `.md` + 2 `.mdx`) | ~45 React `.tsx` stubs (thin) |
 | Sidebar | 3-tier progressive (Concepts/Guides/Reference) | 9-section flat sidebar |
 | Interactive | 3 custom components (RolloutSimulator, TargetingRuleDemo, TryItSnippet) | None |
 | API Playground | `@scalar/docusaurus` plugin | `@scalar/api-reference` standalone (working, needs spec file) |
 | CSS | Docusaurus Infima + custom CSS (1,775 lines) | Signal UI design tokens |
-| URL Pattern | `docs.featuresignals.com/getting-started/quickstart` | `featuresignals.com/docs/getting-started/quickstart` |
+| URL Pattern | `featuresignals.com/docs/getting-started/quickstart` | `featuresignals.com/docs/getting-started/quickstart` |
 
 ### 1.2 Target Architecture
 
@@ -574,7 +574,7 @@ Signal UI content voice rules from SIGNAL_UI.md §3.4 apply everywhere:
 - [ ] Deploy global router with new proxy rules
 - [ ] Deploy DNS changes (app.featuresignals.com → featuresignals.com/flagengine)
 - [ ] Monitor for 48 hours (error rates, 404s, redirect chains)
-- [ ] Sunset `docs.featuresignals.com` DNS record
+- [x] Sunset `docs.featuresignals.com` DNS record
 - [ ] Archive Docusaurus codebase at `docs/`
 
 ---

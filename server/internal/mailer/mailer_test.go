@@ -49,7 +49,7 @@ func TestSMTPMailer_TemplateRendering(t *testing.T) {
 		Subject:  "Welcome to FeatureSignals",
 		Data: map[string]string{
 			"DashboardURL":   "https://app.featuresignals.com",
-			"DocsURL":        "https://docs.featuresignals.com",
+			"DocsURL":        "https://featuresignals.com/docs",
 			"UnsubscribeURL": "https://app.featuresignals.com/settings/notifications",
 		},
 	}
@@ -90,9 +90,9 @@ func TestSMTPMailer_AllTemplatesRender(t *testing.T) {
 
 	baseData := map[string]string{
 		"DashboardURL":   "https://app.featuresignals.com",
-		"DocsURL":        "https://docs.featuresignals.com",
+		"DocsURL":        "https://featuresignals.com/docs",
 		"UnsubscribeURL": "https://app.featuresignals.com/unsubscribe",
-		"SDKDocsURL":     "https://docs.featuresignals.com/sdks",
+		"SDKDocsURL":     "https://featuresignals.com/docs/sdks",
 		"FlagURL":        "https://app.featuresignals.com/flags/test",
 		"FlagKey":        "dark-mode",
 		"ProjectName":    "Default Project",

@@ -65,8 +65,7 @@ All DNS records are DNS-only at Cloudflare (no edge proxying). The global router
 
 | Record | Target | Purpose |
 |---|---|---|
-| `featuresignals.com` | K3s node IP | Marketing website — static files served by global router |
-| `docs.featuresignals.com` | K3s node IP | Documentation site — static files served by global router |
+| `featuresignals.com` | K3s node IP | Marketing website + documentation — static files served by global router |
 | `api.featuresignals.com` | K3s node IP | Evaluation + management API |
 | `app.featuresignals.com` | K3s node IP | Dashboard (Next.js SSR) |
 
@@ -86,7 +85,7 @@ The website and docs are **completely separate** from cell deployments. They are
 └───────────────┘     └───────────────┘     └───────────────┘
 ```
 
-| Aspect | Website (`featuresignals.com`) | Docs (`docs.featuresignals.com`) |
+| Aspect | Website (`featuresignals.com`) | Docs (`featuresignals.com/docs`) |
 |---|---|---|
 | **Code location** | `website/` directory in this repo | `docs/` directory in this repo |
 | **Framework** | Next.js SSG (static export) | Next.js SSG or Markdown (Docusaurus/Mintlify) |
@@ -142,7 +141,7 @@ The global router runs with `hostNetwork: true`, binding directly to ports 80 an
 | **Rate limiting** | Per-IP sliding window rate limiter. Path-aware: static assets (`.css`, `.js`, `.svg`, `.png`, `.ico`, `.woff2`) bypass rate limits entirely. API routes get strict limits (20/min auth, 100/min mutations, 1000/min eval). |
 | **Connection limiting** | Max 100 concurrent connections per IP. Prevents connection exhaustion attacks. |
 | **Security headers** | `Strict-Transport-Security` (max-age=31536000, includeSubDomains), `Content-Security-Policy` (restrictive per-service), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`. All set by the global router before proxying. |
-| **Host-based routing** | Routes requests to correct upstream service by domain: `api.featuresignals.com` → Go server (8080), `app.featuresignals.com` → Next.js SSR (3000), `signoz.featuresignals.com` → SigNoz UI (3301), `featuresignals.com` and `docs.featuresignals.com` → static file serving (website/docs). |
+| **Host-based routing** | Routes requests to correct upstream service by domain: `api.featuresignals.com` → Go server (8080), `app.featuresignals.com` → Next.js SSR (3000), `signoz.featuresignals.com` → SigNoz UI (3301), `featuresignals.com` → static file serving (website + docs at /docs). |
 | **Health monitoring** | `/ops/health` endpoint returns JSON with upstream service health checks. |
 
 > **Migration note (April 2026):** Cloudflare edge services (WAF, DDoS protection, bot management, CDN) have been removed. Cloudflare is DNS-only. The global router handles all edge security. This simplifies the architecture and eliminates Cloudflare as a dependency for production traffic.
@@ -932,7 +931,6 @@ import (
 var allowedOrigins = map[string]bool{
     "https://app.featuresignals.com":  true,
     "https://featuresignals.com":      true,
-    "https://docs.featuresignals.com": true,  // API playground
     "http://localhost:3000":           true,
     "http://localhost:3001":           true,
     "http://127.0.0.1:3000":          true,
@@ -945,8 +943,8 @@ func CORS(next http.Handler) http.Handler {
         origin := r.Header.Get("Origin")
 
         // Validate origin against allowlist.
-        // docs.featuresignals.com is included because the API playground
-        // embedded in docs makes XHR requests to api.featuresignals.com.
+        // docs are now at featuresignals.com/docs (same origin),
+        // so no separate docs origin is needed for CORS.
         if allowedOrigins[origin] {
             w.Header().Set("Access-Control-Allow-Origin", origin)
             w.Header().Set("Vary", "Origin")
@@ -1106,7 +1104,6 @@ Create these records at Cloudflare. All records are DNS-only (grey cloud — no 
 | featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
 | api.featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
 | app.featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
-| docs.featuresignals.com | A | DNS only (grey) | <K3s Node IP> |
 
 **Why DNS-only?** Cloudflare is used exclusively for DNS hosting. All edge security (TLS, WAF, rate limiting) is handled by the global router on the K3s node. This simplifies the architecture by eliminating Cloudflare as a traffic dependency. The global router's built-in protections replace the edge-level services previously provided by Cloudflare.
 

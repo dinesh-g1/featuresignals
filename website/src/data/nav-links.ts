@@ -69,7 +69,7 @@ export const learnMoreItems: NavItem[] = [
   {
     title: "Documentation",
     description: "Getting started, GitOps, OpenFeature guides",
-    href: "https://docs.featuresignals.com",
+    href: "https://featuresignals.com/docs",
     icon: Book,
     external: true,
   },
@@ -79,21 +79,21 @@ export const developerItems: NavItem[] = [
   {
     title: "Documentation",
     description: "Getting started, concepts, architecture guides",
-    href: "https://docs.featuresignals.com",
+    href: "https://featuresignals.com/docs",
     icon: Book,
     external: true,
   },
   {
     title: "API Reference",
     description: "REST API & OpenAPI playground",
-    href: "https://docs.featuresignals.com/api-playground",
+    href: "https://featuresignals.com/docs/api-playground",
     icon: Terminal,
     external: true,
   },
   {
     title: "SDKs (8 Languages)",
     description: "Go, Node, Python, Java, C#, Ruby, React, Vue",
-    href: "https://docs.featuresignals.com/sdks/overview",
+    href: "https://featuresignals.com/docs/sdks/overview",
     icon: Package,
     external: true,
   },

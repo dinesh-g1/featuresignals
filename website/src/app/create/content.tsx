@@ -1,12 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Rocket,
-  ArrowRight,
-  Workflow,
-  GitBranch,
-} from "lucide-react";
+import { Rocket, ArrowRight, Workflow, GitBranch } from "lucide-react";
 import { FlagCreator } from "@/components/flag-creator";
 
 const lifecycleSteps = [
@@ -66,7 +61,7 @@ export function CreatePageContent() {
 
               <div className="mt-6">
                 <a
-                  href="https://docs.featuresignals.com/concepts/flags"
+                  href="https://featuresignals.com/docs/concepts/flags"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"

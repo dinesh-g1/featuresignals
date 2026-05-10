@@ -15,9 +15,8 @@ correct upstream service.
 
 | Record | Type | Value | Proxy | Purpose |
 |--------|------|-------|-------|--------|
-| `featuresignals.com` | A | `<K3s Node IP>` | DNS only | Marketing website (static files) |
+| `featuresignals.com` | A | `<K3s Node IP>` | DNS only | Marketing website + documentation (static files) |
 | `www.featuresignals.com` | CNAME | `featuresignals.com` | DNS only | WWW redirect |
-| `docs.featuresignals.com` | A | `<K3s Node IP>` | DNS only | Documentation site (static files) |
 | `api.featuresignals.com` | A | `<K3s Node IP>` | DNS only | FeatureSignals API (Go server, port 8080) |
 | `app.featuresignals.com` | A | `<K3s Node IP>` | DNS only | Dashboard (Next.js SSR, port 3000) |
 | `signoz.featuresignals.com` | A | `<K3s Node IP>` | DNS only | SigNoz UI (port 3301) |
@@ -49,7 +48,6 @@ in the `featuresignals` namespace. It binds directly to ports 80 and 443 on the 
 | Domain | Upstream Service | Port |
 |--------|-----------------|------|
 | `featuresignals.com` | Static file server | Built-in |
-| `docs.featuresignals.com` | Static file server | Built-in |
 | `api.featuresignals.com` | Go API server | 8080 |
 | `app.featuresignals.com` | Next.js dashboard | 3000 |
 | `signoz.featuresignals.com` | SigNoz frontend | 3301 |
@@ -83,7 +81,7 @@ certificate lifecycle automatically.
 
 ## Static Content (Website & Docs)
 
-Website (`featuresignals.com`) and docs (`docs.featuresignals.com`) are served as
+Website and docs (`featuresignals.com/docs`) are served as
 static files by the global router. Content lives on a persistent volume
 (`/mnt/data/www/`) and is updated via CI/CD.
 

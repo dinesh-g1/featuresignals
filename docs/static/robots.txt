@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api-playground
 
-Sitemap: https://docs.featuresignals.com/sitemap.xml
+Sitemap: https://featuresignals.com/docs/sitemap.xml

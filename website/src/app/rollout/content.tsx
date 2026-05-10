@@ -1,13 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Rocket,
-  ArrowRight,
-  ShieldCheck,
-  Users,
-  Zap,
-} from "lucide-react";
+import { Rocket, ArrowRight, ShieldCheck, Users, Zap } from "lucide-react";
 import { RolloutSlider } from "@/components/rollout-slider";
 
 const rolloutPrinciples = [
@@ -75,7 +69,7 @@ export function RolloutPageContent() {
 
               <div className="mt-6">
                 <a
-                  href="https://docs.featuresignals.com/concepts/rollouts"
+                  href="https://featuresignals.com/docs/concepts/rollouts"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"

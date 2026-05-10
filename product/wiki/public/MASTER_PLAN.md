@@ -449,7 +449,7 @@ FUTURE:
     "message": "Flag key 'dark mode' contains spaces. Use lowercase, hyphenated keys like 'dark-mode'.",
     "field": "key",
     "suggestion": "dark-mode",
-    "docs_url": "https://docs.featuresignals.com/core-concepts/flags#naming"
+    "docs_url": "https://featuresignals.com/docs/core-concepts/flags#naming"
   },
   "request_id": "abc123"
 }

@@ -72,7 +72,7 @@ FeatureSignals follows defense-in-depth principles:
 
 ## Past Incidents
 
-We maintain transparency about security incidents. See our [Incident Response documentation](https://docs.featuresignals.com/compliance/security-overview/).
+We maintain transparency about security incidents. See our [Incident Response documentation](https://featuresignals.com/docs/compliance/security-overview/).
 
 ## Bug Bounty
 

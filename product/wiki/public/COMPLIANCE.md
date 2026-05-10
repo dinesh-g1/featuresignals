@@ -144,7 +144,6 @@ Strict origin allowlist enforced at the middleware level:
 var allowedOrigins = map[string]bool{
     "https://app.featuresignals.com":  true,
     "https://featuresignals.com":      true,
-    "https://docs.featuresignals.com": true,
     "http://localhost:3000":           true,
     "http://localhost:3001":           true,
     "http://127.0.0.1:3000":          true,

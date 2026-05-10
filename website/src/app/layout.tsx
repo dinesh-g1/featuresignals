@@ -32,7 +32,10 @@ export const metadata: Metadata = {
     ],
   },
   twitter: { card: "summary_large_image" },
-  alternates: { canonical: "https://featuresignals.com" },
+  // canonical is auto-generated from metadataBase for each page.
+  // /docs/* pages will have proper canonicals like https://featuresignals.com/docs/...
+  // Override in specific page layouts if needed.
+  alternates: {},
   keywords: [
     "feature flags",
     "LaunchDarkly alternative",

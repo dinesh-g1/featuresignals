@@ -33,7 +33,7 @@ This glossary defines the canonical terminology used across **all** FeatureSigna
 | **Flag Engine** | The FeatureSignals web application where teams manage flags, segments, and settings. | Use "Flag Engine" as the product name for the management UI. The URL is `app.featuresignals.com`. |
 | **SDK** | A client library that applications integrate to evaluate flags locally. Available for Go, Node.js, Python, Java, .NET, Ruby, React, and Vue. | Always specify the language when referencing a specific SDK: "the Go SDK", "the React SDK". |
 | **Relay Proxy** | An edge caching layer that sits between SDKs and the FeatureSignals API, reducing latency and providing resilience. | Not a required component. Mention it in the context of performance optimization or enterprise deployments. |
-| **API Playground** | The interactive API documentation where developers can test API calls directly in the browser. | Located at `docs.featuresignals.com/api-playground`. |
+| **API Playground** | The interactive API documentation where developers can test API calls directly in the browser. | Located at `featuresignals.com/docs/api-playground`. |
 
 ## Plans & Billing
 

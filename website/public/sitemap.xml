@@ -160,6 +160,36 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/migration-overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/migrate-from-launchdarkly</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/migrate-from-flagsmith</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/migrate-from-unleash</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/migration-iac-export</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/getting-started/migration-troubleshooting</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 
   <!-- Docs: Core Concepts -->
   <url>
@@ -194,6 +224,21 @@
   </url>
   <url>
     <loc>https://featuresignals.com/docs/core-concepts/projects-and-environments</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/implementation-patterns</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/mutual-exclusion</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/core-concepts/prerequisites</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -266,10 +311,64 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://featuresignals.com/docs/tutorials/progressive-rollout</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/tutorials/kill-switch</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: GLOSSARY -->
+  <url>
+    <loc>https://featuresignals.com/docs/GLOSSARY</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Intro -->
+  <url>
+    <loc>https://featuresignals.com/docs/intro</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 
   <!-- Docs: Advanced -->
   <url>
     <loc>https://featuresignals.com/docs/advanced/ai-janitor</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor-quickstart</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor-git-providers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor-configuration</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor-pr-workflow</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor-llm-integration</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/ai-janitor-troubleshooting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -308,6 +407,11 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://featuresignals.com/docs/advanced/kill-switch</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 
   <!-- Docs: Architecture -->
   <url>
@@ -316,7 +420,112 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://featuresignals.com/docs/architecture/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://featuresignals.com/docs/architecture/evaluation-engine</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/architecture/real-time-updates</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Dashboard (full section) -->
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/managing-flags</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/env-comparison</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/target-inspector</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/target-comparison</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/evaluation-metrics</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/flag-health</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/dashboard/usage-insights</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Enterprise -->
+  <url>
+    <loc>https://featuresignals.com/docs/enterprise/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/enterprise/onboarding</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: IAC -->
+  <url>
+    <loc>https://featuresignals.com/docs/iac/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/iac/terraform</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/iac/pulumi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/iac/ansible</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Self-Hosting -->
+  <url>
+    <loc>https://featuresignals.com/docs/self-hosting/onboarding-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Docs: Operations -->
+  <url>
+    <loc>https://featuresignals.com/docs/operations/incident-runbook</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/operations/disaster-recovery</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -333,6 +542,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://featuresignals.com/docs/deployment/on-premises</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://featuresignals.com/docs/deployment/configuration</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -345,7 +559,47 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://featuresignals.com/docs/compliance/privacy-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/data-retention</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/dpa-template</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/subprocessors</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/gdpr-rights</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://featuresignals.com/docs/compliance/soc2</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/soc2/controls-matrix</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/soc2/evidence-collection</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/soc2/incident-response</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -356,6 +610,36 @@
   </url>
   <url>
     <loc>https://featuresignals.com/docs/compliance/hipaa</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/ccpa-cpra</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/dora</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/csa-star</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/data-privacy-framework</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/iso27001/isms-overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://featuresignals.com/docs/compliance/iso27701/pims-overview</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

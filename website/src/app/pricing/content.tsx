@@ -62,7 +62,7 @@ import {
 
 const REGISTER_URL = "https://app.featuresignals.com/register";
 const DOCS_QUICKSTART =
-  "https://docs.featuresignals.com/getting-started/quickstart";
+  "https://featuresignals.com/docs/getting-started/quickstart";
 const CONTACT_SALES = "/contact?reason=sales";
 
 /* ==========================================================================

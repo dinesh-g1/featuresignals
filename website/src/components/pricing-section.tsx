@@ -150,7 +150,7 @@ export function PricingSection() {
             ]}
             cta={{
               label: "Deploy Now",
-              href: "https://docs.featuresignals.com/getting-started/quickstart",
+              href: "https://featuresignals.com/docs/getting-started/quickstart",
             }}
             variant="outline"
             delay={0.3}

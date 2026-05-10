@@ -37,7 +37,7 @@ export default function NotFound() {
             Go Home
           </Link>
           <a
-            href="https://docs.featuresignals.com"
+            href="https://featuresignals.com/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-[var(--signal-fg-primary)] bg-[var(--signal-bg-secondary)] hover:bg-[#eff2f5] border border-[var(--signal-border-default)] transition-colors duration-150"

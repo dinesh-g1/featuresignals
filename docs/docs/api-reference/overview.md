@@ -307,11 +307,11 @@ All errors follow a consistent format with HATEOAS links for recovery:
   "code": "validation_failed",
   "message": "Flag key 'Dark Mode' contains spaces. Use lowercase, hyphenated keys like 'dark-mode'.",
   "suggestion": "Try 'dark-mode' instead.",
-  "docs_url": "https://docs.featuresignals.com/core-concepts/flags#naming",
+  "docs_url": "https://featuresignals.com/docs/core-concepts/flags#naming",
   "request_id": "correlation-id",
   "_links": [
-    {"rel": "docs", "href": "https://docs.featuresignals.com/api-reference/overview", "method": "GET", "title": "API documentation"},
-    {"rel": "docs-specific", "href": "https://docs.featuresignals.com/core-concepts/flags#naming", "method": "GET", "title": "Relevant documentation for this error"}
+    {"rel": "docs", "href": "https://featuresignals.com/docs/api-reference/overview", "method": "GET", "title": "API documentation"},
+    {"rel": "docs-specific", "href": "https://featuresignals.com/docs/core-concepts/flags#naming", "method": "GET", "title": "Relevant documentation for this error"}
   ]
 }
 ```

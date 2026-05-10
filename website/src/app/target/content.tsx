@@ -1,12 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Target,
-  ArrowRight,
-  ListChecks,
-  ShieldCheck,
-} from "lucide-react";
+import { Target, ArrowRight, ListChecks, ShieldCheck } from "lucide-react";
 import { TargetingBuilder } from "@/components/targeting-builder";
 
 const targetingBenefits = [
@@ -88,7 +83,7 @@ export function TargetPageContent() {
 
               <div className="mt-6">
                 <a
-                  href="https://docs.featuresignals.com/concepts/targeting"
+                  href="https://featuresignals.com/docs/concepts/targeting"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"

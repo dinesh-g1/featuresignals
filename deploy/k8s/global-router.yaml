@@ -18,9 +18,6 @@ data:
         - name: featuresignals.com
           type: static
           root: /data/www/website
-        - name: docs.featuresignals.com
-          type: static
-          root: /data/www/docs
         - name: api.featuresignals.com
           type: proxy
           target: http://featuresignals-server:8080

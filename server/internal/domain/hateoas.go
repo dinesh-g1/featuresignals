@@ -132,7 +132,7 @@ func LinksForAPIKeysCollection(envID string) Links {
 // LinksForError returns HATEOAS links that help a developer recover from an error.
 func LinksForError(docsURL string) Links {
 	links := Links{
-		{Rel: "docs", Href: "https://docs.featuresignals.com/api-reference/overview", Method: "GET", Title: "API documentation"},
+		{Rel: "docs", Href: "https://featuresignals.com/docs/api-reference/overview", Method: "GET", Title: "API documentation"},
 	}
 	if docsURL != "" {
 		links = append(links, Link{

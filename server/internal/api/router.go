@@ -187,7 +187,7 @@ func NewRouter(
 	r.With(middleware.CacheControl("public, max-age=3600")).Get("/docs/openapi.json", docsH.OpenAPISpec)
 
 	// Swagger UI + OpenAPI spec under /v1 — available in development and cloud modes.
-	// In production/staging, these are served from the docs.featuresignals.com domain.
+	// In production/staging, these are served from featuresignals.com/docs.
 	if deployMode == "development" || deployMode == "cloud" {
 		r.Get("/v1/docs", docsH.SwaggerUI)
 		r.With(middleware.CacheControl("public, max-age=3600")).Get("/v1/openapi.json", docsH.OpenAPISpec)

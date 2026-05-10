@@ -644,6 +644,24 @@ const nextConfig: NextConfig = {
         destination: "/docs/iac/:path*",
         permanent: true,
       },
+
+      // ── Catch-all: any other old docs paths not explicitly listed ──
+      // Matches multi-segment paths (e.g. /some-section/some-page)
+      // that fell through all explicit redirects above.
+      // NOTE: This redirect only fires when the path does NOT match an
+      // existing page. Existing website routes (/features, /pricing,
+      // /blog, etc.) take precedence.
+      //
+      // For the docs.featuresignals.com → featuresignals.com/docs
+      // domain-level redirect, configure at your DNS/CDN provider:
+      //   Cloudflare: Page Rule or Bulk Redirect
+      //     docs.featuresignals.com/* → https://featuresignals.com/docs/$1
+      //   Nginx: return 301 https://featuresignals.com/docs$request_uri;
+      {
+        source: "/:section/:path*",
+        destination: "/docs/:section/:path*",
+        permanent: true,
+      },
     ];
   },
 };
