@@ -2,13 +2,25 @@
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Card, Badge, Switch } from "@/components/ui";
+import { Card, Badge, Switch, Button } from "@/components/ui";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { CopyButton } from "@/components/ui/copy-button";
 import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state";
-import { Rocket, BeakerIcon, Settings, Key, Clock } from "lucide-react";
+import { EvalSparkline } from "@/components/eval-sparkline";
+import {
+  Rocket,
+  BeakerIcon,
+  Settings,
+  Key,
+  Clock,
+  CheckIcon,
+  XIcon,
+  ArchiveIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
+} from "lucide-react";
 import type { Flag, FlagState } from "@/lib/types";
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -68,63 +80,25 @@ interface FlagWithState extends Flag {
   flagState?: FlagState;
   lastEvaluatedAt?: string;
   health?: "healthy" | "stale" | "unused";
+  /** Evaluation counts over the last 24h (hourly buckets, 24 entries) */
+  evalCounts24h?: number[];
 }
 
 interface FlagCardGridProps {
   flags: Flag[];
   flagStates?: Map<string, FlagState>;
+  /** Per-flag eval count data: flagKey -> hourly counts (24 entries) */
+  evalCounts?: Map<string, number[]>;
   projectId: string;
   onToggle?: (flagKey: string, enabled: boolean) => Promise<void>;
   onCreateFlag?: () => void;
   toggling?: Set<string>;
   /** If provided, called when a card is clicked instead of navigating to the flag detail page */
   onFlagClick?: (flagKey: string) => void;
-}
-
-// ─── Activity Sparkline ──────────────────────────────────────────────────────
-
-function ActivitySparkline({
-  lastEvaluatedAt,
-  health,
-}: {
-  lastEvaluatedAt?: string;
-  health?: "healthy" | "stale" | "unused";
-}) {
-  // Generate fake sparkline bars — in production this would use real data
-  const barHeights = useRef(
-    Array.from({ length: 6 }, () => Math.floor(Math.random() * 60) + 20),
-  ).current;
-
-  if (!lastEvaluatedAt || health === "unused") {
-    return (
-      <div className="flex items-center gap-1.5 text-[10px] text-[var(--signal-fg-tertiary)]">
-        <Clock className="h-3 w-3" aria-hidden="true" />
-        Never
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-end gap-px h-5">
-        {barHeights.map((h, i) => (
-          <div
-            key={i}
-            className="w-1.5 rounded-t-sm transition-all"
-            style={{
-              height: `${h}%`,
-              backgroundColor:
-                health === "healthy"
-                  ? "var(--signal-fg-accent)"
-                  : "var(--signal-fg-tertiary)",
-              opacity: 0.4 + (i / barHeights.length) * 0.6,
-            }}
-          />
-        ))}
-      </div>
-      <RelativeTime date={lastEvaluatedAt} className="text-[10px]" />
-    </div>
-  );
+  /** Bulk selection support */
+  selectable?: boolean;
+  selectedKeys?: Set<string>;
+  onSelectionChange?: (selected: Set<string>) => void;
 }
 
 // ─── Health Dot ──────────────────────────────────────────────────────────────
@@ -149,6 +123,62 @@ function HealthDot({ health }: { health?: "healthy" | "stale" | "unused" }) {
   );
 }
 
+// ─── Activity Cell ───────────────────────────────────────────────────────────
+
+function ActivityCell({
+  lastEvaluatedAt,
+  health,
+  evalCounts24h,
+  flagKey,
+}: {
+  lastEvaluatedAt?: string;
+  health?: "healthy" | "stale" | "unused";
+  evalCounts24h?: number[];
+  flagKey: string;
+}) {
+  // If we have real eval data, show the sparkline
+  if (evalCounts24h && evalCounts24h.length > 0) {
+    const hasActivity = evalCounts24h.some((c) => c > 0);
+    return (
+      <div className="flex items-center gap-2">
+        {hasActivity ? (
+          <EvalSparkline
+            data={evalCounts24h}
+            width={80}
+            height={24}
+            ariaLabel={`Evaluation activity for ${flagKey} — last 24 hours`}
+            filled
+          />
+        ) : (
+          <div className="flex items-center gap-1.5 text-[10px] text-[var(--signal-fg-tertiary)]">
+            <Clock className="h-3 w-3" aria-hidden="true" />
+            No activity
+          </div>
+        )}
+        {lastEvaluatedAt && (
+          <RelativeTime date={lastEvaluatedAt} className="text-[10px]" />
+        )}
+      </div>
+    );
+  }
+
+  // Fallback: no sparkline data
+  if (!lastEvaluatedAt || health === "unused") {
+    return (
+      <div className="flex items-center gap-1.5 text-[10px] text-[var(--signal-fg-tertiary)]">
+        <Clock className="h-3 w-3" aria-hidden="true" />
+        Never evaluated
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] text-[var(--signal-fg-tertiary)]">
+      <RelativeTime date={lastEvaluatedAt} className="text-[10px]" />
+    </div>
+  );
+}
+
 // ─── Flag Card ───────────────────────────────────────────────────────────────
 
 function FlagCard({
@@ -158,6 +188,9 @@ function FlagCard({
   onToggle,
   toggling,
   onFlagClick,
+  selectable,
+  isSelected,
+  onSelect,
 }: {
   flag: FlagWithState;
   state?: FlagState;
@@ -165,9 +198,15 @@ function FlagCard({
   onToggle?: (flagKey: string, enabled: boolean) => Promise<void>;
   toggling?: Set<string>;
   onFlagClick?: (flagKey: string) => void;
+  selectable?: boolean;
+  isSelected?: boolean;
+  onSelect?: (key: string, selected: boolean) => void;
 }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
+  const [toggleFeedback, setToggleFeedback] = useState<"on" | "off" | null>(
+    null,
+  );
   const isToggling = toggling?.has(flag.key) ?? false;
   const isBooleanFlag = flag.flag_type === "boolean";
 
@@ -188,17 +227,33 @@ function FlagCard({
 
   const handleToggle = async (checked: boolean) => {
     if (onToggle && !isToggling) {
-      await onToggle(flag.key, checked);
+      setToggleFeedback(checked ? "on" : "off");
+      try {
+        await onToggle(flag.key, checked);
+      } finally {
+        setTimeout(() => setToggleFeedback(null), 1500);
+      }
     }
+  };
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect?.(flag.key, !isSelected);
   };
 
   return (
     <Card
       className={cn(
-        "group cursor-pointer transition-all duration-200",
+        "group relative cursor-pointer transition-all duration-200",
         "hover:shadow-[var(--signal-shadow-md)] hover:-translate-y-px",
         "border-[var(--signal-border-default)]",
         flag.status === "archived" && "opacity-70",
+        isSelected &&
+          "border-[var(--signal-fg-accent)] ring-2 ring-[var(--signal-border-accent-muted)]",
+        toggleFeedback === "on" &&
+          "ring-2 ring-emerald-300 bg-emerald-50/50 transition-colors",
+        toggleFeedback === "off" &&
+          "ring-2 ring-slate-300 bg-slate-50/50 transition-colors",
       )}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -206,8 +261,44 @@ function FlagCard({
       role="article"
       aria-label={`Flag ${flag.name}`}
     >
+      {/* Checkbox overlay */}
+      {selectable && (
+        <div
+          className="absolute top-3 left-3 z-10"
+          onClick={handleCheckboxClick}
+        >
+          <div
+            className={cn(
+              "flex h-5 w-5 items-center justify-center rounded border-2 transition-all",
+              isSelected
+                ? "border-[var(--signal-fg-accent)] bg-[var(--signal-fg-accent)] text-white"
+                : "border-slate-300 bg-white opacity-0 group-hover:opacity-100 hover:border-[var(--signal-fg-accent)]",
+            )}
+          >
+            {isSelected && <CheckIcon className="h-3 w-3" />}
+          </div>
+        </div>
+      )}
+
+      {/* Feedback pulse */}
+      {toggleFeedback && (
+        <div
+          className={cn(
+            "absolute inset-0 rounded-xl pointer-events-none z-20",
+            toggleFeedback === "on"
+              ? "animate-pulse bg-emerald-400/10"
+              : "animate-pulse bg-slate-400/10",
+          )}
+        />
+      )}
+
       {/* Header: Category Icon + Name + Status Badge */}
-      <div className="flex items-start justify-between gap-3">
+      <div
+        className={cn(
+          "flex items-start justify-between gap-3",
+          selectable && "pl-7",
+        )}
+      >
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className={cn(
@@ -286,9 +377,11 @@ function FlagCard({
 
         {/* Right: Activity + Health */}
         <div className="flex items-center gap-2">
-          <ActivitySparkline
+          <ActivityCell
             lastEvaluatedAt={flag.lastEvaluatedAt}
             health={flag.health}
+            evalCounts24h={flag.evalCounts24h}
+            flagKey={flag.key}
           />
           <HealthDot health={flag.health} />
         </div>
@@ -307,44 +400,134 @@ function FlagCard({
   );
 }
 
+// ─── Bulk Actions Toolbar ────────────────────────────────────────────────────
+
+function BulkActionsToolbar({
+  selectedCount,
+  totalCount,
+  onSelectAll,
+  onClearSelection,
+  onBulkEnable,
+  onBulkDisable,
+  onBulkArchive,
+}: {
+  selectedCount: number;
+  totalCount: number;
+  onSelectAll: () => void;
+  onClearSelection: () => void;
+  onBulkEnable: () => void;
+  onBulkDisable: () => void;
+  onBulkArchive: () => void;
+}) {
+  const allSelected = selectedCount === totalCount;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] px-4 py-3 shadow-sm">
+      <span className="text-sm font-medium text-[var(--signal-fg-primary)] mr-2">
+        {selectedCount} flag{selectedCount !== 1 ? "s" : ""} selected
+      </span>
+      <button
+        type="button"
+        onClick={allSelected ? onClearSelection : onSelectAll}
+        className="text-xs text-[var(--signal-fg-accent)] hover:underline"
+      >
+        {allSelected ? "Deselect all" : `Select all ${totalCount}`}
+      </button>
+      <div className="flex-1" />
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="secondary" onClick={onBulkEnable}>
+          <ToggleRightIcon className="h-3.5 w-3.5 mr-1" />
+          Enable
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onBulkDisable}>
+          <ToggleLeftIcon className="h-3.5 w-3.5 mr-1" />
+          Disable
+        </Button>
+        <Button size="sm" variant="danger-ghost" onClick={onBulkArchive}>
+          <ArchiveIcon className="h-3.5 w-3.5 mr-1" />
+          Archive
+        </Button>
+      </div>
+      <button
+        type="button"
+        onClick={onClearSelection}
+        className="ml-2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-primary)]"
+        aria-label="Clear selection"
+      >
+        <XIcon className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Flag Card Grid ──────────────────────────────────────────────────────────
 
 export function FlagCardGrid({
   flags,
   flagStates,
+  evalCounts,
   projectId,
   onToggle,
   onCreateFlag,
   toggling,
   onFlagClick,
+  selectable = false,
+  selectedKeys,
+  onSelectionChange,
 }: FlagCardGridProps) {
-  // Enrich flags with state data
-  const enrichedFlags: FlagWithState[] = flags.map((flag) => {
-    const state = flagStates?.get(flag.key);
-    // Determine health based on state
-    let health: "healthy" | "stale" | "unused" | undefined;
-    if (state) {
-      if (state.updated_at) {
-        const updatedAt = new Date(state.updated_at);
-        const daysSinceUpdate =
-          (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceUpdate > 7) {
-          health = "stale";
-        } else {
-          health = "healthy";
+  // Enrich flags with state data and eval counts
+  const enrichedFlags: FlagWithState[] = useMemo(
+    () =>
+      flags.map((flag) => {
+        const state = flagStates?.get(flag.key);
+        // Determine health based on state
+        let health: "healthy" | "stale" | "unused" | undefined;
+        if (state) {
+          if (state.updated_at) {
+            const updatedAt = new Date(state.updated_at);
+            const daysSinceUpdate =
+              (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceUpdate > 7) {
+              health = "stale";
+            } else {
+              health = "healthy";
+            }
+          } else {
+            health = "unused";
+          }
         }
-      } else {
-        health = "unused";
-      }
-    }
 
-    return {
-      ...flag,
-      flagState: state,
-      lastEvaluatedAt: state?.updated_at,
-      health,
-    };
-  });
+        return {
+          ...flag,
+          flagState: state,
+          lastEvaluatedAt: state?.updated_at,
+          health,
+          evalCounts24h: evalCounts?.get(flag.key),
+        };
+      }),
+    [flags, flagStates, evalCounts],
+  );
+
+  const handleSelect = (key: string, selected: boolean) => {
+    if (!onSelectionChange || !selectedKeys) return;
+    const next = new Set(selectedKeys);
+    if (selected) {
+      next.add(key);
+    } else {
+      next.delete(key);
+    }
+    onSelectionChange(next);
+  };
+
+  const handleSelectAll = () => {
+    if (!onSelectionChange) return;
+    onSelectionChange(new Set(enrichedFlags.map((f) => f.key)));
+  };
+
+  const handleClearSelection = () => {
+    if (!onSelectionChange) return;
+    onSelectionChange(new Set());
+  };
 
   // Empty state
   if (flags.length === 0) {
@@ -358,18 +541,37 @@ export function FlagCardGrid({
   }
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {enrichedFlags.map((flag) => (
-        <FlagCard
-          key={flag.id}
-          flag={flag}
-          state={flag.flagState}
-          projectId={projectId}
-          onToggle={onToggle}
-          toggling={toggling}
-          onFlagClick={onFlagClick}
+    <div className="space-y-4">
+      {/* Bulk Actions Toolbar */}
+      {selectable && selectedKeys && selectedKeys.size > 0 && (
+        <BulkActionsToolbar
+          selectedCount={selectedKeys.size}
+          totalCount={enrichedFlags.length}
+          onSelectAll={handleSelectAll}
+          onClearSelection={handleClearSelection}
+          onBulkEnable={() => {}}
+          onBulkDisable={() => {}}
+          onBulkArchive={() => {}}
         />
-      ))}
+      )}
+
+      {/* Card Grid */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {enrichedFlags.map((flag) => (
+          <FlagCard
+            key={flag.id}
+            flag={flag}
+            state={flag.flagState}
+            projectId={projectId}
+            onToggle={onToggle}
+            toggling={toggling}
+            onFlagClick={onFlagClick}
+            selectable={selectable}
+            isSelected={selectedKeys?.has(flag.key)}
+            onSelect={handleSelect}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, APIError } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
+import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -261,35 +262,19 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--signal-bg-secondary)] px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Welcome + Brand */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-emphasis)] shadow-md shadow-accent/20">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="white"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm4.28 7.78a.75.75 0 00-1.06-1.06l-4.97 4.97-1.97-1.97a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
-            Sign in to FeatureSignals
-          </h1>
-          <p className="mt-1 text-sm text-[var(--signal-fg-tertiary)]">
-            FlagEngine · Enterprise Control Plane
-          </p>
-        </div>
+    <AuthLayout>
+      {/* Heading */}
+      <div className="text-center">
+        <h2 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
+          Sign in to your account
+        </h2>
+        <p className="mt-1.5 text-sm text-[var(--signal-fg-tertiary)]">
+          Enter your credentials to continue
+        </p>
+      </div>
 
-        {/* Messages + Form */}
-        <div className="space-y-4">
+      {/* Messages + Form */}
+      <div className="mt-6 space-y-4">
           {/* ===== SUCCESS MESSAGES ===== */}
           {sessionExpired && (
             <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -594,7 +579,7 @@ function LoginForm() {
                   <div className="w-full border-t border-[var(--signal-border-default)]" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-3 text-[var(--signal-fg-tertiary)]">
+                  <span className="bg-[var(--signal-bg-primary)] px-3 text-[var(--signal-fg-tertiary)]">
                     or continue with
                   </span>
                 </div>
@@ -623,28 +608,7 @@ function LoginForm() {
             </>
           )}
         </div>
-
-        {/* ===== Trust Signals ===== */}
-        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-[var(--signal-fg-tertiary)]">
-          <span className="flex items-center gap-1.5">
-            <SparklesIcon className="h-3 w-3 text-[var(--signal-fg-accent)]" />
-            TLS Encrypted
-          </span>
-          <span className="text-stone-300">·</span>
-          <span className="flex items-center gap-1.5">
-            <ShieldIcon className="h-3 w-3 text-[var(--signal-fg-accent)]" />
-            RBAC
-          </span>
-          <span className="text-stone-300">·</span>
-          <span>Open Source</span>
-        </div>
-
-        {/* ===== Footer ===== */}
-        <p className="mt-4 text-center text-xs text-[var(--signal-fg-tertiary)]">
-          &copy; {new Date().getFullYear()} FeatureSignals. All rights reserved.
-        </p>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
 

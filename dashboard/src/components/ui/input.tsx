@@ -12,15 +12,20 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "flex w-full rounded-lg border bg-white px-3 py-2 text-sm text-[var(--signal-fg-primary)] shadow-sm transition-all duration-200",
-          error
-            ? "border-red-300 focus:border-red-400 focus:ring-red-200"
-            : "border-[var(--signal-border-default)] hover:border-[var(--signal-border-emphasis)] focus:border-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]/10",
+          "flex w-full rounded-lg border px-3 py-2 text-sm shadow-sm transition-all duration-200",
+          "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)]",
           "placeholder:text-[var(--signal-fg-tertiary)]",
-          "hover:shadow-md",
-          "focus:outline-none focus:ring-[3px] focus:shadow-md",
+          "border-[var(--signal-border-default)]",
+          "hover:border-[var(--signal-border-emphasis)] hover:shadow-md",
+          "focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-[3px] focus:ring-[var(--signal-fg-accent)]/10 focus:shadow-md",
           "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[var(--signal-bg-secondary)]",
           "file:border-0 file:bg-transparent file:font-medium file:text-sm file:text-[var(--signal-fg-primary)]",
+          error && [
+            "border-[var(--signal-border-danger-emphasis)]",
+            "bg-[var(--signal-bg-danger-muted)]",
+            "focus:border-[var(--signal-border-danger-emphasis)]",
+            "focus:ring-[var(--signal-fg-danger)]/10",
+          ],
           className,
         )}
         ref={ref}

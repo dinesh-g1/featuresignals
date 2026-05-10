@@ -705,6 +705,10 @@ export const api = {
       token,
     }),
 
+  // Organization
+  deleteOrganization: (token: string) =>
+    request("/v1/organization", { method: "DELETE", token }),
+
   // Approvals
   listApprovals: (token: string, status?: string) =>
     requestList<ApprovalRequest>(

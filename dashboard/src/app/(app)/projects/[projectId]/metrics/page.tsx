@@ -43,14 +43,20 @@ export default function MetricsPage() {
   const envId = useAppStore((s) => s.currentEnvId);
   const [data, setData] = useState<MetricsSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   function load() {
     if (!token) return;
     setLoading(true);
+    setError(null);
     api
       .getEvalMetrics(token)
       .then(setData)
-      .catch(() => {})
+      .catch((err) =>
+        setError(
+          err instanceof Error ? err.message : "Failed to load evaluation metrics",
+        ),
+      )
       .finally(() => setLoading(false));
   }
 
@@ -87,6 +93,29 @@ export default function MetricsPage() {
 
   if (loading) {
     return <LoadingSpinner fullPage />;
+  }
+
+  // ── Error ──
+  if (error) {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          title="Evaluation Metrics"
+          description="Flag evaluation counts"
+        />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
+            <h2 className="text-lg font-bold text-red-800 mb-1">
+              Failed to load metrics
+            </h2>
+            <p className="text-sm text-red-600 mb-4">{error}</p>
+            <Button onClick={load} variant="secondary">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

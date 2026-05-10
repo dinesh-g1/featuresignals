@@ -328,7 +328,7 @@ function HeroSection() {
             >
               Feature flags that evaluate in &lt;1ms. Unlimited seats.{" "}
               <strong className="text-[var(--signal-fg-primary)]">
-                $29/month flat.
+                $24/month flat.
               </strong>{" "}
               Open-source Apache 2.0. Self-host or cloud.
             </motion.p>
@@ -1447,7 +1447,7 @@ const pricingPlans: PricingPlan[] = [
   },
   {
     name: "Pro",
-    price: "$29",
+    price: "$24",
     period: "/month flat",
     description:
       "Unlimited everything. AI Janitor, RBAC, audit logs, webhooks. Flat rate — no per-seat fees.",
@@ -1576,7 +1576,7 @@ function PricingOverviewSection() {
             <strong className="text-[var(--signal-fg-primary)]">
               50 engineers
             </strong>{" "}
-            = $29/month on FeatureSignals. ~$416.50/month on LaunchDarkly.
+            = $24/month on FeatureSignals. ~$416.50/month on LaunchDarkly.
           </p>
         </motion.div>
 
@@ -1704,7 +1704,7 @@ const comparisonData: ComparisonRow[] = [
   },
   {
     feature: "Pricing",
-    featuresignals: "Flat rate, $29/mo unlimited",
+    featuresignals: "Flat rate, $24/mo unlimited",
     others: "$8.33/seat/month + overages",
     fsPositive: true,
   },

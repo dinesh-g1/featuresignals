@@ -17,6 +17,20 @@ import {
   Heart,
   HelpCircle,
 } from "lucide-react";
+import { CurrencySelector } from "@/components/ui/currency-selector";
+import { BillingToggle } from "@/components/ui/billing-toggle";
+import {
+  INR,
+  USD,
+  getProPrice,
+  getFreePrice,
+  ENTERPRISE_LABEL,
+  convertINR,
+  formatCurrency,
+  formatMonthlyPrice,
+  formatAnnualTotal,
+  type CurrencyDef,
+} from "@/lib/currency";
 
 /** GitHub logo — inline SVG (no brand icon in lucide-react) */
 function GithubIcon({ size = 16 }: { size?: number }) {
@@ -39,7 +53,6 @@ import { cn } from "@/lib/utils";
 import {
   type CompetitorProvider,
   calculateSavings,
-  formatUSD,
   PROVIDER_META,
 } from "@/lib/pricing";
 
@@ -51,7 +64,6 @@ const REGISTER_URL = "https://app.featuresignals.com/register";
 const DOCS_QUICKSTART =
   "https://docs.featuresignals.com/getting-started/quickstart";
 const CONTACT_SALES = "/contact?reason=sales";
-const ANNUAL_DISCOUNT_PCT = 17;
 
 /* ==========================================================================
    Animation Presets
@@ -85,67 +97,79 @@ interface Tier {
   features: string[];
   cta: { label: string; href: string; external?: boolean };
   highlight?: boolean;
-  annualLabel?: string;
+  annualSubtitle?: string;
   icon: React.ReactNode;
 }
 
-const tiers: Tier[] = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "/month forever",
-    description:
-      "For individuals and small teams getting started. Up to 50 flags. No credit card required.",
-    features: [
-      "Up to 50 feature flags",
-      "1 project, 2 environments, 3 team members",
-      "All 8 SDKs + OpenFeature",
-      "Community support",
-      "Apache 2.0 license",
-      "Self-hosted is free forever",
-    ],
-    cta: { label: "Start Free", href: REGISTER_URL, external: true },
-    icon: <Zap size={20} className="text-emerald-500" />,
-  },
-  {
-    name: "Pro",
-    price: "$29",
-    period: "/month flat",
-    description: "For growing engineering teams. Unlimited everything.",
-    features: [
-      "Unlimited projects & environments",
-      "Unlimited team members",
-      "AI Janitor: stale flag removal",
-      "RBAC & audit logs",
-      "Webhooks & integrations",
-      "Email support",
-    ],
-    cta: {
-      label: "Start Free Trial",
-      href: `${REGISTER_URL}?plan=pro`,
-      external: true,
+/** Build tier data dynamically based on selected currency and billing period */
+function buildTiers(currency: CurrencyDef, annual: boolean): Tier[] {
+  const pro = getProPrice(currency, annual);
+  const freePrice = getFreePrice(currency);
+
+  const freePeriod =
+    currency.code === "INR" ? "/month forever" : "/month forever";
+  const proPeriod = annual ? "/mo (billed annually)" : "/month flat";
+
+  return [
+    {
+      name: "Free",
+      price: freePrice,
+      period: freePeriod,
+      description:
+        "For individuals and small teams getting started. Up to 50 flags. No credit card required.",
+      features: [
+        "Up to 50 feature flags",
+        "1 project, 2 environments, 3 team members",
+        "All 8 SDKs + OpenFeature",
+        "Community support",
+        "Apache 2.0 license",
+        "Self-hosted is free forever",
+      ],
+      cta: { label: "Start Free", href: REGISTER_URL, external: true },
+      icon: <Zap size={20} className="text-emerald-500" />,
     },
-    highlight: true,
-    annualLabel: `$${Math.round(29 * 12 * (1 - ANNUAL_DISCOUNT_PCT / 100))}/year (save ${ANNUAL_DISCOUNT_PCT}%)`,
-    icon: <Zap size={20} className="text-[var(--signal-fg-accent)]" />,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "For large teams with custom requirements.",
-    features: [
-      "Everything in Pro",
-      "SSO (SAML/OIDC) & SCIM",
-      "99.9% uptime SLA",
-      "Dedicated support engineer",
-      "On-prem / air-gapped deployment",
-      "Invoice billing (NET-30)",
-    ],
-    cta: { label: "Talk to Us", href: CONTACT_SALES, external: true },
-    icon: <Building2 size={20} className="text-[var(--signal-fg-info)]" />,
-  },
-];
+    {
+      name: "Pro",
+      price: annual ? pro.annualMonthly : pro.monthly,
+      period: proPeriod,
+      description: "For growing engineering teams. Unlimited everything.",
+      features: [
+        "Unlimited projects & environments",
+        "Unlimited team members",
+        "AI Janitor: stale flag removal",
+        "RBAC & audit logs",
+        "Webhooks & integrations",
+        "Email support",
+      ],
+      cta: {
+        label: "Start Free Trial",
+        href: `${REGISTER_URL}?plan=pro`,
+        external: true,
+      },
+      highlight: true,
+      annualSubtitle: annual
+        ? pro.annualTotal
+        : `${pro.annualMonthly} · ${pro.annualTotal}`,
+      icon: <Zap size={20} className="text-[var(--signal-fg-accent)]" />,
+    },
+    {
+      name: "Enterprise",
+      price: ENTERPRISE_LABEL,
+      period: "",
+      description: "For large teams with custom requirements.",
+      features: [
+        "Everything in Pro",
+        "SSO (SAML/OIDC) & SCIM",
+        "99.9% uptime SLA",
+        "Dedicated support engineer",
+        "On-prem / air-gapped deployment",
+        "Invoice billing (NET-30)",
+      ],
+      cta: { label: "Talk to Us", href: CONTACT_SALES, external: true },
+      icon: <Building2 size={20} className="text-[var(--signal-fg-info)]" />,
+    },
+  ];
+}
 
 /* ==========================================================================
    FAQ Data
@@ -173,10 +197,16 @@ const faqItems: FaqItem[] = [
       "Enterprise includes SSO (SAML/OIDC), SCIM provisioning, a 99.9% uptime SLA with financial penalties, a dedicated support engineer with 4-hour response SLA, on-premises and air-gapped deployment support, invoice billing (NET-30), and custom AI Janitor pools. We'll quote you upfront — typically $150–500/month depending on scale. No hidden fees.",
   },
   {
-    question: "Do you offer annual discounts?",
+    question: "How does annual billing work?",
     answer:
-      "Yes. Pay annually and save 17% (2 months free). Pro annually is $290/year instead of $348 ($29/month × 12). Enterprise contracts are annual by default with NET-30 invoicing. Self-hosted is always free under Apache 2.0.",
+      "Annual billing is ₹23,988/year (effectively ₹1,999/month). Same features as monthly. You can switch anytime from billing settings.",
   },
+  {
+    question: "What currencies do you support?",
+    answer:
+      "We display pricing in INR (₹), USD ($), and EUR (€). Our base prices are set in INR and converted at transparent exchange rates: 1 USD = ₹83, 1 EUR = ₹90. You can toggle between currencies using the selector at the top of the pricing page. Actual billing happens in INR for Indian customers and USD for international customers.",
+  },
+
   {
     question: "Is there a free trial for Enterprise?",
     answer:
@@ -341,9 +371,9 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
             </span>
           )}
         </div>
-        {tier.annualLabel && (
-          <p className="text-xs text-emerald-600 font-medium mt-1.5">
-            {tier.annualLabel}
+        {tier.annualSubtitle && (
+          <p className="text-xs text-[var(--signal-fg-secondary)] mt-1.5">
+            {tier.annualSubtitle}
           </p>
         )}
       </div>
@@ -393,7 +423,19 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
   );
 }
 
-function PricingTiersSection() {
+function PricingTiersSection({
+  currency,
+  annual,
+  onCurrencyChange,
+  onAnnualChange,
+}: {
+  currency: CurrencyDef;
+  annual: boolean;
+  onCurrencyChange: (c: CurrencyDef) => void;
+  onAnnualChange: (a: boolean) => void;
+}) {
+  const tiers = useMemo(() => buildTiers(currency, annual), [currency, annual]);
+
   return (
     <section
       id="pricing-tiers"
@@ -401,7 +443,7 @@ function PricingTiersSection() {
       aria-labelledby="tiers-heading"
     >
       <div className="mx-auto max-w-6xl px-6">
-        <motion.div className="text-center mb-12" {...fadeUp}>
+        <motion.div className="text-center mb-8" {...fadeUp}>
           <h2
             id="tiers-heading"
             className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
@@ -412,6 +454,15 @@ function PricingTiersSection() {
             Every price is exact. No asterisks. No &ldquo;starting at&rdquo;
             unless it&rsquo;s literally the starting price.
           </p>
+        </motion.div>
+
+        {/* Sticky control bar — currency selector + billing toggle */}
+        <motion.div
+          className="sticky top-0 z-30 flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 py-4 bg-[var(--signal-bg-secondary)]/90 backdrop-blur-sm"
+          {...fadeUpDelayed(0.05)}
+        >
+          <CurrencySelector value={currency} onChange={onCurrencyChange} />
+          <BillingToggle annual={annual} onChange={onAnnualChange} />
         </motion.div>
 
         {/* 3-column pricing grid */}
@@ -523,13 +574,19 @@ function EnterpriseTransparencySection() {
    Section: Cost Comparison Calculator
    ========================================================================== */
 
-function CostComparisonCalculator() {
+function CostComparisonCalculator({
+  currency,
+  annual,
+}: {
+  currency: CurrencyDef;
+  annual: boolean;
+}) {
   const [teamSize, setTeamSize] = useState(50);
   const [provider, setProvider] = useState<CompetitorProvider>("launchdarkly");
 
   const savingsResult = useMemo(
-    () => calculateSavings({ teamSize, provider }),
-    [teamSize, provider],
+    () => calculateSavings({ teamSize, provider, currency, annual }),
+    [teamSize, provider, currency, annual],
   );
 
   const handleSliderChange = useCallback(
@@ -635,16 +692,23 @@ function CostComparisonCalculator() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-xs text-[var(--signal-fg-tertiary)] mb-1">
-                  FeatureSignals Pro
+                  FeatureSignals Pro{annual ? " (annual)" : ""}
                 </p>
                 <p className="text-2xl font-bold text-emerald-600 tabular-nums">
-                  {formatUSD(savingsResult.featureSignals.monthly)}
+                  {formatCurrency(
+                    savingsResult.featureSignals.monthly,
+                    currency,
+                  )}
                   <span className="text-sm font-normal text-emerald-600">
                     /mo
                   </span>
                 </p>
                 <p className="text-xs text-[var(--signal-fg-tertiary)] mt-0.5">
-                  {formatUSD(savingsResult.featureSignals.annual)}/year
+                  {formatCurrency(
+                    savingsResult.featureSignals.annual,
+                    currency,
+                  )}
+                  /year
                 </p>
               </div>
               <div>
@@ -652,13 +716,14 @@ function CostComparisonCalculator() {
                   {savingsResult.competitor.name}
                 </p>
                 <p className="text-2xl font-bold text-[var(--signal-fg-primary)] tabular-nums">
-                  {formatUSD(savingsResult.competitor.monthly)}
+                  {formatCurrency(savingsResult.competitor.monthly, currency)}
                   <span className="text-sm font-normal text-[var(--signal-fg-secondary)]">
                     /mo
                   </span>
                 </p>
                 <p className="text-xs text-[var(--signal-fg-tertiary)] mt-0.5">
-                  {formatUSD(savingsResult.competitor.annual)}/year
+                  {formatCurrency(savingsResult.competitor.annual, currency)}
+                  /year
                 </p>
               </div>
             </div>
@@ -672,7 +737,7 @@ function CostComparisonCalculator() {
                 <p className="text-sm font-semibold text-emerald-700">
                   Save{" "}
                   <span className="tabular-nums">
-                    {formatUSD(savingsResult.savings.annual)}
+                    {formatCurrency(savingsResult.savings.annual, currency)}
                   </span>
                   /year ({savingsPercentFormatted})
                 </p>
@@ -710,7 +775,7 @@ const trustPrinciples = [
     icon: <Users size={22} />,
     title: "No per-seat pricing",
     description:
-      "Your bill shouldn't grow just because your team does. Pro is $29/month flat — whether you have 5 engineers or 500.",
+      "Your bill shouldn't grow just because your team does. Pro is $32/month flat — whether you have 5 engineers or 500.",
   },
   {
     icon: <Zap size={22} />,
@@ -946,12 +1011,20 @@ function FinalCtaSection() {
    ========================================================================== */
 
 export function PricingPageContent() {
+  const [currency, setCurrency] = useState<CurrencyDef>(USD);
+  const [annual, setAnnual] = useState(false);
+
   return (
     <>
       <HeroSection />
-      <PricingTiersSection />
+      <PricingTiersSection
+        currency={currency}
+        annual={annual}
+        onCurrencyChange={setCurrency}
+        onAnnualChange={setAnnual}
+      />
       <EnterpriseTransparencySection />
-      <CostComparisonCalculator />
+      <CostComparisonCalculator currency={currency} annual={annual} />
       <TrustSection />
       <FaqSection />
       <FinalCtaSection />

@@ -101,7 +101,7 @@ function SignupLeft() {
           <strong className="text-[var(--signal-fg-primary)]">
             INR 1,999/month
           </strong>{" "}
-          (~$29). Unlimited seats. Unlimited flags. No per-MAU fees. No
+          (~$32). Unlimited seats. Unlimited flags. No per-MAU fees. No
           surprises.
         </p>
 

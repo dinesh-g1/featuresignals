@@ -1,5 +1,4 @@
 import { CheckIcon, XIcon } from "@/components/icons/nav-icons";
-import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Password Strength — inline color-coded progress bar
@@ -55,9 +54,14 @@ export function PasswordStrengthInline({
 
   if (!password) return null;
 
+  // Use inline styles for widths to avoid hydration mismatches from
+  // dynamic Tailwind arbitrary values (Tailwind JIT can't resolve
+  // template literals at build time).
+  const widthPercent = (score / 5) * 100;
+
   const levelColors: Record<string, string> = {
-    none: "bg-[var(--signal-bg-secondary)]",
-    weak: "bg-[var(--signal-bg-danger-muted)]0",
+    none: "bg-gray-200",
+    weak: "bg-red-400",
     fair: "bg-amber-500",
     good: "bg-yellow-500",
     strong: "bg-emerald-500",
@@ -66,13 +70,10 @@ export function PasswordStrengthInline({
   return (
     <div className="mt-2 space-y-2">
       {/* Progress bar */}
-      <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--signal-bg-secondary)]">
+      <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
         <div
-          className={cn(
-            "h-full rounded-full transition-all duration-300",
-            levelColors[level],
-            `w-[${(score / 5) * 100}%]`,
-          )}
+          className={`h-full rounded-full transition-all duration-300 ${levelColors[level]}`}
+          style={{ width: `${widthPercent}%` }}
         />
       </div>
       {/* Checklist */}
@@ -80,12 +81,15 @@ export function PasswordStrengthInline({
         {checks.map((c) => (
           <div
             key={c.label}
-            className={cn(
-              "flex items-center gap-1.5 text-xs transition-colors",
-              c.met ? "text-[var(--signal-fg-success)]" : "text-[var(--signal-fg-tertiary)]",
-            )}
+            className={`flex items-center gap-1.5 text-xs transition-colors ${
+              c.met ? "text-emerald-600" : "text-gray-400"
+            }`}
           >
-            {c.met ? <CheckIcon className="h-3 w-3" /> : <XIcon className="h-3 w-3" />}
+            {c.met ? (
+              <CheckIcon className="h-3 w-3" />
+            ) : (
+              <XIcon className="h-3 w-3" />
+            )}
             <span className="truncate">{c.label}</span>
           </div>
         ))}

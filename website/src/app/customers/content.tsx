@@ -91,7 +91,7 @@ const stories: Story[] = [
     headline:
       "Finch Commerce migrated from LaunchDarkly and cut costs by 90% while adding A/B testing",
     quote:
-      "We were paying $4,200/month for LaunchDarkly. Switched to FeatureSignals Pro at $29/month flat. Same features, better performance, and the AI Janitor found 300 stale flags our team had forgotten about. Best infrastructure decision we made this year.",
+      "We were paying $4,200/month for LaunchDarkly. Switched to FeatureSignals Pro at $32/month flat. Same features, better performance, and the AI Janitor found 300 stale flags our team had forgotten about. Best infrastructure decision we made this year.",
     accentColor: "#1f883d",
     href: "#",
   },

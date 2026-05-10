@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
@@ -11,6 +11,7 @@ import {
   Badge,
   LoadingSpinner,
   EmptyState,
+  Button,
 } from "@/components/ui";
 import { ChevronRightIcon, FolderOpenIcon } from "@/components/icons/nav-icons";
 import type { Flag } from "@/lib/types";
@@ -21,18 +22,29 @@ export default function FlagHealthPage() {
   const projectId = useAppStore((s) => s.currentProjectId);
   const [flags, setFlags] = useState<Flag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadFlags = useCallback(() => {
     if (!token || !projectId) return;
     setLoading(true);
+    setError(null);
     api
       .listFlags(token, projectId)
       .then((f) => {
         setFlags(f ?? []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        setError(
+          err instanceof Error ? err.message : "Failed to load flags",
+        );
+        setLoading(false);
+      });
   }, [token, projectId]);
+
+  useEffect(() => {
+    loadFlags();
+  }, [loadFlags]);
 
   const now = useMemo(() => new Date(), []);
   const EXPIRING_SOON_DAYS = 7;
@@ -52,7 +64,6 @@ export default function FlagHealthPage() {
       const threshold = staleDaysForCategory[f.category] ?? DEFAULT_STALE_DAYS;
       return age > threshold;
     });
-    // staleDaysForCategory and DEFAULT_STALE_DAYS are stable component-level constants
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flags, now]);
 
@@ -119,6 +130,29 @@ export default function FlagHealthPage() {
 
   if (loading) {
     return <LoadingSpinner fullPage />;
+  }
+
+  // ── Error ──
+  if (error) {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          title="Flag Health"
+          description="Monitor technical debt and flag hygiene"
+        />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
+            <h2 className="text-lg font-bold text-red-800 mb-1">
+              Failed to load flag health data
+            </h2>
+            <p className="text-sm text-red-600 mb-4">{error}</p>
+            <Button onClick={loadFlags} variant="secondary">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

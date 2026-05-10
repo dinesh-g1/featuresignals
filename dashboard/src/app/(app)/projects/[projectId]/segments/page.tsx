@@ -63,7 +63,12 @@ export default function SegmentsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data: segments = [], refetch } = useSegments(projectId);
+  const {
+    data: segments = [],
+    loading: segmentsLoading,
+    error: segmentsError,
+    refetch,
+  } = useSegments(projectId);
   const createSegment = useCreateSegment(projectId);
   const deleteSegment = useDeleteSegment(projectId);
 
@@ -137,7 +142,8 @@ export default function SegmentsPage() {
     refresh: refreshPrereqs,
   } = usePrerequisites();
 
-  if (prereqLoading) {
+  // ── Loading state ──
+  if (prereqLoading || segmentsLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -152,6 +158,23 @@ export default function SegmentsPage() {
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (segmentsError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
+          <h2 className="text-lg font-bold text-red-800 mb-1">
+            Failed to load segments
+          </h2>
+          <p className="text-sm text-red-600 mb-4">{segmentsError}</p>
+          <Button onClick={refetch} variant="secondary">
+            Retry
+          </Button>
         </div>
       </div>
     );

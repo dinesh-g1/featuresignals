@@ -2,6 +2,138 @@
 
 > Chronological record
 
+## [2026-05-16 23:00] overhaul | Complete Server & Dashboard UX Overhaul — Norman-Inspired
+
+**Context:** Comprehensive UX/UI overhaul of both Go server and Next.js dashboard,
+grounded in Don Norman's design principles (DOET, Emotional Design, Living with
+Complexity) and Nielsen Norman Group heuristics. Five parallel workstreams executed.
+
+### Workstream 1: Server API Overhaul — `server/internal/api/router.go`
+
+**Route reorganization:**
+- Restructured into 10 clearly labeled logical groups with comprehensive godoc comments
+- Groups: Public, Auth, Billing, Evaluation, Agent, Management/Read, Management/Write,
+  Admin, Enterprise, Operations Portal
+- Each group documented with auth model, rate limits, and purpose
+
+**8 new endpoints added:**
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/v1/projects/{id}/environments/{eid}` | Get single environment |
+| `POST` | `/v1/projects/{id}/environments/{eid}/clone` | Clone env + flag states |
+| `POST` | `/v1/projects/{id}/flags/{key}/archive` | Soft-delete flag |
+| `POST` | `/v1/projects/{id}/flags/{key}/restore` | Restore archived flag |
+| `GET` | `/v1/projects/{id}/flags/archived` | List archived flags |
+| `POST` | `/v1/projects/{id}/segments/{key}/evaluate` | Test segment matching |
+| `GET` | `/v1/search/suggest` | Search autocomplete |
+| `GET` | `/v1/projects/{id}/dashboard` | Dashboard summary stats |
+
+**Rate limit tuning:** Added missing rate limits to billing (60/min) and sales (1/min)
+endpoints. Documented tier-based scaling.
+
+**New handler methods:** `EnvironmentHandler.Get`, `EnvironmentHandler.Clone`,
+`FlagHandler.Archive`, `FlagHandler.Restore`, `FlagHandler.ListArchived`,
+`SegmentHandler.Evaluate`, `SearchHandler.Suggest`
+
+**Files:** `server/internal/api/router.go`, `server/internal/api/handlers/projects.go`,
+`server/internal/api/handlers/flags.go`, `server/internal/api/handlers/segments.go`,
+`server/internal/api/handlers/search.go`
+
+### Workstream 2: Dashboard Navigation Overhaul — `dashboard/src/components/nav-list.tsx`
+
+**Sidebar reorganization:**
+- Org-level: Dashboard → Projects → Activity → Usage → Limits → Settings → Support
+- Project-level sections renamed/regrouped:
+  - "Feature Management" → "Flags & Segments" (Flags, Segments, Env Config)
+  - New "Insights" group (Analytics, Eval Metrics, Flag Health, Usage Insights)
+  - New "Power Tools" group (AI Janitor, Env Comparison, Target Inspector)
+  - "Integrations" promoted to top-level (API Keys, Webhooks) — no longer buried
+  - "Settings & Admin" section for admin-only (Team, Governance)
+- Added Pro/Enterprise tier badges next to gated features
+- Added item count badges (Flags, Segments show live counts)
+- Added "Recents" section with last 3 visited items
+- Added section dividers between major groups
+- Power Tools collapsed by default, auto-expands when active
+- Mobile: sidebar closes on nav item click
+
+**Context bar enhancements — `context-bar.tsx`:**
+- Quick Create (+) button with dropdown: New Flag, New Segment, New Project
+- Environment shown as colored pill with the env color as background
+
+**Breadcrumbs — `breadcrumb.tsx`:**
+- Context-aware: Org > Project > Page for project routes, Org > Page for org routes
+- Live project name resolution
+- Icons on org and project levels
+
+**App layout — `layout.tsx`:**
+- Breadcrumbs now rendered above main content for every page
+
+### Workstream 3: Page State Handling
+
+**Created `use-page-data.ts` hook** — Reusable fetch lifecycle with loading/error/data
+states and cancellation support.
+
+**Pages fixed with complete state handling (loading, error, empty, data):**
+- Segments list, API Keys (project + settings), Approvals, Metrics, Health
+- Webhooks (project) — complete rewrite with WebhookDialog, delivery log, test button
+- Team/Members (project) — complete rewrite with InviteDialog, RoleChangeConfirmDialog
+
+**Pages verified as already compliant:**
+Projects, Environments, Dashboard, Activity, Audit, Analytics, Usage Insights,
+Target Inspector, Target Comparison, Env Comparison, Limits, Org Usage, Pricing,
+Support, Billing, General, SSO, Notifications, Integrations, Onboarding
+
+### Workstream 4: Flag Pages UX Deepening
+
+**Flag card grid — `flag-card-grid.tsx`:**
+- Real `EvalSparkline` integration with per-flag hourly eval counts
+- Checkbox selection for bulk actions (Enable, Disable, Archive)
+- Toggle feedback animation (green/gray pulse on state change)
+
+**Flag creation — `simple-flag-create.tsx`:**
+- Visual flag type cards (Boolean, String, Number, JSON, A/B Experiment)
+- Dual submit: "Create & close" vs "Create & add targeting"
+- Real-time key validation with visual feedback
+
+**Flags list — `flags/page.tsx`:**
+- Filter chips with counts: All, Active, Disabled, Scheduled, Archived
+- Sort dropdown with combined field+direction values
+- Bulk selection mode toggle
+
+**Flag detail — `flags/[flagKey]/page.tsx`:**
+- SDK snippet card with copy button
+- Dependency graph (prerequisites + dependents)
+- Enhanced evaluation tester with attribute support
+
+### Workstream 5: Auth & Settings Polish
+
+**Auth pages:**
+- `AuthLayout` completely rewritten with split-screen design (dark gradient + testimonial)
+- Social proof: "10B+ Flags Evaluated", "<1ms P99 Latency", "99.99% Uptime SLA"
+- Login/Register/ForgotPassword/ResetPassword all wrapped in new AuthLayout
+- ForgotPassword: new 4-step flow (email → check inbox → reset → success)
+- Password show/hide toggles on all password fields
+
+**Settings pages:**
+- General: Added Danger Zone with Delete Organization (confirmation requires typing name)
+- Billing, SSO, Notifications, Integrations: verified already world-class
+
+### Norman Principles Applied
+- **Close the Gulfs**: Quick Create button, SDK snippet, evaluation tester
+- **Error Prevention**: Hold-to-confirm, type-to-confirm delete, archive instead of delete
+- **Knowledge in the World**: Breadcrumbs everywhere, colored env pill, tier badges
+- **Emotional Design**: Premium AuthLayout, toggle animations, sparklines
+- **Progressive Disclosure**: Collapsed Power Tools, Simple/Advanced flag create
+
+### Build Verification
+- `go build ./...` — passes
+- `go vet ./...` — passes
+- `go test ./...` — all tests pass
+- `npx tsc --noEmit` — zero TypeScript errors
+- Only informational Tailwind CSS v4 migration warnings
+
+### Files Changed: 40+ files across server and dashboard
+
 ## [2026-05-15 22:00] fix | Norman-Inspired Contrast & Mobile UX Fixes
 
 **Context:** Applied Don Norman "Knowledge in the World" and affordance principles to fix

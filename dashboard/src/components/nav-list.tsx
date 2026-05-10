@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useAppStore } from "@/stores/app-store";
 import { PrismLotusIcon } from "@/components/prism-lotus";
 import { RoleBasedView } from "@/components/role-based-view";
+import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
 import { path } from "@/lib/paths";
@@ -32,6 +33,9 @@ import {
   ActivityIcon,
   BarChartIcon,
   HelpCircleIcon,
+  SettingsIcon,
+  TrendingUpIcon,
+  ClockIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -47,22 +51,62 @@ interface NavGroupDef {
   items: NavItemDef[];
 }
 
-// ─── Org-level nav items (when no project selected) ───────────────────
+// ─── Tier detection ──────────────────────────────────────────────────
+
+/** Features gated behind Pro or Enterprise plans */
+const PRO_FEATURES = new Set([
+  "/analytics",
+  "/metrics",
+  "/health",
+  "/usage-insights",
+  "/env-comparison",
+  "/target-inspector",
+  "/approvals",
+  "/webhooks",
+]);
+
+function TierBadge({ href, plan }: { href: string; plan: string }) {
+  if (!PRO_FEATURES.has(href)) return null;
+  const label = plan === "enterprise" ? "Enterprise" : "Pro";
+  return (
+    <Badge
+      variant="info"
+      className="ml-auto shrink-0 text-[9px] px-1.5 py-0 leading-normal font-semibold"
+    >
+      {label}
+    </Badge>
+  );
+}
+
+// ─── Data items — flat navigation definitions ────────────────────────
 
 const orgNavItems: NavItemDef[] = [
+  { href: path("/dashboard"), label: "Dashboard", icon: DashboardIcon },
   { href: path("/projects"), label: "Projects", icon: ProjectIcon },
-  { href: path("/usage"), label: "Usage", icon: BarChartIcon },
   { href: path("/activity"), label: "Activity", icon: ActivityIcon },
+  { href: path("/usage"), label: "Usage", icon: BarChartIcon },
   { href: path("/limits"), label: "Limits", icon: CheckListIcon },
+  { href: path("/settings/general"), label: "Settings", icon: SettingsIcon },
   { href: path("/support"), label: "Support", icon: HelpCircleIcon },
 ];
 
-// ─── Project-level nav groups (when project selected) ─────────────────
-
-const featureManagement: NavItemDef[] = [
+const flagsAndSegments: NavItemDef[] = [
   { href: path("/flags"), label: "Flags", icon: FlagIcon },
   { href: path("/segments"), label: "Segments", icon: SegmentIcon },
   { href: path("/environments"), label: "Env Config", icon: EnvironmentIcon },
+];
+
+const insights: NavItemDef[] = [
+  { href: path("/analytics"), label: "Analytics", icon: GraphIcon },
+  { href: path("/metrics"), label: "Eval Metrics", icon: TrendingUpIcon },
+  { href: path("/health"), label: "Flag Health", icon: HeartIcon },
+  { href: path("/usage-insights"), label: "Usage Insights", icon: BarChartIcon },
+];
+
+const powerTools: NavItemDef[] = [
+  { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
+  { href: path("/env-comparison"), label: "Env Comparison", icon: SearchIcon },
+  { href: path("/target-inspector"), label: "Target Inspector", icon: SearchIcon },
 ];
 
 const integrations: NavItemDef[] = [
@@ -70,48 +114,32 @@ const integrations: NavItemDef[] = [
   { href: path("/webhooks"), label: "Webhooks", icon: WebhookIcon },
 ];
 
-const team: NavItemDef[] = [
+const teamItems: NavItemDef[] = [
   { href: path("/team"), label: "Members", icon: TeamIcon },
 ];
 
-const governance: NavItemDef[] = [
+const governanceItems: NavItemDef[] = [
   { href: path("/approvals"), label: "Approvals", icon: CheckListIcon },
 ];
 
-const tools: NavItemDef[] = [
-  { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
-  { href: path("/env-comparison"), label: "Env Comparison", icon: SearchIcon },
-  { href: path("/target-inspector"), label: "Target Inspector", icon: SearchIcon },
-  { href: path("/target-comparison"), label: "Target Compare", icon: SearchIcon },
-  { href: path("/analytics"), label: "Analytics", icon: GraphIcon },
-  { href: path("/metrics"), label: "Metrics", icon: GraphIcon },
-  { href: path("/health"), label: "Health", icon: HeartIcon },
-];
+// ─── Section Divider ─────────────────────────────────────────────────
 
-// ─── Sidebar groups split by role visibility ──────────────────────
-
-/** Development groups — visible to all roles (developer, viewer, admin, owner) */
-const developmentGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
-  {
-    label: "Feature Management",
-    items: featureManagement,
-    defaultExpanded: true,
-  },
-  { label: "Tools", items: tools, defaultExpanded: false },
-];
-
-/** Management groups — visible only to admins and owners */
-const managementGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
-  { label: "Integrations", items: integrations, defaultExpanded: true },
-  { label: "Team", items: team, defaultExpanded: true },
-  { label: "Governance", items: governance, defaultExpanded: true },
-];
-
-/** All groups in flat order (kept for backward compatibility if needed) */
-const _sidebarGroups: (NavGroupDef & { defaultExpanded?: boolean })[] = [
-  ...developmentGroups,
-  ...managementGroups,
-];
+function SectionDivider({ label }: { label?: string }) {
+  if (!label) {
+    return (
+      <div className="mx-3 my-2 border-t border-[var(--signal-border-subtle)]" />
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 mx-3 my-3">
+      <div className="flex-1 border-t border-[var(--signal-border-subtle)]" />
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--signal-fg-tertiary)]/60 shrink-0">
+        {label}
+      </span>
+      <div className="flex-1 border-t border-[var(--signal-border-subtle)]" />
+    </div>
+  );
+}
 
 // ─── Pin Icon ─────────────────────────────────────────────────────────
 
@@ -130,12 +158,14 @@ function PinIcon({ className }: { className?: string }) {
   );
 }
 
-interface PinnedItem {
+// ─── Recents types ───────────────────────────────────────────────────
+
+interface RecentEntry {
   id: string;
-  project_id: string;
   resource_type: string;
   resource_id: string;
-  created_at: string;
+  resource_name: string;
+  visited_at: string;
 }
 
 // ─── Simple Nav Item (no project prefix) ─────────────────────────────
@@ -143,14 +173,17 @@ interface PinnedItem {
 function SimpleNavItem({
   item,
   active,
+  onClick,
 }: {
   item: NavItemDef;
   active: boolean;
+  onClick?: () => void;
 }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
+      onClick={onClick}
       className={cn(
         "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
         active
@@ -159,7 +192,7 @@ function SimpleNavItem({
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span>{item.label}</span>
+      <span className="truncate">{item.label}</span>
     </Link>
   );
 }
@@ -170,16 +203,23 @@ function ProjectNavItem({
   item,
   active,
   projectId,
+  count,
+  plan,
+  onClick,
 }: {
   item: NavItemDef;
   active: boolean;
   projectId: string;
+  count?: number;
+  plan?: string;
+  onClick?: () => void;
 }) {
   const Icon = item.icon;
   const href = `/projects/${projectId}${item.href}`;
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
         active
@@ -188,7 +228,13 @@ function ProjectNavItem({
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span>{item.label}</span>
+      <span className="truncate flex-1">{item.label}</span>
+      {count !== undefined && count > 0 && (
+        <span className="shrink-0 text-[10px] font-semibold text-[var(--signal-fg-tertiary)] tabular-nums">
+          {count}
+        </span>
+      )}
+      {plan && <TierBadge href={item.href} plan={plan} />}
     </Link>
   );
 }
@@ -198,9 +244,15 @@ function ProjectNavItem({
 function NavGroup({
   group,
   projectId,
+  plan,
+  counts,
+  onItemClick,
 }: {
   group: NavGroupDef & { defaultExpanded?: boolean };
   projectId: string;
+  plan?: string;
+  counts?: Record<string, number>;
+  onItemClick?: () => void;
 }) {
   const pathname = usePathname();
   const storageKey = `fs:nav-${group.label.toLowerCase().replace(/\s+/g, "-")}`;
@@ -243,7 +295,7 @@ function NavGroup({
           size={12}
           className={cn(
             "shrink-0 transition-transform duration-200",
-            expanded && "rotate-180",
+            !expanded && "-rotate-90",
           )}
         />
         {group.label}
@@ -259,6 +311,9 @@ function NavGroup({
                 pathname === `/projects/${projectId}${item.href}` ||
                 pathname.startsWith(`/projects/${projectId}${item.href}/`)
               }
+              count={counts?.[item.href]}
+              plan={plan}
+              onClick={onItemClick}
             />
           ))}
         </div>
@@ -267,26 +322,49 @@ function NavGroup({
   );
 }
 
-// ─── Pinned Section ──────────────────────────────────────────────────
+// ─── Recents Section ─────────────────────────────────────────────────
 
-function PinnedSection() {
+function RecentsSection({ projectId }: { projectId: string }) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
   const pathname = usePathname();
-  const [pinnedItems, setPinnedItems] = useState<PinnedItem[]>([]);
+  const [recents, setRecents] = useState<RecentEntry[]>([]);
   const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
-    if (!token || !currentProjectId) return;
+    if (!token || !projectId) return;
     api
-      .listPinnedItems(token, currentProjectId)
-      .then((d) => setPinnedItems(d?.items ?? []))
+      .listPinnedItems(token, projectId)
+      .then((d) => {
+        const items = d?.items ?? [];
+        const mapped: RecentEntry[] = items.slice(0, 3).map((p) => ({
+          id: p.id,
+          resource_type: p.resource_type,
+          resource_id: p.resource_id,
+          resource_name: p.resource_id,
+          visited_at: p.created_at,
+        }));
+        setRecents(mapped);
+      })
       .catch(() => {});
-  }, [token, currentProjectId]);
+  }, [token, projectId]);
 
-  if (!currentProjectId) return null;
+  if (!projectId || recents.length === 0) return null;
 
   const toggle = () => setExpanded((p) => !p);
+
+  const getIcon = (resourceType: string) => {
+    if (resourceType === "flag") return FlagIcon;
+    if (resourceType === "segment") return SegmentIcon;
+    return ClockIcon;
+  };
+
+  const getHref = (entry: RecentEntry) => {
+    if (entry.resource_type === "flag")
+      return `/projects/${projectId}/flags/${entry.resource_id}`;
+    if (entry.resource_type === "segment")
+      return `/projects/${projectId}/segments`;
+    return `/projects/${projectId}/environments`;
+  };
 
   return (
     <div className="border-t border-[var(--signal-border-subtle)]">
@@ -298,48 +376,37 @@ function PinnedSection() {
           size={12}
           className={cn(
             "shrink-0 transition-transform duration-200",
-            expanded && "rotate-180",
+            !expanded && "-rotate-90",
           )}
         />
-        Pinned
+        Recents
       </button>
       {expanded && (
         <div className="px-3 pb-2 space-y-0.5">
-          {pinnedItems.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-[var(--signal-fg-tertiary)]">
-              No pinned items yet
-            </p>
-          ) : (
-            pinnedItems.map((item) => {
-              const label =
-                item.resource_type === "flag"
-                  ? item.resource_id
-                  : item.resource_type;
-              const href =
-                item.resource_type === "flag"
-                  ? `/projects/${currentProjectId}/flags/${item.resource_id}`
-                  : item.resource_type === "segment"
-                    ? `/projects/${currentProjectId}/segments`
-                    : `/projects/${currentProjectId}/environments`;
-              const active =
-                pathname === href || pathname.startsWith(href + "/");
-              return (
-                <Link
-                  key={item.id}
-                  href={href}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
-                    active
-                      ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border-l-[3px] border-l-[var(--signal-fg-accent)] pl-[9px]"
-                      : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] border-l-[3px] border-l-transparent pl-[9px]",
-                  )}
-                >
-                  <PinIcon className="h-4 w-4 shrink-0" />
-                  <span>{label}</span>
-                </Link>
-              );
-            })
-          )}
+          {recents.map((entry) => {
+            const Icon = getIcon(entry.resource_type);
+            const href = getHref(entry);
+            const active =
+              pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={entry.id}
+                href={href}
+                className={cn(
+                  "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-100",
+                  active
+                    ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] border-l-[3px] border-l-[var(--signal-fg-accent)] pl-[9px]"
+                    : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] border-l-[3px] border-l-transparent pl-[9px]",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate flex-1">{entry.resource_name}</span>
+                <span className="shrink-0 text-[10px] text-[var(--signal-fg-tertiary)]">
+                  {entry.resource_type}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -385,10 +452,44 @@ export function NavList() {
   const isOpen = useSidebarStore((s) => s.isOpen);
   const close = useSidebarStore((s) => s.close);
   const currentProjectId = useAppStore((s) => s.currentProjectId) || "";
+  const organization = useAppStore((s) => s.organization);
+  const plan = organization?.plan ?? "free";
+  const token = useAppStore((s) => s.token);
 
   // Sidebar mode: project-nav only when URL is inside a project AND project is selected
   const isProjectRoute = pathname && /^\/projects\/[^/]+/.test(pathname);
   const isInProject = isProjectRoute && !!currentProjectId;
+
+  // Item counts for badges
+  const [flagCount, setFlagCount] = useState<number>(0);
+  const [segmentCount, setSegmentCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!token || !currentProjectId) return;
+    let cancelled = false;
+    Promise.all([
+      api.listFlags(token, currentProjectId),
+      api.listSegments(token, currentProjectId),
+    ])
+      .then(([flags, segments]) => {
+        if (!cancelled) {
+          setFlagCount(Array.isArray(flags) ? flags.length : 0);
+          setSegmentCount(Array.isArray(segments) ? segments.length : 0);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [token, currentProjectId]);
+
+  const counts: Record<string, number> = {
+    "/flags": flagCount,
+    "/segments": segmentCount,
+  };
+
+  // Close sidebar on any nav item click (mobile)
+  const handleItemClick = useCallback(() => {
+    close();
+  }, [close]);
 
   const dashHref = isInProject
     ? `/projects/${currentProjectId}/dashboard`
@@ -449,7 +550,7 @@ export function NavList() {
         >
           {isInProject ? (
             <>
-              {/* Project mode: Dashboard + grouped sections */}
+              {/* Project Dashboard */}
               <div className="px-3 pb-1">
                 <ProjectNavItem
                   item={{
@@ -459,39 +560,101 @@ export function NavList() {
                   }}
                   projectId={currentProjectId}
                   active={dashActive}
+                  onClick={handleItemClick}
                 />
               </div>
 
-              <div className="my-3 mx-3 border-t border-[var(--signal-border-subtle)]" />
+              <SectionDivider />
 
-              <div className="space-y-1 px-3">
-                {/* Development section — visible to all roles */}
-                {developmentGroups.map((group) => (
-                  <NavGroup
-                    key={group.label}
-                    group={group}
-                    projectId={currentProjectId}
-                  />
-                ))}
-
-                {/* Management section — admin/owner only */}
-                <RoleBasedView roles={["admin", "owner"]}>
-                  <div className="mt-4 mb-2">
-                    <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--signal-fg-tertiary)]/70">
-                      Management
-                    </p>
-                  </div>
-                  {managementGroups.map((group) => (
-                    <NavGroup
-                      key={group.label}
-                      group={group}
-                      projectId={currentProjectId}
-                    />
-                  ))}
-                </RoleBasedView>
+              {/* Flags & Segments — always expanded */}
+              <div className="px-3 space-y-1">
+                <NavGroup
+                  group={{
+                    label: "Flags & Segments",
+                    items: flagsAndSegments,
+                    defaultExpanded: true,
+                  }}
+                  projectId={currentProjectId}
+                  counts={counts}
+                  onItemClick={handleItemClick}
+                />
               </div>
 
-              <PinnedSection />
+              <SectionDivider />
+
+              {/* Insights — expanded by default */}
+              <div className="px-3 space-y-1">
+                <NavGroup
+                  group={{
+                    label: "Insights",
+                    items: insights,
+                    defaultExpanded: true,
+                  }}
+                  projectId={currentProjectId}
+                  plan={plan}
+                  onItemClick={handleItemClick}
+                />
+              </div>
+
+              {/* Power Tools — collapsed by default */}
+              <div className="px-3 space-y-1">
+                <NavGroup
+                  group={{
+                    label: "Power Tools",
+                    items: powerTools,
+                    defaultExpanded: false,
+                  }}
+                  projectId={currentProjectId}
+                  plan={plan}
+                  onItemClick={handleItemClick}
+                />
+              </div>
+
+              <SectionDivider />
+
+              {/* Integrations — visible to all roles */}
+              <div className="px-3 space-y-1">
+                <NavGroup
+                  group={{
+                    label: "Integrations",
+                    items: integrations,
+                    defaultExpanded: true,
+                  }}
+                  projectId={currentProjectId}
+                  plan={plan}
+                  onItemClick={handleItemClick}
+                />
+              </div>
+
+              <SectionDivider label="Admin" />
+
+              {/* Settings & Admin — admin/owner only */}
+              <RoleBasedView roles={["admin", "owner"]}>
+                <div className="px-3 space-y-1">
+                  <NavGroup
+                    group={{
+                      label: "Team",
+                      items: teamItems,
+                      defaultExpanded: true,
+                    }}
+                    projectId={currentProjectId}
+                    onItemClick={handleItemClick}
+                  />
+                  <NavGroup
+                    group={{
+                      label: "Governance",
+                      items: governanceItems,
+                      defaultExpanded: true,
+                    }}
+                    projectId={currentProjectId}
+                    plan={plan}
+                    onItemClick={handleItemClick}
+                  />
+                </div>
+              </RoleBasedView>
+
+              {/* Recents */}
+              <RecentsSection projectId={currentProjectId} />
             </>
           ) : (
             <>
@@ -505,6 +668,7 @@ export function NavList() {
                       pathname === item.href ||
                       pathname.startsWith(item.href + "/")
                     }
+                    onClick={handleItemClick}
                   />
                 ))}
               </div>

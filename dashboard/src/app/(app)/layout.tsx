@@ -10,6 +10,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { toast, ToastContainer } from "@/components/toast";
 import { ActionFeedbackContainer } from "@/components/action-feedback";
 import { EnvColorBar } from "@/components/env-color-bar";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
 import { UpgradeBanner } from "@/components/upgrade-banner";
@@ -120,6 +121,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6"
           >
             <EnvColorBar />
+            {/* Breadcrumb — contextual hierarchy: Org > Project > Page */}
+            <div className="mb-4">
+              <Breadcrumb />
+            </div>
             {children}
           </main>
 

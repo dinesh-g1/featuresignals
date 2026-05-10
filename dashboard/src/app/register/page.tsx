@@ -23,7 +23,6 @@ import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import {
   isPasswordStrong,
   PasswordStrengthInline,
@@ -275,7 +274,7 @@ const VALUE_PROPS = [
   {
     title: "Unlimited seats. Flat pricing.",
     description:
-      "INR 1,999/month (~$29). No per-seat fees. No usage meters. No surprise bills..",
+      "INR 2,649/month (~$32). No per-seat fees. No usage meters. No surprise bills..",
     icon: (
       <svg
         className="h-5 w-5"
@@ -334,8 +333,8 @@ const VALUE_PROPS = [
 function ValuePanel() {
   return (
     <div className="max-w-lg mx-auto">
-      {/* Badge */}
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--signal-bg-success-muted)] text-[var(--signal-fg-success)] border border-[var(--signal-border-success-muted)] mb-8">
+      {/* Badge — frosted glass on dark */}
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-8 bg-white/10 text-white border border-white/15">
         <svg
           className="h-3.5 w-3.5"
           viewBox="0 0 24 24"
@@ -351,10 +350,10 @@ function ValuePanel() {
       </div>
 
       {/* Headline */}
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--signal-fg-primary)] mb-4">
+      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4">
         Feature flags that don&apos;t punish growth.
       </h1>
-      <p className="text-base text-[var(--signal-fg-secondary)] mb-10 leading-relaxed">
+      <p className="text-base text-gray-300 mb-10 leading-relaxed">
         Unlimited seats. Flat pricing. Sub-millisecond latency. Everything you
         need to ship faster, at a fraction of the cost.
       </p>
@@ -363,14 +362,14 @@ function ValuePanel() {
       <div className="space-y-5">
         {VALUE_PROPS.map((prop) => (
           <div key={prop.title} className="flex gap-3.5">
-            <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] flex items-center justify-center">
+            <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-white/10 text-white flex items-center justify-center">
               {prop.icon}
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
+              <h3 className="text-sm font-semibold text-white">
                 {prop.title}
               </h3>
-              <p className="text-sm text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
+              <p className="text-sm text-gray-400 mt-0.5 leading-relaxed">
                 {prop.description}
               </p>
             </div>
@@ -379,14 +378,14 @@ function ValuePanel() {
       </div>
 
       {/* Trust bar */}
-      <div className="mt-10 pt-7 border-t border-[var(--signal-border-subtle)]">
+      <div className="mt-10 pt-7 border-t border-white/10">
         <div className="flex flex-wrap items-center gap-2.5">
           {["Apache 2.0", "8 SDKs", "OpenFeature", "SOC 2"].map((item) => (
             <span
               key={item}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-tertiary)] border border-[var(--signal-border-default)]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-gray-400 border border-white/10"
             >
-              <CheckIcon className="h-3 w-3 text-[var(--signal-fg-success)]" />
+              <CheckIcon className="h-3 w-3 text-emerald-400" />
               {item}
             </span>
           ))}
@@ -625,84 +624,18 @@ function RegisterForm() {
   }
 
   return (
-    <AuthLayout left={<ValuePanel />}>
-      <Card className="w-full space-y-5 p-7 sm:p-9 shadow-sm">
-        {/* Mobile headline (hidden on desktop since ValuePanel shows it) */}
-        <div className="text-center lg:hidden">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--signal-fg-accent)]">
-            FeatureSignals
-          </h1>
-          <p className="mt-2 text-sm text-[var(--signal-fg-secondary)]">
-            {step === "form" ? "Create your account" : "Verify your email"}
-          </p>
-        </div>
-
-        {/* Desktop heading */}
-        <div className="hidden lg:block text-center">
+    <AuthLayout>
+      <div className="space-y-5">
+        {/* Heading */}
+        <div className="text-center">
           <h2 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
             {step === "form" ? "Create your account" : "Verify your email"}
           </h2>
           <p className="mt-1.5 text-sm text-[var(--signal-fg-secondary)]">
-            Start your 14-day Pro trial. No credit card required.
+            {step === "form"
+              ? "14-day Pro trial — no credit card required"
+              : "Enter the 6-digit code sent to " + form.email}
           </p>
-        </div>
-
-        {planIntent === "pro" && step === "form" && (
-          <div className="rounded-lg bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)] px-4 py-3 text-center">
-            <p className="text-sm font-medium text-[var(--signal-fg-accent)]">
-              Start your <span className="font-bold">14-day Pro trial</span> —
-              subscribe anytime during or after
-            </p>
-          </div>
-        )}
-
-        {/* Step indicator */}
-        <div className="flex items-center justify-center gap-0">
-          {["Account", "Verify Email"].map((label, i) => {
-            const isCompleted = step === "otp" && i === 0;
-            const isCurrent =
-              (step === "form" && i === 0) || (step === "otp" && i === 1);
-            return (
-              <div key={label} className="flex items-center">
-                {i > 0 && (
-                  <div
-                    className={cn(
-                      "h-0.5 w-12 sm:w-16",
-                      isCompleted || isCurrent
-                        ? "bg-[var(--signal-bg-accent-emphasis)]/60"
-                        : "bg-[var(--signal-bg-secondary)]",
-                    )}
-                  />
-                )}
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                      isCompleted
-                        ? "bg-emerald-500 text-white"
-                        : isCurrent
-                          ? "bg-[var(--signal-bg-accent-emphasis)] text-white ring-4 ring-accent/10"
-                          : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
-                    )}
-                  >
-                    {isCompleted ? <CheckIcon className="h-4 w-4" /> : i + 1}
-                  </div>
-                  <span
-                    className={cn(
-                      "text-xs font-medium",
-                      isCurrent
-                        ? "text-[var(--signal-fg-accent)]"
-                        : isCompleted
-                          ? "text-[var(--signal-fg-success)]"
-                          : "text-[var(--signal-fg-tertiary)]",
-                    )}
-                  >
-                    {label}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {error && (
@@ -723,13 +656,13 @@ function RegisterForm() {
               e.preventDefault();
               handleInitiateSignup();
             }}
-            className="space-y-4"
+            className="space-y-5"
           >
             {/* 2-column grid for form fields on desktop, single column on mobile */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="name">
-                  Name <span className="text-red-500">*</span>
+                  Name <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -748,7 +681,7 @@ function RegisterForm() {
                 />
                 {fieldErrors.name && (
                   <p
-                    className="text-xs text-red-500"
+                    className="text-xs text-[var(--signal-fg-danger)]"
                     role="alert"
                     id="name-error"
                   >
@@ -759,7 +692,7 @@ function RegisterForm() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="email">
-                  Email <span className="text-red-500">*</span>
+                  Email <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="email"
@@ -771,6 +704,8 @@ function RegisterForm() {
                     setForm({ ...form, email: e.target.value });
                     if (fieldErrors.email)
                       setFieldErrors({ ...fieldErrors, email: undefined });
+                    // Reset touched on change so inline error clears while typing
+                    if (touched.email) setTouched({ ...touched, email: false });
                   }}
                   onBlur={() => setTouched({ ...touched, email: true })}
                   aria-invalid={!!emailError || !!fieldErrors.email}
@@ -781,7 +716,7 @@ function RegisterForm() {
                 />
                 {(emailError || fieldErrors.email) && (
                   <p
-                    className="text-xs text-red-500"
+                    className="text-xs text-[var(--signal-fg-danger)]"
                     role="alert"
                     id="email-error"
                   >
@@ -792,7 +727,7 @@ function RegisterForm() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="password">
-                  Password <span className="text-red-500">*</span>
+                  Password <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="password"
@@ -813,7 +748,7 @@ function RegisterForm() {
                 />
                 {fieldErrors.password && (
                   <p
-                    className="text-xs text-red-500"
+                    className="text-xs text-[var(--signal-fg-danger)]"
                     role="alert"
                     id="password-error"
                   >
@@ -826,7 +761,7 @@ function RegisterForm() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="org_name">
-                  Organization Name <span className="text-red-500">*</span>
+                  Organization Name <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="org_name"
@@ -847,7 +782,7 @@ function RegisterForm() {
                 />
                 {fieldErrors.org_name && (
                   <p
-                    className="text-xs text-red-500"
+                    className="text-xs text-[var(--signal-fg-danger)]"
                     role="alert"
                     id="org_name-error"
                   >
@@ -857,23 +792,20 @@ function RegisterForm() {
               </div>
             </div>
 
-            {/* Data region - full width */}
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-[var(--signal-fg-primary)]">
-                Data Region <span className="text-red-500">*</span>
+            {/* Data region — compact inline selector */}
+            <fieldset>
+              <legend className="text-sm font-medium text-[var(--signal-fg-primary)] mb-1.5">
+                Data Region <span className="text-[var(--signal-fg-danger)]">*</span>
               </legend>
-              <p className="text-xs text-[var(--signal-fg-tertiary)]">
-                Choose where your data is stored for compliance
-              </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex gap-2">
                 {regions.map((region) => (
                   <label
                     key={region.code}
                     className={cn(
-                      "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all",
+                      "flex-1 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-2 px-3 text-sm transition-all",
                       form.data_region === region.code
-                        ? "border-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] shadow-sm"
-                        : "border-[var(--signal-border-default)] hover:border-[var(--signal-border-emphasis)]",
+                        ? "border-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium"
+                        : "border-[var(--signal-border-default)] text-[var(--signal-fg-secondary)] hover:border-[var(--signal-border-emphasis)]",
                     )}
                   >
                     <input
@@ -884,29 +816,17 @@ function RegisterForm() {
                       onChange={(e) => {
                         setForm({ ...form, data_region: e.target.value });
                         if (fieldErrors.data_region)
-                          setFieldErrors({
-                            ...fieldErrors,
-                            data_region: undefined,
-                          });
+                          setFieldErrors({...fieldErrors, data_region: undefined});
                       }}
                       className="sr-only"
                     />
-                    <span className="text-xl">{region.flag}</span>
-                    <span
-                      className={cn(
-                        "text-xs font-medium",
-                        form.data_region === region.code
-                          ? "text-[var(--signal-fg-accent)]"
-                          : "text-[var(--signal-fg-secondary)]",
-                      )}
-                    >
-                      {region.name}
-                    </span>
+                    <span>{region.flag}</span>
+                    <span>{region.name}</span>
                   </label>
                 ))}
               </div>
               {fieldErrors.data_region && (
-                <p className="text-xs text-red-500" role="alert">
+                <p className="mt-1 text-xs text-[var(--signal-fg-danger)]" role="alert">
                   {fieldErrors.data_region}
                 </p>
               )}
@@ -920,19 +840,30 @@ function RegisterForm() {
               {loading ? "Sending verification code..." : "Continue"}
             </Button>
 
-            <div className="text-center">
-              <p className="text-xs text-[var(--signal-fg-tertiary)]">
-                By signing up you agree to our Terms of Service and Privacy
-                Policy.
-              </p>
-              <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
-                You will start with a{" "}
-                <span className="font-semibold text-[var(--signal-fg-accent)]">
-                  14-day free trial
-                </span>{" "}
-                with full Pro features.
-              </p>
-            </div>
+            <p className="text-center text-xs text-[var(--signal-fg-tertiary)]">
+              By continuing, you agree to our{" "}
+              <a
+                href="https://featuresignals.com/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[var(--signal-fg-accent)] hover:underline"
+              >
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://featuresignals.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[var(--signal-fg-accent)] hover:underline"
+              >
+                Privacy Policy
+              </a>
+              .
+            </p>
+            <p className="text-center text-xs text-[var(--signal-fg-tertiary)]">
+              14-day free trial, cancel anytime. No credit card required.
+            </p>
           </form>
         )}
 
@@ -1004,22 +935,7 @@ function RegisterForm() {
           </p>
         )}
 
-        {/* Trust signals */}
-        <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-5 text-xs text-[var(--signal-fg-tertiary)]">
-          <svg
-            className="h-3 w-3 text-emerald-500"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          TLS encrypted &middot; RBAC &middot; SSO &middot; Audit trails
-          &middot; Open source
-        </div>
-      </Card>
+      </div>
     </AuthLayout>
   );
 }

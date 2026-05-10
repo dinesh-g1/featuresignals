@@ -184,6 +184,8 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 type envHandlerStore interface {
 	domain.EnvironmentReader
 	domain.EnvironmentWriter
+	domain.FlagReader
+	domain.FlagWriter
 	domain.AuditWriter
 	projectGetter
 }
@@ -288,6 +290,118 @@ type UpdateEnvironmentRequest struct {
 	Name  string `json:"name"`
 	Slug  string `json:"slug"`
 	Color string `json:"color"`
+}
+
+// Get returns a single environment by ID, verifying it belongs to the
+// project specified in the URL path. All authenticated roles can access.
+func (h *EnvironmentHandler) Get(w http.ResponseWriter, r *http.Request) {
+	project, ok := verifyProjectOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	envID := chi.URLParam(r, "envID")
+
+	env, err := h.store.GetEnvironment(r.Context(), envID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "environment not found")
+			return
+		}
+		httputil.Error(w, http.StatusInternalServerError, "failed to get environment")
+		return
+	}
+
+	// Verify environment belongs to the project
+	if env.ProjectID != project.ID {
+		httputil.Error(w, http.StatusNotFound, "environment not found")
+		return
+	}
+
+	resp := dto.EnvironmentFromDomain(env)
+	respWithLinks := map[string]interface{}{
+		"environment": resp,
+		"_links":      domain.LinksForEnvironment(project.ID, envID),
+	}
+	httputil.JSON(w, http.StatusOK, respWithLinks)
+}
+
+// Clone creates a copy of an existing environment, including all its flag
+// states. The new environment gets a unique slug and can be customized via
+// the request body (name, slug, color). Useful for creating staging from
+// production or spinning up ephemeral test environments.
+func (h *EnvironmentHandler) Clone(w http.ResponseWriter, r *http.Request) {
+	_, ok := verifyProjectOwnership(h.store, r, w)
+	if !ok {
+		return
+	}
+	sourceEnvID := chi.URLParam(r, "envID")
+
+	var req CreateEnvironmentRequest
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		// Body is optional for clone; use defaults if empty
+		req = CreateEnvironmentRequest{}
+	}
+
+	sourceEnv, err := h.store.GetEnvironment(r.Context(), sourceEnvID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "source environment not found")
+			return
+		}
+		httputil.Error(w, http.StatusInternalServerError, "failed to get source environment")
+		return
+	}
+
+	// Build the cloned environment
+	name := req.Name
+	if name == "" {
+		name = sourceEnv.Name + " (copy)"
+	}
+	slug := req.Slug
+	if slug == "" {
+		slug = slugify(name)
+	}
+	color := req.Color
+	if color == "" {
+		color = sourceEnv.Color
+	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	newEnv := &domain.Environment{
+		ProjectID: sourceEnv.ProjectID,
+		OrgID:     orgID,
+		Name:      name,
+		Slug:      slug,
+		Color:     color,
+	}
+
+	if err := h.store.CreateEnvironment(r.Context(), newEnv); err != nil {
+		httputil.Error(w, http.StatusConflict, "environment slug already exists in this project")
+		return
+	}
+
+	// Clone flag states from source environment
+	flagStates, err := h.store.ListFlagStatesByEnv(r.Context(), sourceEnvID)
+	if err == nil {
+		for _, fs := range flagStates {
+			fs.EnvID = newEnv.ID
+			fs.OrgID = orgID
+			// Reset scheduling fields for the cloned environment
+			fs.ScheduledEnableAt = nil
+			fs.ScheduledDisableAt = nil
+			_ = h.store.UpsertFlagState(r.Context(), &fs)
+		}
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(newEnv)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ProjectID: &newEnv.ProjectID, ActorID: &userID, ActorType: "user",
+		Action: "environment.cloned", ResourceType: "environment", ResourceID: &newEnv.ID,
+		AfterState: afterState, IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	httputil.JSON(w, http.StatusCreated, dto.EnvironmentFromDomain(newEnv))
 }
 
 func (h *EnvironmentHandler) Update(w http.ResponseWriter, r *http.Request) {

@@ -16,7 +16,16 @@ import { cn } from "@/lib/utils";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const INR_TO_USD = 83;
+/** Exchange rates: 1 unit = X INR */
+const EXCHANGE_RATES = {
+  USD: 83, // 1 USD = ₹83
+  EUR: 90, // 1 EUR = ₹90
+  INR: 1,
+} as const;
+
+const PRO_MONTHLY_INR = 2649; // ₹2,649/mo
+const PRO_ANNUAL_MONTHLY_INR = 1999; // ₹1,999/mo (billed annually)
+const PRO_ANNUAL_TOTAL_INR = 23988; // ₹23,988/year
 
 const COMPETITOR_PRICING = {
   launchdarkly: { name: "LaunchDarkly", perSeat: 8.33, currency: "USD" },
@@ -26,12 +35,25 @@ const COMPETITOR_PRICING = {
 } as const;
 
 type CompetitorKey = keyof typeof COMPETITOR_PRICING;
+type CurrencyKey = "USD" | "INR" | "EUR";
+
+const CURRENCY_SYMBOLS: Record<CurrencyKey, string> = {
+  USD: "$",
+  INR: "₹",
+  EUR: "€",
+};
+
+const CURRENCY_LOCALES: Record<CurrencyKey, string> = {
+  USD: "en-US",
+  INR: "en-IN",
+  EUR: "de-DE",
+};
 
 const FEATURESIGNALS_PRICING = {
   pro: {
-    monthly: 1999,
-    annual: 19190,
-    currency: "INR",
+    monthly: PRO_MONTHLY_INR,
+    annualMonthly: PRO_ANNUAL_MONTHLY_INR,
+    annualTotal: PRO_ANNUAL_TOTAL_INR,
     label: "Pro — Unlimited Everything",
   },
   enterprise: {
@@ -40,14 +62,27 @@ const FEATURESIGNALS_PRICING = {
   },
 } as const;
 
-const _ANNUAL_DISCOUNT = 0.2; // 20% off annual
-
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Convert INR to target currency */
+function convertFromINR(amountInr: number, to: CurrencyKey): number {
+  if (to === "INR") return amountInr;
+  return Math.round(amountInr / EXCHANGE_RATES[to]);
+}
+
+/** Format a number in the given currency */
+function fmtCurrency(amount: number, currency: CurrencyKey): string {
+  if (currency === "INR") {
+    return `₹${amount.toLocaleString("en-IN")}`;
+  }
+  return `${CURRENCY_SYMBOLS[currency]}${amount.toLocaleString()}`;
+}
 
 function competitorCost(
   key: CompetitorKey,
   teamSize: number,
-): { usd: number; inr: number } {
+  currency: CurrencyKey,
+): number {
   const c = COMPETITOR_PRICING[key];
   let usd: number;
   if ("perSeat" in c) {
@@ -55,24 +90,28 @@ function competitorCost(
   } else {
     usd = c.flatRate!;
   }
-  return { usd, inr: Math.round(usd * INR_TO_USD) };
+  // Convert from USD → INR → target currency
+  const inr = Math.round(usd * EXCHANGE_RATES.USD);
+  return convertFromINR(inr, currency);
 }
 
-function fsCost(annual: boolean): { inr: number; usd: number } {
+function fsMonthlyCost(annual: boolean, currency: CurrencyKey): number {
   const inr = annual
-    ? FEATURESIGNALS_PRICING.pro.annual
+    ? FEATURESIGNALS_PRICING.pro.annualMonthly
     : FEATURESIGNALS_PRICING.pro.monthly;
-  return { inr, usd: Math.round(inr / INR_TO_USD) };
+  return convertFromINR(inr, currency);
 }
 
-function savings(
-  competitorCostUsd: number,
-  fsCostUsd: number,
-): { usd: number; pct: number } {
-  const saved = competitorCostUsd - fsCostUsd;
+function calculateSavings(
+  competitorAmt: number,
+  fsAmt: number,
+): { amount: number; pct: number } {
+  const saved = competitorAmt - fsAmt;
   const pct =
-    competitorCostUsd > 0 ? Math.round((saved / competitorCostUsd) * 100) : 0;
-  return { usd: saved, pct };
+    competitorAmt > 0
+      ? Math.round((saved / competitorAmt) * 100)
+      : 0;
+  return { amount: saved, pct };
 }
 
 // ── Animated Number ─────────────────────────────────────────────────────────
@@ -133,14 +172,13 @@ function ComparisonBars({
   competitorCost: number;
   fsLabel: string;
   fsCost: number;
-  currency: "USD" | "INR";
+  currency: CurrencyKey;
 }) {
   const max = Math.max(competitorCost, fsCost, 1);
   const competitorPct = Math.max((competitorCost / max) * 100, 8);
   const fsPct = Math.max((fsCost / max) * 100, 8);
 
-  const fmt = (v: number) =>
-    currency === "USD" ? `$${v.toLocaleString()}` : `₹${v.toLocaleString()}`;
+  const fmt = (v: number) => fmtCurrency(v, currency);
 
   return (
     <div className="mt-6 space-y-4" aria-label="Cost comparison bar chart">
@@ -196,29 +234,34 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
     useState<CompetitorKey>("launchdarkly");
   const [annual, setAnnual] = useState(false);
   const [showMath, setShowMath] = useState(false);
-  const [currency, setCurrency] = useState<"USD" | "INR">("USD");
+  const [currency, setCurrency] = useState<CurrencyKey>("USD");
 
   const competitor = COMPETITOR_PRICING[competitorKey];
+
   const compCost = useMemo(
-    () => competitorCost(competitorKey, teamSize),
-    [competitorKey, teamSize],
+    () => competitorCost(competitorKey, teamSize, currency),
+    [competitorKey, teamSize, currency],
   );
-  const fs = useMemo(() => fsCost(annual), [annual]);
+  const fsMonthly = useMemo(
+    () => fsMonthlyCost(annual, currency),
+    [annual, currency],
+  );
   const save = useMemo(
-    () => savings(compCost.usd, fs.usd),
-    [compCost.usd, fs.usd],
+    () => calculateSavings(compCost, fsMonthly),
+    [compCost, fsMonthly],
   );
 
-  // Display costs in selected currency
-  const displayCompCost = currency === "INR" ? compCost.inr : compCost.usd;
-  const displayFsCost = currency === "INR" ? fs.inr : fs.usd;
-  const displaySavings =
-    currency === "INR" ? Math.round(save.usd * INR_TO_USD) : save.usd;
-  const currencySymbol = currency === "USD" ? "$" : "₹";
+  const currencySymbol = CURRENCY_SYMBOLS[currency];
 
   const fsLabel = annual
     ? "FeatureSignals Pro (annual)"
     : "FeatureSignals Pro (monthly)";
+
+  // Calculate annual totals for display
+  const compAnnualTotal = compCost * 12;
+  const fsAnnualTotal = annual
+    ? convertFromINR(PRO_ANNUAL_TOTAL_INR, currency)
+    : fsMonthly * 12;
 
   return (
     <section
@@ -318,54 +361,40 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
             )}
             role="switch"
             aria-checked={annual}
-            aria-label="Pay annually, save 20%"
+            aria-label="Pay annually"
           >
             <span className="font-medium">
               {annual ? "Annual billing" : "Monthly billing"}
             </span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-semibold",
-                annual
-                  ? "bg-[var(--signal-bg-success-emphasis)] text-white"
-                  : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
-              )}
-            >
-              {annual ? "Save 20%" : "Save 20%?"}
-            </span>
+
           </button>
         </div>
       </div>
 
-      {/* Currency toggle */}
+      {/* Currency toggle — 3-way segmented */}
       <div className="mt-4 flex items-center gap-2">
         <span className="text-xs text-[var(--signal-fg-tertiary)]">
           Show in:
         </span>
-        <button
-          onClick={() => setCurrency("USD")}
-          className={cn(
-            "inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors",
-            currency === "USD"
-              ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
-              : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
-          )}
-        >
-          <DollarSign className="h-3 w-3" />
-          USD
-        </button>
-        <button
-          onClick={() => setCurrency("INR")}
-          className={cn(
-            "inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors",
-            currency === "INR"
-              ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
-              : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
-          )}
-        >
-          <IndianRupee className="h-3 w-3" />
-          INR
-        </button>
+        <div className="inline-flex items-center rounded border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-0.5">
+          {(["USD", "INR", "EUR"] as CurrencyKey[]).map((c) => (
+            <button
+              key={c}
+              onClick={() => setCurrency(c)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                currency === c
+                  ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+                  : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
+              )}
+            >
+              {c === "USD" && <DollarSign className="h-3 w-3" />}
+              {c === "INR" && <IndianRupee className="h-3 w-3" />}
+              {c === "EUR" && <span className="text-[11px] font-bold">€</span>}
+              {c}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Savings callout */}
@@ -373,16 +402,13 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
         <p className="text-sm font-medium text-[var(--signal-fg-success)]">
           You save{" "}
           <AnimatedNumber
-            value={displaySavings}
+            value={save.amount}
             prefix={currencySymbol}
             className="text-xl font-bold text-[var(--signal-fg-success)]"
           />{" "}
           per month vs {competitor.name}
         </p>
         <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
-          {annual
-            ? "Annual billing saves an extra 20%."
-            : "Switch to annual billing and save an additional 20%."}{" "}
           That&apos;s{" "}
           <span className="font-semibold text-[var(--signal-fg-success)]">
             {save.pct}%
@@ -394,9 +420,9 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
       {/* Bar chart */}
       <ComparisonBars
         competitorLabel={competitor.name}
-        competitorCost={displayCompCost}
+        competitorCost={compCost}
         fsLabel={fsLabel}
-        fsCost={displayFsCost}
+        fsCost={fsMonthly}
         currency={currency}
       />
 
@@ -425,18 +451,18 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
               <li>
                 <strong>{competitor.name}:</strong>{" "}
                 {"perSeat" in competitor
-                  ? `${competitor.perSeat} USD/seat × ${teamSize} ${teamSize === 1 ? "seat" : "seats"} = $${compCost.usd.toLocaleString()} USD/mo`
-                  : `Flat rate of $${competitor.flatRate} USD/mo`}
+                  ? `${competitor.perSeat} USD/seat × ${teamSize} ${teamSize === 1 ? "seat" : "seats"} = ${fmtCurrency(compCost, currency)}/mo`
+                  : `Flat rate of $${competitor.flatRate} USD/mo = ${fmtCurrency(compCost, currency)}/mo`}
               </li>
               <li>
                 <strong>FeatureSignals:</strong>{" "}
                 {annual
-                  ? `₹19,190/yr (annual) ≈ ₹${Math.round(FEATURESIGNALS_PRICING.pro.annual / 12).toLocaleString()}/mo ≈ $${fs.usd.toLocaleString()} USD/mo`
-                  : `₹1,999/mo flat ≈ $${fs.usd.toLocaleString()} USD/mo`}{" "}
+                  ? `₹${PRO_ANNUAL_TOTAL_INR.toLocaleString("en-IN")}/yr (annual) ≈ ₹${PRO_ANNUAL_MONTHLY_INR.toLocaleString("en-IN")}/mo ≈ ${fmtCurrency(fsMonthly, currency)}/mo`
+                  : `₹${PRO_MONTHLY_INR.toLocaleString("en-IN")}/mo flat ≈ ${fmtCurrency(fsMonthly, currency)}/mo`}{" "}
                 — unlimited seats, unlimited projects.
               </li>
               <li>
-                <strong>Currency conversion:</strong> 1 USD ≈ ₹{INR_TO_USD}
+                <strong>Exchange rates:</strong> 1 USD ≈ ₹{EXCHANGE_RATES.USD}, 1 EUR ≈ ₹{EXCHANGE_RATES.EUR}
               </li>
             </ul>
             <p className="mt-3 text-[var(--signal-fg-tertiary)]">

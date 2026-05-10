@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -252,4 +254,147 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// Evaluate tests whether a given entity matches this segment's rules.
+// The request body contains an entity (a map of attribute-value pairs).
+// Returns the match result and which rules contributed to the decision.
+// This is a diagnostic/testing endpoint — it does not require a flag context.
+func (h *SegmentHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	projectID := chi.URLParam(r, "projectID")
+	segKey := chi.URLParam(r, "segmentKey")
+
+	seg, err := h.store.GetSegment(r.Context(), projectID, segKey)
+	if err != nil {
+		httputil.Error(w, http.StatusNotFound, "segment not found")
+		return
+	}
+
+	var entity map[string]interface{}
+	if err := httputil.DecodeJSON(r, &entity); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid entity: expected JSON object with attribute-value pairs")
+		return
+	}
+
+	// Convert entity to domain.EvalContext for rule matching.
+	// Extract the "key" field if present; everything else goes into Attributes.
+	entityKey, _ := entity["key"].(string)
+	attrs := make(map[string]interface{}, len(entity))
+	for k, v := range entity {
+		if k != "key" {
+			attrs[k] = v
+		}
+	}
+	evalCtx := domain.EvalContext{Key: entityKey, Attributes: attrs}
+
+	// Evaluate segment rules against the entity
+	matched, matchedRules := evaluateSegmentRules(seg, evalCtx)
+
+	type evaluateResponse struct {
+		SegmentKey  string   `json:"segment_key"`
+		SegmentName string   `json:"segment_name"`
+		Matched     bool     `json:"matched"`
+		MatchType   string   `json:"match_type"`
+		TotalRules  int      `json:"total_rules"`
+		RulesMatched int     `json:"rules_matched"`
+	}
+
+	ruleCount := len(seg.Rules)
+	matchedCount := 0
+	if matched {
+		matchedCount = len(matchedRules)
+	}
+
+	httputil.JSON(w, http.StatusOK, evaluateResponse{
+		SegmentKey:   seg.Key,
+		SegmentName:  seg.Name,
+		Matched:      matched,
+		MatchType:    string(seg.MatchType),
+		TotalRules:   ruleCount,
+		RulesMatched: matchedCount,
+	})
+}
+
+// evaluateSegmentRules checks whether the given entity matches the segment's
+// rules according to the segment's match type (all or any). Returns whether
+// the entity matches and which rules contributed to the match.
+func evaluateSegmentRules(seg *domain.Segment, ctx domain.EvalContext) (bool, []domain.Condition) {
+	if seg == nil || len(seg.Rules) == 0 {
+		return false, nil
+	}
+
+	var matched []domain.Condition
+	for _, rule := range seg.Rules {
+		if segmentRuleMatches(rule, ctx) {
+			matched = append(matched, rule)
+		}
+	}
+
+	switch seg.MatchType {
+	case domain.MatchAny:
+		return len(matched) > 0, matched
+	case domain.MatchAll:
+		return len(matched) == len(seg.Rules), matched
+	default:
+		return len(matched) > 0, matched
+	}
+}
+
+// segmentRuleMatches evaluates a single segment rule against the entity context.
+func segmentRuleMatches(rule domain.Condition, ctx domain.EvalContext) bool {
+	attrValue, exists := ctx.GetAttribute(rule.Attribute)
+	if !exists {
+		return false
+	}
+	attrStr, ok := attrValue.(string)
+	if !ok {
+		attrStr = fmt.Sprintf("%v", attrValue)
+	}
+
+	switch rule.Operator {
+	case domain.OpEquals:
+		return len(rule.Values) > 0 && attrStr == rule.Values[0]
+	case domain.OpNotEquals:
+		return len(rule.Values) > 0 && attrStr != rule.Values[0]
+	case domain.OpContains:
+		for _, v := range rule.Values {
+			if strings.Contains(attrStr, v) {
+				return true
+			}
+		}
+		return false
+	case domain.OpStartsWith:
+		for _, v := range rule.Values {
+			if strings.HasPrefix(attrStr, v) {
+				return true
+			}
+		}
+		return false
+	case domain.OpEndsWith:
+		for _, v := range rule.Values {
+			if strings.HasSuffix(attrStr, v) {
+				return true
+			}
+		}
+		return false
+	case domain.OpIn:
+		for _, v := range rule.Values {
+			if attrStr == v {
+				return true
+			}
+		}
+		return false
+	case domain.OpNotIn:
+		for _, v := range rule.Values {
+			if attrStr == v {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
 }

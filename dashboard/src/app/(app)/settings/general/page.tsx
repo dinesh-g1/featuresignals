@@ -50,6 +50,10 @@ export default function SettingsGeneralPage() {
   const [fieldError, setFieldError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Danger Zone
+  const [deleteOrgDialogOpen, setDeleteOrgDialogOpen] = useState(false);
+  const [deleteOrgConfirm, setDeleteOrgConfirm] = useState("");
+
   const loadProjects = useCallback(async () => {
     if (!token) return;
     try {
@@ -365,7 +369,104 @@ export default function SettingsGeneralPage() {
         </div>
       </Card>
 
+      {/* ── Danger Zone ─────────────────────────────────── */}
+      <Card className="border-red-200 bg-red-50/30 p-4 sm:p-6">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-100">
+            <AlertIcon className="h-5 w-5 text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-red-800">Danger Zone</h2>
+            <p className="text-sm text-red-600 mt-0.5">Irreversible actions. Proceed with caution.</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-red-200 bg-white p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">Delete Organization</h3>
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 max-w-md">
+                Permanently delete &ldquo;{organization?.name || "your organization"}&rdquo; and all associated data. This cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => { setDeleteOrgConfirm(""); setDeleteOrgDialogOpen(true); }}
+              className="shrink-0"
+            >
+              <TrashIcon className="mr-1.5 h-4 w-4" />
+              Delete Organization
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* --- Dialogs --- */}
+
+      {/* Delete Organization Confirmation */}
+      <Dialog open={deleteOrgDialogOpen} onOpenChange={setDeleteOrgDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertIcon className="h-5 w-5" />
+              Delete Organization
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="mt-3 space-y-3">
+                <p className="font-semibold text-[var(--signal-fg-primary)]">
+                  Are you sure you want to delete &ldquo;{organization?.name}&rdquo;?
+                </p>
+                <div className="bg-[var(--signal-bg-danger-muted)] border border-red-200 rounded-lg p-3 text-sm">
+                  <p className="font-semibold text-red-800 mb-1">This will permanently delete:</p>
+                  <ul className="list-disc list-inside space-y-1 text-red-700">
+                    <li>All projects, environments, flags, and segments</li>
+                    <li>All API keys, SDK configurations, and webhooks</li>
+                    <li>All team members and SSO configurations</li>
+                    <li>All audit logs and analytics data</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-red-200 bg-white p-3">
+                  <Label htmlFor="delete-org-confirm" className="text-sm font-medium">
+                    Type <span className="font-bold text-red-600">{organization?.name || "DELETE"}</span> to confirm:
+                  </Label>
+                  <Input
+                    id="delete-org-confirm"
+                    value={deleteOrgConfirm}
+                    onChange={(e) => setDeleteOrgConfirm(e.target.value)}
+                    placeholder={organization?.name || "Type organization name"}
+                    className="mt-1.5"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setDeleteOrgDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="danger"
+              disabled={deleteOrgConfirm !== organization?.name}
+              onClick={async () => {
+                if (!token || deleteOrgConfirm !== organization?.name) return;
+                setSubmitting(true);
+                try {
+                  await api.deleteOrganization(token);
+                  toast("Organization deleted. Redirecting...", "success");
+                  window.location.href = "/login";
+                } catch (err: unknown) {
+                  toast(err instanceof Error ? err.message : "Failed to delete organization", "error");
+                } finally {
+                  setSubmitting(false);
+                  setDeleteOrgDialogOpen(false);
+                }
+              }}
+            >
+              <TrashIcon className="mr-2 h-4 w-4" />
+              Delete Organization
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Project */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

@@ -1,10 +1,47 @@
 "use client";
 
-import React, { useId } from "react";
+import React, { useId, useState } from "react";
 import Link from "next/link";
-import { Check, Minus, ArrowRight, Crown } from "lucide-react";
+import { Check, Minus, ArrowRight, Crown, IndianRupee, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
+
+// ── Multi-Currency Constants ────────────────────────────────────────────────
+
+const EXCHANGE_RATES = {
+  USD: 83, // 1 USD = ₹83
+  EUR: 90, // 1 EUR = ₹90
+  INR: 1,
+} as const;
+
+const PRO_MONTHLY_INR = 2649;
+const PRO_ANNUAL_MONTHLY_INR = 1999;
+const PRO_ANNUAL_TOTAL_INR = 23988;
+
+type CurrencyKey = "USD" | "INR" | "EUR";
+
+const CURRENCY_SYMBOLS: Record<CurrencyKey, string> = {
+  USD: "$",
+  INR: "₹",
+  EUR: "€",
+};
+
+function convertFromINR(amountInr: number, to: CurrencyKey): number {
+  if (to === "INR") return amountInr;
+  return Math.round(amountInr / EXCHANGE_RATES[to]);
+}
+
+function fmtPrice(amountInr: number, currency: CurrencyKey): string {
+  const converted = convertFromINR(amountInr, currency);
+  if (currency === "INR") {
+    return `₹${converted.toLocaleString("en-IN")}`;
+  }
+  return `${CURRENCY_SYMBOLS[currency]}${converted.toLocaleString()}`;
+}
+
+function fmtMonthly(amountInr: number, currency: CurrencyKey): string {
+  return `${fmtPrice(amountInr, currency)}/mo`;
+}
 
 // ── Plan Feature Definitions ────────────────────────────────────────────────
 
@@ -163,36 +200,38 @@ const FEATURES: FeatureRow[] = [
 
 const CATEGORIES = Array.from(new Set(FEATURES.map((f) => f.category!)));
 
-// ── Plan Metadata ───────────────────────────────────────────────────────────
+// ── Plan Metadata Builder ───────────────────────────────────────────────────
 
-const PLANS = {
-  community: {
-    name: "Community",
-    tagline: "Free",
-    price: "Free forever",
-    cta: "Start Free",
-    href: "https://app.featuresignals.com/signup",
-    highlight: false,
-  },
-  pro: {
-    name: "Pro",
-    tagline: "INR 1,999/mo",
-    price: "~$29 USD/mo",
-    cta: "Upgrade to Pro",
-    href: "/settings/billing",
-    highlight: true,
-  },
-  enterprise: {
-    name: "Enterprise",
-    tagline: "Custom pricing",
-    price: "Starting at ~$150/mo",
-    cta: "Talk to us",
-    href: "mailto:sales@featuresignals.com",
-    highlight: false,
-  },
-} as const;
+function buildPlans(currency: CurrencyKey) {
+  return {
+    community: {
+      name: "Community",
+      tagline: "Free",
+      price: "Free forever",
+      cta: "Start Free",
+      href: "https://app.featuresignals.com/signup",
+      highlight: false,
+    },
+    pro: {
+      name: "Pro",
+      tagline: fmtMonthly(PRO_MONTHLY_INR, currency),
+      price: `Annual: ${fmtMonthly(PRO_ANNUAL_MONTHLY_INR, currency)} (${fmtPrice(PRO_ANNUAL_TOTAL_INR, currency)}/yr)`,
+      cta: "Upgrade to Pro",
+      href: "/settings/billing",
+      highlight: true,
+    },
+    enterprise: {
+      name: "Enterprise",
+      tagline: "Custom pricing",
+      price: "Starting at ~$150/mo",
+      cta: "Talk to us",
+      href: "mailto:sales@featuresignals.com",
+      highlight: false,
+    },
+  } as const;
+}
 
-type PlanKey = keyof typeof PLANS;
+type PlanKey = keyof ReturnType<typeof buildPlans>;
 
 // ── Rendering Helpers ───────────────────────────────────────────────────────
 
@@ -220,20 +259,51 @@ function FeatureCell({ value }: { value: boolean | string }) {
   );
 }
 
+// ── Currency Selector ───────────────────────────────────────────────────────
+
+function MiniCurrencySelector({
+  value,
+  onChange,
+}: {
+  value: CurrencyKey;
+  onChange: (c: CurrencyKey) => void;
+}) {
+  return (
+    <div className="inline-flex items-center rounded border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-0.5">
+      {(["INR", "USD", "EUR"] as CurrencyKey[]).map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className={cn(
+            "inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors",
+            value === c
+              ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+              : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
+          )}
+          aria-label={`Show prices in ${c}`}
+        >
+          {c === "USD" && <DollarSign className="h-3 w-3" />}
+          {c === "INR" && <IndianRupee className="h-3 w-3" />}
+          {c === "EUR" && <span className="text-[11px] font-bold">€</span>}
+          {c}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── Mobile Card ─────────────────────────────────────────────────────────────
 
 function MobilePlanCard({
   planKey,
+  plans,
   isCurrentPlan,
 }: {
   planKey: PlanKey;
+  plans: ReturnType<typeof buildPlans>;
   isCurrentPlan: boolean;
 }) {
-  const plan = PLANS[planKey];
-  const planFeatures = FEATURES.filter((_f) => {
-    // Show all features for this plan
-    return true;
-  });
+  const plan = plans[planKey];
 
   return (
     <div
@@ -266,7 +336,7 @@ function MobilePlanCard({
 
       {/* Feature list */}
       <ul className="mt-4 space-y-2.5">
-        {planFeatures.map((f) => (
+        {FEATURES.map((f) => (
           <li key={f.feature} className="flex items-center gap-2.5 text-sm">
             <FeatureCell value={f[planKey]} />
             <span className="text-[var(--signal-fg-primary)]">{f.feature}</span>
@@ -292,7 +362,13 @@ function MobilePlanCard({
 
 // ── Desktop Table ───────────────────────────────────────────────────────────
 
-function DesktopTable({ currentPlan }: { currentPlan: PlanKey | null }) {
+function DesktopTable({
+  currentPlan,
+  plans,
+}: {
+  currentPlan: PlanKey | null;
+  plans: ReturnType<typeof buildPlans>;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-left">
@@ -301,7 +377,7 @@ function DesktopTable({ currentPlan }: { currentPlan: PlanKey | null }) {
             <th className="sticky left-0 bg-[var(--signal-bg-primary)] py-3 pr-4 text-sm font-semibold text-[var(--signal-fg-primary)]">
               Feature
             </th>
-            {Object.entries(PLANS).map(([key, plan]) => (
+            {Object.entries(plans).map(([key, plan]) => (
               <th
                 key={key}
                 className={cn(
@@ -377,6 +453,9 @@ interface PlanComparisonProps {
 
 export function PlanComparison({ className }: PlanComparisonProps) {
   const id = useId();
+  const [currency, setCurrency] = useState<CurrencyKey>("USD");
+  const plans = React.useMemo(() => buildPlans(currency), [currency]);
+
   const organization = useAppStore((s) => s.organization);
   const currentPlan: PlanKey | null =
     organization?.plan === "pro"
@@ -403,19 +482,27 @@ export function PlanComparison({ className }: PlanComparisonProps) {
           Every plan includes unlimited flags and unlimited seats. No per-seat
           surprises.
         </p>
+        {/* Mini currency selector */}
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <span className="text-xs text-[var(--signal-fg-tertiary)]">
+            Currency:
+          </span>
+          <MiniCurrencySelector value={currency} onChange={setCurrency} />
+        </div>
       </div>
 
       {/* Desktop: table layout */}
       <div className="hidden lg:block">
-        <DesktopTable currentPlan={currentPlan} />
+        <DesktopTable currentPlan={currentPlan} plans={plans} />
       </div>
 
       {/* Mobile: stacked cards */}
       <div className="space-y-4 lg:hidden">
-        {Object.keys(PLANS).map((key) => (
+        {Object.keys(plans).map((key) => (
           <MobilePlanCard
             key={key}
             planKey={key as PlanKey}
+            plans={plans}
             isCurrentPlan={currentPlan === key}
           />
         ))}

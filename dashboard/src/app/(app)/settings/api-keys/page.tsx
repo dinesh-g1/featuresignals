@@ -12,9 +12,10 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { KeyIcon, CopyIcon } from "@/components/icons/nav-icons";
+import { KeyIcon, CopyIcon, LoaderIcon } from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { FieldHelp } from "@/components/field-help";
+import { SkeletonList } from "@/components/loading-skeletons";
 import type { APIKey, APIKeyCreateResponse, Environment } from "@/lib/types";
 
 const KEY_TYPE_OPTIONS = [
@@ -29,6 +30,8 @@ export default function APIKeysPage() {
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
   const [keys, setKeys] = useState<APIKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -54,15 +57,22 @@ export default function APIKeysPage() {
 
   function reloadKeys() {
     if (!token || !selectedEnv) return;
+    setLoading(true);
+    setError(null);
     api
       .listAPIKeys(token, selectedEnv)
       .then((k) => setKeys(k ?? []))
-      .catch(() => {});
+      .catch((err) =>
+        setError(
+          err instanceof Error ? err.message : "Failed to load API keys",
+        ),
+      )
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
     reloadKeys();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reloadKeys is intentionally not included to avoid re-render loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, selectedEnv]);
 
   async function handleCreate(e: React.FormEvent) {
@@ -136,6 +146,35 @@ export default function APIKeysPage() {
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
     toast("API key copied to clipboard", "success");
+  }
+
+  // ── Loading ──
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
+        <div className="h-24 animate-pulse rounded-xl bg-[var(--signal-border-default)]" />
+        <SkeletonList rows={4} />
+      </div>
+    );
+  }
+
+  // ── Error ──
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
+          <h2 className="text-lg font-bold text-red-800 mb-1">
+            Failed to load API keys
+          </h2>
+          <p className="text-sm text-red-600 mb-4">{error}</p>
+          <Button onClick={reloadKeys} variant="secondary">
+            <LoaderIcon className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -244,7 +283,11 @@ export default function APIKeysPage() {
               return (
                 <div
                   key={k.id}
-                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${isDisabled ? " opacity-60" : " hover:bg-[var(--signal-bg-accent-emphasis)]-glass"}`}
+                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${
+                    isDisabled
+                      ? " opacity-60"
+                      : " hover:bg-[var(--signal-bg-accent-emphasis)]-glass"
+                  }`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

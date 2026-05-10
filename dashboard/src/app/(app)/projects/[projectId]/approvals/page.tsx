@@ -13,7 +13,8 @@ import {
   Textarea,
 } from "@/components/ui";
 import { toast } from "@/components/toast";
-import { CheckCircleFillIcon, ClockIcon } from "@/components/icons/nav-icons";
+import { CheckCircleFillIcon, ClockIcon, LoaderIcon } from "@/components/icons/nav-icons";
+import { SkeletonList } from "@/components/loading-skeletons";
 import type { ApprovalRequest } from "@/lib/types";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -135,13 +136,18 @@ export default function ApprovalsPage() {
   const [tab, setTab] = useState<"all" | "mine">("all");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
-  const { data: approvals = [], refetch } = useApprovals(filter || undefined);
+  const {
+    data: approvals = [],
+    loading: approvalsLoading,
+    error: approvalsError,
+    refetch,
+  } = useApprovals(filter || undefined);
 
   async function handleReview(id: string, action: "approve" | "reject") {
     if (!token) return;
-    setLoading(true);
+    setReviewLoading(true);
     try {
       await api.reviewApproval(token, id, action, note);
       setReviewingId(null);
@@ -154,7 +160,7 @@ export default function ApprovalsPage() {
     } catch {
       toast("Failed to submit review", "error");
     } finally {
-      setLoading(false);
+      setReviewLoading(false);
     }
   }
 
@@ -170,6 +176,48 @@ export default function ApprovalsPage() {
     setReviewingId(null);
     setNote("");
   }, []);
+
+  // ── Loading ──
+  if (approvalsLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Approval Requests"
+          description="Review and approve flag changes before they go live"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="h-9 w-16 animate-pulse rounded-lg bg-[var(--signal-border-default)]" />
+          <div className="h-9 w-24 animate-pulse rounded-lg bg-[var(--signal-border-default)]" />
+          <div className="h-9 w-20 animate-pulse rounded-lg bg-[var(--signal-border-default)]" />
+        </div>
+        <SkeletonList rows={5} />
+      </div>
+    );
+  }
+
+  // ── Error ──
+  if (approvalsError) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <PageHeader
+          title="Approval Requests"
+          description="Review and approve flag changes before they go live"
+        />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
+            <h2 className="text-lg font-bold text-red-800 mb-1">
+              Failed to load approvals
+            </h2>
+            <p className="text-sm text-red-600 mb-4">{approvalsError}</p>
+            <Button onClick={refetch} variant="secondary">
+              <LoaderIcon className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -285,7 +333,7 @@ export default function ApprovalsPage() {
                         <Button
                           size="sm"
                           onClick={() => handleReview(ar.id, "approve")}
-                          disabled={loading}
+                          disabled={reviewLoading}
                           className="bg-emerald-600 hover:bg-emerald-700"
                         >
                           Approve & Apply
@@ -294,7 +342,7 @@ export default function ApprovalsPage() {
                           size="sm"
                           variant="danger"
                           onClick={() => handleReview(ar.id, "reject")}
-                          disabled={loading}
+                          disabled={reviewLoading}
                         >
                           Reject
                         </Button>

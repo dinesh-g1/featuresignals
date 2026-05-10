@@ -112,7 +112,7 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     expect(screen.getByText("Create your account")).toBeInTheDocument();
-    expect(screen.getByText("FeatureSignals")).toBeInTheDocument();
+    expect(screen.getByText("Feature")).toBeInTheDocument();
   });
 
   it("shows password strength indicators when password is entered", () => {

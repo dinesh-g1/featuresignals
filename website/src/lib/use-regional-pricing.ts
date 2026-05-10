@@ -18,33 +18,61 @@ const pricing: Record<PricingRegion, RegionalPricing> = {
     region: "IN",
     currency: "INR",
     symbol: "₹",
-    proMonthly: "INR 1,999",
-    proAnnual: "INR 19,990",
+    proMonthly: "₹2,649",
+    proAnnual: "₹23,988",
     proMonthlyValue: 1999,
   },
   US: {
     region: "US",
     currency: "USD",
     symbol: "$",
-    proMonthly: "$29",
-    proAnnual: "$290",
-    proMonthlyValue: 29,
+    proMonthly: "$24",
+    proAnnual: "$216",
+    proMonthlyValue: 24,
   },
   EU: {
     region: "EU",
     currency: "EUR",
     symbol: "€",
-    proMonthly: "€27",
-    proAnnual: "€270",
-    proMonthlyValue: 27,
+    proMonthly: "€22",
+    proAnnual: "€200",
+    proMonthlyValue: 22,
   },
 };
 
 const EU_COUNTRIES = [
-  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-  "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-  "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO",
-  "CH", "GB",
+  "AT",
+  "BE",
+  "BG",
+  "HR",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HU",
+  "IE",
+  "IT",
+  "LV",
+  "LT",
+  "LU",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SK",
+  "SI",
+  "ES",
+  "SE",
+  "IS",
+  "LI",
+  "NO",
+  "CH",
+  "GB",
 ];
 
 function detectRegion(): PricingRegion {
@@ -55,7 +83,8 @@ function detectRegion(): PricingRegion {
   if (tz === "Asia/Kolkata" || tz === "Asia/Calcutta") return "IN";
 
   // Check locale
-  const locale = navigator.language || (navigator as any).userLanguage || "en-US";
+  const locale =
+    navigator.language || (navigator as any).userLanguage || "en-US";
   if (locale.startsWith("hi") || locale === "en-IN") return "IN";
 
   // Check for EU country codes via locale

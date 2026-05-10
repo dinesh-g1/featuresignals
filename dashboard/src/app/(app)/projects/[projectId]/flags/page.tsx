@@ -45,6 +45,7 @@ import {
   PrerequisiteGate,
   usePrerequisites,
 } from "@/components/prerequisite-gate";
+import { cn } from "@/lib/utils";
 import type {
   FlagState,
   Flag as FlagType,
@@ -799,6 +800,8 @@ function FlagsWithData({
       tagOptions={tagOptions}
       sortBy={sortBy}
       sortDir={sortDir}
+      setSortBy={setSortBy}
+      setSortDir={setSortDir}
       handleSort={handleSort}
       showCreate={showCreate}
       setShowCreate={setShowCreate}
@@ -853,6 +856,8 @@ function FlagsContent({
   tagOptions,
   sortBy,
   sortDir,
+  setSortBy,
+  setSortDir,
   handleSort,
   showCreate,
   setShowCreate,
@@ -900,6 +905,8 @@ function FlagsContent({
   tagOptions: { value: string; label: string }[];
   sortBy: SortKey;
   sortDir: "asc" | "desc";
+  setSortBy: (v: SortKey) => void;
+  setSortDir: (v: "asc" | "desc") => void;
   handleSort: (key: SortKey) => void;
   showCreate: boolean;
   setShowCreate: (v: boolean) => void;
@@ -933,6 +940,61 @@ function FlagsContent({
   handleListGateConfirm: () => Promise<void>;
 }) {
   const _currentEnvId = useAppStore((s) => s.currentEnvId);
+
+  // Bulk selection state
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [bulkSelectionMode, setBulkSelectionMode] = useState(false);
+
+  // Compute filter chip counts
+  const chipCounts = useMemo(() => {
+    const all = flags ?? [];
+    return {
+      all: all.length,
+      active: all.filter((f) => f.status === "active").length,
+      disabled: all.filter(
+        (f) =>
+          f.status === "active" &&
+          !(stateMap.get(f.key)?.enabled ?? false),
+      ).length,
+      scheduled: all.filter(
+        (f) =>
+          (stateMap.get(f.key)?.scheduled_enable_at ||
+            stateMap.get(f.key)?.scheduled_disable_at) ??
+          false,
+      ).length,
+      archived: all.filter((f) => f.status === "archived").length,
+    };
+  }, [flags, stateMap]);
+
+  // Sort options
+  const SORT_OPTIONS = useMemo(
+    () => [
+      { value: "updated_at-desc", label: "Last Updated" },
+      { value: "updated_at-asc", label: "Oldest Updated" },
+      { value: "name-asc", label: "Name A-Z" },
+      { value: "name-desc", label: "Name Z-A" },
+      { value: "created_at-desc", label: "Newest First" },
+      { value: "created_at-asc", label: "Oldest First" },
+    ],
+    [],
+  );
+
+  const sortValue = `${sortBy}-${sortDir}`;
+
+  const handleSortChange = useCallback(
+    (value: string) => {
+      const parts = value.split("-");
+      const dir = parts.pop() as "asc" | "desc";
+      const key = parts.join("-") as SortKey;
+      if (sortBy !== key) {
+        setSortBy(key);
+        setSortDir(dir);
+      } else if (sortDir !== dir) {
+        setSortDir(dir);
+      }
+    },
+    [sortBy, sortDir, setSortBy, setSortDir],
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -1111,6 +1173,72 @@ function FlagsContent({
         </form>
       )}
 
+      {/* Filter chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { key: "all", label: "All", count: chipCounts.all },
+          { key: "active", label: "Active", count: chipCounts.active },
+          {
+            key: "disabled",
+            label: "Disabled",
+            count: chipCounts.disabled,
+          },
+          {
+            key: "scheduled",
+            label: "Scheduled",
+            count: chipCounts.scheduled,
+          },
+          {
+            key: "archived",
+            label: "Archived",
+            count: chipCounts.archived,
+          },
+        ].map((chip) => {
+          const isActive =
+            chip.key === "all"
+              ? statusFilter === "all"
+              : chip.key === "disabled"
+                ? statusFilter === "active" &&
+                  !(stateMap.size > 0)
+                : statusFilter === chip.key;
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => {
+                if (chip.key === "disabled") {
+                  setStatusFilter("all");
+                } else if (chip.key === "all") {
+                  setStatusFilter("all");
+                } else {
+                  setStatusFilter(chip.key);
+                }
+              }}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                isActive ||
+                  (chip.key === "all" && statusFilter === "all")
+                  ? "bg-[var(--signal-fg-accent)] text-white shadow-sm"
+                  : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-slate-200 hover:text-[var(--signal-fg-primary)]",
+              )}
+            >
+              {chip.label}
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center rounded-full px-1.5 py-0 min-w-[18px] text-[10px] font-semibold",
+                  isActive ||
+                    (chip.key === "all" && statusFilter === "all")
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-300/60 text-[var(--signal-fg-secondary)]",
+                )}
+              >
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--signal-border-default)]/60 bg-white/80 p-3 shadow-sm sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:w-auto">
@@ -1143,14 +1271,6 @@ function FlagsContent({
             size="sm"
           />
         </div>
-        <div className="w-full sm:w-auto">
-          <Select
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-            options={STATUS_OPTIONS}
-            size="sm"
-          />
-        </div>
         {allTags.length > 0 && (
           <div className="w-full sm:w-auto">
             <Select
@@ -1161,23 +1281,33 @@ function FlagsContent({
             />
           </div>
         )}
-      </div>
-
-      {/* Sort controls */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--signal-fg-secondary)]">
-        <span>Sort by:</span>
-        {(["key", "name", "created_at", "updated_at"] as SortKey[]).map(
-          (key) => (
-            <button
-              key={key}
-              onClick={() => handleSort(key)}
-              className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${sortBy === key ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] font-medium shadow-sm ring-1 ring-[var(--signal-border-accent-muted)]" : "hover:bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]"}`}
-            >
-              {key.replace(/_/g, " ")}
-              {sortBy === key && (sortDir === "asc" ? " \u2191" : " \u2193")}
-            </button>
-          ),
-        )}
+        <div className="w-full sm:w-auto sm:ml-auto">
+          <Select
+            value={sortValue}
+            onValueChange={handleSortChange}
+            options={SORT_OPTIONS}
+            size="sm"
+            placeholder="Sort by…"
+          />
+        </div>
+        {/* Bulk selection toggle */}
+        <div className="w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setBulkSelectionMode(!bulkSelectionMode);
+              if (bulkSelectionMode) setSelectedKeys(new Set());
+            }}
+            className={cn(
+              "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all",
+              bulkSelectionMode
+                ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] ring-1 ring-[var(--signal-border-accent-muted)]"
+                : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]",
+            )}
+          >
+            {bulkSelectionMode ? "Done selecting" : "Select"}
+          </button>
+        </div>
       </div>
 
       {/* Flag display: cards when flags exist, empty states otherwise */}
@@ -1203,6 +1333,9 @@ function FlagsContent({
           onCreateFlag={() => setShowCreate(true)}
           toggling={togglingSet}
           onFlagClick={onFlagClick}
+          selectable={bulkSelectionMode}
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
         />
       )}
     </div>

@@ -900,3 +900,133 @@ func (h *FlagHandler) ListFlagStates(w http.ResponseWriter, r *http.Request) {
 
 	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(out, len(out), len(out), 0))
 }
+
+// Archive soft-deletes a flag by setting its status to "archived".
+// Archived flags are hidden from normal list views but can be restored.
+// The flag's targeting rules and states are preserved.
+func (h *FlagHandler) Archive(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "flag not found")
+			return
+		}
+		h.l(r).Error("failed to get flag for archive", "error", err, "project_id", projectID, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		return
+	}
+
+	if flag.Status == domain.StatusArchived {
+		httputil.Error(w, http.StatusConflict, "flag is already archived")
+		return
+	}
+
+	beforeState, _ := json.Marshal(flag)
+	flag.Status = domain.StatusArchived
+
+	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
+		h.l(r).Error("failed to archive flag", "error", err, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "failed to archive flag")
+		return
+	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(flag)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ProjectID: &projectID, ActorID: &userID, ActorType: "user",
+		Action: "flag.archived", ResourceType: "flag", ResourceID: &flag.ID,
+		BeforeState: beforeState, AfterState: afterState,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	httputil.JSON(w, http.StatusOK, dto.FlagFromDomain(flag))
+}
+
+// Restore returns an archived flag to active status. All previous
+// targeting rules, states, and configuration are preserved.
+func (h *FlagHandler) Restore(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	projectID := chi.URLParam(r, "projectID")
+	flagKey := chi.URLParam(r, "flagKey")
+
+	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "flag not found")
+			return
+		}
+		h.l(r).Error("failed to get flag for restore", "error", err, "project_id", projectID, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		return
+	}
+
+	if flag.Status != domain.StatusArchived {
+		httputil.Error(w, http.StatusConflict, "flag is not archived")
+		return
+	}
+
+	beforeState, _ := json.Marshal(flag)
+	flag.Status = domain.StatusActive
+
+	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
+		h.l(r).Error("failed to restore flag", "error", err, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "failed to restore flag")
+		return
+	}
+
+	orgID := middleware.GetOrgID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+	afterState, _ := json.Marshal(flag)
+	h.store.CreateAuditEntry(r.Context(), &domain.AuditEntry{
+		OrgID: orgID, ProjectID: &projectID, ActorID: &userID, ActorType: "user",
+		Action: "flag.restored", ResourceType: "flag", ResourceID: &flag.ID,
+		BeforeState: beforeState, AfterState: afterState,
+		IPAddress: r.RemoteAddr, UserAgent: r.UserAgent(),
+	})
+
+	httputil.JSON(w, http.StatusOK, dto.FlagFromDomain(flag))
+}
+
+// ListArchived returns all flags with status "archived" for a project.
+// Supports pagination via limit/offset query parameters.
+func (h *FlagHandler) ListArchived(w http.ResponseWriter, r *http.Request) {
+	if _, ok := verifyProjectOwnership(h.store, r, w); !ok {
+		return
+	}
+	projectID := chi.URLParam(r, "projectID")
+
+	flags, err := h.store.ListFlags(r.Context(), projectID)
+	if err != nil {
+		h.l(r).Error("failed to list flags for archived filter", "error", err, "project_id", projectID)
+		httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+		return
+	}
+
+	// Filter to archived-only in application layer.
+	// TODO: push filtering to store with a dedicated query when archive volume grows.
+	archived := make([]domain.Flag, 0)
+	for _, f := range flags {
+		if f.Status == domain.StatusArchived {
+			archived = append(archived, f)
+		}
+	}
+
+	if archived == nil {
+		archived = []domain.Flag{}
+	}
+
+	all := dto.FlagSliceFromDomain(archived)
+	p := dto.ParsePagination(r)
+	page, total := dto.Paginate(all, p)
+	links := domain.LinksForFlagsCollection(projectID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+}

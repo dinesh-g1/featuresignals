@@ -16,6 +16,10 @@ import {
   CheckIcon,
   BellIcon,
   AuditLogIcon,
+  PlusIcon,
+  FlagIcon,
+  SegmentIcon,
+  ProjectIcon,
 } from "@/components/icons/nav-icons";
 import type { Project, Environment, AuditEntry } from "@/lib/types";
 
@@ -144,7 +148,129 @@ function ProjectDropdown() {
   );
 }
 
-// ─── Environment Dropdown (with color dots) ────────────────────────
+// ─── Quick Create Menu ──────────────────────────────────────────
+
+function QuickCreateMenu() {
+  const router = useRouter();
+  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const token = useAppStore((s) => s.token);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open]);
+
+  const items = [
+    {
+      label: "New Flag",
+      icon: FlagIcon,
+      onClick: () => {
+        if (currentProjectId) {
+          router.push(`/projects/${currentProjectId}/flags?create=1`);
+        }
+        setOpen(false);
+      },
+      disabled: !currentProjectId,
+      disabledReason: "Select a project first",
+    },
+    {
+      label: "New Segment",
+      icon: SegmentIcon,
+      onClick: () => {
+        if (currentProjectId) {
+          router.push(`/projects/${currentProjectId}/segments?create=1`);
+        }
+        setOpen(false);
+      },
+      disabled: !currentProjectId,
+      disabledReason: "Select a project first",
+    },
+    {
+      label: "New Project",
+      icon: ProjectIcon,
+      onClick: () => {
+        router.push("/projects?create=1");
+        setOpen(false);
+      },
+      disabled: false,
+    },
+  ];
+
+  const hasDisabled = items.some((i) => i.disabled);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex items-center justify-center rounded-lg p-2 transition-all",
+          open
+            ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+            : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+        )}
+        aria-label="Quick create"
+        title="Quick create"
+      >
+        <PlusIcon className="h-5 w-5" />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-xl border border-[var(--signal-border-default)] bg-white shadow-[var(--signal-shadow-lg)] animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="px-1 py-1.5">
+              <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+                Quick Create
+              </p>
+              {items.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.onClick}
+                  disabled={item.disabled}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                    item.disabled
+                      ? "opacity-50 cursor-not-allowed text-[var(--signal-fg-tertiary)]"
+                      : "text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+                  )}
+                  title={item.disabled ? item.disabledReason : undefined}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.disabled && item.disabledReason && (
+                    <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
+                      {item.disabledReason}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Environment Dropdown (with color pill) ────────────────────────
 
 function EnvironmentDropdown() {
   const token = useAppStore((s) => s.token);
@@ -207,16 +333,18 @@ function EnvironmentDropdown() {
             : "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] border border-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)] hover:border-[var(--signal-border-emphasis)]",
         )}
       >
-        {selected?.color && (
+        {selected?.color ? (
           <span
-            className="inline-block h-2 w-2 rounded-full shrink-0 ring-1 ring-black/10"
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white shadow-sm shrink-0 truncate max-w-[120px]"
             style={{ backgroundColor: selected.color }}
-            aria-hidden="true"
-          />
+          >
+            <span className="truncate">{selected.name}</span>
+          </span>
+        ) : (
+          <span className="truncate max-w-[120px]">
+            {selected?.name || "Select Environment"}
+          </span>
         )}
-        <span className="truncate max-w-[120px]">
-          {selected?.name || "Select Environment"}
-        </span>
         <ChevronDownIcon
           className={cn(
             "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
@@ -458,8 +586,9 @@ export function ContextBar() {
         <OmniSearchButton />
       </div>
 
-      {/* Right: Docs + Activity Bell + User Menu */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* Right: Quick Create + Docs + Activity Bell + User Menu */}
+      <div className="flex items-center gap-1 shrink-0">
+        <QuickCreateMenu />
         <DocsPanelTrigger />
         <ActivityBell />
         <UserMenu />

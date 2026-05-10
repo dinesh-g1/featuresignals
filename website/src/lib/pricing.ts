@@ -5,6 +5,14 @@
  * from product/wiki/private/COMPETITIVE.md and product/wiki/private/BUSINESS.md.
  */
 
+import {
+  USD,
+  BASE_PRICES,
+  convertINR,
+  formatMonthlyPrice,
+  type CurrencyDef,
+} from "./currency";
+
 export type CompetitorProvider =
   | "launchdarkly"
   | "configcat"
@@ -14,6 +22,8 @@ export type CompetitorProvider =
 export interface CalculatorState {
   teamSize: number; // 5–500
   provider: CompetitorProvider;
+  currency?: CurrencyDef;
+  annual?: boolean;
 }
 
 export interface SavingsResult {
@@ -23,7 +33,7 @@ export interface SavingsResult {
   formula: string;
 }
 
-/** Per-seat monthly pricing for each competitor */
+/** Per-seat monthly pricing for each competitor (in USD) */
 const COMPETITOR_RATES: Record<
   CompetitorProvider,
   {
@@ -54,23 +64,54 @@ const COMPETITOR_RATES: Record<
   },
 };
 
-/** FeatureSignals Pro: flat INR 1,999/month (~$29 USD) */
-const FS_MONTHLY_USD = 29; // INR 1,999 ≈ $29
-const FS_MONTHLY_INR = 1999;
-
+/**
+ * Calculate cost comparison between FeatureSignals and a competitor.
+ *
+ * Competitor pricing is defined in USD (industry standard). FeatureSignals
+ * pricing originates in INR. All results are converted to the target currency.
+ */
 export function calculateSavings(state: CalculatorState): SavingsResult {
-  const { teamSize, provider } = state;
+  const { teamSize, provider, currency = USD, annual = false } = state;
   const rate = COMPETITOR_RATES[provider];
 
-  const competitorMonthly = rate.baseFee + rate.perSeat * teamSize;
-  const competitorAnnual = competitorMonthly * 12;
-  const fsMonthly = FS_MONTHLY_USD;
-  const fsAnnual = fsMonthly * 12;
+  // Competitor costs (in USD)
+  const competitorMonthlyUsd = rate.baseFee + rate.perSeat * teamSize;
+  const competitorAnnualUsd = competitorMonthlyUsd * 12;
+
+  // Convert competitor costs from USD to target currency
+  // First convert USD → INR, then INR → target currency
+  const competitorMonthlyInr = Math.round(
+    competitorMonthlyUsd * USD.exchangeRate,
+  );
+  const competitorAnnualInr = Math.round(
+    competitorAnnualUsd * USD.exchangeRate,
+  );
+  const competitorMonthly = convertINR(competitorMonthlyInr, currency);
+  const competitorAnnual = convertINR(competitorAnnualInr, currency);
+
+  // FeatureSignals costs (from INR base)
+  const proPrice = BASE_PRICES.pro;
+  const fsMonthlyInr = annual ? proPrice.annualMonthly : proPrice.monthly;
+  const fsAnnualInr = annual ? proPrice.annualTotal : proPrice.monthly * 12;
+  const fsMonthly = convertINR(fsMonthlyInr, currency);
+  const fsAnnual = convertINR(fsAnnualInr, currency);
+
   const savingsAnnual = competitorAnnual - fsAnnual;
   const savingsPercent =
     competitorAnnual > 0
       ? Math.round((savingsAnnual / competitorAnnual) * 1000) / 10
       : 0;
+
+  // Build formula string
+  const fsLabel =
+    currency.code === "INR"
+      ? `₹${fsMonthlyInr.toLocaleString("en-IN")}/mo flat`
+      : `${formatMonthlyPrice(fsMonthly, currency)} flat`;
+
+  const formula =
+    provider === "launchdarkly"
+      ? `${rate.name}: $${rate.perSeat}/seat × ${teamSize} engineers = ${formatMonthlyPrice(competitorMonthly, currency)} · FeatureSignals: ${fsLabel} — unlimited seats`
+      : `${rate.name}: $${rate.baseFee}/mo base + $${rate.perSeat}/seat × ${teamSize} engineers = ${formatMonthlyPrice(competitorMonthly, currency)} · FeatureSignals: ${fsLabel} — unlimited seats`;
 
   return {
     competitor: {
@@ -86,14 +127,11 @@ export function calculateSavings(state: CalculatorState): SavingsResult {
       annual: savingsAnnual,
       percent: savingsPercent,
     },
-    formula:
-      provider === "launchdarkly"
-        ? `${rate.name}: $${rate.perSeat}/seat × ${teamSize} engineers = $${competitorMonthly.toLocaleString()}/month`
-        : `${rate.name}: $${rate.baseFee}/mo base + $${rate.perSeat}/seat × ${teamSize} engineers = $${competitorMonthly.toLocaleString()}/month`,
+    formula,
   };
 }
 
-/** Format currency for display */
+/** Format currency for display (backward compatible) */
 export function formatUSD(amount: number): string {
   if (amount >= 1_000_000) {
     return `$${(amount / 1_000_000).toFixed(1)}M`;

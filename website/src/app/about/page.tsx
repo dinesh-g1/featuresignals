@@ -15,6 +15,9 @@ import {
   Clock,
   Rocket,
   CheckCircle,
+  Target,
+  Eye,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,41 +50,104 @@ const principles = [
     icon: Zap,
     title: "Performance as a feature",
     description:
-      "Sub-millisecond evaluation. Every flag check matters. We optimise relentlessly because your users shouldn't wait on a feature flag.",
+      "Sub-millisecond evaluation with no database calls on the hot path. An in-memory ruleset cache, a stateless eval engine, and relentless optimisation. Your users should never wait on a feature flag.",
   },
   {
     icon: GitPullRequest,
     title: "Open by default",
     description:
-      "Apache 2.0. Self-host or cloud. Your choice. Our code is open, our roadmap is public, and our community shapes the product.",
+      "Apache 2.0. Community Edition source is public. Self-host or cloud — your choice. Our roadmap is in the open. Our community shapes the product, not a pricing committee.",
   },
   {
     icon: ShieldCheck,
     title: "No vendor lock-in",
     description:
-      "OpenFeature native. Leave anytime. Your application code depends on an open standard, not on us. Switching is a config change, not a rewrite.",
+      "OpenFeature-native across all 8 SDKs. Your application code depends on an open standard, not on us. Switching platforms is a configuration change — not a rewrite. Zero lock-in, by design.",
   },
   {
     icon: Lightbulb,
     title: "AI as an accelerator",
     description:
-      "The AI Janitor automates technical debt cleanup — finding stale flags and removing them. AI augments developers; it doesn't replace them.",
+      "The AI Janitor finds stale flags, suggests cleanups, and automates flag hygiene — the kind of tedious maintenance that shipping teams hate. AI augments developers; it does not replace them.",
   },
   {
     icon: Scale,
-    title: "Transparent pricing",
+    title: "Transparent, flat pricing",
     description:
-      "Flat rate. No per-seat penalties. No surprise bills. Enterprise features are included, not nickel-and-dimed. Pricing that respects your budget.",
+      "Flat rate with unlimited seats. INR 1,999/mo for Pro. No per-seat penalties, no surprise overage bills, no usage-based multipliers. Enterprise features are included — not nickel-and-dimed behind upgrade gates.",
+  },
+  {
+    icon: Heart,
+    title: "Built for engineers, by engineers",
+    description:
+      "We are developers building tools for developers. Every design decision starts with: would we use this ourselves? Every API is designed for DX first. Every feature exists because we needed it.",
+  },
+];
+
+const values = [
+  {
+    icon: Target,
+    title: "Transparency",
+    description:
+      "Open source code. Public roadmap. Honest pricing. We share what we are building, what it costs, and why. No dark patterns, no hidden fees, no bait-and-switch.",
+  },
+  {
+    icon: Eye,
+    title: "Craft",
+    description:
+      "We sweat the details. Every millisecond of latency, every line of documentation, every API design choice. We believe great infrastructure software is craftsmanship, not assembly-line output.",
+  },
+  {
+    icon: Handshake,
+    title: "Independence",
+    description:
+      "Bootstrapped and self-funded. We answer to our users — not to VCs with growth-at-all-costs mandates. Our incentives are aligned with building a sustainable product, not chasing an exit.",
+  },
+  {
+    icon: Users,
+    title: "Customer Success",
+    description:
+      "Your success is our success. We ship features our customers ask for, not features our competitors have. Support is done by engineers who built the product, not by script-reading chatbots.",
   },
 ];
 
 const companyFacts = [
-  { label: "Founded", value: "2024" },
-  { label: "Built by", value: "Vivekananda Technology Labs" },
-  { label: "Location", value: "Hyderabad, India" },
-  { label: "License", value: "Apache 2.0" },
-  { label: "Architecture", value: "Single Go binary, no JVM" },
+  { label: "Trade Name", value: "FeatureSignals" },
+  { label: "Legal Entity", value: "Vivekananda Technology Labs" },
+  { label: "Founded", value: "2025" },
+  { label: "Headquarters", value: "Hyderabad, Telangana, India" },
+  { label: "License", value: "Apache 2.0 (Community Edition)" },
+  { label: "Architecture", value: "Single Go binary, sub-ms eval" },
   { label: "OpenFeature", value: "Native across all 8 SDKs" },
+  { label: "Business Model", value: "B2B SaaS + Open Source" },
+];
+
+const differentiators = [
+  {
+    title: "Sub-millisecond evaluation",
+    description:
+      "Our evaluation engine runs entirely in-memory with zero database calls on the hot path. Flag checks are served from a synchronised in-memory ruleset cache. The result: p99 latencies under 1ms. Your application code calls a flag, and the answer is back before the next CPU instruction matters.",
+  },
+  {
+    title: "OpenFeature-native, zero lock-in",
+    description:
+      "FeatureSignals is built on the OpenFeature standard. All 8 language SDKs implement the OpenFeature provider interface. Your application code calls the OpenFeature API — not our proprietary one. If you ever decide to leave, you swap the provider, not your codebase. That is real portability.",
+  },
+  {
+    title: "Single Go binary, self-host in 3 minutes",
+    description:
+      "No JVM. No Kubernetes requirement. No 12 microservices to orchestrate. The entire FeatureSignals server compiles to a single statically-linked Go binary. Self-host it on a €6/month VPS. Deploy it behind your firewall. Run it air-gapped. It is the same binary that powers our cloud.",
+  },
+  {
+    title: "AI Janitor for automated flag hygiene",
+    description:
+      "Feature flags rot. Teams ship a flag, forget about it, and three years later it is still wrapping dead code in production. The AI Janitor scans your flags, identifies staleness, traces flag usage through your codebase, and suggests removals — or removes them automatically if you configure it to. Technical debt, deleted.",
+  },
+  {
+    title: "Flat pricing with unlimited seats",
+    description:
+      "Pro is INR 1,999 per month — period. Unlimited team members, unlimited flags, unlimited environments. No per-seat calculus. No overage anxiety. No growth penalty. The bill you see is the bill you pay, every month. Enterprise adds SLAs, dedicated support, and self-hosting — quoted transparently, not negotiated against you.",
+  },
 ];
 
 /* ==========================================================================
@@ -93,10 +159,12 @@ export default function AboutPage() {
     <>
       <HeroSection />
       <MissionSection />
+      <WhatMakesUsDifferent />
       <PrinciplesSection />
       <OriginSection />
+      <ValuesSection />
       <TeamSection />
-      <BackersSection />
+      <OpenSourceSection />
     </>
   );
 }
@@ -117,14 +185,14 @@ function HeroSection() {
           className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-4"
           {...fadeUp}
         >
-          About
+          About FeatureSignals
         </motion.p>
         <motion.h1
           id="about-hero-heading"
           className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           {...fadeUp}
         >
-          We&apos;re building the control plane for software delivery
+          Enterprise-grade feature flags, without the enterprise lock-in
         </motion.h1>
         <motion.p
           className="text-lg text-[var(--signal-fg-secondary)] max-w-xl mx-auto"
@@ -134,8 +202,9 @@ function HeroSection() {
           viewport={{ once: true, margin: "-64px" }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         >
-          FeatureSignals was born from a simple observation: feature flag
-          management shouldn&apos;t require a PhD in pricing complexity.
+          Built in Hyderabad by engineers who were tired of feature flag
+          platforms that were too expensive, too slow, or too determined to own
+          your stack.
         </motion.p>
       </div>
     </section>
@@ -162,7 +231,8 @@ function MissionSection() {
             id="mission-heading"
             className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-8 text-center"
           >
-            Real tools for real engineering teams
+            To give every engineering team enterprise-grade feature flag
+            management — without the enterprise price tag or lock-in
           </h2>
         </motion.div>
 
@@ -171,33 +241,87 @@ function MissionSection() {
           {...fadeUpDelayed(0.1)}
         >
           <p>
+            Feature flags are critical infrastructure. They control who sees
+            what in production. They gate feature rollouts, power A/B
+            experiments, and isolate risky code behind kill switches. They sit
+            on the request hot path — every millisecond of evaluation latency
+            multiplies across every user, every request, every day.
+          </p>
+          <p>
+            Yet the market for feature flag management has been dominated by
+            platforms that treat this infrastructure as a profit centre —
+            charging per-seat prices that grow with your team, locking you into
+            proprietary SDKs, and making self-hosting an afterthought reserved
+            for the highest enterprise tiers.
+          </p>
+          <p>
             We believe feature flags should be{" "}
             <strong className="text-[var(--signal-fg-primary)]">
               fast, open, and affordable
-            </strong>{" "}
-            — infrastructure, not a profit center. The platforms that came
-            before us built pricing models designed to extract maximum revenue
-            from engineering teams. We think differently.
-          </p>
-          <p>
-            Feature flags are critical infrastructure — like your database, your
-            CI pipeline, your monitoring stack. They should be fast enough that
-            you never think about them. They should be open enough that you can
-            inspect, modify, and self-host them. And they should be priced like
-            infrastructure: predictable, transparent, and fair.
-          </p>
-          <p>
-            <strong className="text-[var(--signal-fg-primary)]">
-              Open source is not a marketing tactic. It&apos;s how we build
-              trust.
-            </strong>{" "}
-            Every line of FeatureSignals is Apache 2.0. You can read it, fork
-            it, run it on your own hardware, and contribute back. We don&apos;t
-            do &quot;open core&quot; with a proprietary enterprise layer that
-            locks you in. The same binary powers our cloud and your self-hosted
-            instance.
+            </strong>
+            . Fast enough that you never think about them. Open enough that you
+            can inspect, modify, and self-host them. And priced like
+            infrastructure: predictable, transparent, and fair — regardless of
+            how many engineers you hire.
           </p>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   What Makes Us Different
+   ========================================================================== */
+
+function WhatMakesUsDifferent() {
+  return (
+    <section
+      id="differentiators"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
+      aria-labelledby="differentiators-heading"
+    >
+      <div className="mx-auto max-w-7xl px-6">
+        <motion.div className="text-center max-w-2xl mx-auto mb-14" {...fadeUp}>
+          <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
+            Why FeatureSignals
+          </p>
+          <h2
+            id="differentiators-heading"
+            className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
+          >
+            What makes us different
+          </h2>
+          <p className="text-base text-[var(--signal-fg-secondary)] mt-3">
+            Five things that set FeatureSignals apart from every other feature
+            flag platform on the market.
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {differentiators.map((item, i) => (
+            <motion.div
+              key={item.title}
+              className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 hover:border-[var(--signal-border-accent-muted)] hover:shadow-[var(--signal-shadow-md)] transition-all duration-200"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{
+                duration: 0.4,
+                delay: i * 0.08,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-3">
+                {item.title}
+              </h3>
+              <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
+                {item.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -211,7 +335,7 @@ function PrinciplesSection() {
   return (
     <section
       id="principles"
-      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
       aria-labelledby="principles-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
@@ -227,7 +351,7 @@ function PrinciplesSection() {
           </h2>
           <p className="text-base text-[var(--signal-fg-secondary)] mt-3">
             The principles that guide every decision we make — from architecture
-            to pricing.
+            to pricing, from hiring to support.
           </p>
         </motion.div>
 
@@ -274,11 +398,11 @@ function OriginSection() {
   return (
     <section
       id="origin"
-      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-primary)]"
       aria-labelledby="origin-heading"
     >
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
           {/* Text */}
           <motion.div {...fadeUp}>
             <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
@@ -288,26 +412,32 @@ function OriginSection() {
               id="origin-heading"
               className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-6"
             >
-              Built by engineers, for engineers
+              Built by engineers, for engineers — in Hyderabad
             </h2>
             <div className="space-y-4 text-base text-[var(--signal-fg-secondary)] leading-relaxed">
               <p>
-                FeatureSignals started with a real problem: an engineering team
-                needed feature flags, and the market options were either
-                eye-wateringly expensive SaaS platforms or under-maintained open
-                source projects that hadn&apos;t seen a commit in years.
+                FeatureSignals started in 2025 with a real problem: our founding
+                team needed feature flags for a production system serving
+                millions of requests per day. The market options fell into two
+                buckets — enterprise SaaS platforms that cost more than the rest
+                of our infrastructure combined, or open-source projects that
+                were too slow, under-maintained, or both.
               </p>
               <p>
-                The SaaS platforms were fast, but their pricing scaled with your
-                team size — not your usage. The open source alternatives were
-                free, but they were slow, missing critical features, and
-                abandoned. There was no middle ground.
+                The SaaS platforms were fast but their per-seat pricing meant
+                our costs would scale linearly with every engineer we hired. The
+                open source alternatives were free but added double-digit
+                milliseconds of latency to every request — unacceptable for a
+                performance-sensitive application.
               </p>
               <p>
-                So we built one. A single Go binary with sub-millisecond
-                evaluation, an in-memory ruleset cache, 8 language SDKs, and an
-                AI janitor that cleans up stale flags. Apache 2.0. Self-host or
-                cloud. The platform we wished existed.
+                There was no middle ground. So we built one — a single Go binary
+                with sub-millisecond evaluation, an in-memory ruleset cache
+                synchronised via PostgreSQL LISTEN/NOTIFY, 8 language SDKs
+                implementing the OpenFeature standard, and an AI-powered janitor
+                that finds stale flags before they become technical debt. Apache
+                2.0 licensed. Self-host or cloud. The platform we wished had
+                existed when we needed it.
               </p>
             </div>
           </motion.div>
@@ -321,7 +451,7 @@ function OriginSection() {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-8">
+            <div className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-8">
               <h3 className="text-lg font-semibold text-[var(--signal-fg-primary)] mb-6">
                 Company
               </h3>
@@ -341,7 +471,117 @@ function OriginSection() {
                 ))}
               </dl>
             </div>
+
+            {/* Contact Card */}
+            <div className="rounded-2xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-8">
+              <h3 className="text-lg font-semibold text-[var(--signal-fg-primary)] mb-4">
+                Get in Touch
+              </h3>
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="text-[var(--signal-fg-secondary)] mb-0.5">
+                    Registered Office
+                  </dt>
+                  <dd className="text-[var(--signal-fg-primary)]">
+                    Plot no 308, L5-Block, LIG, Chitrapuri Colony, Manikonda
+                    <br />
+                    Hyderabad, Telangana – 500104
+                    <br />
+                    India
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[var(--signal-fg-secondary)] mb-0.5">
+                    Email
+                  </dt>
+                  <dd className="text-[var(--signal-fg-primary)]">
+                    <a
+                      href="mailto:hello@featuresignals.com"
+                      className="text-[var(--signal-fg-accent)] hover:underline"
+                    >
+                      hello@featuresignals.com
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[var(--signal-fg-secondary)] mb-0.5">
+                    Support
+                  </dt>
+                  <dd className="text-[var(--signal-fg-primary)]">
+                    <a
+                      href="mailto:support@featuresignals.com"
+                      className="text-[var(--signal-fg-accent)] hover:underline"
+                    >
+                      support@featuresignals.com
+                    </a>
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+   Values
+   ========================================================================== */
+
+function ValuesSection() {
+  return (
+    <section
+      id="values"
+      className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
+      aria-labelledby="values-heading"
+    >
+      <div className="mx-auto max-w-7xl px-6">
+        <motion.div className="text-center max-w-2xl mx-auto mb-14" {...fadeUp}>
+          <p className="text-xs font-semibold text-[var(--signal-fg-accent)] uppercase tracking-wider mb-3">
+            Our Values
+          </p>
+          <h2
+            id="values-heading"
+            className="text-3xl sm:text-4xl font-bold text-[var(--signal-fg-primary)] tracking-tight"
+          >
+            The beliefs that shape every decision
+          </h2>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 gap-5">
+          {values.map((value, i) => (
+            <motion.div
+              key={value.title}
+              className="group rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] p-6 hover:border-[var(--signal-border-accent-muted)] transition-all duration-200"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{
+                duration: 0.4,
+                delay: i * 0.08,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-[var(--signal-bg-accent-muted)] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
+                  <value.icon
+                    size={20}
+                    className="text-[var(--signal-fg-accent)]"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[var(--signal-fg-primary)] mb-2">
+                    {value.title}
+                  </h3>
+                  <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed">
+                    {value.description}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>
@@ -368,13 +608,15 @@ function TeamSection() {
             id="team-heading"
             className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           >
-            Built by a small, focused team
+            Remote-first, engineering-driven, based in India
           </h2>
           <p className="text-base text-[var(--signal-fg-secondary)] max-w-lg mx-auto leading-relaxed">
-            We&apos;re a small, focused team of engineers passionate about
-            developer tools. We believe great infrastructure software comes from
-            teams that understand the problem deeply — not from the largest
-            headcount or the most funding.
+            We are a small, focused team of engineers passionate about developer
+            tooling and infrastructure. Remote-first by design, with roots in
+            Hyderabad, Telangana — India&apos;s startup capital. We believe
+            great infrastructure software comes from teams that deeply
+            understand the problem, not from the largest headcount or the most
+            funding.
           </p>
         </motion.div>
       </div>
@@ -383,33 +625,48 @@ function TeamSection() {
 }
 
 /* ==========================================================================
-   Backers / Independence
+   Open Source Commitment
    ========================================================================== */
 
-function BackersSection() {
+function OpenSourceSection() {
   return (
     <section
-      id="backers"
+      id="open-source"
       className="py-20 sm:py-28 bg-[var(--signal-bg-secondary)]"
-      aria-labelledby="backers-heading"
+      aria-labelledby="open-source-heading"
     >
       <div className="mx-auto max-w-3xl px-6 text-center">
         <motion.div {...fadeUp}>
-          <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-info-muted)] flex items-center justify-center mx-auto mb-6">
-            <Rocket size={28} className="text-[var(--signal-fg-info)]" />
+          <div className="w-14 h-14 rounded-2xl bg-[var(--signal-bg-accent-muted)] flex items-center justify-center mx-auto mb-6">
+            <GitPullRequest
+              size={28}
+              className="text-[var(--signal-fg-accent)]"
+            />
           </div>
           <h2
-            id="backers-heading"
+            id="open-source-heading"
             className="text-2xl sm:text-3xl font-bold text-[var(--signal-fg-primary)] tracking-tight mb-4"
           >
-            Bootstrapped and independent
+            Open source is not a marketing tactic — it is how we build trust
           </h2>
-          <p className="text-base text-[var(--signal-fg-secondary)] max-w-lg mx-auto leading-relaxed">
-            We answer to our users, not VCs. FeatureSignals is self-funded and
-            profitable. Our incentives are aligned with yours — build a product
-            so good that you choose to pay for it. No growth-at-all-costs
-            pressure. No exit timeline. Just great software, sustainably built.
+          <p className="text-base text-[var(--signal-fg-secondary)] max-w-lg mx-auto leading-relaxed mb-6">
+            The Community Edition of FeatureSignals is Apache 2.0 licensed. You
+            can read every line of code, fork it, run it on your own hardware,
+            and contribute back. The same binary that powers our cloud offering
+            powers your self-hosted instance. No &ldquo;open core&rdquo; with a
+            proprietary enterprise layer. No feature gating behind a license key
+            for core functionality. Real open source, because trust is built on
+            transparency.
           </p>
+          <Link
+            href="https://github.com/dinesh-g1/featuresignals"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GitPullRequest size={16} />
+            View on GitHub
+          </Link>
         </motion.div>
       </div>
     </section>
