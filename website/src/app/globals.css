@@ -244,8 +244,10 @@
     --signal-bg-warning-muted: #422006;
     --signal-bg-info-emphasis: #1e40af;
     --signal-bg-info-muted: #172554;
-    --signal-bg-inverse: #f8fafc;
-    --signal-bg-inverse-secondary: #e2e8f0;
+    /* --signal-bg-inverse intentionally NOT inverted in dark mode.
+       All consumers (footer, CodeBlock, hero sections, header CTAs, TryIt)
+       hardcode light-on-dark content designed for a dark surface.
+       Inverting to light would create white-on-white invisibility bugs. */
 
     /* Border */
     --signal-border-default: #334155;
@@ -293,14 +295,20 @@ body {
   color: var(--signal-fg-primary);
 }
 
-/* Code block selection — high contrast on dark backgrounds */
-.code-block-selection ::selection,
-.code-block-selection ::-moz-selection {
-  background: var(--signal-bg-accent-emphasis);
+/* Code block selection — high contrast on dark surfaces.
+   Uses background-color (not shorthand) for maximum browser compatibility
+   with the ::selection pseudo-element. The `color` must be hardcoded white
+   because code blocks always render on a dark background regardless of theme. */
+.code-block-selection ::selection {
+  background-color: var(--signal-bg-accent-emphasis);
   color: #ffffff;
 }
-.code-block-selection ::-webkit-selection {
-  background: var(--signal-bg-accent-emphasis);
+
+/* Pre/code elements that render on dark surfaces need the same treatment
+   even when not wrapped in .code-block-selection (e.g., inline examples). */
+pre:has(code) ::selection,
+.bg-gradient-mesh-dark ::selection {
+  background-color: var(--signal-bg-accent-emphasis);
   color: #ffffff;
 }
 

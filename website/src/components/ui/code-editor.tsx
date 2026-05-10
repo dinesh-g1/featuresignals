@@ -398,7 +398,7 @@ export function CodeBlock({
       </div>
 
       {/* Code area */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto code-block-selection">
         <HighlightedCode code={code} showLineNumbers={showLineNumbers} />
       </div>
     </div>
@@ -487,7 +487,7 @@ export function CodeEditor({
       </div>
 
       {/* Code area */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto code-block-selection">
         <HighlightedCode code={snippet.code} />
       </div>
     </div>

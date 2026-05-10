@@ -445,6 +445,7 @@ function TryIt({
                     "bg-[var(--signal-bg-inverse)]",
                     "text-[var(--signal-fg-on-emphasis)]",
                     "overflow-x-auto",
+                    "code-block-selection",
                   )}
                 >
                   {Object.entries(state.headers)
@@ -464,6 +465,7 @@ function TryIt({
                     "overflow-x-auto",
                     "max-h-96 overflow-y-auto",
                     "whitespace-pre-wrap",
+                    "code-block-selection",
                   )}
                 >
                   {state.body || "(empty body)"}
