@@ -213,9 +213,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) serveStatic(w http.ResponseWriter, req *http.Request, d Domain) {
-	// Security: prevent path traversal in static serving
+	// Security: prevent path traversal in static serving.
+	// Only block ".." when it appears as a path segment (e.g., /../ or /..),
+	// not when it appears inside a filename (e.g., Next.js chunk 00d..rszoo1gv.js).
 	cleanPath := filepath.Clean(req.URL.Path)
-	if strings.Contains(cleanPath, "..") {
+	if strings.HasPrefix(cleanPath, "../") || strings.Contains(cleanPath, "/../") || strings.HasSuffix(cleanPath, "/..") {
 		http.Error(w, "403 Forbidden", http.StatusForbidden)
 		return
 	}
