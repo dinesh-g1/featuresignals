@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>FeatureSignals Engineering Blog</title>
+    <link>https://featuresignals.com/blog</link>
+    <description>Stories about feature flags, release infrastructure, and building better software.</description>
+    <language>en-us</language>
+    <atom:link href="https://featuresignals.com/feed.xml" rel="self" type="application/rss+xml"/>
+
+    <item>
+      <title>How We Built a Sub-Millisecond Feature Flag Evaluation Engine in Go</title>
+      <link>https://featuresignals.com/blog/how-we-built-sub-millisecond-eval-engine-go</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/how-we-built-sub-millisecond-eval-engine-go</guid>
+      <description>A deep technical walkthrough of our stateless evaluation engine: 9-step short-circuit evaluation, hand-rolled MurmurHash3 consistent hashing for percentage rollouts, zero heap allocation on the hot path, and in-memory ruleset caching with PostgreSQL LISTEN/NOTIFY invalidation. With benchmarks and code.</description>
+      <category>Engineering</category>
+      <pubDate>Fri, 01 May 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Introducing the AI Janitor: Autonomous Stale Flag Cleanup</title>
+      <link>https://featuresignals.com/blog/introducing-ai-janitor-autonomous-stale-flag-cleanup</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/introducing-ai-janitor-autonomous-stale-flag-cleanup</guid>
+      <description>Feature flags rot. The AI Janitor scans your flags against configurable staleness thresholds — 14 days for releases, 30 days for experiments, 90 days for ops toggles — then analyzes your source code and opens cleanup PRs automatically. Works with GitHub, GitLab, Bitbucket, and Azure DevOps. Here's how we built it and what it's already cleaning up in production.</description>
+      <category>Product</category>
+      <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Why OpenFeature Matters: Breaking Free from Vendor Lock-In</title>
+      <link>https://featuresignals.com/blog/why-openfeature-matters-breaking-free-vendor-lock-in</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/why-openfeature-matters-breaking-free-vendor-lock-in</guid>
+      <description>Most feature flag platforms trap you with proprietary SDKs — switching means rewriting every evaluation call across your entire codebase. OpenFeature changes that. We shipped native OpenFeature providers across all 8 of our SDKs, so you can swap from LaunchDarkly to FeatureSignals with a one-line provider change. Here's the architecture, code examples in Go, Node, and Python, and the case for open standards in developer tooling.</description>
+      <category>Open Source</category>
+      <pubDate>Wed, 01 Apr 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Migrating from LaunchDarkly: A Technical Guide with Zero Downtime</title>
+      <link>https://featuresignals.com/blog/migrating-from-launchdarkly-technical-guide-zero-downtime</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/migrating-from-launchdarkly-technical-guide-zero-downtime</guid>
+      <description>A complete migration playbook covering the full 5-step process: discover providers, validate credentials, dry-run analysis, execute import, and monitor progress. We walk through operator mapping (13 operators, negation support), segment migration, environment handling, IaC export for GitOps, and post-migration verification — with real API calls and configuration snippets.</description>
+      <category>Guides</category>
+      <pubDate>Sun, 01 Mar 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Feature Flag Governance for SOC 2 Compliance</title>
+      <link>https://featuresignals.com/blog/feature-flag-governance-soc2-compliance</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/feature-flag-governance-soc2-compliance</guid>
+      <description>Feature flags touch production configuration, which means they sit squarely inside your compliance boundary. We break down RBAC with per-environment toggle permissions, tamper-evident audit logging with before/after diffs, change approval workflows, SSO with SCIM provisioning, and how to map flag controls to SOC 2 Trust Service Criteria — plus GDPR and HIPAA considerations for regulated teams.</description>
+      <category>Security</category>
+      <pubDate>Sun, 01 Mar 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Progressive Delivery Patterns Every Team Should Know</title>
+      <link>https://featuresignals.com/blog/progressive-delivery-patterns-every-team-should-know</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/progressive-delivery-patterns-every-team-should-know</guid>
+      <description>Canary releases, ring-based deployments, percentage rollouts with consistent hashing, kill switches for emergency response, and A/B experiments with impression tracking — all implemented with feature flags. We show production patterns in Go and Node.js, how to structure your observability stack during rollouts, and what to monitor when you're pushing to 1% then 10% then 100% of users.</description>
+      <category>Guides</category>
+      <pubDate>Sun, 01 Feb 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Self-Hosting Feature Flags: The Complete Infrastructure Guide</title>
+      <link>https://featuresignals.com/blog/self-hosting-feature-flags-complete-infrastructure-guide</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/self-hosting-feature-flags-complete-infrastructure-guide</guid>
+      <description>Why self-host? Data sovereignty for air-gapped environments, predictable costs at scale, and full control over your deployment topology. We cover the architecture — a single Go binary backed by PostgreSQL, zero external service dependencies — plus Docker Compose quick start (3 minutes to production), Kubernetes with Helm, reverse proxy setup with Caddy or Nginx, backup and disaster recovery, and Prometheus/Grafana monitoring with pre-built dashboards.</description>
+      <category>DevOps</category>
+      <pubDate>Thu, 01 Jan 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>The Hidden Cost of Stale Feature Flags</title>
+      <link>https://featuresignals.com/blog/hidden-cost-of-stale-feature-flags</link>
+      <guid isPermaLink="true">https://featuresignals.com/blog/hidden-cost-of-stale-feature-flags</guid>
+      <description>Stale flags don't just clutter your code — they multiply test matrix complexity, slow CI pipelines, confuse new developers, and hide real bugs behind dead conditional branches. We analyzed thousands of production flags and found the average flag lives 4x longer than its useful lifespan. The result is a compounding tax on every engineering team that ships features. Here's the data, the patterns we observed, and how the AI Janitor automates the cleanup at scale.</description>
+      <category>Engineering</category>
+      <pubDate>Thu, 01 Jan 2026 00:00:00 +0000</pubDate>
+    </item>
+
+  </channel>
+</rss>
