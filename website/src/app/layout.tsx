@@ -66,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
+    <html lang="en" className="scroll-smooth scroll-pt-[56px]" data-scroll-behavior="smooth">
       <head />
       <body className="min-h-screen flex flex-col bg-[var(--signal-bg-primary)] text-[var(--signal-fg-primary)] font-sans antialiased overflow-x-hidden">
         {/* Announcement Banner */}
