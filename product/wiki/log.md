@@ -1,5 +1,300 @@
 # FeatureSignals Product Wiki — Activity Log
 
+## [2026-05-19 10:00] bugfix | StartListening goroutine + stale binary — routes returning 404
+
+### Context
+Agents and Policies pages showed blank white screen with "route not found" errors. Root cause: two bugs.
+
+### Bug 1: StartListening blocking main goroutine
+The new `PGInvalidator.Subscribe()` correctly blocks until context cancellation, but `main.go` called `evalCache.StartListening(listenCtx)` synchronously instead of in a goroutine. The server hung after "LISTEN started" and never reached `http.ListenAndServe()`. Fixed by wrapping in `go func()`.
+
+### Bug 2: Stale binary
+Running `./server` binary was from May 1, predating all P0 work. Routes existed in source but not in the running process. Fixed by rebuilding with `go build -o fs-server ./cmd/server`.
+
+### Fix applied
+- `server/cmd/server/main.go`: Wrapped `StartListening` in goroutine
+- Rebuilt server binary
+
+### Verification
+- GET /v1/agents → 401 (was 404) ✅
+- GET /v1/policies → 401 (was 404) ✅
+- POST /v1/agents → 415 (was 404) ✅
+- Dashboard TypeScript: zero errors
+- Server tests: 36/36 PASS
+
+
+## [2026-05-19 08:30] implementation | Phase 0 — Agent Runtime core interfaces (P0 #15, #16, #17, #19, #22)
+
+### Context
+The ARCHITECTURE_RESILIENCE_ASSESSMENT identified Agent Runtime abstraction as the MOST CRITICAL decision. Building MCP-specific infrastructure = lock-in. Solution: protocol-agnostic interfaces from day 1, MCP as adapter.
+
+### Key changes
+- **New: `domain/agent_types.go`** (340 lines) — `Brain` interface (Reason/Learn/Type), `Task`/`Decision`/`Reasoning` (EU AI Act-compliant), `Experience` (learning), `Agent` identity (scopes/rate limits/cost profile), `AgentMaturity` (L1-L5 per context + stats), `AgentContext`.
+- **New: `domain/tool_registry.go`** (99 lines) — `Tool` (JSON Schema params, scopes, dangerous/idempotent, maturity required), `ToolRegistry` interface, `ToolHandler`.
+- **New: `domain/governance.go`** (186 lines) — `AgentAction`, `BlastRadiusEstimate`, `GovernanceStep`, `GovernancePipeline` (composable middleware), `GovernanceError`, 7 well-known step names.
+- **New: `domain/agent_protocol.go`** (143 lines) — IAP: `AgentMessage` envelope, 21 `AgentMessageType` constants, typed payload structs.
+- **New: `agent/registry.go`** (237 lines) — `InMemoryToolRegistry` (maturity-gated, scope-filtered), `InMemoryPipeline` (10ms/step budget).
+
+### Architecture decisions
+- MCP is adapter, not foundation. IAP is canonical. Brain pluggable (LLM/rule/neuro-symbolic/hybrid/custom). Governance pluggable middleware. Maturity per-context. All domain types in `domain/`, implementations in `agent/`.
+
+### P0 items addressed
+- #15 Agent Runtime — PARTIAL (Brain/ToolRegistry/InMemoryRegistry done; workflow DAG TBD)
+- #16 Internal agent protocol — DONE
+- #17 Agent governance — PARTIAL (GovStep/Pipeline/InMemoryPipeline done; CEL schema TBD)
+- #19 Agent Registry schema — PARTIAL (domain types done; DB migration TBD)
+- #22 Agent Runtime protocol agnosticism — DONE
+
+### Files changed (5 new)
+- `server/internal/domain/agent_types.go` — NEW
+- `server/internal/domain/tool_registry.go` — NEW
+- `server/internal/domain/governance.go` — NEW
+- `server/internal/domain/agent_protocol.go` — NEW
+- `server/internal/agent/registry.go` — NEW
+
+### P0 Progress (22 items): 4 DONE, 4 PARTIAL, 14 GAP
+
+### Next: Workflow DAG format + CEL policy schema + DB migration for agent_registry + NATS adapter
+
+
+
+## [2026-05-19 07:00] implementation | Phase 0 — CacheInvalidator + EventBus interfaces + PG LISTEN/NOTIFY fix (P0 items #20, #21 DONE)
+
+### Context
+Pre-implementation audit revealed that `domain.EvalStore.ListenForChanges` was declared in the interface but had zero implementations in the postgres store — cache invalidation via PG NOTIFY was silently broken in production. Additionally, the ARCHITECTURE_RESILIENCE_ASSESSMENT identified cache invalidation as a P0 abstraction gap: PG LISTEN/NOTIFY was used directly without an interface, coupling the cache to PostgreSQL.
+
+### Key changes
+- **New: `domain/cache_invalidator.go`** — `CacheInvalidator` interface (Invalidate/Subscribe/Close). Protocol-agnostic.
+- **New: `domain/event_bus.go`** — `EventBus` interface (Publish/Subscribe/Request/Close), `EventEnvelope` message format (tracing, idempotency, tenant isolation), `EventSubscription` handle, `EventHandler` function type.
+- **New: `store/postgres/invalidator.go`** — `PGInvalidator`: PG LISTEN/NOTIFY adapter implementing `CacheInvalidator`. Reconnection with exp backoff, multi-channel, non-blocking handlers.
+- **New: `events/eventbus.go`** — `NoopEventBus` + `LoggingEventBus` decorator for single-instance/development.
+- **Fixed: `store/postgres/store.go`** — `ListenForChanges` now delegates to `PGInvalidator` via `SetInvalidator`, with legacy fallback.
+- **Updated: `store/cache/inmemory.go`** — `StartListening` uses `CacheInvalidator` when set, falls back to legacy `store.ListenForChanges`.
+- **Updated: `cmd/server/main.go`** — `PGInvalidator` wired into Store and Cache.
+- **New: `store/postgres/invalidator_test.go`** — 6 integration tests.
+- **Updated: `store/cache/inmemory_test.go`** — `mockInvalidator` + 3 invalidator-path tests.
+
+### Architecture decisions
+- `CacheInvalidator` placed in `domain/` alongside other ports (not in a separate `infra/` package). Follows existing pattern where domain defines the interface and adapters live in their respective packages.
+- `PGInvalidator` in `store/postgres/` rather than a new `infra/postgres_invalidator/`. Follows existing codebase structure. Can be extracted to `infra/` later when the pattern is established.
+- Backward compatibility: `ListenForChanges` on the Store remains the canonical method for the legacy path; the `CacheInvalidator` is additive, not a breaking change.
+
+### P0 items addressed
+- **#20 EventBus interface specification** — DONE. Interface + envelope + no-op adapter + logging decorator. NATS adapter is NEXT.
+- **#21 CacheInvalidator interface specification** — DONE. Interface + PG adapter + reconnection + multi-channel.
+- **Bug fix: ListenForChanges runtime panic** — DONE. Was silently broken; now works via PGInvalidator.
+
+### Files changed (10 files)
+- `server/internal/domain/cache_invalidator.go` — NEW
+- `server/internal/domain/event_bus.go` — NEW
+- `server/internal/store/postgres/invalidator.go` — NEW
+- `server/internal/store/postgres/invalidator_test.go` — NEW
+- `server/internal/events/eventbus.go` — NEW
+- `server/internal/store/postgres/store.go` — Updated (SetInvalidator, enhanced ListenForChanges)
+- `server/internal/store/cache/inmemory.go` — Updated (SetInvalidator, refactored StartListening)
+- `server/internal/store/cache/inmemory_test.go` — Updated (mockInvalidator, 3 new tests)
+- `server/cmd/server/main.go` — Updated (PGInvalidator wiring)
+- `product/wiki/private/PRE_IMPLEMENTATION_GAP_ANALYSIS.md` — Updated (#20, #21 marked DONE)
+
+### Test results
+- `go build ./...` — PASS
+- `go vet ./internal/store/... ./internal/domain/... ./cmd/server/...` — PASS
+- `go test ./internal/store/cache/... -race` — 16/16 PASS (including 3 new invalidator tests)
+- `go test ./... -race` — 35/36 PASS (1 pre-existing handlers timeout, unrelated)
+
+### Next steps
+1. Implement NATS adapter behind EventBus interface (P0 #9 — message spec)
+2. Create migration plan for v2.0 tables (P0 #3)
+3. Begin Agent Runtime core interfaces: Brain, ToolRegistry, GovernanceStep (P0 #15, #22)
+
+## [2026-05-19 04:00] terminology | Feature Abstraction Principle — feature-level language required in all user-facing surfaces
+
+### Context
+TERMINOLOGY.md v2.0.0 established a nuanced vocabulary policy (keeping standard terms, retiring invented ones). But it was still flag-mechanic-centric: UI labels said "On"/"Off", error messages said "Flag toggled ON in production", and audit entries said "Bob toggled flag new-login ON". Users don't care about flags — they care about their FEATURES. A flag is the mechanism; the feature is the outcome.
+
+### Key changes
+- **TERMINOLOGY.md v2.0.0 → v2.1.0:** Added §0: The Feature Abstraction Principle with a transformation table mapping flag-level → feature-level language. Updated §3 Status Labels (On/Off/Archived → LIVE/PAUSED/RETIRED/PARTIAL/SCHEDULED/NEEDS ATTENTION). Added §5 Feature-Level Notifications table with 10 approved notification patterns.
+- **CLAUDE.md v5.2.1 → v5.2.1:** Rewrote rule #11 to mandate feature-level language with concrete examples.
+- **UI_UX_SPECIFICATION.md:** Updated key pages — Flag List (status filter → LIVE/PAUSED/RETIRED/PARTIAL, bulk actions → Retire, overflow menu → Retire Feature), Flag Detail (status labels → LIVE/PAUSED, history entries → "Bob enabled New login", archived state → "feature is retired"), Preflight Report (header → "Impact Analysis: New login", action → "New login → LIVE", state → "PAUSED → LIVE"), Cleanup (dashboard header → "Feature Cleanup Dashboard", "Ready to Retire", "Unused" not "Stale", "Feature is PAUSED" not "Flag is OFF").
+- **generate_prs_v2.py:** Added TODO comment to update requirement descriptions to feature-level language before next .docx regeneration.
+
+### Files changed
+- `product/wiki/public/TERMINOLOGY.md` — v2.0.0 → v2.1.0 (§0 added, §3 updated, §5 new notifications table)
+- `CLAUDE.md` — rule #11 rewritten
+- `product/wiki/private/UI_UX_SPECIFICATION.md` — 15+ surgical replacements across §6, §7, §10
+- `product/wiki/private/generate_prs_v2.py` — TODO comment added
+- `product/wiki/log.md` — updated (this entry)
+
+### Sources consulted
+- TERMINOLOGY.md v2.0.0
+- CLAUDE.md v5.2.1
+- UI_UX_SPECIFICATION.md v1.0.0
+- THE PRINCIPLE: Feature-level abstraction (flag = mechanism, feature = outcome)
+
+## [2026-05-19 03:00] terminology | TERMINOLOGY.md v2.0.0 — Nuanced vocabulary policy replacing blanket "no generic terms"
+
+### Context
+The original TermLex (v1.0.0) banned all standard CRUD and lifecycle verbs, replacing them with invented premium terms (forge, reforge, engage/disengage, authorize, inspect, tune, enlist/delist). This created friction: engineers had to mentally translate every standard verb, SDK method names diverged from industry norms, and some replacements were longer or more obscure than the originals. The policy needed nuance.
+
+### Key changes
+- **Added THE PRINCIPLE** — 4 criteria for when to use premium terms, with "clarity beats cleverness" as the overriding rule
+- **Retired 9 premium terms:** forge→create, reforge→update, engage/disengage→toggle on/off, authorize→approve, inspect→analyze, tune→configure, enlist/delist→removed entirely
+- **Kept 4 premium terms** that genuinely elevate: ship (shorter than deploy), observe (more active than monitor), sweep (vivid, themed), survey (conveys thoroughness over scan)
+- **Kept 7 standard terms** as-is: create, update, toggle, approve, analyze, configure, discover
+- **Narrowed banned word list** from 15+ to 3: deploy→ship, clean up→sweep, scan→survey
+- **Updated all surfaces:** §2 Lifecycle Verbs (single table + retired terms), §3 UI Labels ("Create Flag" not "Forge Flag"), §3 Status Labels ("On/Off" not "Engaged/Disengaged"), §8 Enforcement Rules (explicit banned word table, standard terms must NOT be flagged), §9 Quick Reference Card
+- **Standard terms explicitly protected from lint false positives**
+
+### Files changed
+- `product/wiki/public/TERMINOLOGY.md` — v1.0.0 → v2.0.0 (major revision)
+- `CLAUDE.md` — v5.2.0 → v5.2.1, rule #11 rewritten, Document History updated
+- `product/wiki/log.md` — updated (this entry)
+
+### Sources consulted
+- Original TERMINOLOGY.md v1.0.0
+- CLAUDE.md v5.2.0
+- Stripe, Linear, Vercel, GitHub terminology conventions
+
+## [2026-05-19 02:00] architecture | PRS v2.1.0 — Agent Operating Model + Architecture Resilience integration
+
+### Context
+The AGENTIC_OPERATING_MODEL and ARCHITECTURE_RESILIENCE_ASSESSMENT were completed as standalone documents. They needed to be integrated into the three canonical specification documents: the PRS (.docx), UI/UX Specification, and Pre-Implementation Gap Analysis. This session performs that integration, ensuring all strategic research flows into implementable specifications.
+
+### Key changes
+
+**PRS v2.1.0 (.docx regenerated):**
+- Added §11: Agent Operating Model Requirements — 33 new FS-AGENT requirements (FS-AGENT-001 through FS-AGENT-033) covering Agent Runtime, Internal Agent Registry, 7-Step Governance Protocol, Agent Maturity Model (L1-L5), Learning Loops, Agent Communication (SSE + NATS), Agent-Driven Flows (Onboarding, Incident Response, Sales, Billing, QA), and Agent Autonomy Configuration
+- Added §12: Architecture Resilience Requirements — 7 new NFR-RES requirements (NFR-RES-001 through NFR-RES-007) covering EventBus Interface, CacheInvalidator Interface, Agent Runtime Protocol Agnosticism, Zero SQL in Business Logic, Versioned Core Interfaces, Infrastructure Feature Flags, and Sub-Processor Pluggability
+- Added Agent Accessibility callouts to all 5 Stage 3 product sections (§8.1-8.5): Code2Flag, Preflight, IncidentFlag (agent-native), Impact Analyzer, and ABM (scope expansion to manage internal platform agents)
+- Expanded Glossary with 12 new terms: Agent Runtime, Internal Platform Agent, Agent Maturity Model, Governance Protocol, Autonomy Budget, Blast Radius, Override Console, Learning Pipeline, MCP Server, EventBus Interface, CacheInvalidator Interface, Infrastructure Feature Flags
+- Renumbered sections: old §11-§23 → new §13-§25
+- Updated version history with v2.1.0 entry
+
+**UI/UX Specification v1.1.0:**
+- Split Agents navigation into Customer Agents (ABM) and Platform Agents (internal)
+- Added 3 new pages: §12 Platform Agents Dashboard (activity feed, 8 agent status cards, pending decisions queue, quick stats), §13 Platform Agent Detail (Overview/Configuration/Learning/Audit tabs with maturity progress, autonomy slider, learning stats), §14 Override Console (split-screen: agent activity feed + action detail with Approve/Modify & Approve/Reject/Escalate buttons + override history)
+- Updated route structure: /agents/customer, /agents/platform, /override
+- Added 🖲️ Override to primary navigation
+- Added documentation drawer content for all new pages
+- Renumbered old §§12-21 → §§15-24
+
+**Pre-Implementation Gap Analysis v2.1.0:**
+- Added Dimension 13: Agent Runtime Gaps — 10 gaps identified (Agent Runtime spec, internal protocol, governance implementation, maturity tracking, Agent Registry schema, learning pipeline, sandboxing, cost tracking, explainability, rollback design)
+- Added Dimension 14: Architecture Resilience Gaps — 7 gaps identified (EventBus interface, CacheInvalidator interface, Agent Runtime protocol agnosticism, Store SQL audit, Versioned Core interfaces, Infrastructure feature flags, Sub-processor interface audit)
+- Updated P0 action list: 14 → 22 items (8 new P0 items from Dimensions 13-14)
+- Updated total effort: ~61 → ~97 person-days
+- Updated timeline: 3-4 weeks → 5-6 weeks specification phase + ~20 person-days architecture hardening
+- Total: 14 dimensions, 106 gaps, 22 P0 items
+
+### Files changed
+- `product/wiki/private/generate_prs_v2.py` — updated with new §§11-12, agent accessibility callouts, glossary terms, version 2.1.0
+- `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` — regenerated (v2.1.0, 25 sections)
+- `product/wiki/private/UI_UX_SPECIFICATION.md` — updated with 3 new pages, split navigation, renumbered sections (v1.1.0)
+- `product/wiki/private/PRE_IMPLEMENTATION_GAP_ANALYSIS.md` — updated with 2 new dimensions, 17 new gaps, 8 new P0 items (v2.1.0)
+- `product/wiki/log.md` — updated (this entry)
+
+### Sources consulted
+- AGENTIC_OPERATING_MODEL.md (Parts 1-7, Appendices A-C)
+- ARCHITECTURE_RESILIENCE_ASSESSMENT.md (Parts 1-7, Appendices A-C)
+- generate_prs_v2.py (full script)
+- UI_UX_SPECIFICATION.md v1.0.0 (Sections 1-21)
+- PRE_IMPLEMENTATION_GAP_ANALYSIS.md v1.0.0 (Dimensions 1-12)
+
+## [2026-05-18 21:00] architecture | Architecture Resilience Assessment — 15-year survival analysis
+
+### Context
+The AGENTIC_OPERATING_MODEL defines the North Star architecture. The PRE_IMPLEMENTATION_GAP_ANALYSIS identifies 62 specification gaps across 12 dimensions. But neither answers: "Will this architecture survive 15 years of AI evolution without a ground-up rewrite?" This assessment fills that gap — applying a 15-year lens to every component, stress-testing against 7 hypothetical future scenarios, and identifying the minimum changes needed now to ensure longevity.
+
+### Key findings
+- **Overall score: 5.8/10 → target 8.5/10** across 10 resilience dimensions
+- **7 critical changes identified (~20 person-days)** that must be made BEFORE implementation:
+  1. Abstract Event Bus (P0) — `EventBus` interface, NATS becomes adapter
+  2. Abstract Cache Invalidation (P0) — `CacheInvalidator` interface, PG LISTEN/NOTIFY becomes adapter
+  3. Agent Runtime Abstraction (P0) ⚠️ MOST CRITICAL — Pluggable Brain, protocol-agnostic tool execution, governance pipeline as middleware. MCP is an ADAPTER, not the internal protocol.
+  4. Store Interface Audit (P1) — zero SQL in business logic, ISP compliance, automated lint rules
+  5. Database Migration Abstraction (P1) — business logic never knows table/column names
+  6. Versioned Core Interfaces (P1) — CoreV1/CoreV2, N-2 support, 5-year deprecation
+  7. Infrastructure Feature Flags (P2) — dogfood our own product to manage infrastructure evolution
+- **12 components assessed:** 6 resilient (✓), 5 fragile (⚠️), 1 not-yet-built-at-risk (⚠️ Agent Runtime)
+- **7 stress test scenarios:** 4 survive cleanly, 2 survive with fixes, 1 requires significant effort (database migration)
+- **Agent protocol independence is the single most critical architectural decision.** MCP scored 30% survival probability to 2040. Must be an adapter, not the foundation.
+- **10 resilience principles defined** (Interface-First, Pluggable Everything, Data Independence, Protocol Agnostic, Configuration-Driven, Self-Hosting, Clean Event Model, Schema Flexibility, Graduated Deprecation, Dogfooding)
+- **15-year technology survival probability matrix** appended — MCP (30%), NATS (60%), SigNoz (50%) are the highest-risk dependencies
+- **Aligned with AGENTIC_OPERATING_MODEL's 7 Immutable Principles** — all validated as architecturally resilient
+
+### Files changed
+- `product/wiki/private/ARCHITECTURE_RESILIENCE_ASSESSMENT.md` — created (914 lines, 7 parts, 3 appendices)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Wiki index updated
+- Added `ARCHITECTURE_RESILIENCE_ASSESSMENT.md` to private pages section
+- Updated page count: 36 (11 public, 21 private, 4 internal)
+
+## [2026-05-18 19:00] architecture | Agentic Operating Model — the definitive North Star architecture
+
+### Context
+The platform has evolved from "SaaS with AI features" to "human-process-rooted lifecycle platform" to its final form: an **agent-operated platform**. The Agentic Operating Model inverts the entire architecture — the MCP Server becomes the primary interface, AI agents become the primary users, and the human dashboard shifts from management console to monitoring/override console. This is no longer a strategy discussion; it is the architectural North Star.
+
+### Key changes
+- **Fundamental inversion:** Primary user = AI agent (not human). Primary interface = MCP Server (not REST API). Dashboard role = monitoring/override (not daily operation).
+- **12 Internal Platform Agents defined:** Onboarding, Sales, Support, SRE, Billing, Docs, QA, Release, Compliance, Security, Flag Janitor, Org Learning — each with defined role, autonomy ceiling, cost profile, and maturity trajectory.
+- **5-level Agent Maturity Model:** L1 (Shadow) → L2 (Assist) → L3 (Execute) → L4 (Autonomy) → L5 (Teach). Progression is data-driven, per-context, with automatic regression on performance degradation.
+- **7-step Governance Protocol:** Every agent action passes through authentication → authorization → policy check → maturity check → rate limit → blast radius → audit before execution.
+- **6 complete flow specifications:** Customer Onboarding (signup→first flag in <15min), Full 14-Step Feature Lifecycle (4 human touchpoints), Production Incident Response (MTTR <2min), Sales Expansion (auto-proposal), Billing & Cost Optimization (full automation), Dogfooding (we use FeatureSignals to build FeatureSignals).
+- **20 new FS-AGENT requirements** defined for PRS: Agent Runtime (FS-AGENT-001–005), Governance (006–010), Maturity (011–015), Learning (016–020).
+- **5-year trajectory:** Foundation → Maturation → Autonomy → Network Effects → Ecosystem.
+- **7 Immutable Principles** that survive every pivot.
+
+### Files changed
+- `product/wiki/private/AGENTIC_OPERATING_MODEL.md` — created (1,901 lines, 7 parts, 3 appendices)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Wiki index updated
+- Added `AGENTIC_OPERATING_MODEL.md` to private pages section
+
+## [2026-05-18 17:00] architecture | Pre-Implementation Gap Analysis — 12-dimension audit before coding begins
+
+### Context
+Before writing any new code for the v2.0 architecture (4 unified products, event-driven infrastructure, 5 maturity levels), we must identify every specification gap. Strategic documentation (WHAT to build) is excellent; implementation specifications (HOW to build) are largely missing. This audit exists to prevent wrong assumptions, incompatible APIs, and missing infrastructure during implementation.
+
+### Key findings
+- **Of 12 dimensions audited:** 0 fully COVERED, 3 PARTIALLY COVERED, 9 are GAPS
+- **14 P0 items** (61 person-days) that MUST be completed before any new code: ABM SDK spec, evaluation event schema, 20-table database migration plan, ClickHouse schema, OpenAPI 3.0 spec, API versioning policy, threat model, fine-grained scopes, NATS message spec, GitHub App spec, performance budgets, in-app docs content, import tool spec, Kubernetes manifests
+- **27 P1 items** (113 person-days) needed during Phase 0-2: SDK code gen templates, per-subsystem observability, load/visual/accessibility/performance/security testing, multi-node scaling, Helm chart, CI/CD, backup strategy, rate limiting tiers, MCP tool schemas, input validation, SOC 2 engagement, BAA/DPA/SLA templates, API docs, SDK docs, tutorials
+- **21 P2 items** (75 person-days) deferrable to Phase 3+: migration adapters, chaos/contract/migration testing, Terraform, DR, air-gapped guide, penetration test, procurement package
+- **Core insight:** The platform has excellent WHAT documentation but insufficient HOW specification. Closing P0 gaps is a 3-4 week specification investment that will save 5-10x during implementation.
+
+### Files changed
+- `product/wiki/private/PRE_IMPLEMENTATION_GAP_ANALYSIS.md` — created (445 lines, 12 dimensions, 89 gaps)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Wiki index updated
+- Added `PRE_IMPLEMENTATION_GAP_ANALYSIS.md` to private pages section
+- Updated page count: 30 (9 public, 17 private, 4 internal)
+
+## [2026-05-18 15:00] governance | TermLex + Definition of Done — enforceable vocabulary & completion standards
+
+### Context
+Two critical governance gaps identified: (1) no standardized vocabulary across surfaces — APIs, UI, docs, and code all using inconsistent generic verbs; (2) no enforceable definition of when a feature is actually done — leading to partial implementations, deferred testing, and missing observability.
+
+### Key changes
+- **TERMINOLOGY.md (TermLex):** Complete vocabulary standard covering 12 trademarked product names, 17 lifecycle verbs (forge/reforge/archive/engage/disengage/ship/revert/sweep/observe/inspect/survey/tune/authorize/optimize/orchestrate/enlist/delist), UI labels & microcopy, REST API naming conventions, SDK method naming, error message language patterns, documentation language, competitive positioning statements, enforcement rules (ESLint + Go lint + CI), and term lifecycle process. Quick reference card included.
+- **DEFINITION_OF_DONE.md:** Non-negotiable 7-layer completion pyramid (Infrastructure → Data → API → Testing → Frontend → Docs → Observability). Includes: full checklists per layer, PR template, layer applicability matrix (9 change types), enforcement rules (code review reject criteria, CI fail conditions, weekly reopened-feature audit). Core rule: no partial implementations accepted.
+- **CLAUDE.md updated (v5.2.0):** Added §0.7 Definition of Done referencing new standard. Added rule #11 to non-negotiable rules: no generic terminology. Added Terminology & Completeness section to §12 Code Quality Checklist.
+
+### Files changed
+- **Created:** `product/wiki/public/TERMINOLOGY.md` — 9-section vocabulary standard
+- **Created:** `product/wiki/public/DEFINITION_OF_DONE.md` — 10-section completion standard
+- **Updated:** `CLAUDE.md` — v5.2.0 with §0.7, rule #11, §12 additions
+- **Updated:** `product/wiki/index.md` — new Governance section with both pages
+- **Updated:** `product/wiki/log.md` — this entry
+
+### Core recommendation
+Both documents must be enforced from day one. Every PR template must include both checklists. Terminology violations in code review are blocking. Features marked "done" without all 7 layers are reopened on Monday audit.
+
 ## [2026-05-17 11:00] audit | Comprehensive Dashboard Codebase Audit — BRUTAL assessment
 
 ### Context

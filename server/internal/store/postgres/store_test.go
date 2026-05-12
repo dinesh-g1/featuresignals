@@ -3,29 +3,91 @@ package postgres_test
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/testcontainers/testcontainers-go"
+	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/migrate"
 	"github.com/featuresignals/server/internal/store/postgres"
+)
+
+var (
+	testContainer *tcpostgres.PostgresContainer
+	testConnStr   string
+	testOnce      sync.Once
+	testOnceErr   error
+	dockerOK      bool
 )
 
 func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	dbURL := os.Getenv("TEST_DATABASE_URL")
-	if dbURL == "" {
-		t.Skip("TEST_DATABASE_URL not set — skipping postgres integration test")
+
+	testOnce.Do(func() {
+		ctx := context.Background()
+
+		container, err := tcpostgres.Run(ctx, "postgres:16-alpine",
+			testcontainers.WithWaitStrategy(
+				wait.ForLog("database system is ready to accept connections").
+					WithOccurrence(2).
+					WithStartupTimeout(60*time.Second),
+			),
+		)
+		if err != nil {
+			testOnceErr = err
+			return
+		}
+		testContainer = container
+		dockerOK = true
+
+		connStr, err := container.ConnectionString(ctx, "sslmode=disable")
+		if err != nil {
+			testOnceErr = err
+			return
+		}
+		testConnStr = connStr
+
+		// Run migrations on the fresh database
+		if err := migrate.RunUp(ctx, connStr, slog.Default(), false); err != nil {
+			testOnceErr = err
+			return
+		}
+	})
+
+	if !dockerOK {
+		dbURL := os.Getenv("TEST_DATABASE_URL")
+		if dbURL == "" {
+			t.Skip("TEST_DATABASE_URL not set and Docker not available — skipping postgres integration test")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		pool, err := pgxpool.New(ctx, dbURL)
+		if err != nil {
+			t.Fatalf("connect to test db: %v", err)
+		}
+		t.Cleanup(func() { pool.Close() })
+		return pool
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	pool, err := pgxpool.New(ctx, dbURL)
+
+	if testOnceErr != nil {
+		t.Fatalf("start postgres container: %v", testOnceErr)
+	}
+
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, testConnStr)
 	if err != nil {
 		t.Fatalf("connect to test db: %v", err)
 	}
+
 	t.Cleanup(func() { pool.Close() })
+
 	return pool
 }
 
@@ -33,6 +95,12 @@ func cleanup(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 	for _, table := range []string{
+		"abm_track_events",
+		"abm_behaviors",
+		"eval_events",
+		"agent_maturity",
+		"agents",
+		"governance_policies",
 		"audit_logs", "env_permissions", "flag_states", "api_keys",
 		"flags", "segments", "environments", "projects", "org_members", "users", "organizations",
 	} {

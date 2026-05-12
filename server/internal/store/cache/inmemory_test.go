@@ -604,6 +604,121 @@ func TestCache_ImplementsRulesetCache(t *testing.T) {
 	var _ RulesetCache = (*Cache)(nil)
 }
 
+// ─── Tests for CacheInvalidator path ───────────────────────────────────────
+
+// mockInvalidator implements domain.CacheInvalidator for testing.
+type mockInvalidator struct {
+	mu      sync.Mutex
+	handler domain.InvalidationHandler
+}
+
+func (m *mockInvalidator) Invalidate(_ context.Context, _ string, _ []byte) error {
+	return nil
+}
+
+func (m *mockInvalidator) Subscribe(ctx context.Context, channel string, handler domain.InvalidationHandler) error {
+	m.mu.Lock()
+	m.handler = handler
+	m.mu.Unlock()
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (m *mockInvalidator) Close() error {
+	return nil
+}
+
+func (m *mockInvalidator) simulateNotify(channel string, payload []byte) {
+	m.mu.Lock()
+	h := m.handler
+	m.mu.Unlock()
+	if h != nil {
+		h(context.Background(), channel, payload)
+	}
+}
+
+func TestStartListening_InvalidatorPath_InvalidatesOnNotify(t *testing.T) {
+	store := &mockStore{
+		flags: []domain.Flag{{ID: "f1", Key: "test"}},
+	}
+	inv := &mockInvalidator{}
+	c := NewCache(store, testLogger(), nil)
+	c.SetInvalidator(inv)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c.LoadRuleset(ctx, "p", "env-1")
+	if c.GetRuleset("env-1") == nil {
+		t.Fatal("expected cached ruleset before notify")
+	}
+
+	// Start listening in background (blocked on ctx)
+	go c.StartListening(ctx)
+
+	// Give the goroutine time to register the handler
+	time.Sleep(10 * time.Millisecond)
+
+	payload, _ := json.Marshal(map[string]string{
+		"flag_id": "f1", "env_id": "env-1", "action": "UPDATE",
+	})
+	inv.simulateNotify("flag_changes", payload)
+
+	// Give the handler goroutine time to process
+	time.Sleep(10 * time.Millisecond)
+
+	if c.GetRuleset("env-1") != nil {
+		t.Error("expected cache to be invalidated after notify via invalidator")
+	}
+}
+
+func TestStartListening_InvalidatorPath_BroadcastsOnNotify(t *testing.T) {
+	store := &mockStore{}
+	inv := &mockInvalidator{}
+	bc := &mockBroadcaster{}
+	c := NewCache(store, testLogger(), bc)
+	c.SetInvalidator(inv)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go c.StartListening(ctx)
+	time.Sleep(10 * time.Millisecond)
+
+	payload, _ := json.Marshal(map[string]string{
+		"flag_id": "f1", "env_id": "env-42", "action": "INSERT",
+	})
+	inv.simulateNotify("flag_changes", payload)
+	time.Sleep(10 * time.Millisecond)
+
+	if bc.count() != 1 {
+		t.Fatalf("expected 1 broadcast, got %d", bc.count())
+	}
+	if bc.events[0].envID != "env-42" {
+		t.Errorf("expected env-42, got %s", bc.events[0].envID)
+	}
+}
+
+func TestStartListening_InvalidatorPath_InvalidJSON(t *testing.T) {
+	store := &mockStore{
+		flags: []domain.Flag{{ID: "f1", Key: "test"}},
+	}
+	inv := &mockInvalidator{}
+	c := NewCache(store, testLogger(), nil)
+	c.SetInvalidator(inv)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c.LoadRuleset(ctx, "p", "env-1")
+	go c.StartListening(ctx)
+	time.Sleep(10 * time.Millisecond)
+
+	inv.simulateNotify("flag_changes", []byte("not json at all"))
+	time.Sleep(10 * time.Millisecond)
+
+	if c.GetRuleset("env-1") == nil {
+		t.Error("cache should NOT be invalidated for unparseable payload")
+	}
+}
+
 // Ensure NewCache fields are properly initialised
 func TestNewCache_Initialization(t *testing.T) {
 	store := &mockStore{}
@@ -740,5 +855,142 @@ func (s *mockStore) ListCreditConsumptions(ctx context.Context, orgID, bearerID 
 	return nil, errCreditNotImpl
 }
 func (s *mockStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) CreateAgent(_ context.Context, _ *domain.Agent) error {
+	return errCreditNotImpl
+}
+func (s *mockStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) UpdateAgent(_ context.Context, _ *domain.Agent) error {
+	return errCreditNotImpl
+}
+func (s *mockStore) UpdateAgentHeartbeat(_ context.Context, _ string) error {
+	return errCreditNotImpl
+}
+func (s *mockStore) DeleteAgent(_ context.Context, _, _ string) error {
+	return errCreditNotImpl
+}
+func (s *mockStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error {
+	return errCreditNotImpl
+}
+func (s *mockStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) {
+	return nil, errCreditNotImpl
+}
+func (s *mockStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) {
+	return nil, errCreditNotImpl
+}
+
+// ─── EvalEventWriter ───────────────────────────────────────────────────────
+
+func (s *mockStore) InsertEvalEvent(_ context.Context, _ *domain.EvalEvent) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) InsertEvalEventBatch(_ context.Context, _ *domain.EvalEventBatch) error {
+	return errCreditNotImpl
+}
+
+// ─── EvalEventReader ───────────────────────────────────────────────────────
+
+func (s *mockStore) CountEvaluations(_ context.Context, _, _ string, _ time.Time) (int64, error) {
+	return 0, errCreditNotImpl
+}
+
+func (s *mockStore) CountEvaluationsByVariant(_ context.Context, _, _ string, _ time.Time) (map[string]int64, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) GetEvaluationLatency(_ context.Context, _, _ string, _ time.Time) (int64, int64, int64, error) {
+	return 0, 0, 0, errCreditNotImpl
+}
+
+func (s *mockStore) GetEvaluationVolume(_ context.Context, _ string, _ time.Time, _ string) ([]domain.TimeSeriesPoint, error) {
+	return nil, errCreditNotImpl
+}
+
+// ─── ABMEventStore ─────────────────────────────────────────────────────────
+
+func (s *mockStore) InsertTrackEvent(_ context.Context, _ *domain.ABMTrackEvent) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) InsertTrackEvents(_ context.Context, _ []domain.ABMTrackEvent) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) CountEventsByBehavior(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, errCreditNotImpl
+}
+
+func (s *mockStore) CountEventsByAgent(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, errCreditNotImpl
+}
+
+func (s *mockStore) GetVariantDistribution(_ context.Context, _, _ string, _ time.Time) (map[string]int, error) {
+	return nil, errCreditNotImpl
+}
+
+// ─── PolicyStore ───────────────────────────────────────────────────────────
+
+func (s *mockStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) CreatePolicy(_ context.Context, _ *domain.Policy) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) UpdatePolicy(_ context.Context, _ *domain.Policy) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) DeletePolicy(_ context.Context, _, _ string) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) SetPolicyEnabled(_ context.Context, _, _ string, _ bool) error {
+	return errCreditNotImpl
+}
+
+// ─── ABMBehaviorStore ──────────────────────────────────────────────────────
+
+func (s *mockStore) CreateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) GetBehavior(_ context.Context, _, _ string) (*domain.ABMBehavior, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) ListBehaviors(_ context.Context, _ string) ([]domain.ABMBehavior, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) ListBehaviorsByAgentType(_ context.Context, _, _ string) ([]domain.ABMBehavior, error) {
+	return nil, errCreditNotImpl
+}
+
+func (s *mockStore) UpdateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
+	return errCreditNotImpl
+}
+
+func (s *mockStore) DeleteBehavior(_ context.Context, _, _ string) error {
 	return errCreditNotImpl
 }

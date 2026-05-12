@@ -23,7 +23,8 @@ type Store struct {
 	pool               *pgxpool.Pool
 	lockMu             sync.Mutex
 	lockConn           *pgxpool.Conn
-	auditIntegrityKey  string // HMAC key for audit log tamper-evidence chain
+	auditIntegrityKey  string         // HMAC key for audit log tamper-evidence chain
+	invalidator        *PGInvalidator // optional; set via SetInvalidator for PG NOTIFY support
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
@@ -41,6 +42,14 @@ func (s *Store) SetAuditIntegrityKey(key string) {
 // (e.g. env var store) to share the same pool.
 func (s *Store) Pool() *pgxpool.Pool {
 	return s.pool
+}
+
+// SetInvalidator attaches a PGInvalidator to this store. After calling
+// SetInvalidator, ListenForChanges will use the invalidator for improved
+// reconnection handling. If not set, ListenForChanges uses the legacy
+// inlined implementation.
+func (s *Store) SetInvalidator(inv *PGInvalidator) {
+	s.invalidator = inv
 }
 
 // wrapNotFound converts pgx.ErrNoRows into domain.ErrNotFound.
@@ -1340,7 +1349,18 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 
 // --- Listen for changes ---
 
+// ListenForChanges implements domain.EvalStore.ListenForChanges.
+// If a PGInvalidator was configured via SetInvalidator, it delegates to the
+// invalidator for improved reconnection handling. Otherwise it uses a legacy
+// inlined LISTEN loop (no automatic reconnection on connection loss).
 func (s *Store) ListenForChanges(ctx context.Context, callback func(payload string)) error {
+	if s.invalidator != nil {
+		return s.invalidator.ListenForChanges(ctx, callback)
+	}
+
+	// Legacy path: acquire a dedicated connection and LISTEN directly.
+	// This does not handle reconnection — the connection is held for the
+	// lifetime of the context. Prefer SetInvalidator in production.
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
 		return fmt.Errorf("acquire conn for listen: %w", err)

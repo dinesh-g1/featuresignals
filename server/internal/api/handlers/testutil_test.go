@@ -1642,3 +1642,138 @@ func (s *mockStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string,
 	return errCreditNotImpl
 }
 
+// AgentStore stubs for domain.Store compliance.
+func (s *mockStore) CreateAgent(_ context.Context, _ *domain.Agent) error {
+	return errors.New("agent store not implemented in tests")
+}
+func (s *mockStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error) {
+	return nil, errors.New("agent store not implemented in tests")
+}
+func (s *mockStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error) {
+	return nil, errors.New("agent store not implemented in tests")
+}
+func (s *mockStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) {
+	return nil, errors.New("agent store not implemented in tests")
+}
+func (s *mockStore) UpdateAgent(_ context.Context, _ *domain.Agent) error {
+	return errors.New("agent store not implemented in tests")
+}
+func (s *mockStore) UpdateAgentHeartbeat(_ context.Context, _ string) error {
+	return errors.New("agent store not implemented in tests")
+}
+func (s *mockStore) DeleteAgent(_ context.Context, _, _ string) error {
+	return errors.New("agent store not implemented in tests")
+}
+
+// AgentMaturityStore stubs for domain.Store compliance.
+func (s *mockStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error {
+	return errors.New("agent maturity store not implemented in tests")
+}
+func (s *mockStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) {
+	return nil, errors.New("agent maturity store not implemented in tests")
+}
+func (s *mockStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) {
+	return nil, errors.New("agent maturity store not implemented in tests")
+}
+
+
+// ─── EvalEventWriter ───────────────────────────────────────────────────────
+
+func (m *mockStore) InsertEvalEvent(ctx context.Context, event *domain.EvalEvent) error {
+	return nil
+}
+
+func (m *mockStore) InsertEvalEventBatch(ctx context.Context, batch *domain.EvalEventBatch) error {
+	return nil
+}
+
+// ─── EvalEventReader ───────────────────────────────────────────────────────
+
+func (m *mockStore) CountEvaluations(ctx context.Context, orgID, flagKey string, since time.Time) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockStore) CountEvaluationsByVariant(ctx context.Context, orgID, flagKey string, since time.Time) (map[string]int64, error) {
+	return nil, nil
+}
+
+func (m *mockStore) GetEvaluationLatency(ctx context.Context, orgID, flagKey string, since time.Time) (int64, int64, int64, error) {
+	return 0, 0, 0, nil
+}
+
+func (m *mockStore) GetEvaluationVolume(ctx context.Context, orgID string, since time.Time, interval string) ([]domain.TimeSeriesPoint, error) {
+	return nil, nil
+}
+
+
+// ─── ABMEventStore ─────────────────────────────────────────────────────────
+
+func (m *mockStore) InsertTrackEvent(ctx context.Context, event *domain.ABMTrackEvent) error {
+	return nil
+}
+
+func (m *mockStore) InsertTrackEvents(ctx context.Context, events []domain.ABMTrackEvent) error {
+	return nil
+}
+
+func (m *mockStore) CountEventsByBehavior(ctx context.Context, orgID, behaviorKey string, since time.Time) (int, error) {
+	return 0, nil
+}
+
+func (m *mockStore) CountEventsByAgent(ctx context.Context, orgID, agentID string, since time.Time) (int, error) {
+	return 0, nil
+}
+
+func (m *mockStore) GetVariantDistribution(ctx context.Context, orgID, behaviorKey string, since time.Time) (map[string]int, error) {
+	return nil, nil
+}
+
+// ─── PolicyStore methods ────────────────────────────────────────────
+
+func (m *mockStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
+	return nil, domain.WrapNotFound("policy")
+}
+func (m *mockStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+	return nil, nil
+}
+func (m *mockStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
+	return nil, nil
+}
+func (m *mockStore) CreatePolicy(_ context.Context, _ *domain.Policy) error {
+	return nil
+}
+func (m *mockStore) UpdatePolicy(_ context.Context, _ *domain.Policy) error {
+	return nil
+}
+func (m *mockStore) DeletePolicy(_ context.Context, _, _ string) error {
+	return nil
+}
+func (m *mockStore) SetPolicyEnabled(_ context.Context, _, _ string, _ bool) error {
+	return nil
+}
+
+// ─── ABMBehaviorStore ──────────────────────────────────────────────────────
+
+func (m *mockStore) CreateBehavior(ctx context.Context, behavior *domain.ABMBehavior) error {
+	return nil
+}
+
+func (m *mockStore) GetBehavior(ctx context.Context, orgID, behaviorKey string) (*domain.ABMBehavior, error) {
+	return nil, domain.WrapNotFound("behavior")
+}
+
+func (m *mockStore) ListBehaviors(ctx context.Context, orgID string) ([]domain.ABMBehavior, error) {
+	return nil, nil
+}
+
+func (m *mockStore) ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string) ([]domain.ABMBehavior, error) {
+	return nil, nil
+}
+
+func (m *mockStore) UpdateBehavior(ctx context.Context, behavior *domain.ABMBehavior) error {
+	return nil
+}
+
+func (m *mockStore) DeleteBehavior(ctx context.Context, orgID, behaviorKey string) error {
+	return nil
+}

@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+
+## [v2.0.0-alpha] — 2026-05-19 — Agent Platform Foundation
+
+### Added
+- **Agent Registry**: Full CRUD API (`/v1/agents`) for registering and managing AI agent identities. Includes agent type categorization, brain type enumeration (LLM, rule, hybrid), scope-based access control, rate limits, cost profiles, heartbeat tracking for liveness monitoring, and per-context maturity tracking (L1–L5) with performance statistics.
+- **Governance Policies**: CEL-based policy engine (`/v1/policies`) for constraining agent actions through the 7-step governance pipeline. Policies support scoped applicability (by agent type, tool name, environment, project), priority ordering, configurable effects (deny, require_human, warn, audit), and JSONB containment queries for efficient filtering. Includes toggle endpoint for enable/disable without full update.
+- **ABM SDK (Agent Behavior Mesh)**: Resolution and tracking API (`/v1/abm/resolve`, `/v1/abm/track`, `/v1/abm/behaviors`) for managing AI agent behaviors — the agent equivalent of feature flags. Supports behavior definition with weighted variants, targeting rules, percentage rollout (FNV-hash based, consistent per user), variant distribution analytics, and fire-and-forget event tracking with batch insert support.
+- **EventBus + NATS Adapter**: Pluggable event bus abstraction with `noop` (default) and `nats` providers. NATS adapter supports automatic reconnection and connection naming. Evaluation events flow through EventBus to billing meter, analytics pipeline, and audit log.
+- **Eval Events Pipeline**: Rich evaluation event schema capturing full context (org, project, env, flag, variant, reason, latency, cache hit). Non-blocking emission with buffered channel, batch flushing, and event drop tracking. Eval event analytics endpoints (`/v1/eval-events`) for per-flag query, variant distribution, latency percentiles (p50/p95/p99), and time-series volume data.
+- **Observability**: New OTEL metric instruments for all P0 features: `agent.registry.created`, `policy.created`, `policy.evaluated`, `policy.eval.duration_ms`, `abm.resolve.count`, `abm.resolve.duration_ms`, `abm.track.count`, `eval_events.emitted`, `eval_events.dropped`, `eventbus.published`, `eventbus.publish.duration_ms`. Periodic delta-based metric reporting from the eval event emitter.
+- **Integration Tests**: Postgres integration tests for AgentStore, AgentMaturityStore, PolicyStore, ABMBehaviorStore, ABMEventStore, and EvalEventStore. All tests skip gracefully when `TEST_DATABASE_URL` is not set. Tests cover CRUD, conflict detection, heartbeat, list/filter, variant distribution, latency percentiles, and time-series volume.
+
+### Changed
+- **Handler signatures**: `NewAgentRegistryHandler`, `NewABMHandler`, `NewPolicyHandler`, and `NewEvalEventEmitter` now accept `*observability.Instruments` for metric recording. Existing call sites updated across `main.go`, `router.go`, and all test files.
+
+## [Unreleased — Prior]
+
+### Added
 - **Internal IAM Strategy** (`.internal/identity-access-management-strategy.md`): Comprehensive guide for centralized identity and access management covering internal team operations, customer IAM, environment lifecycle, and governance
 - **Implementation Checklist** (`.internal/implementation-checklist.md`): Phase-by-phase checklist for rolling out Zoho One, environment provisioning, customer IAM enhancements, and compliance
 - **Architecture Diagrams** (`.internal/architecture-diagrams.md`): Mermaid diagrams for identity flow, user lifecycle, environment provisioning, permission decisions, feedback loops, and data flow

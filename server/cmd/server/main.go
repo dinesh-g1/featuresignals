@@ -229,6 +229,13 @@ func main() {
 	sseServer := sse.NewServer(logger)
 	evalCache := cache.NewCache(store, logger, sseServer)
 
+	// PGInvalidator: cross-instance cache invalidation via PostgreSQL LISTEN/NOTIFY.
+	// Wired into both the Store (for legacy ListenForChanges) and the Cache
+	// (for the new CacheInvalidator interface).
+	pgInvalidator := postgres.NewPGInvalidator(pool, logger)
+	store.SetInvalidator(pgInvalidator)
+	evalCache.SetInvalidator(pgInvalidator)
+
 	// Webhook dispatcher
 	whDispatcher := webhook.NewDispatcher(store, logger, otelInstruments)
 	whCtx, whCancel := context.WithCancel(context.Background())
@@ -245,17 +252,38 @@ func main() {
 	defer schedCancel()
 	go sched.Start(schedCtx)
 
-	// Start listening for PG NOTIFY changes
+	// Start listening for PG NOTIFY changes in background.
+	// StartListening blocks until ctx is cancelled, so it must run in a goroutine.
 	listenCtx, listenCancel := context.WithCancel(context.Background())
 	defer listenCancel()
-	if err := evalCache.StartListening(listenCtx); err != nil {
-		logger.Warn("failed to start PG LISTEN (cache invalidation disabled)", "error", err)
-	}
+	go func() {
+		if err := evalCache.StartListening(listenCtx); err != nil {
+			logger.Warn("PG LISTEN stopped", "error", err)
+		}
+	}()
 
 	// Evaluation metrics collector
 	metricsCollector := metrics.NewCollector()
 
+
+	// EventBus (abstract messaging between services)
+	eventBus, eventBusCleanup, busErr := events.NewEventBus(cfg, logger)
+	if busErr != nil {
+		logger.Error("failed to create event bus", "error", busErr)
+		os.Exit(1)
+	}
+	defer eventBusCleanup()
+	logger.Info("event bus started", "provider", cfg.EventBusProvider)
 	// Email provider — OTP sender + lifecycle mailer selected by EMAIL_PROVIDER
+
+	// Eval event emitter (non-blocking, wraps the eval engine)
+	// Events flow through EventBus to billing meter, analytics, and audit.
+	evalEmissionConfig := domain.EvalEmissionConfig{
+		Mode:           "batch",
+		BatchSize:      50,
+		BatchIntervalMs: 5000,
+	}
+	evalEventEmitter := eval.NewEvalEventEmitter(engine, eventBus, evalEmissionConfig, logger, otelInstruments)
 	var otpSender domain.OTPSender
 	var lifecycleMailer domain.Mailer
 
@@ -330,6 +358,7 @@ func main() {
 		drainCtx, drainCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer drainCancel()
 		eventEmitter.Close(drainCtx)
+		evalEventEmitter.Close(drainCtx)
 	}()
 	logger.Info("product event emitter started")
 
@@ -474,7 +503,7 @@ func main() {
 		)
 	}
 
-	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, engine, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
+	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,

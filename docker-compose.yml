@@ -1,4 +1,16 @@
 services:
+  nats:
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: "-js -m 8222"
+    healthcheck:
+      test: ["CMD", "nats", "server", "check", "connection"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   postgres:
     image: postgres:16-alpine
     ports:
@@ -24,6 +36,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      nats:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://fs:fsdev@postgres:5432/featuresignals?sslmode=disable
       JWT_SECRET: dev-secret-change-in-production
@@ -42,6 +56,8 @@ services:
       STRIPE_MODE: test
       SALES_NOTIFY_EMAIL: dev@featuresignals.com
       SUPER_MODE_DOMAIN: featuresignals.com
+      EVENT_BUS_PROVIDER: ${EVENT_BUS_PROVIDER:-noop}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
     healthcheck:
       test:
         [

@@ -18,6 +18,7 @@ import {
   EnvironmentIcon,
   ApiKeysIcon,
   WebhookIcon,
+  BrainIcon,
   DashboardIcon,
   GraphIcon,
   HeartIcon,
@@ -36,6 +37,7 @@ import {
   SettingsIcon,
   TrendingUpIcon,
   ClockIcon,
+  GavelIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -100,13 +102,22 @@ const insights: NavItemDef[] = [
   { href: path("/analytics"), label: "Analytics", icon: GraphIcon },
   { href: path("/metrics"), label: "Eval Metrics", icon: TrendingUpIcon },
   { href: path("/health"), label: "Flag Health", icon: HeartIcon },
-  { href: path("/usage-insights"), label: "Usage Insights", icon: BarChartIcon },
+  {
+    href: path("/usage-insights"),
+    label: "Usage Insights",
+    icon: BarChartIcon,
+  },
 ];
 
 const powerTools: NavItemDef[] = [
   { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
+  { href: path("/agents"), label: "Agents", icon: BrainIcon },
   { href: path("/env-comparison"), label: "Env Comparison", icon: SearchIcon },
-  { href: path("/target-inspector"), label: "Target Inspector", icon: SearchIcon },
+  {
+    href: path("/target-inspector"),
+    label: "Target Inspector",
+    icon: SearchIcon,
+  },
 ];
 
 const integrations: NavItemDef[] = [
@@ -119,6 +130,7 @@ const teamItems: NavItemDef[] = [
 ];
 
 const governanceItems: NavItemDef[] = [
+  { href: path("/policies"), label: "Policies", icon: GavelIcon },
   { href: path("/approvals"), label: "Approvals", icon: CheckListIcon },
 ];
 
@@ -386,8 +398,7 @@ function RecentsSection({ projectId }: { projectId: string }) {
           {recents.map((entry) => {
             const Icon = getIcon(entry.resource_type);
             const href = getHref(entry);
-            const active =
-              pathname === href || pathname.startsWith(href + "/");
+            const active = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
                 key={entry.id}
@@ -478,7 +489,9 @@ export function NavList() {
         }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token, currentProjectId]);
 
   const counts: Record<string, number> = {

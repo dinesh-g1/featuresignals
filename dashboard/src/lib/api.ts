@@ -225,6 +225,44 @@ async function request<T>(
   return requestWithRetry<T>(path, options);
 }
 
+// ─── Convenience wrappers ───────────────────────────────────────────────
+// Auto-inject the JWT token from the Zustand store so callers don't
+// need to pass it explicitly.
+
+export function apiGet<T>(
+  path: string,
+  options?: Omit<RequestOptions, "method" | "body">,
+): Promise<T> {
+  const token = useAppStore.getState().token;
+  return request<T>(path, { ...options, method: "GET", token: token ?? undefined });
+}
+
+export function apiPost<T>(
+  path: string,
+  body?: unknown,
+  options?: Omit<RequestOptions, "method" | "body">,
+): Promise<T> {
+  const token = useAppStore.getState().token;
+  return request<T>(path, { ...options, method: "POST", body, token: token ?? undefined });
+}
+
+export function apiPatch<T>(
+  path: string,
+  body?: unknown,
+  options?: Omit<RequestOptions, "method" | "body">,
+): Promise<T> {
+  const token = useAppStore.getState().token;
+  return request<T>(path, { ...options, method: "PATCH", body, token: token ?? undefined });
+}
+
+export function apiDelete<T>(
+  path: string,
+  options?: Omit<RequestOptions, "method" | "body">,
+): Promise<T> {
+  const token = useAppStore.getState().token;
+  return request<T>(path, { ...options, method: "DELETE", token: token ?? undefined });
+}
+
 async function requestWithRetry<T>(
   path: string,
   options: RequestOptions,
@@ -860,33 +898,81 @@ export const api = {
   // ── Credit System ───────────────────────────────────────────────
 
   getCredits: (token: string) =>
-    request<CreditsResponse>('/v1/billing/credits', { token }),
+    request<CreditsResponse>("/v1/billing/credits", { token }),
 
-  getCreditHistory: (token: string, bearerId?: string, limit = 50, offset = 0) => {
+  getCreditHistory: (
+    token: string,
+    bearerId?: string,
+    limit = 50,
+    offset = 0,
+  ) => {
     const params = new URLSearchParams();
-    if (bearerId) params.set('bearer_id', bearerId);
-    params.set('limit', String(limit));
-    params.set('offset', String(offset));
-    return request<CreditHistoryResponse>('/v1/billing/credits/history?' + params, { token });
+    if (bearerId) params.set("bearer_id", bearerId);
+    params.set("limit", String(limit));
+    params.set("offset", String(offset));
+    return request<CreditHistoryResponse>(
+      "/v1/billing/credits/history?" + params,
+      { token },
+    );
   },
 
   purchaseCredits: (token: string, packId: string) =>
-    request<CreditPurchaseResponse>('/v1/billing/credits/purchase', {
+    request<CreditPurchaseResponse>("/v1/billing/credits/purchase", {
       token,
-      method: 'POST',
+      method: "POST",
       body: { pack_id: packId },
     }),
 
   getLimits: (token: string) =>
-    request<{ plan: string; limits: Array<{ resource: string; used: number; max: number }> }>("/v1/limits", { token }),
+    request<{
+      plan: string;
+      limits: Array<{ resource: string; used: number; max: number }>;
+    }>("/v1/limits", { token }),
   search: (token: string, q: string, projectId?: string | null) =>
-    request<{ query: string; results: Record<string, Array<{ id: string; label: string; description: string; category: string; href: string }>>; total: number }>(
-      "/v1/search?q=" + encodeURIComponent(q) + (projectId ? "&project_id=" + encodeURIComponent(projectId) : ""), { token }
+    request<{
+      query: string;
+      results: Record<
+        string,
+        Array<{
+          id: string;
+          label: string;
+          description: string;
+          category: string;
+          href: string;
+        }>
+      >;
+      total: number;
+    }>(
+      "/v1/search?q=" +
+        encodeURIComponent(q) +
+        (projectId ? "&project_id=" + encodeURIComponent(projectId) : ""),
+      { token },
     ),
   listPinnedItems: (token: string, projectId: string) =>
-    request<{ items: Array<{ id: string; project_id: string; resource_type: string; resource_id: string; created_at: string }> }>("/v1/projects/" + projectId + "/pinned", { token }),
-  pinItem: (token: string, projectId: string, resourceType: string, resourceId: string) =>
-    request<{ id: string }>("/v1/pinned", { method: "POST", body: { project_id: projectId, resource_type: resourceType, resource_id: resourceId }, token }),
+    request<{
+      items: Array<{
+        id: string;
+        project_id: string;
+        resource_type: string;
+        resource_id: string;
+        created_at: string;
+      }>;
+    }>("/v1/projects/" + projectId + "/pinned", { token }),
+  pinItem: (
+    token: string,
+    projectId: string,
+    resourceType: string,
+    resourceId: string,
+  ) =>
+    request<{ id: string }>("/v1/pinned", {
+      method: "POST",
+      body: {
+        project_id: projectId,
+        resource_type: resourceType,
+        resource_id: resourceId,
+      },
+      token,
+    }),
   unpinItem: (token: string, pinnedId: string) =>
     request<void>("/v1/pinned/" + pinnedId, { method: "DELETE", token }),
   cancelSubscription: (token: string, atPeriodEnd = true) =>

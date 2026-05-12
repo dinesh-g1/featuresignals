@@ -34,6 +34,7 @@ import {
   FlaskConical,
   FolderGit2,
   FolderOpen,
+  Gavel,
   GitBranch,
   GitCompare,
   GitFork,
@@ -133,6 +134,7 @@ export const FilterIcon = Filter;
 export const FlagCircleIcon = CheckCircle;
 export const FlagIcon = Flag;
 export const FolderOpenIcon = FolderOpen;
+export const GavelIcon = Gavel;
 export const GearIcon = Settings;
 export const GitBranchIcon = GitBranch;
 export const GitCompareIcon = GitCompare;

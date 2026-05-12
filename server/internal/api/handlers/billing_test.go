@@ -15,7 +15,7 @@ import (
 	"github.com/featuresignals/server/internal/payment"
 )
 
-func testLogger() *slog.Logger {
+func _testLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 

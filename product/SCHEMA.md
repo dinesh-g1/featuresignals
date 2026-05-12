@@ -1,8 +1,8 @@
-# FeatureSignals Product Wiki — Schema v1.0.0
+# FeatureSignals Product Wiki — Schema v1.1.0
 
 > **Purpose:** This document is the operating system for the FeatureSignals LLM Wiki. It tells every LLM agent how to maintain, query, and evolve the wiki. Read this first in every session.
 > **Status:** Living document — evolves as the wiki grows.
-> **Last Updated:** 2026-04-27
+> **Last Updated:** 2026-05-17
 
 ---
 
@@ -16,6 +16,7 @@
 6. **Cite everything.** Every factual claim in the wiki links back to its source (a raw file, a PR, a conversation, a benchmark). "Trust me, I'm an LLM" is not a citation.
 7. **Archive yearly.** Each January, condense the previous year's log into `product/wiki/archive/YEAR-YYYY.md`. Start a fresh log for the new year. The active wiki stays lean; the archives preserve history.
 8. **Private stays private.** `product/wiki/private/` is gitignored — never reference it in public contexts. `product/wiki/internal/` is git-crypt encrypted. Keep the boundaries clear.
+9. **The PRS is the contract.** `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` is the canonical product specification. Every feature change MUST update the PRS. The PRS leads; code follows. It is the single source of truth that all departments (Engineering, Design, QA, Sales) align on.
 
 ---
 
@@ -64,7 +65,7 @@ sources:
 related:
   - [[Related Page]] (relationship: e.g., "depends on", "extends", "contradicts")
   - [[Another Page]] (relationship)
-last_updated: 2026-04-27
+last_updated: 2026-05-17
 maintainer: llm
 review_status: current | needs_review | stale
 confidence: high | medium | low
@@ -180,14 +181,14 @@ When new material arrives in `product/raw/`:
    a. Read the current page
    b. Determine what changed, what's new, what's contradicted
    c. Update the page with new information
-   d. Tag contradictions explicitly: "⚠️ 2026-04-27: Source X claims Y, but Source Z claims ¬Y"
+   d. Tag contradictions explicitly: "⚠️ 2026-05-17: Source X claims Y, but Source Z claims ¬Y"
 5. UPDATE product/wiki/index.md with any new or modified pages
 6. APPEND to product/wiki/log.md with a complete entry
 ```
 
 **Ingest entry format:**
 ```
-## [2026-04-27 14:30] ingest | Source Title
+## [2026-05-17 14:30] ingest | Source Title
 - Source: product/raw/docs/path/to/source.md
 - Pages affected: [[ARCHITECTURE.md]], [[DEVELOPMENT.md]]
 - Summary: Updated architecture with new cell routing design. Resolved contradiction in DB connection pool tuning.
@@ -219,7 +220,7 @@ When asked a question:
 
 **Query entry format:**
 ```
-## [2026-04-27 16:45] query | "SSO implementation cost estimate"
+## [2026-05-17 16:45] query | "SSO implementation cost estimate"
 - Pages consulted: [[DEVELOPMENT.md]], [[ARCHITECTURE.md]], [[COMPETITIVE.md]], [[ROADMAP.md]]
 - Answer: Estimated 3-4 weeks, 2 engineers. All competitors include SSO in Pro tier.
 - Filed as: product/wiki/public/ARCHITECTURE.md (new ADR section)
@@ -245,7 +246,7 @@ Run periodically (at session start if not run in 7+ days, or on request):
 
 **Lint entry format:**
 ```
-## [2026-04-27 18:00] lint | Weekly health check
+## [2026-05-17 18:00] lint | Weekly health check
 - ✅ 0 orphans found
 - ⚠️ 2 stale pages: [[COMPLIANCE.md]] (last updated 2025-11), [[PERFORMANCE.md]] (last updated 2025-12)
 - ✅ 0 contradictions detected
@@ -289,7 +290,7 @@ CREATED → CURRENT (up to date) → NEEDS_REVIEW (sources updated) → STALE (>
 - **Structure**: Sections with `##` headers. Subsections with `###`. Lists for multiple items.
 - **Contradictions**: Explicitly tag them. Never silently resolve conflicts — flag them for human review.
   ```
-  ⚠️ **Contradiction detected 2026-04-27:**
+  ⚠️ **Contradiction detected 2026-05-17:**
   - Source A claims connection pool should be 50 max
   - Source B claims connection pool should be 20 max
   - Resolution: The difference is due to instance type. Source A assumes 8 vCPU, Source B assumes 4 vCPU.
@@ -311,6 +312,7 @@ CREATED → CURRENT (up to date) → NEEDS_REVIEW (sources updated) → STALE (>
 - ❌ Do not silently merge contradictions. Flag them with ⚠️ and let a human resolve.
 - ❌ Do not remove source citations when updating a page. Add new ones; keep old ones.
 - ❌ Do not let sessions end without filing valuable knowledge into the wiki.
+- Do not let the PRS become stale. If you change a feature, update the PRS .docx specification. The PRS leads; code follows.
 - ❌ Do not put secrets, API keys, or credentials in `public/` or `private/`. They belong in `internal/` (git-crypt encrypted) or in environment variables.
 - ❌ Do not copy-paste large sections from sources. Synthesize in your own words, with citations.
 - ❌ Do not let the active wiki grow unbounded. Archive yearly. Split large pages. Keep each page focused.
@@ -322,6 +324,8 @@ CREATED → CURRENT (up to date) → NEEDS_REVIEW (sources updated) → STALE (>
 | FeatureSignals Component | How It Integrates with the Wiki |
 |---|---|
 | **`CLAUDE.md`** | Section 0A mandates wiki consultation on every prompt |
+| **`CLAUDE.md`** | Section 0.6 mandates PRS consultation before feature work and PRS updates after changes |
+| **`FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx`** | Canonical product specification, the contract between departments, single source of truth |
 | **Makefile** | `make wiki-ingest`, `make wiki-lint`, `make wiki-index` targets |
 | **CI/CD (Dagger)** | `WikiLint` step runs on PRs touching `product/wiki/` |
 | **GitHub PR Templates** | "Does this change require a wiki update?" checkbox |
@@ -344,3 +348,4 @@ CREATED → CURRENT (up to date) → NEEDS_REVIEW (sources updated) → STALE (>
 | Find stale pages | Search frontmatter for `review_status: stale` |
 | List sections in a page | `grep "^## " product/wiki/public/PAGE.md` |
 | Extract one section | `awk "/^## Section Title/{found=1;next} found{print} /^## / && !found" page.md` (or ask the LLM to find it) |
+| Update PRS after feature change | Regenerate .docx to reflect new requirements, update log.md with timestamped entry |

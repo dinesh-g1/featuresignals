@@ -4,6 +4,7 @@ tags: [development, core]
 domain: development
 sources:
   - CLAUDE.md (enterprise dev standards)
+  - product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx (canonical product specification)
   - CONTRIBUTING.md (contribution guidelines)
   - server/README.md (server structure)
   - dashboard/CLAUDE.md (dashboard standards)
@@ -23,7 +24,7 @@ related:
   - [[Testing]]
   - [[SDK]]
   - [[Deployment]]
-last_updated: 2026-04-27
+last_updated: 2026-05-17
 maintainer: llm
 review_status: current
 confidence: high
@@ -32,6 +33,8 @@ confidence: high
 ## Overview
 
 This page is the definitive reference for all development conventions, patterns, and standards at FeatureSignals. It covers the Go server, the Next.js dashboard, contribution workflow, package architecture, configuration patterns, and SDK development conventions. Every engineer (human or LLM) must follow these standards when writing or reviewing code in this repository.
+
+**PRS Mandate:** All development work must reference the Product Requirements Specification at `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx`. Requirement IDs (e.g., `FS-S3-I2P-001`) must be cited in PR descriptions, commit messages, and code comments. When requirements change, the PRS must be updated first. The PRS leads; code follows.
 
 ---
 

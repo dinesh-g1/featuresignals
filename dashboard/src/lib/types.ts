@@ -297,7 +297,6 @@ export interface CreditPurchaseResponse {
   new_balance: number;
 }
 
-
 export interface OrgMember {
   id: string;
   org_id: string;

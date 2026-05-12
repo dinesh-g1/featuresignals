@@ -118,10 +118,20 @@ type Config struct {
 	// Used for JWT claims, telemetry, and audit logging — not for routing.
 	LocalRegion string
 
+	// ── Policy Evaluator (Governance Pipeline) ────────────────────
+	// Maximum number of policies evaluated per agent action.
+	PolicyEvalMaxPolicies int
+	// Timeout for CEL expression evaluation (milliseconds).
+	PolicyEvalTimeoutMs int
+
 	// Router configuration
 	RouterDomain string
 	RouterEmail  string
 	ClusterName  string
+
+	// Event Bus
+	EventBusProvider string // "nats", "noop"
+	NATSURL          string
 
 	// OpenTelemetry
 	OTELEnabled        bool
@@ -209,6 +219,10 @@ func Load() *Config {
 
 		LocalRegion: getEnv("LOCAL_REGION", "in"),
 
+		// Policy Evaluator
+		PolicyEvalMaxPolicies: getEnvInt("POLICY_EVAL_MAX_POLICIES", 50),
+		PolicyEvalTimeoutMs:   getEnvInt("POLICY_EVAL_TIMEOUT_MS", 10),
+
 		RouterDomain: getEnv("ROUTER_DOMAIN", ""),
 		RouterEmail:  getEnv("ROUTER_EMAIL", ""),
 		ClusterName:  getEnv("CLUSTER_NAME", "us-001"),
@@ -223,6 +237,9 @@ func Load() *Config {
 		OTELLogsEnabled:    getEnvBool("OTEL_LOGS_ENABLED", false),
 		OTELLogLevel:       getEnv("OTEL_LOG_LEVEL", "warn"),
 		OTELSampleRate:     getEnvFloat("OTEL_TRACE_SAMPLE_RATE", 0.1),
+
+		EventBusProvider: getEnv("EVENT_BUS_PROVIDER", "noop"),
+		NATSURL:          getEnv("NATS_URL", "nats://localhost:4222"),
 
 	}
 }

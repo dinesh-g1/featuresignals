@@ -1,4 +1,23 @@
 services:
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+    command: "-js -m 8222"
+    volumes:
+      - natsdata:/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "nats", "server", "check", "connection"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -30,6 +49,8 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      nats:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://fs:${POSTGRES_PASSWORD}@postgres:5432/featuresignals?sslmode=disable
@@ -63,6 +84,8 @@ services:
       OTEL_LOGS_ENABLED: ${OTEL_LOGS_ENABLED:-true}
       OTEL_LOG_LEVEL: ${OTEL_LOG_LEVEL:-debug}
       OTEL_TRACE_SAMPLE_RATE: ${OTEL_TRACE_SAMPLE_RATE:-1.0}
+      EVENT_BUS_PROVIDER: ${EVENT_BUS_PROVIDER:-nats}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
     healthcheck:
       test:
         [
@@ -152,6 +175,7 @@ services:
 
 volumes:
   pgdata:
+  natsdata:
   caddy-data:
   caddy-config:
   website-dist:

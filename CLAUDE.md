@@ -1,6 +1,6 @@
 # FeatureSignals — Enterprise Development Standards
 
-> **Version:** 5.0.0  
+> **Version:** 5.2.1  
 > **Status:** Living Document — Updated with every major architectural decision  
 > **Applies To:** All code in this repository (Go server, Next.js dashboard/ops, SDKs, infrastructure)  
 > **Philosophy:** We don't write code that works. We write code that survives production at scale, under attack, at 3 AM, with zero manual intervention.
@@ -21,9 +21,10 @@ Every prompt in this repository **must** consult the FeatureSignals Product Wiki
 ### 0.2 After Every Session
 
 1. **File new knowledge** — if the conversation produced valuable insights, create or update wiki pages
-2. **Update** `product/wiki/log.md` with a timestamped entry
-3. **Update** `product/wiki/index.md` if pages were added or modified
-4. **Commit** changes to git with `chore(wiki): description`
+2. **Update the PRS** — if any feature, requirement, or design decision changed, update `FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` to reflect the new state. The PRS must never become stale.
+3. **Update** `product/wiki/log.md` with a timestamped entry
+4. **Update** `product/wiki/index.md` if pages were added or modified
+5. **Commit** changes to git with `chore(wiki): description`
 
 ### 0.3 Wiki Schema
 
@@ -40,6 +41,57 @@ The operating rules for the wiki live in `product/SCHEMA.md`. Read it in full be
 ### 0.5 Exceptions
 
 If a prompt is a simple code generation task with no strategic or knowledge component (e.g., "fix this typo", "rename this variable"), wiki consultation may be skipped. When in doubt, consult the wiki.
+
+### 0.6 Product Requirements Specification (PRS) — Single Source of Truth
+
+The **Product Requirements Specification** at `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` is the canonical specification for every product, feature, and capability in the FeatureSignals platform. It defines concrete, testable, implementable requirements with unique IDs — not abstractions.
+
+**Before any feature work (design, implementation, or modification):**
+1. **Read** the relevant sections of the PRS for the feature you're working on
+2. **Reference** requirement IDs (e.g., `FS-S3-I2P-001`) in PR descriptions, commit messages, and code comments
+3. **Flag** any gaps or conflicts between the PRS and what you're building
+
+**After any feature change (new feature, modification, deprecation):**
+1. **Update** the PRS if requirements have been added, changed, or removed — the PRS leads, code follows
+2. **Update** `product/wiki/log.md` with a timestamped entry noting the PRS change
+3. **Ensure** requirement IDs remain traceable from spec → code → tests
+
+**The PRS is the contract between departments.** Engineering builds what the PRS specifies. QA tests against PRS requirements. Design follows PRS UX specs. Sales sells what the PRS defines. If the PRS is wrong, fix the PRS first, then fix the code. Never let the PRS become a stale artifact.
+
+**PRS document structure reference (v2.0.0 — 4+1 unified products):**
+
+| Section | Contents | Requirement ID Prefix |
+|---------|----------|----------------------|
+| §3 Stage 0 | Raw material collection, event schema, SDK telemetry | `FS-S0-DATA-` |
+| §4 Stage 1 | Flag CRUD, targeting, segments, SDKs, audit | `FS-S1-{FLAG,SDK,AUDIT}-` |
+| §5 Stage 2 | RPE, E2, FLM (absorbed into Stage 3 products) | `FS-S2-{RPE,E2,FLM}-` |
+| §6 Stage 3 — Code2Flag | Feature flag IDE: discover, spec, create, implement, cleanup | `FS-S3-C2F-` |
+| §7 Stage 3 — Preflight | Pre-change command center: impact, rollout, compliance, approval | `FS-S3-PFL-` |
+| §8 Stage 3 — IncidentFlag | Post-change safety net: monitoring, correlation, auto-remediation | `FS-S3-INC-` |
+| §9 Stage 3 — Impact Analyzer | Feedback loop: impact measurement, cost attribution, org learning | `FS-S3-IA-` |
+| §10 Stage 3 — ABM | Agent Behavior Mesh (standalone, separate AI agent lifecycle) | `FS-S3-ABM-` |
+| §11 Stage 4 | KILLED — CIN, Marketplace, DIN removed | N/A |
+| §12-23 | Architecture, data infra, API, security, UI/UX, testing, GTM, phases, metrics, OSS boundaries, dependencies, risks, glossary, consolidation map | `NFR-`, `UX-`, `API-` |
+
+**Architecture change (v2.0.0):** 9 standalone Stage 3 products consolidated into 4 unified lifecycle products + ABM. Rooted in the 14-step human feature lifecycle. See `HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md` for rationale.
+
+**Onboarding note:** Every new team member's first task is to read the PRS cover-to-cover. It is the map of everything we are building and why.
+
+### 0.7 Definition of Done — End-to-End Feature Completion
+
+Every feature, fix, and enhancement in this repository must satisfy the **Definition of Done** defined in `product/wiki/public/DEFINITION_OF_DONE.md`. A feature is NOT done until EVERY layer is complete:
+
+1. **Infrastructure** — Config, deployment, resource limits, health checks
+2. **Data Layer** — Migrations (idempotent + reversible), indexes, EXPLAIN ANALYZE
+3. **Backend API** — Handler (≤40 lines, narrowest interface), route, middleware, error mapping, MCP tool (if agent-accessible)
+4. **Testing** — Unit + Integration + E2E tests; table-driven; happy path + all error paths; `go test -race` passes
+5. **Frontend** — All states (loading, empty, error, success, not found); responsive; dark mode; accessible; api.ts only
+6. **Documentation** — In-app docs drawer, API docs, SDK examples (all 8 languages), CHANGELOG, PRS updated
+7. **Observability** — Structured logging, metrics (counters + histograms), OpenTelemetry traces, SigNoz dashboards, alerts
+
+**The rule:** Partial implementations are NOT done. "Frontend coming later" = NOT DONE. "Tests next sprint" = NOT DONE. "We'll add metrics after launch" = NOT DONE. Every layer. Every time. No exceptions.
+
+Refer to `DEFINITION_OF_DONE.md` for the complete checklist, enforcement rules, PR template, and layer applicability matrix.
 
 ---
 
@@ -58,6 +110,7 @@ Every line of code you produce must be **production-ready, secure, testable, ext
 8. **Errors are values** — Wrap with context, preserve the chain, never swallow.
 9. **Test before you commit** — No PR without tests. No merge without CI passing.
 10. **Security by default** — Deny by default, allow by exception. Never trust user input.
+11. **Use feature-level language in all user-facing text** — describe WHAT the user achieves, not the flag operation. "Dark mode is LIVE" not "Flag toggled ON." "Roll out to Enterprise" not "Update targeting rules." Flag is the mechanism; feature is the outcome. See `TERMINOLOGY.md` §0.
 
 ---
 
@@ -563,6 +616,15 @@ Before considering **any** change complete, verify every item:
 - [ ] Dashboard components are accessible (keyboard, screen reader)
 - [ ] No `any` types added to TypeScript without justification
 
+**Terminology & Completeness:**
+- [ ] All terminology matches TermLex (`TERMINOLOGY.md`) — no generic verbs in APIs, UI labels, error messages, or docs
+- [ ] Definition of Done checklist complete (`DEFINITION_OF_DONE.md`) — all 7 layers addressed before marking complete
+
+**PRS Traceability:**
+- [ ] Relevant PRS requirement IDs referenced in PR description and commit messages
+- [ ] If requirements changed, PRS .docx has been updated to match
+- [ ] Gaps between PRS and implementation are flagged with linked issues
+
 ---
 
 ## 13. What NOT To Do
@@ -594,6 +656,7 @@ Before considering **any** change complete, verify every item:
 - Do not commit secrets, `.env` files, or credentials.
 - Do not merge code that reduces test coverage or breaks CI.
 - Do not design for "maybe someday" abstractions. Build the simplest thing that works, but with clean interfaces so it can be extended.
+- Do not let the PRS become stale. If you change a feature, update the specification. The PRS leads; code follows.
 
 ---
 
@@ -627,3 +690,6 @@ Before considering **any** change complete, verify every item:
 | 3.0.0 | 2025-01-01 | Engineering | Added testing standards, security hardening, performance budgets |
 | 4.0.0 | 2025-06-01 | Engineering | Added CI/CD standards, observability, resilience patterns |
 | 5.0.0 | 2026-01-15 | Engineering | Synthesized best practices from Stripe, Linear, Vercel, GitLab, Netflix. Added emergency procedures, honest enterprise audit, zero-tolerance rules for `panic()`, `any`, `console.log`, hardcoded config, global mutable state, `init()` side effects. |
+| 5.1.0 | 2026-05-17 | Engineering | Added §0.6: PRS as single source of truth. PRS update mandate in §0.2 after-session workflow. PRS traceability in §12 Code Quality Checklist. "Do not let the PRS become stale" added to §13 What NOT To Do. |
+| 5.2.1 | 2026-05-18 | Engineering | Revised terminology policy: nuanced vocabulary rules replacing blanket "no generic terms" mandate. Updated rule #11 in §0A. See TERMINOLOGY.md v2.0.0. |
+| 5.2.0 | 2026-05-18 | Engineering | Added §0.7: Definition of Done — 7-layer end-to-end completion standard referencing `DEFINITION_OF_DONE.md`. Added rule #11 to §0A: no generic terminology — all terms must match TermLex (`TERMINOLOGY.md`). Added Terminology & Completeness section to §12 Code Quality Checklist. |

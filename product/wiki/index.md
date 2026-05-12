@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
 > **Updated:** 2026-05-18
-> **Total pages:** 31 (9 public, 18 private, 4 internal, 0 archive)
+> **Total pages:** 36 (11 public, 21 private, 4 internal, 0 archive)
 
 ---
 
@@ -46,6 +46,13 @@
 
 | [[SIGNAL_UI.md]] | `current` | Complete design token architecture (color, typography, spacing, animation, shadow, radius), component specification (Button, Table with all states), interaction patterns (10 universal rules), content voice rules, icon migration map (Primer → lucide-react), design system governance | 1 |
 
+### Governance
+
+| Page | Status | Summary | Inbound Links |
+|------|--------|---------|---------------|
+| [[TERMINOLOGY.md]] | `current` | **TermLex** — Official FeatureSignals vocabulary standard. Defines approved terminology for every surface: product names (12 trademarked terms with ™ rules), lifecycle verbs (forge/reforge/archive/engage/disengage/ship/revert/sweep), UI labels & microcopy, API naming conventions, error message language, documentation language, competitive positioning, enforcement rules (lint + CI + code review). Quick reference card. All code, docs, UI, APIs, SDKs, and communications must comply. | 0 |
+| [[DEFINITION_OF_DONE.md]] | `current` | **Done Means Done** — Non-negotiable end-to-end feature completion standard. 7-layer completion pyramid (Infrastructure → Data → API → Testing → Frontend → Docs → Observability). Every layer mandatory. PR template with full checklist. Layer applicability matrix. Enforcement rules: partial implementations are NOT done. No exceptions. | 0 |
+
 ### UX & Design
 
 | Page | Status | Summary | Inbound Links |
@@ -60,6 +67,8 @@
 
 | Page | Status | Summary | Confidence |
 |------|--------|---------|------------|
+| [[AGENTIC_OPERATING_MODEL.md]] | `current` | **NORTH STAR — DEFINITIVE ARCHITECTURE.** Agentic Operating Model v1.0.0. Fundamental inversion: FeatureSignals is an agent-operated platform, not a SaaS humans use with AI features. Primary interface = MCP Server (not REST). Primary user = AI agent (not human). Dashboard = monitoring/override (not primary interaction). Defines 12 internal platform agents, 5-level agent maturity model (L1 Shadow → L5 Teach), 7-step governance protocol, 6 complete agent-driven flow specifications, human-in-the-loop design, learning & maturation engine, implementation blueprint with 20 FS-AGENT requirements, and 5-year trajectory. **This document takes precedence over all other documents when conflicts arise.** | high |
+| [[ARCHITECTURE_RESILIENCE_ASSESSMENT.md]] | `current` | **15-year survival analysis.** Comprehensive resilience assessment across 12 components with 10 resilience principles. Stress-tests 7 hypothetical 2040 scenarios. Identifies 7 critical changes (~20 person-days) needed BEFORE implementation. Agent Runtime abstraction is the most critical: MCP must be an adapter, not the foundation (30% 15-year survival probability). Includes technology survival probability matrix and 2040 day-in-the-life vision. Validates all 7 AOM Immutable Principles. Complements PRE_IMPLEMENTATION_GAP_ANALYSIS.md. | high |
 | [[BUSINESS.md]] | `current` | Business model, pricing strategy (Free/Pro/Enterprise), cost analysis (Hetzner infra at ₹5,242/mo), margin analysis (63% at 100 customers, 80% at 500), competitor pricing benchmarks (LaunchDarkly $8.33/seat vs FeatureSignals INR 1,999/mo unlimited), self-hosting cost comparisons across 4 providers (Hetzner/DigitalOcean/AWS/GCP), Open Core feature boundaries | high |
 | [[COMPETITIVE.md]] | `current` | Competitive intelligence — 4 competitors (LaunchDarkly, ConfigCat, Flagsmith, Unleash), feature comparison, pricing comparison, key differentiators (sub-ms eval, OpenFeature, single Go binary, transparent pricing), known competitor weaknesses, migration patterns from each competitor | high |
 | [[ROADMAP.md]] | `current` | Product roadmap — what's built (flag lifecycle, toggle categories, agent/API, AI janitor, environment comparison, target inspector), what's in progress (IAM implementation), what's planned (compliance certifications, additional SDKs, SSO, Ops Portal, horizontal scaling), CI/CD pipeline verified working (ci.yml, cd.yml, cd-content.yml), multi-region DNS-based routing in long-term vision | medium |
@@ -103,6 +112,7 @@
 
 | Tag | Pages |
 |-----|-------|
+| `governance` | TERMINOLOGY.md, DEFINITION_OF_DONE.md |
 | `architecture` | ARCHITECTURE.md |
 | `development` | DEVELOPMENT.md |
 | `testing` | TESTING.md |
@@ -114,8 +124,9 @@
 | `operations` | INFRASTRUCTURE.md, RUNBOOKS.md, INCIDENTS.md, COMPLIANCE_GAPS.md, OPERATIONAL_FRAMEWORK.md |
 | `incident` | RUNBOOKS.md, INCIDENTS.md |
 | `business` | BUSINESS.md, COMPETITIVE.md, ROADMAP.md, SALES.md, CUSTOMERS.md, FINANCIALS.md, BILLING_STRATEGY.md, USAGE_BASED_BILLING_STRATEGY.md, SUB_PROCESSOR_STRATEGY.md, OPERATIONAL_FRAMEWORK.md |
-| `strategy` | HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md, PROCESS_ALIGNMENT_ARCHITECTURE.md, VALUE_CHAIN_AI_NATIVE_STRATEGY.md, FLAGENGINE_ENTERPRISE_RESEARCH.md, USAGE_BASED_BILLING_STRATEGY.md, SUB_PROCESSOR_STRATEGY.md, OPERATIONAL_FRAMEWORK.md |
+| `strategy` | HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md, PROCESS_ALIGNMENT_ARCHITECTURE.md, VALUE_CHAIN_AI_NATIVE_STRATEGY.md, FLAGENGINE_ENTERPRISE_RESEARCH.md, USAGE_BASED_BILLING_STRATEGY.md, SUB_PROCESSOR_STRATEGY.md, PRE_IMPLEMENTATION_GAP_ANALYSIS.md, OPERATIONAL_FRAMEWORK.md |
 | `specs` | FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx |
+
 | `ai` | HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md, EMERGENT_PRODUCT_ANALYSIS.md, VALUE_CHAIN_AI_NATIVE_STRATEGY.md, FLAGENGINE_ENTERPRISE_RESEARCH.md |
 | `financial` | BUSINESS.md, FINANCIALS.md, BILLING_STRATEGY.md, USAGE_BASED_BILLING_STRATEGY.md |
 | `competitive` | COMPETITIVE.md |
@@ -124,7 +135,7 @@
 | `planning` | OPERATIONAL_FRAMEWORK.md |
 | `roadmap` | ROADMAP.md, BILLING_STRATEGY.md, USAGE_BASED_BILLING_STRATEGY.md |
 | `people` | PEOPLE.md |
-| `core` | ARCHITECTURE.md, DEPLOYMENT.md, DEVELOPMENT.md, SDK.md, TESTING.md, PERFORMANCE.md |
+| `core` | ARCHITECTURE.md, DEPLOYMENT.md, DEVELOPMENT.md, SDK.md, TESTING.md, PERFORMANCE.md, TERMINOLOGY.md, DEFINITION_OF_DONE.md |
 
 ---
 
@@ -150,6 +161,8 @@ Pages with no inbound links from other wiki pages (potential orphans):
 | RUNBOOKS.md | 0 | Add cross-reference from DEPLOYMENT.md and INFRASTRUCTURE.md |
 | INCIDENTS.md | 0 | Add cross-reference from RUNBOOKS.md |
 | COMPLIANCE_GAPS.md | 0 | Add cross-reference from COMPLIANCE.md and INFRASTRUCTURE.md |
+| TERMINOLOGY.md | 0 | (New — add cross-reference from DEVELOPMENT.md and CLAUDE.md) |
+| DEFINITION_OF_DONE.md | 0 | (New — add cross-reference from DEVELOPMENT.md and CLAUDE.md) |
 
 **Action:** Schedule a lint pass after the next session to add cross-references and resolve orphans. OPERATIONAL_FRAMEWORK.md (new, 2026-05-10) needs backlinks from BUSINESS.md, ROADMAP.md, SALES.md.
 
@@ -164,3 +177,5 @@ Pages with no inbound links from other wiki pages (potential orphans):
 | `find product/wiki -name "*.md" \| wc -l` | Count total wiki pages |
 | `grep -r "\[\[" product/wiki/public/ \| grep -o "\[\[[^]]*\]\]" \| sort -u` | List all wikilinks |
 | `open product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` | Open the canonical PRS |
+| `open product/wiki/public/TERMINOLOGY.md` | Open the TermLex vocabulary standard |
+| `open product/wiki/public/DEFINITION_OF_DONE.md` | Open the Definition of Done checklist |

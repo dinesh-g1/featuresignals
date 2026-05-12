@@ -133,9 +133,14 @@ func NewRouter(
 	signupH := handlers.NewSignupHandler(store, jwtMgr, otpSender, emitter, lifecycle, internalChecker, dashboardURL, appBaseURL)
 	salesH := handlers.NewSalesHandler(store, salesNotifier, salesNotifyEmail)
 
+	agentRegistryH := handlers.NewAgentRegistryHandler(store, logger, otelInstruments)
+	abmH := handlers.NewABMHandler(store, logger, otelInstruments)
+	policyH := handlers.NewPolicyHandler(store, logger, otelInstruments)
+
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)
 	featuresH := handlers.NewFeaturesHandler(store)
 	analyticsH := handlers.NewAnalyticsHandler(store)
+	evalEventsH := handlers.NewEvalEventsHandler(store, logger)
 	preferencesH := handlers.NewPreferencesHandler(store)
 	feedbackH := handlers.NewFeedbackHandler(store, emitter)
 	ssoH := handlers.NewSSOHandler(store)
@@ -380,6 +385,12 @@ func NewRouter(
 			r.Get("/client/{envKey}/flags", evalH.ClientFlags)
 			r.Get("/stream/{envKey}", evalH.Stream)
 			r.Post("/track", metricsH.TrackImpression)
+
+			// ABM (Agent Behavior Mesh) — resolution + event tracking.
+			// Hot path, API key auth, same as flag evaluation.
+			r.Post("/abm/resolve", abmH.Resolve)
+			r.Post("/abm/track", abmH.Track)
+			r.Post("/abm/track/batch", abmH.TrackBatch)
 		})
 
 		// ── Agent API ─────────────────────────────────────────────
@@ -551,7 +562,21 @@ func NewRouter(
 				// Team & Members
 				r.Get("/members", teamH.List)
 				r.Get("/members/{memberID}/permissions", teamH.ListPermissions)
-			})
+
+				// Agent Registry (P0 #15, #16, #19) — Read
+					r.Get("/agents", agentRegistryH.List)
+					r.Get("/agents/{agentID}", agentRegistryH.Get)
+					r.Get("/agents/{agentID}/maturity", agentRegistryH.ListMaturities)
+
+					// Governance Policies — Read
+					r.Get("/policies", policyH.List)
+					r.Get("/policies/{policyID}", policyH.Get)
+
+					// ABM (Agent Behavior Mesh) — Read
+					r.Get("/abm/behaviors", abmH.ListBehaviors)
+					r.Get("/abm/behaviors/{key}", abmH.GetBehavior)
+					r.Get("/abm/behaviors/{key}/analytics", abmH.GetBehaviorAnalytics)
+				})
 
 			// ── Approval Read Routes (Pro+, all roles) ──────────────
 			r.Group(func(r chi.Router) {
@@ -617,7 +642,24 @@ func NewRouter(
 				r.Post("/projects/{projectID}/segments", segmentH.Create)
 				r.Put("/projects/{projectID}/segments/{segmentKey}", segmentH.Update)
 				r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
-			})
+
+				// Agent Registry (P0 #15, #16, #19) — Write
+					r.Post("/agents", agentRegistryH.Create)
+					r.Patch("/agents/{agentID}", agentRegistryH.Update)
+					r.Delete("/agents/{agentID}", agentRegistryH.Delete)
+					r.Post("/agents/{agentID}/heartbeat", agentRegistryH.UpdateHeartbeat)
+
+					// Governance Policies — Write
+					r.Post("/policies", policyH.Create)
+					r.Patch("/policies/{policyID}", policyH.Update)
+					r.Delete("/policies/{policyID}", policyH.Delete)
+					r.Post("/policies/{policyID}/toggle", policyH.Toggle)
+
+					// ABM (Agent Behavior Mesh) — Write
+					r.Post("/abm/behaviors", abmH.CreateBehavior)
+					r.Patch("/abm/behaviors/{key}", abmH.UpdateBehavior)
+					r.Delete("/abm/behaviors/{key}", abmH.DeleteBehavior)
+				})
 
 			// ── Approval Create (Pro+, writers) ─────────────────────
 			r.Group(func(r chi.Router) {
@@ -660,6 +702,10 @@ func NewRouter(
 
 				// Internal KPI analytics
 				r.Get("/analytics/overview", analyticsH.Overview)
+
+				// Evaluation event analytics
+				r.Get("/eval-events", evalEventsH.Query)
+				r.Get("/eval-events/volume", evalEventsH.Volume)
 			})
 
 			// ── Approval Review (Pro+, admin-only) ──────────────────

@@ -308,6 +308,16 @@ func (noopStore) DeleteSSOConfig(context.Context, string) error { return errNoop
 func (noopStore) RevokeToken(context.Context, string, string, string, time.Time) error { return nil }
 func (noopStore) IsTokenRevoked(context.Context, string) (bool, error)                 { return false, nil }
 func (noopStore) CleanExpiredRevocations(context.Context) error                        { return nil }
+func (noopStore) CreateAgent(_ context.Context, _ *domain.Agent) error                 { return errNoop }
+func (noopStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error)       { return nil, errNoop }
+func (noopStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error)       { return nil, errNoop }
+func (noopStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) { return nil, errNoop }
+func (noopStore) UpdateAgent(_ context.Context, _ *domain.Agent) error                 { return errNoop }
+func (noopStore) UpdateAgentHeartbeat(_ context.Context, _ string) error               { return errNoop }
+func (noopStore) DeleteAgent(_ context.Context, _, _ string) error                     { return errNoop }
+func (noopStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error { return errNoop }
+func (noopStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) { return nil, errNoop }
+func (noopStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) { return nil, errNoop }
 func (noopStore) UpsertMFASecret(context.Context, string, string) error                { return nil }
 func (noopStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
 	return nil, errNoop
@@ -759,6 +769,38 @@ var internalRoutes = map[string]bool{
 
 				// Internal-only flat flag listing — dashboard uses /v1/projects/{projectID}/flags
 				"GET /v1/flags": true,
+
+			// Agent Registry (v2.0.0-alpha) — OpenAPI spec update pending
+			"POST /v1/agents":                    true,
+			"GET /v1/agents":                     true,
+			"GET /v1/agents/{agentID}":           true,
+			"PATCH /v1/agents/{agentID}":         true,
+			"DELETE /v1/agents/{agentID}":        true,
+			"POST /v1/agents/{agentID}/heartbeat": true,
+			"GET /v1/agents/{agentID}/maturity":   true,
+
+			// Governance Policies (v2.0.0-alpha) — OpenAPI spec update pending
+			"POST /v1/policies":                  true,
+			"GET /v1/policies":                   true,
+			"GET /v1/policies/{policyID}":        true,
+			"PATCH /v1/policies/{policyID}":      true,
+			"DELETE /v1/policies/{policyID}":     true,
+			"POST /v1/policies/{policyID}/toggle": true,
+
+			// Eval Events analytics (v2.0.0-alpha) — OpenAPI spec update pending
+			"GET /v1/eval-events":          true,
+			"GET /v1/eval-events/volume":    true,
+
+			// ABM (v2.0.0-alpha) — OpenAPI spec update pending
+			"POST /v1/abm/resolve":                   true,
+			"POST /v1/abm/track":                     true,
+			"POST /v1/abm/track/batch":               true,
+			"GET /v1/abm/behaviors":                  true,
+			"POST /v1/abm/behaviors":                 true,
+			"GET /v1/abm/behaviors/{key}":            true,
+			"PATCH /v1/abm/behaviors/{key}":          true,
+			"DELETE /v1/abm/behaviors/{key}":         true,
+			"GET /v1/abm/behaviors/{key}/analytics":  true,
 			}
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has
@@ -965,5 +1007,111 @@ func (s noopStore) ListCreditConsumptions(ctx context.Context, orgID, bearerID s
 }
 func (s noopStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
 	return errCreditNotImpl
+}
+
+// ─── EvalEventWriter ───────────────────────────────────────────────────────
+
+func (noopStore) InsertEvalEvent(_ context.Context, _ *domain.EvalEvent) error {
+	return errNoop
+}
+
+func (noopStore) InsertEvalEventBatch(_ context.Context, _ *domain.EvalEventBatch) error {
+	return errNoop
+}
+
+// ─── EvalEventReader ───────────────────────────────────────────────────────
+
+func (noopStore) CountEvaluations(_ context.Context, _, _ string, _ time.Time) (int64, error) {
+	return 0, errNoop
+}
+
+func (noopStore) CountEvaluationsByVariant(_ context.Context, _, _ string, _ time.Time) (map[string]int64, error) {
+	return nil, errNoop
+}
+
+func (noopStore) GetEvaluationLatency(_ context.Context, _, _ string, _ time.Time) (int64, int64, int64, error) {
+	return 0, 0, 0, errNoop
+}
+
+func (noopStore) GetEvaluationVolume(_ context.Context, _ string, _ time.Time, _ string) ([]domain.TimeSeriesPoint, error) {
+	return nil, errNoop
+}
+
+// ─── ABMEventStore ─────────────────────────────────────────────────────────
+
+func (noopStore) InsertTrackEvent(_ context.Context, _ *domain.ABMTrackEvent) error {
+	return errNoop
+}
+
+func (noopStore) InsertTrackEvents(_ context.Context, _ []domain.ABMTrackEvent) error {
+	return errNoop
+}
+
+func (noopStore) CountEventsByBehavior(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, errNoop
+}
+
+func (noopStore) CountEventsByAgent(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, errNoop
+}
+
+func (noopStore) GetVariantDistribution(_ context.Context, _, _ string, _ time.Time) (map[string]int, error) {
+	return nil, errNoop
+}
+
+// ─── PolicyStore ───────────────────────────────────────────────────────────
+
+func (noopStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
+	return nil, errNoop
+}
+
+func (noopStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+	return nil, errNoop
+}
+
+func (noopStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
+	return nil, errNoop
+}
+
+func (noopStore) CreatePolicy(_ context.Context, _ *domain.Policy) error {
+	return errNoop
+}
+
+func (noopStore) UpdatePolicy(_ context.Context, _ *domain.Policy) error {
+	return errNoop
+}
+
+func (noopStore) DeletePolicy(_ context.Context, _, _ string) error {
+	return errNoop
+}
+
+func (noopStore) SetPolicyEnabled(_ context.Context, _, _ string, _ bool) error {
+	return errNoop
+}
+
+// ─── ABMBehaviorStore ──────────────────────────────────────────────────────
+
+func (noopStore) CreateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
+	return errNoop
+}
+
+func (noopStore) GetBehavior(_ context.Context, _, _ string) (*domain.ABMBehavior, error) {
+	return nil, errNoop
+}
+
+func (noopStore) ListBehaviors(_ context.Context, _ string) ([]domain.ABMBehavior, error) {
+	return nil, errNoop
+}
+
+func (noopStore) ListBehaviorsByAgentType(_ context.Context, _, _ string) ([]domain.ABMBehavior, error) {
+	return nil, errNoop
+}
+
+func (noopStore) UpdateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
+	return errNoop
+}
+
+func (noopStore) DeleteBehavior(_ context.Context, _, _ string) error {
+	return errNoop
 }
 

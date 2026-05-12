@@ -337,6 +337,24 @@ type SearchStore interface {
 	Search(ctx context.Context, orgID, projectID, query string) ([]SearchHit, error)
 }
 
+// AgentStore manages the agent registry (P0 #15, #16, #19).
+type AgentStore interface {
+	CreateAgent(ctx context.Context, agent *Agent) error
+	GetAgent(ctx context.Context, orgID, agentID string) (*Agent, error)
+	ListAgents(ctx context.Context, orgID string) ([]Agent, error)
+	ListAgentsByType(ctx context.Context, orgID, agentType string) ([]Agent, error)
+	UpdateAgent(ctx context.Context, agent *Agent) error
+	UpdateAgentHeartbeat(ctx context.Context, agentID string) error
+	DeleteAgent(ctx context.Context, orgID, agentID string) error
+}
+
+// AgentMaturityStore manages per-context agent maturity tracking.
+type AgentMaturityStore interface {
+	UpsertMaturity(ctx context.Context, agentID string, m *AgentMaturity) error
+	GetMaturity(ctx context.Context, agentID, contextKey string) (*AgentMaturity, error)
+	ListMaturities(ctx context.Context, agentID string) ([]AgentMaturity, error)
+}
+
 type Store interface {
 	FlagReader
 	FlagWriter
@@ -384,4 +402,11 @@ type Store interface {
 	LimitsReader
 	PinnedItemsStore
 	SearchStore
+	AgentStore
+	AgentMaturityStore
+	PolicyStore
+	ABMBehaviorStore
+	ABMEventStore
+	EvalEventReader
+	EvalEventWriter
 }

@@ -31,9 +31,9 @@ type WebhookNotifier interface {
 }
 
 // Cache holds in-memory rulesets per environment for fast evaluation.
-// When a ruleset is invalidated via PG NOTIFY, the cache also notifies
-// connected SDK clients through the optional Broadcaster and dispatches
-// webhook events through the optional WebhookNotifier.
+// When a ruleset is invalidated via the CacheInvalidator, the cache also
+// notifies connected SDK clients through the optional Broadcaster and
+// dispatches webhook events through the optional WebhookNotifier.
 type Cache struct {
 	mu              sync.RWMutex
 	rulesets        map[string]*domain.Ruleset // envID -> ruleset
@@ -41,11 +41,15 @@ type Cache struct {
 	logger          *slog.Logger
 	broadcaster     Broadcaster
 	webhookNotifier WebhookNotifier
+	invalidator     domain.CacheInvalidator // optional; set via SetInvalidator
 	listening       bool
 }
 
 // NewCache creates an evaluation cache. Pass nil for broadcaster/notifier
 // when not needed (e.g. in tests).
+//
+// To enable cross-instance cache invalidation, call SetInvalidator after
+// construction with a domain.CacheInvalidator implementation.
 func NewCache(store domain.Store, logger *slog.Logger, broadcaster Broadcaster) *Cache {
 	return &Cache{
 		rulesets:    make(map[string]*domain.Ruleset),
@@ -53,6 +57,13 @@ func NewCache(store domain.Store, logger *slog.Logger, broadcaster Broadcaster) 
 		logger:      logger,
 		broadcaster: broadcaster,
 	}
+}
+
+// SetInvalidator attaches a CacheInvalidator for cross-instance cache
+// invalidation. If set, StartListening uses the invalidator instead of
+// the legacy store.ListenForChanges path.
+func (c *Cache) SetInvalidator(inv domain.CacheInvalidator) {
+	c.invalidator = inv
 }
 
 // SetWebhookNotifier attaches a webhook dispatcher to the cache.
@@ -125,15 +136,20 @@ func (c *Cache) RulesetCount() int {
 	return len(c.rulesets)
 }
 
-// StartListening subscribes to PostgreSQL NOTIFY and refreshes cache on flag changes.
+// StartListening subscribes to cache invalidation events and refreshes the
+// cache on flag changes. If a CacheInvalidator was set via SetInvalidator,
+// it uses that; otherwise it falls back to the legacy store.ListenForChanges
+// path.
+//
+// StartListening blocks until ctx is cancelled. Call it in a goroutine.
 func (c *Cache) StartListening(ctx context.Context) error {
-	err := c.store.ListenForChanges(ctx, func(payload string) {
+	handler := func(_ context.Context, _ string, payload []byte) {
 		var change struct {
 			FlagID string `json:"flag_id"`
 			EnvID  string `json:"env_id"`
 			Action string `json:"action"`
 		}
-		if err := json.Unmarshal([]byte(payload), &change); err != nil {
+		if err := json.Unmarshal(payload, &change); err != nil {
 			c.logger.Error("failed to parse flag change notification", "error", err)
 			return
 		}
@@ -158,7 +174,19 @@ func (c *Cache) StartListening(ctx context.Context) error {
 			c.webhookNotifier.NotifyFlagChange(notifyCtx, change.EnvID, change.FlagID, change.Action)
 			notifyCancel()
 		}
-	})
+	}
+
+	var err error
+	if c.invalidator != nil {
+		err = c.invalidator.Subscribe(ctx, "flag_changes", handler)
+	} else {
+		// Legacy path: fall back to store.ListenForChanges (requires
+		// the store adapter to implement it with PG LISTEN/NOTIFY).
+		err = c.store.ListenForChanges(ctx, func(payload string) {
+			handler(context.Background(), "flag_changes", []byte(payload))
+		})
+	}
+
 	if err == nil {
 		c.mu.Lock()
 		c.listening = true

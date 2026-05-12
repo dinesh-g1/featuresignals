@@ -373,8 +373,37 @@ func (s *tierMockStore) GetComponentHistory(_ context.Context, _ int) ([]domain.
 	return nil, nil
 }
 
-
-
+// AgentStore stubs.
+func (s *tierMockStore) CreateAgent(_ context.Context, _ *domain.Agent) error {
+	return errors.New("not implemented")
+}
+func (s *tierMockStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error) {
+	return nil, errors.New("not implemented")
+}
+func (s *tierMockStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error) {
+	return nil, errors.New("not implemented")
+}
+func (s *tierMockStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) {
+	return nil, errors.New("not implemented")
+}
+func (s *tierMockStore) UpdateAgent(_ context.Context, _ *domain.Agent) error {
+	return errors.New("not implemented")
+}
+func (s *tierMockStore) UpdateAgentHeartbeat(_ context.Context, _ string) error {
+	return errors.New("not implemented")
+}
+func (s *tierMockStore) DeleteAgent(_ context.Context, _, _ string) error {
+	return errors.New("not implemented")
+}
+func (s *tierMockStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error {
+	return errors.New("not implemented")
+}
+func (s *tierMockStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) {
+	return nil, errors.New("not implemented")
+}
+func (s *tierMockStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) {
+	return nil, errors.New("not implemented")
+}
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
 	return context.WithValue(ctx, OrgIDKey, orgID)
@@ -688,4 +717,110 @@ func (s *tierMockStore) ListCreditConsumptions(ctx context.Context, orgID, beare
 }
 func (s *tierMockStore) GrantMonthlyCredits(ctx context.Context, orgID, plan string, periodStart time.Time) error {
 	return errCreditNotImpl
+}
+
+// ─── EvalEventWriter ───────────────────────────────────────────────────────
+
+func (s *tierMockStore) InsertEvalEvent(_ context.Context, _ *domain.EvalEvent) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) InsertEvalEventBatch(_ context.Context, _ *domain.EvalEventBatch) error {
+	return errors.New("not implemented")
+}
+
+// ─── EvalEventReader ───────────────────────────────────────────────────────
+
+func (s *tierMockStore) CountEvaluations(_ context.Context, _, _ string, _ time.Time) (int64, error) {
+	return 0, errors.New("not implemented")
+}
+
+func (s *tierMockStore) CountEvaluationsByVariant(_ context.Context, _, _ string, _ time.Time) (map[string]int64, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) GetEvaluationLatency(_ context.Context, _, _ string, _ time.Time) (int64, int64, int64, error) {
+	return 0, 0, 0, errors.New("not implemented")
+}
+
+func (s *tierMockStore) GetEvaluationVolume(_ context.Context, _ string, _ time.Time, _ string) ([]domain.TimeSeriesPoint, error) {
+	return nil, errors.New("not implemented")
+}
+
+// ─── ABMEventStore ─────────────────────────────────────────────────────────
+
+func (s *tierMockStore) InsertTrackEvent(_ context.Context, _ *domain.ABMTrackEvent) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) InsertTrackEvents(_ context.Context, _ []domain.ABMTrackEvent) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) CountEventsByBehavior(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, errors.New("not implemented")
+}
+
+func (s *tierMockStore) CountEventsByAgent(_ context.Context, _, _ string, _ time.Time) (int, error) {
+	return 0, errors.New("not implemented")
+}
+
+func (s *tierMockStore) GetVariantDistribution(_ context.Context, _, _ string, _ time.Time) (map[string]int, error) {
+	return nil, errors.New("not implemented")
+}
+
+// ─── PolicyStore ───────────────────────────────────────────────────────────
+
+func (s *tierMockStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) CreatePolicy(_ context.Context, _ *domain.Policy) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) UpdatePolicy(_ context.Context, _ *domain.Policy) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) DeletePolicy(_ context.Context, _, _ string) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) SetPolicyEnabled(_ context.Context, _, _ string, _ bool) error {
+	return errors.New("not implemented")
+}
+
+// ─── ABMBehaviorStore ──────────────────────────────────────────────────────
+
+func (s *tierMockStore) CreateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) GetBehavior(_ context.Context, _, _ string) (*domain.ABMBehavior, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) ListBehaviors(_ context.Context, _ string) ([]domain.ABMBehavior, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) ListBehaviorsByAgentType(_ context.Context, _, _ string) ([]domain.ABMBehavior, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *tierMockStore) UpdateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
+	return errors.New("not implemented")
+}
+
+func (s *tierMockStore) DeleteBehavior(_ context.Context, _, _ string) error {
+	return errors.New("not implemented")
 }
