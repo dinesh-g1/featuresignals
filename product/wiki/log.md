@@ -1,6 +1,478 @@
 # FeatureSignals Product Wiki — Activity Log
 
+## [2026-05-17 11:00] audit | Comprehensive Dashboard Codebase Audit — BRUTAL assessment
+
+### Context
+Before undertaking the complete UI/UX redesign for FeatureSignals v1, a line-by-line audit of the entire `/dashboard/` codebase was performed to identify what to keep, redesign, or delete.
+
+### Key findings
+- **42 pages** — 8 KEEP, 25 REDESIGN, 9 DELETE
+- **64 components** — 22 KEEP, 32 REDESIGN, 10 DELETE
+- **32 UI primitives** — 28 KEEP, 4 REFACTOR
+- **2 Zustand stores** — both KEEP
+- **81 test files** — good coverage but gaps in hooks and E2E
+- **Zero `any` types, zero `console.log`, no inline styles** — strong code discipline
+- **Critical problems:** God components (1,400+ lines), massive code duplication (8 pages are duplicate CRUD), inconsistent data fetching (3 different patterns), silent error swallowing
+- **Strong foundation:** API client is production-grade, design tokens are excellent, auth flow is solid, command palette is premium
+- **Missing entirely:** 9 AI-native product UIs, policy builder, cost attribution, rollout stepper, dark mode
+
+### Files changed
+- **Created:** `product/wiki/private/DASHBOARD_AUDIT.md` — comprehensive 11-section audit
+
+### Core recommendation
+Keep the foundation (design tokens, UI primitives, API client, stores, hooks patterns). Redesign the page architecture from scratch. Build missing AI product UIs as new, focused components. Complete rewrite is NOT needed — comprehensive redesign is.
+
 > Chronological record
+
+## [2026-05-18 11:30] design | UI/UX Specification v1.0.0 — complete dashboard redesign blueprint
+
+### Context
+After the comprehensive dashboard audit (`DASHBOARD_AUDIT.md`) revealed god components, duplicated pages, inconsistent state handling, and 9 entirely missing AI product UIs, a complete UI/UX redesign specification was needed. The specification needed to cover every page, every component, every state, and apply Don Norman design principles systematically.
+
+### Key findings
+- Produced 4,392-line specification covering 21 sections
+- Specifies 7 primary navigation sections (Discover, Flags, Ship, Monitor, Analyze, Cleanup, Agents) + Settings
+- Defines 12 new components (DocDrawer, PreflightReport, RolloutStepper, FlagHealthBadge, IncidentCorrelationPanel, CostAttributionChart, AgentConfigEditor, PolicyRuleBuilder, UsageMeter, AIConfidenceBadge, enhanced CommandPalette, enhanced ConfirmDialog)
+- Specifies 6 existing component modifications (Table, Tabs, Select, Button, Input, Skeleton)
+- Documents 13 universal state handling rules (loading, empty, error, success, not found, unauthorized, forbidden, rate limited, SSE disconnected, stale data, unsaved changes, and more)
+- Full accessibility requirements (WCAG 2.1 AA), responsive strategy (3 breakpoints), dark mode implementation, performance budgets
+- 6-persona matrix with role-based landing pages and adaptable UI elements
+- 6-phase implementation plan spanning ~12-16 weeks
+- Every page includes Don Norman principle applications, documentation drawer content, and PRS requirement references
+
+### Files changed
+- `product/wiki/private/UI_UX_SPECIFICATION.md` — created (4,392 lines, 21 sections)
+- `product/wiki/index.md` — updated (added to UX & Design + Private pages tables)
+- `product/wiki/log.md` — updated (this entry)
+
+### Core recommendation
+Follow the 6-phase implementation plan: Phase 0 (stabilize foundation, 1-2 weeks) → Phase 1 (Flags + Ship redesign, 3-4 weeks) → Phase 2 (Monitor + Cleanup, 2-3 weeks) → Phase 3 (Analyze + Agents + Discover, 3-4 weeks) → Phase 4 (Settings + Global Polish, 2-3 weeks) → Phase 5 (Testing + Hardening, 1-2 weeks). Every page and component must pass the Don Norman Principle Audit Checklist (§21) before merge.
+
+## [2026-05-18 09:30] strategy | Usage-Based Billing & Pricing Strategy — comprehensive shift from flat-rate to pay-as-you-go model
+
+### Context
+FeatureSignals currently has a flat INR 1,999/mo "unlimited everything" Pro tier. As the platform expands into AI-native products (Code2Flag, Preflight, IncidentFlag, Impact Analyzer, ABM), the cost profile becomes multi-dimensional — LLM tokens, data retention, sub-processor choices, and pass-through costs destroy margin under flat-rate pricing. The shift to usage-based billing aligns costs with revenue and creates efficient economic signals for customers.
+
+### Key findings
+- **8 Parts:** Philosophy & Rationale, Cost Driver Analysis (infra + pass-through costs + 14 customer usage dimensions), Pricing Model Design (Free / Pro Usage-Based / Enterprise / Self-Hosted), Sub-Processor Pricing Impact, Metering & Billing Infrastructure (NATS→ClickHouse→Rating→Invoice→Payment), Competitive Pricing Analysis (6 competitors), Revenue Projections (3 scenarios at 100 customers), Self-Hosted Licensing Model
+- **Pricing model:** INR 999/mo base platform fee + metered usage. Included: 1M evaluations, 10 flags, 3 seats, 30-day retention. Metered: INR 50/M evals, INR 100/flag, INR 200/seat, INR 200/GB retention. AI add-ons: Code2Flag INR 500/scan, Preflight INR 100/report, IncidentFlag INR 500/mo base, Impact Analyzer INR 1,000/mo base, ABM INR 2,000/mo base
+- **Sub-processor pricing:** Local LLM = INR 0 tokens (saves 29% for heavy AI users). Zero Sub-Processor Mode as premium Enterprise offering for regulated industries
+- **Revenue projections:** Scenario A (100 moderate Pro): MRR INR 3,74,900. Scenario B (mix): MRR INR 13,34,940. Scenario C (full spectrum): MRR INR 9,94,549. Blended margin 85% at 100 customers
+- **20 new PRS requirements:** FS-BILL-001 through FS-BILL-020 covering metering, rating, invoicing, payment integration, spend management, usage dashboard, self-hosted licensing
+- **Transition strategy:** Existing flat-rate customers grandfathered for 12 months with migration incentive (INR 2,000 credit)
+
+### Files changed
+- `product/wiki/private/USAGE_BASED_BILLING_STRATEGY.md` — created (1,023 lines, 8 parts)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added, page count: 30)
+
+### Core recommendation
+Implement in 3 phases: (1) Foundation — metering pipeline, rating engine, invoices, payment gateways (weeks 1-4); (2) Dashboard & Transparency — usage dashboard, forecasts, anomaly detection (weeks 5-8); (3) Enterprise & Self-Hosted — volume discounts, license generation, Zero Sub-Processor Mode (weeks 9-12).
+
+## [2026-05-18 08:30] architecture | Sub-Processor Architecture — PRS & Handbook updated with "Customers choose their own sub-processors" principle
+
+### Context
+Following the sub-processor strategy analysis (06:30 entry), the new architectural principle that every third-party service is a pluggable choice — not a hard dependency — needed to be codified in both the Product Requirements Specification and the Developer Handbook.
+
+### Key changes
+- **PRS v2.0.0 updated:** Added FS-S7-SUB-001 through FS-S7-SUB-005 (sub-processor configuration requirements), FS-S7-SUB-010 through FS-S7-SUB-012 (Zero Sub-Processor Mode). Added ComplianceGuard sub-processor policy checks (FS-S3-PFL-016 through FS-S3-PFL-018). Added §10.3 "Data Boundary & Sub-Processor Configuration" with pluggability matrix. Added 4 glossary terms and 2 new risks (RSK-011, RSK-012).
+- **Developer Handbook updated:** §1 now declares sub-processor agnosticism as a critical architectural principle. §3 S7 (Process Configuration) now documents the sub-processor pluggability architecture and Data Boundary config schema. §6 adds a complete "Sub-Processor Configuration Workflow" table covering onboarding, configuration, enforcement, notification, audit, and Zero Sub-Processor Mode.
+- **Core principle codified:** "Customers choose their own sub-processors" is now a first-class architectural requirement — not an afterthought. Every service category (LLM, email, payment, monitoring, code hosting, SSO, incident management, cloud infra) is pluggable with sensible defaults.
+
+### Files changed
+- `product/wiki/private/generate_prs_v2.py` — updated (new §10.3, ComplianceGuard additions, glossary, risk register)
+- `product/wiki/private/generate_handbook.py` — updated (§1 principle, §3 S7 sub-processor architecture, §6 workflow)
+- `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` — regenerated
+- `product/wiki/private/DEVELOPER_HANDBOOK.docx` — regenerated
+- `product/wiki/log.md` — updated (this entry)
+
+### Core recommendation
+Zero Sub-Processor Mode is the ultimate enterprise differentiator for regulated industries (banks, healthcare, govtech). It must be prominently featured in enterprise sales materials and the website pricing page.
+
+## [2026-05-18 06:30] strategy | Sub-Processor Strategy — comprehensive sub-processor inventory, risk assessment, and competitive positioning
+
+### Context
+FeatureSignals processes sensitive customer data (source code via Code2Flag, evaluation context, audit trails, agent prompts via ABM) and serves regulated industries. Sub-processor management is not just legal compliance — it is a PRODUCT FEATURE that wins regulated-industry deals. This analysis inventories all 13 current and planned sub-processors, traces data flows, and positions self-hosting as the decisive competitive advantage.
+
+### Key findings
+- **13 sub-processors identified** across 8 categories: Infrastructure (Hetzner, future AWS/GCP/Azure), Database (self-managed — NOT sub-processors), Email (ZeptoMail / SMTP), Payments (Stripe, PayU/Razorpay, Paddle), LLM APIs (OpenAI CRITICAL, DeepSeek CRITICAL+, Azure OpenAI, Self-Hosted LLM), Code Hosting (GitHub, GitLab, self-hosted Git), Monitoring (SigNoz self-hosted), Communication (Slack, PagerDuty)
+- **CRITICAL finding: DeepSeek is current default LLM — China-based, not GDPR-compliant, non-starter for US/EU/regulated customers.** Recommendation: Remove as default IMMEDIATELY, make opt-IN only.
+- **10 of 13 sub-processors eliminated by self-hosting.** Zero sub-processors achievable with self-hosting + self-hosted LLM + air-gapped mode.
+- **Self-hosted SSO eliminates Auth0/WorkOS sub-processor.** Our SAML/OIDC implementation in `server/internal/sso/` handles authentication directly — no third-party auth provider needed.
+- **Product architecture implications:** ComplianceGuard sub-processor policy checks, Process Configuration Level 4-5 sub-processor governance, Code2Flag data minimization (PII scrubbing, snippet-only), ABM prompt confidentiality (never send agent prompts to third-party LLM), Preflight/IncidentFlag LLM independence (core deterministic features work without LLM)
+- **15 action items** across immediate/short-term/medium-term/long-term timelines
+- **Strategic principle:** Every sub-processor we add closes a door. Every opt-out we provide opens one. Default: minimize. Design: make optional. Operate: give full visibility.
+
+### Files changed
+- `product/wiki/private/SUB_PROCESSOR_STRATEGY.md` — created (735 lines, 8 parts)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Wiki index updated
+- Added `SUB_PROCESSOR_STRATEGY.md` to private pages section
+- Updated page count: 29 (9 public, 16 private, 4 internal)
+
+## [2026-05-18 07:00] strategy | Human-Process Product Architecture — the definitive product architecture
+
+### Context
+Fundamental re-analysis of FeatureSignals' entire product architecture based on the principle: "All technology extends existing human capabilities." Maps the complete 14-step human feature lifecycle from CONCEIVE through LEARN, then maps 13 AI extensions to each step. This document supersedes VALUE_CHAIN_AI_NATIVE_STRATEGY.md and EMERGENT_PRODUCT_ANALYSIS.md for determining WHAT to build.
+
+### Key findings
+- **14 distinct human steps** documented in granular detail with tools, pain, people, and decisions
+- **13 AI extensions** mapped — each with concrete outputs, hallucination risk, human/AI role boundaries
+- **4 unified products** replace 9-product Stage 3 plan: Code2Flag (Steps 1-5, 13), Preflight (Steps 7-9), IncidentFlag+AutoMonitor (Steps 10-11), Impact Analyzer+Org Learning (Steps 12, 14)
+- **11 of 14 existing products killed or absorbed.** Only ABM survives as standalone.
+- **Unified vision:** "FeatureSignals is not a feature flag platform. It is a feature lifecycle platform."
+
+### Files changed
+- `product/wiki/private/HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md` — created (1,028 lines)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Wiki index updated
+- Added `HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md` to private pages section
+
+## [2026-05-18 04:30] docs | Developer Handbook generated — comprehensive onboarding document
+
+### Context
+New team members need a single document that takes them from zero to "I understand what we're building, how the system works, where we are, and what I should work on" in 20 minutes. All the information existed across 27 wiki pages but was not consolidated.
+
+### Key changes
+- Generated `DEVELOPER_HANDBOOK.docx` (65KB, ~20 pages) at `product/wiki/private/`
+- 9 sections: Quick Start, Architecture Overview, 14-Step Lifecycle, Subsystem Catalog, Status Dashboard, Phase Goals, Workflow Framework, Technical Standards, Glossary
+- 30+ professionally styled tables with dark navy headers and alternating row colors
+- Covers all 7 subsystems with input/output/status/internal architecture details
+- Implementation status dashboard showing Phases 0-7 with ✅/🟡/🔴 indicators
+- Phase 8-11 goals with exit criteria, dependencies, and unlocks
+- Complete acronym glossary (25 terms) and document index (36 documents)
+- Codebase entry points index with key files
+
+### Files changed
+- `product/wiki/private/DEVELOPER_HANDBOOK.docx` — new (generated)
+- `product/wiki/private/generate_handbook.py` — new (generation script)
+- `product/wiki/log.md` — this entry
+
+### Core recommendation
+The handbook should be the FIRST document every new team member reads. It consolidates 27 wiki pages into a single, coherent narrative. Regenerate whenever major architecture changes occur.
+
+## [2026-05-18 03:00] architecture | Process Alignment Architecture — the final architectural layer
+
+### Context
+The third and final architectural layer. After HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md defined WHAT products extend the human lifecycle, PROCESS_ALIGNMENT_ARCHITECTURE.md defines HOW those products reflect each customer's existing business process — not a rigid workflow they must adapt to.
+
+### Key Insight
+A 5-person startup's feature process is fundamentally different from a 500-person bank's. If we build ONE rigid product, we force every company to adapt to OUR process. That's what LaunchDarkly does. We do the opposite: the same codebase supports "no process" (Level 1: solo dev, all automated, instant rollouts) and "maximum process" (Level 5: regulated bank, dual-control CAB, 10-year audit retention) — only configuration differs.
+
+### Key documents produced
+- **NEW: PROCESS_ALIGNMENT_ARCHITECTURE.md** — 9-part comprehensive architecture covering:
+  - Part 1: The Process Alignment Principle (why rigid products fail, reflective product principle)
+  - Part 2: 5-Level Maturity Model (Solo/Indie → Startup → Growth → Enterprise → Regulated) with full lifecycle step config per level
+  - Part 3: Policy-as-Configuration Engine architecture (CEL-based, 9 trigger points, 7 action types, pre-built policy packs for SOC2/HIPAA/PCI/GDPR/RBI/etc.)
+  - Part 4: Workflow Engine architecture (customer-definable phases, guard evaluation, auto-advance/rollback, 8 built-in templates)
+  - Part 5: Reflection Architecture (bi-directional integration plugin system for Jira/Slack/GitHub/PagerDuty/Datadog/ServiceNow/Okta + partner SDK)
+  - Part 6: 9 Industry Template Packs (Solo Dev, Early Startup, Growth SaaS, Enterprise SaaS, Indian Fintech/RBI, US Healthcare/HIPAA, European SaaS/GDPR, US Bank/PCI+SOX, GovTech/FedRAMP)
+  - Part 7: Implementation Impact (new Go packages, SQL migrations, API design, existing product adaptations, 6-phase build plan June-December 2026)
+  - Part 8: Revised Product Priority (Policy Engine + Workflow Engine + Integration Plugins = new shared infrastructure, built first)
+  - Part 9: Complete Architecture Diagram (4-layer: Process Config → Shared Infrastructure → Products → Core Platform, connecting to Customer Tools and Human Lifecycle)
+
+### Architecture decisions
+1. **Policy Engine is shared infrastructure**, not a standalone product. Consumed by Preflight (preview), ComplianceGuard (enforcement), Workflow Engine (gates), Flag handlers (mutation gating).
+2. **Workflow Engine replaces hardcoded phases** in Preflight. Becomes a shared service for Preflight, IncidentFlag, ServiceMesh, Flag Janitor.
+3. **Integration Plugin System** turns basic webhooks into bi-directional process participants. Every integration implements a common `IntegrationPlugin` interface.
+4. **CEL (Common Expression Language)** chosen for policy conditions over Rego/OPA, Lua, or custom DSL. Industry-standard, safe, Go-native.
+5. **Correct build order:** Policy Engine → Integration Plugins → Maturity Model → Workflow Engine → Code2Flag → Preflight → IncidentFlag → ComplianceGuard. Infrastructure before products.
+6. **Design invariant:** Same codebase, zero code changes between Level 1 and Level 5. Only configuration differs.
+
+### Files changed
+- **NEW: product/wiki/private/PROCESS_ALIGNMENT_ARCHITECTURE.md** — 2,500+ line comprehensive architecture
+- **UPDATED: product/wiki/index.md** — Added PROCESS_ALIGNMENT_ARCHITECTURE.md to private pages, updated tag index
+- **UPDATED: product/wiki/log.md** — This entry
+
+### Core recommendation
+**Build the Policy Engine first.** Everything else gates on policy evaluation. Without it, every product hardcodes process assumptions. With it, every product becomes process-configurable.
+
+
+## [2026-05-17 04:00] architecture | Complete product re-architecture — human-process-rooted
+
+### Context
+Three-phase deep analysis session that completely transformed the product architecture:
+
+1. **Phase 1 — Market Fit:** Brutal assessment killed 6 products (CGP, FEP, FPE, CIN, Marketplace, DIN) and flagged 5 for validation.
+2. **Phase 2 — Emergent Products:** Discovered 7 new products (Preflight, ServiceMesh, Code2Flag, ComplianceGuard, CostPath, IncidentFlag, FlagGraph) from code-level thinking.
+3. **Phase 3 — Human-Process Rooting:** Re-anchored everything in the 14-step human feature lifecycle. From "what AI products can we build?" to "what human capability are we extending?"
+
+### Key documents produced/updated
+- **NEW: HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md** — Canonical product architecture. 14-step lifecycle → 4 unified products + ABM.
+- **NEW: MARKET_FIT_ANALYSIS.md** — Willingness-to-pay analysis for every product.
+- **NEW: EMERGENT_PRODUCT_ANALYSIS.md** — 7 new products, 3 AI transformations, 5 industry architectures.
+- **UPDATED: VALUE_CHAIN_AI_NATIVE_STRATEGY.md** (v2.0.0) — Marked superseded for product decisions, updated with new architecture.
+- **UPDATED: FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx** (v2.0.0) — Regenerated with 4+1 product architecture, 100 requirements, new lifecycle sections.
+- **UPDATED: CLAUDE.md** — PRS reference table updated for v2.0.0.
+- **UPDATED: index.md** — New documents added.
+
+### Architecture decision: 9 → 4+1
+- Killed: CGP, FEP (revenue), FPE, CIN, Marketplace, DIN
+- Absorbed into Code2Flag: AICG, FLM, KSG (creation)
+- Absorbed into Preflight: I2P, RPE, CaCP, KSG (blast radius)
+- Absorbed into IncidentFlag: SHI
+- Absorbed into Impact Analyzer: FEP (cost part)
+- Demoted to feature: E2
+- Survives standalone: ABM
+
+### Unified Vision
+"FeatureSignals is not a feature flag platform. It is a feature lifecycle platform. Feature flags are the mechanism. The lifecycle is the product. Humans decide. AI executes."
+
+
+## [2026-05-17 09:00] specs | PRS v2.0.0 regenerated — human-process-rooted architecture
+
+### Context
+Full regeneration of the Product Requirements Specification .docx from the canonical HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md.
+
+### Key changes
+- **Document:** PRS v2.0.0 replaces v1.0.0 entirely
+- **Architecture:** 9 Stage 3 products → 4+1 unified (Code2Flag, Preflight, IncidentFlag+AutoMonitor, Impact Analyzer+Org Learning, ABM)
+- **New sections:** §3 (14-step lifecycle mapping), §4 (Human-in-the-Loop design principle), §23 (Product Consolidation Map)
+- **Rewritten sections:** §8 (Stage 3 products), §16 (Implementation Phases 0-7), §17 (GTM & Pricing by product line), §18 (Success Metrics), §19 (Open Core Boundary), §20 (Dependency Map), §21 (Risk Register)
+- **Requirements:** 100 concrete, testable requirements with unique IDs across all products
+- **Products killed:** CGP, FEP (revenue), FPE, CIN, Marketplace, DIN — removed entirely
+- **Products absorbed:** I2P→Preflight, AICG→Code2Flag, KSG→Code2Flag+Preflight, RPE→Preflight, FLM→Code2Flag, SHI→IncidentFlag, CaCP→ComplianceGuard, E2→feature in Code2Flag
+- **Generation script:** Saved to `product/wiki/private/generate_prs_v2.py` for future updates
+
+### Files changed
+- `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` — regenerated (v2.0.0, 68.7 KB, 257 paragraphs, 48 tables, 100 requirements)
+- `product/wiki/private/generate_prs_v2.py` — new (generation script, reusable)
+- `product/wiki/log.md` — this entry
+
+### Core recommendation
+The PRS v2.0.0 is now the single source of truth for all product requirements. All previous product planning documents (VALUE_CHAIN_AI_NATIVE_STRATEGY.md Stage 3, EMERGENT_PRODUCT_ANALYSIS.md product definitions) are superseded by HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md + this PRS.
+
+
+## [2026-05-17 08:00] strategy | VALUE_CHAIN_AI_NATIVE_STRATEGY updated to reflect human-process-rooted architecture
+
+### Context
+Updated the value chain strategy document to reflect the new human-process-rooted product architecture from HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md. The original 9 standalone Stage 3 products have been consolidated into 4 unified lifecycle products + ABM. All superseded sections are clearly marked while valuable content (data infrastructure, risk analysis, GTM strategy, competitive response) is preserved.
+
+### Key changes
+- **Frontmatter + Overview:** Added superseded note, unified vision statement, version bump to 2.0.0
+- **Part 4 (Stage 3):** COMPLETELY REPLACED with 4 unified products (Code2Flag, Preflight, IncidentFlag+AutoMonitor, Impact Analyzer+Org Learning) + ABM surviving as standalone. Added 14-step lifecycle-to-product mapping table.
+- **Part 4A:** Preserved original 9-product definitions for historical reference, marked with strikethrough where killed/absorbed
+- **Part 5 (Stage 4):** All three products (CIN, Marketplace, DIN) marked KILLED with hallucination scores
+- **Part 7 (GTM & Pricing):** Product line restructured from 9 to 4+ABM. Revenue projection updated (INR 1,329,825 -> INR 1,169,800/mo). Strategic moat updated for new products.
+- **Part 8 (Implementation Priorities):** Phases rebuilt around 4 unified products + ABM. Old I2P-first plan replaced. Stage 4 phases removed. New Phase 0-7 plan.
+- **Part 11 (Additional Stage 3):** FPE marked KILLED, AICG marked ABSORBED into Code2Flag, KSG marked ABSORBED into Code2Flag+Preflight
+- **Part 12 (Stage 2):** RPE marked absorbed into Preflight, E2 demoted to feature, FLM absorbed into Code2Flag
+
+### Files changed
+- **Modified:** `product/wiki/private/VALUE_CHAIN_AI_NATIVE_STRATEGY.md` — v2.0.0, 8 major section updates
+- **Updated:** `product/wiki/log.md` — this entry
+
+## [2026-05-17 07:00] strategy | Human-Process Product Architecture — the definitive product architecture
+
+### Context
+Fundamental re-analysis of FeatureSignals' entire product architecture based on the principle: "All technology extends existing human capabilities." Instead of asking "what AI products can we build?", this analysis asks "what do humans actually do, and how can AI extend each step?" Maps the complete 14-step human feature lifecycle from CONCEIVE through CLEANUP and LEARN, then maps 13 AI extensions to each step.
+
+### Key findings
+- **14 distinct human steps** documented in granular detail: CONCEIVE, SPECIFY, DESIGN, FLAGIFY, IMPLEMENT, TEST, CONFIGURE, APPROVE, EXECUTE, OBSERVE, DECIDE, ANALYZE, CLEANUP, LEARN
+- **13 AI extensions** mapped to each step — each with: what AI extends, data needed, human's role, concrete output, hallucination risk, product vs feature classification
+- **4 unified products** replace the fragmented 9-product Stage 3 plan: Code2Flag (Steps 1-5, 13), Preflight (Steps 7-9), IncidentFlag + AutoMonitor (Steps 10-11), Impact Analyzer + Org Learning (Steps 12, 14)
+- **11 of 14 existing products killed or absorbed:** Only ABM survives as standalone. I2P, CaCP, SHI, AICG, KSG, RPE, FLM absorbed into the 4 unified products. CGP, FEP, FPE, E2, CIN/Marketplace/DIN killed.
+- **ABM survives** because it extends a DIFFERENT human lifecycle (AI agent management), not feature management
+- **Uncovered gold mines:** Multi-service orchestration (ServiceMesh), design-time flag dependency management, cross-team flag governance, flag cost visibility, emergency response integration
+- **Unified vision:** "FeatureSignals is not a feature flag platform. It is a feature lifecycle platform. Feature flags are the mechanism. The lifecycle is the product."
+
+### Files changed
+- `product/wiki/private/HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md` — created (1,028 lines, 6 parts, comprehensive)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Core recommendation
+This document **supersedes** VALUE_CHAIN_AI_NATIVE_STRATEGY.md and EMERGENT_PRODUCT_ANALYSIS.md for the purpose of determining WHAT to build. Future product decisions should start from the human step they extend, not from the AI capability they demonstrate. If a proposed product doesn't extend a documented human step, it should be treated as suspect.
+
+### Wiki index updated
+- Added `HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md` to private pages section
+- Updated page count: 27 (9 public, 14 private, 4 internal)
+
+
+## [2026-05-17 05:00] strategy | Emergent Product Analysis — first-principles new product discovery
+
+### Context
+Deep, emergent analysis of what products FeatureSignals COULD build that haven't been imagined yet. Starting from first principles at the code implementation level, identified 7 genuinely new product concepts, 3 foundational AI transformations for Stage 0-1, and 5 industry-specific architectures. Applied brutal validation to existing 9-product Stage 3 plan — killed 5 products, merged 2 into simpler forms.
+
+### Key findings
+- **7 new products discovered:** Preflight (pre-change impact analysis), ServiceMesh (multi-service flag orchestration), Code2Flag (AI-powered flag discovery & generation), ComplianceGuard (pre-change compliance enforcement), CostPath (infrastructure cost attribution per flag), IncidentFlag (flag-aware incident response pipeline), FlagGraph (runtime dependency graph)
+- **3 Stage 0-1 AI transformations:** AI-powered onboarding (zero to production flag in 60 seconds), AI rule suggestions (data-driven targeting recommendations), Flag Health Scoring (automated code quality for flags)
+- **5 industry-specific architectures:** Indian Fintech (RBI/UPI), US Healthcare (HIPAA/FDA), European SaaS (GDPR/EU AI Act), Global E-commerce (multi-regulation), AI/ML Platform Companies (model versioning/agent governance)
+- **5 existing products killed:** CGP (CDP market saturated), FEP (revenue attribution unsolved), FPE (competing with Optimizely/Adobe), E2 (commodity), CIN/Marketplace/DIN (fantasy products)
+- **2 existing products merged:** CaCP → ComplianceGuard, AICG → Code2Flag
+- **New "Big Three":** Code2Flag (acquisition), Preflight (retention), ABM (expansion)
+- **Revised timeline:** Phase 1 (Code2Flag + AI Onboarding) Jun-Jul 2026, Phase 2 (Preflight) Jul-Aug 2026, Phase 3 (ABM) Aug-Sep 2026
+
+### Files changed
+- `product/wiki/private/EMERGENT_PRODUCT_ANALYSIS.md` — created (1,562 lines, comprehensive)
+- `product/wiki/log.md` — updated (this entry)
+- `product/wiki/index.md` — updated (new page added)
+
+### Core recommendation
+Focus 80% of new product energy on Code2Flag + Preflight + ABM. These are the acquisition, retention, and expansion engines respectively. Kill CGP, FEP, FPE, E2, and all Stage 4 products. Merge CaCP into ComplianceGuard, AICG into Code2Flag. Build an event-driven architecture layer (NATS/Kafka + ClickHouse) as shared infrastructure.
+
+### Wiki index updated
+- Added `EMERGENT_PRODUCT_ANALYSIS.md` to private pages section
+- Updated page count: 26 (9 public, 13 private, 4 internal)
+
+
+## [2026-05-17 03:30] strategy | Comprehensive Market Fit Analysis — brutal honesty audit of entire value chain
+
+### Context
+User requested a brutally honest analysis of whether each product in the 5-stage value chain has genuine market fit or is hallucination. The analysis applies the core question: "What do companies do TODAY to solve this?" to every product from Stage 0 through Stage 4.
+
+### Key findings
+- **Stage 1 (Basic Flag Management):** Real, validated market. Flat-rate pricing is genuinely disruptive for price-sensitive segments. Risk: enterprise trust.
+- **Stage 2 (RPE, E2, FLM):** All are features, not standalone products. Should be included in Pro tier as competitive differentiators.
+- **Stage 3 (9 AI-native products):** Only 2-3 have clear near-term market demand:
+  - **ABM (Agent Behavior Mesh):** DEFINITE BUILD — emerging market, real pain, no dominant player. Our strongest Stage 3 bet.
+  - **AICG (AI Code Generator):** DEFINITE BUILD — universal developer pain, build as Copilot/Cursor extension.
+  - **KSG (simplified):** VALIDATE FIRST — blast radius analysis is genuine value; 5-layer version is over-engineered.
+  - **I2P, CaCP, SHI:** VALIDATE FIRST — interesting ideas with critical unvalidated assumptions.
+  - **CGP, FEP, FPE:** LIKELY HALLUCINATIONS — saturated markets, unsolvable problems, or weak differentiators.
+- **Stage 4 (CIN, Marketplace, DIN):** All LIKELY HALLUCINATIONS — data sharing fantasies, marketplace failures, GDPR nightmares.
+
+### Core recommendation
+Focus 80% of Stage 3 energy on ABM. Get 100 paying Stage 1 customers before building anything else. One great product beats nine speculative ones.
+
+### Files changed
+- **Created:** `product/wiki/private/MARKET_FIT_ANALYSIS.md` — 787-line comprehensive analysis with per-product hallucination scores, Phase 0 validation plan, and brutal honesty about what's real vs fantasy.
+
+### Wiki index updated
+- Added MARKET_FIT_ANALYSIS.md to Private Pages section with `strategy`, `business`, `ai` tags.
+
+## [2026-05-17 02:45] governance | PRS enforcement woven into all core documents
+
+### Context
+After creating the PRS .docx, the user wanted it enshrined as the single source of truth that must be kept updated. Updated all core governance documents to mandate PRS consultation and updates.
+
+### Files changed
+- CLAUDE.md (v5.0.0 > v5.1.0): Added Section 0.6 (PRS as single source of truth), updated Section 0.2 (after-session PRS update), added PRS Traceability to Code Quality Checklist (Section 12), added PRS staleness warning to What NOT To Do (Section 13).
+- SCHEMA.md (v1.0.0 > v1.1.0): Added Principle 9 (The PRS is the contract), PRS to Integration Points and Quick Reference, PRS staleness warning to What NOT To Do.
+- DEVELOPMENT.md: Added PRS to sources and PRS Mandate paragraph to Overview requiring requirement IDs in PRs, commits, and code comments.
+- index.md: Added PRS to Private Pages table, specs tag to Tag Index, PRS open command to Quick Reference.
+
+### Key mandates established
+1. Before any feature work: read relevant PRS sections, reference requirement IDs
+2. After any feature change: update the PRS if requirements changed
+3. The PRS is the contract between all departments
+4. Every new team member reads the PRS cover-to-cover first
+5. Requirement IDs trace from spec through code to tests
+
+## [2026-05-17 02:05] specs | Product Requirements Specification .docx generated
+
+### Context
+Created the official FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx from VALUE_CHAIN_AI_NATIVE_STRATEGY.md. This is the concrete, testable PRS for use by all departments (Engineering, Design, QA, Documentation, Sales, Marketing, Support).
+
+### Document details
+- **File:** `product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx`
+- **Size:** 67KB, ~393 paragraphs, 45 tables
+- **Sections:** 22 numbered sections covering all 5 value-chain stages
+- **Requirements:** 100+ concrete functional requirements with unique IDs (FS-S{STAGE}-{PRODUCT}-{NNN})
+- **Structure:** Ordered from raw materials (Stage 0) → processed products (Stage 3) so each step builds on the last
+- **Audience:** Backend, Frontend, ML/AI, QA, DevOps, PM, Design, Tech Writers, Security, Sales/Marketing
+
+### Key sections
+1. Document Purpose & Scope
+2. Value Chain Overview (manufacturing analogy)
+3. Stage 0 — Raw Material Collection (10 requirements, event schema, NFRs)
+4. Stage 1 — Basic Processing (flag CRUD, SDKs, audit — 17 requirements)
+5. Stage 2 — Enterprise Processing (RPE, E2, FLM — 21 requirements)
+6. Stage 3 — AI-Native Products (9 products: I2P, ABM, CGP, CaCP, FEP, SHI, FPE, AICG, KSG — 65+ requirements)
+7. Stage 4 — Network-Effect Products (CIN, Marketplace, DIN)
+8. Platform Architecture — Agent-First Design (MCP, auth, structured output, event streams)
+9. Data Infrastructure — The Refinery (4 storage tiers, tech decisions, optimization)
+10. API & Integration Specifications (10 API rules, 10 partner integrations)
+11. Security & Compliance Requirements (auth, data protection, framework mappings)
+12. UI/UX Requirements (5 states, accessibility, product-specific UI)
+13. User Guidance & Documentation (in-app, docs, agent-first)
+14. Testing Requirements (6 test levels, Go/ML standards)
+15. Go-To-Market & Pricing (4 tiers, 9 product prices, revenue projection)
+16. Implementation Phases & Milestones (Phase 0-6 with deliverables)
+17. Success Metrics & KPIs (platform + per-product)
+18. Open Core Boundary (OSS vs proprietary, graduated strategy)
+19. Dependency Map (build-order constraints)
+20. Risk Register (8 strategic + 4 execution risks)
+21. Glossary (23 terms)
+22. Appendices (competitive comparison, reference docs)
+
+### Status
+Generator script cleaned up. .docx is in gitignored private/ directory. Ready for use by all departments.
+
+## [2026-05-17 02:00] strategy | VALUE_CHAIN_AI_NATIVE_STRATEGY — comprehensive gap analysis and completion
+
+### Context
+Previous session created the VALUE_CHAIN_AI_NATIVE_STRATEGY.md document (Parts 0-9) but ran out of tokens before completion. This session performed a thorough gap analysis and filled all missing sections.
+
+### Gaps identified and filled (12 new Parts added: 10-21)
+
+| Part | Title | What It Covers |
+|------|-------|---------------|
+| Part 10 | Data Infrastructure | 4-tier data refinery architecture (hot/warm/cold/archive), event pipeline with NATS JetStream + TimescaleDB + pgvector, data collection optimization strategies |
+| Part 11 | Additional Stage 3 Products | 3 new AI-native products: Flag-Driven Personalization Engine (FPE), AI Code Generator for Flags (AICG), Kill Switch Grid (KSG) |
+| Part 12 | Stage 2 Product Specifications | Detailed specs for Release Pipeline Engine (RPE), Experimentation Engine (E2), Flag Lifecycle Manager (FLM) — the bridge layer |
+| Part 13 | Open Core Boundary Specification | What's open vs proprietary for Stage 3+, graduated open source strategy (proprietary tier stays 2 years ahead) |
+| Part 14 | Risk Analysis & Mitigation | 8 strategic risks, 4 execution risks, 3 market timing risks with probability/impact/mitigation |
+| Part 15 | Build vs Buy vs Partner | Build (6 core differentiators), Buy/OSS (7 commodity components), Partner (6 acceleration partners) |
+| Part 16 | Team & Talent Requirements | 15-person org structure across 6 teams, 5 key hires with priority ordering |
+| Part 17 | Customer Validation Strategy | Design partner program, 5-stage validation sequence, lean MVP validation for each product |
+| Part 18 | Competitive Response Analysis | How LD/Statsig/OSS competitors will respond at 6/12/18/24 months, 5 asymmetric advantages |
+| Part 19 | Customer Migration Path | 4-stage adoption ladder (Stage 1→2→2.5→3), trigger-based upgrade suggestions, data accumulation period strategy |
+| Part 20 | Agent-to-Agent Coordination | 3 interaction patterns (delegation, escalation, negotiation), 6-step agent governance protocol |
+| Part 21 | Federation Strategy | Multi-vendor flag control plane vision, OpenFeature abstraction layer, migration accelerator pricing |
+
+### Updates applied
+- Updated `last_updated` to 2026-05-17
+- Expanded Cross-References section with links to PEOPLE.md, FINANCIALS.md, BILLING_STRATEGY.md
+- Added Updated Success Metrics table incorporating new products
+- Total document: 9 original parts + 12 new parts = 21 parts
+- Total products: 6 original Stage 3 + 3 additional = 9 Stage 3 products
+
+### Wiki index update needed
+- VALUE_CHAIN_AI_NATIVE_STRATEGY.md should be added to private wiki index with summary and confidence rating
+
+## [2026-05-16 23:00] research | FlagEngine Enterprise Research — competitive deep-dive, AI strategy & UX overhaul
+
+**Context:** Thorough research of LaunchDarkly (complete docs via llms.txt — 1,500+ pages across Product Docs, SDKs, Guides, Integrations, API Docs, Tutorials, Blog) and Statsig documentation. Applied Don Norman's principles from The Design of Everyday Things and Living with Complexity to create a comprehensive enterprise transformation strategy.
+
+### New wiki page created:
+- `product/wiki/private/FLAGENGINE_ENTERPRISE_RESEARCH.md` — 7-part comprehensive strategy document
+
+### Parts documented:
+1. **Competitive Deep-Dive**: LD's 9-domain feature architecture, 6-step onboarding, AI strategy (Vega, AI Configs, MCP), ~80+ integrations; Statsig's unified platform; Gap analysis with 13 critical/major gaps identified vs 8 existing FS advantages
+2. **AI-Powered Strategy**: 4-layer assistance model — Ambient Intelligence (always-on health scores, anomaly detection), Conversational AI (natural language → flag config), Predictive Suggestions (proactive nudges), Autonomous Operations (trusted automation with safeguards)
+3. **AI/LLM/RAG Stack**: pgvector for embeddings, Claude/GPT-4o model selection, RAG pipeline over docs+flags+audit, structured JSON output for safe mutations, MCP server for IDE integration, 13 function-calling tools with safety levels
+4. **Enterprise UX (Don Norman)**: Per-feature Gulf-closing patterns (flag creation wizard, visual rule builder, environment-aware safety), error prevention matrix, progressive disclosure levels, NNGroup heuristic compliance for all 10 heuristics, 3-level emotional design
+5. **Integration Ecosystem**: 3-tier strategy — Tier 1 (8 must-have: GitHub, Slack, Datadog, VSCode, Terraform, MCP, Jira, Sentry), Tier 2 (8 should-have), Tier 3 (6 nice-to-have), Partner integration framework
+6. **Implementation Roadmap**: 6 phases over 12 months — Phase 0 (foundation) → Phase 1 (AI MVP, Jun-Jul) → Phase 2 (Automation, Aug-Sep) → Phase 3 (Release Mgmt, Oct-Nov) → Phase 4 (Observe/Experiment, Dec-Jan) → Phase 5 (Admin/Ecosystem, Feb-Mar) → Phase 6 (Warehouse/Advanced AI, Apr-Jun 2027)
+7. **Success Metrics**: 9 KPIs with current → 12-month targets
+
+### Wiki index updated:
+- `product/wiki/index.md` — added FLAGENGINE_ENTERPRISE_RESEARCH.md to private pages, updated count to 23 total
+
+## [2026-05-10 20:12] strategy | Enterprise SaaS Operational Framework — private wiki page created
+
+**Context:** Comprehensive operational framework documenting the dependency graph of SaaS
+workstreams, compliance strategy (build secure first, certify later), migration compatibility
+approach (OpenFeature + import tool + parity tests), total company operations map across
+6 domains (Product, Security, Revenue, Customer, Platform, Legal, Marketing, People),
+and a prioritized 90-day action plan with 12 concrete actions.
+
+**Sources ingested:**
+- COMPLIANCE.md (9-framework mapping, security architecture)
+- COMPLIANCE_GAPS.md (claims vs reality audit, certification roadmap)
+- SDK.md (migration integration, OpenFeature provider strategy)
+- ARCHITECTURE.md (hexagonal architecture, multi-tenancy)
+- BUSINESS.md, BILLING_STRATEGY.md, COMPETITIVE.md (pricing, billing, competitive)
+
+**New page:** `product/wiki/private/OPERATIONAL_FRAMEWORK.md`
+- Tags: operations, business, planning, compliance, sales
+- Cross-referenced: ROADMAP, COMPLIANCE_GAPS, BUSINESS, SDK, SALES, CUSTOMERS, FINANCIALS, COMPETITIVE, BILLING_STRATEGY
+- Confidence: high
 
 ## [2026-05-16 23:00] overhaul | Complete Server & Dashboard UX Overhaul — Norman-Inspired
 

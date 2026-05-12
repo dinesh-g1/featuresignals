@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-05-14
-> **Total pages:** 21 (9 public, 8 private, 4 internal, 0 archive)
+> **Updated:** 2026-05-18
+> **Total pages:** 31 (9 public, 18 private, 4 internal, 0 archive)
 
 ---
 
@@ -52,6 +52,7 @@
 |------|--------|---------|---------------|
 | [[UX_STRATEGY.md]] | `current` | Don Norman-inspired UX strategy — 5 design principles (Close the Gulfs, Error Prevention, Knowledge in the World, Emotional Design, Progressive Disclosure), heuristic compliance checklist, 8-phase implementation roadmap, competitive UX differentiators | 0 |
 | [[UNIFIED_OVERHAUL_PLAN.md]] | `current` | Phase-by-phase plan for: (1) Docs migration Docusaurus→Next.js MDX (99 pages), (2) Dashboard rebrand to FlagEngine (app.featuresignals.com→/flagengine), (3) FlagEngine-docs contextual integration (inline docs panels). All grounded in Norman principles. Ready for agentic execution with 17 parallel agent prompts specified. | 0 |
+| [[../private/UI_UX_SPECIFICATION.md]] | `current` | **v1 Complete UI/UX Specification** — 4,392 lines, 21 sections. Every page (7 nav sections + settings), every component (12 new, 6 existing modified), every state (13 universal rules), full accessibility requirements (WCAG 2.1 AA), responsive strategy, dark mode implementation, performance budgets, 6-persona matrix, 6-phase implementation plan. Grounded in Don Norman's 10 design principles applied per-page. Aligned with DASHBOARD_AUDIT.md findings. | 1 |
 
 ---
 
@@ -65,8 +66,19 @@
 | [[SALES.md]] | `current` | Sales playbook — target customer profiles (startups, growing teams, enterprises), common objections with responses (placeholder - needs filling from real calls), sales process overview, links to competitive intelligence and pricing data | low |
 | [[CUSTOMERS.md]] | `current` | Customer insights — profiles, feedback, use cases, pain points (placeholder shell - to be filled from real customer interactions) | low |
 | [[FINANCIALS.md]] | `current` | Financial data — infrastructure costs (€47.47/mo for Hetzner Scale tier), margin analysis, pricing tiers revenue structure, self-hosting cost comparisons across 4 cloud providers | medium |
-| [[BILLING_STRATEGY.md]] | `current` | Complete billing strategy — market analysis, resource model (platform fee + evaluation metering), invoice structure, payment infrastructure (Razorpay/Stripe/Paddle), spend management, missing features for V1 leadership, 3-phase implementation plan, revenue projections, risk analysis | high |
+| [[BILLING_STRATEGY.md]] | `current` | Complete billing strategy — market analysis, resource model (platform fee + evaluation metering), invoice structure, payment infrastructure (Razorpay/Stripe/Paddle), spend management, missing features for V1 leadership, 3-phase implementation plan, revenue projections, risk analysis. **Superseded for pricing model by USAGE_BASED_BILLING_STRATEGY.md.** | high |
+| [[SUB_PROCESSOR_STRATEGY.md]] | `current` | Comprehensive sub-processor inventory (13 services across 8 categories), risk assessment, data flow tracing, competitive positioning. Key principle: every sub-processor we add closes a door — every opt-out we provide opens one. Zero Sub-Processor Mode achievable via self-hosting. 15 action items across 4 timelines. | high |
+| [[USAGE_BASED_BILLING_STRATEGY.md]] | `current` | **Definitive billing strategy.** Usage-based pay-as-you-go model replacing flat-rate INR 1,999/mo. 8 parts: cost driver analysis (infra + pass-through + 14 meters), pricing model (Free/Pro-INR999-base-metered/Enterprise/Self-Hosted), sub-processor pricing impact (local LLM=INR0), metering infrastructure (NATS→ClickHouse→Rating→Invoice→Payment), competitive analysis (6 competitors), revenue projections (3 scenarios, 85% blended margin), PRS requirements (20 FS-BILL-xxx IDs), self-hosted licensing model (INR 50K-25L/yr). | high |
+| [[OPERATIONAL_FRAMEWORK.md]] | `current` | Enterprise SaaS operational framework — dependency graph of workstreams (Phase 0→4), compliance strategy (build secure then certify), migration compatibility (OpenFeature + import tool + parity tests), total company operations map across 8 domains, prioritized 90-day action plan with 12 concrete actions, 7 meta-principles governing operational decisions | high |
+| [[FLAGENGINE_ENTERPRISE_RESEARCH.md]] | `current` | Comprehensive competitive deep-dive (LaunchDarkly, Statsig), AI-powered "zero-thinking" hand-holding strategy across 4 layers, LLM/RAG/MCP technology stack plan, enterprise-grade UX strategy applying Don Norman principles to every feature, integration ecosystem strategy with 3 tiers, 6-phase implementation roadmap with success metrics | high |
+| [[VALUE_CHAIN_AI_NATIVE_STRATEGY.md]] | `superseded_in_part` | v2.0.0. Value-chain framework, data infrastructure, risk analysis, GTM strategy, competitive response, and federation strategy remain valid. Stage 3 product architecture superseded by HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md — now reflects 4 unified lifecycle products (Code2Flag, Preflight, IncidentFlag+AutoMonitor, Impact Analyzer+Org Learning) + ABM. Original 9-product definitions preserved in Part 4A for historical reference. | high |
+| [[MARKET_FIT_ANALYSIS.md]] | `current` | Brutally honest market fit audit of every product in the 5-stage value chain. Applies the core question "What do companies do TODAY?" to each product. Scores hallucination risk 1-10. Categorizes products as DEFINITE BUILD, VALIDATE FIRST, or LIKELY HALLUCINATION. Includes Phase 0 validation plan. Core recommendation: focus 80% of Stage 3 energy on ABM. | high |
+| [[EMERGENT_PRODUCT_ANALYSIS.md]] | `current` | Deep first-principles product analysis: 7 new product concepts (Preflight, ServiceMesh, Code2Flag, ComplianceGuard, CostPath, IncidentFlag, FlagGraph), 3 AI Stage 0-1 transformations, 5 industry-specific architectures (Indian Fintech, US Healthcare, EU SaaS, E-commerce, AI/ML). Revised product priority killing 5 existing products, merging 2. New "Big Three": Code2Flag, Preflight, ABM. Implementation implications including event-driven architecture, team requirements, GTM changes, and revised timeline. | high |
+| [[HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md]] | `current` | **SUPERSEDES** previous product planning documents. Definitive product architecture rooted in the 14-step human feature lifecycle (CONCEIVE through LEARN). 13 AI extensions mapped to each human step — each with concrete outputs, hallucination risk scoring, and human/AI role boundaries. Consolidates the fragmented 9-product Stage 3 plan into 4 unified products (Code2Flag, Preflight, IncidentFlag+AutoMonitor, Impact Analyzer+Org Learning). 11 of 14 existing products killed or absorbed. Unified vision: "FeatureSignals is not a feature flag platform. It is a feature lifecycle platform." | high |
+| [[PROCESS_ALIGNMENT_ARCHITECTURE.md]] | `current` | **FINAL ARCHITECTURAL LAYER.** Makes FeatureSignals a true reflection of each customer's existing business process — not a rigid product they must adapt to. 5-level company maturity model (Solo→Regulated), Policy-as-Configuration engine (CEL-based), customer-definable Workflow Engine (replaces hardcoded phases), Reflection Architecture (bi-directional integration with Jira/Slack/GitHub/PagerDuty/Datadog/ServiceNow), 9 industry template packs (Solo Dev through GovTech), graduated onboarding path. Design invariant: same codebase supports "no process" (Level 1) and "maximum process" (Level 5 bank) — only configuration differs. Implementation blueprint with Go schemas, SQL migrations, API design, and 6-phase build plan. | high |
+| FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx | `current` | **Canonical product specification.** 100+ concrete requirements with unique IDs across 22 sections. Covers all 5 value-chain stages. Single source of truth for Engineering, Design, QA, Sales, and all departments. Must be updated whenever features change. | high |
 | [[PEOPLE.md]] | `current` | Team & hiring — structure, hiring plans, skill gaps (placeholder shell) | low |
+| [[UI_UX_SPECIFICATION.md]] | `current` | **v1 Complete UI/UX Specification** — 4,392 lines. Every page, component, state, and Don Norman principle application for the FeatureSignals dashboard. Covers 7 nav sections, settings, component library (12 new, 6 modified), state handling (13 universal rules), accessibility (WCAG 2.1 AA), responsive strategy, dark mode, performance requirements, 6-persona matrix, 6-phase implementation plan. Companion to DASHBOARD_AUDIT.md. | high |
 
 ---
 
@@ -97,16 +109,20 @@
 | `sdk` | SDK.md |
 | `performance` | PERFORMANCE.md |
 | `deployment` | DEPLOYMENT.md |
-| `compliance` | COMPLIANCE.md |
+| `compliance` | COMPLIANCE.md, PROCESS_ALIGNMENT_ARCHITECTURE.md, SUB_PROCESSOR_STRATEGY.md, OPERATIONAL_FRAMEWORK.md |
 | `infrastructure` | DEPLOYMENT.md, INFRASTRUCTURE.md |
-| `operations` | INFRASTRUCTURE.md, RUNBOOKS.md, INCIDENTS.md, COMPLIANCE_GAPS.md |
+| `operations` | INFRASTRUCTURE.md, RUNBOOKS.md, INCIDENTS.md, COMPLIANCE_GAPS.md, OPERATIONAL_FRAMEWORK.md |
 | `incident` | RUNBOOKS.md, INCIDENTS.md |
-| `business` | BUSINESS.md, COMPETITIVE.md, ROADMAP.md, SALES.md, CUSTOMERS.md, FINANCIALS.md, BILLING_STRATEGY.md |
-| `financial` | BUSINESS.md, FINANCIALS.md, BILLING_STRATEGY.md |
+| `business` | BUSINESS.md, COMPETITIVE.md, ROADMAP.md, SALES.md, CUSTOMERS.md, FINANCIALS.md, BILLING_STRATEGY.md, USAGE_BASED_BILLING_STRATEGY.md, SUB_PROCESSOR_STRATEGY.md, OPERATIONAL_FRAMEWORK.md |
+| `strategy` | HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md, PROCESS_ALIGNMENT_ARCHITECTURE.md, VALUE_CHAIN_AI_NATIVE_STRATEGY.md, FLAGENGINE_ENTERPRISE_RESEARCH.md, USAGE_BASED_BILLING_STRATEGY.md, SUB_PROCESSOR_STRATEGY.md, OPERATIONAL_FRAMEWORK.md |
+| `specs` | FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx |
+| `ai` | HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md, EMERGENT_PRODUCT_ANALYSIS.md, VALUE_CHAIN_AI_NATIVE_STRATEGY.md, FLAGENGINE_ENTERPRISE_RESEARCH.md |
+| `financial` | BUSINESS.md, FINANCIALS.md, BILLING_STRATEGY.md, USAGE_BASED_BILLING_STRATEGY.md |
 | `competitive` | COMPETITIVE.md |
 | `customer` | CUSTOMERS.md |
-| `sales` | SALES.md |
-| `roadmap` | ROADMAP.md, BILLING_STRATEGY.md |
+| `sales` | SALES.md, OPERATIONAL_FRAMEWORK.md |
+| `planning` | OPERATIONAL_FRAMEWORK.md |
+| `roadmap` | ROADMAP.md, BILLING_STRATEGY.md, USAGE_BASED_BILLING_STRATEGY.md |
 | `people` | PEOPLE.md |
 | `core` | ARCHITECTURE.md, DEPLOYMENT.md, DEVELOPMENT.md, SDK.md, TESTING.md, PERFORMANCE.md |
 
@@ -135,7 +151,7 @@ Pages with no inbound links from other wiki pages (potential orphans):
 | INCIDENTS.md | 0 | Add cross-reference from RUNBOOKS.md |
 | COMPLIANCE_GAPS.md | 0 | Add cross-reference from COMPLIANCE.md and INFRASTRUCTURE.md |
 
-**Action:** Schedule a lint pass after the next session to add cross-references and resolve orphans.
+**Action:** Schedule a lint pass after the next session to add cross-references and resolve orphans. OPERATIONAL_FRAMEWORK.md (new, 2026-05-10) needs backlinks from BUSINESS.md, ROADMAP.md, SALES.md.
 
 ---
 
@@ -147,3 +163,4 @@ Pages with no inbound links from other wiki pages (potential orphans):
 | `grep "^## \[" product/wiki/log.md \| tail -5` | See last 5 operations |
 | `find product/wiki -name "*.md" \| wc -l` | Count total wiki pages |
 | `grep -r "\[\[" product/wiki/public/ \| grep -o "\[\[[^]]*\]\]" \| sort -u` | List all wikilinks |
+| `open product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` | Open the canonical PRS |
