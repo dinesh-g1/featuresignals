@@ -133,7 +133,10 @@ function InviteDialog({ open, onOpenChange, onInvited }: InviteDialogProps) {
 
       try {
         setSubmitting(true);
-        await api.inviteMember(token, { email: form.email.trim(), role: form.role });
+        await api.inviteMember(token, {
+          email: form.email.trim(),
+          role: form.role,
+        });
         toast("Invitation sent", "success");
         onOpenChange(false);
         onInvited();
@@ -209,9 +212,7 @@ function InviteDialog({ open, onOpenChange, onInvited }: InviteDialogProps) {
             <div className="mt-1.5">
               <Select
                 value={form.role}
-                onValueChange={(val) =>
-                  setForm({ ...form, role: val })
-                }
+                onValueChange={(val) => setForm({ ...form, role: val })}
                 options={ROLE_OPTIONS}
               />
             </div>
@@ -307,10 +308,7 @@ function RoleChangeConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="!justify-between">
-          <Button
-            variant="secondary"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button variant="primary" onClick={onConfirm}>
@@ -334,11 +332,10 @@ export default function TeamPage() {
     loading,
     error,
     reload,
-  } = usePageData<OrgMember[]>(
-    () => api.listMembers(token!),
-    [token],
-    { enabled: !!token, initialData: [] },
-  );
+  } = usePageData<OrgMember[]>(() => api.listMembers(token!), [token], {
+    enabled: !!token,
+    initialData: [],
+  });
 
   // Environments for permissions (loaded separately since they depend on projectId)
   const [envs, setEnvs] = useState<Environment[]>([]);
@@ -352,7 +349,9 @@ export default function TeamPage() {
 
   // Role change confirmation
   const [roleConfirmOpen, setRoleConfirmOpen] = useState(false);
-  const [roleConfirmMember, setRoleConfirmMember] = useState<OrgMember | null>(null);
+  const [roleConfirmMember, setRoleConfirmMember] = useState<OrgMember | null>(
+    null,
+  );
   const [roleConfirmNewRole, setRoleConfirmNewRole] = useState("");
 
   // ── Derived state (process raw members list) ──
@@ -523,7 +522,7 @@ export default function TeamPage() {
         toast("Failed to update permissions", "error");
       }
     },
-    [token, loadPermissions],
+    [token, permMap, loadPermissions],
   );
 
   const getPermValue = useCallback(
@@ -546,8 +545,7 @@ export default function TeamPage() {
     user != null &&
     (members ?? []).some(
       (m) =>
-        m.email === user.email &&
-        (m.role === "owner" || m.role === "admin"),
+        m.email === user.email && (m.role === "owner" || m.role === "admin"),
     );
 
   // ── Loading ──

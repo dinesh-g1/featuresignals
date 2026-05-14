@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-  Suspense,
-} from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiGet, apiPost, apiDelete } from "@/lib/api";
@@ -28,7 +21,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Pagination } from "@/components/ui/pagination";
 import {
   Plus,
   MoreHorizontal,

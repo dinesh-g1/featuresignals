@@ -6,19 +6,12 @@ import { suggestSlug } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { Input } from "@/components/ui/input";
-import { Select, type SelectOption } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { FormField } from "@/components/ui/form-field";
 import { ProgressiveDisclosure } from "@/components/ui/progressive-disclosure";
 import { FieldHelp } from "@/components/field-help";
 import { toast } from "@/components/toast";
-import {
-  FlagIcon,
-  CodeIcon,
-  ToggleLeftIcon,
-  FileCodeIcon,
-  BeakerIcon,
-} from "@/components/icons/nav-icons";
+import { FlagIcon, CodeIcon } from "@/components/icons/nav-icons";
 import {
   ToggleRightIcon,
   BracesIcon,
@@ -30,14 +23,6 @@ import type { Flag } from "@/lib/types";
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-const FLAG_TYPE_OPTIONS: SelectOption[] = [
-  { value: "boolean", label: "Boolean (on/off)" },
-  { value: "string", label: "String" },
-  { value: "number", label: "Number" },
-  { value: "json", label: "JSON" },
-  { value: "ab", label: "A/B Experiment" },
-];
-
 const FLAG_TYPE_CARDS: {
   value: string;
   label: string;
@@ -47,7 +32,8 @@ const FLAG_TYPE_CARDS: {
   {
     value: "boolean",
     label: "Boolean",
-    description: "Simple on/off toggle. Best for feature releases and kill switches.",
+    description:
+      "Simple on/off toggle. Best for feature releases and kill switches.",
     icon: ToggleRightIcon,
   },
   {
@@ -65,7 +51,8 @@ const FLAG_TYPE_CARDS: {
   {
     value: "json",
     label: "JSON",
-    description: "Return structured JSON. Best for complex configuration objects.",
+    description:
+      "Return structured JSON. Best for complex configuration objects.",
     icon: BracesIcon,
   },
   {
@@ -342,9 +329,7 @@ export function SimpleFlagCreate({
             <span
               className={cn(
                 "text-xs",
-                keyValidation.valid
-                  ? "text-emerald-600"
-                  : "text-red-600",
+                keyValidation.valid ? "text-emerald-600" : "text-red-600",
               )}
             >
               {keyValidation.message}

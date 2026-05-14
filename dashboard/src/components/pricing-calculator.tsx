@@ -43,12 +43,6 @@ const CURRENCY_SYMBOLS: Record<CurrencyKey, string> = {
   EUR: "€",
 };
 
-const CURRENCY_LOCALES: Record<CurrencyKey, string> = {
-  USD: "en-US",
-  INR: "en-IN",
-  EUR: "de-DE",
-};
-
 const FEATURESIGNALS_PRICING = {
   pro: {
     monthly: PRO_MONTHLY_INR,
@@ -107,10 +101,7 @@ function calculateSavings(
   fsAmt: number,
 ): { amount: number; pct: number } {
   const saved = competitorAmt - fsAmt;
-  const pct =
-    competitorAmt > 0
-      ? Math.round((saved / competitorAmt) * 100)
-      : 0;
+  const pct = competitorAmt > 0 ? Math.round((saved / competitorAmt) * 100) : 0;
   return { amount: saved, pct };
 }
 
@@ -257,12 +248,6 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
     ? "FeatureSignals Pro (annual)"
     : "FeatureSignals Pro (monthly)";
 
-  // Calculate annual totals for display
-  const compAnnualTotal = compCost * 12;
-  const fsAnnualTotal = annual
-    ? convertFromINR(PRO_ANNUAL_TOTAL_INR, currency)
-    : fsMonthly * 12;
-
   return (
     <section
       className={cn(
@@ -366,7 +351,6 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
             <span className="font-medium">
               {annual ? "Annual billing" : "Monthly billing"}
             </span>
-
           </button>
         </div>
       </div>
@@ -462,7 +446,8 @@ export function PricingCalculator({ className }: PricingCalculatorProps) {
                 — unlimited seats, unlimited projects.
               </li>
               <li>
-                <strong>Exchange rates:</strong> 1 USD ≈ ₹{EXCHANGE_RATES.USD}, 1 EUR ≈ ₹{EXCHANGE_RATES.EUR}
+                <strong>Exchange rates:</strong> 1 USD ≈ ₹{EXCHANGE_RATES.USD},
+                1 EUR ≈ ₹{EXCHANGE_RATES.EUR}
               </li>
             </ul>
             <p className="mt-3 text-[var(--signal-fg-tertiary)]">

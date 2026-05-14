@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-  Suspense,
-} from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiGet, apiDelete, apiPost } from "@/lib/api";
@@ -32,7 +25,6 @@ import {
   Shield,
   Clock,
   Activity,
-  X,
 } from "lucide-react";
 import {
   Dialog,

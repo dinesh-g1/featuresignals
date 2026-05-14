@@ -9,7 +9,6 @@ import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeftIcon,
@@ -109,7 +108,9 @@ export default function ForgotPasswordPage() {
           setError(err.message);
         }
       } else {
-        setError(err instanceof Error ? err.message : "Failed to send reset email");
+        setError(
+          err instanceof Error ? err.message : "Failed to send reset email",
+        );
       }
     } finally {
       setLoading(false);
@@ -243,15 +244,23 @@ export default function ForgotPasswordPage() {
         const msg = err.message.toLowerCase();
         if (msg.includes("expir") || msg.includes("expired")) {
           setFieldErrors({ otp: "This code has expired. Request a new one." });
-        } else if (msg.includes("invalid") || msg.includes("wrong") || msg.includes("incorrect")) {
+        } else if (
+          msg.includes("invalid") ||
+          msg.includes("wrong") ||
+          msg.includes("incorrect")
+        ) {
           setFieldErrors({ otp: "Invalid code. Please check and try again." });
         } else if (msg.includes("already used")) {
-          setError("This reset link has already been used. Please request a new one.");
+          setError(
+            "This reset link has already been used. Please request a new one.",
+          );
         } else {
           setError(err.message);
         }
       } else {
-        setError(err instanceof Error ? err.message : "Failed to reset password");
+        setError(
+          err instanceof Error ? err.message : "Failed to reset password",
+        );
       }
     } finally {
       setLoading(false);
@@ -281,302 +290,333 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout>
+      {/* Heading */}
+      <div className="text-center">
+        <h2 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
+          {step === "email" && "Reset your password"}
+          {step === "checkEmail" && "Check your email"}
+          {step === "reset" && "Set a new password"}
+          {step === "success" && "Password reset"}
+        </h2>
+        <p className="mt-1.5 text-sm text-[var(--signal-fg-tertiary)]">
+          {step === "email" && "Enter your email to receive a reset code"}
+          {step === "checkEmail" && `We sent a 6-digit code to ${email}`}
+          {step === "reset" &&
+            "Enter the code from your email and a new password"}
+        </p>
+      </div>
 
-        {/* Heading */}
-        <div className="text-center">
-          <h2 className="text-xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
-            {step === "email" && "Reset your password"}
-            {step === "checkEmail" && "Check your email"}
-            {step === "reset" && "Set a new password"}
-            {step === "success" && "Password reset"}
-          </h2>
-          <p className="mt-1.5 text-sm text-[var(--signal-fg-tertiary)]">
-            {step === "email" && "Enter your email to receive a reset code"}
-            {step === "checkEmail" &&
-              `We sent a 6-digit code to ${email}`}
-            {step === "reset" && "Enter the code from your email and a new password"}
-          </p>
+      {/* Error message */}
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg bg-[var(--signal-bg-danger-muted)] border border-[var(--signal-border-danger-muted)] p-3 text-sm text-[var(--signal-fg-danger)]">
+          <svg
+            className="mt-0.5 h-4 w-4 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{error}</span>
         </div>
+      )}
 
-        {/* Error message */}
-        {error && (
-          <div className="flex items-start gap-2 rounded-lg bg-[var(--signal-bg-danger-muted)] border border-[var(--signal-border-danger-muted)] p-3 text-sm text-[var(--signal-fg-danger)]">
-            <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* ── Step: Email ────────────────────────────────────────── */}
-        {step === "email" && (
-          <form onSubmit={handleEmailSubmit} noValidate className="mt-6 space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (fieldErrors.email) setFieldErrors({});
-                  }}
-                  className="pl-9"
-                  aria-invalid={!!fieldErrors.email}
-                  autoFocus
-                />
-              </div>
-              {fieldErrors.email && (
-                <p className="text-xs text-[var(--signal-fg-danger)]" role="alert">
-                  {fieldErrors.email}
-                </p>
-              )}
+      {/* ── Step: Email ────────────────────────────────────────── */}
+      {step === "email" && (
+        <form
+          onSubmit={handleEmailSubmit}
+          noValidate
+          className="mt-6 space-y-5"
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email address</Label>
+            <div className="relative">
+              <MailIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors({});
+                }}
+                className="pl-9"
+                aria-invalid={!!fieldErrors.email}
+                autoFocus
+              />
             </div>
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? (
-                <>
-                  <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
-                  Sending code...
-                </>
-              ) : (
-                <>
-                  <SendIcon className="mr-1.5 h-4 w-4" />
-                  Send reset code
-                </>
-              )}
-            </Button>
-          </form>
-        )}
-
-        {/* ── Step: Check Email (interstitial) ────────────────────── */}
-        {step === "checkEmail" && (
-          <div className="mt-6 space-y-5">
-            <div className="flex flex-col items-center gap-4 rounded-xl bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)] p-6 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--signal-bg-primary)] shadow-sm ring-1 ring-accent/10">
-                <MailIcon className="h-7 w-7 text-[var(--signal-fg-accent)]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
-                  Check your inbox
-                </h3>
-                <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
-                  We&apos;ve sent a 6-digit verification code to{" "}
-                  <span className="font-medium text-[var(--signal-fg-primary)]">
-                    {email}
-                  </span>
-                  . The code expires in 15 minutes.
-                </p>
-                <p className="mt-2 text-xs text-[var(--signal-fg-tertiary)]">
-                  Didn&apos;t receive it? Check your spam folder or{" "}
-                  <button
-                    type="button"
-                    onClick={handleBackToEmail}
-                    className="font-medium text-[var(--signal-fg-accent)] hover:underline"
-                  >
-                    try a different email
-                  </button>
-                  .
-                </p>
-              </div>
-            </div>
-
-            <Button onClick={handleProceedToReset} className="w-full">
-              I have the code — continue
-            </Button>
+            {fieldErrors.email && (
+              <p
+                className="text-xs text-[var(--signal-fg-danger)]"
+                role="alert"
+              >
+                {fieldErrors.email}
+              </p>
+            )}
           </div>
-        )}
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? (
+              <>
+                <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
+                Sending code...
+              </>
+            ) : (
+              <>
+                <SendIcon className="mr-1.5 h-4 w-4" />
+                Send reset code
+              </>
+            )}
+          </Button>
+        </form>
+      )}
 
-        {/* ── Step: Reset (OTP + new password) ────────────────────── */}
-        {step === "reset" && (
-          <form onSubmit={handleResetSubmit} noValidate className="mt-6 space-y-5">
-            {/* OTP Input */}
-            <div className="space-y-1.5">
-              <Label>Verification code</Label>
-              <div className="flex justify-center gap-2">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => { inputRefs.current[index] = el; }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOTPChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                    className={cn(
-                      "w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--signal-fg-accent)] focus:border-[var(--signal-fg-accent)]",
-                      fieldErrors.otp
-                        ? "border-[var(--signal-border-danger-emphasis)] bg-[var(--signal-bg-danger-muted)]"
-                        : digit
-                          ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]"
-                          : "border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]",
-                    )}
-                    aria-label={`Digit ${index + 1}`}
-                  />
-                ))}
-              </div>
-              {fieldErrors.otp && (
-                <p className="text-xs text-[var(--signal-fg-danger)] text-center" role="alert">
-                  {fieldErrors.otp}
-                </p>
-              )}
-              <p className="text-xs text-[var(--signal-fg-tertiary)] text-center mt-1.5">
-                Code expires in 15 minutes.{" "}
+      {/* ── Step: Check Email (interstitial) ────────────────────── */}
+      {step === "checkEmail" && (
+        <div className="mt-6 space-y-5">
+          <div className="flex flex-col items-center gap-4 rounded-xl bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)] p-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--signal-bg-primary)] shadow-sm ring-1 ring-accent/10">
+              <MailIcon className="h-7 w-7 text-[var(--signal-fg-accent)]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
+                Check your inbox
+              </h3>
+              <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
+                We&apos;ve sent a 6-digit verification code to{" "}
+                <span className="font-medium text-[var(--signal-fg-primary)]">
+                  {email}
+                </span>
+                . The code expires in 15 minutes.
+              </p>
+              <p className="mt-2 text-xs text-[var(--signal-fg-tertiary)]">
+                Didn&apos;t receive it? Check your spam folder or{" "}
                 <button
                   type="button"
                   onClick={handleBackToEmail}
                   className="font-medium text-[var(--signal-fg-accent)] hover:underline"
                 >
-                  Resend code
+                  try a different email
                 </button>
+                .
               </p>
             </div>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[var(--signal-border-default)]" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[var(--signal-bg-primary)] px-3 text-[var(--signal-fg-tertiary)]">
-                  New password
-                </span>
-              </div>
-            </div>
-
-            {/* New Password */}
-            <div className="space-y-1.5">
-              <Label htmlFor="newPassword">New password</Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    if (fieldErrors.newPassword)
-                      setFieldErrors({ ...fieldErrors, newPassword: undefined });
-                  }}
-                  className="pr-10"
-                  placeholder="Enter new password"
-                  aria-invalid={!!fieldErrors.newPassword}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] transition-colors"
-                  tabIndex={-1}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="h-4 w-4" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {fieldErrors.newPassword && (
-                <p className="text-xs text-[var(--signal-fg-danger)]" role="alert">
-                  {fieldErrors.newPassword}
-                </p>
-              )}
-              <PasswordStrengthInline password={newPassword} />
-            </div>
-
-            {/* Confirm Password */}
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    if (fieldErrors.confirmPassword)
-                      setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
-                  }}
-                  className="pr-10"
-                  placeholder="Confirm new password"
-                  aria-invalid={!!fieldErrors.confirmPassword}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] transition-colors"
-                  tabIndex={-1}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOffIcon className="h-4 w-4" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              {fieldErrors.confirmPassword && (
-                <p className="text-xs text-[var(--signal-fg-danger)]" role="alert">
-                  {fieldErrors.confirmPassword}
-                </p>
-              )}
-            </div>
-
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? (
-                <>
-                  <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
-                  Resetting password...
-                </>
-              ) : (
-                "Reset password"
-              )}
-            </Button>
-          </form>
-        )}
-
-        {/* ── Step: Success ────────────────────────────────────────── */}
-        {step === "success" && (
-          <div className="space-y-5">
-            <div className="flex flex-col items-center gap-4 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)] p-6 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--signal-bg-primary)] shadow-sm ring-1 ring-[var(--signal-border-success-muted)]">
-                <CheckCircleFillIcon className="h-7 w-7 text-[var(--signal-fg-success)]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
-                  Password reset successfully
-                </h3>
-                <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
-                  Your password has been updated. Redirecting to sign in
-                  {redirectCountdown > 0 ? ` in ${redirectCountdown}s` : "..."}
-                </p>
-              </div>
-            </div>
-            <Link href="/login">
-              <Button className="w-full">Sign in now</Button>
-            </Link>
           </div>
-        )}
 
-        {/* Back to login link */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1.5 text-sm text-[var(--signal-fg-secondary)] transition-colors hover:text-[var(--signal-fg-primary)]"
-          >
-            <ArrowLeftIcon className="h-3.5 w-3.5" />
-            Back to login
+          <Button onClick={handleProceedToReset} className="w-full">
+            I have the code — continue
+          </Button>
+        </div>
+      )}
+
+      {/* ── Step: Reset (OTP + new password) ────────────────────── */}
+      {step === "reset" && (
+        <form
+          onSubmit={handleResetSubmit}
+          noValidate
+          className="mt-6 space-y-5"
+        >
+          {/* OTP Input */}
+          <div className="space-y-1.5">
+            <Label>Verification code</Label>
+            <div className="flex justify-center gap-2">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOTPChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOTPKeyDown(index, e)}
+                  className={cn(
+                    "w-12 h-14 text-center text-xl font-semibold rounded-lg border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--signal-fg-accent)] focus:border-[var(--signal-fg-accent)]",
+                    fieldErrors.otp
+                      ? "border-[var(--signal-border-danger-emphasis)] bg-[var(--signal-bg-danger-muted)]"
+                      : digit
+                        ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)]"
+                        : "border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)]",
+                  )}
+                  aria-label={`Digit ${index + 1}`}
+                />
+              ))}
+            </div>
+            {fieldErrors.otp && (
+              <p
+                className="text-xs text-[var(--signal-fg-danger)] text-center"
+                role="alert"
+              >
+                {fieldErrors.otp}
+              </p>
+            )}
+            <p className="text-xs text-[var(--signal-fg-tertiary)] text-center mt-1.5">
+              Code expires in 15 minutes.{" "}
+              <button
+                type="button"
+                onClick={handleBackToEmail}
+                className="font-medium text-[var(--signal-fg-accent)] hover:underline"
+              >
+                Resend code
+              </button>
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--signal-border-default)]" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[var(--signal-bg-primary)] px-3 text-[var(--signal-fg-tertiary)]">
+                New password
+              </span>
+            </div>
+          </div>
+
+          {/* New Password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="newPassword">New password</Label>
+            <div className="relative">
+              <Input
+                id="newPassword"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  if (fieldErrors.newPassword)
+                    setFieldErrors({ ...fieldErrors, newPassword: undefined });
+                }}
+                className="pr-10"
+                placeholder="Enter new password"
+                aria-invalid={!!fieldErrors.newPassword}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] transition-colors"
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="h-4 w-4" />
+                ) : (
+                  <EyeIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            {fieldErrors.newPassword && (
+              <p
+                className="text-xs text-[var(--signal-fg-danger)]"
+                role="alert"
+              >
+                {fieldErrors.newPassword}
+              </p>
+            )}
+            <PasswordStrengthInline password={newPassword} />
+          </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (fieldErrors.confirmPassword)
+                    setFieldErrors({
+                      ...fieldErrors,
+                      confirmPassword: undefined,
+                    });
+                }}
+                className="pr-10"
+                placeholder="Confirm new password"
+                aria-invalid={!!fieldErrors.confirmPassword}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-secondary)] transition-colors"
+                tabIndex={-1}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOffIcon className="h-4 w-4" />
+                ) : (
+                  <EyeIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            {fieldErrors.confirmPassword && (
+              <p
+                className="text-xs text-[var(--signal-fg-danger)]"
+                role="alert"
+              >
+                {fieldErrors.confirmPassword}
+              </p>
+            )}
+          </div>
+
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? (
+              <>
+                <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" />
+                Resetting password...
+              </>
+            ) : (
+              "Reset password"
+            )}
+          </Button>
+        </form>
+      )}
+
+      {/* ── Step: Success ────────────────────────────────────────── */}
+      {step === "success" && (
+        <div className="space-y-5">
+          <div className="flex flex-col items-center gap-4 rounded-xl bg-[var(--signal-bg-success-muted)] border border-[var(--signal-border-success-muted)] p-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--signal-bg-primary)] shadow-sm ring-1 ring-[var(--signal-border-success-muted)]">
+              <CheckCircleFillIcon className="h-7 w-7 text-[var(--signal-fg-success)]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
+                Password reset successfully
+              </h3>
+              <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
+                Your password has been updated. Redirecting to sign in
+                {redirectCountdown > 0 ? ` in ${redirectCountdown}s` : "..."}
+              </p>
+            </div>
+          </div>
+          <Link href="/login">
+            <Button className="w-full">Sign in now</Button>
           </Link>
         </div>
+      )}
 
+      {/* Back to login link */}
+      <div className="mt-6 text-center">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--signal-fg-secondary)] transition-colors hover:text-[var(--signal-fg-primary)]"
+        >
+          <ArrowLeftIcon className="h-3.5 w-3.5" />
+          Back to login
+        </Link>
+      </div>
     </AuthLayout>
   );
 }

@@ -93,7 +93,10 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
     limit,
     offset,
   );
-  const envs = envsPaginated?.data ?? [];
+  const envs: Environment[] = useMemo(
+    () => envsPaginated?.data ?? [],
+    [envsPaginated?.data],
+  );
   const envsTotal = envsPaginated?.total ?? 0;
   const [loading, setLoading] = useState(true);
 

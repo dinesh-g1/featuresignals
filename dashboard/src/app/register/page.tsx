@@ -11,7 +11,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  CheckIcon,
   MailIcon,
   AlertIcon,
   ArrowLeftIcon,
@@ -244,153 +243,6 @@ function ResendCooldown({
       <p className="text-xs text-[var(--signal-fg-tertiary)]">
         Resend code in {countdown}s
       </p>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Value Propositions — What FeatureSignals offers that competitors don't
-// ---------------------------------------------------------------------------
-
-const VALUE_PROPS = [
-  {
-    title: "Sub-millisecond evaluation",
-    description:
-      "Stateless, allocation-free engine. No database calls on the hot path. Your users never wait.",
-    icon: (
-      <svg
-        className="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-      </svg>
-    ),
-  },
-  {
-    title: "Unlimited seats. Flat pricing.",
-    description:
-      "INR 2,649/month (~$32). No per-seat fees. No usage meters. No surprise bills..",
-    icon: (
-      <svg
-        className="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-      </svg>
-    ),
-  },
-  {
-    title: "OpenFeature-native. Zero lock-in.",
-    description:
-      "All 8 SDKs built on OpenFeature. Switch providers by changing one line of code.",
-    icon: (
-      <svg
-        className="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
-  },
-  {
-    title: "Self-host in 3 minutes",
-    description:
-      "Single Go binary. Docker or bare metal. Apache 2.0. Your infrastructure, your data.",
-    icon: (
-      <svg
-        className="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-        <circle cx="6" cy="6" r="1" fill="currentColor" />
-        <circle cx="10" cy="6" r="1" fill="currentColor" />
-      </svg>
-    ),
-  },
-];
-
-function ValuePanel() {
-  return (
-    <div className="max-w-lg mx-auto">
-      {/* Badge — frosted glass on dark */}
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-8 bg-white/10 text-white border border-white/15">
-        <svg
-          className="h-3.5 w-3.5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-        14-day Pro trial — all features
-      </div>
-
-      {/* Headline */}
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4">
-        Feature flags that don&apos;t punish growth.
-      </h1>
-      <p className="text-base text-gray-300 mb-10 leading-relaxed">
-        Unlimited seats. Flat pricing. Sub-millisecond latency. Everything you
-        need to ship faster, at a fraction of the cost.
-      </p>
-
-      {/* Value props */}
-      <div className="space-y-5">
-        {VALUE_PROPS.map((prop) => (
-          <div key={prop.title} className="flex gap-3.5">
-            <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-white/10 text-white flex items-center justify-center">
-              {prop.icon}
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                {prop.title}
-              </h3>
-              <p className="text-sm text-gray-400 mt-0.5 leading-relaxed">
-                {prop.description}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Trust bar */}
-      <div className="mt-10 pt-7 border-t border-white/10">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {["Apache 2.0", "8 SDKs", "OpenFeature", "SOC 2"].map((item) => (
-            <span
-              key={item}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-gray-400 border border-white/10"
-            >
-              <CheckIcon className="h-3 w-3 text-emerald-400" />
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -692,7 +544,8 @@ function RegisterForm() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="email">
-                  Email <span className="text-[var(--signal-fg-danger)]">*</span>
+                  Email{" "}
+                  <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="email"
@@ -727,7 +580,8 @@ function RegisterForm() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="password">
-                  Password <span className="text-[var(--signal-fg-danger)]">*</span>
+                  Password{" "}
+                  <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="password"
@@ -761,7 +615,8 @@ function RegisterForm() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="org_name">
-                  Organization Name <span className="text-[var(--signal-fg-danger)]">*</span>
+                  Organization Name{" "}
+                  <span className="text-[var(--signal-fg-danger)]">*</span>
                 </Label>
                 <Input
                   id="org_name"
@@ -795,7 +650,8 @@ function RegisterForm() {
             {/* Data region — compact inline selector */}
             <fieldset>
               <legend className="text-sm font-medium text-[var(--signal-fg-primary)] mb-1.5">
-                Data Region <span className="text-[var(--signal-fg-danger)]">*</span>
+                Data Region{" "}
+                <span className="text-[var(--signal-fg-danger)]">*</span>
               </legend>
               <div className="flex gap-2">
                 {regions.map((region) => (
@@ -816,7 +672,10 @@ function RegisterForm() {
                       onChange={(e) => {
                         setForm({ ...form, data_region: e.target.value });
                         if (fieldErrors.data_region)
-                          setFieldErrors({...fieldErrors, data_region: undefined});
+                          setFieldErrors({
+                            ...fieldErrors,
+                            data_region: undefined,
+                          });
                       }}
                       className="sr-only"
                     />
@@ -826,7 +685,10 @@ function RegisterForm() {
                 ))}
               </div>
               {fieldErrors.data_region && (
-                <p className="mt-1 text-xs text-[var(--signal-fg-danger)]" role="alert">
+                <p
+                  className="mt-1 text-xs text-[var(--signal-fg-danger)]"
+                  role="alert"
+                >
                   {fieldErrors.data_region}
                 </p>
               )}
@@ -934,7 +796,6 @@ function RegisterForm() {
             </Link>
           </p>
         )}
-
       </div>
     </AuthLayout>
   );

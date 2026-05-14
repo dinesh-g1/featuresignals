@@ -41,12 +41,7 @@ import { useFlagToggle } from "@/hooks/use-flag-toggle";
 import { ProductionSafetyGate } from "@/components/production-safety-gate";
 import { CopyButton } from "@/components/ui/copy-button";
 import { AlertIcon, XIcon } from "@/components/icons/nav-icons";
-import {
-  Code2Icon,
-  GitCompareIcon,
-  BeakerIcon,
-  ArrowRightIcon,
-} from "lucide-react";
+import { Code2Icon } from "lucide-react";
 import type {
   Flag,
   FlagState,
@@ -105,10 +100,6 @@ export default function FlagDetailPage() {
   );
   const [testTargetKey, setTestTargetKey] = useState("");
   const [testResult, setTestResult] = useState<boolean | null>(null);
-  const [testAttributes, setTestAttributes] = useState("");
-  const [testInspecting, setTestInspecting] = useState(false);
-  const [showDiff, setShowDiff] = useState(false);
-  const [previousState, setPreviousState] = useState<FlagState | null>(null);
   const [deleteImpact, setDeleteImpact] = useState<{
     envsEnabled: number;
     segmentRefs: number;
@@ -675,13 +666,9 @@ export default function FlagDetailPage() {
             flag={flag}
             state={state}
             testTargetKey={testTargetKey}
-            testAttributes={testAttributes}
             testResult={testResult}
-            testInspecting={testInspecting}
             setTestTargetKey={setTestTargetKey}
-            setTestAttributes={setTestAttributes}
             setTestResult={setTestResult}
-            setTestInspecting={setTestInspecting}
           />
         </TabsContent>
 
@@ -1252,24 +1239,16 @@ function FlagEvaluationView({
   flag,
   state,
   testTargetKey,
-  testAttributes,
   testResult,
-  testInspecting,
   setTestTargetKey,
-  setTestAttributes,
   setTestResult,
-  setTestInspecting,
 }: {
   flag: Flag;
   state: FlagState | null;
   testTargetKey: string;
-  testAttributes: string;
   testResult: boolean | null;
-  testInspecting: boolean;
   setTestTargetKey: (v: string) => void;
-  setTestAttributes: (v: string) => void;
   setTestResult: (v: boolean | null) => void;
-  setTestInspecting: (v: boolean) => void;
 }) {
   const rules = useMemo(() => state?.rules || [], [state?.rules]);
   const isEnabled = state?.enabled ?? false;

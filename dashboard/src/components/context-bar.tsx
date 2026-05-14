@@ -153,7 +153,7 @@ function ProjectDropdown() {
 function QuickCreateMenu() {
   const router = useRouter();
   const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const token = useAppStore((s) => s.token);
+  const _token = useAppStore((s) => s.token);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -214,7 +214,7 @@ function QuickCreateMenu() {
     },
   ];
 
-  const hasDisabled = items.some((i) => i.disabled);
+  const _hasDisabled = items.some((i) => i.disabled);
 
   return (
     <div className="relative" ref={ref}>

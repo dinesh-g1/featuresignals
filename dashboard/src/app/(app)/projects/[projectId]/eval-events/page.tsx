@@ -67,7 +67,7 @@ function EvalEventsSkeleton() {
 
 export default function EvalEventsPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const _projectId = useAppStore((s) => s.currentProjectId);
 
   const [analytics, setAnalytics] = useState<EvalEventAnalytics | null>(null);
   const [volume, setVolume] = useState<EvalEventVolume | null>(null);
@@ -89,7 +89,6 @@ export default function EvalEventsPage() {
     classifyError,
     markFresh,
     isForbidden,
-    isStale,
     rateLimitRetryAfter,
   } = usePageStates({
     onRefresh: () => load(),
@@ -151,7 +150,16 @@ export default function EvalEventsPage() {
     );
 
     Promise.all(promises).finally(() => setLoading(false));
-  }, [token, flagKey, since, interval, resetErrors, classifyError, markFresh]);
+  }, [
+    token,
+    flagKey,
+    since,
+    interval,
+    error,
+    resetErrors,
+    classifyError,
+    markFresh,
+  ]);
 
   useEffect(() => {
     load();

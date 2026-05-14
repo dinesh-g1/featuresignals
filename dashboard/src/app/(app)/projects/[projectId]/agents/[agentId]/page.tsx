@@ -37,9 +37,7 @@ import {
   Clock,
   DollarSign,
   BarChart3,
-  CheckCircle2,
   AlertTriangle,
-  XCircle,
 } from "lucide-react";
 
 // ─── Status Badge ──────────────────────────────────────────────────────────

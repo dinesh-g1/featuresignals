@@ -70,14 +70,6 @@ const CATEGORY_OPTIONS = [
   { value: "permission", label: "Permission" },
 ];
 
-const STATUS_OPTIONS = [
-  { value: "all", label: "All Statuses" },
-  { value: "active", label: "Active" },
-  { value: "rolled_out", label: "Rolled Out" },
-  { value: "deprecated", label: "Deprecated" },
-  { value: "archived", label: "Archived" },
-];
-
 const CREATE_TYPE_OPTIONS = [
   { value: "boolean", label: "Boolean" },
   { value: "string", label: "String" },
@@ -127,9 +119,10 @@ function FlagsInner() {
     error: _flagsError,
     refetch: refetchFlags,
   } = useFlagsPaginated(projectId, limit, offsetVal);
-  const flags = flagsPaginated?.data ?? [];
-  const flagsTotal = flagsPaginated?.total ?? 0;
-
+  const flags = useMemo(
+    () => flagsPaginated?.data ?? [],
+    [flagsPaginated?.data],
+  );
   const { data: envs } = useEnvironments(projectId);
   const { data: batchStates } = useFlagStates(projectId, currentEnvId);
   const stateMap = useFlagStateMap(batchStates, flags);
@@ -435,7 +428,6 @@ function FlagsInner() {
         stateMap={stateMap}
         prereqState={prereqState}
         onRefreshPrereqs={refreshPrereqs}
-        flagsTotal={flagsTotal}
       />
 
       <FlagSlideOver
@@ -535,7 +527,6 @@ function FlagsWithData({
   stateMap,
   prereqState,
   onRefreshPrereqs,
-  flagsTotal,
 }: {
   search: string;
   searchInput: string;
@@ -581,7 +572,6 @@ function FlagsWithData({
     canCreateFlags: boolean;
   };
   onRefreshPrereqs: () => void;
-  flagsTotal: number;
 }) {
   // ALL hooks must come before any conditional return
   const token = useAppStore((s) => s.token);
@@ -732,15 +722,6 @@ function FlagsWithData({
     [allTags],
   );
 
-  function handleSort(key: SortKey) {
-    if (sortBy === key) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(key);
-      setSortDir("asc");
-    }
-  }
-
   const filtered = useMemo(() => {
     const query = search.toLowerCase();
     let result = (flags ?? []).filter(
@@ -836,7 +817,6 @@ function FlagsWithData({
       sortDir={sortDir}
       setSortBy={setSortBy}
       setSortDir={setSortDir}
-      handleSort={handleSort}
       showCreate={showCreate}
       setShowCreate={setShowCreate}
       newFlag={newFlag}
@@ -892,7 +872,6 @@ function FlagsContent({
   sortDir,
   setSortBy,
   setSortDir,
-  handleSort,
   showCreate,
   setShowCreate,
   newFlag,
@@ -941,7 +920,6 @@ function FlagsContent({
   sortDir: "asc" | "desc";
   setSortBy: (v: SortKey) => void;
   setSortDir: (v: "asc" | "desc") => void;
-  handleSort: (key: SortKey) => void;
   showCreate: boolean;
   setShowCreate: (v: boolean) => void;
   newFlag: NewFlagState;
