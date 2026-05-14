@@ -38,6 +38,7 @@ import {
   TrendingUpIcon,
   ClockIcon,
   GavelIcon,
+  BotIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -112,6 +113,7 @@ const insights: NavItemDef[] = [
 const powerTools: NavItemDef[] = [
   { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
   { href: path("/agents"), label: "Agents", icon: BrainIcon },
+  { href: path("/abm"), label: "Agent Behaviors", icon: BotIcon },
   { href: path("/env-comparison"), label: "Env Comparison", icon: SearchIcon },
   {
     href: path("/target-inspector"),

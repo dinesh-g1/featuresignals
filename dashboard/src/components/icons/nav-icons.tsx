@@ -1,6 +1,7 @@
 /** Signal UI Icons — powered by lucide-react, zero Primer dependency */
 import {
   Activity,
+  Bot,
   AlertTriangle,
   ArrowLeft,
   ArrowLeftRight,
@@ -103,6 +104,7 @@ export const AuditLogIcon = ListChecks;
 export const BarChartIcon = BarChart3;
 export const BeakerIcon = FlaskConical;
 export const BellIcon = Bell;
+export const BotIcon = Bot;
 export const BookIcon = Book;
 export const BrainIcon = Lightbulb;
 export const BugIcon = Bug;
